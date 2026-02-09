@@ -1,0 +1,111 @@
+# 📋 Евиденција на подобрувања — Math Curriculum AI Navigator
+
+> Последно ажурирање: 9 февруари 2026
+
+---
+
+## ✅ Завршено
+
+### Фаза 1 — Поправка на React Error #130 (commit `648938c`)
+- **Проблем**: Апликацијата паѓаше на Vercel со React error #130 (undefined component)
+- **Причина**: `ICONS.arrowRight` не постоеше во `constants.tsx`, а се користеше во повеќе компоненти
+- **Решение**: Додадени `arrowRight`, `target`, `chartBar` икони во `constants.tsx`
+- **Засегнати фајлови**: `constants.tsx`
+
+---
+
+### Фаза 2 — Quick Wins (commit `efff62f`)
+
+| # | Подобрување | Фајл(ови) | Детали |
+|---|-------------|-----------|--------|
+| 1 | `lang="mk"` наместо `lang="en"` | `index.html` | SEO и accessibility за македонски јазик |
+| 2 | Отстранет importmap блок | `index.html` | Остаток од AI Studio, не се користеше |
+| 3 | Test deps → devDependencies | `package.json` | `vitest`, `@testing-library/react` преместени во devDependencies |
+| 4 | useMemo на сите контексти (×9) | `AuthContext.tsx`, `PlannerContext.tsx`, `UserPreferencesContext.tsx`, `UIContext.tsx`, `GeneratorPanelContext.tsx`, `ModalContext.tsx`, `LastVisitedContext.tsx`, `NetworkStatusContext.tsx`, `NotificationContext.tsx` | Спречува непотребни re-renders на сите consumers |
+| 5 | Скопиран CSS transition | `index.html` | `* { transition }` заменет со селектор само за интерактивни елементи (button, a, input, select, textarea) |
+| 6 | Sidebar aria-label | `components/Sidebar.tsx` | Преведен на македонски: "Главна навигација" |
+| 7 | Име на пакет | `package.json` | Од `copy-of-copy-of-...` → `math-curriculum-ai-navigator` |
+
+---
+
+### Фаза 3 — Medium Wins (commit `2618869`)
+
+| # | Подобрување | Фајл(ови) | Детали |
+|---|-------------|-----------|--------|
+| 1 | SilentErrorBoundary | `components/common/SilentErrorBoundary.tsx` (НОВ), `App.tsx` | Обвива Sidebar, AIGeneratorPanel, ContextualFAB — ако паднат, не ја рушат целата апликација |
+| 2 | Zod валидација на share decode | `services/shareService.ts` | Додадени `SharedLessonPlanSchema` и `SharedAnnualPlanSchema` — спречува injection преку share линкови |
+| 3 | Отстранет дупликат getDocs | `contexts/PlannerContext.tsx` | Двапати се читаше од Firestore при mount; сега loading се следи само преку onSnapshot |
+| 4 | Custom ConfirmDialog | `components/common/ConfirmDialog.tsx` (НОВ), `types.ts`, `components/common/ModalManager.tsx`, `views/LessonPlanLibraryView.tsx`, `views/MaterialsGeneratorView.tsx`, `components/ai/AIAnnualPlanGeneratorModal.tsx` | Замена на сите `window.confirm` со модален дијалог (danger/warning/info варијанти) |
+
+---
+
+### Фаза 4 — КРИТИЧНО: API Key Security (commit `0196296`)
+
+- **Проблем**: Gemini API клучот беше видлив во client bundle (`process.env.API_KEY` → инјектиран од Vite)
+- **Решение**: Server-side proxy преку Vercel Serverless Functions
+- **Нови фајлови**:
+  - `api/gemini.ts` — Non-streaming proxy (POST → JSON)
+  - `api/gemini-stream.ts` — Streaming proxy (POST → SSE)
+- **Рефакториран**: `services/geminiService.real.ts` — целосно отстранет `@google/genai` SDK од client, заменет со `fetch('/api/gemini')` и `fetch('/api/gemini-stream')`
+- **Отстранет**: `process.env.API_KEY` define од `vite.config.ts`
+- **Додаден**: `geminiDevProxy()` Vite plugin за локален development
+- **Резултат**: Bundle намален од 1,555 KB → 1,296 KB (−259 KB / −17%)
+- **Верифицирано**: 0 API key референци во production bundle; двата endpoints одговараат правилно на POST
+
+---
+
+## 🔲 Останато (по приоритет)
+
+### 🔴 П1: Tailwind CSS — PostCSS миграција
+- **Статус**: Се користи Tailwind Play CDN (`<script src="cdn.tailwindcss.com">`) — само за прототипи
+- **Проблеми**: ~300KB непотребен JS, FOUC, нема tree-shaking, конзолно предупредување
+- **План**: Инсталирај `tailwindcss` + `@tailwindcss/vite`, замени CDN со build-time CSS
+- **Очекуван ефект**: Значително намалување на bundle, без FOUC, production-ready
+
+### 🟠 П2: Bundle splitting
+- **Статус**: Главен chunk е 1,296 KB — сè уште преголем
+- **План**:
+  - Firebase auth/firestore → lazy dynamic import (~200KB заштеда)
+  - Curriculum data (grade-6/7/8/9.json) → per-grade dynamic import (~400KB)
+  - Vendor chunk splitting: Chart.js, KaTeX, vis-network, pptxgenjs
+- **Очекуван ефект**: Main chunk под 500KB
+
+### 🟡 П3: Focus trapping во модали
+- **Статус**: Tab копчето излегува надвор од отворен модал — WCAG нарушување
+- **План**: Додади `focus-trap-react` или рачно focus management
+- **Засегнати**: Сите модали во `ModalManager.tsx`
+- **Очекуван ефект**: Пристапност за корисници со тастатура и screen reader
+
+### 🟢 П4: TypeScript `strict: true`
+- **Статус**: 47× `any` типови низ кодот, `strict` е исклучен
+- **План**: Инкрементално — прво `noImplicitAny`, потоа `strictNullChecks`, потоа целосен `strict`
+- **Очекуван ефект**: Спречува undefined/null багови долгорочно
+
+### 🔵 П5: Компонентни тестови
+- **Статус**: Vitest + Testing Library инсталирани, но 0 UI компонентни тестови
+- **План**: Тестови за критични патеки — Login flow, Planner CRUD, AI Generator, Share decode
+- **Очекуван ефект**: Доверба при идни промени, regression заштита
+
+---
+
+## 📊 Метрики
+
+| Метрика | Пред | Сега | Цел |
+|---------|------|------|-----|
+| Bundle (main chunk) | 1,555 KB | 1,296 KB | < 500 KB |
+| API keys во bundle | 1 (Gemini) | 0 | 0 ✅ |
+| Context re-renders | Секој render | Memoized (×9) | Memoized ✅ |
+| `window.confirm` | 4 места | 0 | 0 ✅ |
+| `any` типови | ~47 | ~47 | 0 |
+| UI тестови | 0 | 0 | 20+ |
+| Tailwind | CDN Play | CDN Play | PostCSS build |
+
+---
+
+## 🛠 Технички стек
+
+- **Frontend**: React 19.2.1, TypeScript 5.8, Vite 6.x
+- **Backend**: Firebase 12.4 (Auth + Firestore), Vercel Serverless Functions
+- **AI**: Google Gemini (преку server proxy)
+- **Deployment**: Vercel (auto-deploy од `main` гранка)
+- **Repo**: `igorbogdanoski/math-curriculum-ai-navigator`

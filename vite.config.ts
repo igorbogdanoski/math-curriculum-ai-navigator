@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 /**
  * Vite plugin: Dev middleware for Gemini API proxy.
@@ -84,6 +85,7 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [
+        tailwindcss(),
         react(),
         // Only add dev proxy when GEMINI_API_KEY is available (dev mode)
         env.GEMINI_API_KEY ? geminiDevProxy(env.GEMINI_API_KEY) : undefined,
