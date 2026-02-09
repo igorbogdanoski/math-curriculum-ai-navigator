@@ -12,7 +12,48 @@ interface MathRendererProps {
   text: string | null | undefined;
 }
 
-// Converts a string with double backslashes for JS to single backslashes for standard LaTeX
+/**
+ * Auto-detect bare LaTeX commands outside math delimiters and wrap them in $...$.
+ * Handles cases where AI omits $ delimiters around math expressions.
+ * Runs on non-math segments only (text not already inside $...$ or $$...$$).
+ */
+function wrapBareLatex(text: string): string {
+    // Split by existing math delimiters — captured groups land at odd indices
+    const parts = text.split(/(\$\$[\s\S]*?\$\$|\$[^$]+?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g);
+
+    return parts.map((part, i) => {
+        if (i % 2 === 1) return part; // already-delimited math, keep as-is
+
+        // One level of nested braces: matches {abc}, {a{bc}d}
+        const b = '\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\}';
+
+        // Single-pass regex matching all common bare LaTeX patterns
+        const pattern = new RegExp(
+            '(?:' +
+            // \frac{...}{...}  with optional leading number (e.g., 2\frac{1}{3})
+            `(?:\\d+(?:[.,]\\d+)?\\s*)?\\\\frac${b}${b}` + '|' +
+            // \sqrt[...]{...}  or  \sqrt{...}
+            `\\\\sqrt(?:\\[[^\\]]*\\])?${b}` + '|' +
+            // number + \text{...}  (units injected by step 2.5, e.g., 11\text{ km})
+            `\\d+(?:[.,]\\d+)?\\s*\\\\text${b}` + '|' +
+            // Decorator commands with one brace arg: \mathbb{R}, \overline{AB}, etc.
+            `\\\\(?:text|mathbb|overline|underline|hat|vec|bar|tilde)${b}` + '|' +
+            // Bare superscript / subscript: x^{2}, a_{n}, x^2, a_1
+            `[a-zA-Zа-яА-Я](?:\\^|_)(?:${b}|\\d+)` + '|' +
+            // Standalone symbols (no brace args)
+            '\\\\(?:cdot|times|div|pm|mp|leq|geq|neq|approx|infty|circ|angle|triangle|perp|parallel|sim|' +
+            'alpha|beta|gamma|delta|pi|theta|lambda|sigma|omega|phi|psi|mu|rho|tau|epsilon)(?![a-zA-Z])' +
+            ')',
+            'g'
+        );
+
+        return part.replace(pattern, m => '$' + m.trim() + '$');
+    }).join('');
+}
+
+// Converts a string with double backslashes for JS to single backslashes for standard LaTeX.
+// Pipeline: escape normalisation → space fix → unit injection → environment spacing
+//           → bare-LaTeX auto-wrapping → inner-$ cleanup
 const convertToStandardLatex = (text: string): string => {
     if (!text) return "";
     
@@ -30,16 +71,25 @@ const convertToStandardLatex = (text: string): string => {
     
     // 2.6 Pull units inside math blocks if they follow immediately
     // Fixes cases like $7 + 4 = 11$ km -> $7 + 4 = 11 \text{ km}$
-    // We do this globally before splitting into blocks/inline parts
     processed = processed.replace(/(\$|\\\(|\\\[)\s*([\s\S]+?)\s*(\$|\\\)|\\\])\s*(km|cm|mm|kg|mg|ml|km2|m2|cm2|км|см|мм|кг|мг|мл|км2|м2|см2|m|м|g|г|t|т|l|л|dm|дм)\b/g, '$1 $2 \\text{ $4} $3');
     
     // 3. Ensure mathematical environments like {matrix} or {align} have proper spacing
     processed = processed.replace(/\\begin\{/g, '\n\\begin{').replace(/\\end\{/g, '\\end{\n');
     
-    // 4. Remove any unintentional $ inside the math (sometimes happens with AI)
-    if (processed.includes('$')) {
-        processed = processed.replace(/\$/g, '');
-    }
+    // 4. Auto-detect bare LaTeX commands not inside delimiters and wrap in $...$
+    //    This catches cases where the AI forgot $ delimiters (e.g., bare \frac{1}{2})
+    processed = wrapBareLatex(processed);
+    
+    // 5. Fix stray $ inside already-delimited math blocks
+    //    e.g., $$\frac{$1$}{2}$$ → $$\frac{1}{2}$$
+    processed = processed.replace(/(\$\$)([\s\S]*?)(\$\$)/g, (_, open, content, close) => {
+        return open + content.replace(/\$/g, '') + close;
+    });
+    // For inline $...$: match non-greedily and strip inner stray $
+    processed = processed.replace(/(?<!\$)\$(?!\$)([\s\S]*?)(?<!\$)\$(?!\$)/g, (_match, content) => {
+        const cleaned = content.replace(/\$/g, '');
+        return '$' + cleaned + '$';
+    });
 
     return processed;
 };
