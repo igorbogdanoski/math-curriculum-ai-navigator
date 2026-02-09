@@ -1,8 +1,8 @@
 
 import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
 import type { Curriculum, VerticalProgressionAnalysis, Concept, ConceptProgression, Grade, Topic, NationalStandard } from '../types';
+import type { CurriculumModule } from '../data/curriculum';
 import { firestoreService } from '../services/firestoreService';
-import { type CurriculumModule, fullCurriculumData as localCurriculumData } from '../data/curriculum';
 import { useNotification } from '../contexts/NotificationContext';
 
 interface CurriculumContextType {
@@ -36,10 +36,15 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const { addNotification } = useNotification();
 
     useEffect(() => {
-        // 1. Immediately load local data to ensure the app is responsive instantly (Optimistic UI)
-        // This guarantees the user never sees an empty screen even if offline.
-        setData(localCurriculumData);
-        setIsLoading(false);
+        let cancelled = false;
+
+        // 1. Load local curriculum data (code-split into its own chunk)
+        import('../data/curriculum').then(({ fullCurriculumData }) => {
+            if (!cancelled) {
+                setData(fullCurriculumData);
+                setIsLoading(false);
+            }
+        });
 
         // 2. Background Sync with Firestore
         const syncWithFirestore = async () => {
@@ -69,6 +74,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         };
 
         syncWithFirestore();
+        return () => { cancelled = true; };
     }, []); // Dependency array empty to run only on mount
 
     const curriculum = useMemo(() => data?.curriculumData, [data]);

@@ -93,6 +93,20 @@ export default defineConfig(({ mode }) => {
       // NOTE: API key is NO LONGER injected into the client bundle.
       // In production, requests go through /api/gemini (Vercel serverless function).
       // In development, requests go through the Vite dev middleware above.
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'vendor-react': ['react', 'react-dom'],
+              'vendor-firebase-app': ['firebase/app'],
+              'vendor-firebase-auth': ['firebase/auth'],
+              'vendor-firebase-firestore': ['firebase/firestore'],
+              'vendor-firebase-storage': ['firebase/storage'],
+              'vendor-zod': ['zod'],
+            }
+          }
+        }
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

@@ -1,7 +1,10 @@
 import React from 'react';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
-import { MaterialsGeneratorView } from '../../views/MaterialsGeneratorView';
 import { ICONS } from '../../constants';
+
+const MaterialsGeneratorView = React.lazy(() =>
+  import('../../views/MaterialsGeneratorView').then(m => ({ default: m.MaterialsGeneratorView }))
+);
 
 export const AIGeneratorPanel: React.FC = () => {
     const { isOpen, props, closeGeneratorPanel } = useGeneratorPanel();
@@ -51,7 +54,13 @@ export const AIGeneratorPanel: React.FC = () => {
                     </header>
                     <div className="flex-1 overflow-y-auto">
                         {/* Removed key to prevent unnecessary unmounting/loops if props change slightly */}
-                        {props && <MaterialsGeneratorView {...props} />}
+                        <React.Suspense fallback={
+                            <div className="flex items-center justify-center h-32">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
+                            </div>
+                        }>
+                            {props && <MaterialsGeneratorView {...props} />}
+                        </React.Suspense>
                     </div>
                 </div>
             </div>
