@@ -91,7 +91,8 @@ export const HomeView: React.FC = () => {
         tour.setOptions({
             steps: dashboardTourSteps,
             showProgress: true,
-            showBullets: false,
+            showBullets: true,
+            showStepNumbers: true,
             nextLabel: 'Следно',
             prevLabel: 'Претходно',
             doneLabel: 'Готово',

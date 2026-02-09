@@ -14,13 +14,40 @@ interface MathRendererProps {
 
 // Converts a string with double backslashes for JS to single backslashes for standard LaTeX
 const convertToStandardLatex = (text: string): string => {
-    return text.replace(/\\\\/g, '\\');
+    if (!text) return "";
+    
+    let processed = text;
+    
+    // 1. Handle double escaped backslashes common in JSON (\\\\ -> \)
+    processed = processed.replace(/\\\\\\\\/g, '\\').replace(/\\\\/g, '\\');
+    
+    // 2. Fix common AI issues like \ frac instead of \frac
+    processed = processed.replace(/\\ /g, '\\');
+    
+    // 3. Ensure mathematical environments like {matrix} or {align} have proper spacing
+    processed = processed.replace(/\\begin\{/g, '\n\\begin{').replace(/\\end\{/g, '\\end{\n');
+    
+    return processed;
+};
+
+// Custom styles for KaTeX elements to ensure they look great on all screens
+const katexOptions = {
+    throwOnError: false,
+    strict: false,
+    trust: true,
+    macros: {
+        "\\R": "\\mathbb{R}",
+        "\\N": "\\mathbb{N}",
+        "\\Z": "\\mathbb{Z}",
+        "\\Q": "\\mathbb{Q}"
+    }
 };
 
 
 const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => {
     // Regex to split by markdown bold/italic/code and KaTeX inline delimiters ($...$ and \(...\))
-    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\$[^\$]+\$|\\\(.*?\\\))/g);
+    // Improved to handle common edge cases and allow spaces inside $...$
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\$(?!\$)[^\$]+?\$|\\\(.*?\\\))/g);
 
     return (
         <>
@@ -42,7 +69,7 @@ const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => 
                     let html;
                     try {
                         if (window.katex) {
-                            html = window.katex.renderToString(convertToStandardLatex(math), { throwOnError: true });
+                            html = window.katex.renderToString(convertToStandardLatex(math), { ...katexOptions, displayMode: false });
                         } else {
                              // Fallback if KaTeX isn't loaded
                             return <code key={index} className="font-mono text-sm bg-gray-100 text-gray-800 rounded px-1 border border-gray-200" title="Unrendered math">{math}</code>;
@@ -138,7 +165,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
                     if (isDisplayMath && math !== undefined) {
                         let html;
                         try {
-                            html = window.katex.renderToString(convertToStandardLatex(math), { displayMode: true, throwOnError: true });
+                            html = window.katex.renderToString(convertToStandardLatex(math), { ...katexOptions, displayMode: true });
                         } catch (e: any) {
                             console.warn("KaTeX block rendering error:", e.message, "for content:", math);
                             html = `<div class="text-red-600 font-mono bg-red-100 p-2 rounded" title="${e.message}">${math}</div>`;

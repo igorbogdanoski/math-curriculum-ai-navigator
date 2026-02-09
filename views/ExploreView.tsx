@@ -6,6 +6,12 @@ import type { Topic, Grade, NationalStandard } from '../types';
 import { ModalType } from '../types';
 import { useModal } from '../contexts/ModalContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
+import { exploreTourSteps } from '../tours/tour-steps';
+
+declare var introJs: any;
+
+import { MathRenderer } from '../components/common/MathRenderer';
 
 const GradeSelector: React.FC<{
   grades: Grade[];
@@ -38,8 +44,8 @@ const TopicCard: React.FC<{ topic: Topic; onSelect: () => void }> = ({ topic, on
       <ICONS.bookOpen className="w-8 h-8 text-brand-accent" />
     </div>
     <div className="flex-grow">
-      <h3 className="text-xl font-bold text-brand-primary">{topic.title}</h3>
-      <p className="text-sm text-gray-600 mt-2 line-clamp-3">{topic.description}</p>
+      <h3 className="text-xl font-bold text-brand-primary"><MathRenderer text={topic.title} /></h3>
+      <p className="text-sm text-gray-600 mt-2 line-clamp-3"><MathRenderer text={topic.description} /></p>
     </div>
     <div className="mt-4 pt-3 border-t border-gray-200 flex justify-between items-center">
         <span className="text-xs font-semibold text-gray-500">{topic.concepts.length} поими</span>
@@ -54,8 +60,31 @@ export const ExploreView: React.FC = () => {
     const { curriculum, isLoading } = useCurriculum();
     const { showModal } = useModal();
     const { navigate } = useNavigation();
+    const { toursSeen, markTourAsSeen } = useUserPreferences();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedGradeId, setSelectedGradeId] = useState<string>('');
+
+    useEffect(() => {
+        if (toursSeen.explore === true || typeof introJs === 'undefined' || isLoading || !curriculum) return;
+
+        const timer = setTimeout(() => {
+            const tour = introJs();
+            tour.setOptions({
+                steps: exploreTourSteps,
+                showProgress: true,
+                showBullets: true,
+                showStepNumbers: true,
+                nextLabel: 'Следно',
+                prevLabel: 'Претходно',
+                doneLabel: 'Готово',
+            });
+            tour.oncomplete(() => markTourAsSeen('explore'));
+            tour.onexit(() => markTourAsSeen('explore'));
+            tour.start();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [toursSeen, markTourAsSeen, isLoading, curriculum]);
 
     useEffect(() => {
         if (curriculum && curriculum.grades.length > 0 && !selectedGradeId) {
@@ -110,7 +139,7 @@ export const ExploreView: React.FC = () => {
     return (
         <div className="flex flex-col md:flex-row h-full">
             {/* Left Column: Grade Selector */}
-            <div className="w-full md:w-64 p-4 bg-white border-b md:border-b-0 md:border-r flex-shrink-0">
+            <div data-tour="explore-grade-selector" className="w-full md:w-64 p-4 bg-white border-b md:border-b-0 md:border-r flex-shrink-0">
                 <h2 className="text-xl font-bold text-brand-primary mb-4 px-2 hidden md:block">Одделенија</h2>
                 <div className="md:hidden">
                      <label htmlFor="grade-select-mobile" className="sr-only">Избери одделение</label>
@@ -133,7 +162,7 @@ export const ExploreView: React.FC = () => {
             {/* Main Content Area */}
             <div className="flex-1 p-4 md:p-8 overflow-y-auto">
                  <header className="mb-6">
-                     <div className="flex justify-between items-center">
+                     <div data-tour="explore-header" className="flex justify-between items-center">
                         <h1 className="text-2xl md:text-3xl font-bold text-brand-primary">{selectedGrade?.title}</h1>
                          {selectedGrade?.transversalStandards && (
                              <button
@@ -144,7 +173,7 @@ export const ExploreView: React.FC = () => {
                             </button>
                         )}
                     </div>
-                    <div className="relative mt-4">
+                    <div data-tour="explore-search" className="relative mt-4">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3"><ICONS.search className="w-5 h-5 text-gray-400" /></span>
                         <input
                             type="text"
@@ -156,7 +185,7 @@ export const ExploreView: React.FC = () => {
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in-up">
+                <div data-tour="explore-topics-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in-up">
                     {filteredTopics.map(topic => (
                         <TopicCard key={topic.id} topic={topic} onSelect={() => navigate(`/topic/${topic.id}`)} />
                     ))}

@@ -67,7 +67,8 @@ export const PlannerView: React.FC = () => {
             tour.setOptions({
                 steps: plannerTourSteps,
                 showProgress: true,
-                showBullets: false,
+                showBullets: true,
+                showStepNumbers: true,
                 nextLabel: 'Следно',
                 prevLabel: 'Претходно',
                 doneLabel: 'Готово',

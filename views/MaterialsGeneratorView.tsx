@@ -64,7 +64,8 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props)
             tour.setOptions({
                 steps: generatorTourSteps,
                 showProgress: true,
-                showBullets: false,
+                showBullets: true,
+                showStepNumbers: true,
                 nextLabel: 'Следно',
                 prevLabel: 'Претходно',
                 doneLabel: 'Готово',

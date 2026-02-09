@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useCallback, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebaseConfig';
-import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 
 interface UserPreferences {
   favoriteConceptIds: string[];
@@ -91,13 +91,13 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     if (!firebaseUser) return;
     const userDocRef = doc(db, "users", firebaseUser.uid);
     
-    // Update Firestore in the background
-    updateDoc(userDocRef, {
-      [`toursSeen.${tour}`]: true
-    }).catch(err => {
+    // Use setDoc with merge: true to ensure the document exists
+    setDoc(userDocRef, {
+      toursSeen: {
+        [tour]: true
+      }
+    }, { merge: true }).catch(err => {
         console.error("Failed to mark tour as seen, reverting optimistic update:", err);
-        // If the update fails, onSnapshot will eventually correct the state,
-        // but we can also revert manually for a quicker response if needed.
         setToursSeen(prev => {
             const revertedState = { ...prev };
             delete revertedState[tour];

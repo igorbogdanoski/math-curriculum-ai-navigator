@@ -19,7 +19,7 @@ export function useRouter(routes: { path: string; component: React.FC<any> }[]) 
     window.location.hash = to;
   }, []);
 
-  const { component: Component, params } = routes.reduce(
+  const { component: Component, params } = React.useMemo(() => routes.reduce(
     (acc, route) => {
       const routeParts = route.path.split('/');
       const pathParts = rawPath.split('?')[0].split('/');
@@ -52,7 +52,7 @@ export function useRouter(routes: { path: string; component: React.FC<any> }[]) 
       return acc;
     },
     { component: null, params: {} as Record<string, string | undefined> }
-  );
+  ), [routes, rawPath]);
 
   return { path: rawPath, navigate, Component, params };
 }

@@ -145,6 +145,11 @@ const TEXT_SYSTEM_INSTRUCTION = `
    - За инлајн формули користи: $ ... $ (на пр. $a^2+b^2=c^2$)
    - За блок формули користи: $$ ... $$
    - НЕ користи долар знак за валути (користи "ден." или "EUR").
+   - Специфично за Македонија: 
+     - Користи \cdot за множење (пр. $3 \cdot 5 = 15$) наместо *.
+     - Користи : за делење (пр. $15 : 3 = 5$) наместо /.
+     - Користи децимална запирка (,) наместо точка (.) за децимални броеви (пр. 3,14).
+4. Објаснувања: Секогаш кога е можно, објаснувај ги постапките чекор-по-чекор со јасен и разбирлив јазик за учениците.
 `;
 
 const JSON_SYSTEM_INSTRUCTION = `
@@ -159,10 +164,16 @@ const JSON_SYSTEM_INSTRUCTION = `
 - За да добиеш \`\\frac{a}{b}\` во финалниот текст, во JSON стрингот мора да напишеш \`"\\\\frac{a}{b}"\`.
 - За да добиеш \`\\sqrt{x}\`, во JSON мора да напишеш \`"\\\\sqrt{x}"\`.
 - Користи единечни долари \`$\` за инлајн математика (пр. \`"$\\\\alpha + \\\\beta$"\`).
+- Специфично за Македонија: 
+  - Користи \`\\\\cdot\` за множење ($ \cdot $) наместо *.
+  - Користи \`:\` за делење ($ : $) наместо /.
+  - Користи децимална запирка (,) во математичките изрази за македонски стандард (пр. 2,5).
+- РЕШЕНИЈА: Во полето "solution" секогаш давај детално објаснување чекор-по-чекор со користење на LaTeX каде што е соодветно.
 
 ПЕДАГОШКИ НАСОКИ:
 - Користи македонски јазик.
 - Биди креативен и прецизен во содржината.
+- Објаснувањата на задачите треба да бидат структурирани чекор-по-чекор за полесно разбирање.
 `;
 
 // Improved Safety Settings to prevent false-positive blocking of educational content
@@ -419,6 +430,7 @@ export const realGeminiService = {
                         question: { type: Type.STRING },
                         options: { type: Type.ARRAY, items: { type: Type.STRING } },
                         answer: { type: Type.STRING },
+                        solution: { type: Type.STRING, description: "Чекор-по-чекор објаснување на решението на македонски јазик" },
                         cognitiveLevel: { type: Type.STRING },
                         difficulty_level: { type: Type.STRING },
                         alignment_justification: { type: Type.STRING },
@@ -443,6 +455,7 @@ export const realGeminiService = {
                                     question: { type: Type.STRING },
                                     options: { type: Type.ARRAY, items: { type: Type.STRING } },
                                     answer: { type: Type.STRING },
+                                    solution: { type: Type.STRING, description: "Чекор-по-чекор објаснување на решението на македонски јазик" },
                                 },
                                 required: ["type", "question", "answer"]
                             }
@@ -757,6 +770,7 @@ export const realGeminiService = {
                           type: { type: Type.STRING }, 
                           text: { type: Type.STRING },
                           answer: { type: Type.STRING },
+                          solution: { type: Type.STRING, description: "Чекор-по-чекор објаснување на решението на македонски јазик" },
                       },
                       required: ["type", "text", "answer"]
                   }

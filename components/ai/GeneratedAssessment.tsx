@@ -96,6 +96,26 @@ const QuestionList: React.FC<{
                                     <span className="text-sm ml-2"><MathRenderer text={q.answer} /></span>
                                 )}
                             </div>
+
+                            {isEditing ? (
+                                <div className="mt-2">
+                                    <span className="font-semibold text-sm">Решение чекор-по-чекор:</span>
+                                    <textarea 
+                                        value={q.solution || ''}
+                                        onChange={(e) => handleQuestionFieldChange(index, 'solution', e.target.value)}
+                                        className="w-full p-2 border rounded-md text-sm mt-1"
+                                        rows={3}
+                                        placeholder="Внесете детално решение..."
+                                    />
+                                </div>
+                            ) : q.solution && (
+                                <div className="mt-2 p-3 bg-blue-50 border-l-4 border-blue-400 text-sm">
+                                    <span className="font-semibold block mb-1 text-blue-800">Решение чекор-по-чекор:</span>
+                                    <div className="text-gray-700 italic">
+                                        <MathRenderer text={q.solution} />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {!isEditing && (
@@ -247,12 +267,20 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                     <meta charset="UTF-8">
                     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
                     <style>
-                        body { font-family: Calibri, sans-serif; font-size: 11pt; }
-                        h1, h2, h3, h4 { font-family: 'Calibri Light', sans-serif; }
+                        body { font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11pt; line-height: 1.5; color: #333; }
+                        h1, h2, h3, h4 { color: #0D47A1; }
+                        .katex { font-size: 1.1em !important; }
+                        .mb-4 { margin-bottom: 1rem; }
+                        .pb-4 { padding-bottom: 1rem; }
+                        .border-b { border-bottom: 1px solid #eee; }
+                        ul { list-style-type: none; padding-left: 20px; }
+                        li { margin-bottom: 8px; }
                     </style>
                 </head>
                 <body>
-                    ${renderedHtml}
+                    <div style="max-width: 800px; margin: 0 auto;">
+                        ${renderedHtml}
+                    </div>
                 </body>
                 </html>
             `;

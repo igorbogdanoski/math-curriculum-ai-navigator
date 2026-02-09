@@ -92,7 +92,7 @@ export const LessonPlanLibraryView: React.FC = () => {
             tour.setOptions({
                 steps: libraryTourSteps,
                 showProgress: true,
-                showBullets: false,
+                showBullets: true,
                 nextLabel: 'Следно',
                 prevLabel: 'Претходно',
                 doneLabel: 'Готово',

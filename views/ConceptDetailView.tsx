@@ -673,11 +673,21 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                 <ICONS.generator className="w-5 h-5 mr-2" />
                                 {practiceMaterial.title}
                             </h4>
-                             <div className="prose prose-sm max-w-none text-gray-800 space-y-3">
+                             <div className="prose prose-sm max-w-none text-gray-800 space-y-4">
                                 {practiceMaterial.items.map((item, index) => (
-                                    <div key={index}>
-                                        <p><strong>{index + 1}. <MathRenderer text={item.text} /></strong></p>
-                                        {item.answer && <p className="text-sm"><em>Одговор: <MathRenderer text={item.answer} /></em></p>}
+                                    <div key={index} className="pb-3 border-b last:border-b-0 border-indigo-100">
+                                        <p className="mb-1"><strong>{index + 1}. <MathRenderer text={item.text} /></strong></p>
+                                        {item.answer && (
+                                            <p className="text-sm bg-indigo-100 p-1 rounded inline-block">
+                                                <span className="font-semibold">Одговор:</span> <MathRenderer text={item.answer} />
+                                            </p>
+                                        )}
+                                        {item.solution && (
+                                            <div className="mt-2 p-2 bg-blue-50 border-l-2 border-blue-400 text-xs italic">
+                                                <span className="font-semibold text-blue-800">Решение:</span>
+                                                <div className="mt-1"><MathRenderer text={item.solution} /></div>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

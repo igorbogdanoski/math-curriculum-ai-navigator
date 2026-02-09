@@ -1,5 +1,5 @@
 
-import { useReducer, useEffect } from 'react';
+import { useReducer, useEffect, useRef } from 'react';
 import { QuestionType, type MaterialType, type GenerationContextType, type StudentProfile, type DifferentiationLevel, type BloomDistribution } from '../types';
 import { useCurriculum } from './useCurriculum';
 
@@ -137,12 +137,17 @@ export function useGeneratorState(props: Partial<GeneratorState> = {}) {
 
     const [state, dispatch] = useReducer(generatorReducer, initialState);
 
+    const serializedProps = JSON.stringify(props);
+
+    const lastInitializedProps = useRef<string>('');
+
     useEffect(() => {
-        if (!isLoading) {
+        if (!isLoading && serializedProps !== lastInitializedProps.current) {
             const initialPropsWithDefaults = { ...initialState, ...props };
             dispatch({ type: 'INITIALIZE', payload: initialPropsWithDefaults });
+            lastInitializedProps.current = serializedProps;
         }
-    }, [isLoading, props, curriculum, allNationalStandards]);
+    }, [isLoading, serializedProps, curriculum, allNationalStandards, initialState]);
 
     return [state, dispatch] as const;
 }

@@ -50,8 +50,8 @@ export const AIGeneratorPanel: React.FC = () => {
                         </button>
                     </header>
                     <div className="flex-1 overflow-y-auto">
-                        {/* The key ensures the view remounts with new props if it's already open */}
-                        {props && <MaterialsGeneratorView key={JSON.stringify(props)} {...props} />}
+                        {/* Removed key to prevent unnecessary unmounting/loops if props change slightly */}
+                        {props && <MaterialsGeneratorView {...props} />}
                     </div>
                 </div>
             </div>

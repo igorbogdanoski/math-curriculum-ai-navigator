@@ -33,6 +33,7 @@ const AssessmentQuestionSchema = z.object({
     question: z.string(),
     options: z.array(z.string()).optional(),
     answer: z.string(),
+    solution: z.string().optional(), // Step-by-step solution
     cognitiveLevel: z.string().optional(),
     difficulty_level: z.string().optional(),
     alignment_justification: z.string().optional(),
@@ -109,7 +110,8 @@ export const AIGeneratedPracticeMaterialSchema = z.object({
     items: z.array(z.object({
         type: z.string(),
         text: z.string(),
-        answer: z.string().optional()
+        answer: z.string().optional(),
+        solution: z.string().optional() // Step-by-step solution
     })).default([])
 });
 
