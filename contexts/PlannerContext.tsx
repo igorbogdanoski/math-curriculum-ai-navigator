@@ -32,7 +32,7 @@ interface PlannerContextType {
   getLessonPlan: (id: string) => LessonPlan | undefined;
   addLessonPlan: (plan: Omit<LessonPlan, 'id'>) => Promise<string>;
   updateLessonPlan: (plan: LessonPlan) => Promise<void>;
-  deleteLessonPlan: (planId: string) => Promise<void>;
+  deleteLessonPlan: (planId: string, confirmed?: boolean) => Promise<void>;
   publishLessonPlan: (planId: string, authorName: string) => Promise<void>;
   importCommunityPlan: (plan: LessonPlan) => Promise<string>;
   addRatingToCommunityPlan: (planId: string, rating: number) => Promise<void>;
@@ -111,10 +111,15 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const itemsQuery = query(collection(db, "users", uid, "plannerItems"));
     const plansQuery = query(collection(db, "users", uid, "lessonPlans"));
 
+    let itemsLoaded = false;
+    let plansLoaded = false;
+    const checkLoaded = () => { if (itemsLoaded && plansLoaded) setIsUserLoading(false); };
+
     const unsubscribeItems = onSnapshot(itemsQuery, 
       (snapshot) => {
         const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PlannerItem));
         setItems(fetchedItems);
+        if (!itemsLoaded) { itemsLoaded = true; checkLoaded(); }
       }, 
       (err) => {
         console.error("Error fetching planner items:", err);
@@ -126,6 +131,7 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       (snapshot) => {
         const fetchedPlans = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LessonPlan));
         setUserLessonPlans(fetchedPlans);
+        if (!plansLoaded) { plansLoaded = true; checkLoaded(); }
       }, 
       (err) => {
         console.error("Error fetching lesson plans:", err);
@@ -133,14 +139,6 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     );
     
-    // Set loading to false after initial fetch for both user collections
-    Promise.all([getDocs(itemsQuery), getDocs(plansQuery)]).catch(err => {
-      console.error("Error during initial user data fetch:", err);
-      setError("Грешка при вчитување на корисничките податоци.");
-    }).finally(() => {
-      setIsUserLoading(false);
-    });
-
     return () => {
       unsubscribeItems();
       unsubscribePlans();
@@ -213,20 +211,19 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [firebaseUser]);
 
-  const deleteLessonPlan = useCallback(async (planId: string) => {
+  const deleteLessonPlan = useCallback(async (planId: string, confirmed?: boolean) => {
     const uid = checkUser();
-    if (window.confirm('Дали сте сигурни дека сакате да ја избришете оваа подготовка? Оваа акција не може да се врати.')) {
-      await deleteDoc(doc(db, "users", uid, "lessonPlans", planId));
-      await deleteDoc(doc(db, "communityLessonPlans", planId)).catch(() => {});
-      
-      const q = query(collection(db, "users", uid, "plannerItems"), where("lessonPlanId", "==", planId));
-      const querySnapshot = await getDocs(q);
-      const batch = writeBatch(db);
-      querySnapshot.forEach(docSnapshot => {
-        batch.update(docSnapshot.ref, { lessonPlanId: deleteField() });
-      });
-      await batch.commit();
-    }
+    if (!confirmed) return; // Confirmation must be handled by the UI layer
+    await deleteDoc(doc(db, "users", uid, "lessonPlans", planId));
+    await deleteDoc(doc(db, "communityLessonPlans", planId)).catch(() => {});
+    
+    const q = query(collection(db, "users", uid, "plannerItems"), where("lessonPlanId", "==", planId));
+    const querySnapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    querySnapshot.forEach(docSnapshot => {
+      batch.update(docSnapshot.ref, { lessonPlanId: deleteField() });
+    });
+    await batch.commit();
   }, [firebaseUser]);
 
   const publishLessonPlan = useCallback(async (planId: string, authorName: string) => {

@@ -10,6 +10,7 @@ import { AIAnnualPlanGeneratorModal } from '../planner/AIAnnualPlanGeneratorModa
 import { AIThematicPlanGeneratorModal } from '../planner/AIThematicPlanGeneratorModal';
 import { LessonReflectionModal } from '../planner/LessonReflectionModal';
 import { NationalStandardDetailsModal } from '../explore/NationalStandardDetailsModal';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export const ModalManager: React.FC = () => {
   const { modal } = useModal();
@@ -41,6 +42,9 @@ export const ModalManager: React.FC = () => {
       
     case ModalType.NationalStandardDetails:
       return <NationalStandardDetailsModal {...(props as { standard: NationalStandard })} />;
+
+    case ModalType.Confirm:
+      return <ConfirmDialog {...(props as { message: string; title?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void; onCancel: () => void })} />;
 
     default:
       return null;

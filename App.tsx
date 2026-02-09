@@ -29,6 +29,7 @@ import { AppSkeleton } from './components/common/AppSkeleton';
 import { ContextualFAB } from './components/common/ContextualFAB';
 import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
 import { OfflineBanner } from './components/common/OfflineBanner';
+import { SilentErrorBoundary } from './components/common/SilentErrorBoundary';
 
 // Helper for safe lazy loading to prevent module resolution crashes
 const safeLazy = (importFunc: () => Promise<any>) => {
@@ -122,7 +123,9 @@ const AppContent: React.FC = () => {
     return (
         <NavigationContext.Provider value={{ navigate }}>
             <div className="flex h-screen bg-brand-bg">
-                <Sidebar currentPath={path} isOpen={isSidebarOpen} onClose={closeSidebar} />
+                <SilentErrorBoundary name="Sidebar">
+                    <Sidebar currentPath={path} isOpen={isSidebarOpen} onClose={closeSidebar} />
+                </SilentErrorBoundary>
                  {isSidebarOpen && (
                     <div
                         className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
@@ -151,9 +154,13 @@ const AppContent: React.FC = () => {
                     </div>
                     <OfflineBanner />
                 </main>
-                <ContextualFAB path={path} params={params} />
+                <SilentErrorBoundary name="ContextualFAB">
+                    <ContextualFAB path={path} params={params} />
+                </SilentErrorBoundary>
             </div>
-            <AIGeneratorPanel />
+            <SilentErrorBoundary name="AIGeneratorPanel">
+                <AIGeneratorPanel />
+            </SilentErrorBoundary>
         </NavigationContext.Provider>
     );
 };

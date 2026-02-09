@@ -356,6 +356,7 @@ export enum ModalType {
   AIThematicPlanGenerator = 'aiThematicPlanGenerator',
   LessonReflection = 'lessonReflection',
   NationalStandardDetails = 'nationalStandardDetails',
+  Confirm = 'confirm',
 }
 
 // Context Generator Types

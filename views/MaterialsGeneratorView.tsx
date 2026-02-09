@@ -5,6 +5,7 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
 import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType } from '../types';
+import { ModalType } from '../types';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { AILoadingIndicator } from '../components/common/AILoadingIndicator';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +19,7 @@ import { usePlanner } from '../contexts/PlannerContext';
 import { GeneratedLearningPaths } from '../components/ai/GeneratedLearningPaths';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { generatorTourSteps } from '../tours/tour-steps';
+import { useModal } from '../contexts/ModalContext';
 import { useGeneratorState, type GeneratorState, getInitialState } from '../hooks/useGeneratorState';
 import { GenerationContextForm } from '../components/generator/GenerationContextForm';
 import { MaterialOptions } from '../components/generator/MaterialOptions';
@@ -45,6 +47,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props)
     const { addItem } = usePlanner();
     const { toursSeen, markTourAsSeen } = useUserPreferences();
     const { isOnline } = useNetworkStatus();
+    const { showModal, hideModal } = useModal();
     
     const [state, dispatch] = useGeneratorState(props);
     const { materialType, contextType, selectedGrade, selectedTopic, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile, illustrationPrompt, activityTitle, useStudentProfiles, selectedStudentProfileIds, questionTypes, includeSelfAssessment } = state;
@@ -160,13 +163,21 @@ ${generatedMaterial.assessmentIdea}
     };
     
     const handleReset = () => {
-        if (window.confirm('Дали сте сигурни дека сакате ги ресетирате сите полиња?')) {
-            if(curriculum && allNationalStandards) {
-                dispatch({ type: 'INITIALIZE', payload: getInitialState(curriculum, allNationalStandards) });
-            }
-            setGeneratedMaterial(null);
-            addNotification('Формата е ресетирана.', 'info');
-        }
+        showModal(ModalType.Confirm, {
+            title: 'Ресетирање',
+            message: 'Дали сте сигурни дека сакате да ги ресетирате сите полиња?',
+            variant: 'warning',
+            confirmLabel: 'Да, ресетирај',
+            onConfirm: () => {
+                hideModal();
+                if(curriculum && allNationalStandards) {
+                    dispatch({ type: 'INITIALIZE', payload: getInitialState(curriculum, allNationalStandards) });
+                }
+                setGeneratedMaterial(null);
+                addNotification('Формата е ресетирана.', 'info');
+            },
+            onCancel: hideModal,
+        });
     };
 
     const handleGenerate = async () => {

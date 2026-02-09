@@ -3,6 +3,7 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { usePlanner } from '../contexts/PlannerContext';
 import type { LessonPlan } from '../types';
+import { ModalType } from '../types';
 import { EmptyState } from '../components/common/EmptyState';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -10,6 +11,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { libraryTourSteps } from '../tours/tour-steps';
+import { useModal } from '../contexts/ModalContext';
 
 declare var introJs: any;
 
@@ -78,6 +80,7 @@ export const LessonPlanLibraryView: React.FC = () => {
     const { addNotification } = useNotification();
     const { allConcepts, allNationalStandards } = useCurriculum();
     const { toursSeen, markTourAsSeen } = useUserPreferences();
+    const { showModal, hideModal } = useModal();
     
     const [searchQuery, setSearchQuery] = useState('');
     const [gradeFilter, setGradeFilter] = useState<string>('all');
@@ -164,16 +167,24 @@ export const LessonPlanLibraryView: React.FC = () => {
             ? 'Дали сте сигурни дека сакате да ги ажурирате промените во галеријата? Ова ќе ја замени постоечката верзија.'
             : 'Дали сте сигурни дека сакате да ја објавите оваа подготовка во галеријата на заедницата? Вашето име ќе биде видливо за сите.';
         
-        if (window.confirm(confirmMessage)) {
-            try {
-                await publishLessonPlan(plan.id, user.name);
-                const message = plan.isPublished ? 'Подготовката е успешно ажурирана во галеријата!' : 'Подготовката е успешно објавена!';
-                addNotification(message, 'success');
-            } catch (error) {
-                addNotification('Грешка при објавување на подготовката.', 'error');
-                console.error("Publishing failed:", error);
-            }
-        }
+        showModal(ModalType.Confirm, {
+            title: plan.isPublished ? 'Ажурирање на подготовка' : 'Објавување на подготовка',
+            message: confirmMessage,
+            variant: 'info',
+            confirmLabel: plan.isPublished ? 'Да, ажурирај' : 'Да, објави',
+            onConfirm: async () => {
+                hideModal();
+                try {
+                    await publishLessonPlan(plan.id, user.name);
+                    const message = plan.isPublished ? 'Подготовката е успешно ажурирана во галеријата!' : 'Подготовката е успешно објавена!';
+                    addNotification(message, 'success');
+                } catch (error) {
+                    addNotification('Грешка при објавување на подготовката.', 'error');
+                    console.error("Publishing failed:", error);
+                }
+            },
+            onCancel: hideModal,
+        });
     };
 
     return (
@@ -276,7 +287,16 @@ export const LessonPlanLibraryView: React.FC = () => {
                                 plan={plan}
                                 onView={() => navigate(`/planner/lesson/view/${plan.id}`)}
                                 onEdit={() => navigate(`/planner/lesson/${plan.id}`)}
-                                onDelete={() => deleteLessonPlan(plan.id)}
+                                onDelete={() => {
+                                    showModal(ModalType.Confirm, {
+                                        title: 'Бришење на подготовка',
+                                        message: 'Дали сте сигурни дека сакате да ја избришете оваа подготовка? Оваа акција не може да се врати.',
+                                        variant: 'danger',
+                                        confirmLabel: 'Да, избриши',
+                                        onConfirm: async () => { hideModal(); await deleteLessonPlan(plan.id, true); addNotification('Подготовката е избришана.', 'success'); },
+                                        onCancel: hideModal,
+                                    });
+                                }}
                                 onPublish={() => handlePublish(plan)}
                             />
                         ))}

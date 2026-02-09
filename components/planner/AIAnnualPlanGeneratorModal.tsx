@@ -5,10 +5,10 @@ import { usePlanner } from '../../contexts/PlannerContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { geminiService } from '../../services/geminiService';
 import { ICONS } from '../../constants';
-import { PlannerItemType } from '../../types';
+import { PlannerItemType, ModalType } from '../../types';
 
 export const AIAnnualPlanGeneratorModal: React.FC = () => {
-    const { hideModal } = useModal();
+    const { hideModal, showModal } = useModal();
     const { curriculum } = useCurriculum();
     const { addItem } = usePlanner();
     const { addNotification } = useNotification();
@@ -43,21 +43,28 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
             
             setIsLoading(false);
 
-            if (window.confirm(`AI генерираше предлог-план со ${generatedItems.length} теми. Дали сакате да го додадете во вашиот планер? Постоечките настани нема да бидат избришани.`)) {
-                try {
-                    await Promise.all(generatedItems.map(item =>
-                        addItem({
-                            ...item,
-                            type: PlannerItemType.LESSON,
-                        })
-                    ));
-                    addNotification('Годишниот план е успешно додаден во планерот!', 'success');
+            showModal(ModalType.Confirm, {
+                title: 'Додади годишен план',
+                message: `AI генерираше предлог-план со ${generatedItems.length} теми. Дали сакате да го додадете во вашиот планер? Постоечките настани нема да бидат избришани.`,
+                variant: 'info',
+                confirmLabel: 'Да, додади',
+                onConfirm: async () => {
                     hideModal();
-                } catch (addError) {
-                    addNotification('Грешка при додавање на планот во планерот.', 'error');
-                    console.error("Failed to add annual plan items:", addError);
-                }
-            }
+                    try {
+                        await Promise.all(generatedItems.map(item =>
+                            addItem({
+                                ...item,
+                                type: PlannerItemType.LESSON,
+                            })
+                        ));
+                        addNotification('Годишниот план е успешно додаден во планерот!', 'success');
+                    } catch (addError) {
+                        addNotification('Грешка при додавање на планот во планерот.', 'error');
+                        console.error("Failed to add annual plan items:", addError);
+                    }
+                },
+                onCancel: hideModal,
+            });
 
         } catch (error) {
             addNotification((error as Error).message, 'error');
