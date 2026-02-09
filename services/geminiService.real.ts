@@ -83,7 +83,10 @@ async function* streamGeminiProxy(params: { model: string; contents: any; config
     throw new Error(errorData.error || `Stream proxy error: ${response.status}`);
   }
 
-  const reader = response.body!.getReader();
+  if (!response.body) {
+    throw new Error('Stream response body is null — streaming not supported in this environment');
+  }
+  const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
 

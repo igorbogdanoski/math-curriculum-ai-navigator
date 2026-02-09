@@ -211,6 +211,7 @@ const AppCore: React.FC = () => {
 
 const App: React.FC = () => {
   return (
+    <ErrorBoundary>
     <NetworkStatusProvider>
         <NotificationProvider>
         <AuthProvider>
@@ -232,6 +233,7 @@ const App: React.FC = () => {
         </AuthProvider>
         </NotificationProvider>
     </NetworkStatusProvider>
+    </ErrorBoundary>
   );
 };
 

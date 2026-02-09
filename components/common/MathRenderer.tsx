@@ -45,6 +45,10 @@ const convertToStandardLatex = (text: string): string => {
 };
 
 // Custom styles for KaTeX elements to ensure they look great on all screens
+/** Escape HTML entities to prevent XSS when injecting into innerHTML */
+const escapeHtml = (str: string): string =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 const katexOptions = {
     throwOnError: false,
     strict: false,
@@ -99,7 +103,7 @@ const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => 
                         }
                     } catch (e: any) {
                         console.warn("KaTeX inline rendering error:", e.message, "for content:", math);
-                        html = `<span class="text-red-600 font-mono bg-red-100 p-1 rounded" title="${e.message}">${math}</span>`;
+                        html = `<span class="text-red-600 font-mono bg-red-100 p-1 rounded" title="${escapeHtml(e.message)}">${escapeHtml(math)}</span>`;
                     }
                     return <span key={index} dangerouslySetInnerHTML={{ __html: html }} />;
                 }
@@ -194,7 +198,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
                             html = window.katex.renderToString(math, { ...katexOptions, displayMode: true });
                         } catch (e: any) {
                             console.warn("KaTeX block rendering error:", e.message, "for content:", math);
-                            html = `<div class="text-red-600 font-mono bg-red-100 p-2 rounded" title="${e.message}">${math}</div>`;
+                            html = `<div class="text-red-600 font-mono bg-red-100 p-2 rounded" title="${escapeHtml(e.message)}">${escapeHtml(math)}</div>`;
                         }
                         return <div key={index} dangerouslySetInnerHTML={{ __html: html }} />;
                     }
