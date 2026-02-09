@@ -13,6 +13,7 @@ import { MonthlyActivityChart } from '../components/dashboard/MonthlyActivityCha
 import { TopicCoverageChart } from '../components/dashboard/TopicCoverageChart';
 import { OverallProgress } from '../components/dashboard/OverallProgress';
 import { WeeklySchedule } from '../components/dashboard/WeeklySchedule';
+import { StandardsCoverageCard } from '../components/dashboard/StandardsCoverageCard';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useLastVisited } from '../contexts/LastVisitedContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -172,7 +173,16 @@ export const HomeView: React.FC = () => {
             <ChartTabs monthlyActivity={monthlyActivity} topicCoverage={topicCoverage} isLoading={isStatsLoading} />
         </div>
         
-         {/* CELL 5: Continue Browsing */}
+         {/* CELL 5: Standards Coverage (Teacher's Portfolio Killer Feature) */}
+         <div className="md:col-span-1" data-tour="dashboard-standards">
+            {isStatsLoading ? (
+                <Card><SkeletonLoader type="paragraph" /></Card>
+            ) : (
+                <StandardsCoverageCard data={overallStats.gradePercentages} />
+            )}
+         </div>
+
+         {/* CELL 6: Continue Browsing */}
          <div className="md:col-span-1">
             <ContinueBrowsing lastVisited={lastVisited} />
          </div>

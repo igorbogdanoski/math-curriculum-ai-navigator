@@ -24,6 +24,10 @@ const convertToStandardLatex = (text: string): string => {
     // 2. Fix common AI issues like \ frac instead of \frac, or \ cdot
     processed = processed.replace(/\\ /g, '\\');
     
+    // 2.5 Fix unit issues (e.g., 11 km outside of \text{})
+    // Detect numbers followed by km, m, cm etc. if they aren't already in \text
+    processed = processed.replace(/(\d+)\s*(km|cm|mm|kg|mg|ml|km2|m2|cm2)\b/g, '$1\\text{ $2}');
+    
     // 3. Ensure mathematical environments like {matrix} or {align} have proper spacing
     processed = processed.replace(/\\begin\{/g, '\n\\begin{').replace(/\\end\{/g, '\\end{\n');
     
@@ -46,7 +50,13 @@ const katexOptions = {
         "\\Z": "\\mathbb{Z}",
         "\\Q": "\\mathbb{Q}",
         "\\No": "\\mathbb{N}_0",
-        "\\deg": "^{\\circ}"
+        "\\deg": "^{\\circ}",
+        "\\km": "\\text{ km}",
+        "\\m": "\\text{ m}",
+        "\\cm": "\\text{ cm}",
+        "\\mm": "\\text{ mm}",
+        "\\kg": "\\text{ kg}",
+        "\\g": "\\text{ g}"
     }
 };
 
