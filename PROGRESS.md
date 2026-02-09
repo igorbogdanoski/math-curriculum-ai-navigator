@@ -57,18 +57,37 @@
 ## 🔲 Останато (по приоритет)
 
 ### 🔴 П1: Tailwind CSS — PostCSS миграција
-- **Статус**: Се користи Tailwind Play CDN (`<script src="cdn.tailwindcss.com">`) — само за прототипи
-- **Проблеми**: ~300KB непотребен JS, FOUC, нема tree-shaking, конзолно предупредување
-- **План**: Инсталирај `tailwindcss` + `@tailwindcss/vite`, замени CDN со build-time CSS
-- **Очекуван ефект**: Значително намалување на bundle, без FOUC, production-ready
+### Фаза 5 — Tailwind PostCSS миграција (commit `8ded4ed`)
 
-### 🟠 П2: Bundle splitting
-- **Статус**: Главен chunk е 1,296 KB — сè уште преголем
-- **План**:
-  - Firebase auth/firestore → lazy dynamic import (~200KB заштеда)
-  - Curriculum data (grade-6/7/8/9.json) → per-grade dynamic import (~400KB)
-  - Vendor chunk splitting: Chart.js, KaTeX, vis-network, pptxgenjs
-- **Очекуван ефект**: Main chunk под 500KB
+- **Проблем**: Tailwind Play CDN (`<script src="cdn.tailwindcss.com">`) — ~300KB JS runtime, FOUC, нема tree-shaking
+- **Решение**: Инсталиран `tailwindcss@4.1.18` + `@tailwindcss/vite` со build-time CSS
+- **Нов фајл**: `app.css` — `@import "tailwindcss"` + `@theme` со custom brand бои, shadows, animations + сите стилови од inline `<style>` блокови
+- **Отстрането од `index.html`**: CDN script, inline tailwind.config, сите `<style>` блокови, мртов `index.css` линк (378 → 42 линии)
+- **Ажурирани**: `vite.config.ts` (додаден `tailwindcss()` plugin), `index.tsx` (import `./app.css`)
+- **Резултат**: 71.2 KB tree-shaken CSS (наместо ~300KB JS), без FOUC, без конзолно предупредување
+
+---
+
+### Фаза 6 — Bundle Splitting (commit `155c3eb`)
+
+- **Проблем**: Main chunk 1,296 KB — сè на една хрпа
+- **Поправки**:
+  1. **AIGeneratorPanel** — `MaterialsGeneratorView` беше eager import (влечеше geminiService + zod + AI компоненти); заменет со `React.lazy()`
+  2. **useCurriculum.ts** — `fullCurriculumData` беше sync top-level import (~228KB); заменет со `import()` dynamic
+  3. **vite.config.ts** — додадени `manualChunks`: firebase-app, firebase-auth, firebase-firestore, firebase-storage, react, zod
+  4. **Избришани**: 4 неискористени JSON фајлови (`data/grade-6/7/8/9.json`)
+- **Резултат**: Main chunk **1,296 KB → 323 KB (−75%)**
+
+| Chunk | Големина | gzip |
+|-------|---------|------|
+| index.js (main) | 323 KB | 96 KB |
+| firebase-firestore | 386 KB | 97 KB |
+| curriculum data | 228 KB | 40 KB |
+| firebase-auth | 172 KB | 36 KB |
+| MaterialsGeneratorView | 84 KB | 21 KB |
+| vendor-zod | 54 KB | 12 KB |
+| firebase-storage | 34 KB | 9 KB |
+| vendor-react | 12 KB | 4 KB |
 
 ### 🟡 П3: Focus trapping во модали
 - **Статус**: Tab копчето излегува надвор од отворен модал — WCAG нарушување
@@ -92,13 +111,13 @@
 
 | Метрика | Пред | Сега | Цел |
 |---------|------|------|-----|
-| Bundle (main chunk) | 1,555 KB | 1,296 KB | < 500 KB |
+| Bundle (main chunk) | 1,555 KB | **323 KB** | < 500 KB ✅ |
 | API keys во bundle | 1 (Gemini) | 0 | 0 ✅ |
 | Context re-renders | Секој render | Memoized (×9) | Memoized ✅ |
 | `window.confirm` | 4 места | 0 | 0 ✅ |
+| Tailwind | CDN Play (~300KB JS) | PostCSS build (71KB CSS) | PostCSS ✅ |
 | `any` типови | ~47 | ~47 | 0 |
 | UI тестови | 0 | 0 | 20+ |
-| Tailwind | CDN Play | CDN Play | PostCSS build |
 
 ---
 
