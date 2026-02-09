@@ -1,0 +1,16 @@
+{
+  "short_name": "Math Navigator",
+  "name": "Math Curriculum AI Navigator",
+  "description": "An interactive web application for math teachers (grades VI-IX) to track the development and progression of key mathematical concepts and national standards throughout the school years, assisted by AI.",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0D47A1",
+  "background_color": "#F5F5F5"
+}
