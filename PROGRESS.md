@@ -89,6 +89,21 @@
 | firebase-storage | 34 KB | 9 KB |
 | vendor-react | 12 KB | 4 KB |
 
+---
+
+### Фаза 7 — Security & Stability Fixes (commit `fe90d46`)
+
+| # | Поправка | Фајл(ови) | Детали |
+|---|----------|-----------|--------|
+| A | XSS fix во MathRenderer | `components/common/MathRenderer.tsx` | Додадена `escapeHtml()` функција; math content и error messages се escape-ираат пред инјектирање во `dangerouslySetInnerHTML` |
+| B | CORS restriction на API | `api/gemini.ts`, `api/gemini-stream.ts` | `Access-Control-Allow-Origin: '*'` → ограничен на app домен (конфигурирачки преку `ALLOWED_ORIGIN` env var) |
+| C | Outer ErrorBoundary | `App.tsx` | `<ErrorBoundary>` обвива целиот `<App>` tree — спречува бел екран при context-level crash |
+| D | response.body null check | `services/geminiService.real.ts` | `response.body!.getReader()` → null check со описна грешка наместо crash |
+
+---
+
+## 🔲 Останато (по приоритет)
+
 ### 🟡 П3: Focus trapping во модали
 - **Статус**: Tab копчето излегува надвор од отворен модал — WCAG нарушување
 - **План**: Додади `focus-trap-react` или рачно focus management
