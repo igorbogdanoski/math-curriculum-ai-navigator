@@ -29,7 +29,7 @@ export const TransversalStandardsModal: React.FC<TransversalStandardsModalProps>
         'Броеви и Операции': ICONS.plus,
         'Алгебра и Функции': ICONS.sparkles,
         'Мерење и Геометрија': ICONS.generator,
-        'Податоци и Веројатност': ICONS.chartBar,
+        'Податоци и Веројатност': ICONS.chart,
     };
 
     return (
@@ -39,7 +39,7 @@ export const TransversalStandardsModal: React.FC<TransversalStandardsModalProps>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-brand-primary text-white rounded-lg">
-                                <ICONS.target className="w-6 h-6" />
+                                <ICONS.check className="w-6 h-6" />
                             </div>
                             <div>
                                 <h2 className="text-2xl font-bold text-brand-primary">Трансверзални компетенции</h2>

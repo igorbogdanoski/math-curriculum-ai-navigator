@@ -26,7 +26,12 @@ const convertToStandardLatex = (text: string): string => {
     
     // 2.5 Fix unit issues (e.g., 11 km outside of \text{})
     // Detect numbers followed by km, m, cm etc. if they aren't already in \text
-    processed = processed.replace(/(\d+)\s*(km|cm|mm|kg|mg|ml|km2|m2|cm2)\b/g, '$1\\text{ $2}');
+    processed = processed.replace(/(\d+(?:[.,]\d+)?)\s*(km|cm|mm|kg|mg|ml|km2|m2|cm2|км|см|мм|кг|мг|мл|км2|м2|см2|m|м|g|г|t|т|l|л|dm|дм)\b/g, '$1\\text{ $2}');
+    
+    // 2.6 Pull units inside math blocks if they follow immediately
+    // Fixes cases like $7 + 4 = 11$ km -> $7 + 4 = 11 \text{ km}$
+    // We do this globally before splitting into blocks/inline parts
+    processed = processed.replace(/(\$|\\\(|\\\[)\s*([\s\S]+?)\s*(\$|\\\)|\\\])\s*(km|cm|mm|kg|mg|ml|km2|m2|cm2|км|см|мм|кг|мг|мл|км2|м2|см2|m|м|g|г|t|т|l|л|dm|дм)\b/g, '$1 $2 \\text{ $4} $3');
     
     // 3. Ensure mathematical environments like {matrix} or {align} have proper spacing
     processed = processed.replace(/\\begin\{/g, '\n\\begin{').replace(/\\end\{/g, '\\end{\n');
@@ -87,7 +92,7 @@ const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => 
                     let html;
                     try {
                         if (window.katex) {
-                            html = window.katex.renderToString(convertToStandardLatex(math), { ...katexOptions, displayMode: false });
+                            html = window.katex.renderToString(math, { ...katexOptions, displayMode: false });
                         } else {
                              // Fallback if KaTeX isn't loaded
                             return <code key={index} className="font-mono text-sm bg-gray-100 text-gray-800 rounded px-1 border border-gray-200" title="Unrendered math">{math}</code>;
@@ -152,16 +157,19 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
 
     if (!text) return null;
     
+    // Pre-process text to fix common issues before splitting
+    const processedText = convertToStandardLatex(text);
+    
     // If KaTeX is not loaded and we've waited long enough, render raw text with visual cue
     if (!isKatexLoaded) {
         if (hasTimedOut) {
-             return <code className="font-mono text-gray-800 bg-gray-100 p-1 rounded block whitespace-pre-wrap">{text.replace(/\\/g, '')}</code>;
+             return <code className="font-mono text-gray-800 bg-gray-100 p-1 rounded block whitespace-pre-wrap">{processedText.replace(/\\/g, '')}</code>;
         }
         // While loading
-        return <span className="animate-pulse bg-gray-200 rounded text-transparent select-none">{text}</span>;
+        return <span className="animate-pulse bg-gray-200 rounded text-transparent select-none">{processedText}</span>;
     }
 
-    const blocks = text.split(/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\])/g);
+    const blocks = processedText.split(/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\])/g);
 
     return (
         <>
@@ -183,7 +191,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
                     if (isDisplayMath && math !== undefined) {
                         let html;
                         try {
-                            html = window.katex.renderToString(convertToStandardLatex(math), { ...katexOptions, displayMode: true });
+                            html = window.katex.renderToString(math, { ...katexOptions, displayMode: true });
                         } catch (e: any) {
                             console.warn("KaTeX block rendering error:", e.message, "for content:", math);
                             html = `<div class="text-red-600 font-mono bg-red-100 p-2 rounded" title="${e.message}">${math}</div>`;
