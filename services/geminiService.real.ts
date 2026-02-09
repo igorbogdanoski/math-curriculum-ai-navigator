@@ -57,58 +57,87 @@ import {
 // --- API PROXY ---
 // All Gemini API calls go through server-side proxy.
 // The API key NEVER reaches the client bundle.
+const PROXY_TIMEOUT_MS = 60_000; // 60 s – generous for Gemini thinking models
 
 async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
-  const response = await fetch('/api/gemini', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: `Proxy error: ${response.status}` }));
-    throw new Error(errorData.error || `Proxy error: ${response.status}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+  try {
+    const response = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: `Proxy error: ${response.status}` }));
+      throw new Error(errorData.error || `Proxy error: ${response.status}`);
+    }
+    return response.json();
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('AI барањето истече (timeout 60s). Обидете се повторно.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-  return response.json();
 }
 
 async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
-  const response = await fetch('/api/gemini-stream', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+  try {
+    const response = await fetch('/api/gemini-stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: `Stream proxy error: ${response.status}` }));
-    throw new Error(errorData.error || `Stream proxy error: ${response.status}`);
-  }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: `Stream proxy error: ${response.status}` }));
+      throw new Error(errorData.error || `Stream proxy error: ${response.status}`);
+    }
 
-  if (!response.body) {
-    throw new Error('Stream response body is null — streaming not supported in this environment');
-  }
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
+    if (!response.body) {
+      throw new Error('Stream response body is null — streaming not supported in this environment');
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') return;
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.error) throw new Error(parsed.error);
-          if (parsed.text) yield parsed.text;
-        } catch (e) {
-          if (e instanceof Error && e.message !== data) throw e;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      // Reset timeout on each chunk — stream is alive
+      clearTimeout(timer);
+      const chunkTimer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') { clearTimeout(chunkTimer); return; }
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.error) throw new Error(parsed.error);
+            if (parsed.text) yield parsed.text;
+          } catch (e) {
+            if (e instanceof Error && e.message !== data) throw e;
+          }
         }
       }
+      clearTimeout(chunkTimer);
     }
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('AI stream истече (timeout 60s). Обидете се повторно.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
