@@ -56,11 +56,19 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props)
     const filteredTopics = useMemo(() => curriculum?.grades.find(g => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
     const filteredConcepts = useMemo(() => filteredTopics.find(t => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
 
+    const tourInstance = React.useRef<any>(null);
     useEffect(() => {
-        if (toursSeen.generator === true || typeof introJs === 'undefined' || isCurriculumLoading) return;
+        if (toursSeen.generator === true || typeof introJs === 'undefined' || isCurriculumLoading || tourInstance.current) return;
+        
+        // Disable tours on small screens as they are often buggy
+        if (window.innerWidth < 768) return;
 
         const timer = setTimeout(() => {
+            if (toursSeen.generator === true || tourInstance.current) return;
+
             const tour = introJs();
+            tourInstance.current = tour;
+            
             tour.setOptions({
                 steps: generatorTourSteps,
                 showProgress: true,
@@ -69,14 +77,33 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props)
                 nextLabel: 'Следно',
                 prevLabel: 'Претходно',
                 doneLabel: 'Готово',
+                exitOnOverlayClick: false, // Prevent accidental exits
             });
-            tour.oncomplete(() => markTourAsSeen('generator'));
-            tour.onexit(() => markTourAsSeen('generator'));
-            tour.start();
-        }, 500);
+            
+            const cleanup = () => {
+                markTourAsSeen('generator');
+                tourInstance.current = null;
+            };
 
-        return () => clearTimeout(timer);
-    }, [toursSeen, markTourAsSeen, isCurriculumLoading]);
+            tour.oncomplete(cleanup);
+            tour.onexit(cleanup);
+            
+            try {
+                tour.start();
+            } catch (e) {
+                console.warn("Failed to start generator tour:", e);
+                tourInstance.current = null;
+            }
+        }, 1000);
+
+        return () => {
+            clearTimeout(timer);
+            if (tourInstance.current) {
+                tourInstance.current.exit(true);
+                tourInstance.current = null;
+            }
+        };
+    }, [toursSeen.generator, markTourAsSeen, isCurriculumLoading]);
     
     // Auto-populate illustration prompt
     useEffect(() => {

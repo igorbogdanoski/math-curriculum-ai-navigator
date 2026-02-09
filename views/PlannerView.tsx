@@ -58,12 +58,20 @@ export const PlannerView: React.FC = () => {
         };
     }, []);
 
+    const tourInstance = useRef<any>(null);
     useEffect(() => {
         // Only run tour if not seen AND data is fully loaded
-        if (toursSeen.planner === true || typeof introJs === 'undefined' || isLoading) return;
+        if (toursSeen.planner === true || typeof introJs === 'undefined' || isLoading || tourInstance.current) return;
+
+        // Disable tours on small screens as they are often buggy
+        if (window.innerWidth < 768) return;
 
         const timer = setTimeout(() => {
+            if (toursSeen.planner === true || tourInstance.current) return;
+            
             const tour = introJs();
+            tourInstance.current = tour;
+
             tour.setOptions({
                 steps: plannerTourSteps,
                 showProgress: true,
@@ -73,14 +81,33 @@ export const PlannerView: React.FC = () => {
                 prevLabel: 'Претходно',
                 doneLabel: 'Готово',
                 tooltipClass: 'custom-tooltip-class',
+                exitOnOverlayClick: false,
             });
-            tour.oncomplete(() => markTourAsSeen('planner'));
-            tour.onexit(() => markTourAsSeen('planner'));
-            tour.start();
-        }, 500); // Short delay for render
 
-        return () => clearTimeout(timer);
-    }, [toursSeen, markTourAsSeen, isLoading]);
+            const cleanup = () => {
+                markTourAsSeen('planner');
+                tourInstance.current = null;
+            };
+
+            tour.oncomplete(cleanup);
+            tour.onexit(cleanup);
+            
+            try {
+                tour.start();
+            } catch (e) {
+                console.warn("Failed to start planner tour:", e);
+                tourInstance.current = null;
+            }
+        }, 1000); // Short delay for render
+
+        return () => {
+            clearTimeout(timer);
+            if (tourInstance.current) {
+                tourInstance.current.exit(true);
+                tourInstance.current = null;
+            }
+        };
+    }, [toursSeen.planner, markTourAsSeen, isLoading]);
 
 
     const sensors = useSensors(

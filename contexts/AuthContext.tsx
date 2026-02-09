@@ -79,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             
             if (!user.emailVerified) {
+                console.info("User logged in but email not verified. UID:", user.uid);
                 setAuthState({
                     firebaseUser: user,
                     profile: null,
@@ -86,15 +87,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     isLoading: false,
                 });
             } else {
+                console.info("Fetching profile for verified user. UID:", user.uid);
                 const profile = await fetchUserProfile(user.uid);
+                
+                const finalProfile: TeachingProfile = profile || { 
+                    name: user.displayName || 'Корисник', 
+                    photoURL: user.photoURL || undefined, 
+                    style: 'Constructivist', 
+                    experienceLevel: 'Beginner',
+                    studentProfiles: [],
+                    favoriteConceptIds: [],
+                    favoriteLessonPlanIds: [],
+                    toursSeen: {}
+                };
+
+                console.info("Auth state resolved. IsAuthenticated: true");
                 setAuthState({
                     firebaseUser: user,
-                    profile: profile || { name: user.displayName || 'Корисник', photoURL: user.photoURL || undefined, style: 'Constructivist', experienceLevel: 'Beginner' },
+                    profile: finalProfile,
                     isAuthenticated: true,
                     isLoading: false,
                 });
             }
         } else {
+            console.info("No user detected (logged out).");
             setAuthState({ firebaseUser: null, profile: null, isAuthenticated: false, isLoading: false });
         }
     });

@@ -64,11 +64,19 @@ export const ExploreView: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedGradeId, setSelectedGradeId] = useState<string>('');
 
+    const tourInstance = React.useRef<any>(null);
     useEffect(() => {
-        if (toursSeen.explore === true || typeof introJs === 'undefined' || isLoading || !curriculum) return;
+        if (toursSeen.explore === true || typeof introJs === 'undefined' || isLoading || !curriculum || tourInstance.current) return;
+
+        // Disable tours on small screens as they are often buggy
+        if (window.innerWidth < 768) return;
 
         const timer = setTimeout(() => {
+            if (toursSeen.explore === true || tourInstance.current) return;
+
             const tour = introJs();
+            tourInstance.current = tour;
+            
             tour.setOptions({
                 steps: exploreTourSteps,
                 showProgress: true,
@@ -77,14 +85,33 @@ export const ExploreView: React.FC = () => {
                 nextLabel: 'Следно',
                 prevLabel: 'Претходно',
                 doneLabel: 'Готово',
+                exitOnOverlayClick: false,
             });
-            tour.oncomplete(() => markTourAsSeen('explore'));
-            tour.onexit(() => markTourAsSeen('explore'));
-            tour.start();
-        }, 500);
 
-        return () => clearTimeout(timer);
-    }, [toursSeen, markTourAsSeen, isLoading, curriculum]);
+            const cleanup = () => {
+                markTourAsSeen('explore');
+                tourInstance.current = null;
+            };
+
+            tour.oncomplete(cleanup);
+            tour.onexit(cleanup);
+            
+            try {
+                tour.start();
+            } catch (e) {
+                console.warn("Failed to start explore tour:", e);
+                tourInstance.current = null;
+            }
+        }, 1000);
+
+        return () => {
+            clearTimeout(timer);
+            if (tourInstance.current) {
+                tourInstance.current.exit(true);
+                tourInstance.current = null;
+            }
+        };
+    }, [toursSeen.explore, markTourAsSeen, isLoading, curriculum]);
 
     useEffect(() => {
         if (curriculum && curriculum.grades.length > 0 && !selectedGradeId) {

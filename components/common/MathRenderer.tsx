@@ -18,15 +18,20 @@ const convertToStandardLatex = (text: string): string => {
     
     let processed = text;
     
-    // 1. Handle double escaped backslashes common in JSON (\\\\ -> \)
+    // 1. Handle triple/double escaped backslashes common in JSON (\\\\ -> \)
     processed = processed.replace(/\\\\\\\\/g, '\\').replace(/\\\\/g, '\\');
     
-    // 2. Fix common AI issues like \ frac instead of \frac
+    // 2. Fix common AI issues like \ frac instead of \frac, or \ cdot
     processed = processed.replace(/\\ /g, '\\');
     
     // 3. Ensure mathematical environments like {matrix} or {align} have proper spacing
     processed = processed.replace(/\\begin\{/g, '\n\\begin{').replace(/\\end\{/g, '\\end{\n');
     
+    // 4. Remove any unintentional $ inside the math (sometimes happens with AI)
+    if (processed.includes('$')) {
+        processed = processed.replace(/\$/g, '');
+    }
+
     return processed;
 };
 
@@ -39,7 +44,9 @@ const katexOptions = {
         "\\R": "\\mathbb{R}",
         "\\N": "\\mathbb{N}",
         "\\Z": "\\mathbb{Z}",
-        "\\Q": "\\mathbb{Q}"
+        "\\Q": "\\mathbb{Q}",
+        "\\No": "\\mathbb{N}_0",
+        "\\deg": "^{\\circ}"
     }
 };
 
@@ -47,7 +54,8 @@ const katexOptions = {
 const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => {
     // Regex to split by markdown bold/italic/code and KaTeX inline delimiters ($...$ and \(...\))
     // Improved to handle common edge cases and allow spaces inside $...$
-    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\$(?!\$)[^\$]+?\$|\\\(.*?\\\))/g);
+    // We use a more permissive regex for $...$ to capture expressions like $ 7 + 4 = 11 $
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\$\s*[\s\S]+?\s*\$|\\\(.*?\\\))/g);
 
     return (
         <>
@@ -58,10 +66,10 @@ const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => 
                 let isMath = false;
 
                 if (part.startsWith('$') && part.endsWith('$')) {
-                    math = part.substring(1, part.length - 1);
+                    math = part.substring(1, part.length - 1).trim();
                     isMath = true;
                 } else if (part.startsWith('\\(') && part.endsWith('\\)')) {
-                    math = part.substring(2, part.length - 2);
+                    math = part.substring(2, part.length - 2).trim();
                     isMath = true;
                 }
 

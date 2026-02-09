@@ -119,7 +119,7 @@ export const HomeView: React.FC = () => {
     }
   };
 
-  const firstName = user?.name.split(' ')[0];
+  const firstName = user?.name?.split(' ')[0] || 'Корисник';
 
   return (
     <div className="p-4 md:p-6 max-w-[1600px] mx-auto animate-fade-in space-y-6">

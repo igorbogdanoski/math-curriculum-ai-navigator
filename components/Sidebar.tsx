@@ -87,11 +87,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
                     <img src={user.photoURL} alt={user.name} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
                 ) : (
                     <div className="w-10 h-10 rounded-full bg-brand-secondary text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                        {user?.name.charAt(0)}
+                        {user?.name?.charAt(0) || '?'}
                     </div>
                 )}
                 <div className="overflow-hidden">
-                    <p className="font-semibold text-sm text-brand-text truncate">{user?.name}</p>
+                    <p className="font-semibold text-sm text-brand-text truncate">{user?.name || 'Корисник'}</p>
                     <button onClick={logout} className="text-xs text-gray-500 hover:text-brand-primary transition-colors">Одјави се</button>
                 </div>
             </div>
