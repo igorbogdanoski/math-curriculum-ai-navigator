@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useState, useEffect } from 'react';
+import React, { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react';
 import type { TeachingProfile } from '../types';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile as firebaseUpdateProfile, type User, sendEmailVerification, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -217,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [authState.firebaseUser]);
 
-  const value: AuthContextType = { 
+  const value: AuthContextType = useMemo(() => ({ 
       user: authState.profile,
       firebaseUser: authState.firebaseUser,
       isAuthenticated: authState.isAuthenticated, 
@@ -228,7 +228,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateProfile,
       resendVerificationEmail,
       resetPassword,
-    };
+    }), [authState.profile, authState.firebaseUser, authState.isAuthenticated, authState.isLoading, login, register, logout, updateProfile, resendVerificationEmail, resetPassword]);
 
   return (
     <AuthContext.Provider value={value}>

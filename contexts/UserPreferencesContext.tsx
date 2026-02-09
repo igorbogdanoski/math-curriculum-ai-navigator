@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useState, useEffect } from 'react';
+import React, { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebaseConfig';
 import { doc, onSnapshot, updateDoc, setDoc, arrayUnion, arrayRemove } from "firebase/firestore";
@@ -106,7 +106,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     });
   }, [firebaseUser]);
 
-  const value = {
+  const value = useMemo(() => ({
     favoriteConceptIds,
     favoriteLessonPlanIds,
     toursSeen,
@@ -115,7 +115,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     isFavoriteLessonPlan,
     toggleFavoriteLessonPlan,
     markTourAsSeen,
-  };
+  }), [favoriteConceptIds, favoriteLessonPlanIds, toursSeen, isFavoriteConcept, toggleFavoriteConcept, isFavoriteLessonPlan, toggleFavoriteLessonPlan, markTourAsSeen]);
 
   return (
     <UserPreferencesContext.Provider value={value}>

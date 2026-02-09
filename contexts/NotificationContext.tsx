@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useCallback, useContext } from 'react';
+import React, { createContext, useState, useCallback, useContext, useMemo } from 'react';
 
 type NotificationType = 'success' | 'error' | 'info';
 
@@ -58,8 +58,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }, 5000);
   }, [removeNotification]);
 
+  const value = useMemo(() => ({ addNotification }), [addNotification]);
+
   return (
-    <NotificationContext.Provider value={{ addNotification }}>
+    <NotificationContext.Provider value={value}>
       {children}
       <NotificationContainer notifications={notifications} removeNotification={removeNotification} />
     </NotificationContext.Provider>

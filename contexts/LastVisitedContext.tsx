@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useMemo } from 'react';
 import { usePersistentState } from '../hooks/usePersistentState';
 
 interface LastVisitedItem {
@@ -29,7 +29,7 @@ export const LastVisitedProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLastVisitedState(item);
   }, [setLastVisitedState]);
 
-  const value = { lastVisited, setLastVisited };
+  const value = useMemo(() => ({ lastVisited, setLastVisited }), [lastVisited, setLastVisited]);
 
   return (
     <LastVisitedContext.Provider value={value}>

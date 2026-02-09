@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="mk">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -105,26 +105,7 @@
       }
     </style>
 
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.22.0",
-    "@dnd-kit/core": "https://aistudiocdn.com/@dnd-kit/core@^6.1.0",
-    "@dnd-kit/utilities": "https://aistudiocdn.com/@dnd-kit/utilities@^3.2.2",
-    "vitest": "https://aistudiocdn.com/vitest@^3.2.4",
-    "@testing-library/react": "https://aistudiocdn.com/@testing-library/react@^16.3.0",
-    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
-    "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
-    "firebase/storage": "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.4.0/",
-    "zod": "https://aistudiocdn.com/zod@^3.22.4"
-  }
-}
-</script>
+
 <style>
   /* Inter Font & Global Enhancements */
   body {
@@ -137,8 +118,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Global Transitions for smoothness */
-  *, *::before, *::after {
+  /* Global Transitions for interactive elements only */
+  a, button, input, select, textarea,
+  [role="button"], [role="tab"], [role="menuitem"],
+  .card, .transition-colors, .transition-all {
     transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 200ms;

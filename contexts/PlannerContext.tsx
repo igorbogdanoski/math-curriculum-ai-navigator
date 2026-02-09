@@ -326,7 +326,7 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const isUserPlan = useCallback((planId: string) => userLessonPlans.some(plan => plan.id === planId), [userLessonPlans]);
 
-  const value: PlannerContextType = {
+  const value: PlannerContextType = useMemo(() => ({
     items,
     lessonPlans: userLessonPlans,
     communityLessonPlans,
@@ -350,7 +350,7 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     todaysLesson,
     tomorrowsLesson,
     progress
-  };
+  }), [items, userLessonPlans, communityLessonPlans, isLoading, error, addItem, updateItem, deleteItem, addOrUpdateReflection, getLessonPlan, addLessonPlan, updateLessonPlan, deleteLessonPlan, publishLessonPlan, importCommunityPlan, addRatingToCommunityPlan, addCommentToCommunityPlan, isUserPlan, importAnnualPlan, todaysItems, todaysLesson, tomorrowsLesson, progress]);
 
   return (
     <PlannerContext.Provider value={value}>

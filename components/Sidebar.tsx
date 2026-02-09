@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         <button 
           onClick={onClose} 
           className="md:hidden p-1 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
-          aria-label="Close Sidebar"
+          aria-label="Затвори странична лента"
         >
           <ICONS.close className="w-6 h-6" />
         </button>

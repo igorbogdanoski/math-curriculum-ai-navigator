@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 interface UIContextType {
   isSidebarOpen: boolean;
@@ -32,12 +32,12 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setIsSidebarOpen(false);
   }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     isSidebarOpen,
     toggleSidebar,
     openSidebar,
     closeSidebar,
-  };
+  }), [isSidebarOpen, toggleSidebar, openSidebar, closeSidebar]);
 
   return (
     <UIContext.Provider value={value}>

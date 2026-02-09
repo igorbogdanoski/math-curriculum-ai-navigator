@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, useCallback } from 'react';
+import React, { useState, createContext, useContext, useCallback, useMemo } from 'react';
 import type { GenerationContextType, MaterialType } from '../types';
 
 interface GeneratorPanelProps {
@@ -43,7 +43,7 @@ export const GeneratorPanelProvider: React.FC<{ children: React.ReactNode }> = (
     setTimeout(() => setProps(null), 300);
   }, []);
 
-  const value = { isOpen, props, openGeneratorPanel, closeGeneratorPanel };
+  const value = useMemo(() => ({ isOpen, props, openGeneratorPanel, closeGeneratorPanel }), [isOpen, props, openGeneratorPanel, closeGeneratorPanel]);
 
   return (
     <GeneratorPanelContext.Provider value={value}>

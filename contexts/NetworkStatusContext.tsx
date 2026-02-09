@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 interface NetworkStatusContextType {
   isOnline: boolean;
@@ -24,8 +24,10 @@ export const NetworkStatusProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
+  const value = useMemo(() => ({ isOnline }), [isOnline]);
+
   return (
-    <NetworkStatusContext.Provider value={{ isOnline }}>
+    <NetworkStatusContext.Provider value={value}>
       {children}
     </NetworkStatusContext.Provider>
   );

@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, useCallback } from 'react';
+import React, { useState, createContext, useContext, useCallback, useMemo } from 'react';
 import { ModalManager } from '../components/common/ModalManager';
 import { ModalType } from '../types';
 
@@ -34,7 +34,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setModal(null);
   }, []);
 
-  const value = { showModal, hideModal, modal };
+  const value = useMemo(() => ({ showModal, hideModal, modal }), [showModal, hideModal, modal]);
 
   return (
     <ModalContext.Provider value={value}>
