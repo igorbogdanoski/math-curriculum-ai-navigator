@@ -1,5 +1,19 @@
 
-import { GoogleGenAI, Type, Modality, Part } from "@google/genai";
+// Schema type constants (matches @google/genai Type enum values, avoids bundling SDK on client)
+const Type = {
+  OBJECT: 'OBJECT' as const,
+  STRING: 'STRING' as const,
+  ARRAY: 'ARRAY' as const,
+  INTEGER: 'INTEGER' as const,
+  NUMBER: 'NUMBER' as const,
+  BOOLEAN: 'BOOLEAN' as const,
+};
+
+interface Part {
+  text?: string;
+  inlineData?: { mimeType: string; data: string };
+}
+
 import { QuestionType } from '../types';
 import type {
   ChatMessage,
@@ -40,7 +54,60 @@ import {
     AnnualPlanSchema
 } from '../utils/schemas';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// --- API PROXY ---
+// All Gemini API calls go through server-side proxy.
+// The API key NEVER reaches the client bundle.
+
+async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
+  const response = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: `Proxy error: ${response.status}` }));
+    throw new Error(errorData.error || `Proxy error: ${response.status}`);
+  }
+  return response.json();
+}
+
+async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
+  const response = await fetch('/api/gemini-stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: `Stream proxy error: ${response.status}` }));
+    throw new Error(errorData.error || `Stream proxy error: ${response.status}`);
+  }
+
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') return;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.error) throw new Error(parsed.error);
+          if (parsed.text) yield parsed.text;
+        } catch (e) {
+          if (e instanceof Error && e.message !== data) throw e;
+        }
+      }
+    }
+  }
+}
 
 // Helper to handle and re-throw specific API errors
 function handleGeminiError(error: unknown, customMessage?: string): never {
@@ -208,7 +275,7 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
         config.thinkingConfig = { thinkingBudget: 4096 };
     }
 
-    const response = await ai.models.generateContent({
+    const response = await callGeminiProxy({
       model,
       contents: { parts: contents },
       config: config,
@@ -317,17 +384,17 @@ export const realGeminiService = {
             }
         }
 
-        const responseStream = await ai.models.generateContentStream({
+        const responseStream = streamGeminiProxy({
             model: "gemini-2.5-flash", 
             contents,
             config: {
                 systemInstruction,
-                safetySettings: SAFETY_SETTINGS as any,
+                safetySettings: SAFETY_SETTINGS,
             },
         });
 
-        for await (const chunk of responseStream) {
-            yield chunk.text;
+        for await (const text of responseStream) {
+            yield text;
         }
     } catch (error) {
         handleGeminiError(error, "Грешка при комуникација со AI асистентот.");
@@ -346,12 +413,12 @@ export const realGeminiService = {
         });
       }
       
-      const response = await ai.models.generateContent({
+      const response = await callGeminiProxy({
         model: 'gemini-2.5-flash-image',
         contents: { parts },
         config: {
-          responseModalities: [Modality.IMAGE],
-          safetySettings: SAFETY_SETTINGS as any,
+          responseModalities: ['IMAGE'],
+          safetySettings: SAFETY_SETTINGS,
         },
       });
 
@@ -564,12 +631,12 @@ export const realGeminiService = {
     const prompt = `Подобри го текстот за полето '${fieldType}' во подготовка за час (${gradeLevel} одд).
     Оригинален текст: "${textToEnhance}"`;
     
-    const response = await ai.models.generateContent({
+    const response = await callGeminiProxy({
         model: "gemini-2.5-flash",
         contents: prompt,
         config: { 
             systemInstruction: TEXT_SYSTEM_INSTRUCTION,
-            safetySettings: SAFETY_SETTINGS as any
+            safetySettings: SAFETY_SETTINGS
         } 
     });
     return response.text || "";
@@ -600,12 +667,12 @@ export const realGeminiService = {
 
   async generateProactiveSuggestion(concept: Concept, profile?: TeachingProfile): Promise<string> {
       const prompt = `Генерирај краток, корисен и проактивен предлог за наставник кој ќе го предава концептот "${concept.title}". Предлогот треба да биде релевантен и да нуди конкретна акција. Заврши го предлогот со акција во загради [Пример: Сакаш да генерирам активност?].`;
-      const response = await ai.models.generateContent({ 
+      const response = await callGeminiProxy({ 
           model: "gemini-2.5-flash", 
           contents: prompt,
           config: { 
               systemInstruction: TEXT_SYSTEM_INSTRUCTION,
-              safetySettings: SAFETY_SETTINGS as any
+              safetySettings: SAFETY_SETTINGS
           }
       });
       return response.text || "";
@@ -657,12 +724,12 @@ export const realGeminiService = {
   
   async analyzeReflection(wentWell: string, challenges: string, profile?: TeachingProfile): Promise<string> {
       const prompt = `Анализирај ја рефлексијата од часот и дај краток, концизен и корисен предлог за следниот час. Предлогот треба да заврши со акционо прашање во загради [Пример: Сакаш да генерирам активност?]. Рефлексија - Што помина добро: "${wentWell}". Предизвици: "${challenges}".`;
-      const response = await ai.models.generateContent({ 
+      const response = await callGeminiProxy({ 
           model: "gemini-2.5-flash", 
           contents: prompt,
           config: { 
               systemInstruction: TEXT_SYSTEM_INSTRUCTION,
-              safetySettings: SAFETY_SETTINGS as any
+              safetySettings: SAFETY_SETTINGS
           } 
       });
       return response.text || "";
@@ -787,12 +854,12 @@ export const realGeminiService = {
   async generateAnalogy(concept: Concept, gradeLevel: number): Promise<string> {
     const prompt = `Објасни го математичкиот поим "${concept.title}" за ${gradeLevel} одделение користејќи едноставна и лесно разбирлива аналогија.`;
     try {
-      const response = await ai.models.generateContent({
+      const response = await callGeminiProxy({
         model: "gemini-2.5-flash",
         contents: prompt,
         config: { 
             systemInstruction: TEXT_SYSTEM_INSTRUCTION,
-            safetySettings: SAFETY_SETTINGS as any
+            safetySettings: SAFETY_SETTINGS
         }
       });
       return response.text || "";
@@ -804,12 +871,12 @@ export const realGeminiService = {
   async generatePresentationOutline(concept: Concept, gradeLevel: number): Promise<string> {
     const prompt = `Креирај кратка структура (outline) за презентација за математичкиот поим "${concept.title}" за ${gradeLevel} одделение.`;
     try {
-      const response = await ai.models.generateContent({
+      const response = await callGeminiProxy({
         model: "gemini-2.5-flash",
         contents: prompt,
         config: { 
             systemInstruction: TEXT_SYSTEM_INSTRUCTION,
-            safetySettings: SAFETY_SETTINGS as any
+            safetySettings: SAFETY_SETTINGS
         }
       });
       return response.text || "";
