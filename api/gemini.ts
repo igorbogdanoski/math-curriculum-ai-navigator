@@ -161,10 +161,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as Content[];
 
+    // Extract systemInstruction from config if present
+    const { systemInstruction, ...restConfig } = (config || {}) as any;
+
     const response = await ai.models.generateContent({
       model: targetModel,
       contents: normalizedContents,
-      config: config as any,
+      systemInstruction: systemInstruction,
+      config: restConfig,
     });
 
     res.status(200).json({

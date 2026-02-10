@@ -35,6 +35,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as Content[];
 
+    // Extract systemInstruction from config if present
+    const { systemInstruction, ...restConfig } = (config || {}) as any;
+
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -43,7 +46,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const responseStream = await ai.models.generateContentStream({
       model: targetModel,
       contents: normalizedContents,
-      config: config as any,
+      systemInstruction: systemInstruction,
+      config: restConfig,
     });
 
     for await (const chunk of responseStream) {
