@@ -245,7 +245,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
         case 'tex':
             mimeType = 'application/x-tex;charset=utf-8';
             extension = 'tex';
-            content = `\\documentclass[12pt, a4paper]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\title{${escapeLatexAware(title)}}\n\\author{${escapeLatexAware(String(grade))}. одделение}\n\\date{}\n\\begin{document}\n\\maketitle\n\\section*{Цели}\n\\begin{itemize}\n${(objectives || []).map(item => `\\item ${escapeLatexAware(item)}`).join('\n')}\n\\end{itemize}\n\\section*{Сценарио}\n\\subsection*{Вовед}\n${escapeLatexAware(scenario.introductory)}\n\\subsection*{Главни активности}\n\\begin{enumerate}\n${(scenario.main || []).map(item => `\\item ${escapeLatexAware(item)}`).join('\n')}\n\\end{enumerate}\n\\subsection*{Завршна активност}\n${escapeLatexAware(scenario.concluding)}\n\\end{document}`;
+            content = `\\documentclass[12pt, a4paper]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\title{${escapeLatexAware(title)}}\n\\author{${escapeLatexAware(String(grade))}. одделение}\n\\date{}\n\\begin{document}\n\\maketitle\n\\section*{Цели}\n\\begin{itemize}\n${(objectives || []).map((item: string) => `\\item ${escapeLatexAware(item)}`).join('\n')}\n\\end{itemize}\n\\section*{Сценарио}\n\\subsection*{Вовед}\n${escapeLatexAware(scenario.introductory)}\n\\subsection*{Главни активности}\n\\begin{enumerate}\n${(scenario.main || []).map((item: string) => `\\item ${escapeLatexAware(item)}`).join('\n')}\n\\end{enumerate}\n\\subsection*{Завршна активност}\n${escapeLatexAware(scenario.concluding)}\n\\end{document}`;
             break;
         case 'doc': {
             const listHtml = (items: string[] = []) => items.length ? `<ul>${items.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>` : '<p><i>Нема</i></p>';
@@ -287,7 +287,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
                 
                 <h3>Главни активности</h3>
                 <ol>
-                    ${(scenario?.main || []).map(m => `<li>${escapeHtml(m)}</li>`).join('')}
+                    ${(scenario?.main || []).map((m: string) => `<li>${escapeHtml(m)}</li>`).join('')}
                 </ol>
 
                 <h3>Завршна активност</h3>
@@ -387,7 +387,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
              
              {/* Export Dropdown */}
              <div className="relative" ref={exportMenuRef}>
-                <button type="button" onClick={() => setIsExportMenuOpen(prev => !prev)} className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-lg shadow hover:bg-blue-800 transition-colors">
+                <button type="button" onClick={() => setIsExportMenuOpen((prev: boolean) => !prev)} className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-lg shadow hover:bg-blue-800 transition-colors">
                     <ICONS.download className="w-5 h-5" />
                     Извези
                     <ICONS.chevronDown className={`w-4 h-4 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
@@ -462,7 +462,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
                   <form onSubmit={handlePostComment} className="flex-grow relative">
                       <textarea
                           value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
+                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCommentText(e.target.value)}
                           placeholder={user ? "Споделете го вашето мислење, искуство или предлог за подобрување..." : "Најавете се за да се приклучите на дискусијата"}
                           className="w-full p-4 rounded-2xl bg-gray-50 border-transparent focus:border-brand-secondary focus:bg-white focus:ring-0 resize-none text-sm transition-all duration-200 min-h-[100px]"
                           disabled={!user || isSubmittingComment}
@@ -483,7 +483,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
               {/* Comments Feed */}
               <div className="space-y-6">
                   {plan.comments && plan.comments.length > 0 ? (
-                      plan.comments.slice().reverse().map((comment, index) => (
+                      plan.comments.slice().reverse().map((comment: { authorName: string; text: string; date: string }, index: number) => (
                           <div key={index} className="flex gap-4 animate-fade-in group">
                               <div className="flex-shrink-0">
                                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md">

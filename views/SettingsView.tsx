@@ -54,18 +54,18 @@ export const SettingsView: React.FC = () => {
             name: newProfileName,
             description: newProfileDesc,
         };
-        setStudentProfiles(prev => [...prev, newProfile]);
+        setStudentProfiles((prev: StudentProfile[]) => [...prev, newProfile]);
         setNewProfileName('');
         setNewProfileDesc('');
     };
 
     const handleDeleteProfile = (id: string) => {
-        setStudentProfiles(prev => prev.filter(p => p.id !== id));
+        setStudentProfiles((prev: StudentProfile[]) => prev.filter((p: StudentProfile) => p.id !== id));
     };
 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setProfile(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        setProfile((prev: TeachingProfile) => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     if (!user) {
@@ -149,7 +149,7 @@ export const SettingsView: React.FC = () => {
                             <input
                                 id="newProfileName"
                                 value={newProfileName}
-                                onChange={(e) => setNewProfileName(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewProfileName(e.target.value)}
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                                 placeholder="Ученик А"
                             />
@@ -159,7 +159,7 @@ export const SettingsView: React.FC = () => {
                             <textarea
                                 id="newProfileDesc"
                                 value={newProfileDesc}
-                                onChange={(e) => setNewProfileDesc(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewProfileDesc(e.target.value)}
                                 rows={2}
                                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                                 placeholder="пр. Визуелен тип, подобро учи со слики. Потребна му е поддршка со текстуални задачи."
@@ -176,7 +176,7 @@ export const SettingsView: React.FC = () => {
                         <h3 className="font-semibold text-gray-800 mb-2">Постоечки профили</h3>
                         {studentProfiles.length > 0 ? (
                             <ul className="space-y-2">
-                                {studentProfiles.map(p => (
+                                {studentProfiles.map((p: StudentProfile) => (
                                     <li key={p.id} className="p-3 bg-white border rounded-md flex justify-between items-start">
                                         <div>
                                             <p className="font-bold text-brand-primary">{p.name}</p>

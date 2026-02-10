@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
-import type { AIGeneratedLearningPaths } from '../../types';
+import type { AIGeneratedLearningPaths, LearningPath, LearningPathStep } from '../../types';
 
 interface GeneratedLearningPathsProps {
   material: AIGeneratedLearningPaths;
@@ -43,14 +43,14 @@ export const GeneratedLearningPaths: React.FC<GeneratedLearningPathsProps> = ({ 
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {material.paths.map((path, index) => (
+                {material.paths.map((path: LearningPath, index: number) => (
                     <div key={index} className="bg-gray-50 p-4 rounded-lg border">
                         <h4 className="text-lg font-bold text-brand-primary text-center mb-4">{path.profileName}</h4>
                         <div className="relative pl-5 space-y-4">
                             {/* Timeline line */}
                             <div className="absolute top-2 left-2.5 h-full w-0.5 bg-gray-300"></div>
 
-                            {path.steps.map((step, stepIndex) => {
+                            {path.steps.map((step: LearningPathStep, stepIndex: number) => {
                                 const Icon = stepIcons[step.type] || ICONS.star;
                                 return (
                                     <div key={stepIndex} className="relative">

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ICONS } from '../../constants';
 import { useCurriculum } from '../../hooks/useCurriculum';
-import type { GenerationContext, LessonPlan } from '../../types';
+import type { GenerationContext, LessonPlan, Grade, Topic, Concept, NationalStandard } from '../../types';
 
 interface AIContextSelectorProps {
     plan: Partial<LessonPlan>;
@@ -32,18 +32,18 @@ export const AIContextSelector: React.FC<AIContextSelectorProps> = ({ plan, onGe
     const [selectedActivity, setSelectedActivity] = useState('');
 
     const topicsForGrade = useMemo(() => {
-        return curriculum?.grades.find(g => g.level === Number(plan.grade))?.topics || [];
+        return curriculum?.grades.find((g: Grade) => g.level === Number(plan.grade))?.topics || [];
     }, [curriculum, plan.grade]);
     
     const conceptsForTopic = useMemo(() => {
-        return topicsForGrade.find(t => t.id === plan.topicId)?.concepts || [];
+        return topicsForGrade.find((t: Topic) => t.id === plan.topicId)?.concepts || [];
     }, [topicsForGrade, plan.topicId]);
 
     const activitiesForConcepts = useMemo(() => {
         if (!plan.conceptIds || plan.conceptIds.length === 0) return [];
         return conceptsForTopic
-            .filter(c => plan.conceptIds?.includes(c.id))
-            .flatMap(c => c.activities || []);
+            .filter((c: Concept) => plan.conceptIds?.includes(c.id))
+            .flatMap((c: Concept) => c.activities || []);
     }, [conceptsForTopic, plan.conceptIds]);
 
     useEffect(() => {
@@ -79,10 +79,10 @@ export const AIContextSelector: React.FC<AIContextSelectorProps> = ({ plan, onGe
     const handleGenerateClick = () => {
         let gradeData: GenerationContext['grade'] | undefined;
         if (generationContextType === 'STANDARD') {
-            const standard = allNationalStandards?.find(s => s.id === selectedStandard);
-            gradeData = curriculum?.grades.find(g => g.level === standard?.gradeLevel);
+            const standard = allNationalStandards?.find((s: NationalStandard) => s.id === selectedStandard);
+            gradeData = curriculum?.grades.find((g: Grade) => g.level === standard?.gradeLevel);
         } else {
-            gradeData = curriculum?.grades.find(g => g.level === Number(plan.grade));
+            gradeData = curriculum?.grades.find((g: Grade) => g.level === Number(plan.grade));
         }
 
         if (!gradeData) return;
@@ -90,16 +90,16 @@ export const AIContextSelector: React.FC<AIContextSelectorProps> = ({ plan, onGe
         let context: GenerationContext | null = null;
         switch(generationContextType) {
             case 'CONCEPT': {
-                const topic = topicsForGrade.find(t => t.id === plan.topicId);
-                const concepts = conceptsForTopic.filter(c => plan.conceptIds?.includes(c.id));
+                const topic = topicsForGrade.find((t: Topic) => t.id === plan.topicId);
+                const concepts = conceptsForTopic.filter((c: Concept) => plan.conceptIds?.includes(c.id));
                 if (!topic || concepts.length === 0) return;
                 context = { type: 'CONCEPT', grade: gradeData, topic, concepts };
                 break;
             }
             case 'STANDARD': {
-                const standard = allNationalStandards?.find(s => s.id === selectedStandard);
+                const standard = allNationalStandards?.find((s: NationalStandard) => s.id === selectedStandard);
                 if (!standard) return;
-                const concepts = standard.relatedConceptIds?.map(id => getConceptDetails(id).concept).filter(Boolean as any);
+                const concepts = standard.relatedConceptIds?.map((id: string) => getConceptDetails(id).concept).filter((c): c is Concept => !!c);
                 context = { type: 'STANDARD', grade: gradeData, standard, concepts };
                 break;
             }
@@ -108,8 +108,8 @@ export const AIContextSelector: React.FC<AIContextSelectorProps> = ({ plan, onGe
                  break;
             }
             case 'ACTIVITY': {
-                const topic = topicsForGrade.find(t => t.id === plan.topicId);
-                const concepts = conceptsForTopic.filter(c => plan.conceptIds?.includes(c.id));
+                const topic = topicsForGrade.find((t: Topic) => t.id === plan.topicId);
+                const concepts = conceptsForTopic.filter((c: Concept) => plan.conceptIds?.includes(c.id));
                 if (!topic || concepts.length === 0) return;
                 context = { type: 'ACTIVITY', grade: gradeData, scenario: selectedActivity, topic, concepts };
                 break;
@@ -169,12 +169,12 @@ export const AIContextSelector: React.FC<AIContextSelectorProps> = ({ plan, onGe
                         <select 
                             id="activity-select" 
                             value={selectedActivity} 
-                            onChange={(e) => setSelectedActivity(e.target.value)} 
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedActivity(e.target.value)} 
                             className="mt-1 block w-full p-2 border-gray-300 rounded-md"
                             disabled={activitiesForConcepts.length === 0}
                         >
                             {activitiesForConcepts.length > 0 ? (
-                                activitiesForConcepts.map((act, i) => <option key={i} value={act}>{act.substring(0, 100)}...</option>)
+                                activitiesForConcepts.map((act: string, i: number) => <option key={i} value={act}>{act.substring(0, 100)}...</option>)
                             ) : (
                                 <option>Прво изберете поим(и) за да се прикажат активности.</option>
                             )}
@@ -184,8 +184,8 @@ export const AIContextSelector: React.FC<AIContextSelectorProps> = ({ plan, onGe
                 {generationContextType === 'STANDARD' && (
                     <div className="animate-fade-in space-y-2">
                         <label htmlFor="standard-select" className="block text-sm font-medium text-gray-700">Национален стандард</label>
-                        <select id="standard-select" value={selectedStandard} onChange={(e) => setSelectedStandard(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md">
-                            {allNationalStandards?.map(s => <option key={s.id} value={s.id}>{s.code} ({s.gradeLevel} одд.) - {s.description}</option>)}
+                        <select id="standard-select" value={selectedStandard} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedStandard(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md">
+                            {allNationalStandards?.map((s: NationalStandard) => <option key={s.id} value={s.id}>{s.code} ({s.gradeLevel} одд.) - {s.description}</option>)}
                         </select>
                          <p className="text-xs text-gray-500">Одделението ќе биде автоматски одбрано според стандардот.</p>
                     </div>
@@ -193,7 +193,7 @@ export const AIContextSelector: React.FC<AIContextSelectorProps> = ({ plan, onGe
                 {generationContextType === 'SCENARIO' && (
                     <div className="animate-fade-in space-y-2">
                         <label htmlFor="scenario-text" className="block text-sm font-medium text-gray-700">Внесете ја вашата идеја, сценарио, или текстуален проблем</label>
-                        <textarea id="scenario-text" value={scenarioText} onChange={e => setScenarioText(e.target.value)} rows={3} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="На пр. 'Сакам да направам час за Питагорова теорема каде учениците ќе мерат вистински објекти во училницата'"></textarea>
+                        <textarea id="scenario-text" value={scenarioText} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setScenarioText(e.target.value)} rows={3} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="На пр. 'Сакам да направам час за Питагорова теорема каде учениците ќе мерат вистински објекти во училницата'"></textarea>
                     </div>
                 )}
             </div>

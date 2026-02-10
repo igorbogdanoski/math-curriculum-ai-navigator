@@ -13,6 +13,7 @@ interface ErrorBoundaryState {
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  declare props: Readonly<ErrorBoundaryProps>;
   public state: ErrorBoundaryState = {
     hasError: false,
     error: undefined,
@@ -24,7 +25,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
-    this.setState({ errorInfo, error });
+    this.state = { ...this.state, errorInfo, error, hasError: true };
     console.error("Uncaught error in ErrorBoundary:", error, errorInfo);
   }
 

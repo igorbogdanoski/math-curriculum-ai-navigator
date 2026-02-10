@@ -65,14 +65,14 @@ const StandardGroup: React.FC<{
           <h5 className="font-semibold text-gray-800">{title} ({standards.length})</h5>
         </div>
         <ul className="space-y-3 py-2 pl-4">
-          {standards.map((standardItem) => (
+          {standards.map((standardItem: {text: string, originalIndex: number}) => (
             <li key={standardItem.originalIndex} className="flex items-start">
                <ICONS.check className="w-4 h-4 mr-2 mt-1 flex-shrink-0 text-green-500" />
                <div className="flex-1 text-gray-700 text-sm">
                  {isEditing ? (
                     <textarea
                       value={standardItem.text}
-                      onChange={(e) => onStandardChange(standardItem.originalIndex, e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onStandardChange(standardItem.originalIndex, e.target.value)}
                       className={`w-full p-1 border rounded-md shadow-sm text-sm ${isEditing ? 'animate-pulse-bg-blue' : ''}`}
                       rows={2}
                     />
@@ -123,7 +123,7 @@ const ConceptCard: React.FC<{
     });
   };
 
-  const conceptIndex = useMemo(() => allConceptsInTopic.findIndex(c => c.id === concept.id), [allConceptsInTopic, concept.id]);
+  const conceptIndex = useMemo(() => allConceptsInTopic.findIndex((c: Concept) => c.id === concept.id), [allConceptsInTopic, concept.id]);
   const hasPrev = conceptIndex > 0;
   const hasNext = conceptIndex < allConceptsInTopic.length - 1;
 
@@ -171,7 +171,7 @@ const ConceptCard: React.FC<{
                             standards={standardsInGroup}
                             icon={groupIcons[groupName as keyof typeof groupIcons] || ICONS.menu}
                             isEditing={isEditing}
-                            onStandardChange={(originalIndex, newText) => onAssessmentStandardChange(concept.id, originalIndex, newText)}
+                            onStandardChange={(originalIndex: number, newText: string) => onAssessmentStandardChange(concept.id, originalIndex, newText)}
                         />
                     ))
                 ) : (
@@ -185,7 +185,7 @@ const ConceptCard: React.FC<{
             {isEditing ? (
                 <textarea
                   value={arrayToString(concept.activities)}
-                  onChange={(e) => onActivitiesChange(concept.id, stringToArray(e.target.value))}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onActivitiesChange(concept.id, stringToArray(e.target.value))}
                   className={`w-full p-2 border rounded-md shadow-sm text-sm ${isEditing ? 'animate-pulse-bg-blue' : ''}`}
                   rows={5}
                   placeholder="Внесете секоја активност во нов ред..."
@@ -193,7 +193,7 @@ const ConceptCard: React.FC<{
             ) : (
                 concept.activities && concept.activities.length > 0 ? (
                   <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm">
-                    {concept.activities.map((activity, i) => <li key={i}><MathRenderer text={activity} /></li>)}
+                    {concept.activities.map((activity: string, i: number) => <li key={i}><MathRenderer text={activity} /></li>)}
                   </ul>
                 ) : (
                    <p className="text-sm text-gray-500 italic">Нема дефинирани предлог активности.</p>
@@ -261,13 +261,13 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
   }, [topic, id]);
 
   const handleToggleConcept = (conceptId: string) => {
-    setExpandedConceptId(prevId => (prevId === conceptId ? null : conceptId));
+    setExpandedConceptId((prevId: string | null) => (prevId === conceptId ? null : conceptId));
   };
   
   const handleAssessmentStandardChange = useCallback((conceptId: string, index: number, newText: string) => {
-    setEditedTopicData(prevTopic => {
+    setEditedTopicData((prevTopic: Topic | null) => {
         if (!prevTopic) return null;
-        const newConcepts = prevTopic.concepts.map(c => {
+        const newConcepts = prevTopic.concepts.map((c: Concept) => {
             if (c.id === conceptId) {
                 const newStandards = [...c.assessmentStandards];
                 newStandards[index] = newText;
@@ -280,9 +280,9 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
   }, []);
 
   const handleActivitiesChange = useCallback((conceptId: string, newActivities: string[]) => {
-    setEditedTopicData(prevTopic => {
+    setEditedTopicData((prevTopic: Topic | null) => {
         if (!prevTopic) return null;
-        const newConcepts = prevTopic.concepts.map(c => {
+        const newConcepts = prevTopic.concepts.map((c: Concept) => {
             if (c.id === conceptId) {
                 return { ...c, activities: newActivities };
             }
@@ -358,7 +358,7 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
 
       <Card>
         <h2 className="text-2xl font-semibold text-brand-primary mb-4">Поими во оваа тема</h2>
-        {concepts.map(concept => (
+        {concepts.map((concept: Concept) => (
           <ConceptCard
             key={concept.id}
             concept={concept}

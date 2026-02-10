@@ -16,7 +16,7 @@ export const AILoadingIndicator: React.FC = () => {
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+            setMessageIndex((prev: number) => (prev + 1) % LOADING_MESSAGES.length);
         }, 2500);
         return () => clearInterval(interval);
     }, []);

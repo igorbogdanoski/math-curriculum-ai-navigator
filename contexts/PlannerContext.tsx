@@ -153,14 +153,14 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-    const todaysItems = items.filter(item => item.date === today);
-    const tomorrowsItems = items.filter(item => item.date === tomorrowStr);
+    const todaysItems = items.filter((item: PlannerItem) => item.date === today);
+    const tomorrowsItems = items.filter((item: PlannerItem) => item.date === tomorrowStr);
     
-    const todaysLesson = todaysItems.find(i => i.type === PlannerItemType.LESSON);
-    const tomorrowsLesson = tomorrowsItems.find(i => i.type === PlannerItemType.LESSON);
+    const todaysLesson = todaysItems.find((i: PlannerItem) => i.type === PlannerItemType.LESSON);
+    const tomorrowsLesson = tomorrowsItems.find((i: PlannerItem) => i.type === PlannerItemType.LESSON);
 
-    const totalTasks = todaysItems.filter(i => i.type === PlannerItemType.LESSON).length;
-    const completedTasks = todaysItems.filter(i => i.type === PlannerItemType.LESSON && !!i.reflection).length;
+    const totalTasks = todaysItems.filter((i: PlannerItem) => i.type === PlannerItemType.LESSON).length;
+    const completedTasks = todaysItems.filter((i: PlannerItem) => i.type === PlannerItemType.LESSON && !!i.reflection).length;
     const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
     
     return { todaysItems, todaysLesson, tomorrowsLesson, progress };
@@ -228,7 +228,7 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const publishLessonPlan = useCallback(async (planId: string, authorName: string) => {
     const uid = checkUser();
-    const plan = userLessonPlans.find(p => p.id === planId);
+    const plan = userLessonPlans.find((p: LessonPlan) => p.id === planId);
     if (plan) {
       const publishedData = { ...plan, isPublished: true, authorName, ratings: plan.ratings || [], comments: plan.comments || [] };
       const { id, ...data } = publishedData;
@@ -278,7 +278,7 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const newPlanRef = doc(collection(db, "users", uid, "lessonPlans"));
         idMap.set(id, newPlanRef.id);
         
-        const newPlanData = { ...data, isPublished: false, authorName: undefined, ratings: [], comments: [], originalId: id };
+        const newPlanData = { ...data, isPublished: false, authorName: undefined as string | undefined, ratings: [] as unknown[], comments: [] as unknown[], originalId: id };
         currentBatch.set(newPlanRef, newPlanData);
         operationCount++;
 
@@ -306,7 +306,7 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [firebaseUser]);
 
   const addRatingToCommunityPlan = useCallback(async (planId: string, rating: number) => {
-    const plan = communityLessonPlans.find(p => p.id === planId);
+    const plan = communityLessonPlans.find((p: LessonPlan) => p.id === planId);
     if (plan) {
       const newRatings = [...(plan.ratings || []), rating];
       await setDoc(doc(db, "communityLessonPlans", planId), { ratings: newRatings }, { merge: true });
@@ -314,14 +314,14 @@ export const PlannerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [communityLessonPlans]);
 
   const addCommentToCommunityPlan = useCallback(async (planId: string, comment: { authorName: string; text: string; date: string; }) => {
-    const plan = communityLessonPlans.find(p => p.id === planId);
+    const plan = communityLessonPlans.find((p: LessonPlan) => p.id === planId);
     if (plan) {
       const newComments = [...(plan.comments || []), comment];
       await setDoc(doc(db, "communityLessonPlans", planId), { comments: newComments }, { merge: true });
     }
   }, [communityLessonPlans]);
 
-  const isUserPlan = useCallback((planId: string) => userLessonPlans.some(plan => plan.id === planId), [userLessonPlans]);
+  const isUserPlan = useCallback((planId: string) => userLessonPlans.some((plan: LessonPlan) => plan.id === planId), [userLessonPlans]);
 
   const value: PlannerContextType = useMemo(() => ({
     items,

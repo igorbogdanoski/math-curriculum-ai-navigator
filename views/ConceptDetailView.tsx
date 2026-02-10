@@ -3,7 +3,7 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
-import type { AIGeneratedIdeas, LessonPlan, AIGeneratedPracticeMaterial } from '../types';
+import type { AIGeneratedIdeas, LessonPlan, AIGeneratedPracticeMaterial, Concept, NationalStandard } from '../types';
 import { PlannerItemType } from '../types';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useAuth } from '../contexts/AuthContext';
@@ -215,7 +215,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
         assessmentStandards: [],
         scenario: {
             introductory: aiSuggestions.openingActivity,
-            main: aiSuggestions.mainActivity.split('\n').filter(line => line.trim() !== ''),
+            main: aiSuggestions.mainActivity.split('\n').filter((line: string) => line.trim() !== ''),
             concluding: aiSuggestions.assessmentIdea,
         },
         materials: [],
@@ -307,9 +307,9 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
 
                 // 2. Content Slides
                 // Better splitting logic: look for Markdown headings (### or ##)
-                const slidesContent = presentationOutline.split(/(?:\r?\n|^)(?=#{2,3}\s)/).filter(s => s.trim().length > 0);
+                const slidesContent = presentationOutline.split(/(?:\r?\n|^)(?=#{2,3}\s)/).filter((s: string) => s.trim().length > 0);
                 
-                slidesContent.forEach((slideContent) => {
+                slidesContent.forEach((slideContent: string) => {
                     if (!slideContent.trim()) return;
                     
                     const lines = slideContent.trim().split('\n');
@@ -319,8 +319,8 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                     titleLine = titleLine.replace(/^Слајд \d+:\s*/i, '').replace(/^Slide \d+:\s*/i, '').trim();
                     
                     const bodyLines = lines.slice(1)
-                        .map(line => cleanTextForPresentation(line.replace(/^- \s*/, '').replace(/^\* \s*/, '').trim()))
-                        .filter(line => line.length > 0);
+                        .map((line: string) => cleanTextForPresentation(line.replace(/^- \s*/, '').replace(/^\* \s*/, '').trim()))
+                        .filter((line: string) => line.length > 0);
 
                     if (!titleLine && bodyLines.length === 0) return;
 
@@ -335,7 +335,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                     
                     // Slide Body
                     if (bodyLines.length > 0) {
-                        const textObjects = bodyLines.map(line => ({ 
+                        const textObjects = bodyLines.map((line: string) => ({ 
                             text: line, 
                             options: { 
                                 bullet: true, 
@@ -426,7 +426,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   }
   
   const isAnyGenerating = isLoadingIdeas || isGeneratingAnalogy || isGeneratingOutline || isGeneratingProblems || isGeneratingQuestions || isExportingPptx;
-  const priorKnowledgeConcepts = concept.priorKnowledgeIds.map(pkId => allConcepts.find(c => c.id === pkId)).filter(Boolean);
+  const priorKnowledgeConcepts = concept.priorKnowledgeIds.map((pkId: string) => allConcepts.find((c: Concept & { gradeLevel: number; topicId: string }) => c.id === pkId)).filter(Boolean);
   const isFavorite = isFavoriteConcept(concept.id);
 
   return (
@@ -453,14 +453,14 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                     <Card>
                         <h2 className="text-2xl font-semibold text-brand-primary mb-3">Детални содржини</h2>
                         <ul className="list-disc list-inside text-gray-700 space-y-1">
-                            {concept.content.map((item, i) => <li key={i}><MathRenderer text={item} /></li>)}
+                            {concept.content.map((item: string, i: number) => <li key={i}><MathRenderer text={item} /></li>)}
                         </ul>
                     </Card>
                 )}
                 <Card>
                     <h2 className="text-2xl font-semibold text-brand-primary mb-3">Стандарди за оценување</h2>
                      <ul className="space-y-1">
-                        {concept.assessmentStandards.map((standard, i) => (
+                        {concept.assessmentStandards.map((standard: string, i: number) => (
                             <li key={i}>
                                 <button 
                                     onClick={() => handleStandardClick(standard)}
@@ -484,7 +484,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                     <Card>
                         <h2 className="text-2xl font-semibold text-brand-primary mb-3">Предлог активности од програмата</h2>
                         <ul className="space-y-1">
-                            {concept.activities.map((activity, i) => (
+                            {concept.activities.map((activity: string, i: number) => (
                                 <li key={i}>
                                     <button 
                                         onClick={() => handleActivityClick(activity)}
@@ -509,7 +509,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                      <Card>
                         <h2 className="text-2xl font-semibold text-brand-primary mb-3">Потребни предзнаења</h2>
                         <ul className="space-y-2">
-                           {priorKnowledgeConcepts.map(pkConcept => pkConcept && (
+                           {priorKnowledgeConcepts.map((pkConcept: any) => pkConcept && (
                                 <li key={pkConcept.id} className="flex items-start">
                                     <ICONS.link className="w-4 h-4 mr-2 mt-1 flex-shrink-0 text-gray-500" />
                                     <a onClick={() => navigate(`/concept/${pkConcept.id}`)} className="text-brand-secondary hover:underline cursor-pointer">
@@ -526,7 +526,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                  <Card>
                     <h2 className="text-2xl font-semibold text-brand-primary mb-3">Поврзани национални стандарди</h2>
                     <div className="space-y-2">
-                        {conceptStandards.map(std => (
+                        {conceptStandards.map((std: NationalStandard) => (
                             <button
                                 key={std.id}
                                 onClick={() => openGeneratorPanel({ contextType: 'STANDARD', standardId: std.id })}
@@ -634,7 +634,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                     Структура за презентација
                                 </h4>
                                 <div className="relative" ref={exportMenuRef}>
-                                    <button type="button" onClick={() => setIsExportMenuOpen(p => !p)} className="flex items-center gap-1 text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-full hover:bg-teal-200">
+                                    <button type="button" onClick={() => setIsExportMenuOpen((p: boolean) => !p)} className="flex items-center gap-1 text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-full hover:bg-teal-200">
                                         <ICONS.download className="w-4 h-4" /> Извези
                                     </button>
                                     {isExportMenuOpen && (
@@ -674,7 +674,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                 {practiceMaterial.title}
                             </h4>
                              <div className="prose prose-sm max-w-none text-gray-800 space-y-4">
-                                {practiceMaterial.items.map((item, index) => (
+                                {practiceMaterial.items.map((item: any, index: number) => (
                                     <div key={index} className="pb-3 border-b last:border-b-0 border-indigo-100">
                                         <p className="mb-1"><strong>{index + 1}. <MathRenderer text={item.text} /></strong></p>
                                         {item.answer && (
@@ -692,7 +692,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                 ))}
                             </div>
                              <div className="mt-3">
-                                <button onClick={() => handleSaveAsNote(practiceMaterial.title, practiceMaterial.items.map(it => `${it.text} (Одг: ${it.answer || 'N/A'})`).join('\n'))} className="flex items-center text-sm bg-yellow-500 text-white px-3 py-1 rounded-lg shadow hover:bg-yellow-600"><ICONS.edit className="w-4 h-4 mr-1"/> Зачувај како белешка</button>
+                                <button onClick={() => handleSaveAsNote(practiceMaterial.title, practiceMaterial.items.map((it: any) => `${it.text} (Одг: ${it.answer || 'N/A'})`).join('\n'))} className="flex items-center text-sm bg-yellow-500 text-white px-3 py-1 rounded-lg shadow hover:bg-yellow-600"><ICONS.edit className="w-4 h-4 mr-1"/> Зачувај како белешка</button>
                             </div>
                         </Card>
                     )}

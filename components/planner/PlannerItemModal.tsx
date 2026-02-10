@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import type { PlannerItem } from '../../types';
+import type { PlannerItem, LessonPlan } from '../../types';
 import { PlannerItemType } from '../../types';
 import { ICONS } from '../../constants';
 import { usePlanner } from '../../contexts/PlannerContext';
@@ -48,7 +48,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev: Partial<PlannerItem>) => ({ ...prev, [name]: value }));
   };
   
   const isNew = !formData?.id;
@@ -77,7 +77,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
         
         try {
             const parsedData = await geminiService.parsePlannerInput(transcript);
-            setFormData(prev => ({
+            setFormData((prev: Partial<PlannerItem>) => ({
                 ...prev,
                 title: parsedData.title || prev.title,
                 date: parsedData.date || prev.date,
@@ -170,7 +170,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
     >
       <div 
         className="bg-white rounded-lg shadow-xl max-w-lg w-full transform transition-all animate-fade-in-up"
-        onClick={e => e.stopPropagation()}
+        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
       >
         <form onSubmit={handleSubmit}>
             <div className="p-6 border-b">
@@ -261,7 +261,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
                         >
                             <option value="">-- Избери подготовка --</option>
-                            {lessonPlans.map(lp => <option key={lp.id} value={lp.id}>{lp.title} ({lp.grade}. одд)</option>)}
+                            {lessonPlans.map((lp: LessonPlan) => <option key={lp.id} value={lp.id}>{lp.title} ({lp.grade}. одд)</option>)}
                         </select>
                     </div>
                 )}

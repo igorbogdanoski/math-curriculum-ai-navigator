@@ -23,7 +23,7 @@ export const StandardsCoverageCard: React.FC<StandardsCoverageCardProps> = ({ da
             </div>
 
             <div className="flex-1 space-y-4 py-2">
-                {data.map((item) => (
+                {data.map((item: GradePercentage) => (
                     <div key={item.grade} className="space-y-1.5">
                         <div className="flex justify-between items-end">
                             <span className="text-sm font-semibold text-gray-700">{item.grade}-то одделение</span>

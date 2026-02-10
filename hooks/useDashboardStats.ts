@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from './useCurriculum';
 import { PlannerItemType } from '../types';
+import type { PlannerItem, LessonPlan, Grade, Topic, Concept, NationalStandard } from '../types';
 
 export function useDashboardStats() {
     const { items, lessonPlans, isLoading: isPlannerLoading } = usePlanner();
@@ -10,7 +11,7 @@ export function useDashboardStats() {
     const monthlyActivity = useMemo(() => {
         const monthData: { [key: string]: { label: string; sortKey: number; lessons: number; events: number } } = {};
 
-        items.forEach(item => {
+        items.forEach((item: PlannerItem) => {
             const itemDate = new Date(item.date);
             const year = itemDate.getFullYear();
             const monthIndex = itemDate.getMonth();
@@ -48,7 +49,7 @@ export function useDashboardStats() {
         
         const topicCounts: { [key: string]: { count: number; title: string } } = {};
 
-        lessonPlans.forEach(plan => {
+        lessonPlans.forEach((plan: LessonPlan) => {
             if (plan.topicId) {
                 if (!topicCounts[plan.topicId]) {
                     topicCounts[plan.topicId] = { count: 0, title: 'Непозната Тема' };
@@ -57,8 +58,8 @@ export function useDashboardStats() {
             }
         });
 
-        curriculum.grades.forEach(grade => {
-            grade.topics.forEach(topic => {
+        curriculum.grades.forEach((grade: Grade) => {
+            grade.topics.forEach((topic: Topic) => {
                 if (topicCounts[topic.id]) {
                     topicCounts[topic.id].title = topic.title;
                 }
@@ -82,14 +83,14 @@ export function useDashboardStats() {
         const today = new Date();
         today.setHours(0,0,0,0);
 
-        const pastLessons = items.filter(item => 
+        const pastLessons = items.filter((item: PlannerItem) => 
             item.type === PlannerItemType.LESSON && new Date(item.date) < today
         );
-        const reflectedLessons = pastLessons.filter(item => !!item.reflection).length;
+        const reflectedLessons = pastLessons.filter((item: PlannerItem) => !!item.reflection).length;
         const reflectionRate = pastLessons.length > 0 ? Math.round((reflectedLessons / pastLessons.length) * 100) : 0;
         
         const coveredStandardIds = new Set<string>();
-        const conceptIdsInPlans = new Set(lessonPlans.flatMap(p => p.conceptIds));
+        const conceptIdsInPlans = new Set(lessonPlans.flatMap((p: LessonPlan) => p.conceptIds));
         
         // Per grade coverage
         const gradeCoverage: { [key: number]: { covered: number; total: number } } = {
@@ -100,18 +101,20 @@ export function useDashboardStats() {
         };
 
         const stdToGrade: { [stdId: string]: number } = {};
-        allNationalStandards?.forEach(std => {
-            stdToGrade[std.id] = std.gradeLevel;
-            if (gradeCoverage[std.gradeLevel]) {
-                gradeCoverage[std.gradeLevel].total++;
+        allNationalStandards?.forEach((std: NationalStandard) => {
+            if (std.gradeLevel != null) {
+                stdToGrade[std.id] = std.gradeLevel;
+                if (gradeCoverage[std.gradeLevel]) {
+                    gradeCoverage[std.gradeLevel].total++;
+                }
             }
         });
 
-        curriculum?.grades.forEach(grade => {
-            grade.topics.forEach(topic => {
-                topic.concepts.forEach(concept => {
+        curriculum?.grades.forEach((grade: Grade) => {
+            grade.topics.forEach((topic: Topic) => {
+                topic.concepts.forEach((concept: Concept) => {
                     if (conceptIdsInPlans.has(concept.id)) {
-                        concept.nationalStandardIds.forEach(stdId => {
+                        concept.nationalStandardIds.forEach((stdId: string) => {
                             if (!coveredStandardIds.has(stdId)) {
                                 coveredStandardIds.add(stdId);
                                 const gLevel = stdToGrade[stdId];

@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
  * Handles non-streaming generateContent calls.
  * The GEMINI_API_KEY is only available server-side (never sent to the browser).
  */
-export default async function handler(req, res) {
+export default async function handler(req: any, res: any) {
   // CORS headers
   const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://math-curriculum-ai-navigator.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);

@@ -35,7 +35,7 @@ export function useProactiveSuggestions() {
       const nextWeek = new Date(today);
       nextWeek.setDate(today.getDate() + 7);
 
-      const upcomingItems = items.filter(item => {
+      const upcomingItems = items.filter((item: PlannerItem) => {
         const itemDate = new Date(item.date);
         return itemDate >= today && itemDate <= nextWeek;
       });

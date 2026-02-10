@@ -27,14 +27,14 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
     // Only score gradable questions
     if (currentQuestion.type !== 'ESSAY') {
         if (userAnswer.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim()) {
-            setScore(s => s + 1);
+            setScore((s: number) => s + 1);
         }
     }
   };
 
   const handleNext = () => {
     if (currentIndex < questions.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex((prev: number) => prev + 1);
       setIsAnswered(false);
       setSelectedAnswer(null);
     } else {
@@ -68,7 +68,7 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
 
     switch(type) {
         case 'MULTIPLE_CHOICE':
-            return options?.map((opt, i) => (
+            return options?.map((opt: string, i: number) => (
                 <button key={i} onClick={() => handleAnswer(opt)} disabled={isAnswered} className={`w-full text-left p-3 border rounded-lg transition-colors ${getButtonClass(opt)}`}>
                     <MathRenderer text={opt} />
                 </button>
@@ -82,7 +82,7 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
         case 'SHORT_ANSWER':
         case 'FILL_IN_THE_BLANK':
             return (
-                <form onSubmit={(e) => { e.preventDefault(); handleAnswer((e.currentTarget.elements.namedItem('shortAnswer') as HTMLInputElement).value); }}>
+                <form onSubmit={(e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); handleAnswer((e.currentTarget.elements.namedItem('shortAnswer') as HTMLInputElement).value); }}>
                     <div className="flex gap-2">
                         <input name="shortAnswer" type="text" disabled={isAnswered} className="flex-1 p-2 border rounded-md" placeholder="Внесете го одговорот..."/>
                         <button type="submit" disabled={isAnswered} className="px-4 py-2 bg-brand-primary text-white rounded-lg disabled:bg-gray-400">Провери</button>
@@ -103,7 +103,7 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
                         disabled={isAnswered}
                         className="w-full p-2 border rounded-md"
                         placeholder="Напишете го вашиот одговор овде..."
-                        onChange={(e) => setSelectedAnswer(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSelectedAnswer(e.target.value)}
                     />
                     {!isAnswered && (
                         <button
@@ -148,7 +148,7 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
     
     return (
       <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={onClose}>
-        <div onClick={e => e.stopPropagation()}>
+        <div onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
             <Card className="max-w-md w-full text-center">
                 <Icon className={`w-16 h-16 mx-auto ${iconColor} rounded-full p-2`} />
                 <h2 className="text-2xl font-bold mt-4">{feedbackMessage}</h2>
@@ -174,7 +174,7 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
     >
       <div 
         className="bg-gray-100 rounded-lg shadow-xl max-w-2xl w-full flex flex-col"
-        onClick={e => e.stopPropagation()}
+        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
       >
         <div className="p-4 border-b flex justify-between items-center bg-white rounded-t-lg">
           <h2 id="quiz-title" className="text-xl font-bold text-brand-primary">Интерактивен Квиз</h2>

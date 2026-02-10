@@ -77,7 +77,7 @@ const CoverageAnalyzerView = safeLazy(() => import('./views/CoverageAnalyzerView
 const MindMapView = safeLazy(() => import('./views/MindMapView').then(module => ({ default: module.MindMapView })));
 const RoadmapView = safeLazy(() => import('./views/RoadmapView').then(module => ({ default: module.RoadmapView })));
 
-const GeneratorRouteHandler: React.FC<any> = (props) => {
+const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     const { openGeneratorPanel } = useGeneratorPanel();
     const { navigate } = useNavigation();
     useEffect(() => {

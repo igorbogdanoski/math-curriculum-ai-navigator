@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
-import type { Concept } from '../types';
+import type { Concept, ThematicProgression, ProgressionByGrade } from '../types';
 import { useNavigation } from '../contexts/NavigationContext';
 
 const ProgressionTimelineNode: React.FC<{ grade: number, concept: Concept, isLast: boolean }> = ({ grade, concept, isLast }) => (
@@ -16,7 +16,7 @@ const ProgressionTimelineNode: React.FC<{ grade: number, concept: Concept, isLas
              <div className="mt-3 text-sm">
                 <h4 className="font-semibold text-gray-700">Стандарди за оценување:</h4>
                 <ul className="list-disc list-inside text-gray-600">
-                    {concept.assessmentStandards.map((outcome, i) => <li key={i}>{outcome}</li>)}
+                    {concept.assessmentStandards.map((outcome: string, i: number) => <li key={i}>{outcome}</li>)}
                 </ul>
             </div>
         </Card>
@@ -42,13 +42,13 @@ const ThematicProgressionView: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {verticalProgression.tematska_progresija.map(theme => (
+                        {verticalProgression.tematska_progresija.map((theme: ThematicProgression) => (
                             <tr key={theme.tema}>
                                 <td className="px-6 py-4 whitespace-normal align-top border-r">
                                     <div className="text-sm font-semibold text-brand-primary">{theme.tema}</div>
                                 </td>
                                 {grades.map(grade => {
-                                    const gradeData = theme.progresija.find(p => p.oddelenie === grade);
+                                    const gradeData = theme.progresija.find((p: ProgressionByGrade) => p.oddelenie === grade);
                                     return (
                                         <td key={grade} className="px-6 py-4 whitespace-normal align-top border-r text-xs text-gray-700">
                                             {gradeData && gradeData.poimi && gradeData.rezultati_od_ucenje ? (
@@ -92,12 +92,12 @@ const ConceptProgressionView: React.FC<{ initialConceptId?: string }> = ({ initi
     
     const uniqueConcepts = useMemo(() => {
         const seen = new Set<string>();
-        return allConcepts.filter(c => {
+        return allConcepts.filter((c: Concept) => {
             const cleanTitle = c.title.replace(/Вовед во |Операции со |Основи на /i, '');
             if(seen.has(cleanTitle)) return false;
             seen.add(cleanTitle);
             return true;
-        }).sort((a,b) => a.title.localeCompare(b.title));
+        }).sort((a: Concept, b: Concept) => a.title.localeCompare(b.title));
     }, [allConcepts]);
 
     if (isLoading && !initialConceptId) {
@@ -116,11 +116,11 @@ const ConceptProgressionView: React.FC<{ initialConceptId?: string }> = ({ initi
                 <select 
                     id="concept-select"
                     value={selectedConceptId || ''}
-                    onChange={e => setSelectedConceptId(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedConceptId(e.target.value)}
                     className="block w-full max-w-md p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-secondary focus:border-brand-secondary"
                 >
                     <option value="" disabled>-- Изберете --</option>
-                    {uniqueConcepts.map(c => (
+                    {uniqueConcepts.map((c: Concept) => (
                         <option key={c.id} value={c.id}>{c.title.replace(/Вовед во |Операции со |Основи на /i, '')}</option>
                     ))}
                 </select>
@@ -130,7 +130,7 @@ const ConceptProgressionView: React.FC<{ initialConceptId?: string }> = ({ initi
                 <div>
                     <h2 className="text-2xl font-semibold text-brand-primary mb-4">Развој на поимот: <span className="text-brand-secondary">{progressionData.title}</span></h2>
                     <div>
-                        {progressionData.progression.map((item, index) => (
+                        {progressionData.progression.map((item: { grade: number; concept: Concept }, index: number) => (
                             <ProgressionTimelineNode 
                                 key={item.grade} 
                                 grade={item.grade} 

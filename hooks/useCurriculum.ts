@@ -84,7 +84,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const gradeMap = useMemo(() => {
         if (!curriculum) return new Map();
         const map = new Map<string, Grade>();
-        curriculum.grades.forEach(grade => {
+        curriculum.grades.forEach((grade: Grade) => {
             map.set(grade.id, grade);
         });
         return map;
@@ -93,8 +93,8 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const topicMap = useMemo(() => {
         if (!curriculum) return new Map();
         const map = new Map<string, { grade: Grade; topic: Topic }>();
-        curriculum.grades.forEach(grade => {
-            grade.topics.forEach(topic => {
+        curriculum.grades.forEach((grade: Grade) => {
+            grade.topics.forEach((topic: Topic) => {
                 map.set(topic.id, { grade, topic });
             });
         });
@@ -104,9 +104,9 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const conceptMap = useMemo(() => {
         if (!curriculum) return new Map();
         const map = new Map<string, { grade: Grade; topic: Topic; concept: Concept }>();
-        curriculum.grades.forEach(grade => {
-            grade.topics.forEach(topic => {
-                topic.concepts.forEach(concept => {
+        curriculum.grades.forEach((grade: Grade) => {
+            grade.topics.forEach((topic: Topic) => {
+                topic.concepts.forEach((concept: Concept) => {
                     map.set(concept.id, { grade, topic, concept });
                 });
             });
@@ -117,7 +117,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const nationalStandardMap = useMemo(() => {
         if (!allNationalStandards) return new Map();
         const map = new Map<string, NationalStandard>();
-        allNationalStandards.forEach(std => {
+        allNationalStandards.forEach((std: NationalStandard) => {
           map.set(std.id, std);
         });
         return map;
@@ -142,9 +142,9 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       
     const allConcepts = useMemo(() => {
         if (!curriculum) return [];
-        return curriculum.grades.flatMap(grade => 
-            grade.topics.flatMap(topic => 
-                topic.concepts.map(concept => ({
+        return curriculum.grades.flatMap((grade: Grade) => 
+            grade.topics.flatMap((topic: Topic) => 
+                topic.concepts.map((concept: Concept) => ({
                     ...concept,
                     gradeLevel: grade.level,
                     topicId: topic.id
@@ -156,14 +156,14 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const findConceptAcrossGrades = useCallback((conceptId: string): ConceptProgression | undefined => {
         if (!curriculum || allConcepts.length === 0) return undefined;
 
-        const initialConcept = allConcepts.find(c => c.id === conceptId);
+        const initialConcept = allConcepts.find((c: Concept & { gradeLevel: number; topicId: string }) => c.id === conceptId);
         if (!initialConcept) return undefined;
 
         const baseTitle = initialConcept.title.replace(/Вовед во |Операции со |Основи на /i, '').trim();
 
         const progression: Array<{ grade: number; concept: Concept }> = allConcepts
-            .filter(c => c.title.replace(/Вовед во |Операции со |Основи на /i, '').trim() === baseTitle)
-            .map(c => ({
+            .filter((c: Concept & { gradeLevel: number; topicId: string }) => c.title.replace(/Вовед во |Операции со |Основи на /i, '').trim() === baseTitle)
+            .map((c: Concept & { gradeLevel: number; topicId: string }) => ({
                 grade: c.gradeLevel,
                 concept: c,
             }));

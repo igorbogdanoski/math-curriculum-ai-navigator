@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
-import type { AIGeneratedIdeas, LessonPlan } from '../../types';
+import type { AIGeneratedIdeas, LessonPlan, Concept } from '../../types';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -52,14 +52,14 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
             title: material.title,
             grade: context?.grade?.level ?? 6,
             topicId: context?.topic?.id ?? '',
-            conceptIds: context?.concepts?.map(c => c.id) ?? [],
+            conceptIds: context?.concepts?.map((c: Concept) => c.id) ?? [],
             subject: 'Математика',
             theme: context?.topic?.title ?? '',
             objectives: [],
             assessmentStandards: [],
             scenario: {
                 introductory: material.openingActivity,
-                main: material.mainActivity.split('\n').filter(line => line.trim() !== ''),
+                main: material.mainActivity.split('\n').filter((line: string) => line.trim() !== ''),
                 concluding: material.assessmentIdea,
             },
             materials: [],
@@ -166,7 +166,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                 <h3 className="text-2xl font-bold">{material.title}</h3>
                 <div className="flex space-x-2 no-print">
                      <div className="relative" ref={exportMenuRef}>
-                        <button type="button" onClick={() => setIsExportMenuOpen(prev => !prev)} className="flex items-center gap-2 bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm">
+                        <button type="button" onClick={() => setIsExportMenuOpen((prev: boolean) => !prev)} className="flex items-center gap-2 bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm">
                             <ICONS.download className="w-5 h-5" />
                             Извези
                             <ICONS.chevronDown className={`w-4 h-4 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />

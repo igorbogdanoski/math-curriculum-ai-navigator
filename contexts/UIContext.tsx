@@ -21,7 +21,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen(prev => !prev);
+    setIsSidebarOpen((prev: boolean) => !prev);
   }, []);
 
   const openSidebar = useCallback(() => {

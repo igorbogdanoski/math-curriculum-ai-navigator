@@ -36,7 +36,7 @@ export const LessonReflectionModal: React.FC<LessonReflectionModalProps> = ({ it
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev: LessonReflection) => ({ ...prev, [name]: value }));
   };
 
   const handleAnalyzeReflection = async () => {
@@ -119,7 +119,7 @@ export const LessonReflectionModal: React.FC<LessonReflectionModalProps> = ({ it
     >
       <div 
         className="bg-white rounded-lg shadow-xl max-w-lg w-full"
-        onClick={e => e.stopPropagation()}
+        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
       >
         <form onSubmit={handleSubmit}>
             <div className="p-6 border-b">

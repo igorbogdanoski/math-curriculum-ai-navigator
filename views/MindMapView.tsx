@@ -4,6 +4,7 @@ import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ICONS } from '../constants';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
+import type { Concept, NationalStandard } from '../types';
 
 declare global {
   interface Window {
@@ -56,7 +57,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
     });
 
     // 2. Concept Nodes (Main branches)
-    topic.concepts.forEach((concept, i) => {
+    topic.concepts.forEach((concept: Concept, i: number) => {
       nodes.push({
         id: concept.id,
         label: concept.title,
@@ -69,7 +70,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
 
       // 3. Sub-branch nodes for each concept
       // Prior Knowledge
-      concept.priorKnowledgeIds.forEach(pkId => {
+      concept.priorKnowledgeIds.forEach((pkId: string) => {
         const { concept: pkConcept } = getConceptDetails(pkId);
         if (pkConcept) {
           nodes.push({
@@ -85,21 +86,21 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
       });
       
       // Assessment Standards
-      concept.assessmentStandards.forEach((std, j) => {
+      concept.assessmentStandards.forEach((std: string, j: number) => {
         const id = `${concept.id}-as-${j}`;
         nodes.push({ id, label: wrapText(std), shape: 'dot', color: '#4CAF50', size: 10, title: `<b>Стандард за оценување:</b><br>${std}` });
         edges.push({ from: concept.id, to: id });
       });
 
       // National Standards
-      getStandardsByIds(concept.nationalStandardIds).forEach((std, j) => {
+      getStandardsByIds(concept.nationalStandardIds).forEach((std: NationalStandard, j: number) => {
           const id = `${concept.id}-ns-${j}`;
           nodes.push({ id, label: std.code, shape: 'dot', color: '#F44336', size: 10, title: `<b>Национален стандард:</b><br>${std.code}: ${std.description}` });
           edges.push({ from: concept.id, to: id });
       });
 
       // Activities
-      concept.activities?.forEach((act, j) => {
+      concept.activities?.forEach((act: string, j: number) => {
         const id = `${concept.id}-act-${j}`;
         nodes.push({ id, label: wrapText(act, 15), shape: 'dot', color: '#9C27B0', size: 10, title: `<b>Активност:</b><br>${act}` });
         edges.push({ from: concept.id, to: id });

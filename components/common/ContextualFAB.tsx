@@ -95,7 +95,7 @@ export const ContextualFAB: React.FC<ContextualFABProps> = ({ path, params }) =>
         };
     }, [isOpen]);
 
-    const toggleMenu = () => setIsOpen(prev => !prev);
+    const toggleMenu = () => setIsOpen((prev: boolean) => !prev);
     
     return (
         <div ref={fabRef} className="fixed bottom-8 right-8 z-40 no-print">

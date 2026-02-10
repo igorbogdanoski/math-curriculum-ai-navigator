@@ -18,8 +18,8 @@ export const NationalStandardDetailsModal: React.FC<NationalStandardDetailsModal
     const relatedConcepts = useMemo(() => {
         if (!standard.relatedConceptIds) return [];
         return standard.relatedConceptIds
-            .map(id => getConceptDetails(id))
-            .filter(details => details.concept);
+            .map((id: string) => getConceptDetails(id))
+            .filter((details: { concept?: Concept }) => details.concept);
     }, [standard, getConceptDetails]);
 
     const handleConceptClick = (conceptId: string) => {
@@ -29,7 +29,7 @@ export const NationalStandardDetailsModal: React.FC<NationalStandardDetailsModal
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={hideModal}>
-            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <div className="sticky top-0 bg-white p-6 border-b z-10">
                     <div className="flex justify-between items-center">
                         <div>
@@ -55,7 +55,7 @@ export const NationalStandardDetailsModal: React.FC<NationalStandardDetailsModal
                                     <>
                                         <h4 className="text-md font-medium text-gray-700 mt-3 mb-1">Стандарди за оценување (Задачи):</h4>
                                         <ul className="space-y-1 list-disc list-inside">
-                                            {concept.assessmentStandards.map((std, i) => (
+                                            {concept.assessmentStandards.map((std: string, i: number) => (
                                                 <li key={i} className="text-sm text-gray-600">
                                                     <MathRenderer text={std} />
                                                 </li>
@@ -68,7 +68,7 @@ export const NationalStandardDetailsModal: React.FC<NationalStandardDetailsModal
                                     <>
                                         <h4 className="text-md font-medium text-gray-700 mt-3 mb-1">Предлог активности:</h4>
                                         <ul className="space-y-1 list-disc list-inside">
-                                            {concept.activities.map((activity, i) => (
+                                            {concept.activities.map((activity: string, i: number) => (
                                                 <li key={i} className="text-sm text-gray-600">
                                                     <MathRenderer text={activity} />
                                                 </li>

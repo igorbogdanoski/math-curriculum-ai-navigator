@@ -5,6 +5,7 @@ import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { ICONS } from '../constants';
+import type { Concept, Grade, Topic } from '../types';
 
 declare global {
   interface Window {
@@ -22,6 +23,8 @@ interface MenuState {
   topicId: string;
   isCluster: boolean;
 }
+
+type EnrichedConcept = Concept & { gradeLevel: number; topicId: string };
 
 const createTooltipElement = (title: string, description: string): HTMLElement => {
     const container = document.createElement('div');
@@ -117,9 +120,9 @@ export const CurriculumGraphView: React.FC = () => {
 
   const handleGradeToggle = (gradeLevel: number) => {
     if (focusNodeId) return; // Disable toggling while focused
-    setSelectedGrades(prev =>
+    setSelectedGrades((prev: number[]) =>
       prev.includes(gradeLevel)
-        ? prev.filter(g => g !== gradeLevel)
+        ? prev.filter((g: number) => g !== gradeLevel)
         : [...prev, gradeLevel]
     );
   };
@@ -127,8 +130,8 @@ export const CurriculumGraphView: React.FC = () => {
   const groupedTopics = useMemo(() => {
     if (!curriculum) return [];
     return curriculum.grades
-      .filter(grade => selectedGrades.includes(grade.level))
-      .map(grade => ({
+      .filter((grade: Grade) => selectedGrades.includes(grade.level))
+      .map((grade: Grade) => ({
         gradeLevel: grade.level,
         gradeTitle: grade.title,
         topics: grade.topics,
@@ -137,14 +140,14 @@ export const CurriculumGraphView: React.FC = () => {
 
   useEffect(() => {
       if (!focusNodeId) {
-          setSelectedTopics(groupedTopics.flatMap(group => group.topics.map(t => t.id)));
+          setSelectedTopics(groupedTopics.flatMap((group: { topics: Topic[] }) => group.topics.map((t: Topic) => t.id)));
       }
   }, [groupedTopics, focusNodeId]);
 
   // Handle Search Input
   useEffect(() => {
       if (searchQuery.trim().length > 1 && allConcepts) {
-          const results = allConcepts.filter(c => 
+          const results = allConcepts.filter((c: EnrichedConcept) => 
               c.title.toLowerCase().includes(searchQuery.toLowerCase())
           );
           setSearchResults(results);
@@ -174,12 +177,12 @@ export const CurriculumGraphView: React.FC = () => {
         const childrenMap = new Map<string, string[]>();
         const parentMap = new Map<string, string[]>();
 
-        allConcepts.forEach(c => {
+        allConcepts.forEach((c: EnrichedConcept) => {
             // Map Parents
             parentMap.set(c.id, c.priorKnowledgeIds);
 
             // Map Children
-            c.priorKnowledgeIds.forEach(pkId => {
+            c.priorKnowledgeIds.forEach((pkId: string) => {
                 if (!childrenMap.has(pkId)) childrenMap.set(pkId, []);
                 childrenMap.get(pkId)?.push(c.id);
             });
@@ -216,7 +219,7 @@ export const CurriculumGraphView: React.FC = () => {
 
     } else {
         // Normal mode: Use filters
-        allConcepts.forEach(concept => {
+        allConcepts.forEach((concept: EnrichedConcept) => {
             if (selectedGrades.includes(concept.gradeLevel)) {
                 activeConceptIds.add(concept.id);
             }
@@ -225,8 +228,8 @@ export const CurriculumGraphView: React.FC = () => {
 
     // 3. Create Node Data
     const nodesData = allConcepts
-        .filter(c => activeConceptIds.has(c.id))
-        .map(concept => {
+      .filter((c: EnrichedConcept) => activeConceptIds.has(c.id))
+      .map((concept: EnrichedConcept) => {
             const isFocused = concept.id === focusNodeId;
             
             let nodeColor = gradeColors[concept.gradeLevel] || '#9E9E9E';
@@ -238,8 +241,8 @@ export const CurriculumGraphView: React.FC = () => {
             }
             
             // Find Topic Title for Clustering
-            const grade = curriculum?.grades.find(g => g.level === concept.gradeLevel);
-            const topic = grade?.topics.find(t => t.id === concept.topicId);
+            const grade = curriculum?.grades.find((g: Grade) => g.level === concept.gradeLevel);
+            const topic = grade?.topics.find((t: Topic) => t.id === concept.topicId);
 
             return {
                 id: concept.id,
@@ -260,8 +263,8 @@ export const CurriculumGraphView: React.FC = () => {
         });
 
     // 4. Create Edge Data
-    const edgesData = allConcepts.flatMap(concept =>
-      concept.priorKnowledgeIds.map(priorId => {
+    const edgesData = allConcepts.flatMap((concept: EnrichedConcept) =>
+      concept.priorKnowledgeIds.map((priorId: string) => {
         // Only create edge if both nodes are visible
         const isConnected = activeConceptIds.has(concept.id) && activeConceptIds.has(priorId);
         if (!isConnected) return null;
@@ -312,10 +315,10 @@ export const CurriculumGraphView: React.FC = () => {
 
           if (isClustered) {
               // Get all unique topic IDs present in the current node set
-              const topicsInView = new Set(nodes.map(n => n._topicId));
+              const topicsInView = new Set(nodes.map((n: any) => n._topicId));
               
               topicsInView.forEach(topicId => {
-                  const topicNodes = nodes.filter(n => n._topicId === topicId);
+                  const topicNodes = nodes.filter((n: any) => n._topicId === topicId);
                   if (!topicNodes || topicNodes.length === 0) return;
 
                   const firstNode = topicNodes[0];
@@ -325,7 +328,7 @@ export const CurriculumGraphView: React.FC = () => {
                   const color = gradeColors[gradeLevel];
 
                   // Create informative tooltip content for cluster (hexagon)
-                  const conceptLabels = topicNodes.map(n => n._fullLabel || n.label);
+                  const conceptLabels = topicNodes.map((n: any) => n._fullLabel || n.label);
                   const previewCount = 10;
                   const previewItems = conceptLabels.slice(0, previewCount);
                   const titleLabel = `[${romanGrade}] ${topicTitle}`;
@@ -431,7 +434,7 @@ export const CurriculumGraphView: React.FC = () => {
           setFocusNodeId(nodeId);
           
           // Find node data using REF to avoid stale closure
-          const nodeData = nodesRef.current.find(n => n.id === nodeId);
+          const nodeData = nodesRef.current.find((n: any) => n.id === nodeId);
           
           if (nodeData) {
               // Calculate center of the graph container for fallback
@@ -450,11 +453,11 @@ export const CurriculumGraphView: React.FC = () => {
               });
           }
         } else {
-          setMenuState(prev => ({ ...prev, visible: false }));
+          setMenuState((prev: MenuState) => ({ ...prev, visible: false }));
         }
       });
       
-      network.on('dragStart', () => setMenuState(prev => ({ ...prev, visible: false })));
+      network.on('dragStart', () => setMenuState((prev: MenuState) => ({ ...prev, visible: false })));
 
       network.on("hoverNode", function () {
         if(graphRef.current) graphRef.current.style.cursor = "pointer";
@@ -499,7 +502,7 @@ export const CurriculumGraphView: React.FC = () => {
               contextType: 'CONCEPT',
               materialType: 'ASSESSMENT'
           });
-          setMenuState(prev => ({ ...prev, visible: false }));
+          setMenuState((prev: MenuState) => ({ ...prev, visible: false }));
       }
   };
 
@@ -512,7 +515,7 @@ export const CurriculumGraphView: React.FC = () => {
               contextType: 'CONCEPT',
               materialType: 'SCENARIO'
           });
-          setMenuState(prev => ({ ...prev, visible: false }));
+          setMenuState((prev: MenuState) => ({ ...prev, visible: false }));
       }
   };
 
@@ -558,7 +561,7 @@ export const CurriculumGraphView: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className={`flex flex-wrap items-center gap-4 ${focusNodeId ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
                 <div className="flex items-center gap-2">
-                    {curriculum?.grades.map(grade => (
+                    {curriculum?.grades.map((grade: Grade) => (
                         <button
                             key={grade.level}
                             onClick={() => handleGradeToggle(grade.level)}
@@ -602,11 +605,11 @@ export const CurriculumGraphView: React.FC = () => {
                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
                     placeholder="Пронајди поим во графот..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                 />
                 {searchResults.length > 0 && (
                     <ul className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                        {searchResults.map((result) => (
+                        {searchResults.map((result: EnrichedConcept) => (
                             <li
                                 key={result.id}
                                 className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 text-gray-900"
@@ -633,7 +636,7 @@ export const CurriculumGraphView: React.FC = () => {
             </div>
             {focusNodeId && (
                 <button 
-                    onClick={() => { setFocusNodeId(null); setMenuState(p => ({...p, visible: false})); }}
+                    onClick={() => { setFocusNodeId(null); setMenuState((p: MenuState) => ({...p, visible: false})); }}
                     className="text-white font-bold bg-[#FF5722] hover:bg-[#E64A19] px-4 py-1.5 rounded-full shadow-md transition-all flex items-center gap-2 animate-fade-in"
                 >
                     <ICONS.close className="w-4 h-4" />
@@ -698,7 +701,7 @@ export const CurriculumGraphView: React.FC = () => {
                         <p className="text-[10px] font-bold text-brand-primary uppercase tracking-wider">Опции за поим</p>
                         <p className="text-sm font-bold text-gray-800 line-clamp-2 leading-tight">{menuState.label}</p>
                      </div>
-                     <button onClick={() => setMenuState(prev => ({...prev, visible: false}))} className="text-gray-400 hover:text-red-500 transition-colors">
+                     <button onClick={() => setMenuState((prev: MenuState) => ({...prev, visible: false}))} className="text-gray-400 hover:text-red-500 transition-colors">
                         <ICONS.close className="w-4 h-4" />
                      </button>
                  </div>

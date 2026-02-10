@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { Card } from '../common/Card';
-import type { LessonPlan } from '../../types';
+import type { LessonPlan, Grade, Topic, Concept } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 import { useNavigation } from '../../contexts/NavigationContext';
 
@@ -23,7 +23,7 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
     
     const linkedConcepts = useMemo(() => {
         if (!plan?.conceptIds) return [];
-        return plan.conceptIds.map(conceptId => getConceptDetails(conceptId)).filter(details => details.concept);
+        return plan.conceptIds.map((conceptId: string) => getConceptDetails(conceptId)).filter((details: { grade?: Grade; topic?: Topic; concept?: Concept }) => details.concept);
     }, [plan, getConceptDetails]);
 
     return (
@@ -37,13 +37,13 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                             <div>
                                 <SectionHeader title="Цели" />
                                 <ul className="list-disc list-inside text-gray-700 space-y-1">
-                                    {plan.objectives.map((obj, i) => <ListItem key={i}><MathRenderer text={obj} /></ListItem>)}
+                                    {plan.objectives.map((obj: string, i: number) => <ListItem key={i}><MathRenderer text={obj} /></ListItem>)}
                                 </ul>
                             </div>
                             <div>
                                 <SectionHeader title="Стандарди за оценување" />
                                 <ul className="list-disc list-inside text-gray-700 space-y-1">
-                                    {plan.assessmentStandards.map((std, i) => <ListItem key={i}><MathRenderer text={std} /></ListItem>)}
+                                    {plan.assessmentStandards.map((std: string, i: number) => <ListItem key={i}><MathRenderer text={std} /></ListItem>)}
                                 </ul>
                             </div>
                         </div>
@@ -59,7 +59,7 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                                 <div>
                                     <h4 className="font-semibold">Главни активности:</h4>
                                     <ul className="list-decimal list-inside space-y-1">
-                                        {plan.scenario.main.map((act, i) => <ListItem key={i}><MathRenderer text={act} /></ListItem>)}
+                                        {plan.scenario.main.map((act: string, i: number) => <ListItem key={i}><MathRenderer text={act} /></ListItem>)}
                                     </ul>
                                 </div>
                                 <div>
@@ -76,13 +76,13 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                     <div>
                         <SectionHeader title="Средства" />
                         <ul className="list-disc list-inside text-gray-700 space-y-1">
-                            {plan.materials.map((mat, i) => <ListItem key={i}><MathRenderer text={mat} /></ListItem>)}
+                            {plan.materials.map((mat: string, i: number) => <ListItem key={i}><MathRenderer text={mat} /></ListItem>)}
                         </ul>
                     </div>
                      <div>
                         <SectionHeader title="Следење на напредокот" />
                         <ul className="list-disc list-inside text-gray-700 space-y-1">
-                            {plan.progressMonitoring.map((mon, i) => <ListItem key={i}><MathRenderer text={mon} /></ListItem>)}
+                            {plan.progressMonitoring.map((mon: string, i: number) => <ListItem key={i}><MathRenderer text={mon} /></ListItem>)}
                         </ul>
                     </div>
                     {plan.differentiation && (

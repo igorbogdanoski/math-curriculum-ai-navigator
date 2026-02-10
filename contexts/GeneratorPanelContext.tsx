@@ -9,6 +9,7 @@ interface GeneratorPanelProps {
     scenario?: string;
     standardId?: string;
     materialType?: MaterialType;
+    customInstruction?: string;
 }
 
 interface GeneratorPanelContextType {

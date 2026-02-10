@@ -27,7 +27,7 @@ const NavItem: React.FC<{
   return (
     <a
       href={`#${path}`}
-      onClick={(e) => {
+      onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         if (isGenerator) {
           openGeneratorPanel({});

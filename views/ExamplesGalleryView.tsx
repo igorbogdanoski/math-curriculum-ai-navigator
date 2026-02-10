@@ -70,7 +70,7 @@ export const ExamplesGalleryView: React.FC<ExamplesGalleryViewProps> = () => {
     const [gradeFilter, setGradeFilter] = useState<string>('all');
 
     const filteredPlans = useMemo(() => {
-        return communityLessonPlans.filter(plan => {
+        return communityLessonPlans.filter((plan: LessonPlan) => {
             const gradeMatch = gradeFilter === 'all' || !plan.grade || plan.grade === parseInt(gradeFilter);
             const queryMatch = searchQuery.trim() === '' || plan.title.toLowerCase().includes(searchQuery.toLowerCase());
             return gradeMatch && queryMatch;
@@ -96,7 +96,7 @@ export const ExamplesGalleryView: React.FC<ExamplesGalleryViewProps> = () => {
                                 id="search-title"
                                 type="text"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                                 placeholder="Пребарај по наслов..."
                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                             />
@@ -107,7 +107,7 @@ export const ExamplesGalleryView: React.FC<ExamplesGalleryViewProps> = () => {
                         <select
                             id="grade-filter"
                             value={gradeFilter}
-                            onChange={(e) => setGradeFilter(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGradeFilter(e.target.value)}
                             className="block w-full p-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent"
                         >
                             <option value="all">Сите</option>
@@ -122,7 +122,7 @@ export const ExamplesGalleryView: React.FC<ExamplesGalleryViewProps> = () => {
 
             {filteredPlans.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredPlans.map(plan => (
+                    {filteredPlans.map((plan: LessonPlan) => (
                         <LessonPlanCard key={plan.id} plan={plan} navigate={navigate} />
                     ))}
                 </div>

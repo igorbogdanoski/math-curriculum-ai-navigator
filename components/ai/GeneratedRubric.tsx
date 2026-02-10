@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../common/Card';
-import type { AIGeneratedRubric } from '../../types';
+import type { AIGeneratedRubric, RubricCriterion, RubricLevel } from '../../types';
 import { ICONS } from '../../constants';
 import { useNotification } from '../../contexts/NotificationContext';
 
@@ -34,9 +34,9 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
         }
 
         let fullContent = `${material.title}\n\n`;
-        material.criteria?.forEach(c => {
+        material.criteria?.forEach((c: RubricCriterion) => {
             fullContent += `${c.criterion}\n`;
-            c.levels.forEach(l => {
+            c.levels.forEach((l: RubricLevel) => {
                 fullContent += `- ${l.levelName} (${l.points} поени): ${l.description}\n`;
             });
             fullContent += '\n';
@@ -58,18 +58,18 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
                 mimeType = 'text/markdown;charset=utf-8';
                 extension = 'md';
                 content = `# ${material.title}\n\n`;
-                material.criteria?.forEach(c => {
+                material.criteria?.forEach((c: RubricCriterion) => {
                     content += `## ${c.criterion}\n\n| Ниво | Опис | Поени |\n|:---|:---|:---|\n`;
-                    c.levels.forEach(l => { content += `| ${l.levelName} | ${l.description} | ${l.points} |\n`; });
+                    c.levels.forEach((l: RubricLevel) => { content += `| ${l.levelName} | ${l.description} | ${l.points} |\n`; });
                 });
                 break;
             case 'tex':
                 mimeType = 'application/x-tex;charset=utf-8';
                 extension = 'tex';
                 content = `\\documentclass{article}\\usepackage[utf8]{inputenc}\\title{${escapeLatex(material.title)}}\\begin{document}\\maketitle\n`;
-                material.criteria?.forEach(c => {
+                material.criteria?.forEach((c: RubricCriterion) => {
                     content += `\\section*{${escapeLatex(c.criterion)}}\n\\begin{tabular}{|l|p{8cm}|l|}\\hline\n`;
-                    c.levels.forEach(l => { content += `${escapeLatex(l.levelName)} & ${escapeLatex(l.description)} & ${escapeLatex(l.points)} \\\\ \\hline\n`; });
+                    c.levels.forEach((l: RubricLevel) => { content += `${escapeLatex(l.levelName)} & ${escapeLatex(l.description)} & ${escapeLatex(l.points)} \\\\ \\hline\n`; });
                     content += `\\end{tabular}\n`;
                 });
                 content += `\\end{document}`;
@@ -133,7 +133,7 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
                 <h3 className="text-2xl font-bold">{material.title}</h3>
                 <div className="flex space-x-2 no-print">
                      <div className="relative" ref={exportMenuRef}>
-                        <button type="button" onClick={() => setIsExportMenuOpen(prev => !prev)} className="flex items-center gap-2 bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm">
+                        <button type="button" onClick={() => setIsExportMenuOpen((prev: boolean) => !prev)} className="flex items-center gap-2 bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm">
                             <ICONS.download className="w-5 h-5" />
                             Извези
                             <ICONS.chevronDown className={`w-4 h-4 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
@@ -163,21 +163,21 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
                 </div>
             </div>
             <div className="space-y-6">
-                {material.criteria?.map((criterion, index) => (
+                {material.criteria?.map((criterion: RubricCriterion, index: number) => (
                     <div key={index}>
                         <h4 className="text-lg font-semibold text-brand-secondary mb-2">{criterion.criterion}</h4>
                         <div className="overflow-x-auto border rounded-lg">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        {criterion.levels.map((level, i) => (
+                                        {criterion.levels.map((level: RubricLevel, i: number) => (
                                             <th key={i} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{level.levelName} ({level.points} поени)</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white">
                                     <tr>
-                                        {criterion.levels.map((level, i) => (
+                                        {criterion.levels.map((level: RubricLevel, i: number) => (
                                             <td key={i} className="px-4 py-3 whitespace-normal text-sm text-gray-600 align-top border-r last:border-r-0">{level.description}</td>
                                         ))}
                                     </tr>

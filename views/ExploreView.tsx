@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
-import type { Topic, Grade, NationalStandard } from '../types';
+import type { Topic, Grade, NationalStandard, Concept } from '../types';
 import { ModalType } from '../types';
 import { useModal } from '../contexts/ModalContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -19,7 +19,7 @@ const GradeSelector: React.FC<{
   onSelect: (id: string) => void;
 }> = ({ grades, selectedGradeId, onSelect }) => (
   <div className="flex flex-col space-y-2">
-    {grades.map(grade => (
+    {grades.map((grade: Grade) => (
       <button
         key={grade.id}
         onClick={() => onSelect(grade.id)}
@@ -125,7 +125,7 @@ export const ExploreView: React.FC = () => {
     };
 
     const selectedGrade = useMemo(() => 
-        curriculum?.grades.find(g => g.id === selectedGradeId)
+        curriculum?.grades.find((g: Grade) => g.id === selectedGradeId)
     , [curriculum, selectedGradeId]);
     
     const handleShowTransversal = (standards: NationalStandard[], gradeTitle: string) => {
@@ -138,9 +138,9 @@ export const ExploreView: React.FC = () => {
         if (!lowercasedQuery) return selectedGrade.topics;
         
         // Return topics if the topic title matches OR if any of its concepts match
-        return selectedGrade.topics.filter(topic => 
+        return selectedGrade.topics.filter((topic: Topic) => 
             topic.title.toLowerCase().includes(lowercasedQuery) ||
-            topic.concepts.some(concept => 
+            topic.concepts.some((concept: Concept) => 
                 concept.title.toLowerCase().includes(lowercasedQuery) || 
                 concept.description.toLowerCase().includes(lowercasedQuery)
             )
@@ -173,10 +173,10 @@ export const ExploreView: React.FC = () => {
                         <select
                             id="grade-select-mobile"
                             value={selectedGradeId}
-                            onChange={(e) => handleGradeSelect(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleGradeSelect(e.target.value)}
                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-secondary focus:border-brand-secondary"
                         >
-                            {curriculum.grades.map(grade => (
+                            {curriculum.grades.map((grade: Grade) => (
                                 <option key={grade.id} value={grade.id}>{grade.title}</option>
                             ))}
                         </select>
@@ -205,7 +205,7 @@ export const ExploreView: React.FC = () => {
                         <input
                             type="text"
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                             placeholder="Пребарај теми или поими..."
                             className="w-full max-w-md pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                         />
@@ -213,7 +213,7 @@ export const ExploreView: React.FC = () => {
                 </header>
 
                 <div data-tour="explore-topics-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in-up">
-                    {filteredTopics.map(topic => (
+                    {filteredTopics.map((topic: Topic) => (
                         <TopicCard key={topic.id} topic={topic} onSelect={() => navigate(`/topic/${topic.id}`)} />
                     ))}
                 </div>

@@ -16,6 +16,7 @@ interface SilentErrorBoundaryState {
  * Use for non-critical UI sections like Sidebar, FAB, AI panels.
  */
 export class SilentErrorBoundary extends Component<SilentErrorBoundaryProps, SilentErrorBoundaryState> {
+  declare props: Readonly<SilentErrorBoundaryProps>;
   public state: SilentErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(): Partial<SilentErrorBoundaryState> {

@@ -288,7 +288,7 @@ const SAFETY_SETTINGS = [
 
 
 // Helper to safely parse JSON responses from the model with INTELLIGENT RETRY logic and Zod Validation
-async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = "gemini-2.5-flash", zodSchema?: z.ZodType<T>, retries = 3, useThinking = false): Promise<T> {
+async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = "gemini-2.5-flash", zodSchema?: z.ZodTypeAny, retries = 3, useThinking = false): Promise<T> {
   try {
     console.log(`Generating content with model: ${model}... (Retries left: ${retries})`);
     
@@ -337,7 +337,7 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
             console.error("Zod Validation Failed:", validation.error);
             throw new Error(`Data validation failed: ${validation.error.message}`);
         }
-        return validation.data;
+        return validation.data as T;
     }
 
     return parsedJson as T;

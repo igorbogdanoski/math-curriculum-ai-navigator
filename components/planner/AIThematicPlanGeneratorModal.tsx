@@ -4,7 +4,7 @@ import { useCurriculum } from '../../hooks/useCurriculum';
 import { useNotification } from '../../contexts/NotificationContext';
 import { geminiService } from '../../services/geminiService';
 import { ICONS } from '../../constants';
-import type { AIGeneratedThematicPlan } from '../../types';
+import type { AIGeneratedThematicPlan, Grade, Topic, ThematicPlanLesson } from '../../types';
 
 export const AIThematicPlanGeneratorModal: React.FC = () => {
     const { hideModal } = useModal();
@@ -28,12 +28,12 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
 
     const topicsForGrade = useMemo(() => {
         if (!selectedGradeId || !curriculum) return [];
-        return curriculum.grades.find(g => g.id === selectedGradeId)?.topics || [];
+        return curriculum.grades.find((g: Grade) => g.id === selectedGradeId)?.topics || [];
     }, [curriculum, selectedGradeId]);
 
     const handleGradeChange = (gradeId: string) => {
         setSelectedGradeId(gradeId);
-        const firstTopicId = curriculum?.grades.find(g => g.id === gradeId)?.topics[0]?.id || '';
+        const firstTopicId = curriculum?.grades.find((g: Grade) => g.id === gradeId)?.topics[0]?.id || '';
         setSelectedTopicId(firstTopicId);
     };
 
@@ -42,8 +42,8 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
         setIsLoading(true);
         setGeneratedPlan(null);
         
-        const selectedGrade = curriculum?.grades.find(g => g.id === selectedGradeId);
-        const selectedTopic = topicsForGrade.find(t => t.id === selectedTopicId);
+        const selectedGrade = curriculum?.grades.find((g: Grade) => g.id === selectedGradeId);
+        const selectedTopic = topicsForGrade.find((t: Topic) => t.id === selectedTopicId);
 
         if (!selectedGrade || !selectedTopic) {
             addNotification('Ве молиме изберете валидно одделение и тема.', 'error');
@@ -65,7 +65,7 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
     if (!curriculum) {
         return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-thematic-plan-title">
-                <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8" onClick={e => e.stopPropagation()}>
+                <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                     <p className="text-center text-gray-600">Вчитување на податоците за наставната програма...</p>
                 </div>
             </div>
@@ -98,7 +98,7 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {generatedPlan.lessons.map(lesson => (
+                                {generatedPlan.lessons.map((lesson: ThematicPlanLesson) => (
                                     <tr key={lesson.lessonNumber}>
                                         <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{lesson.lessonNumber}</td>
                                         <td className="px-4 py-2 whitespace-normal text-sm text-gray-800 font-semibold">{lesson.lessonUnit}</td>
@@ -120,14 +120,14 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
                     <p className="text-sm text-gray-600">Изберете одделение и тема, а AI асистентот ќе ви генерира предлог-план со наставни единици, цели и активности за целата тема.</p>
                     <div>
                         <label htmlFor="grade-select" className="block text-sm font-medium text-gray-700">Одделение</label>
-                        <select id="grade-select" value={selectedGradeId} onChange={e => handleGradeChange(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md">
-                            {curriculum.grades.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+                        <select id="grade-select" value={selectedGradeId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleGradeChange(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md">
+                            {curriculum.grades.map((g: Grade) => <option key={g.id} value={g.id}>{g.title}</option>)}
                         </select>
                     </div>
                     <div>
                         <label htmlFor="topic-select" className="block text-sm font-medium text-gray-700">Тематска целина</label>
-                        <select id="topic-select" value={selectedTopicId} onChange={e => setSelectedTopicId(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md" disabled={topicsForGrade.length === 0}>
-                             {topicsForGrade.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                        <select id="topic-select" value={selectedTopicId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedTopicId(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md" disabled={topicsForGrade.length === 0}>
+                             {topicsForGrade.map((t: Topic) => <option key={t.id} value={t.id}>{t.title}</option>)}
                         </select>
                     </div>
                 </div>
@@ -164,7 +164,7 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-thematic-plan-title">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <div className="p-6 border-b">
                     <div className="flex justify-between items-center">
                         <h2 id="ai-thematic-plan-title" className="text-2xl font-bold text-brand-primary flex items-center gap-2">

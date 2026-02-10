@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useCallback, useContext, useMemo } from 'react';
 
-type NotificationType = 'success' | 'error' | 'info';
+type NotificationType = 'success' | 'error' | 'info' | 'warning';
 
 interface Notification {
   id: number;
@@ -26,7 +26,7 @@ export const useNotification = () => {
 const NotificationContainer: React.FC<{ notifications: Notification[]; removeNotification: (id: number) => void }> = ({ notifications, removeNotification }) => {
   return (
     <div className="fixed top-5 right-5 z-50 space-y-3">
-      {notifications.map((notification) => (
+      {notifications.map((notification: Notification) => (
         <div
           key={notification.id}
           onClick={() => removeNotification(notification.id)}
@@ -47,12 +47,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const removeNotification = useCallback((id: number) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setNotifications((prev: Notification[]) => prev.filter((n: Notification) => n.id !== id));
   }, []);
 
   const addNotification = useCallback((message: string, type: NotificationType) => {
     const id = Date.now();
-    setNotifications((prev) => [...prev, { id, message, type }]);
+    setNotifications((prev: Notification[]) => [...prev, { id, message, type }]);
     setTimeout(() => {
       removeNotification(id);
     }, 5000);

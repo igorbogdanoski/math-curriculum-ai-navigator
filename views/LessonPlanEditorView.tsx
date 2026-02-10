@@ -3,7 +3,7 @@ import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import type { LessonPlan, AIPedagogicalAnalysis, GenerationContext } from '../types';
+import type { LessonPlan, AIPedagogicalAnalysis, GenerationContext, Grade, Topic, Concept } from '../types';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
@@ -78,7 +78,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         navigate('/my-lessons');
       }
     } else {
-        setPlan(currentPlan => {
+        setPlan((currentPlan: Partial<LessonPlan>) => {
             if (currentPlan.topicId === '' && curriculum && curriculum.grades.length > 0) {
                 const defaultGrade = curriculum.grades[0];
                 const defaultTopic = defaultGrade?.topics[0];
@@ -114,7 +114,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         const generatedData = await geminiService.generateDetailedLessonPlan(context, user ?? undefined);
         
         if (isMounted.current) {
-            setPlan(prev => {
+            setPlan((prev: Partial<LessonPlan>) => {
                 const basePlan = { ...prev, ...generatedData };
                 // Preserve key context fields depending on generation source
                 if (context.type === 'CONCEPT' || context.type === 'ACTIVITY') {
@@ -125,9 +125,9 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                 } else if (context.type === 'STANDARD') {
                     if (context.standard?.gradeLevel) {
                         basePlan.grade = context.standard.gradeLevel;
-                        const gradeData = curriculum?.grades.find(g => g.level === context.standard!.gradeLevel);
+                        const gradeData = curriculum?.grades.find((g: Grade) => g.level === context.standard!.gradeLevel);
                         if (gradeData) {
-                            const relevantTopic = gradeData.topics.find(t => t.concepts.some(c => c.nationalStandardIds.includes(context.standard!.id)));
+                            const relevantTopic = gradeData.topics.find((t: Topic) => t.concepts.some((c: Concept) => c.nationalStandardIds.includes(context.standard!.id)));
                             basePlan.topicId = relevantTopic?.id || gradeData.topics[0]?.id || '';
                             basePlan.theme = relevantTopic?.title || gradeData.topics[0]?.title || '';
                         }
@@ -160,7 +160,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         const enhancedText = await geminiService.enhanceText(currentText, fieldName, plan.grade || 6, user ?? undefined);
         
         if (isMounted.current) {
-            setPlan(prev => {
+            setPlan((prev: Partial<LessonPlan>) => {
                 const newPlan = { ...prev };
                 const isArrayField = ['objectives', 'assessmentStandards', 'materials', 'progressMonitoring'].includes(fieldName);
 
@@ -335,7 +335,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
             
             <h3>Главни активности</h3>
             <ol>
-                ${(scenario?.main || []).map(m => `<li>${escapeHtml(m)}</li>`).join('')}
+                ${(scenario?.main || []).map((m: string) => `<li>${escapeHtml(m)}</li>`).join('')}
             </ol>
 
             <h3>Завршна активност</h3>
@@ -452,7 +452,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                 <div className="relative" ref={exportMenuRef}>
                     <button
                         type="button"
-                        onClick={() => setIsExportMenuOpen(prev => !prev)}
+                        onClick={() => setIsExportMenuOpen((prev: boolean) => !prev)}
                         disabled={!plan.title}
                         className="flex items-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-lg shadow hover:bg-gray-700 transition-colors font-semibold disabled:bg-gray-400"
                         title="Извези ја оваа нацрт-подготовка"

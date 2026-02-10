@@ -134,7 +134,7 @@ const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => 
 
     return (
         <>
-            {parts.map((part, index) => {
+            {parts.map((part: string, index: number) => {
                 if (!part) return null;
                 
                 let math;

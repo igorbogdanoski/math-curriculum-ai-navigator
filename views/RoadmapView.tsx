@@ -5,6 +5,7 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
+import type { Grade, Topic } from '../types';
 
 // Helper function to add working days to a date, skipping weekends
 function addWorkingDays(startDate: Date, days: number): Date {
@@ -42,7 +43,7 @@ export const RoadmapView: React.FC = () => {
     // Automatic Hours Logic based on Macedonian Education System
     useEffect(() => {
         if (curriculum && selectedGradeId) {
-            const grade = curriculum.grades.find(g => g.id === selectedGradeId);
+            const grade = curriculum.grades.find((g: Grade) => g.id === selectedGradeId);
             if (grade) {
                 // 6th Grade has 5 hours, others (7, 8, 9) have 4 hours
                 if (grade.level === 6) {
@@ -72,14 +73,14 @@ export const RoadmapView: React.FC = () => {
     }, [selectedGradeId]); // Run when grade changes
 
     const selectedGrade = useMemo(() => 
-        curriculum?.grades.find(g => g.id === selectedGradeId)
+        curriculum?.grades.find((g: Grade) => g.id === selectedGradeId)
     , [curriculum, selectedGradeId]);
 
     const topicSchedule = useMemo(() => {
         if (!selectedGrade || hoursPerWeek <= 0) return [];
         
         let currentDate = new Date(schoolYearStart);
-        return selectedGrade.topics.map(topic => {
+        return selectedGrade.topics.map((topic: Topic) => {
             const teachingWeeks = (topic.suggestedHours || 20) / hoursPerWeek;
             const teachingDays = Math.ceil(teachingWeeks * 5); // 5 working days in a week
             
@@ -145,10 +146,10 @@ export const RoadmapView: React.FC = () => {
                         <select
                             id="grade-select"
                             value={selectedGradeId}
-                            onChange={(e) => setSelectedGradeId(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedGradeId(e.target.value)}
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-secondary focus:border-brand-secondary"
                         >
-                            {curriculum.grades.map(grade => (
+                            {curriculum.grades.map((grade: Grade) => (
                                 <option key={grade.id} value={grade.id}>{grade.title}</option>
                             ))}
                         </select>
@@ -159,7 +160,7 @@ export const RoadmapView: React.FC = () => {
                             type="number"
                             id="hours-week"
                             value={hoursPerWeek}
-                            onChange={(e) => setHoursPerWeek(Math.max(1, Number(e.target.value)))}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHoursPerWeek(Math.max(1, Number(e.target.value)))}
                             min="1"
                             max="10"
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-secondary focus:border-brand-secondary bg-gray-50"
@@ -203,7 +204,7 @@ export const RoadmapView: React.FC = () => {
                         
                         {/* Topic rows */}
                         <div className="space-y-4 pb-4">
-                            {topicSchedule.map(({ topic, startDate, endDate }, index) => (
+                            {topicSchedule.map(({ topic, startDate, endDate }, index: number) => (
                                 <div 
                                     key={topic.id}
                                     className="relative h-12 flex items-center group"

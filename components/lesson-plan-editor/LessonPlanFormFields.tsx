@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
-import type { LessonPlan } from '../../types';
+import type { LessonPlan, Grade, Topic, Concept } from '../../types';
 import { ICONS } from '../../constants';
 
 interface LessonPlanFormFieldsProps {
@@ -53,11 +53,11 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
     const [newMaterial, setNewMaterial] = useState('');
 
     const topicsForGrade = useMemo(() => {
-        return curriculum?.grades.find(g => g.level === Number(plan.grade))?.topics || [];
+        return curriculum?.grades.find((g: Grade) => g.level === Number(plan.grade))?.topics || [];
     }, [curriculum, plan.grade]);
 
     const conceptsForTopic = useMemo(() => {
-        return topicsForGrade.find(t => t.id === plan.topicId)?.concepts || [];
+        return topicsForGrade.find((t: Topic) => t.id === plan.topicId)?.concepts || [];
     }, [topicsForGrade, plan.topicId]);
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -65,23 +65,23 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
         
         if (name === 'grade') {
             const newGradeLevel = Number(value);
-            const newGradeData = curriculum?.grades.find(g => g.level === newGradeLevel);
+            const newGradeData = curriculum?.grades.find((g: Grade) => g.level === newGradeLevel);
             const newTopic = newGradeData?.topics[0];
-            setPlan(prev => ({ ...prev, grade: newGradeLevel, topicId: newTopic?.id || '', theme: newTopic?.title || '', conceptIds: [] }));
+            setPlan((prev: Partial<LessonPlan>) => ({ ...prev, grade: newGradeLevel, topicId: newTopic?.id || '', theme: newTopic?.title || '', conceptIds: [] }));
         } else if (name === 'topicId') {
-            const newTopic = topicsForGrade.find(t => t.id === value);
-            setPlan(prev => ({ ...prev, topicId: value, theme: newTopic?.title || '', conceptIds: [] }));
+            const newTopic = topicsForGrade.find((t: Topic) => t.id === value);
+            setPlan((prev: Partial<LessonPlan>) => ({ ...prev, topicId: value, theme: newTopic?.title || '', conceptIds: [] }));
         }
         else {
             const isNumeric = ['lessonNumber'].includes(name);
             const finalValue = isNumeric ? (value === '' ? undefined : Number(value)) : value;
-            setPlan(prev => ({ ...prev, [name]: finalValue as any }));
+            setPlan((prev: Partial<LessonPlan>) => ({ ...prev, [name]: finalValue as any }));
         }
     };
     
     const handleScenarioChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setPlan(prev => ({
+        setPlan((prev: Partial<LessonPlan>) => ({
           ...prev,
           scenario: {
             ...(prev.scenario || { introductory: '', main: [], concluding: '' }),
@@ -92,19 +92,19 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
     
     const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const options = Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value);
-        setPlan(prev => ({ ...prev, conceptIds: options }));
+        setPlan((prev: Partial<LessonPlan>) => ({ ...prev, conceptIds: options }));
     };
 
     const handleMaterialChange = (index: number, value: string) => {
         const newMaterials = [...(plan.materials || [])];
         newMaterials[index] = value;
-        setPlan(p => ({...p, materials: newMaterials}));
+        setPlan((p: Partial<LessonPlan>) => ({...p, materials: newMaterials}));
     };
     
     const handleMaterialAdd = () => {
         if (newMaterial.trim()) {
             const newMaterials = [...(plan.materials || []), newMaterial.trim()];
-            setPlan(p => ({...p, materials: newMaterials}));
+            setPlan((p: Partial<LessonPlan>) => ({...p, materials: newMaterials}));
             setNewMaterial('');
         }
     };
@@ -112,7 +112,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
     const handleMaterialDelete = (index: number) => {
         const newMaterials = [...(plan.materials || [])];
         newMaterials.splice(index, 1);
-        setPlan(p => ({...p, materials: newMaterials}));
+        setPlan((p: Partial<LessonPlan>) => ({...p, materials: newMaterials}));
     };
     
     const handleMaterialKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -131,20 +131,20 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                 <div>
                   <label htmlFor="grade" className="block text-sm font-medium text-gray-700">Одделение</label>
                   <select id="grade" name="grade" value={plan.grade || ''} onChange={handleChange} className="mt-1 block w-full p-2 border-gray-300 rounded-md transition-shadow focus:ring-brand-secondary focus:border-brand-secondary">
-                    {curriculum.grades.map(g => <option key={g.id} value={g.level}>{g.title}</option>)}
+                    {curriculum.grades.map((g: Grade) => <option key={g.id} value={g.level}>{g.title}</option>)}
                   </select>
                 </div>
                 <div className="sm:col-span-2">
                   <label htmlFor="topicId" className="block text-sm font-medium text-gray-700">Тема</label>
                   <select id="topicId" name="topicId" value={plan.topicId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border-gray-300 rounded-md transition-shadow focus:ring-brand-secondary focus:border-brand-secondary" disabled={topicsForGrade.length === 0}>
                     <option value="">-- Избери тема --</option>
-                    {topicsForGrade.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                    {topicsForGrade.map((t: Topic) => <option key={t.id} value={t.id}>{t.title}</option>)}
                   </select>
                 </div>
                  <div className="sm:col-span-1">
                   <label htmlFor="conceptIds" className="block text-sm font-medium text-gray-700">Поими (Ctrl/Cmd)</label>
                   <select id="conceptIds" name="conceptIds" multiple value={plan.conceptIds || []} onChange={handleMultiSelectChange} className="mt-1 block w-full p-2 border-gray-300 rounded-md h-24 transition-shadow focus:ring-brand-secondary focus:border-brand-secondary" disabled={conceptsForTopic.length === 0}>
-                    {conceptsForTopic.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                    {conceptsForTopic.map((c: Concept) => <option key={c.id} value={c.id}>{c.title}</option>)}
                   </select>
                   <p className="text-xs text-gray-500 mt-1 hidden md:block">Држете Ctrl (или Cmd) за повеќе поими.</p>
                 </div>
@@ -176,9 +176,9 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     id="tags" 
                     name="tags" 
                     value={(plan.tags || []).join(', ')} 
-                    onChange={e => {
-                        const tags = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
-                        setPlan(p => ({...p, tags}));
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        const tags = e.target.value.split(',').map((tag: string) => tag.trim()).filter(Boolean);
+                        setPlan((p: Partial<LessonPlan>) => ({...p, tags}));
                     }}
                     className="mt-1 block w-full p-2 border-gray-300 rounded-md transition-shadow focus:ring-brand-secondary focus:border-brand-secondary" 
                     placeholder="пр. проектна-настава, квиз, воведен-час"
@@ -191,7 +191,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     fieldName="objectives"
                     label="Наставни цели"
                     value={arrayToString(plan.objectives || [])}
-                    onChange={e => setPlan(p => ({...p, objectives: stringToArray(e.target.value)}))}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPlan((p: Partial<LessonPlan>) => ({...p, objectives: stringToArray(e.target.value)}))}
                     onEnhance={onEnhanceField}
                     isEnhancing={enhancingField === 'objectives'}
                     rows={5}
@@ -202,7 +202,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     fieldName="assessmentStandards"
                     label="Стандарди за оценување"
                     value={arrayToString(plan.assessmentStandards || [])}
-                    onChange={e => setPlan(p => ({...p, assessmentStandards: stringToArray(e.target.value)}))}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPlan((p: Partial<LessonPlan>) => ({...p, assessmentStandards: stringToArray(e.target.value)}))}
                     onEnhance={onEnhanceField}
                     isEnhancing={enhancingField === 'assessmentStandards'}
                     rows={5}
@@ -255,13 +255,13 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     <label className="block text-sm font-medium text-gray-700">Потребни материјали (Средства)</label>
                     <div className="relative mt-1">
                         <div className="p-2 border border-gray-300 rounded-md bg-white space-y-2 min-h-[108px]">
-                            {(plan.materials || []).map((material, index) => (
+                            {(plan.materials || []).map((material: string, index: number) => (
                                 <div key={index} className="flex items-center gap-2 group animate-fade-in">
                                     <span className="text-gray-500">&bull;</span>
                                     <input 
                                         type="text"
                                         value={material}
-                                        onChange={(e) => handleMaterialChange(index, e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleMaterialChange(index, e.target.value)}
                                         className="flex-1 p-1 border-b focus:outline-none focus:border-brand-primary transition-colors"
                                     />
                                     <button type="button" onClick={() => handleMaterialDelete(index)} title="Избриши ставка" className="opacity-60 hover:opacity-100">
@@ -275,7 +275,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                             <input 
                                 type="text" 
                                 value={newMaterial} 
-                                onChange={(e) => setNewMaterial(e.target.value)} 
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMaterial(e.target.value)} 
                                 onKeyDown={handleMaterialKeyDown} 
                                 placeholder="Додади нов материјал..."
                                 className="flex-1 p-2 border border-gray-300 rounded-md transition-shadow focus:ring-brand-secondary focus:border-brand-secondary"
@@ -305,7 +305,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     fieldName="progressMonitoring"
                     label="Следење на напредокот"
                     value={arrayToString(plan.progressMonitoring || [])}
-                    onChange={e => setPlan(p => ({...p, progressMonitoring: stringToArray(e.target.value)}))}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPlan((p: Partial<LessonPlan>) => ({...p, progressMonitoring: stringToArray(e.target.value)}))}
                     onEnhance={onEnhanceField}
                     isEnhancing={enhancingField === 'progressMonitoring'}
                     rows={3}

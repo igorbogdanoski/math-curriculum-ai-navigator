@@ -65,7 +65,7 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({ questions, tit
                 break;
             case ' ':
                 e.preventDefault();
-                setIsFlipped(f => !f);
+                setIsFlipped((f: boolean) => !f);
                 break;
         }
     };
@@ -75,7 +75,7 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({ questions, tit
   
   
   const progress = useMemo(() => {
-      const counts = cardStatuses.reduce((acc, status) => {
+      const counts = cardStatuses.reduce((acc: Record<CardStatus, number>, status: CardStatus) => {
           acc[status] = (acc[status] || 0) + 1;
           return acc;
       }, {} as Record<CardStatus, number>);
@@ -87,7 +87,7 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({ questions, tit
   }, [cardStatuses]);
 
   const handleRetryIncorrect = () => {
-    const incorrectQuestions = sessionQuestions.filter((_, i) => cardStatuses[i] === 'incorrect');
+    const incorrectQuestions = sessionQuestions.filter((_: AssessmentQuestion, i: number) => cardStatuses[i] === 'incorrect');
     if (incorrectQuestions.length === 0) return;
     setSessionQuestions(incorrectQuestions);
     setCurrentIndex(0);
@@ -107,7 +107,7 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({ questions, tit
   if (isFinished) {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in no-print" onClick={onClose} role="dialog">
-            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full text-center p-8" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full text-center p-8" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <ICONS.check className="w-16 h-16 mx-auto bg-green-100 text-green-600 rounded-full p-2 mb-4" />
                 <h2 className="text-2xl font-bold text-brand-primary">Сесијата е завршена!</h2>
                 <p className="text-lg text-gray-600 mt-2">Вашиот резултат:</p>
@@ -133,7 +133,7 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({ questions, tit
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in printable-root" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="flashcard-title">
-        <div className="bg-gray-100 rounded-lg shadow-xl max-w-2xl w-full flex flex-col h-[90vh] max-h-[700px] no-print" onClick={e => e.stopPropagation()}>
+        <div className="bg-gray-100 rounded-lg shadow-xl max-w-2xl w-full flex flex-col h-[90vh] max-h-[700px] no-print" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
             <div className="p-4 border-b flex justify-between items-center bg-white rounded-t-lg flex-shrink-0">
                 <h2 id="flashcard-title" className="text-xl font-bold text-brand-primary">Флеш-картички</h2>
                 <div className="flex items-center gap-2">
@@ -168,10 +168,10 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({ questions, tit
                                 <div className="text-2xl md:text-3xl font-medium"><MathRenderer text={currentQuestion.answer} /></div>
                             </div>
                             <div className="w-full flex justify-around items-center pt-4 mt-auto border-t">
-                                <button onClick={(e) => { e.stopPropagation(); handleSetStatus('incorrect'); }} className="flex items-center gap-2 text-red-600 font-semibold hover:bg-red-50 p-2 rounded-lg">
+                                <button onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); handleSetStatus('incorrect'); }} className="flex items-center gap-2 text-red-600 font-semibold hover:bg-red-50 p-2 rounded-lg">
                                     <ICONS.close className="w-6 h-6"/> Треба да повторам
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); handleSetStatus('correct'); }} className="flex items-center gap-2 text-green-600 font-semibold hover:bg-green-50 p-2 rounded-lg">
+                                <button onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); handleSetStatus('correct'); }} className="flex items-center gap-2 text-green-600 font-semibold hover:bg-green-50 p-2 rounded-lg">
                                     <ICONS.check className="w-6 h-6"/> Знаев
                                 </button>
                             </div>
@@ -209,7 +209,7 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({ questions, tit
             <h1 className="text-2xl font-bold mb-4">{title}</h1>
             <h2 className="text-lg font-semibold mb-6">Флеш-картички</h2>
             <div className="space-y-4">
-                {sessionQuestions.map((q, index) => (
+                {sessionQuestions.map((q: AssessmentQuestion, index: number) => (
                     <div key={index} className="printable-flashcard">
                         <p className="font-semibold">Прашање {index + 1}:</p>
                         <div className="pl-2 mb-2"><MathRenderer text={q.question} /></div>

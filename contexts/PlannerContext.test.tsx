@@ -14,7 +14,7 @@ vi.mock('../firebaseConfig', () => ({
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = await importOriginal() as Record<string, unknown>;
     return {
         ...actual,
         collection: vi.fn(),

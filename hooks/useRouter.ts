@@ -19,7 +19,7 @@ export function useRouter(routes: { path: string; component: React.FC<any> }[]) 
     window.location.hash = to;
   }, []);
 
-  const { component: Component, params } = React.useMemo(() => routes.reduce(
+  const { component: Component, params } = React.useMemo(() => routes.reduce<{ component: React.FC<any> | null; params: Record<string, string | undefined> }>(
     (acc, route) => {
       const routeParts = route.path.split('/');
       const pathParts = rawPath.split('?')[0].split('/');

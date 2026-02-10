@@ -112,7 +112,7 @@ describe('useCurriculum hook', () => {
         const allConcepts = result.current.allConcepts;
         expect(allConcepts.length).toBeGreaterThan(0);
         
-        const firstConcept = allConcepts.find(c => c.id === 'g6-concept-sets');
+        const firstConcept = allConcepts.find((c: any) => c.id === 'g6-concept-sets');
         expect(firstConcept).toBeDefined();
         expect(firstConcept?.gradeLevel).toBe(6);
         expect(firstConcept?.topicId).toBe('g6-topic-numbers');

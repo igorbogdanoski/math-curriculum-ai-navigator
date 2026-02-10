@@ -75,7 +75,7 @@ export const AssistantView: React.FC = () => {
             const contextTypeLabel = lastVisited.type === 'concept' ? 'поимот' : 'подготовката';
             const suggestedPrompt = `Забележав дека работевте на ${contextTypeLabel} "**${lastVisited.label}**". Дали ви треба помош или идеи поврзани со тоа?`;
             
-            setHistory(prev => {
+            setHistory((prev: ChatMessage[]) => {
                 // Update the greeting to be contextual
                 const newHistory = [...prev];
                 newHistory[0] = { 
@@ -132,7 +132,7 @@ export const AssistantView: React.FC = () => {
         // Prepare attachment payload for the API
         const attachmentPayload = attachment ? { base64: attachment.base64, mimeType: attachment.mimeType } : undefined;
 
-        setHistory(prev => [...prev, newUserMessage]);
+        setHistory((prev: ChatMessage[]) => [...prev, newUserMessage]);
         setInput('');
         
         // Clear attachment state but do NOT revoke URL yet as it's used in the history display
@@ -141,7 +141,7 @@ export const AssistantView: React.FC = () => {
         setIsLoading(true);
 
         const placeholderMessage: ChatMessage = { role: 'model', text: '' };
-        setHistory(prev => [...prev, placeholderMessage]);
+        setHistory((prev: ChatMessage[]) => [...prev, placeholderMessage]);
 
         try {
             // Pass the visual history plus the user profile AND the attachment
@@ -152,7 +152,7 @@ export const AssistantView: React.FC = () => {
             );
             
             for await (const chunk of stream) {
-                setHistory(prev => {
+                setHistory((prev: ChatMessage[]) => {
                     const newHistory = [...prev];
                     const lastMessageIndex = newHistory.length - 1;
             
@@ -167,7 +167,7 @@ export const AssistantView: React.FC = () => {
             }
         } catch (error) {
             const errorMessage: ChatMessage = { role: 'model', text: (error as Error).message };
-            setHistory(prev => [...prev.slice(0, -1), errorMessage]);
+            setHistory((prev: ChatMessage[]) => [...prev.slice(0, -1), errorMessage]);
         } finally {
             setIsLoading(false);
         }
@@ -190,7 +190,7 @@ export const AssistantView: React.FC = () => {
 
             <Card className="flex-1 flex flex-col relative overflow-hidden shadow-lg border-brand-secondary/10">
                 <div className="flex-1 overflow-y-auto p-4 pb-20 scroll-smooth">
-                    {history.map((msg, i) => <Message key={i} message={msg} />)}
+                    {history.map((msg: ChatMessage, i: number) => <Message key={i} message={msg} />)}
                     {isLoading && history[history.length-1].text === '' && (
                         <div className="flex items-start gap-3 my-4">
                              <div className="p-2 rounded-full bg-brand-secondary">
@@ -250,8 +250,8 @@ export const AssistantView: React.FC = () => {
                         <input
                             type="text"
                             value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+                            onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSend()}
                             placeholder={isOnline ? "Поставете прашање или прикачете материјал..." : "Офлајн режим. Четувањето е оневозможено."}
                             className="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-secondary focus:border-brand-secondary disabled:bg-gray-100 disabled:cursor-not-allowed shadow-sm"
                             disabled={isLoading || !isOnline}

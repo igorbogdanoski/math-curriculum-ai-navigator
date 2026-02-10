@@ -7,6 +7,8 @@ import { FlashcardViewer } from './FlashcardViewer';
 import { QuizViewer } from './QuizViewer';
 import { useNotification } from '../../contexts/NotificationContext';
 
+type DifferentiatedVersion = { profileName: string; questions: AssessmentQuestion[] };
+
 interface GeneratedAssessmentProps {
   material: AIGeneratedAssessment;
 }
@@ -51,7 +53,7 @@ const QuestionList: React.FC<{
                                 {isEditing ? (
                                     <textarea 
                                         value={q.question}
-                                        onChange={(e) => handleQuestionFieldChange(index, 'question', e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleQuestionFieldChange(index, 'question', e.target.value)}
                                         className="w-full p-2 border rounded-md"
                                         rows={2}
                                     />
@@ -70,7 +72,7 @@ const QuestionList: React.FC<{
                                                 <input
                                                     type="text"
                                                     value={opt}
-                                                    onChange={(e) => handleOptionChange(index, i, e.target.value)}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOptionChange(index, i, e.target.value)}
                                                     className="w-full text-sm p-1 border-b"
                                                 />
                                             ) : (
@@ -89,7 +91,7 @@ const QuestionList: React.FC<{
                                     <input 
                                         type="text"
                                         value={q.answer}
-                                        onChange={(e) => handleQuestionFieldChange(index, 'answer', e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuestionFieldChange(index, 'answer', e.target.value)}
                                         className="w-full text-sm p-1 border-b"
                                     />
                                 ) : (
@@ -102,7 +104,7 @@ const QuestionList: React.FC<{
                                     <span className="font-semibold text-sm">Решение чекор-по-чекор:</span>
                                     <textarea 
                                         value={q.solution || ''}
-                                        onChange={(e) => handleQuestionFieldChange(index, 'solution', e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleQuestionFieldChange(index, 'solution', e.target.value)}
                                         className="w-full p-2 border rounded-md text-sm mt-1"
                                         rows={3}
                                         placeholder="Внесете детално решение..."
@@ -163,17 +165,17 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
     }, []);
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEditableMaterial(prev => ({ ...prev, title: e.target.value }));
+        setEditableMaterial((prev: AIGeneratedAssessment) => ({ ...prev, title: e.target.value }));
     };
     
     const handleQuestionFieldChangeForVersion = (versionName: string, qIndex: number, field: keyof AssessmentQuestion, value: string) => {
-        setEditableMaterial(prev => {
+        setEditableMaterial((prev: AIGeneratedAssessment) => {
             if (versionName === 'standard') {
                 const newQuestions = [...prev.questions];
                 newQuestions[qIndex] = { ...newQuestions[qIndex], [field]: value };
                 return { ...prev, questions: newQuestions };
             }
-            const newVersions = prev.differentiatedVersions?.map(v => {
+            const newVersions = prev.differentiatedVersions?.map((v: DifferentiatedVersion) => {
                 if (v.profileName === versionName) {
                     const newQuestions = [...v.questions];
                     newQuestions[qIndex] = { ...newQuestions[qIndex], [field]: value };
@@ -186,7 +188,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
     };
 
     const handleOptionChangeForVersion = (versionName: string, qIndex: number, optIndex: number, value: string) => {
-        setEditableMaterial(prev => {
+        setEditableMaterial((prev: AIGeneratedAssessment) => {
             const updateOptions = (questions: AssessmentQuestion[]) => {
                 const newQuestions = [...questions];
                 const oldQuestion = newQuestions[qIndex];
@@ -200,7 +202,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 return { ...prev, questions: updateOptions(prev.questions) };
             }
             
-            const newVersions = prev.differentiatedVersions?.map(v => 
+            const newVersions = prev.differentiatedVersions?.map((v: DifferentiatedVersion) => 
                 v.profileName === versionName ? { ...v, questions: updateOptions(v.questions) } : v
             ) || [];
 
@@ -242,7 +244,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         };
 
         content += formatVersionForText('Стандардна верзија', editableMaterial.questions, editableMaterial.selfAssessmentQuestions);
-        editableMaterial.differentiatedVersions?.forEach(v => {
+        editableMaterial.differentiatedVersions?.forEach((v: DifferentiatedVersion) => {
             content += '\n---\n';
             content += formatVersionForText(`Верзија за ${v.profileName}`, v.questions);
         });
@@ -328,7 +330,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
     const hasDifferentiatedVersions = editableMaterial.differentiatedVersions && editableMaterial.differentiatedVersions.length > 0;
     const currentQuestions = activeTab === 'standard' 
         ? editableMaterial.questions 
-        : editableMaterial.differentiatedVersions?.find(v => v.profileName === activeTab)?.questions || [];
+        : editableMaterial.differentiatedVersions?.find((v: DifferentiatedVersion) => v.profileName === activeTab)?.questions || [];
 
     const selfAssessmentSection = (questions?: string[]) => {
         if (!questions || questions.length === 0) return null;
@@ -380,7 +382,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                         </>
                     ) : (
                          <div className="relative" ref={actionsMenuRef}>
-                            <button type="button" onClick={() => setIsActionsMenuOpen(prev => !prev)} className="flex items-center gap-2 bg-brand-primary text-white px-3 py-2 rounded-lg shadow hover:bg-brand-secondary">
+                            <button type="button" onClick={() => setIsActionsMenuOpen((prev: boolean) => !prev)} className="flex items-center gap-2 bg-brand-primary text-white px-3 py-2 rounded-lg shadow hover:bg-brand-secondary">
                                 <ICONS.menu className="w-5 h-5" />
                                 Акции
                                 <ICONS.chevronDown className={`w-4 h-4 transition-transform ${isActionsMenuOpen ? 'rotate-180' : ''}`} />
@@ -435,7 +437,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 <div className="border-b border-gray-200 mb-4 no-print">
                     <nav className="-mb-px flex space-x-4" aria-label="Tabs">
                         <button onClick={() => setActiveTab('standard')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'standard' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Стандардна верзија</button>
-                        {editableMaterial.differentiatedVersions?.map(v => (
+                        {editableMaterial.differentiatedVersions?.map((v: DifferentiatedVersion) => (
                             <button key={v.profileName} onClick={() => setActiveTab(v.profileName)} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === v.profileName ? 'border-brand-primary text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>За {v.profileName}</button>
                         ))}
                     </nav>
@@ -446,8 +448,8 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 <QuestionList
                     questions={currentQuestions}
                     isEditing={isEditing}
-                    handleQuestionFieldChange={(qIndex, field, value) => handleQuestionFieldChangeForVersion(activeTab, qIndex, field, value)}
-                    handleOptionChange={(qIndex, optIndex, value) => handleOptionChangeForVersion(activeTab, qIndex, optIndex, value)}
+                    handleQuestionFieldChange={(qIndex: number, field: keyof AssessmentQuestion, value: string) => handleQuestionFieldChangeForVersion(activeTab, qIndex, field, value)}
+                    handleOptionChange={(qIndex: number, optIndex: number, value: string) => handleOptionChangeForVersion(activeTab, qIndex, optIndex, value)}
                 />
                 {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
             </div>
@@ -460,7 +462,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                         <h4 className="text-lg font-semibold mt-4">Стандардна верзија</h4>
                         <QuestionList questions={editableMaterial.questions} isEditing={false} handleQuestionFieldChange={()=>{}} handleOptionChange={()=>{}} />
                         {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
-                        {editableMaterial.differentiatedVersions?.map(v => (
+                        {editableMaterial.differentiatedVersions?.map((v: DifferentiatedVersion) => (
                             <div key={v.profileName} className="mt-6 pt-6 border-t" style={{pageBreakBefore: 'always'}}>
                                 <h4 className="text-lg font-semibold">Верзија за: {v.profileName}</h4>
                                 <QuestionList questions={v.questions} isEditing={false} handleQuestionFieldChange={()=>{}} handleOptionChange={()=>{}} />

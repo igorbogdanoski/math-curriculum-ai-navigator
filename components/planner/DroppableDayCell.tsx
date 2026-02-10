@@ -4,7 +4,7 @@ import { ICONS } from '../../constants';
 
 interface DroppableDayCellProps {
   dateStr: string;
-  children: React.ReactNode;
+  children: [React.ReactNode, React.ReactNode];
   onAdd: () => void;
 }
 

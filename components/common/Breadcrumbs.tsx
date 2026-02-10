@@ -20,7 +20,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ crumbs }) => {
   return (
     <nav aria-label="breadcrumb" className="px-8 pt-6 pb-2 no-print">
       <ol className="flex items-center space-x-2 text-sm text-gray-500">
-        {crumbs.map((crumb, index) => {
+        {crumbs.map((crumb: Breadcrumb, index: number) => {
           const isLast = index === crumbs.length - 1;
           return (
             <li key={crumb.path} className="flex items-center">
@@ -34,7 +34,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ crumbs }) => {
               ) : (
                 <a
                   href={`#${crumb.path}`}
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                     e.preventDefault();
                     navigate(crumb.path);
                   }}

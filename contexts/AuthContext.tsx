@@ -209,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
         await setDoc(doc(db, "users", authState.firebaseUser.uid), profileData, { merge: true });
         // Update local state immediately for better UX
-        setAuthState(prev => ({ ...prev, profile: profileData }));
+        setAuthState((prev: typeof authState) => ({ ...prev, profile: profileData }));
     } catch (error) {
         console.error("Error updating user profile in Firestore:", error);
         // Re-throw a user-friendly error to be caught by the UI component

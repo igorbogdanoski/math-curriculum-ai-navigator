@@ -4,8 +4,8 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
-import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType } from '../types';
-import { ModalType } from '../types';
+import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType } from '../types';
+import { ModalType, PlannerItemType } from '../types';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { AILoadingIndicator } from '../components/common/AILoadingIndicator';
 import { useAuth } from '../contexts/AuthContext';
@@ -40,7 +40,7 @@ const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICO
     { id: 'ILLUSTRATION', label: 'Илустрација', icon: 'gallery' },
 ];
 
-export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props) => {
+export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props: Partial<GeneratorState>) => {
     const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails } = useCurriculum();
     const { user } = useAuth();
     const { addNotification } = useNotification();
@@ -56,8 +56,8 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props)
     const [isGenerating, setIsLoading] = useState(false);
     const [generatedMaterial, setGeneratedMaterial] = useState<AIGeneratedIdeas | AIGeneratedAssessment | AIGeneratedRubric | AIGeneratedIllustration | AIGeneratedLearningPaths | null>(null);
 
-    const filteredTopics = useMemo(() => curriculum?.grades.find(g => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
-    const filteredConcepts = useMemo(() => filteredTopics.find(t => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
+    const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
+    const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
 
     const tourInstance = React.useRef<any>(null);
     useEffect(() => {
@@ -114,10 +114,10 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props)
 
         let newPrompt = '';
         if (contextType === 'CONCEPT' && selectedConcepts.length > 0) {
-            const concept = filteredConcepts.find(c => c.id === selectedConcepts[0]);
+            const concept = filteredConcepts.find((c: Concept) => c.id === selectedConcepts[0]);
             newPrompt = concept ? `Визуелен приказ на ${concept.title}` : '';
         } else if (contextType === 'STANDARD' && selectedStandard) {
-            const standard = allNationalStandards?.find(s => s.id === selectedStandard);
+            const standard = allNationalStandards?.find((s: NationalStandard) => s.id === selectedStandard);
             newPrompt = standard ? `Илустрација за: ${standard.description}` : '';
         } else if (contextType === 'SCENARIO' && scenarioText) {
             newPrompt = `Илустрација за идејата: ${scenarioText}`;
@@ -153,7 +153,7 @@ ${generatedMaterial.assessmentIdea}
             await addItem({
                 title: `Белешка: ${generatedMaterial.title}`,
                 date: new Date().toISOString().split('T')[0],
-                type: 'EVENT',
+                type: PlannerItemType.EVENT,
                 description: noteContent,
             });
             addNotification('Идејата е успешно зачувана како белешка во планерот!', 'success');
@@ -192,7 +192,7 @@ ${generatedMaterial.assessmentIdea}
         }
 
         // Robust grade lookup to handle both string IDs and number levels
-        const gradeData = curriculum.grades.find(g => g.id === selectedGrade) || curriculum.grades.find(g => String(g.level) === selectedGrade);
+        const gradeData = curriculum.grades.find((g: Grade) => g.id === selectedGrade) || curriculum.grades.find((g: Grade) => String(g.level) === selectedGrade);
         
         // Only enforce grade selection if NOT using STANDARD context (standard defines grade)
         if(!gradeData && contextType !== 'STANDARD') {
@@ -208,12 +208,12 @@ ${generatedMaterial.assessmentIdea}
             case 'TOPIC':
             case 'ACTIVITY': {
                 // Re-find topic to ensure it's valid object
-                const topic = gradeData?.topics.find(t => t.id === selectedTopic);
+                const topic = gradeData?.topics.find((t: Topic) => t.id === selectedTopic);
                 if (!topic) {
                     addNotification('Ве молиме изберете валидна тема.', 'error');
                     return;
                 }
-                const concepts = allConcepts.filter(c => selectedConcepts.includes(c.id));
+                const concepts = allConcepts.filter((c: Concept) => selectedConcepts.includes(c.id));
                 if ((contextType === 'CONCEPT' || contextType === 'ACTIVITY') && concepts.length === 0) {
                     addNotification('Ве молиме изберете барем еден поим.', 'error');
                     return;
@@ -227,14 +227,14 @@ ${generatedMaterial.assessmentIdea}
                 break;
             }
             case 'STANDARD': {
-                const standard = allNationalStandards?.find(s => s.id === selectedStandard);
+                const standard = allNationalStandards?.find((s: NationalStandard) => s.id === selectedStandard);
                 if (!standard) {
                      addNotification('Ве молиме изберете стандард.', 'error');
                      return;
                 }
                 
                 // Find grade data for standard
-                const standardGradeData = curriculum.grades.find(g => g.level === standard.gradeLevel) || gradeData;
+                const standardGradeData = curriculum.grades.find((g: Grade) => g.level === standard.gradeLevel) || gradeData;
                 
                 if (!standardGradeData) {
                     addNotification('Не може да се одреди одделението за избраниот стандард.', 'error');
@@ -243,14 +243,14 @@ ${generatedMaterial.assessmentIdea}
 
                 let topicForStandard: Topic | undefined;
                 const concepts = standard.relatedConceptIds
-                    ?.map(id => {
+                    ?.map((id: string) => {
                         const details = getConceptDetails(id);
                         if (!topicForStandard && details.topic) {
                             topicForStandard = details.topic;
                         }
                         return details.concept;
                     })
-                    .filter((c): c is Concept => !!c);
+                    .filter((c: Concept | undefined): c is Concept => !!c);
 
                 if (!topicForStandard) {
                     topicForStandard = {
@@ -291,7 +291,7 @@ ${generatedMaterial.assessmentIdea}
         
         const finalContext = context;
         const imageParam = imageFile ? { base64: imageFile.base64, mimeType: imageFile.file.type } : undefined;
-        const studentProfilesToPass = (useStudentProfiles || materialType === 'LEARNING_PATH') ? user?.studentProfiles?.filter(p => selectedStudentProfileIds.includes(p.id)) : undefined;
+        const studentProfilesToPass = (useStudentProfiles || materialType === 'LEARNING_PATH') ? user?.studentProfiles?.filter((p: StudentProfile) => selectedStudentProfileIds.includes(p.id)) : undefined;
 
         setIsLoading(true);
         setGeneratedMaterial(null);
@@ -384,7 +384,7 @@ ${generatedMaterial.assessmentIdea}
     return (
         <div className="p-4 md:p-6">
             <Card>
-                <form onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
+                <form onSubmit={(e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); handleGenerate(); }}>
                     <fieldset disabled={isGenerating} className="space-y-6">
                         <fieldset data-tour="generator-step-1" className="p-4 border border-gray-200 rounded-lg">
                             <legend className="text-xl font-bold text-gray-800 px-2 -ml-2">1. Изберете тип на материјал</legend>
@@ -414,7 +414,7 @@ ${generatedMaterial.assessmentIdea}
                                 <MaterialOptions state={state} dispatch={dispatch} user={user} />
                                 <div>
                                     <label htmlFor="customInstruction" className="block text-sm font-medium text-gray-700">Дополнителни инструкции за AI (опционално)</label>
-                                    <textarea id="customInstruction" value={state.customInstruction} onChange={(e) => dispatch({ type: 'SET_FIELD', payload: { field: 'customInstruction', value: e.target.value } })} rows={2} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="На пр. 'Фокусирај се на примери од реалниот живот', 'Направи го текстот забавен', 'Прашањата да бидат потешки'..."></textarea>
+                                    <textarea id="customInstruction" value={state.customInstruction} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'customInstruction', value: e.target.value } })} rows={2} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="На пр. 'Фокусирај се на примери од реалниот живот', 'Направи го текстот забавен', 'Прашањата да бидат потешки'..."></textarea>
                                 </div>
                             </div>
                         </fieldset>

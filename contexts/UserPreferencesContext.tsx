@@ -86,7 +86,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
 
   const markTourAsSeen = useCallback((tour: string) => {
     // Optimistically update the state for immediate UI feedback
-    setToursSeen(prev => ({ ...prev, [tour]: true }));
+    setToursSeen((prev: Record<string, boolean>) => ({ ...prev, [tour]: true }));
 
     if (!firebaseUser) return;
     const userDocRef = doc(db, "users", firebaseUser.uid);
@@ -98,7 +98,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
       }
     }, { merge: true }).catch(err => {
         console.error("Failed to mark tour as seen, reverting optimistic update:", err);
-        setToursSeen(prev => {
+        setToursSeen((prev: Record<string, boolean>) => {
             const revertedState = { ...prev };
             delete revertedState[tour];
             return revertedState;

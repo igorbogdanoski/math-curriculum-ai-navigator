@@ -40,7 +40,7 @@ export const LessonPlanQuickViewModal: React.FC<LessonPlanQuickViewModalProps> =
     >
       <div
         className="bg-white rounded-lg shadow-xl max-w-2xl w-full flex flex-col"
-        onClick={e => e.stopPropagation()}
+        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
       >
         <div className="p-5 bg-brand-primary text-white rounded-t-lg">
           <div className="flex justify-between items-start">
@@ -62,7 +62,7 @@ export const LessonPlanQuickViewModal: React.FC<LessonPlanQuickViewModalProps> =
           <div>
             <h3 className="font-semibold text-brand-secondary mb-2">Наставни цели:</h3>
             <ul className="list-disc list-inside text-gray-700 text-sm space-y-1">
-              {lessonPlan.objectives.map((obj, i) => <li key={i}><MathRenderer text={obj} /></li>)}
+              {lessonPlan.objectives.map((obj: string, i: number) => <li key={i}><MathRenderer text={obj} /></li>)}
             </ul>
           </div>
           <div>
@@ -72,7 +72,7 @@ export const LessonPlanQuickViewModal: React.FC<LessonPlanQuickViewModalProps> =
               <div>
                 <strong>Главни активности:</strong>
                 <ul className="list-decimal list-inside ml-4">
-                  {lessonPlan.scenario.main.map((act, i) => <li key={i}><MathRenderer text={act} /></li>)}
+                  {lessonPlan.scenario.main.map((act: string, i: number) => <li key={i}><MathRenderer text={act} /></li>)}
                 </ul>
               </div>
               <p><strong>Завршна активност:</strong> <MathRenderer text={lessonPlan.scenario.concluding} /></p>

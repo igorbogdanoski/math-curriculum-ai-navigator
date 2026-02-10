@@ -27,7 +27,7 @@ export const TodaysFocusItems: React.FC<TodaysFocusItemsProps> = ({ items }) => 
     return (
         <div className="flex-1 overflow-y-auto pr-2">
             <ul className="space-y-3">
-                {items.map(item => {
+                {items.map((item: PlannerItem) => {
                     const Icon = item.type === PlannerItemType.LESSON ? ICONS.bookOpen : item.type === PlannerItemType.EVENT ? ICONS.lightbulb : ICONS.star;
                     const itemDate = new Date(item.date);
                     itemDate.setHours(0,0,0,0);

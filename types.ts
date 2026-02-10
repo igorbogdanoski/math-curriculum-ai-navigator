@@ -184,6 +184,8 @@ export interface AssessmentQuestion {
   answer: string;
   levelDescription?: string;
   
+  solution?: string;
+
   // For context-based generation
   cognitiveLevel: 'Remembering' | 'Understanding' | 'Applying' | 'Analyzing' | 'Evaluating' | 'Creating';
   difficulty_level?: 'Easy' | 'Medium' | 'Hard';

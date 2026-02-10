@@ -177,7 +177,7 @@ export const AIPedagogicalAnalysisDisplay: React.FC<AIPedagogicalAnalysisDisplay
                                 <ICONS.assistant className="w-6 h-6"/> AI Педагошка Анализа
                             </h3>
                             <div className="relative" ref={exportMenuRef}>
-                                <button type="button" onClick={() => setIsExportMenuOpen(prev => !prev)} className="no-print flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium">
+                                <button type="button" onClick={() => setIsExportMenuOpen((prev: boolean) => !prev)} className="no-print flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium">
                                     <ICONS.download className="w-5 h-5" /> Извези
                                     <ICONS.chevronDown className={`w-4 h-4 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
                                 </button>

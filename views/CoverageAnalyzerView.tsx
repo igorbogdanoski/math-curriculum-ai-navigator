@@ -4,7 +4,7 @@ import { ICONS } from '../constants';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { geminiService } from '../services/geminiService';
-import type { CoverageAnalysisReport, GradeCoverageAnalysis, NationalStandard } from '../types';
+import type { CoverageAnalysisReport, GradeCoverageAnalysis, NationalStandard, PartiallyCoveredStandard } from '../types';
 import { EmptyState } from '../components/common/EmptyState';
 import { useNavigation } from '../contexts/NavigationContext';
 
@@ -21,7 +21,7 @@ const GradeAnalysisCard: React.FC<{ analysis: GradeCoverageAnalysis }> = ({ anal
 
     const covered = useMemo(() => getStandardsByIds(analysis.coveredStandardIds), [analysis.coveredStandardIds, getStandardsByIds]);
     const partial = useMemo(() => analysis.partiallyCoveredStandards, [analysis.partiallyCoveredStandards]);
-    const partialStandards = useMemo(() => getStandardsByIds(partial.map(p => p.id)), [partial, getStandardsByIds]);
+    const partialStandards = useMemo(() => getStandardsByIds(partial.map((p: PartiallyCoveredStandard) => p.id)), [partial, getStandardsByIds]);
     const uncovered = useMemo(() => getStandardsByIds(analysis.uncoveredStandardIds), [analysis.uncoveredStandardIds, getStandardsByIds]);
 
     const TabButton: React.FC<{ tabId: 'covered' | 'partial' | 'uncovered'; label: string; count: number; color: string; }> = ({ tabId, label, count, color }) => (
@@ -49,12 +49,12 @@ const GradeAnalysisCard: React.FC<{ analysis: GradeCoverageAnalysis }> = ({ anal
             </div>
 
             <div className="max-h-60 overflow-y-auto">
-                {activeTab === 'covered' && covered.map(std => <StandardItem key={std.id} standard={std} />)}
-                {activeTab === 'partial' && partial.map(pStd => {
-                    const standard = partialStandards.find(s => s.id === pStd.id);
+                {activeTab === 'covered' && covered.map((std: NationalStandard) => <StandardItem key={std.id} standard={std} />)}
+                {activeTab === 'partial' && partial.map((pStd: PartiallyCoveredStandard) => {
+                    const standard = partialStandards.find((s: NationalStandard) => s.id === pStd.id);
                     return standard ? <StandardItem key={pStd.id} standard={standard} reason={pStd.reason} /> : null;
                 })}
-                {activeTab === 'uncovered' && uncovered.map(std => <StandardItem key={std.id} standard={std} />)}
+                {activeTab === 'uncovered' && uncovered.map((std: NationalStandard) => <StandardItem key={std.id} standard={std} />)}
             </div>
         </Card>
     );
@@ -132,7 +132,7 @@ export const CoverageAnalyzerView: React.FC = () => {
         if (report?.analysis && report.analysis.length > 0) {
             return (
                 <div className="space-y-6">
-                    {report.analysis.sort((a,b) => a.gradeLevel - b.gradeLevel).map(gradeAnalysis => (
+                    {report.analysis.sort((a: GradeCoverageAnalysis, b: GradeCoverageAnalysis) => a.gradeLevel - b.gradeLevel).map((gradeAnalysis: GradeCoverageAnalysis) => (
                         <GradeAnalysisCard key={gradeAnalysis.gradeLevel} analysis={gradeAnalysis} />
                     ))}
                 </div>

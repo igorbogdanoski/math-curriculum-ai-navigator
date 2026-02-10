@@ -70,7 +70,7 @@ describe('Integration Test: AI Generator Flow', () => {
 
         // 5. Click the "Generate with AI" button
         const generateButton = screen.getByRole('button', { name: /генерирај со ai/i });
-        expect(generateButton).not.toBeDisabled(); // Ensure button is enabled
+        expect((generateButton as HTMLButtonElement).disabled).toBe(false); // Ensure button is enabled
         fireEvent.click(generateButton);
 
         // 6. Verify that the loading state appears

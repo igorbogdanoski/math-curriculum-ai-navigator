@@ -13,7 +13,7 @@ export const TransversalStandardsModal: React.FC<TransversalStandardsModalProps>
     const { hideModal } = useModal();
 
     const groupedStandards = useMemo(() => {
-        return standards.reduce((acc: Record<string, NationalStandard[]>, std) => {
+        return standards.reduce((acc: Record<string, NationalStandard[]>, std: NationalStandard) => {
             const category = std.category || 'Останати';
             if (!acc[category]) {
                 acc[category] = [];
@@ -34,7 +34,7 @@ export const TransversalStandardsModal: React.FC<TransversalStandardsModalProps>
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={hideModal}>
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <div className="bg-white p-6 border-b flex-shrink-0">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
@@ -62,7 +62,7 @@ export const TransversalStandardsModal: React.FC<TransversalStandardsModalProps>
                                     <span className="text-xs font-normal text-gray-400 ml-1">({groupedStandards[category].length})</span>
                                 </h3>
                                 <div className="grid grid-cols-1 gap-2">
-                                    {groupedStandards[category].map(std => (
+                                    {groupedStandards[category].map((std: NationalStandard) => (
                                         <div key={std.id} className="group flex items-start gap-3 p-3 bg-gray-50 hover:bg-white hover:shadow-md border border-transparent hover:border-blue-100 rounded-xl transition-all">
                                             <div className="mt-1">
                                                 <ICONS.check className="w-4 h-4 text-green-500 flex-shrink-0" />

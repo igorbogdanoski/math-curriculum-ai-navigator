@@ -37,7 +37,7 @@ export const WeeklySchedule: React.FC = () => {
             const dateStr = day.toISOString().split('T')[0];
             nextSevenDays.push({
                 date: day,
-                items: items.filter(item => item.date === dateStr)
+                items: items.filter((item: PlannerItem) => item.date === dateStr)
             });
         }
         return nextSevenDays;
@@ -65,7 +65,7 @@ export const WeeklySchedule: React.FC = () => {
                 </button>
             </div>
             <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-5 custom-scrollbar">
-                {schedule.map(({ date, items }, idx) => {
+                {schedule.map(({ date, items }, idx: number) => {
                     const isToday = idx === 0;
                     const hasItems = items.length > 0;
 
@@ -81,7 +81,7 @@ export const WeeklySchedule: React.FC = () => {
                                 <div className="space-y-2 relative">
                                     {!isToday && <div className="absolute left-1.5 top-0 bottom-0 w-0.5 bg-gray-100 rounded-full"></div>}
                                     <div className={isToday ? "" : "pl-4"}>
-                                        {items.map(item => <AgendaItem key={item.id} item={item} onClick={() => handleItemClick(item)} />)}
+                                        {items.map((item: PlannerItem) => <AgendaItem key={item.id} item={item} onClick={() => handleItemClick(item)} />)}
                                     </div>
                                 </div>
                             ) : (

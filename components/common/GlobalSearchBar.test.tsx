@@ -13,12 +13,12 @@ vi.mock('../../contexts/PlannerContext');
 
 // Mock data
 const mockConcepts = [
-    { id: 'g8-concept-2d-forms-pythagoras', title: 'Питагорова теорема', description: 'Pythagorean theorem concept', gradeLevel: 8, topicId: 'g8-topic-geometry', priorKnowledgeIds: [], assessmentStandards: [], nationalStandardIds: [] },
-    { id: 'g6-concept-sets', title: 'Множества', description: 'Sets concept', gradeLevel: 6, topicId: 'g6-topic-numbers', priorKnowledgeIds: [], assessmentStandards: [], nationalStandardIds: [] },
+    { id: 'g8-concept-2d-forms-pythagoras', title: 'Питагорова теорема', description: 'Pythagorean theorem concept', gradeLevel: 8, topicId: 'g8-topic-geometry', priorKnowledgeIds: [] as string[], assessmentStandards: [] as string[], nationalStandardIds: [] as string[] },
+    { id: 'g6-concept-sets', title: 'Множества', description: 'Sets concept', gradeLevel: 6, topicId: 'g6-topic-numbers', priorKnowledgeIds: [] as string[], assessmentStandards: [] as string[], nationalStandardIds: [] as string[] },
 ];
 
 const mockTopics = [
-    { id: 'g8-topic-geometry', title: 'Геометрија', description: '', concepts: [], gradeLevel: 8 },
+    { id: 'g8-topic-geometry', title: 'Геометрија', description: '', concepts: [] as unknown[], gradeLevel: 8 },
 ];
 
 const mockLessonPlans = exampleLessonPlans;
@@ -58,7 +58,7 @@ describe('GlobalSearchBar', () => {
             getConceptDetails: vi.fn(),
             getStandardsByIds: vi.fn(),
             findConceptAcrossGrades: vi.fn(),
-        });
+        } as any);
 
         vi.mocked(usePlanner).mockReturnValue({
             lessonPlans: mockLessonPlans,
@@ -80,7 +80,7 @@ describe('GlobalSearchBar', () => {
             addCommentToCommunityPlan: vi.fn().mockResolvedValue(undefined),
             isUserPlan: vi.fn().mockReturnValue(true),
             importAnnualPlan: vi.fn().mockResolvedValue(undefined),
-        });
+        } as any);
         
         navigate.mockClear();
     });
@@ -123,7 +123,7 @@ describe('GlobalSearchBar', () => {
         const input = screen.getByPlaceholderText(/Пребарај/i);
         fireEvent.change(input, { target: { value: 'Питагорова' } });
 
-        let resultItem;
+        let resultItem: HTMLElement;
         await waitFor(() => {
             resultItem = screen.getByText('Вовед во Питагорова теорема');
             expect(resultItem).not.toBeNull();
@@ -139,7 +139,7 @@ describe('GlobalSearchBar', () => {
         const input = screen.getByPlaceholderText(/Пребарај/i) as HTMLInputElement;
         fireEvent.change(input, { target: { value: 'Питагорова' } });
 
-        let resultItem;
+        let resultItem: HTMLElement;
         await waitFor(() => {
             resultItem = screen.getByText('Вовед во Питагорова теорема');
             expect(resultItem).not.toBeNull();

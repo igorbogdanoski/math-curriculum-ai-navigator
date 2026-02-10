@@ -122,7 +122,7 @@ export const PlannerView: React.FC = () => {
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            const itemToMove = items.find(item => item.id === active.id);
+            const itemToMove = items.find((item: PlannerItem) => item.id === active.id);
             const newDate = over.id as string;
             
             if (itemToMove && itemToMove.date !== newDate) {
@@ -139,7 +139,7 @@ export const PlannerView: React.FC = () => {
     const weekDays = ['Пон', 'Вто', 'Сре', 'Чет', 'Пет', 'Саб', 'Нед'];
 
     const changePeriod = (offset: number) => {
-        setCurrentDate(prev => {
+        setCurrentDate((prev: Date) => {
             const newDate = new Date(prev);
             if (viewMode === 'month') {
                 newDate.setMonth(prev.getMonth() + offset, 1);
@@ -164,7 +164,7 @@ export const PlannerView: React.FC = () => {
     
     const handleShareAnnualPlan = useCallback(() => {
         const lessonPlanIds = new Set<string>();
-        items.forEach(item => {
+        items.forEach((item: PlannerItem) => {
             if (item.lessonPlanId) {
                 lessonPlanIds.add(item.lessonPlanId);
             }
@@ -205,8 +205,8 @@ export const PlannerView: React.FC = () => {
     
     // Calculate unscheduled plans
     // Find all plans that are NOT linked to any planner item
-    const scheduledPlanIds = new Set(items.map(i => i.lessonPlanId).filter(Boolean));
-    const unscheduledPlansCount = lessonPlans.filter(p => !scheduledPlanIds.has(p.id)).length;
+    const scheduledPlanIds = new Set(items.map((i: PlannerItem) => i.lessonPlanId).filter(Boolean));
+    const unscheduledPlansCount = lessonPlans.filter((p: LessonPlan) => !scheduledPlanIds.has(p.id)).length;
 
     const renderPeriodHeader = () => {
         if (viewMode === 'month') {
@@ -218,11 +218,11 @@ export const PlannerView: React.FC = () => {
 
     const firstItemForTourId = useMemo(() => {
         const itemsInMonth = items
-          .filter(item => {
+          .filter((item: PlannerItem) => {
             const itemDate = new Date(item.date);
             return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth();
           })
-          .sort((a, b) => new Date(a.date).getDate() - new Date(b.date).getDate());
+          .sort((a: PlannerItem, b: PlannerItem) => new Date(a.date).getDate() - new Date(b.date).getDate());
         return itemsInMonth.length > 0 ? itemsInMonth[0].id : null;
     }, [items, currentDate]);
 
@@ -235,7 +235,7 @@ export const PlannerView: React.FC = () => {
             {calendarDays.map(day => {
                 const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
                 const dateStr = dayDate.toISOString().split('T')[0];
-                const itemsForDay = items.filter(item => item.date === dateStr);
+                const itemsForDay = items.filter((item: PlannerItem) => item.date === dateStr);
                 const isToday = dayDate.getTime() === today.getTime();
                 const isPast = dayDate < today;
 
@@ -252,7 +252,7 @@ export const PlannerView: React.FC = () => {
                             </button>
                         </div>
                         <div className="space-y-1 min-h-[80px]">
-                            {itemsForDay.map((item) => {
+                            {itemsForDay.map((item: PlannerItem) => {
                                  const canReflect = item.type === PlannerItemType.LESSON && isPast;
                                  return (
                                     <div key={item.id} data-tour={item.id === firstItemForTourId ? "planner-item" : undefined}>
@@ -323,7 +323,7 @@ export const PlannerView: React.FC = () => {
                         </button>
                          <div data-tour="planner-ai-button" className="relative" ref={aiMenuRef}>
                             <button
-                                onClick={() => setIsAiMenuOpen(prev => !prev)}
+                                onClick={() => setIsAiMenuOpen((prev: boolean) => !prev)}
                                 className="flex items-center bg-purple-600 text-white px-3 py-2 rounded-lg shadow hover:bg-purple-700 transition-colors text-sm"
                             >
                                 <ICONS.sparkles className="w-5 h-5 mr-1" />

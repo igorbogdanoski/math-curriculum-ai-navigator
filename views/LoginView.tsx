@@ -22,7 +22,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ email, setEmail, password, setPas
     <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
         <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Е-пошта</label>
-            <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
+            <input type="email" id="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
         </div>
         <div>
             <div className="flex items-center justify-between">
@@ -33,7 +33,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ email, setEmail, password, setPas
                     </button>
                 </div>
             </div>
-            <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
+            <input type="password" id="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
         </div>
         {error && <p className="text-sm text-red-600 text-center bg-red-50 p-2 rounded">{error}</p>}
         <button type="submit" disabled={isLoading} className="w-full flex justify-center items-center gap-2 bg-brand-primary text-white px-4 py-2.5 rounded-lg shadow disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brand-secondary transition-all active:scale-95">
@@ -82,19 +82,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEm
         </div>
         <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">Име и презиме</label>
-            <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
+            <input type="text" id="name" value={name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
         </div>
         <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Е-пошта</label>
-            <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
+            <input type="email" id="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
         </div>
         <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">Лозинка</label>
-            <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
+            <input type="password" id="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
         </div>
         <div>
             <label htmlFor="repeatPassword" className="block text-sm font-medium text-gray-700">Повтори лозинка</label>
-            <input type="password" id="repeatPassword" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
+            <input type="password" id="repeatPassword" value={repeatPassword} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRepeatPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
         </div>
         {error && <p className="text-sm text-red-600 text-center bg-red-50 p-2 rounded">{error}</p>}
         {successMessage && <p className="text-sm text-green-600 text-center bg-green-50 p-2 rounded">{successMessage}</p>}
@@ -163,7 +163,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, setEmail, 
     <form onSubmit={handleResetSubmit} className="space-y-4 animate-fade-in">
         <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Е-пошта</label>
-            <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
+            <input type="email" id="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
         </div>
         {error && <p className="text-sm text-red-600 text-center bg-red-50 p-2 rounded">{error}</p>}
         {successMessage && <p className="text-sm text-green-600 text-center bg-green-50 p-2 rounded">{successMessage}</p>}

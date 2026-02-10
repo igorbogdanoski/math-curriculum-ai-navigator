@@ -6,6 +6,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 import { geminiService } from '../../services/geminiService';
 import { ICONS } from '../../constants';
 import { PlannerItemType, ModalType } from '../../types';
+import type { Grade } from '../../types';
 
 export const AIAnnualPlanGeneratorModal: React.FC = () => {
     const { hideModal, showModal } = useModal();
@@ -31,7 +32,7 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
         e.preventDefault();
         setIsLoading(true);
         
-        const selectedGrade = curriculum?.grades.find(g => g.id === selectedGradeId);
+        const selectedGrade = curriculum?.grades.find((g: Grade) => g.id === selectedGradeId);
         if (!selectedGrade) {
             addNotification('Ве молиме изберете одделение.', 'error');
             setIsLoading(false);
@@ -76,7 +77,7 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
     if (!curriculum) {
         return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-plan-title">
-                <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-8" onClick={e => e.stopPropagation()}>
+                <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-8" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                     <p className="text-center text-gray-600">Вчитување на податоците за наставната програма...</p>
                 </div>
             </div>
@@ -85,7 +86,7 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-plan-title">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 border-b">
                         <div className="flex justify-between items-center">
@@ -110,33 +111,33 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
                                 <p className="text-sm text-gray-600">Пополнете ги основните параметри за учебната година, а AI асистентот ќе генерира предлог распоред на темите во вашиот планер.</p>
                                 <div>
                                     <label htmlFor="grade-select" className="block text-sm font-medium text-gray-700">Одделение</label>
-                                    <select id="grade-select" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md">
-                                        {curriculum.grades.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+                                    <select id="grade-select" value={selectedGradeId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedGradeId(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md">
+                                        {curriculum.grades.map((g: Grade) => <option key={g.id} value={g.id}>{g.title}</option>)}
                                     </select>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label htmlFor="start-date" className="block text-sm font-medium text-gray-700">Почеток на учебна година</label>
-                                        <input type="date" id="start-date" value={startDate} onChange={e => setStartDate(e.target.value)} required className="mt-1 block w-full p-2 border-gray-300 rounded-md" />
+                                        <input type="date" id="start-date" value={startDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartDate(e.target.value)} required className="mt-1 block w-full p-2 border-gray-300 rounded-md" />
                                     </div>
                                     <div>
                                         <label htmlFor="end-date" className="block text-sm font-medium text-gray-700">Крај на учебна година</label>
-                                        <input type="date" id="end-date" value={endDate} onChange={e => setEndDate(e.target.value)} required className="mt-1 block w-full p-2 border-gray-300 rounded-md" />
+                                        <input type="date" id="end-date" value={endDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEndDate(e.target.value)} required className="mt-1 block w-full p-2 border-gray-300 rounded-md" />
                                     </div>
                                 </div>
                                  <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label htmlFor="winter-start" className="block text-sm font-medium text-gray-700">Почеток на зимски распуст</label>
-                                        <input type="date" id="winter-start" value={winterBreakStart} onChange={e => setWinterBreakStart(e.target.value)} required className="mt-1 block w-full p-2 border-gray-300 rounded-md" />
+                                        <input type="date" id="winter-start" value={winterBreakStart} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWinterBreakStart(e.target.value)} required className="mt-1 block w-full p-2 border-gray-300 rounded-md" />
                                     </div>
                                     <div>
                                         <label htmlFor="winter-end" className="block text-sm font-medium text-gray-700">Крај на зимски распуст</label>
-                                        <input type="date" id="winter-end" value={winterBreakEnd} onChange={e => setWinterBreakEnd(e.target.value)} required className="mt-1 block w-full p-2 border-gray-300 rounded-md" />
+                                        <input type="date" id="winter-end" value={winterBreakEnd} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWinterBreakEnd(e.target.value)} required className="mt-1 block w-full p-2 border-gray-300 rounded-md" />
                                     </div>
                                 </div>
                                 <div>
                                     <label htmlFor="holidays" className="block text-sm font-medium text-gray-700">Празници и неработни денови (одделени со запирка)</label>
-                                    <textarea id="holidays" value={holidays} onChange={e => setHolidays(e.target.value)} rows={2} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="пр. 11 Октомври, 8 Декември..."></textarea>
+                                    <textarea id="holidays" value={holidays} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setHolidays(e.target.value)} rows={2} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="пр. 11 Октомври, 8 Декември..."></textarea>
                                 </div>
                             </div>
                             <div className="flex justify-end items-center bg-gray-50 p-4 rounded-b-lg">

@@ -70,7 +70,7 @@ export const PlannerAgendaView: React.FC<PlannerAgendaViewProps> = ({ currentDat
             <div className="absolute top-0 left-8 w-0.5 h-full bg-gray-200"></div>
             {weekDays.map((day, index) => {
                 const dateStr = day.toISOString().split('T')[0];
-                const itemsForDay = items.filter(item => item.date === dateStr);
+                const itemsForDay = items.filter((item: PlannerItem) => item.date === dateStr);
                 const isCurrentDayToday = isToday(day);
 
                 return (
@@ -94,7 +94,7 @@ export const PlannerAgendaView: React.FC<PlannerAgendaViewProps> = ({ currentDat
                             
                             {itemsForDay.length > 0 ? (
                                 <div className="space-y-3">
-                                    {itemsForDay.map(item => (
+                                    {itemsForDay.map((item: PlannerItem) => (
                                         <AgendaItem key={item.id} item={item} onClick={() => onItemClick(item)} />
                                     ))}
                                 </div>

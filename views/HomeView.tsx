@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-
+import type { AIRecommendation } from '../types';
 import { RecommendationCard } from '../components/ai/RecommendationCard';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { usePersonalizedRecommendations } from '../hooks/usePersonalizedRecommendations';
@@ -200,7 +200,7 @@ export const HomeView: React.FC = () => {
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-full">
-                    {recommendations.slice(0, 3).map((rec, index) => (
+                    {recommendations.slice(0, 3).map((rec: AIRecommendation, index: number) => (
                         <RecommendationCard key={index} recommendation={rec} />
                     ))}
                 </div>

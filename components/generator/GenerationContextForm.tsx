@@ -3,7 +3,7 @@ import React, { useMemo, useEffect } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { ICONS } from '../../constants';
 import type { GeneratorState, GeneratorAction } from '../../hooks/useGeneratorState';
-import type { GenerationContextType } from '../../types';
+import type { GenerationContextType, Grade, Topic, Concept, NationalStandard } from '../../types';
 import { useNotification } from '../../contexts/NotificationContext';
 
 const contextOptions: { id: GenerationContextType | 'ACTIVITY'; label: string }[] = [
@@ -88,19 +88,19 @@ export const GenerationContextForm: React.FC<GenerationContextFormProps> = ({ st
     const { curriculum, allNationalStandards } = useCurriculum();
     const { contextType, selectedGrade, selectedTopic, selectedConcepts, selectedActivity, selectedStandard, scenarioText, imageFile, materialType } = state;
 
-    const filteredTopics = useMemo(() => curriculum?.grades.find(g => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
-    const filteredConcepts = useMemo(() => filteredTopics.find(t => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
+    const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
+    const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
 
     const activitiesForContext = useMemo(() => {
         // If specific concepts are selected, show only their activities
         if (selectedConcepts.length > 0) {
             return filteredConcepts
-                .filter(c => selectedConcepts.includes(c.id))
-                .flatMap(c => c.activities || []);
+                .filter((c: Concept) => selectedConcepts.includes(c.id))
+                .flatMap((c: Concept) => c.activities || []);
         }
         // If no concepts are selected but a topic is, show all activities for that topic
         if (selectedTopic) {
-            return filteredConcepts.flatMap(c => c.activities || []);
+            return filteredConcepts.flatMap((c: Concept) => c.activities || []);
         }
         return [];
     }, [selectedConcepts, selectedTopic, filteredConcepts]);
@@ -143,25 +143,25 @@ export const GenerationContextForm: React.FC<GenerationContextFormProps> = ({ st
             <div className="pt-6">
                 {(contextType === 'CONCEPT' || contextType === 'ACTIVITY') && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
-                        <div><label className="block text-sm font-medium text-gray-700">Одделение</label><select value={selectedGrade} onChange={(e) => dispatch({ type: 'SET_GRADE', payload: e.target.value })} className="mt-1 block w-full p-2 border-gray-300 rounded-md">{curriculum?.grades.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}</select></div>
-                        <div><label className="block text-sm font-medium text-gray-700">Тема</label><select value={selectedTopic} onChange={(e) => dispatch({ type: 'SET_TOPIC', payload: e.target.value })} className="mt-1 block w-full p-2 border-gray-300 rounded-md" disabled={!selectedGrade}><option value="">-- Избери тема --</option>{filteredTopics.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}</select></div>
-                        <div><label className="block text-sm font-medium text-gray-700">Поими (опционално)</label><select multiple value={selectedConcepts} onChange={handleConceptChange} className="mt-1 block w-full p-2 border-gray-300 rounded-md h-24" disabled={!selectedTopic}>{filteredConcepts.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}</select><p className="text-xs text-gray-500 mt-1">Држете Ctrl (или Cmd) за повеќе поими.</p></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Одделение</label><select value={selectedGrade} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_GRADE', payload: e.target.value })} className="mt-1 block w-full p-2 border-gray-300 rounded-md">{curriculum?.grades.map((g: Grade) => <option key={g.id} value={g.id}>{g.title}</option>)}</select></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Тема</label><select value={selectedTopic} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_TOPIC', payload: e.target.value })} className="mt-1 block w-full p-2 border-gray-300 rounded-md" disabled={!selectedGrade}><option value="">-- Избери тема --</option>{filteredTopics.map((t: Topic) => <option key={t.id} value={t.id}>{t.title}</option>)}</select></div>
+                        <div><label className="block text-sm font-medium text-gray-700">Поими (опционално)</label><select multiple value={selectedConcepts} onChange={handleConceptChange} className="mt-1 block w-full p-2 border-gray-300 rounded-md h-24" disabled={!selectedTopic}>{filteredConcepts.map((c: Concept) => <option key={c.id} value={c.id}>{c.title}</option>)}</select><p className="text-xs text-gray-500 mt-1">Држете Ctrl (или Cmd) за повеќе поими.</p></div>
                     </div>
                 )}
                     {contextType === 'ACTIVITY' && (
                     <div className="animate-fade-in mt-4">
                         <label className="block text-sm font-medium text-gray-700">Активност од програмата</label>
-                        <select value={selectedActivity} onChange={(e) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedActivity', value: e.target.value } })} className="mt-1 block w-full p-2 border-gray-300 rounded-md" disabled={activitiesForContext.length === 0}>
+                        <select value={selectedActivity} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedActivity', value: e.target.value } })} className="mt-1 block w-full p-2 border-gray-300 rounded-md" disabled={activitiesForContext.length === 0}>
                             {activitiesForContext.length > 0 ? (
-                                activitiesForContext.map((act, i) => <option key={i} value={act}>{act.substring(0,120)}...</option>)
+                                activitiesForContext.map((act: string, i: number) => <option key={i} value={act}>{act.substring(0,120)}...</option>)
                             ) : (
                                 <option>Прво изберете тема за да се прикажат активности.</option>
                             )}
                         </select>
                     </div>
                     )}
-                {contextType === 'STANDARD' && (<div className="animate-fade-in space-y-4"><div><label className="block text-sm font-medium text-gray-700">Национален стандард</label><select value={selectedStandard} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedStandard', value: e.target.value }})} className="mt-1 block w-full p-2 border-gray-300 rounded-md">{allNationalStandards?.map(s => <option key={s.id} value={s.id}>{s.code} - {s.description}</option>)}</select></div></div>)}
-                {contextType === 'SCENARIO' && (<div className="animate-fade-in"><label className="block text-sm font-medium text-gray-700">Сценарио или наратив од часот</label><textarea value={scenarioText} onChange={e => dispatch({ type: 'SET_FIELD', payload: { field: 'scenarioText', value: e.target.value }})} rows={5} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="Внесете опис на активностите од часот, клучна дискусија или проблем на кој сте работеле..."></textarea></div>)}
+                {contextType === 'STANDARD' && (<div className="animate-fade-in space-y-4"><div><label className="block text-sm font-medium text-gray-700">Национален стандард</label><select value={selectedStandard} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedStandard', value: e.target.value }})} className="mt-1 block w-full p-2 border-gray-300 rounded-md">{allNationalStandards?.map((s: NationalStandard) => <option key={s.id} value={s.id}>{s.code} - {s.description}</option>)}</select></div></div>)}
+                {contextType === 'SCENARIO' && (<div className="animate-fade-in"><label className="block text-sm font-medium text-gray-700">Сценарио или наратив од часот</label><textarea value={scenarioText} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'scenarioText', value: e.target.value }})} rows={5} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="Внесете опис на активностите од часот, клучна дискусија или проблем на кој сте работеле..."></textarea></div>)}
             </div>
             {shouldShowImageUpload && contextType === 'SCENARIO' && (
                 <div className="pt-6 mt-6 border-t">

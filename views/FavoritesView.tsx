@@ -34,8 +34,8 @@ export const FavoritesView: React.FC = () => {
     const { allConcepts } = useCurriculum();
     const { lessonPlans } = usePlanner();
 
-    const favoriteConcepts = allConcepts.filter(c => favoriteConceptIds.includes(c.id));
-    const favoritePlans = lessonPlans.filter(p => favoriteLessonPlanIds.includes(p.id));
+    const favoriteConcepts = allConcepts.filter((c: Concept & { gradeLevel: number; topicId: string }) => favoriteConceptIds.includes(c.id));
+    const favoritePlans = lessonPlans.filter((p: LessonPlan) => favoriteLessonPlanIds.includes(p.id));
 
     return (
         <div className="p-8 animate-fade-in">
@@ -49,7 +49,7 @@ export const FavoritesView: React.FC = () => {
                     <h2 className="text-2xl font-semibold text-brand-secondary border-b pb-2 mb-4">Омилени поими</h2>
                     {favoriteConcepts.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {favoriteConcepts.map(concept => (
+                            {favoriteConcepts.map((concept: Concept & { gradeLevel: number; topicId: string }) => (
                                 <FavoriteConceptCard key={concept.id} concept={concept} onClick={() => navigate(`/concept/${concept.id}`)} />
                             ))}
                         </div>
@@ -62,7 +62,7 @@ export const FavoritesView: React.FC = () => {
                     <h2 className="text-2xl font-semibold text-brand-secondary border-b pb-2 mb-4">Омилени подготовки</h2>
                      {favoritePlans.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {favoritePlans.map(plan => (
+                            {favoritePlans.map((plan: LessonPlan) => (
                                 <FavoriteLessonPlanCard key={plan.id} plan={plan} onClick={() => navigate(`/planner/lesson/view/${plan.id}`)} />
                             ))}
                         </div>

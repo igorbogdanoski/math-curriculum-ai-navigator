@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { ICONS } from '../../constants';
-import type { Topic, LessonPlan, NationalStandard } from '../../types';
+import type { Topic, LessonPlan, NationalStandard, Grade, Concept } from '../../types';
 import { useNavigation } from '../../contexts/NavigationContext';
 
 interface SearchResult {
@@ -41,11 +41,11 @@ export const GlobalSearchBar: React.FC = () => {
     const searchRef = useRef<HTMLDivElement>(null);
     const resultListRef = useRef<HTMLUListElement>(null);
 
-    const allTopics = curriculum?.grades.flatMap(g => g.topics.map(t => ({ ...t, gradeLevel: g.level }))) ?? [];
+    const allTopics = curriculum?.grades.flatMap((g: Grade) => g.topics.map((t: Topic) => ({ ...t, gradeLevel: g.level }))) ?? [];
 
     // Calculate grouped and flattened results for keyboard navigation
     const groupedResults = useMemo(() => {
-        return results.reduce((acc, result) => {
+        return results.reduce((acc: Record<SearchResult['type'], SearchResult[]>, result: SearchResult) => {
             const type = result.type;
             if (!acc[type]) {
                 acc[type] = [];
@@ -70,11 +70,11 @@ export const GlobalSearchBar: React.FC = () => {
                 const lowerCaseQuery = query.toLowerCase();
                 
                 const conceptResults: SearchResult[] = allConcepts
-                    .filter(c => 
+                    .filter((c: Concept & { gradeLevel: number; topicId: string }) => 
                         c.title.toLowerCase().includes(lowerCaseQuery) ||
                         c.description.toLowerCase().includes(lowerCaseQuery)
                     )
-                    .map(c => ({
+                    .map((c: Concept & { gradeLevel: number; topicId: string }) => ({
                         id: c.id,
                         title: c.title,
                         type: 'concept',
@@ -83,11 +83,11 @@ export const GlobalSearchBar: React.FC = () => {
                     }));
 
                 const topicResults: SearchResult[] = allTopics
-                    .filter(t => 
+                    .filter((t: Topic & { gradeLevel: number }) => 
                         t.title.toLowerCase().includes(lowerCaseQuery) ||
                         t.description.toLowerCase().includes(lowerCaseQuery)
                     )
-                    .map(t => ({
+                    .map((t: Topic & { gradeLevel: number }) => ({
                         id: t.id,
                         title: t.title,
                         type: 'topic',
@@ -96,11 +96,11 @@ export const GlobalSearchBar: React.FC = () => {
                     }));
 
                 const lessonResults: SearchResult[] = lessonPlans
-                    .filter(p => 
+                    .filter((p: LessonPlan) => 
                         p.title.toLowerCase().includes(lowerCaseQuery) ||
                         p.objectives.join(' ').toLowerCase().includes(lowerCaseQuery)
                     )
-                    .map(p => ({
+                    .map((p: LessonPlan) => ({
                         id: p.id,
                         title: p.title,
                         type: 'lesson',
@@ -109,11 +109,11 @@ export const GlobalSearchBar: React.FC = () => {
                     }));
 
                 const standardResults: SearchResult[] = (allNationalStandards || [])
-                    .filter(s => 
+                    .filter((s: NationalStandard) => 
                         s.code.toLowerCase().includes(lowerCaseQuery) ||
                         s.description.toLowerCase().includes(lowerCaseQuery)
                     )
-                    .map(s => ({
+                    .map((s: NationalStandard) => ({
                         id: s.id,
                         title: s.description,
                         type: 'standard',
@@ -170,11 +170,11 @@ export const GlobalSearchBar: React.FC = () => {
         switch (e.key) {
             case 'ArrowDown':
                 e.preventDefault();
-                setFocusedIndex(prev => (prev + 1) % flatResults.length);
+                setFocusedIndex((prev: number) => (prev + 1) % flatResults.length);
                 break;
             case 'ArrowUp':
                 e.preventDefault();
-                setFocusedIndex(prev => (prev - 1 + flatResults.length) % flatResults.length);
+                setFocusedIndex((prev: number) => (prev - 1 + flatResults.length) % flatResults.length);
                 break;
             case 'Enter':
                 e.preventDefault();
@@ -203,7 +203,7 @@ export const GlobalSearchBar: React.FC = () => {
                 <input
                     type="text"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
                     onFocus={() => query.trim().length > 1 && setIsOpen(true)}
                     onKeyDown={handleKeyDown}
                     placeholder="Пребарај низ целата апликација (поими, теми, подготовки, стандарди)..."
@@ -240,7 +240,7 @@ export const GlobalSearchBar: React.FC = () => {
                                     </li>
                                     {(groupResults as SearchResult[]).slice(0, 10).map((result, idx) => {
                                         // Find absolute index in flattened list for highlighting
-                                        const absoluteIndex = flatResults.findIndex(r => r === result);
+                                        const absoluteIndex = flatResults.findIndex((r: SearchResult) => r === result);
                                         const isFocused = absoluteIndex === focusedIndex;
                                         
                                         return (
@@ -253,7 +253,7 @@ export const GlobalSearchBar: React.FC = () => {
                                             >
                                                 <a
                                                     href={`#${result.path}`}
-                                                    onClick={(e) => { e.preventDefault(); handleResultClick(result.path); }}
+                                                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.preventDefault(); handleResultClick(result.path); }}
                                                     className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none"
                                                 >
                                                     <p className="font-semibold truncate pr-2 flex items-center">

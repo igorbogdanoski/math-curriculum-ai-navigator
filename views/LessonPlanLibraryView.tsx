@@ -2,7 +2,7 @@ import React, { memo, useMemo, useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { usePlanner } from '../contexts/PlannerContext';
-import type { LessonPlan } from '../types';
+import type { Concept, LessonPlan, NationalStandard } from '../types';
 import { ModalType } from '../types';
 import { EmptyState } from '../components/common/EmptyState';
 import { useAuth } from '../contexts/AuthContext';
@@ -65,7 +65,7 @@ const LessonPlanCard: React.FC<{
         </div>
         {plan.tags && plan.tags.length > 0 && (
             <div className="mt-3 pt-3 border-t flex flex-wrap gap-1">
-                {plan.tags.map(tag => (
+                {plan.tags.map((tag: string) => (
                     <span key={tag} className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">#{tag}</span>
                 ))}
             </div>
@@ -111,20 +111,20 @@ export const LessonPlanLibraryView: React.FC = () => {
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
-        lessonPlans.forEach(plan => {
-            plan.tags?.forEach(tag => tags.add(tag));
+        lessonPlans.forEach((plan: LessonPlan) => {
+            plan.tags?.forEach((tag: string) => tags.add(tag));
         });
         return Array.from(tags).sort();
     }, [lessonPlans]);
 
     const handleTagToggle = (tag: string) => {
-        setTagFilters(prev => 
-            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        setTagFilters((prev: string[]) => 
+            prev.includes(tag) ? prev.filter((t: string) => t !== tag) : [...prev, tag]
         );
     };
 
     const filteredPlans = useMemo(() => {
-        return lessonPlans.filter(plan => {
+        return lessonPlans.filter((plan: LessonPlan) => {
             // Grade Filter
             const gradeMatch = gradeFilter === 'all' || plan.grade === parseInt(gradeFilter);
 
@@ -142,15 +142,15 @@ export const LessonPlanLibraryView: React.FC = () => {
                 if (type === 'concept') {
                     conceptStandardMatch = plan.conceptIds.includes(id);
                 } else if (type === 'standard') {
-                    const standard = allNationalStandards?.find(s => s.id === id);
+                    const standard = allNationalStandards?.find((s: NationalStandard) => s.id === id);
                     if (standard?.relatedConceptIds) {
-                        conceptStandardMatch = plan.conceptIds.some(cid => standard.relatedConceptIds!.includes(cid));
+                        conceptStandardMatch = plan.conceptIds.some((cid: string) => standard.relatedConceptIds!.includes(cid));
                     }
                 }
             }
 
             // Tag Filter
-            const tagMatch = tagFilters.length === 0 || tagFilters.every(tag => plan.tags?.includes(tag));
+            const tagMatch = tagFilters.length === 0 || tagFilters.every((tag: string) => plan.tags?.includes(tag));
 
             return gradeMatch && queryMatch && conceptStandardMatch && tagMatch;
         });
@@ -215,7 +215,7 @@ export const LessonPlanLibraryView: React.FC = () => {
                                 id="search-query"
                                 type="text"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                                 placeholder="Пребарај низ наслов, цели, сценарио..."
                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                             />
@@ -226,7 +226,7 @@ export const LessonPlanLibraryView: React.FC = () => {
                         <select
                             id="grade-filter"
                             value={gradeFilter}
-                            onChange={(e) => setGradeFilter(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGradeFilter(e.target.value)}
                             className="mt-1 block w-full p-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent"
                         >
                             <option value="all">Сите</option>
@@ -238,15 +238,15 @@ export const LessonPlanLibraryView: React.FC = () => {
                         <select
                             id="concept-standard-filter"
                             value={conceptStandardFilter}
-                            onChange={(e) => setConceptStandardFilter(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setConceptStandardFilter(e.target.value)}
                             className="mt-1 block w-full p-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent"
                         >
                             <option value="all">Сите поими и стандарди</option>
                             <optgroup label="Поими">
-                                {allConcepts.map(c => <option key={c.id} value={`concept:${c.id}`}>{c.title} ({c.gradeLevel} одд.)</option>)}
+                                {allConcepts.map((c: Concept & { gradeLevel: number; topicId: string }) => <option key={c.id} value={`concept:${c.id}`}>{c.title} ({c.gradeLevel} одд.)</option>)}
                             </optgroup>
                             <optgroup label="Национални Стандарди">
-                                {allNationalStandards?.map(s => <option key={s.id} value={`standard:${s.id}`}>{s.code} - {s.description.substring(0, 50)}... ({s.gradeLevel} одд.)</option>)}
+                                {allNationalStandards?.map((s: NationalStandard) => <option key={s.id} value={`standard:${s.id}`}>{s.code} - {s.description.substring(0, 50)}... ({s.gradeLevel} одд.)</option>)}
                             </optgroup>
                         </select>
                     </div>
@@ -255,7 +255,7 @@ export const LessonPlanLibraryView: React.FC = () => {
                      <div data-tour="library-filter-tags" className="mt-4 pt-4 border-t">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Тагови</label>
                         <div className="flex flex-wrap gap-2">
-                            {allTags.map(tag => (
+                            {allTags.map((tag: string) => (
                                 <button
                                     key={tag}
                                     onClick={() => handleTagToggle(tag)}
@@ -281,7 +281,7 @@ export const LessonPlanLibraryView: React.FC = () => {
             {lessonPlans.length > 0 ? (
                 filteredPlans.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredPlans.map(plan => (
+                        {filteredPlans.map((plan: LessonPlan) => (
                             <LessonPlanCard 
                                 key={plan.id} 
                                 plan={plan}
