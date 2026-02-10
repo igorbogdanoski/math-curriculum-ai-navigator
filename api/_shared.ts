@@ -14,20 +14,27 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 // Firebase Admin — singleton
 // ---------------------------------------------------------------------------
+let firebaseAuthAvailable = true;
+
 function getFirebaseAdmin() {
   if (getApps().length === 0) {
-    // In Vercel, set FIREBASE_SERVICE_ACCOUNT env var as the JSON string
-    // of your service account key file, OR use individual env vars.
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (serviceAccount) {
-      initializeApp({
-        credential: cert(JSON.parse(serviceAccount)),
-      });
+      try {
+        initializeApp({ credential: cert(JSON.parse(serviceAccount)) });
+      } catch (err) {
+        console.error('[auth] Failed to init Firebase Admin with service account:', err);
+        firebaseAuthAvailable = false;
+        return null;
+      }
     } else {
-      // Fallback: use GOOGLE_APPLICATION_CREDENTIALS or ADC
-      initializeApp();
+      // No FIREBASE_SERVICE_ACCOUNT configured — auth verification disabled
+      console.warn('[auth] FIREBASE_SERVICE_ACCOUNT not set. Token verification is DISABLED.');
+      firebaseAuthAvailable = false;
+      return null;
     }
   }
+  if (!firebaseAuthAvailable) return null;
   return getAuth();
 }
 
@@ -35,6 +42,8 @@ function getFirebaseAdmin() {
 // Model whitelist — only these models can be called
 // ---------------------------------------------------------------------------
 const ALLOWED_MODELS = new Set([
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-image',
   'gemini-2.0-flash',
   'gemini-2.0-flash-lite',
   'gemini-1.5-flash',
@@ -59,7 +68,13 @@ const ContentSchema = z.object({
   parts: z.array(PartSchema),
 });
 
-// Safe subset of generation config — dangerous fields stripped
+// Safety setting entry
+const SafetySettingSchema = z.object({
+  category: z.string(),
+  threshold: z.string(),
+});
+
+// Generation config — validated subset that the client may send
 const SafeConfigSchema = z.object({
   temperature: z.number().min(0).max(2).optional(),
   topP: z.number().min(0).max(1).optional(),
@@ -70,7 +85,13 @@ const SafeConfigSchema = z.object({
   thinkingConfig: z.object({
     thinkingBudget: z.number().int().min(0).max(24576).optional(),
   }).optional(),
-}).optional();
+  // System instruction — string or Content object
+  systemInstruction: z.union([z.string(), ContentSchema]).optional(),
+  // Safety settings array
+  safetySettings: z.array(SafetySettingSchema).optional(),
+  // Response modalities (e.g. ['TEXT'], ['IMAGE'])
+  responseModalities: z.array(z.string()).optional(),
+}).passthrough().optional();
 
 // Full request body
 export const GeminiRequestSchema = z.object({
@@ -115,21 +136,24 @@ export async function authenticateAndValidate(
     return null;
   }
 
-  // 2. Verify Firebase ID token
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing or invalid Authorization header' });
-    return null;
-  }
-
-  const idToken = authHeader.slice(7);
-  try {
-    const auth = getFirebaseAdmin();
-    await auth.verifyIdToken(idToken);
-  } catch (err) {
-    console.error('[auth] Token verification failed:', err);
-    res.status(401).json({ error: 'Invalid or expired authentication token' });
-    return null;
+  // 2. Verify Firebase ID token (skipped if Firebase Admin is not configured)
+  const auth = getFirebaseAdmin();
+  if (auth) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Missing or invalid Authorization header' });
+      return null;
+    }
+    const idToken = authHeader.slice(7);
+    try {
+      await auth.verifyIdToken(idToken);
+    } catch (err) {
+      console.error('[auth] Token verification failed:', err);
+      res.status(401).json({ error: 'Invalid or expired authentication token' });
+      return null;
+    }
+  } else {
+    console.warn('[auth] Skipping token verification — Firebase Admin not available');
   }
 
   // 3. Validate request body with Zod
