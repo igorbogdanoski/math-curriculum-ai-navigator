@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const stream = await ai.models.generateContentStream({ model, contents, config });
+    const stream = await ai.models.generateContentStream({ model, contents, config: config as any });
 
     for await (const chunk of stream) {
       if (chunk.text) {
