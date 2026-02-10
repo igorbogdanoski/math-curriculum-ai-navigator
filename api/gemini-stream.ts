@@ -31,9 +31,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const stream = await ai.models.generateContentStream({ model, contents, config: config as unknown as import("@google/genai").GenerateContentConfig });
+    const responseStream = await ai.models.generateContentStream({
+      model,
+      contents: contents as any,
+      config: config as any,
+    });
 
-    for await (const chunk of stream) {
+    for await (const chunk of responseStream) {
       if (chunk.text) {
         res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
       }

@@ -37,8 +37,13 @@ function geminiDevProxy(apiKey: string): Plugin {
             'Connection': 'keep-alive',
           });
 
-          const stream = await ai.models.generateContentStream({ model, contents, config });
-          for await (const chunk of stream) {
+          const responseStream = await ai.models.generateContentStream({
+            model,
+            contents,
+            config,
+          });
+          
+          for await (const chunk of responseStream) {
             if (chunk.text) {
               res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
             }
@@ -65,9 +70,17 @@ function geminiDevProxy(apiKey: string): Plugin {
           const ai = new GoogleGenAI({ apiKey });
           const { model, contents, config } = await readBody(req);
 
-          const response = await ai.models.generateContent({ model, contents, config });
+          const response = await ai.models.generateContent({
+            model,
+            contents,
+            config,
+          });
+
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ text: response.text || '', candidates: response.candidates }));
+          res.end(JSON.stringify({ 
+            text: response.text || '', 
+            candidates: response.candidates 
+          }));
         } catch (error: any) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: error.message }));

@@ -28,11 +28,10 @@ function getFirebaseAdmin() {
 }
 
 const ALLOWED_MODELS = new Set([
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-image',
   'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
   'gemini-1.5-flash',
+  'gemini-1.5-pro',
+  'gemini-2.0-flash-lite',
 ]);
 
 const PartSchema = z.object({
@@ -82,14 +81,14 @@ export const GeminiRequestSchema = z.object({
 
 export type GeminiRequest = z.infer<typeof GeminiRequestSchema>;
 
-function setCorsHeaders(res) {
+function setCorsHeaders(res: VercelResponse) {
   const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://math-curriculum-ai-navigator.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
-async function authenticateAndValidate(req, res) {
+async function authenticateAndValidate(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return null;
@@ -151,7 +150,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ai = new GoogleGenAI({ apiKey });
     const { model, contents, config } = validated;
 
-    const response = await ai.models.generateContent({ model, contents, config: config as unknown as import("@google/genai").GenerateContentConfig });
+    const response = await ai.models.generateContent({
+      model,
+      contents: contents as any,
+      config: config as any,
+    });
 
     res.status(200).json({
       text: response.text || '',

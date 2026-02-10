@@ -139,6 +139,24 @@
 
 ---
 
+### Фаза 11 — Content Generation Fix (КРИТИЧНО)
+- **Проблем**: КРИТИЧНО — апликацијата престана да генерира содржина по рефакторирањето во Фаза 4
+- **Причини**:
+  1. **SDK Mismatch**: Проектот користи `@google/genai` (Gemini 2.0+ SDK), а не стандардниот `@google/generative-ai`.
+  2. **Invalid Constructor**: SDK-то бара објект `{ apiKey }`, а не директен стринг.
+  3. **Invalid Zod structure**: `generateAndParseJSON` праќаше објект наместо низа (array) за `contents`.
+  4. **ThinkingConfig error**: Се праќаше `thinkingBudget` на `gemini-1.5-flash` кој не го поддржува.
+- **Решенија**:
+  - Заменет моделот со стабилен `gemini-1.5-flash`.
+  - Коригиран конструкторот во `new GoogleGenAI({ apiKey })`.
+  - Коригирана структурата на `contents` во `[{ parts: [...] }]` за Zod валидација.
+  - Имплементиран правилен SDK паттерн (`ai.models.generateContent`) во сите handlers.
+  - Отстранет `thinkingConfig` за 1.5-flash модели.
+- **Засегнати фајлови**: `services/geminiService.real.ts`, `api/gemini.ts`, `api/gemini-stream.ts`, `api/_lib/sharedUtils.ts`, `vite.config.ts`
+
+---
+
+
 ## Експертска оценка (10 февруари 2026)
 
 | Категорија | Оценка | Белешки |
