@@ -139,12 +139,12 @@
 
 ---
 
-### Фаза 11 — Content Generation Recovery (commit `5a766e9`)
+### Фаза 11 — Content Generation Recovery (commit `32d4288`, `pending`)
 - **Проблем**: КРИТИЧНО — апликацијата престана да генерира содржина по рефакторирањето.
 - **Решение**:
-  - Коригиран `GoogleGenAI` конструктор во API рутите.
-  - Реструктуиран `contents` пејлоуд во правилен низа-формат `[{ parts: [...] }]`.
-  - Отстранет `thinkingConfig` за flash модели.
+  - Мигрирано од `@google/generative-ai` на новиот унифициран `@google/genai` (v1.22.0) SDK.
+  - Рефакториран кодот за користење на `client.models.generateContent` и `client.models.generateContentStream`.
+  - Правилно инстанциран `GoogleGenAI` со `{ apiKey }` објект.
   - Стандардизиран модел `gemini-1.5-flash` за стабилност.
 - **Верифицирано**: Генерирањето содржина работи правилно на Vercel.
 

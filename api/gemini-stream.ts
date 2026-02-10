@@ -35,15 +35,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const modelInstance = ai.getGenerativeModel({ model });
-    const responseStream = await modelInstance.generateContentStream({
+    const responseStream = await ai.models.generateContentStream({
+      model,
       contents: normalizedContents,
-      generationConfig: config as GenerationConfig,
+      config: config as any,
     });
 
-    for await (const chunk of responseStream.stream) {
-      if (chunk.text()) {
-        res.write(`data: ${JSON.stringify({ text: chunk.text() })}\n\n`);
+    for await (const chunk of responseStream) {
+      if (chunk.text) {
+        res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
       }
     }
 

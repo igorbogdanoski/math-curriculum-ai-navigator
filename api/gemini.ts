@@ -155,16 +155,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as Content[];
 
-    const modelInstance = ai.getGenerativeModel({ model });
-    const response = await modelInstance.generateContent({
+    const response = await ai.models.generateContent({
+      model,
       contents: normalizedContents,
-      generationConfig: config as GenerationConfig,
+      config: config as any,
     });
 
-    const result = response.response;
     res.status(200).json({
-      text: result.text(),
-      candidates: result.candidates,
+      text: response.text,
+      candidates: response.candidates,
     });
   } catch (error) {
     console.error('[/api/gemini] Error:', error);
