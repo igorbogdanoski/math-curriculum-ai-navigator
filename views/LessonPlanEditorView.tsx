@@ -176,9 +176,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                     newPlan.scenario = scenario;
                 } else {
                     if (isArrayField) {
-                        (newPlan as any)[fieldName] = stringToArray(enhancedText);
+                        const key = fieldName as 'objectives' | 'assessmentStandards' | 'materials' | 'progressMonitoring';
+                        newPlan[key] = stringToArray(enhancedText);
                     } else {
-                        (newPlan as any)[fieldName] = enhancedText;
+                        const key = fieldName as 'title' | 'subject' | 'theme' | 'differentiation' | 'reflectionPrompt' | 'selfAssessmentPrompt';
+                        newPlan[key] = enhancedText;
                     }
                 }
                 return newPlan;

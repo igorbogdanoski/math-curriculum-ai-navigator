@@ -14,6 +14,16 @@ interface Part {
   inlineData?: { mimeType: string; data: string };
 }
 
+interface SafetySetting {
+  category: string;
+  threshold: string;
+}
+
+interface Content {
+  role?: string;
+  parts: Part[];
+}
+
 import { QuestionType } from '../types';
 import type {
   ChatMessage,
@@ -301,7 +311,7 @@ const JSON_SYSTEM_INSTRUCTION = `
 `;
 
 // Improved Safety Settings to prevent false-positive blocking of educational content
-const SAFETY_SETTINGS = [
+const SAFETY_SETTINGS: SafetySetting[] = [
     { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
     { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
     { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
@@ -320,11 +330,11 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
     
     // Configure Thinking for models that support it (like Gemini 2.0 Flash/Pro when requested)
     // Thinking budget allows the model to reason before outputting JSON, increasing accuracy for complex tasks.
-    const config: any = {
+    const config = {
         responseMimeType: "application/json",
         responseSchema: schema,
         systemInstruction: JSON_SYSTEM_INSTRUCTION,
-        safetySettings: SAFETY_SETTINGS as any, 
+        safetySettings: SAFETY_SETTINGS, 
     };
 
     const response = await callGeminiProxy({
@@ -426,7 +436,10 @@ export const realGeminiService = {
         const systemInstruction = `${TEXT_SYSTEM_INSTRUCTION}\nПрофил на наставник: ${JSON.stringify(profile || {})}\nДоколку корисникот прикачи слика, анализирај ја детално (текст, формули, дијаграми).`;
         
         // Transform history to Google GenAI format
-        const contents = history.map(msg => ({ role: msg.role, parts: [{ text: msg.text }] }));
+        const contents: Content[] = history.map(msg => ({ 
+            role: msg.role, 
+            parts: [{ text: msg.text }] 
+        }));
 
         // Inject attachment into the LAST user message if present
         if (attachment && contents.length > 0) {
@@ -437,7 +450,7 @@ export const realGeminiService = {
                         mimeType: attachment.mimeType,
                         data: attachment.base64
                     }
-                } as any); // Cast as any because Typescript definitions for Part might be strict on union types
+                });
             }
         }
 

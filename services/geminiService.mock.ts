@@ -40,7 +40,14 @@ async function* streamText(text: string) {
 
 
 /** Helper function to generate a mock assessment object */
-function generateMockAssessment(context: any, numQuestions: number, type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS' | 'EXIT_TICKET', differentiationLevel: DifferentiationLevel, studentProfiles?: StudentProfile[], includeSelfAssessment?: boolean): Omit<AIGeneratedAssessment, 'error'> {
+function generateMockAssessment(
+    context: GenerationContext | any, 
+    numQuestions: number, 
+    type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS' | 'EXIT_TICKET', 
+    differentiationLevel: DifferentiationLevel, 
+    studentProfiles?: StudentProfile[], 
+    includeSelfAssessment?: boolean
+): Omit<AIGeneratedAssessment, 'error'> {
     let title = `Тест за ${context?.concepts?.map((c: Concept) => c.title).join(', ') || 'поимот'} (${context?.grade?.level} одд.)`;
     if (type === 'QUIZ') title = `Квиз за ${context?.concepts?.map((c: Concept) => c.title).join(', ') || 'поимот'}`;
     if (type === 'FLASHCARDS') title = `Флеш-картички за ${context?.concepts?.map((c: Concept) => c.title).join(', ') || 'поимот'}`;
@@ -427,7 +434,7 @@ ${titlePrefix}
             {
                 gradeLevel: 6,
                 coveredStandardIds: [grade6Standards[0]?.id].filter(Boolean) as string[],
-                partiallyCoveredStandards: [{ id: grade6Standards[1]?.id, reason: 'Само вовед' }].filter(s => s.id) as any,
+                partiallyCoveredStandards: [{ id: grade6Standards[1]?.id, reason: 'Само вовед' }].filter((s): s is { id: string, reason: string } => !!s.id),
                 uncoveredStandardIds: grade6Standards.slice(2).map(s => s.id),
                 summary: 'Добра покриеност, но има простор за подобрување.',
                 totalStandardsInGrade: grade6Standards.length

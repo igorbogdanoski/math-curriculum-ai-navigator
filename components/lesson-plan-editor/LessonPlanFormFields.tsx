@@ -75,7 +75,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
         else {
             const isNumeric = ['lessonNumber'].includes(name);
             const finalValue = isNumeric ? (value === '' ? undefined : Number(value)) : value;
-            setPlan((prev: Partial<LessonPlan>) => ({ ...prev, [name]: finalValue as any }));
+            setPlan((prev: Partial<LessonPlan>) => ({ ...prev, [name]: finalValue }));
         }
     };
     

@@ -6,6 +6,7 @@ import { useCurriculum } from '../../hooks/useCurriculum';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { exampleLessonPlans } from '../../data/examples';
 import { NavigationContext } from '../../contexts/NavigationContext';
+import type { Concept, Topic, Curriculum, NationalStandard } from '../../types';
 
 // Mock the hooks
 vi.mock('../../hooks/useCurriculum');
@@ -39,26 +40,28 @@ describe('GlobalSearchBar', () => {
 
     beforeEach(() => {
         vi.mocked(useCurriculum).mockReturnValue({
-            allConcepts: mockConcepts as any,
+            allConcepts: mockConcepts as unknown as (Concept & { gradeLevel: number; topicId: string; })[],
             curriculum: {
                 grades: [
                     {
                         id: 'grade-8',
                         level: 8,
                         title: 'VIII Одделение',
-                        topics: mockTopics as any,
+                        topics: mockTopics as unknown as Topic[],
+                        transversalStandards: [],
                     },
                 ],
-            } as any,
+            } as unknown as Curriculum,
             isLoading: false,
-            verticalProgression: null,
-            allNationalStandards: mockNationalStandards as any,
+            error: null,
+            verticalProgression: undefined,
+            allNationalStandards: mockNationalStandards as unknown as NationalStandard[],
             getGrade: vi.fn(),
             getTopic: vi.fn(),
             getConceptDetails: vi.fn(),
             getStandardsByIds: vi.fn(),
             findConceptAcrossGrades: vi.fn(),
-        } as any);
+        } as unknown as ReturnType<typeof useCurriculum>);
 
         vi.mocked(usePlanner).mockReturnValue({
             lessonPlans: mockLessonPlans,
@@ -80,7 +83,7 @@ describe('GlobalSearchBar', () => {
             addCommentToCommunityPlan: vi.fn().mockResolvedValue(undefined),
             isUserPlan: vi.fn().mockReturnValue(true),
             importAnnualPlan: vi.fn().mockResolvedValue(undefined),
-        } as any);
+        } as unknown as ReturnType<typeof usePlanner>);
         
         navigate.mockClear();
     });

@@ -3,23 +3,32 @@ import React, { useEffect, useState } from 'react';
 import { ICONS } from '../../constants';
 import { Card } from './Card';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+interface NavigatorWithStandalone extends Navigator {
+  standalone?: boolean;
+}
+
 export const InstallApp: React.FC = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('beforeinstallprompt', handler as EventListener);
 
-    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true) {
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as NavigatorWithStandalone).standalone === true) {
         setIsInstalled(true);
     }
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler as EventListener);
   }, []);
 
   const handleInstallClick = async () => {

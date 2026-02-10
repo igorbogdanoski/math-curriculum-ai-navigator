@@ -7,13 +7,21 @@ import { render } from '@testing-library/react';
 import { MathRenderer } from '../MathRenderer';
 
 // Mock KaTeX globally
-const mockRenderToString = vi.fn((latex) => `<span class="katex-mock">${latex}</span>`);
+const mockRenderToString = vi.fn((latex: string) => `<span class="katex-mock">${latex}</span>`);
+
+declare global {
+  interface Window {
+    katex?: {
+      renderToString: (latex: string, options?: any) => string;
+    };
+  }
+}
 
 describe('MathRenderer', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         window.katex = {
-            renderToString: mockRenderToString as any
+            renderToString: mockRenderToString
         };
     });
 

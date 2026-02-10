@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Content, GenerationConfig } from "@google/genai";
 // --- SharedUtils.ts code inlined below ---
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -151,9 +151,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ai = new GoogleGenAI(apiKey);
     const { model, contents, config } = validated;
 
+    const normalizedContents: Content[] = typeof contents === 'string'
+      ? [{ role: 'user', parts: [{ text: contents }] }]
+      : contents as Content[];
+
     const response = await ai.getGenerativeModel({ model }).generateContent({
-      contents: contents as any,
-      generationConfig: config as any,
+      contents: normalizedContents,
+      generationConfig: config as GenerationConfig,
     });
 
     const result = response.response;

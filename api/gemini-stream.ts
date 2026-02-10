@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Content, GenerationConfig } from "@google/genai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 /**
@@ -26,14 +26,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ai = new GoogleGenAI(apiKey);
     const { model, contents, config } = validated;
 
+    const normalizedContents: Content[] = typeof contents === 'string'
+      ? [{ role: 'user', parts: [{ text: contents }] }]
+      : contents as Content[];
+
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
     const responseStream = await ai.getGenerativeModel({ model }).generateContentStream({
-      contents: contents as any,
-      generationConfig: config as any,
+      contents: normalizedContents,
+      generationConfig: config as GenerationConfig,
     });
 
     for await (const chunk of responseStream.stream) {

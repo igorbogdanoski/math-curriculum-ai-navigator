@@ -7,6 +7,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { PlannerProvider, usePlanner } from './PlannerContext';
 import { AuthContext } from './AuthContext';
 import { PlannerItemType, type LessonPlan } from '../types';
+import type { User } from 'firebase/auth';
 
 // Mock Firebase services to avoid real database calls
 vi.mock('../firebaseConfig', () => ({
@@ -18,7 +19,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     return {
         ...actual,
         collection: vi.fn(),
-        onSnapshot: vi.fn((query, callback) => {
+        onSnapshot: vi.fn((_query, callback) => {
             // Immediately invoke callback with empty snapshot
             callback({ docs: [] }); 
             // Return a dummy unsubscribe function
@@ -40,8 +41,17 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 // Minimal mock user for AuthContext
 const mockFirebaseUser = { uid: 'test-user-123', emailVerified: true };
 
+const mockAuthValue = {
+    firebaseUser: mockFirebaseUser as unknown as User,
+    user: null,
+    isLoading: false,
+    login: vi.fn(),
+    logout: vi.fn(),
+    isAdmin: false
+};
+
 const wrapper: React.FC<{children: React.ReactNode}> = ({ children }) => (
-    <AuthContext.Provider value={{ firebaseUser: mockFirebaseUser } as any}>
+    <AuthContext.Provider value={mockAuthValue}>
         <PlannerProvider>{children}</PlannerProvider>
     </AuthContext.Provider>
 );

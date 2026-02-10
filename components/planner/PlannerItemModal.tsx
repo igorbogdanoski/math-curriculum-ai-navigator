@@ -30,6 +30,13 @@ const getInitialFormData = (item?: Partial<PlannerItem>): Partial<PlannerItem> =
 };
 
 
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
   const { hideModal } = useModal();
   const { navigate } = useNavigation();
@@ -60,7 +67,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
         return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = 'mk-MK';
     recognition.continuous = false;

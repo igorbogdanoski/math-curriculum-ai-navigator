@@ -25,12 +25,12 @@ describe('useDashboardStats hook', () => {
                 { id: '4', date: '2024-10-03', type: PlannerItemType.LESSON, title: 'L3' },
             ],
             lessonPlans: [],
-        } as any);
+        } as unknown as ReturnType<typeof usePlanner>);
 
         vi.mocked(useCurriculum).mockReturnValue({
             curriculum: null,
             allNationalStandards: [],
-        } as any);
+        } as unknown as ReturnType<typeof useCurriculum>);
         
         const { result } = renderHook(() => useDashboardStats());
 
@@ -49,7 +49,7 @@ describe('useDashboardStats hook', () => {
                 { id: 'lp2', topicId: 'g6-topic-numbers', title: 'Plan 2' },
                 { id: 'lp3', topicId: 'g6-topic-geometry', title: 'Plan 3' },
             ],
-        } as any);
+        } as unknown as ReturnType<typeof usePlanner>);
 
         vi.mocked(useCurriculum).mockReturnValue({
             curriculum: {
@@ -62,7 +62,7 @@ describe('useDashboardStats hook', () => {
                 }]
             },
             allNationalStandards: [],
-        } as any);
+        } as unknown as ReturnType<typeof useCurriculum>);
 
         const { result } = renderHook(() => useDashboardStats());
         const { labels, datasets } = result.current.topicCoverage;
@@ -92,7 +92,7 @@ describe('useDashboardStats hook', () => {
                 { id: 'lp1', conceptIds: ['g6-concept-sets'] },
                 { id: 'lp2', conceptIds: ['g6-concept-natural-numbers-ext'] },
             ],
-        } as any);
+        } as unknown as ReturnType<typeof usePlanner>);
 
         vi.mocked(useCurriculum).mockReturnValue({
             curriculum: {
@@ -111,7 +111,7 @@ describe('useDashboardStats hook', () => {
             allNationalStandards: [
                 { id: 'M-6-A' }, { id: 'M-6-B' }, { id: 'M-6-C' }, { id: 'M-6-D' }
             ],
-        } as any);
+        } as unknown as ReturnType<typeof useCurriculum>);
 
         const { result } = renderHook(() => useDashboardStats());
         const { totalPlans, reflectionRate, standardsCoverage } = result.current.overallStats;
@@ -125,11 +125,11 @@ describe('useDashboardStats hook', () => {
         vi.mocked(usePlanner).mockReturnValue({
             items: [],
             lessonPlans: [],
-        } as any);
+        } as unknown as ReturnType<typeof usePlanner>);
          vi.mocked(useCurriculum).mockReturnValue({
             curriculum: { grades: [] },
             allNationalStandards: [],
-        } as any);
+        } as unknown as ReturnType<typeof useCurriculum>);
         
         const { result } = renderHook(() => useDashboardStats());
 
