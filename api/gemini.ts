@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from "@google/genai";
-import { setCorsHeaders, authenticateAndValidate } from './sharedUtils';
+import { setCorsHeaders, authenticateAndValidate } from './sharedUtils.js';
 
 /**
  * Vercel Serverless Function: Gemini API Proxy (non-streaming)
