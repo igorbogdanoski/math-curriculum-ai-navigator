@@ -26,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ai = new GoogleGenAI({ apiKey });
     const { model, contents, config } = validated;
 
-    const response = await ai.models.generateContent({ model, contents, config: config as any });
+    const response = await ai.models.generateContent({ model, contents, config: config as unknown as import("@google/genai").GenerateContentConfig });
 
     res.status(200).json({
       text: response.text || '',
