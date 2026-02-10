@@ -1,6 +1,7 @@
 import React from 'react';
 import { useModal } from '../../contexts/ModalContext';
 import { ModalType, type NationalStandard, type PlannerItem } from '../../types';
+import { ModalContainer } from './ModalContainer';
 
 // Import modal components
 import { PlannerItemModal } from '../planner/PlannerItemModal';
@@ -13,7 +14,7 @@ import { NationalStandardDetailsModal } from '../explore/NationalStandardDetails
 import { ConfirmDialog } from './ConfirmDialog';
 
 export const ModalManager: React.FC = () => {
-  const { modal } = useModal();
+  const { modal, closeModal } = useModal();
 
   if (!modal) {
     return null;
@@ -21,32 +22,46 @@ export const ModalManager: React.FC = () => {
 
   const { type, props } = modal;
 
-  switch (type) {
-    case ModalType.PlannerItem:
-      return <PlannerItemModal {...props} />;
-    
-    case ModalType.LessonQuickView:
-      return <LessonPlanQuickViewModal {...(props as { lessonPlanId: string })} />;
-    
-    case ModalType.TransversalStandards:
-      return <TransversalStandardsModal {...(props as { standards: NationalStandard[], gradeTitle: string })} />;
-    
-    case ModalType.AIAnnualPlanGenerator:
-        return <AIAnnualPlanGeneratorModal {...props} />;
-    
-    case ModalType.AIThematicPlanGenerator:
-        return <AIThematicPlanGeneratorModal {...props} />;
-    
-    case ModalType.LessonReflection:
-        return <LessonReflectionModal {...(props as { item: PlannerItem })} />;
+  const renderModalContent = () => {
+    switch (type) {
+      case ModalType.PlannerItem:
+        return <PlannerItemModal {...props} />;
       
-    case ModalType.NationalStandardDetails:
-      return <NationalStandardDetailsModal {...(props as { standard: NationalStandard })} />;
+      case ModalType.LessonQuickView:
+        return <LessonPlanQuickViewModal {...(props as { lessonPlanId: string })} />;
+      
+      case ModalType.TransversalStandards:
+        return <TransversalStandardsModal {...(props as { standards: NationalStandard[], gradeTitle: string })} />;
+      
+      case ModalType.AIAnnualPlanGenerator:
+          return <AIAnnualPlanGeneratorModal {...props} />;
+      
+      case ModalType.AIThematicPlanGenerator:
+          return <AIThematicPlanGeneratorModal {...props} />;
+      
+      case ModalType.LessonReflection:
+          return <LessonReflectionModal {...(props as { item: PlannerItem })} />;
+        
+      case ModalType.NationalStandardDetails:
+        return <NationalStandardDetailsModal {...(props as { standard: NationalStandard })} />;
 
-    case ModalType.Confirm:
-      return <ConfirmDialog {...(props as { message: string; title?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void; onCancel: () => void })} />;
+      case ModalType.Confirm:
+        return <ConfirmDialog {...(props as { message: string; title?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void; onCancel: () => void })} />;
 
-    default:
-      return null;
+      default:
+        return null;
+    }
+  };
+
+  // If it's a Confirm dialog, it handles its own backdrop and container for now 
+  // (to avoid double nesting or styling conflicts)
+  if (type === ModalType.Confirm) {
+    return renderModalContent();
   }
+
+  return (
+    <ModalContainer onClose={closeModal}>
+      {renderModalContent()}
+    </ModalContainer>
+  );
 };

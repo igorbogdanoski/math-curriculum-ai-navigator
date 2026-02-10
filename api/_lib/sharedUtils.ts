@@ -135,7 +135,7 @@ export async function authenticateAndValidate(
     return null;
   }
 
-  // 2. Verify Firebase ID token (skipped if Firebase Admin is not configured)
+  // 2. Verify Firebase ID token
   const auth = getFirebaseAdmin();
   if (auth) {
     const authHeader = req.headers.authorization;
@@ -152,7 +152,14 @@ export async function authenticateAndValidate(
       return null;
     }
   } else {
-    console.warn('[auth] Skipping token verification — Firebase Admin not available');
+    // If we're in production but Firebase Admin is NOT available, we MUST block the request
+    // as it means GEMINI_API_KEY could be exploited without authentication.
+    if (process.env.NODE_ENV === 'production') {
+        console.error('[auth] CRITICAL: FIREBASE_SERVICE_ACCOUNT missing in production!');
+        res.status(500).json({ error: 'Server authentication configuration error' });
+        return null;
+    }
+    console.warn('[auth] Skipping token verification — Firebase Admin not available (Development Mode)');
   }
 
   // 3. Validate request body with Zod
