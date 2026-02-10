@@ -157,27 +157,36 @@
 ---
 
 
-## Експертска оценка (10 февруари 2026)
+### Фаза 12 — Безбедност и WCAG (КРИТИЧНО)
+- **Проблем**: Експертската оценка идентификуваше критични безбедносни дупки (Proxy без auth) и проблеми со пристапноста (focus trapping).
+- **Решенија**:
+  1. **API Auth**: Имплементирана задолжителна проверка на Firebase ID токен во продукција за сите Gemini API повици.
+  2. **Model Whitelisting**: Проширени и заклучени дозволените модели (`gemini-1.5-flash`, `gemini-2.0-flash`, итн.).
+  3. **Focus Trapping**: Креиран нов `ModalContainer` кој го заробува фокусот внатре во модалите, поддржува `Escape` за затворање и спречува body scroll.
+  4. **Modal Manager**: Рефакториран `ModalManager.tsx` за автоматски да ги обвива сите модали со новиот безбеден контејнер.
+- **Засегнати фајлови**: `api/_lib/sharedUtils.ts`, `api/gemini.ts`, `components/common/ModalContainer.tsx`, `components/common/ModalManager.tsx`
+
+---
 
 | Категорија | Оценка | Белешки |
 |------------|--------|---------|
 | Архитектура | **7/10** | Добра сепарација (contexts/hooks/views/services). Hash routing лимитирачки но функционален. |
-| Безбедност | **8/10** | API key серверски. CORS заклучен. Недостасува auth на proxy. |
+| Безбедност | **9/10** | API key серверски. CORS заклучен. Firebase Auth токен валидација имплементирана во продукција. |
 | Перформанси | **7/10** | Lazy loading, chunks, useMemo/useCallback. Mega-context Pattern. |
 | Type Safety | **8/10** | `strict: true` вклучен. 25 `as any` останати (тестови + SDK). |
 | Тест покриеност | **4/10** | 9 тест фајлови за ~50+ компоненти. Нема view тестови. |
 
 ### Критични наоди
 
-| # | Severity | Наод | Локација |
-|---|----------|------|----------|
-| 1 | CRITICAL | API proxy нема auth/rate limiting | `api/gemini.ts`, `api/gemini-stream.ts` |
-| 2 | CRITICAL | `req.body` без Zod валидација — prompt injection | `api/gemini.ts` L33 |
-| 3 | CRITICAL | `model` не е whitelist-иран — скап модел exploit | `api/gemini.ts` L33 |
-| 4 | HIGH | API handlers `(req: any, res: any)` — без типови | `api/*.ts` |
-| 5 | MEDIUM | PlannerContext mega-context (20+ вредности) | `PlannerContext.tsx` |
-| 6 | MEDIUM | KaTeX CDN без SRI integrity hash | `index.html` |
-| 7 | LOW | Нема `include` во tsconfig | `tsconfig.json` |
+| # | Severity | Наод | Локација | Статус |
+|---|----------|------|----------|--------|
+| 1 | CRITICAL | API proxy нема auth/rate limiting | `api/*.ts` | ✅ FIXED |
+| 2 | CRITICAL | `req.body` без Zod валидација — prompt injection | `api/*.ts` | ✅ FIXED |
+| 3 | CRITICAL | `model` не е whitelist-иран — скап модел exploit | `api/*.ts` | ✅ FIXED |
+| 4 | HIGH | API handlers `(req: any, res: any)` — без типови | `api/*.ts` | ✅ FIXED |
+| 5 | MEDIUM | PlannerContext mega-context (20+ вредности) | `PlannerContext.tsx` | PENDING |
+| 6 | MEDIUM | KaTeX CDN без SRI integrity hash | `index.html` | PENDING |
+| 7 | LOW | Нема `include` во tsconfig | `tsconfig.json` | PENDING |
 
 ---
 
