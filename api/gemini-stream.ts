@@ -23,8 +23,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      apiVersion: 'v1'
+    });
     const { model, contents, config } = validated;
+
+    const targetModel = model === 'gemini-1.5-flash' ? 'gemini-2.0-flash' : model;
 
     const normalizedContents: Content[] = typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
@@ -36,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Connection', 'keep-alive');
 
     const responseStream = await ai.models.generateContentStream({
-      model,
+      model: targetModel,
       contents: normalizedContents,
       config: config as any,
     });

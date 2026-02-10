@@ -148,15 +148,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      apiVersion: 'v1' // Use stable v1 API
+    });
     const { model, contents, config } = validated;
+
+    // Use gemini-2.0-flash by default if 1.5-flash fails in this SDK
+    const targetModel = model === 'gemini-1.5-flash' ? 'gemini-2.0-flash' : model;
 
     const normalizedContents: Content[] = typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as Content[];
 
     const response = await ai.models.generateContent({
-      model,
+      model: targetModel,
       contents: normalizedContents,
       config: config as any,
     });

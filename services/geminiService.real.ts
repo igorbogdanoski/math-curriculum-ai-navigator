@@ -69,6 +69,7 @@ import {
 // The API key NEVER reaches the client bundle.
 // Every request is authenticated with Firebase ID token.
 const PROXY_TIMEOUT_MS = 60_000; // 60 s – generous for Gemini thinking models
+const DEFAULT_MODEL = 'gemini-2.0-flash'; // Upgrade default to 2.0-flash
 
 /**
  * Get a Firebase ID token for the currently signed-in user.
@@ -321,9 +322,8 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 
 
 // Helper to safely parse JSON responses from the model with INTELLIGENT RETRY logic and Zod Validation
-async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = "gemini-1.5-flash", zodSchema?: z.ZodTypeAny, retries = 3, useThinking = false): Promise<T> {
-  // Hard-fix: Force correct model name if an invalid one is passed
-  const activeModel = model.includes("2.5") ? "gemini-1.5-flash" : model;
+async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 3, useThinking = false): Promise<T> {
+  const activeModel = model;
   
   try {
     console.log(`Generating content with model: ${activeModel}... (Retries left: ${retries})`);
@@ -427,7 +427,7 @@ export const realGeminiService = {
 
     const contents: Part[] = [{ text: prompt }];
 
-    return generateAndParseJSON<AIGeneratedIdeas>(contents, schema, "gemini-1.5-flash", AIGeneratedIdeasSchema);
+    return generateAndParseJSON<AIGeneratedIdeas>(contents, schema, DEFAULT_MODEL, AIGeneratedIdeasSchema);
   },
 
   // Enhanced with Attachment Support for RAG (Chat with your Data)
@@ -455,7 +455,7 @@ export const realGeminiService = {
         }
 
         const responseStream = streamGeminiProxy({
-            model: "gemini-1.5-flash", 
+            model: DEFAULT_MODEL, 
             contents,
             config: {
                 systemInstruction,
@@ -484,7 +484,7 @@ export const realGeminiService = {
       }
       
       const response = await callGeminiProxy({
-        model: 'gemini-1.5-flash',
+        model: DEFAULT_MODEL,
         contents: [{ parts }],
         config: {
           responseModalities: ['IMAGE'],
