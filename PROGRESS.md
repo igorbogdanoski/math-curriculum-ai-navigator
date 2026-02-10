@@ -1,6 +1,6 @@
-# 📋 Евиденција на подобрувања — Math Curriculum AI Navigator
+﻿# 📋 Евиденција на подобрувања — Math Curriculum AI Navigator
 
-> Последно ажурирање: 9 февруари 2026
+> Последно ажурирање: 10 февруари 2026
 
 ---
 
@@ -54,9 +54,6 @@
 
 ---
 
-## 🔲 Останато (по приоритет)
-
-### 🔴 П1: Tailwind CSS — PostCSS миграција
 ### Фаза 5 — Tailwind PostCSS миграција (commit `8ded4ed`)
 
 - **Проблем**: Tailwind Play CDN (`<script src="cdn.tailwindcss.com">`) — ~300KB JS runtime, FOUC, нема tree-shaking
@@ -111,52 +108,124 @@
   3. Поддржани: `\frac`, `\sqrt`, `\cdot`, `\times`, `\div`, `\pm`, грчки букви, суперскрипти, субскрипти, `\mathbb`, `\overline`, `\text{}`
 - **Pipeline**: escape normalization → space fix → unit injection → environment spacing → **bare-LaTeX auto-wrap** → inner-$ cleanup
 - **Засегнати фајлови**: `components/common/MathRenderer.tsx` (користен во 15+ компоненти)
+---
+
+### Фаза 8б — Backslash Recovery (commit `851d565`)
+- AI понекогаш генерира `frac{1}{2}` наместо `\frac{1}{2}` (без backslash)
+- Додаден Step 2.1 во `wrapBareLatex()`: автоматска детекција и поправка на bare LaTeX команди без `\`
+- Поддржани: `frac`, `sqrt`, `cdot`, `times`, `div`, `pm`, `neq`, `leq`, `geq`, `approx`, `infty`
 
 ---
 
-## 🔲 Останато (по приоритет)
-
-### � П2: AbortController timeout на fetch
-- **Статус**: Нема timeout на AI proxy повиците — може бесконечно да чека
-- **План**: Додади 60s AbortController timeout во `callGeminiProxy` и `streamGeminiProxy` во `geminiService.real.ts`
-- **Очекуван ефект**: Корисникот добива грешка наместо бесконечен spinner
-
-### �🟡 П3: Focus trapping во модали
-- **Статус**: Tab копчето излегува надвор од отворен модал — WCAG нарушување
-- **План**: Додади `focus-trap-react` или рачно focus management
-- **Засегнати**: Сите модали во `ModalManager.tsx`
-- **Очекуван ефект**: Пристапност за корисници со тастатура и screen reader
-
-### 🟢 П4: TypeScript `strict: true`
-- **Статус**: 47× `any` типови низ кодот, `strict` е исклучен
-- **План**: Инкрементално — прво `noImplicitAny`, потоа `strictNullChecks`, потоа целосен `strict`
-- **Очекуван ефект**: Спречува undefined/null багови долгорочно
-
-### 🔵 П5: Компонентни тестови
-- **Статус**: Vitest + Testing Library инсталирани, но 0 UI компонентни тестови
-- **План**: Тестови за критични патеки — Login flow, Planner CRUD, AI Generator, Share decode
-- **Очекуван ефект**: Доверба при идни промени, regression заштита
+### Фаза 9 — P2: AbortController Timeout (commit `d892eb9`)
+- **Проблем**: AI proxy повиците немаа timeout — можеа бесконечно да чекаат
+- **Решение**: 60-секунден `AbortController` timeout на двата endpoint-а
+  - `callGeminiProxy()` — стандарден 60s timeout
+  - `streamGeminiProxy()` — timeout се ресетира на секој примен chunk
+- **Нов**: `PROXY_TIMEOUT_MS = 60_000` константа во `geminiService.real.ts`
 
 ---
 
-## 📊 Метрики
+### Фаза 10 — P4: TypeScript `strict: true` (commit `cea06b9`)
+- **Проблем**: `strict` беше исклучен; 477+ implicit `any` типови низ целиот код
+- **Решение**: Инкрементално вклучување на сите strict флагови
+  - Поправени 23 baseline TS грешки (Zod generic, React 19 class, `import.meta.env`)
+  - Поправени **471 `noImplicitAny`** (TS7006) грешки во ~60 фајлови
+  - Инсталирани `@types/react` + `@types/react-dom` — решени 3,820 JSX грешки
+  - Поправени 19 дополнителни + 6 `strictNullChecks` грешки
+  - Вклучен `"strict": true` во `tsconfig.json`
+- **Засегнати**: **75 фајлови** (501 додавања / 452 бришења)
+- **Резултат**: Целосен `strict: true`
+
+---
+
+## Експертска оценка (10 февруари 2026)
+
+| Категорија | Оценка | Белешки |
+|------------|--------|---------|
+| Архитектура | **7/10** | Добра сепарација (contexts/hooks/views/services). Hash routing лимитирачки но функционален. |
+| Безбедност | **8/10** | API key серверски. CORS заклучен. Недостасува auth на proxy. |
+| Перформанси | **7/10** | Lazy loading, chunks, useMemo/useCallback. Mega-context Pattern. |
+| Type Safety | **8/10** | `strict: true` вклучен. 25 `as any` останати (тестови + SDK). |
+| Тест покриеност | **4/10** | 9 тест фајлови за ~50+ компоненти. Нема view тестови. |
+
+### Критични наоди
+
+| # | Severity | Наод | Локација |
+|---|----------|------|----------|
+| 1 | CRITICAL | API proxy нема auth/rate limiting | `api/gemini.ts`, `api/gemini-stream.ts` |
+| 2 | CRITICAL | `req.body` без Zod валидација — prompt injection | `api/gemini.ts` L33 |
+| 3 | CRITICAL | `model` не е whitelist-иран — скап модел exploit | `api/gemini.ts` L33 |
+| 4 | HIGH | API handlers `(req: any, res: any)` — без типови | `api/*.ts` |
+| 5 | MEDIUM | PlannerContext mega-context (20+ вредности) | `PlannerContext.tsx` |
+| 6 | MEDIUM | KaTeX CDN без SRI integrity hash | `index.html` |
+| 7 | LOW | Нема `include` во tsconfig | `tsconfig.json` |
+
+---
+
+## Останато (по приоритет — ревидирано)
+
+### П1: API Auth + Input Validation (КРИТИЧНО)
+- **Статус**: Proxy endpoints отворени без auth
+- **План**: Firebase ID token verify, Zod body validation, model whitelist, rate limiting
+
+### П2: Focus Trapping (WCAG)
+- **Статус**: Tab излегува од модали
+- **План**: `focus-trap-react` во `ModalManager.tsx`
+
+### П3: Тест покриеност (4/10 → 7/10)
+- **План**: Тестови за `useRouter`, `PlannerContext`, `geminiService`, `MathRenderer`
+
+### П4: PlannerContext Split
+- **План**: `PlannerItemsContext` + `LessonPlansContext` + `CommunityPlansContext`
+
+### П5: Cleanup `as any` (25 останати)
+- **План**: Proper типови за SDK, SpeechRecognition, test mocks
+
+---
+
+## Метрики
 
 | Метрика | Пред | Сега | Цел |
 |---------|------|------|-----|
-| Bundle (main chunk) | 1,555 KB | **323 KB** | < 500 KB ✅ |
-| API keys во bundle | 1 (Gemini) | 0 | 0 ✅ |
-| Context re-renders | Секој render | Memoized (×9) | Memoized ✅ |
-| `window.confirm` | 4 места | 0 | 0 ✅ |
-| Tailwind | CDN Play (~300KB JS) | PostCSS build (71KB CSS) | PostCSS ✅ |
-| `any` типови | ~47 | ~47 | 0 |
-| UI тестови | 0 | 0 | 20+ |
+| Bundle (main chunk) | 1,555 KB | **325 KB** | < 500 KB |
+| API keys во bundle | 1 (Gemini) | **0** | 0 |
+| Context re-renders | Секој render | **Memoized (x9)** | Memoized |
+| `window.confirm` | 4 места | **0** | 0 |
+| Tailwind | CDN (~300KB JS) | **PostCSS (71KB CSS)** | PostCSS |
+| TypeScript strict | Исклучен | **`strict: true`** | strict |
+| `any` типови | ~477 | **25 `as any`** | <10 |
+| API timeout | Нема | **60s AbortController** | 60s |
+| Math rendering | Скршено | **LaTeX auto-wrap + recovery** | Working |
+| Тестови | 9 фајлови | **9 фајлови** | 25+ |
 
 ---
 
-## 🛠 Технички стек
+## Хронологија на комити
 
-- **Frontend**: React 19.2.1, TypeScript 5.8, Vite 6.x
+| # | Commit | Фаза | Опис |
+|---|--------|------|------|
+| 1 | `648938c` | Фаза 1 | React Error #130 fix |
+| 2 | `efff62f` | Фаза 2 | Quick Wins (7 подобрувања) |
+| 3 | `2618869` | Фаза 3 | Medium Wins (ErrorBoundary, Zod, ConfirmDialog) |
+| 4 | `0196296` | Фаза 4 | API Key Security (server proxy) |
+| 5 | `8ded4ed` | Фаза 5 | Tailwind PostCSS миграција |
+| 6 | `155c3eb` | Фаза 6 | Bundle Splitting (-75%) |
+| 7 | `fe90d46` | Фаза 7 | Security и Stability (XSS, CORS, ErrorBoundary) |
+| 8 | `96aef74` | Фаза 8 | Math Rendering Fix |
+| 9 | `851d565` | Фаза 8б | Backslash Recovery |
+| 10 | `d892eb9` | Фаза 9 | AbortController Timeout |
+| 11 | `cea06b9` | Фаза 10 | TypeScript `strict: true` |
+
+---
+
+## Технички стек
+
+- **Frontend**: React 19.2.4, TypeScript 5.8, Vite 6.4.1
+- **Стилизирање**: Tailwind CSS v4.1.18 (`@tailwindcss/vite`)
 - **Backend**: Firebase 12.4 (Auth + Firestore), Vercel Serverless Functions
-- **AI**: Google Gemini (преку server proxy)
+- **AI**: Google Gemini (преку server proxy со 60s timeout)
+- **Математика**: KaTeX 0.16.10 (CDN) со auto-wrap и backslash recovery
+- **Type Safety**: TypeScript `strict: true`, Zod валидација
 - **Deployment**: Vercel (auto-deploy од `main` гранка)
 - **Repo**: `igorbogdanoski/math-curriculum-ai-navigator`
