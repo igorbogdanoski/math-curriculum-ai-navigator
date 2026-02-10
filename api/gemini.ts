@@ -1,25 +1,21 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from "@google/genai";
+import { setCorsHeaders, authenticateAndValidate } from './_shared';
 
 /**
- * Vercel Serverless Function: Gemini API Proxy
+ * Vercel Serverless Function: Gemini API Proxy (non-streaming)
  * 
- * Handles non-streaming generateContent calls.
- * The GEMINI_API_KEY is only available server-side (never sent to the browser).
+ * Security layers:
+ * 1. CORS — only allowed origin
+ * 2. Firebase ID token verification
+ * 3. Zod request body validation (model whitelist, config sanitization)
+ * 4. GEMINI_API_KEY server-side only
  */
-export default async function handler(req: any, res: any) {
-  // CORS headers
-  const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://math-curriculum-ai-navigator.vercel.app';
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCorsHeaders(res);
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const validated = await authenticateAndValidate(req, res);
+  if (!validated) return; // Response already sent
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -28,11 +24,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const { model, contents, config } = req.body;
-
-    if (!model || !contents) {
-      return res.status(400).json({ error: 'Missing required fields: model, contents' });
-    }
+    const { model, contents, config } = validated;
 
     const response = await ai.models.generateContent({ model, contents, config });
 

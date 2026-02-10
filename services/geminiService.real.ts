@@ -57,15 +57,34 @@ import {
 // --- API PROXY ---
 // All Gemini API calls go through server-side proxy.
 // The API key NEVER reaches the client bundle.
+// Every request is authenticated with Firebase ID token.
 const PROXY_TIMEOUT_MS = 60_000; // 60 s – generous for Gemini thinking models
 
+/**
+ * Get a Firebase ID token for the currently signed-in user.
+ * Lazily imports firebase/auth to avoid circular deps.
+ */
+async function getAuthToken(): Promise<string> {
+  const { getAuth } = await import('firebase/auth');
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('Не сте најавени. Ве молиме најавете се повторно.');
+  }
+  return user.getIdToken();
+}
+
 async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
+  const token = await getAuthToken();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
   try {
     const response = await fetch('/api/gemini', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
       body: JSON.stringify(params),
       signal: controller.signal,
     });
@@ -85,12 +104,16 @@ async function callGeminiProxy(params: { model: string; contents: any; config?: 
 }
 
 async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
+  const token = await getAuthToken();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
   try {
     const response = await fetch('/api/gemini-stream', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
       body: JSON.stringify(params),
       signal: controller.signal,
     });
