@@ -38,6 +38,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Extract systemInstruction from config if present
     const { systemInstruction, ...restConfig } = (config || {}) as any;
 
+    // Map camelCase to snake_case for new SDK v1
+    const mappedConfig = {
+      temperature: restConfig.temperature,
+      top_p: restConfig.topP,
+      top_k: restConfig.topK,
+      candidate_count: restConfig.candidateCount,
+      max_output_tokens: restConfig.maxOutputTokens,
+      stop_sequences: restConfig.stopSequences,
+      response_mime_type: restConfig.responseMimeType,
+      response_schema: restConfig.responseSchema,
+      presence_penalty: restConfig.presencePenalty,
+      frequency_penalty: restConfig.frequencyPenalty,
+    };
+
+    // Remove undefined fields
+    Object.keys(mappedConfig).forEach(key => (mappedConfig as any)[key] === undefined && delete (mappedConfig as any)[key]);
+
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -47,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model: targetModel,
       contents: normalizedContents,
       systemInstruction: systemInstruction,
-      config: restConfig,
+      config: mappedConfig as any,
     });
 
     for await (const chunk of responseStream) {
