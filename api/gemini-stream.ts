@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI(apiKey);
     const { model, contents, config } = validated;
 
     // Set SSE headers
@@ -31,15 +31,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const responseStream = await ai.models.generateContentStream({
-      model,
+    const responseStream = await ai.getGenerativeModel({ model }).generateContentStream({
       contents: contents as any,
-      config: config as any,
+      generationConfig: config as any,
     });
 
-    for await (const chunk of responseStream) {
-      if (chunk.text) {
-        res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+    for await (const chunk of responseStream.stream) {
+      if (chunk.text()) {
+        res.write(`data: ${JSON.stringify({ text: chunk.text() })}\n\n`);
       }
     }
 

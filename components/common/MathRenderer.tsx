@@ -68,9 +68,16 @@ const convertToStandardLatex = (text: string): string => {
     // 2.1 Fix bare LaTeX commands missing their backslash (AI sometimes drops it)
     //     e.g., "frac{1}{2}" → "\frac{1}{2}", "sqrt{4}" → "\sqrt{4}"
     //     Commands with mandatory brace arg — only fix when followed by {
-    processed = processed.replace(/(?<![a-zA-Z\\])(frac|sqrt|text|mathbb|overline|underline|hat|vec|bar|tilde)(?=\{)/g, '\\$1');
+    processed = processed.replace(/(?<![a-zA-Z\\])\b(frac|sqrt|text|mathbb|overline|underline|hat|vec|bar|tilde)(?=\{)/g, '\\$1');
     //     Standalone symbols — only fix when NOT preceded by a letter or \
-    processed = processed.replace(/(?<![a-zA-Z\\])(cdot|times|div|pm|mp|leq|geq|neq|approx|infty|circ)(?![a-zA-Z])/g, '\\$1');
+    processed = processed.replace(/(?<![a-zA-Z\\])\b(cdot|times|div|pm|mp|leq|geq|neq|approx|infty|circ)(?![a-zA-Z])/g, '\\$1');
+    
+    // 2.2 AGGRESSIVE FIX: Check for commands that should ALWAYS have a backslash inside $...$
+    // Sometimes AI writes $frac{1}{2}$ which is technically invalid but we want to show it correctly.
+    processed = processed.replace(/\$(.*?)\$/g, (match, inner) => {
+        const fixedInner = inner.replace(/(?<!\\)\b(frac|sqrt|cdot|times|div|pm|leq|geq|neq|approx|infty|alpha|beta|gamma|delta|pi|theta|lambda|sigma|omega|phi|psi|mu|rho|tau|epsilon)\b/g, '\\$1');
+        return `$${fixedInner}$`;
+    });
     // 2.5 Fix unit issues (e.g., 11 km outside of \text{})
     // Detect numbers followed by km, m, cm etc. if they aren't already in \text
     processed = processed.replace(/(\d+(?:[.,]\d+)?)\s*(km|cm|mm|kg|mg|ml|km2|m2|cm2|км|см|мм|кг|мг|мл|км2|м2|см2|m|м|g|г|t|т|l|л|dm|дм)\b/g, '$1\\text{ $2}');

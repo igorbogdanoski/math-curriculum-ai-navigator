@@ -168,6 +168,11 @@ export async function authenticateAndValidate(
     const issues = parsed.error.issues.map(
       (i) => `${i.path.join('.')}: ${i.message}`
     ).join('; ');
+    
+    // Log the failing body for debugging (only in development or for specific errors)
+    console.error('[validation] Invalid Gemini request body:', JSON.stringify(req.body, null, 2));
+    console.error('[validation] Issues:', issues);
+    
     res.status(400).json({ error: `Invalid request: ${issues}` });
     return null;
   }

@@ -113,8 +113,6 @@ async function authenticateAndValidate(req: VercelRequest, res: VercelResponse) 
       return null;
     }
   } else {
-    // If we're in production but Firebase Admin is NOT available, we MUST block the request
-    // as it means GEMINI_API_KEY could be exploited without authentication.
     if (process.env.NODE_ENV === 'production') {
         console.error('[auth] CRITICAL: FIREBASE_SERVICE_ACCOUNT missing in production!');
         res.status(500).json({ error: 'Server authentication configuration error' });
@@ -127,26 +125,22 @@ async function authenticateAndValidate(req: VercelRequest, res: VercelResponse) 
     const issues = parsed.error.issues.map(
       (i) => `${i.path.join('.')}: ${i.message}`
     ).join('; ');
+    
+    // Log the failing body for debugging
+    console.error('[validation] Invalid Gemini request body:', JSON.stringify(req.body, null, 2));
+    console.error('[validation] Issues:', issues);
+    
     res.status(400).json({ error: `Invalid request: ${issues}` });
     return null;
   }
   return parsed.data;
 }
 
-/**
- * Vercel Serverless Function: Gemini API Proxy (non-streaming)
- * 
- * Security layers:
- * 1. CORS — only allowed origin
- * 2. Firebase ID token verification
- * 3. Zod request body validation (model whitelist, config sanitization)
- * 4. GEMINI_API_KEY server-side only
- */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
 
   const validated = await authenticateAndValidate(req, res);
-  if (!validated) return; // Response already sent
+  if (!validated) return;
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -154,18 +148,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI(apiKey);
     const { model, contents, config } = validated;
 
-    const response = await ai.models.generateContent({
-      model,
+    const response = await ai.getGenerativeModel({ model }).generateContent({
       contents: contents as any,
-      config: config as any,
+      generationConfig: config as any,
     });
 
+    const result = response.response;
     res.status(200).json({
-      text: response.text || '',
-      candidates: response.candidates,
+      text: result.text(),
+      candidates: result.candidates,
     });
   } catch (error) {
     console.error('[/api/gemini] Error:', error);

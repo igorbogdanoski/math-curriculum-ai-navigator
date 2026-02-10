@@ -312,10 +312,13 @@ const SAFETY_SETTINGS = [
 
 // Helper to safely parse JSON responses from the model with INTELLIGENT RETRY logic and Zod Validation
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = "gemini-1.5-flash", zodSchema?: z.ZodTypeAny, retries = 3, useThinking = false): Promise<T> {
+  // Hard-fix: Force correct model name if an invalid one is passed
+  const activeModel = model.includes("2.5") ? "gemini-1.5-flash" : model;
+  
   try {
-    console.log(`Generating content with model: ${model}... (Retries left: ${retries})`);
+    console.log(`Generating content with model: ${activeModel}... (Retries left: ${retries})`);
     
-    // Configure Thinking for models that support it (like Gemini 2.5 Flash/Pro when requested)
+    // Configure Thinking for models that support it (like Gemini 2.0 Flash/Pro when requested)
     // Thinking budget allows the model to reason before outputting JSON, increasing accuracy for complex tasks.
     const config: any = {
         responseMimeType: "application/json",
@@ -325,10 +328,15 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
     };
 
     const response = await callGeminiProxy({
-      model,
+      model: activeModel,
       contents: [{ parts: contents }],
       config: config,
     });
+
+    if (!response || (!response.text && !response.candidates)) {
+        console.error("Malformed response from Gemini Proxy:", response);
+        throw new Error("AI сервисот врати нецелосен одговор.");
+    }
 
     const rawText = response.text || "";
     
