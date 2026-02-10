@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const ai = new GoogleGenAI(apiKey);
+    const ai = new GoogleGenAI({ apiKey });
     const { model, contents, config } = validated;
 
     const normalizedContents: Content[] = typeof contents === 'string'
@@ -35,7 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const responseStream = await ai.getGenerativeModel({ model }).generateContentStream({
+    const modelInstance = ai.getGenerativeModel({ model });
+    const responseStream = await modelInstance.generateContentStream({
       contents: normalizedContents,
       generationConfig: config as GenerationConfig,
     });

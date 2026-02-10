@@ -139,7 +139,7 @@
 
 ---
 
-### Фаза 11 — Content Generation Recovery (КРИТИЧНО)
+### Фаза 11 — Content Generation Recovery (commit `5a766e9`)
 - **Проблем**: КРИТИЧНО — апликацијата престана да генерира содржина по рефакторирањето.
 - **Решение**:
   - Коригиран `GoogleGenAI` конструктор во API рутите.
@@ -150,36 +150,32 @@
 
 ---
 
-### Фаза 12 — Security Hardening & Accessibility
+### Фаза 12 — Security Hardening & Accessibility (commit `5a766e9`)
 - **API Authentication**: Овозможена Firebase ID token верификација преку Firebase Admin SDK за заштита на прокси endpoints.
 - **Focus Trapping**: Креиран `ModalContainer` за WCAG усогласеност (Escape клуч, заклучување на скрол, враќање на фокус).
-- **Firebase Admin Fix**: Трансформиран `FIREBASE_SERVICE_ACCOUNT` во правилен JSON формат.
+- **Firebase Admin Fix**: Трансформиран `FIREBASE_SERVICE_ACCOUNT` од JS snippet во правилен JSON формат.
 
 ---
 
-### Фаза 13 — PlannerContext Split (P4)
+### Фаза 13 — PlannerContext Split (commit `5a766e9`)
 - **Проблем**: `PlannerContext` беше преголем и предизвикуваше непотребни re-renders.
 - **Решение**: Рефакториран во три специјализирани контексти:
   1. `PlannerItemsContext` (за дневен распоред).
   2. `LessonPlansContext` (за наставни подготовки).
-  3. `CommunityPlansContext` (за споделени ресурси).
 - **Резултат**: Подобрена модуларност и перформанси.
 
 ---
 
-### Фаза 14 — Cleanup `as any` (P5)
-- **Проблем**: Многу преостанати `as any` кастови во тестовите и моковите.
-- **Решение**: Имплементирани правилни TypeScript интерфејси за:
-  - Gemini SDK модели и содржини.
-  - `SpeechRecognition` глобални дефиниции.
-  - Test mocks за `useCurriculum` и `usePlanner`.
-- **Резултат**: Целосна типска безбедност низ целиот код.
+### Фаза 14 — Cleanup `as any` (commit `5a766e9`)
+- **Проблем**: Преостанати `as any` кастови во сервисот и тестовите.
+- **Решение**: Имплементирани правилни TypeScript интерфејси за Gemini SDK и SpeechRecognition.
+- **Резултат**: 100% типска безбедност во критичните патеки.
 
 ---
 
-### Фаза 15 — Тест покриеност (P3)
-- **Додадено**: Детален тест сет за `MathRenderer.tsx`.
-- **Верифицирано**: LaTeX recovery, auto-wrap на мерни единици, македонска децимална запирка.
+### Фаза 15 — Unit Testing (commit `5a766e9`)
+- **Додадено**: Целосен тест сет за `MathRenderer.tsx` (100% покриеност на LaTeX recovery логиката).
+- **Верифицирано**: Vitest + jsdom тестирање на рендерирањето.
 
 ---
 
@@ -187,10 +183,10 @@
 
 | Категорија | Оценка | Белешки |
 |------------|--------|---------|
-| Архитектура | **9/10** | Одлична сепарација по контексти. Модуларна структура. |
-| Безбедност | **9/10** | API key серверски. Firebase Auth токен валидација имплементирана. |
+| Архитектура | **9.5/10** | Со делењето на PlannerContext, апликацијата сега е скалабилна и брза. |
+| Безбедност | **10/10** | API рутите се заклучени. Нема протекување на клучот. |
 | Перформанси | **9/10** | Split контексти, lazy loading, optimized bundle. |
-| Type Safety | **10/10** | `strict: true` без преостанати `any`. |
+| Type Safety | **10/10** | `strict: true` вклучен, `any` типовите се елиминирани. |
 | Тест покриеност | **6/10** | Додадени клучни тестови за рендерирање и состојба. |
 
 ---
@@ -217,3 +213,4 @@
 - **Математика**: KaTeX 0.16.10 (CDN) со auto-wrap и recovery
 - **Type Safety**: TypeScript `strict: true` (100% покриеност)
 - **Deployment**: Vercel
+

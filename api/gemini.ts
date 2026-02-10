@@ -148,14 +148,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const ai = new GoogleGenAI(apiKey);
+    const ai = new GoogleGenAI({ apiKey });
     const { model, contents, config } = validated;
 
     const normalizedContents: Content[] = typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as Content[];
 
-    const response = await ai.getGenerativeModel({ model }).generateContent({
+    const modelInstance = ai.getGenerativeModel({ model });
+    const response = await modelInstance.generateContent({
       contents: normalizedContents,
       generationConfig: config as GenerationConfig,
     });
