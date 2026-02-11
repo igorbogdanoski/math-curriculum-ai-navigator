@@ -552,7 +552,7 @@ export const realGeminiService = {
       { text: `Контекст:\n${JSON.stringify({ context: minifyContext(context), studentProfiles }, null, 2)}` },
     ];
     // Using Thinking mode here for deep personalization logic
-    return generateAndParseJSON<AIGeneratedLearningPaths>(contents, schema, "gemini-1.5-flash", AIGeneratedLearningPathsSchema, 3, true);
+    return generateAndParseJSON<AIGeneratedLearningPaths>(contents, schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, 3, true);
   },
 
   async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean): Promise<AIGeneratedAssessment> {
@@ -622,7 +622,7 @@ export const realGeminiService = {
         contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
     }
 
-    return generateAndParseJSON<AIGeneratedAssessment>(contents, schema, "gemini-1.5-flash", AIGeneratedAssessmentSchema);
+    return generateAndParseJSON<AIGeneratedAssessment>(contents, schema, DEFAULT_MODEL, AIGeneratedAssessmentSchema);
   },
   
   async generateExitTicket(numQuestions: number, focus: string, context: GenerationContext, profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedAssessment> {
@@ -667,7 +667,7 @@ export const realGeminiService = {
      };
 
     const contents: Part[] = [{ text: prompt }];
-    return generateAndParseJSON<AIGeneratedRubric>(contents, schema, "gemini-1.5-flash", AIGeneratedRubricSchema);
+    return generateAndParseJSON<AIGeneratedRubric>(contents, schema, DEFAULT_MODEL, AIGeneratedRubricSchema);
   },
 
   async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingProfile, image?: { base64: string, mimeType: string }): Promise<Partial<LessonPlan>> {
@@ -701,7 +701,7 @@ export const realGeminiService = {
         required: ["title", "objectives", "assessmentStandards", "scenario", "materials", "progressMonitoring", "differentiation"]
       };
 
-      return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, "gemini-1.5-flash", LessonPlanSchema.partial());
+      return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, LessonPlanSchema.partial());
   },
   
   async enhanceText(textToEnhance: string, fieldType: string, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
@@ -709,7 +709,7 @@ export const realGeminiService = {
     Оригинален текст: "${textToEnhance}"`;
     
     const response = await callGeminiProxy({
-        model: "gemini-1.5-flash",
+        model: DEFAULT_MODEL,
         contents: prompt,
         config: { 
             systemInstruction: TEXT_SYSTEM_INSTRUCTION,
@@ -739,13 +739,13 @@ export const realGeminiService = {
     };
     
     // Using Thinking Config here to allow the model to reason about the pedagogical structure
-    return generateAndParseJSON<AIPedagogicalAnalysis>([{text: prompt}, {text: `План: ${JSON.stringify(plan)}`}], schema, "gemini-1.5-flash", AIPedagogicalAnalysisSchema, 3, true);
+    return generateAndParseJSON<AIPedagogicalAnalysis>([{text: prompt}, {text: `План: ${JSON.stringify(plan)}`}], schema, DEFAULT_MODEL, AIPedagogicalAnalysisSchema, 3, true);
   },
 
   async generateProactiveSuggestion(concept: Concept, profile?: TeachingProfile): Promise<string> {
       const prompt = `Генерирај краток, корисен и проактивен предлог за наставник кој ќе го предава концептот "${concept.title}". Предлогот треба да биде релевантен и да нуди конкретна акција. Заврши го предлогот со акција во загради [Пример: Сакаш да генерирам активност?].`;
       const response = await callGeminiProxy({ 
-          model: "gemini-1.5-flash", 
+          model: DEFAULT_MODEL, 
           contents: prompt,
           config: { 
               systemInstruction: TEXT_SYSTEM_INSTRUCTION,
@@ -770,7 +770,7 @@ export const realGeminiService = {
           }
        };
       
-      return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{text: prompt}, {text: `Контекст: ${JSON.stringify({startDate, endDate, holidays, winterBreak})}`}], schema, "gemini-1.5-flash", AnnualPlanSchema);
+      return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{text: prompt}, {text: `Контекст: ${JSON.stringify({startDate, endDate, holidays, winterBreak})}`}], schema, DEFAULT_MODEL, AnnualPlanSchema);
   },
   
   async generateThematicPlan(grade: Grade, topic: Topic): Promise<AIGeneratedThematicPlan> {
@@ -796,13 +796,13 @@ export const realGeminiService = {
           },
           required: ["thematicUnit", "lessons"]
        };
-      return generateAndParseJSON<AIGeneratedThematicPlan>([{text: prompt}, {text: `Контекст: ${JSON.stringify({grade: grade.level, topic: topic.title})}`}], schema, "gemini-1.5-flash", AIGeneratedThematicPlanSchema);
+      return generateAndParseJSON<AIGeneratedThematicPlan>([{text: prompt}, {text: `Контекст: ${JSON.stringify({grade: grade.level, topic: topic.title})}`}], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema);
   },
   
   async analyzeReflection(wentWell: string, challenges: string, profile?: TeachingProfile): Promise<string> {
       const prompt = `Анализирај ја рефлексијата од часот и дај краток, концизен и корисен предлог за следниот час. Предлогот треба да заврши со акционо прашање во загради [Пример: Сакаш да генерирам активност?]. Рефлексија - Што помина добро: "${wentWell}". Предизвици: "${challenges}".`;
       const response = await callGeminiProxy({ 
-          model: "gemini-1.5-flash", 
+          model: DEFAULT_MODEL, 
           contents: prompt,
           config: { 
               systemInstruction: TEXT_SYSTEM_INSTRUCTION,
@@ -848,7 +848,7 @@ export const realGeminiService = {
       const minifiedStandards = allNationalStandards.map(s => ({ id: s.id, code: s.code }));
       const minifiedPlans = lessonPlans.map(p => ({ grade: p.grade, assessmentStandards: p.assessmentStandards }));
 
-      return generateAndParseJSON<CoverageAnalysisReport>([{text: prompt}, {text: `Податоци: ${JSON.stringify({lessonPlans: minifiedPlans, allNationalStandards: minifiedStandards})}`}], schema, "gemini-1.5-flash", CoverageAnalysisSchema);
+      return generateAndParseJSON<CoverageAnalysisReport>([{text: prompt}, {text: `Податоци: ${JSON.stringify({lessonPlans: minifiedPlans, allNationalStandards: minifiedStandards})}`}], schema, DEFAULT_MODEL, CoverageAnalysisSchema);
   },
   
   async getPersonalizedRecommendations(profile: TeachingProfile, lessonPlans: LessonPlan[]): Promise<AIRecommendation[]> {
@@ -887,7 +887,7 @@ export const realGeminiService = {
       };
       const minifiedPlans = lessonPlans.map(p => ({ title: p.title, grade: p.grade, topicId: p.topicId })).slice(0, 10);
       
-      return generateAndParseJSON<AIRecommendation[]>([{text: prompt}, {text: `Податоци: ${JSON.stringify({profile, lessonPlans: minifiedPlans})}`}], schema, "gemini-1.5-flash", AIRecommendationSchema);
+      return generateAndParseJSON<AIRecommendation[]>([{text: prompt}, {text: `Податоци: ${JSON.stringify({profile, lessonPlans: minifiedPlans})}`}], schema, DEFAULT_MODEL, AIRecommendationSchema);
   },
   
   async generatePracticeMaterials(concept: Concept, gradeLevel: number, materialType: 'problems' | 'questions'): Promise<AIGeneratedPracticeMaterial> {
@@ -925,14 +925,14 @@ export const realGeminiService = {
           required: ["title", "items"] 
       };
       
-      return generateAndParseJSON<AIGeneratedPracticeMaterial>([{text: prompt}], schema, "gemini-1.5-flash", AIGeneratedPracticeMaterialSchema);
+      return generateAndParseJSON<AIGeneratedPracticeMaterial>([{text: prompt}], schema, DEFAULT_MODEL, AIGeneratedPracticeMaterialSchema);
   },
   
   async generateAnalogy(concept: Concept, gradeLevel: number): Promise<string> {
     const prompt = `Објасни го математичкиот поим "${concept.title}" за ${gradeLevel} одделение користејќи едноставна и лесно разбирлива аналогија.`;
     try {
       const response = await callGeminiProxy({
-        model: "gemini-1.5-flash",
+        model: DEFAULT_MODEL,
         contents: prompt,
         config: { 
             systemInstruction: TEXT_SYSTEM_INSTRUCTION,
@@ -949,7 +949,7 @@ export const realGeminiService = {
     const prompt = `Креирај кратка структура (outline) за презентација за математичкиот поим "${concept.title}" за ${gradeLevel} одделение.`;
     try {
       const response = await callGeminiProxy({
-        model: "gemini-1.5-flash",
+        model: DEFAULT_MODEL,
         contents: prompt,
         config: { 
             systemInstruction: TEXT_SYSTEM_INSTRUCTION,
@@ -984,6 +984,6 @@ export const realGeminiService = {
         required: ["title", "date", "type", "description"]
     };
 
-    return generateAndParseJSON<any>([{text: prompt}], schema, "gemini-1.5-flash");
+    return generateAndParseJSON<any>([{text: prompt}], schema, DEFAULT_MODEL);
   }
 };
