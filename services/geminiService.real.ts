@@ -323,19 +323,24 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 
 // Helper to safely parse JSON responses from the model with INTELLIGENT RETRY logic and Zod Validation
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 3, useThinking = false): Promise<T> {
-  const activeModel = model;
+  const activeModel = useThinking ? 'gemini-2.0-flash-thinking' : model;
   
   try {
     console.log(`Generating content with model: ${activeModel}... (Retries left: ${retries})`);
     
-    // Configure Thinking for models that support it (like Gemini 2.0 Flash/Pro when requested)
-    // Thinking budget allows the model to reason before outputting JSON, increasing accuracy for complex tasks.
-    const config = {
+    // Configure Thinking for models that support it (like Gemini 2.0 Flash Thinking when requested)
+    const config: any = {
         responseMimeType: "application/json",
         responseSchema: schema,
         systemInstruction: JSON_SYSTEM_INSTRUCTION,
         safetySettings: SAFETY_SETTINGS, 
     };
+
+    if (useThinking) {
+        config.thinkingConfig = {
+            thinkingBudget: 16000 // default budget
+        };
+    }
 
     const response = await callGeminiProxy({
       model: activeModel,
@@ -381,7 +386,9 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
     const errorMessage = error.message?.toLowerCase() || "";
     const isFatal = errorMessage.includes("api key") || 
                     errorMessage.includes("permission") || 
-                    errorMessage.includes("403"); 
+                    errorMessage.includes("403") ||
+                    errorMessage.includes("429") ||
+                    errorMessage.includes("too many requests"); 
 
     if (retries > 0 && !isFatal) {
         const delay = 1000 * Math.pow(2, 3 - retries); 

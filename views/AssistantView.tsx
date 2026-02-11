@@ -59,6 +59,7 @@ export const AssistantView: React.FC = () => {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isThrottled, setIsThrottled] = useState(false);
     
     // File Upload State
     const [attachment, setAttachment] = useState<{ file: File; previewUrl: string; base64: string; mimeType: string } | null>(null);
@@ -119,6 +120,10 @@ export const AssistantView: React.FC = () => {
 
     const handleSend = async () => {
         if ((!input.trim() && !attachment) || isLoading || !isOnline) return;
+
+        if (isThrottled) {
+            return; // Silent throttle for chat
+        }
         
         const textToSend = input.trim() || (attachment ? `[Прикачен фајл: ${attachment.file.name}]` : '');
         
@@ -139,6 +144,8 @@ export const AssistantView: React.FC = () => {
         setAttachment(null); 
         
         setIsLoading(true);
+        setIsThrottled(true);
+        setTimeout(() => setIsThrottled(false), 2000); // 2s throttle for chat
 
         const placeholderMessage: ChatMessage = { role: 'model', text: '' };
         setHistory((prev: ChatMessage[]) => [...prev, placeholderMessage]);

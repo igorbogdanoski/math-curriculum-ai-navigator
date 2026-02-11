@@ -1,140 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, Content, GenerationConfig } from "@google/genai";
-// --- SharedUtils.ts code inlined below ---
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { z } from 'zod';
-
-let firebaseAuthAvailable = true;
-function getFirebaseAdmin() {
-  if (getApps().length === 0) {
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (serviceAccount) {
-      try {
-        initializeApp({ credential: cert(JSON.parse(serviceAccount)) });
-      } catch (err) {
-        console.error('[auth] Failed to init Firebase Admin with service account:', err);
-        firebaseAuthAvailable = false;
-        return null;
-      }
-    } else {
-      console.warn('[auth] FIREBASE_SERVICE_ACCOUNT not set. Token verification is DISABLED.');
-      firebaseAuthAvailable = false;
-      return null;
-    }
-  }
-  if (!firebaseAuthAvailable) return null;
-  return getAuth();
-}
-
-const ALLOWED_MODELS = new Set([
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro',
-  'gemini-2.0-flash-lite',
-]);
-
-const PartSchema = z.object({
-  text: z.string().optional(),
-  inlineData: z.object({
-    mimeType: z.string(),
-    data: z.string(),
-  }).optional(),
-});
-
-const ContentSchema = z.object({
-  role: z.string().optional(),
-  parts: z.array(PartSchema),
-});
-
-const SafetySettingSchema = z.object({
-  category: z.string(),
-  threshold: z.string(),
-});
-
-const SafeConfigSchema = z.object({
-  temperature: z.number().min(0).max(2).optional(),
-  topP: z.number().min(0).max(1).optional(),
-  topK: z.number().int().min(1).max(100).optional(),
-  maxOutputTokens: z.number().int().min(1).max(65536).optional(),
-  responseMimeType: z.enum(['text/plain', 'application/json']).optional(),
-  responseSchema: z.any().optional(),
-  thinkingConfig: z.object({
-    thinkingBudget: z.number().int().min(0).max(24576).optional(),
-  }).optional(),
-  systemInstruction: z.union([z.string(), ContentSchema]).optional(),
-  safetySettings: z.array(SafetySettingSchema).optional(),
-  responseModalities: z.array(z.string()).optional(),
-}).passthrough().optional();
-
-export const GeminiRequestSchema = z.object({
-  model: z.string().refine(
-    (m) => ALLOWED_MODELS.has(m),
-    { message: `Model not allowed. Allowed: ${[...ALLOWED_MODELS].join(', ')}` }
-  ),
-  contents: z.union([
-    z.array(ContentSchema),
-    z.string(),
-  ]),
-  config: SafeConfigSchema,
-});
-
-export type GeminiRequest = z.infer<typeof GeminiRequestSchema>;
-
-function setCorsHeaders(res: VercelResponse) {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://math-curriculum-ai-navigator.vercel.app';
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-}
-
-async function authenticateAndValidate(req: VercelRequest, res: VercelResponse) {
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return null;
-  }
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return null;
-  }
-  const auth = getFirebaseAdmin();
-  if (auth) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'Missing or invalid Authorization header' });
-      return null;
-    }
-    const idToken = authHeader.slice(7);
-    try {
-      await auth.verifyIdToken(idToken);
-    } catch (err) {
-      console.error('[auth] Token verification failed:', err);
-      res.status(401).json({ error: 'Invalid or expired authentication token' });
-      return null;
-    }
-  } else {
-    if (process.env.NODE_ENV === 'production') {
-        console.error('[auth] CRITICAL: FIREBASE_SERVICE_ACCOUNT missing in production!');
-        res.status(500).json({ error: 'Server authentication configuration error' });
-        return null;
-    }
-    console.warn('[auth] Skipping token verification — Firebase Admin not available (Development Mode)');
-  }
-  const parsed = GeminiRequestSchema.safeParse(req.body);
-  if (!parsed.success) {
-    const issues = parsed.error.issues.map(
-      (i) => `${i.path.join('.')}: ${i.message}`
-    ).join('; ');
-    
-    // Log the failing body for debugging
-    console.error('[validation] Invalid Gemini request body:', JSON.stringify(req.body, null, 2));
-    console.error('[validation] Issues:', issues);
-    
-    res.status(400).json({ error: `Invalid request: ${issues}` });
-    return null;
-  }
-  return parsed.data;
-}
+import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -154,37 +20,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     const { model, contents, config } = validated;
 
-    // Use gemini-2.0-flash by default if 1.5-flash fails in this SDK
-    const targetModel = model === 'gemini-1.5-flash' ? 'gemini-2.0-flash' : model;
+    const targetModel = model;
 
-    const normalizedContents: Content[] = typeof contents === 'string'
+    const normalizedContents: Content[] = (typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
-      : contents as Content[];
+      : contents as any[]).map(c => ({
+        role: c.role || 'user',
+        parts: c.parts.map((p: any) => {
+          const part: any = {};
+          if (p.text) part.text = p.text;
+          if (p.inlineData || p.inline_data) {
+            const data = p.inlineData || p.inline_data;
+            part.inline_data = {
+              mime_type: data.mimeType || data.mime_type,
+              data: data.data
+            };
+          }
+          return part;
+        })
+      }));
 
-    // Extract systemInstruction from config if present
-    const { systemInstruction, ...restConfig } = (config || {}) as any;
+    // Extract systemInstruction from config if present (support both camelCase and snake_case)
+    const { systemInstruction, system_instruction, ...restConfig } = (config || {}) as any;
+    let finalSystemInstruction = systemInstruction || system_instruction;
+    
+    // Normalize system instruction to Content object if it's a string
+    if (typeof finalSystemInstruction === 'string') {
+        finalSystemInstruction = { role: 'system', parts: [{ text: finalSystemInstruction }] };
+    }
 
     // Map camelCase to snake_case for new SDK v1
     const mappedConfig = {
       temperature: restConfig.temperature,
-      top_p: restConfig.topP,
-      top_k: restConfig.topK,
-      candidate_count: restConfig.candidateCount,
-      max_output_tokens: restConfig.maxOutputTokens,
-      stop_sequences: restConfig.stopSequences,
-      response_mime_type: restConfig.responseMimeType,
-      response_schema: restConfig.responseSchema,
-      presence_penalty: restConfig.presencePenalty,
-      frequency_penalty: restConfig.frequencyPenalty,
+      top_p: restConfig.topP || restConfig.top_p,
+      top_k: restConfig.topK || restConfig.top_k,
+      candidate_count: restConfig.candidateCount || restConfig.candidate_count,
+      max_output_tokens: restConfig.maxOutputTokens || restConfig.max_output_tokens,
+      stop_sequences: restConfig.stopSequences || restConfig.stop_sequences,
+      response_mime_type: restConfig.responseMimeType || restConfig.response_mime_type,
+      response_schema: restConfig.responseSchema || restConfig.response_schema,
+      presence_penalty: restConfig.presencePenalty || restConfig.presence_penalty,
+      frequency_penalty: restConfig.frequencyPenalty || restConfig.frequency_penalty,
+      thinking_config: restConfig.thinkingConfig ? {
+        thinking_budget: restConfig.thinkingConfig.thinkingBudget || restConfig.thinkingConfig.thinking_budget,
+        include_thoughts: restConfig.thinkingConfig.includeThoughts || restConfig.thinkingConfig.include_thoughts,
+      } : undefined,
     };
 
     // Remove undefined fields
     Object.keys(mappedConfig).forEach(key => (mappedConfig as any)[key] === undefined && delete (mappedConfig as any)[key]);
 
-    const response = await ai.models.generateContent({
+    const response = await (ai.models as any).generate_content({
       model: targetModel,
       contents: normalizedContents,
-      systemInstruction: systemInstruction,
+      system_instruction: finalSystemInstruction,
       config: mappedConfig as any,
     });
 

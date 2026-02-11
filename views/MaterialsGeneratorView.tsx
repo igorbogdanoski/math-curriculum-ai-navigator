@@ -55,6 +55,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     // API State
     const [isGenerating, setIsLoading] = useState(false);
     const [generatedMaterial, setGeneratedMaterial] = useState<AIGeneratedIdeas | AIGeneratedAssessment | AIGeneratedRubric | AIGeneratedIllustration | AIGeneratedLearningPaths | null>(null);
+    const [isThrottled, setIsThrottled] = useState(false);
 
     const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
     const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
@@ -185,11 +186,19 @@ ${generatedMaterial.assessmentIdea}
             addNotification("Нема интернет конекција. Генераторот е недостапен.", 'error');
             return;
         }
+
+        if (isThrottled) {
+            addNotification("Ве молиме почекајте малку пред следното барање.", 'warning');
+            return;
+        }
         
         if(!curriculum) {
             addNotification('Наставната програма се уште се вчитува.', 'warning');
             return;
         }
+
+        setIsThrottled(true);
+        setTimeout(() => setIsThrottled(false), 3000); // 3s throttle
 
         // Robust grade lookup to handle both string IDs and number levels
         const gradeData = curriculum.grades.find((g: Grade) => g.id === selectedGrade) || curriculum.grades.find((g: Grade) => String(g.level) === selectedGrade);

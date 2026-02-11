@@ -139,14 +139,16 @@
 
 ---
 
-### Фаза 11 — Content Generation Recovery (commit `32d4288`, `pending`)
+### Фаза 11 — Content Generation Recovery (commit `32d4288`)
 - **Проблем**: КРИТИЧНО — апликацијата престана да генерира содржина по рефакторирањето.
 - **Решение**:
   - Мигрирано од `@google/generative-ai` на новиот унифициран `@google/genai` (v1.22.0) SDK.
   - Рефакториран кодот за користење на `client.models.generateContent` и `client.models.generateContentStream`.
   - Правилно инстанциран `GoogleGenAI` со `{ apiKey }` објект.
-  - Стандардизиран модел `gemini-1.5-flash` за стабилност.
-- **Верифицирано**: Генерирањето содржина работи правилно на Vercel.
+  - Стандардизиран модел `gemini-2.0-flash` за стабилност и подобри перформанси.
+  - **Робусно мапирање**: Додадена автоматска конверзија од camelCase во snake_case (пр. `responseMimeType` → `response_mime_type`) во прокси функциите за целосна компатибилност со SDK v1.
+  - **Thinking Config**: Додадена поддршка за `thinking_config` за моделите што го поддржуваат (пр. Gemini 2.0 Flash Thinking).
+- **Верифицирано**: Генерирањето содржина работи правилно; поправени "Unknown name" грешките од Google API.
 
 ---
 
@@ -201,6 +203,22 @@
 | `any` типови | ~477 | **0** | 0 |
 | Math rendering | Скршено | **LaTeX recovery** | Working |
 | Тестови | 9 фајлови | **12 фајлови** | 25+ |
+
+---
+
+### Фаза 16 — AI Proxy & SDK v1 Fix (commit `pending`)
+- **Проблем**: AI генерацијата не работеше поради некомпатибилност на имињата на полињата во новиот SDK.
+- **Решение**: Мигрирано на snake_case протокол (`system_instruction`, `inline_data`) во API прокси рутите.
+- **Подобрување**: Овозможена поддршка за слики преку проксито.
+
+---
+
+### Фаза 17 — Rate Limit & Cache Optimization (commit `pending`)
+- **Проблем**: Error 429 (Too Many Requests) на почетниот екран.
+- **Решение**:
+  1. **Throttling**: Додадено 3s ограничување на сите AI генератори за да се спречат повеќекратни кликови.
+  2. **Smart Caching**: `usePersonalizedRecommendations` и `useProactiveSuggestions` сега користат `localStorage` со TTL (12-24h).
+  3. **Thinking Mode**: Овозможен `gemini-2.0-flash-thinking` за комплексни педагошки задачи.
 
 ---
 

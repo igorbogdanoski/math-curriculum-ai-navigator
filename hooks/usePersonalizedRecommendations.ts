@@ -19,17 +19,20 @@ export function usePersonalizedRecommendations() {
                 return;
             }
 
-            // Simple caching mechanism to avoid re-fetching on every navigation
-            const cacheKey = 'personalized-recommendations';
-            const cachedData = sessionStorage.getItem(cacheKey);
-            if (cachedData) {
+            // More robust caching with timestamp to avoid re-fetching constantly
+            const cacheKey = `personalized-recs-${user.uid}`;
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
                 try {
-                    const parsedData = JSON.parse(cachedData);
-                    setRecommendations(parsedData);
-                    setIsLoading(false);
-                    return;
+                    const { data, timestamp } = JSON.parse(cached);
+                    // 12 hour cache
+                    if (Date.now() - timestamp < 12 * 60 * 60 * 1000) {
+                        setRecommendations(data);
+                        setIsLoading(false);
+                        return;
+                    }
                 } catch(e) {
-                    sessionStorage.removeItem(cacheKey);
+                    localStorage.removeItem(cacheKey);
                 }
             }
 
@@ -38,7 +41,10 @@ export function usePersonalizedRecommendations() {
             try {
                 const fetchedRecommendations = await geminiService.getPersonalizedRecommendations(user, lessonPlans);
                 setRecommendations(fetchedRecommendations);
-                sessionStorage.setItem(cacheKey, JSON.stringify(fetchedRecommendations));
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    data: fetchedRecommendations,
+                    timestamp: Date.now()
+                }));
             } catch (err) {
                 console.error("Failed to fetch personalized recommendations:", err);
                 setError((err as Error).message);
@@ -47,12 +53,12 @@ export function usePersonalizedRecommendations() {
             }
         };
 
-        // Use a timeout to ensure other contexts are loaded
-        const timerId = setTimeout(fetchRecommendations, 200);
+        // Increase delay and only depend on user.uid to avoid loops
+        const timerId = setTimeout(fetchRecommendations, 1000);
 
         return () => clearTimeout(timerId);
 
-    }, [user, lessonPlans]);
+    }, [user?.uid]); // Only depend on UID to prevent re-fetch loops
 
     return { recommendations, isLoading, error };
 }

@@ -29,27 +29,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     const { model, contents, config } = validated;
 
-    const targetModel = model === 'gemini-1.5-flash' ? 'gemini-2.0-flash' : model;
+    const targetModel = model;
 
-    const normalizedContents: Content[] = typeof contents === 'string'
+    const normalizedContents: Content[] = (typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
-      : contents as Content[];
+      : contents as any[]).map(c => ({
+        role: c.role || 'user',
+        parts: c.parts.map((p: any) => {
+          const part: any = {};
+          if (p.text) part.text = p.text;
+          if (p.inlineData || p.inline_data) {
+            const data = p.inlineData || p.inline_data;
+            part.inline_data = {
+              mime_type: data.mimeType || data.mime_type,
+              data: data.data
+            };
+          }
+          return part;
+        })
+      }));
 
-    // Extract systemInstruction from config if present
-    const { systemInstruction, ...restConfig } = (config || {}) as any;
+    // Extract systemInstruction from config if present (support both camelCase and snake_case)
+    const { systemInstruction, system_instruction, ...restConfig } = (config || {}) as any;
+    let finalSystemInstruction = systemInstruction || system_instruction;
+
+    // Normalize system instruction to Content object if it's a string
+    if (typeof finalSystemInstruction === 'string') {
+        finalSystemInstruction = { role: 'system', parts: [{ text: finalSystemInstruction }] };
+    }
 
     // Map camelCase to snake_case for new SDK v1
     const mappedConfig = {
       temperature: restConfig.temperature,
-      top_p: restConfig.topP,
-      top_k: restConfig.topK,
-      candidate_count: restConfig.candidateCount,
-      max_output_tokens: restConfig.maxOutputTokens,
-      stop_sequences: restConfig.stopSequences,
-      response_mime_type: restConfig.responseMimeType,
-      response_schema: restConfig.responseSchema,
-      presence_penalty: restConfig.presencePenalty,
-      frequency_penalty: restConfig.frequencyPenalty,
+      top_p: restConfig.topP || restConfig.top_p,
+      top_k: restConfig.topK || restConfig.top_k,
+      candidate_count: restConfig.candidateCount || restConfig.candidate_count,
+      max_output_tokens: restConfig.maxOutputTokens || restConfig.max_output_tokens,
+      stop_sequences: restConfig.stopSequences || restConfig.stop_sequences,
+      response_mime_type: restConfig.responseMimeType || restConfig.response_mime_type,
+      response_schema: restConfig.responseSchema || restConfig.response_schema,
+      presence_penalty: restConfig.presencePenalty || restConfig.presence_penalty,
+      frequency_penalty: restConfig.frequencyPenalty || restConfig.frequency_penalty,
+      thinking_config: restConfig.thinkingConfig ? {
+        thinking_budget: restConfig.thinkingConfig.thinkingBudget || restConfig.thinkingConfig.thinking_budget,
+        include_thoughts: restConfig.thinkingConfig.includeThoughts || restConfig.thinkingConfig.include_thoughts,
+      } : undefined,
     };
 
     // Remove undefined fields
@@ -60,10 +84,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const responseStream = await ai.models.generateContentStream({
+    const responseStream = await (ai.models as any).generate_content_stream({
       model: targetModel,
       contents: normalizedContents,
-      systemInstruction: systemInstruction,
+      system_instruction: finalSystemInstruction,
       config: mappedConfig as any,
     });
 

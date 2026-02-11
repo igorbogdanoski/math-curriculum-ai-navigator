@@ -98,6 +98,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   const [isGeneratingProblems, setIsGeneratingProblems] = useState(false);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [isExportingPptx, setIsExportingPptx] = useState(false);
+  const [isThrottled, setIsThrottled] = useState(false);
   
   const [practiceMaterial, setPracticeMaterial] = useState<AIGeneratedPracticeMaterial | null>(null);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -124,8 +125,18 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     return getStandardsByIds(concept.nationalStandardIds);
   }, [concept, getStandardsByIds]);
 
+  const checkThrottle = () => {
+    if (isThrottled) {
+      addNotification("Ве молиме почекајте малку пред следното барање.", 'warning');
+      return true;
+    }
+    setIsThrottled(true);
+    setTimeout(() => setIsThrottled(false), 3000); // 3s throttle
+    return false;
+  };
+
   const handleGenerateIdeas = async () => {
-    if (!concept || !topic || !grade) return;
+    if (!concept || !topic || !grade || checkThrottle()) return;
     setIsLoadingIdeas(true);
     try {
       const ideas = await geminiService.generateLessonPlanIdeas([concept], topic, grade.level, user ?? undefined);
@@ -138,7 +149,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   };
   
   const handleGenerateAnalogy = async () => {
-    if (!concept || !grade) return;
+    if (!concept || !grade || checkThrottle()) return;
     setIsGeneratingAnalogy(true);
     setAnalogy(null); 
     try {
@@ -152,7 +163,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   };
 
   const handleGenerateOutline = async () => {
-    if (!concept || !grade) return;
+    if (!concept || !grade || checkThrottle()) return;
     setIsGeneratingOutline(true);
     setPresentationOutline(null);
     try {
@@ -166,7 +177,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   };
   
   const handleGeneratePracticeMaterial = async (type: 'problems' | 'questions') => {
-    if (!concept || !grade) return;
+    if (!concept || !grade || checkThrottle()) return;
     
     if (type === 'problems') setIsGeneratingProblems(true);
     else setIsGeneratingQuestions(true);

@@ -29,7 +29,7 @@ export function useProactiveSuggestions() {
         setIsLoading(false);
         return;
       }
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const nextWeek = new Date(today);
@@ -68,6 +68,29 @@ export function useProactiveSuggestions() {
         const isDismissed = sessionStorage.getItem(suggestionId);
         
         if (!isDismissed) {
+          // Check localStorage for recently generated text for THIS trigger
+          const cacheKey = `cached-${suggestionId}`;
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+             try {
+                const { text, timestamp } = JSON.parse(cached);
+                // 24 hour cache for the same suggestion text
+                if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+                   setSuggestion({
+                      id: suggestionId,
+                      text: text,
+                      target: {
+                        concept: triggerConcept,
+                        grade: triggerPlan.grade,
+                        topicId: triggerPlan.topicId,
+                      }
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+             } catch(e) { localStorage.removeItem(cacheKey); }
+          }
+
           try {
             const suggestionText = await geminiService.generateProactiveSuggestion(triggerConcept, user);
             setSuggestion({
@@ -79,6 +102,11 @@ export function useProactiveSuggestions() {
                 topicId: triggerPlan.topicId,
               }
             });
+            // Cache it
+            localStorage.setItem(cacheKey, JSON.stringify({
+                text: suggestionText,
+                timestamp: Date.now()
+            }));
           } catch (error) {
             console.error("Failed to generate proactive suggestion:", error);
             setSuggestion(null);
@@ -92,11 +120,11 @@ export function useProactiveSuggestions() {
       setIsLoading(false);
     };
 
-    // Delay execution slightly to ensure all context is loaded
-    const timer = setTimeout(findAndGenerateSuggestion, 100);
+    // Delay execution significantly to avoid race with recommendations
+    const timer = setTimeout(findAndGenerateSuggestion, 2500);
 
     return () => clearTimeout(timer);
-  }, [items, getLessonPlan, getConceptDetails, user]);
+  }, [user?.uid, items.length]); // Minimal dependencies to prevent re-runs
 
   const dismissSuggestion = () => {
     if (suggestion) {
