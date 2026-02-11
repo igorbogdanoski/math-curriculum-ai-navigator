@@ -84,9 +84,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const responseStream = await (ai.models as any).generate_content_stream({
+    const responseStream = await (ai.models as any).generateContentStream({
       model: targetModel,
       contents: normalizedContents,
+      systemInstruction: finalSystemInstruction,
       system_instruction: finalSystemInstruction,
       config: mappedConfig as any,
     });

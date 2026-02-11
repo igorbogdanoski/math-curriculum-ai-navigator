@@ -70,9 +70,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Remove undefined fields
     Object.keys(mappedConfig).forEach(key => (mappedConfig as any)[key] === undefined && delete (mappedConfig as any)[key]);
 
-    const response = await (ai.models as any).generate_content({
+    const response = await (ai.models as any).generateContent({
       model: targetModel,
       contents: normalizedContents,
+      systemInstruction: finalSystemInstruction,
       system_instruction: finalSystemInstruction,
       config: mappedConfig as any,
     });
