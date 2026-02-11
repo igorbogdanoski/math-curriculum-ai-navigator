@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI, Content } from "@google/genai";
+import { GoogleGenerativeAI, Content } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 /**
@@ -23,8 +23,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const client = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
     const { model, contents, config } = validated;
+
+    // Use v1beta for widest model support
+    const modelInstance = genAI.getGenerativeModel(
+      { model }, 
+      { apiVersion: 'v1beta' }
+    );
 
     // Normalize contents
     const normalizedContents: Content[] = (typeof contents === 'string'
@@ -54,17 +60,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Map config to SDK structure
     const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
-    const responseStream = await client.models.generateContentStream({
-      model,
+    const result = await modelInstance.generateContentStream({
       contents: normalizedContents,
-      systemInstruction,
-      safetySettings,
-      ...generationConfig,
+      systemInstruction: systemInstruction as any,
+      safetySettings: safetySettings as any,
+      generationConfig: generationConfig as any,
     });
 
-    for await (const chunk of responseStream) {
-      if (chunk.text) {
-        res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      if (chunkText) {
+        res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
       }
     }
 

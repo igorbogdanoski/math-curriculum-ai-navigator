@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI, Content } from "@google/genai";
+import { GoogleGenerativeAI, Content } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -14,10 +14,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const client = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
     const { model, contents, config } = validated;
 
-    // Normalize contents to SDK structure
+    // Use v1beta for widest model support (including 2.0 and thinking)
+    const modelInstance = genAI.getGenerativeModel(
+      { model }, 
+      { apiVersion: 'v1beta' }
+    );
+
+    // Normalize contents to content objects
     const normalizedContents: Content[] = (typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as any[]).map(c => ({
@@ -37,24 +43,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }));
 
-    // Map config to SDK v1 structure
+    // Map config to generationConfig
     const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
-    const result = await client.models.generateContent({
-      model,
+    const result = await modelInstance.generateContent({
       contents: normalizedContents,
-      systemInstruction,
-      safetySettings,
-      ...generationConfig,
+      systemInstruction: systemInstruction as any,
+      safetySettings: safetySettings as any,
+      generationConfig: generationConfig as any,
     });
 
-    if (!result) {
-      throw new Error("No response from AI service.");
+    const response = await result.response;
+    
+    // Safety check for candidates
+    if (!response.candidates || response.candidates.length === 0) {
+      throw new Error("No candidates returned. Likely safety block.");
     }
 
+    const text = response.text();
+
     res.status(200).json({
-      text: result.text,
-      candidates: result.candidates,
+      text: text,
+      candidates: response.candidates,
     });
   } catch (error) {
     console.error('[/api/gemini] Error:', error);

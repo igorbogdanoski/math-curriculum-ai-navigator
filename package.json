@@ -11,7 +11,7 @@
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@google/genai": "^1.22.0",
+    "@google/generative-ai": "^0.24.1",
     "firebase": "^12.4.0",
     "firebase-admin": "^13.6.1",
     "react": "^19.2.1",
