@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const ai = new GoogleGenAI({ 
       apiKey,
-      apiVersion: 'v1'
+      apiVersion: 'v1beta'
     });
     const { model, contents, config } = validated;
 
@@ -87,7 +87,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const responseStream = await (ai.models as any).generateContentStream({
       model: targetModel,
       contents: normalizedContents,
-      systemInstruction: finalSystemInstruction,
       system_instruction: finalSystemInstruction,
       config: mappedConfig as any,
     });
