@@ -69,7 +69,7 @@ import {
 // The API key NEVER reaches the client bundle.
 // Every request is authenticated with Firebase ID token.
 const PROXY_TIMEOUT_MS = 60_000; // 60 s – generous for Gemini thinking models
-const DEFAULT_MODEL = 'gemini-2.0-flash'; // Upgrade default to 2.0-flash
+const DEFAULT_MODEL = 'gemini-1.5-flash'; // Fallback to 1.5-flash for higher quota stability
 
 /**
  * Get a Firebase ID token for the currently signed-in user.
