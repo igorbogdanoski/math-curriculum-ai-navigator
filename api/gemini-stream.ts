@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI, Content, GenerationConfig } from "@google/genai";
+import { GoogleGenerativeAI, Content, GenerationConfig } from "@google/genai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 /**
@@ -23,12 +23,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Force stable v1 API version
-    const ai = new GoogleGenAI({ 
-      apiKey,
-      apiVersion: 'v1' 
-    });
+    const genAI = new GoogleGenerativeAI(apiKey);
     const { model, contents, config } = validated;
+
+    // Use v1beta for better compatibility with all models including flash 2.0 and thinking
+    const modelInstance = genAI.getGenerativeModel(
+      { model }, 
+      { apiVersion: 'v1beta' }
+    );
 
     // Normalize contents
     const normalizedContents: Content[] = (typeof contents === 'string'
@@ -55,16 +57,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    // Pass parameters directly to the model stream
-    const responseStream = await ai.models.generateContentStream({
-      model: model.replace('models/', ''), // Ensure no double prefix
+    // Map config to the structure expected by the SDK
+    const { systemInstruction, safetySettings, ...generationConfig } = config || {};
+
+    // Generate stream
+    const result = await modelInstance.generateContentStream({
       contents: normalizedContents,
-      ...config,
+      systemInstruction,
+      safetySettings,
+      generationConfig,
     });
 
-    for await (const chunk of responseStream) {
-      if (chunk.text) {
-        res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      if (chunkText) {
+        res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
       }
     }
 

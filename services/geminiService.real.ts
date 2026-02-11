@@ -69,7 +69,7 @@ import {
 // The API key NEVER reaches the client bundle.
 // Every request is authenticated with Firebase ID token.
 const PROXY_TIMEOUT_MS = 60_000; // 60 s – generous for Gemini thinking models
-const DEFAULT_MODEL = 'gemini-1.5-flash'; // Fallback to 1.5-flash for higher quota stability
+const DEFAULT_MODEL = 'gemini-2.0-flash'; // Reverting to 2.0-flash as requested for better capabilities
 
 /**
  * Get a Firebase ID token for the currently signed-in user.
@@ -231,6 +231,10 @@ function cleanJsonString(text: string): string {
         cleaned = cleaned.substring(0, endIndex + 1);
     }
 
+    // HACK: Fix LaTeX backslashes if the model forgot to double-escape them in JSON
+    // This replaces single \ with \\ only when NOT followed by a valid JSON escape char
+    cleaned = cleaned.replace(/\\(?![^"nrtbf\/u\\])/g, '\\\\');
+
     return cleaned.trim();
 }
 
@@ -323,7 +327,7 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 
 // Helper to safely parse JSON responses from the model with INTELLIGENT RETRY logic and Zod Validation
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 3, useThinking = false): Promise<T> {
-  const activeModel = useThinking ? 'gemini-2.0-flash-thinking' : model;
+  const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
   
   try {
     console.log(`Generating content with model: ${activeModel}... (Retries left: ${retries})`);
@@ -386,9 +390,7 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
     const errorMessage = error.message?.toLowerCase() || "";
     const isFatal = errorMessage.includes("api key") || 
                     errorMessage.includes("permission") || 
-                    errorMessage.includes("403") ||
-                    errorMessage.includes("429") ||
-                    errorMessage.includes("too many requests"); 
+                    errorMessage.includes("403");
 
     if (retries > 0 && !isFatal) {
         const delay = 1000 * Math.pow(2, 3 - retries); 
