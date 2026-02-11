@@ -11,7 +11,7 @@ const mockRenderToString = vi.fn((latex: string) => `<span class="katex-mock">${
 
 declare global {
   interface Window {
-    katex?: {
+    katex: {
       renderToString: (latex: string, options?: any) => string;
     };
   }

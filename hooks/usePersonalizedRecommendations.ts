@@ -9,18 +9,18 @@ export function usePersonalizedRecommendations() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const { user } = useAuth();
+    const { user, firebaseUser } = useAuth();
     const { lessonPlans } = usePlanner();
 
     useEffect(() => {
         const fetchRecommendations = async () => {
-            if (!user) {
+            if (!firebaseUser || !user) {
                 setIsLoading(false);
                 return;
             }
 
             // More robust caching with timestamp to avoid re-fetching constantly
-            const cacheKey = `personalized-recs-${user.uid}`;
+            const cacheKey = `personalized-recs-${firebaseUser.uid}`;
             const cached = localStorage.getItem(cacheKey);
             if (cached) {
                 try {
@@ -53,12 +53,12 @@ export function usePersonalizedRecommendations() {
             }
         };
 
-        // Increase delay and only depend on user.uid to avoid loops
-        const timerId = setTimeout(fetchRecommendations, 1000);
+        // Increase delay significantly to allow other startup tasks to finish
+        const timerId = setTimeout(fetchRecommendations, 3000);
 
         return () => clearTimeout(timerId);
 
-    }, [user?.uid]); // Only depend on UID to prevent re-fetch loops
+    }, [firebaseUser?.uid]); // Only depend on UID to prevent re-fetch loops
 
     return { recommendations, isLoading, error };
 }

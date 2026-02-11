@@ -65,34 +65,50 @@ export const CoverageAnalyzerView: React.FC = () => {
     const { lessonPlans } = usePlanner();
     const { allNationalStandards, isLoading: isCurriculumLoading } = useCurriculum();
     const [report, setReport] = useState<CoverageAnalysisReport | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasStartedAnalysis, setHasStartedAnalysis] = useState(false);
 
-    useEffect(() => {
-        const runAnalysis = async () => {
-            if (isCurriculumLoading) return;
-            if (lessonPlans.length === 0 || !allNationalStandards) {
-                setIsLoading(false);
-                return;
+    const runAnalysis = async () => {
+        if (isCurriculumLoading || lessonPlans.length === 0 || !allNationalStandards) return;
+        
+        setIsLoading(true);
+        setHasStartedAnalysis(true);
+        try {
+            const analysisResult = await geminiService.analyzeCoverage(lessonPlans, allNationalStandards);
+            if (analysisResult.error) {
+                throw new Error(analysisResult.error);
             }
-
-            try {
-                const analysisResult = await geminiService.analyzeCoverage(lessonPlans, allNationalStandards);
-                if (analysisResult.error) {
-                    throw new Error(analysisResult.error);
-                }
-                setReport(analysisResult);
-            } catch (error) {
-                console.error("Failed to get coverage analysis:", error);
-                setReport({ analysis: [], error: (error as Error).message });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        runAnalysis();
-    }, [lessonPlans, allNationalStandards, isCurriculumLoading]);
+            setReport(analysisResult);
+        } catch (error) {
+            console.error("Failed to get coverage analysis:", error);
+            setReport({ analysis: [], error: (error as Error).message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const renderContent = () => {
+        if (!hasStartedAnalysis) {
+            return (
+                <Card className="text-center py-12">
+                    <div className="max-w-md mx-auto">
+                        <ICONS.sparkles className="w-12 h-12 text-brand-accent mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold text-brand-primary mb-2">Стартувај AI Анализа</h2>
+                        <p className="text-gray-600 mb-6">
+                            Кликнете на копчето подолу за AI асистентот да ги анализира сите ваши подготовки наспроти националните стандарди.
+                        </p>
+                        <button
+                            onClick={runAnalysis}
+                            disabled={isCurriculumLoading || lessonPlans.length === 0}
+                            className="bg-brand-primary text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-brand-secondary transition-all transform hover:scale-105 disabled:bg-gray-400 disabled:transform-none"
+                        >
+                            {isCurriculumLoading ? 'Се вчитува...' : 'Анализирај покриеност'}
+                        </button>
+                    </div>
+                </Card>
+            );
+        }
+
         if (isLoading || isCurriculumLoading) {
             return (
                 <div className="space-y-6">

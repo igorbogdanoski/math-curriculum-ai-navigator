@@ -20,12 +20,12 @@ export function useProactiveSuggestions() {
   const [isLoading, setIsLoading] = useState(true);
   const { items, getLessonPlan } = usePlanner();
   const { getConceptDetails } = useCurriculum();
-  const { user } = useAuth();
+  const { user, firebaseUser } = useAuth();
 
   useEffect(() => {
     const findAndGenerateSuggestion = async () => {
       // Don't run suggestions if not logged in
-      if (!user) {
+      if (!firebaseUser || !user) {
         setIsLoading(false);
         return;
       }
@@ -120,11 +120,11 @@ export function useProactiveSuggestions() {
       setIsLoading(false);
     };
 
-    // Delay execution significantly to avoid race with recommendations
-    const timer = setTimeout(findAndGenerateSuggestion, 2500);
+    // Delay execution significantly (8s) to avoid race with recommendations and allow for 2s queue gaps
+    const timer = setTimeout(findAndGenerateSuggestion, 8000);
 
     return () => clearTimeout(timer);
-  }, [user?.uid, items.length]); // Minimal dependencies to prevent re-runs
+  }, [firebaseUser?.uid, items.length]); // Minimal dependencies to prevent re-runs
 
   const dismissSuggestion = () => {
     if (suggestion) {

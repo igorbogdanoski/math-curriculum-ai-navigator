@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 declare global {
     interface Window {
         katex: {
-            renderToString(latex: string, options?: any): string;
+            renderToString: (latex: string, options?: any) => string;
         };
     }
 }

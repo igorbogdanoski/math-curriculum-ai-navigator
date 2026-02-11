@@ -14,7 +14,7 @@ import { NationalStandardDetailsModal } from '../explore/NationalStandardDetails
 import { ConfirmDialog } from './ConfirmDialog';
 
 export const ModalManager: React.FC = () => {
-  const { modal, closeModal } = useModal();
+  const { modal, hideModal } = useModal();
 
   if (!modal) {
     return null;
@@ -60,7 +60,7 @@ export const ModalManager: React.FC = () => {
   }
 
   return (
-    <ModalContainer onClose={closeModal}>
+    <ModalContainer onClose={hideModal}>
       {renderModalContent()}
     </ModalContainer>
   );

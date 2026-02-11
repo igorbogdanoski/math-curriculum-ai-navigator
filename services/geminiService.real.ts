@@ -25,6 +25,8 @@ interface Content {
 }
 
 import { QuestionType } from '../types';
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from '../firebaseConfig';
 import type {
   ChatMessage,
   Concept,
@@ -71,6 +73,25 @@ import {
 const PROXY_TIMEOUT_MS = 60_000; // 60 s – generous for Gemini thinking models
 const DEFAULT_MODEL = 'gemini-2.0-flash'; // Reverting to 2.0-flash as requested for better capabilities
 
+// --- REQUEST QUEUEING ---
+// Gemini Free Tier has a limit of 15 RPM. 
+// To prevent 429s, we process requests sequentially using a simple queue.
+let requestQueue: Promise<any> = Promise.resolve();
+
+async function queueRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+  // Chain the request to the current queue
+  const result = requestQueue.then(async () => {
+    // Add a larger safety gap between requests (2000ms) for Free Tier limits
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    return requestFn();
+  });
+  
+  // Update the queue head, catching errors so the queue doesn't get stuck
+  requestQueue = result.catch(() => {});
+  
+  return result;
+}
+
 /**
  * Get a Firebase ID token for the currently signed-in user.
  * Lazily imports firebase/auth to avoid circular deps.
@@ -86,43 +107,43 @@ async function getAuthToken(): Promise<string> {
 }
 
 async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
-  // Add a small random jitter (0-1500ms) to prevent simultaneous parallel requests 
-  // from hitting the proxy at the exact same millisecond
-  await new Promise(resolve => setTimeout(resolve, Math.random() * 1500));
-
-  const token = await getAuthToken();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
-  try {
-    const response = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(params),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `Proxy error: ${response.status}` }));
-      throw new Error(errorData.error || `Proxy error: ${response.status}`);
+  return queueRequest(async () => {
+    const token = await getAuthToken();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+    try {
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(params),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: `Proxy error: ${response.status}` }));
+        throw new Error(errorData.error || `Proxy error: ${response.status}`);
+      }
+      return response.json();
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        throw new Error('AI барањето истече (timeout 60s). Обидете се повторно.');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
     }
-    return response.json();
-  } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new Error('AI барањето истече (timeout 60s). Обидете се повторно.');
-    }
-    throw err;
-  } finally {
-    clearTimeout(timer);
-  }
+  });
 }
 
 async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
+  // For streaming, we also queue the START of the stream
   const token = await getAuthToken();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
-  try {
+  
+  // Wrap the generator setup in the queue
+  const streamSetup = await queueRequest(async () => {
     const response = await fetch('/api/gemini-stream', {
       method: 'POST',
       headers: {
@@ -141,16 +162,24 @@ async function* streamGeminiProxy(params: { model: string; contents: any; config
     if (!response.body) {
       throw new Error('Stream response body is null — streaming not supported in this environment');
     }
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+    
+    return response.body;
+  });
 
+  const reader = streamSetup.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+
+  try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      // Reset timeout on each chunk — stream is alive
+      
+      // Reset timeout on each chunk
       clearTimeout(timer);
       const chunkTimer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+      
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
@@ -169,11 +198,6 @@ async function* streamGeminiProxy(params: { model: string; contents: any; config
       }
       clearTimeout(chunkTimer);
     }
-  } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new Error('AI stream истече (timeout 60s). Обидете се повторно.');
-    }
-    throw err;
   } finally {
     clearTimeout(timer);
   }
@@ -403,17 +427,26 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
                     errorMessage.includes("403");
 
     if (retries > 0 && !isFatal) {
-        // IF RATE LIMIT: Wait much longer (Free Tier cooldown)
-        // OTHERWISE: Standard exponential backoff
-        let delay = 1000 * Math.pow(2, 3 - retries); 
-        
+        let delay = 2000; 
+
         if (isRateLimit) {
-            console.warn(`⏳ Rate Limit погоден. Чекам 12 секунди пред повторен обид... (Retries left: ${retries})`);
-            delay = 12000; 
+            // 1. Try to find the number of seconds in the error message (e.g., "retry in 58.11s")
+            const match = errorMessage.match(/retry in (\d+(\.\d+)?)s/i);
+            
+            if (match && match[1]) {
+                const secondsToWait = Math.ceil(parseFloat(match[1]));
+                console.warn(`⏳ Google бара пауза од ${secondsToWait}s. Се прилагодувам... (Retries left: ${retries})`);
+                delay = (secondsToWait + 2) * 1000; // Add 2s buffer
+            } else {
+                console.warn(`⏳ Rate Limit детектиран (непознато време). Чекам 20s... (Retries left: ${retries})`);
+                delay = 20000; 
+            }
         } else {
-            console.warn(`AI Generation failed, retrying in ${delay}ms... Error:`, errorMessage);
+             // Exponential backoff for other errors (2s, 4s, 8s)
+             delay = 1000 * Math.pow(2, 4 - retries); 
         }
 
+        console.log(`...Чекам ${delay}ms пред повторен обид...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         return generateAndParseJSON<T>(contents, schema, model, zodSchema, retries - 1, useThinking);
     }
@@ -950,6 +983,19 @@ export const realGeminiService = {
   },
   
   async generateAnalogy(concept: Concept, gradeLevel: number): Promise<string> {
+    const cacheId = `analogy_${concept.id}_${gradeLevel}`;
+    try {
+      // Check cache first
+      const cacheRef = doc(db, "cached_ai_materials", cacheId);
+      const cacheSnap = await getDoc(cacheRef);
+      if (cacheSnap.exists()) {
+        console.log(`Using cached analogy for ${concept.id}`);
+        return cacheSnap.data().content;
+      }
+    } catch (err) {
+      console.warn("Cache read failed, proceeding with AI:", err);
+    }
+
     const prompt = `Објасни го математичкиот поим "${concept.title}" за ${gradeLevel} одделение користејќи едноставна и лесно разбирлива аналогија.`;
     try {
       const response = await callGeminiProxy({
@@ -960,13 +1006,39 @@ export const realGeminiService = {
             safetySettings: SAFETY_SETTINGS
         }
       });
-      return response.text || "";
+      
+      const content = response.text || "";
+      
+      // Save to cache asynchronously
+      if (content) {
+        setDoc(doc(db, "cached_ai_materials", cacheId), {
+            content,
+            type: 'analogy',
+            conceptId: concept.id,
+            gradeLevel,
+            timestamp: new Date().toISOString()
+        }).catch(e => console.error("Cache write failed:", e));
+      }
+
+      return content;
     } catch (error) {
       handleGeminiError(error, "Грешка при генерирање на аналогија.");
     }
   },
   
   async generatePresentationOutline(concept: Concept, gradeLevel: number): Promise<string> {
+    const cacheId = `outline_${concept.id}_${gradeLevel}`;
+    try {
+      const cacheRef = doc(db, "cached_ai_materials", cacheId);
+      const cacheSnap = await getDoc(cacheRef);
+      if (cacheSnap.exists()) {
+        console.log(`Using cached outline for ${concept.id}`);
+        return cacheSnap.data().content;
+      }
+    } catch (err) {
+      console.warn("Cache read failed, proceeding with AI:", err);
+    }
+
     const prompt = `Креирај кратка структура (outline) за презентација за математичкиот поим "${concept.title}" за ${gradeLevel} одделение.`;
     try {
       const response = await callGeminiProxy({
@@ -977,7 +1049,20 @@ export const realGeminiService = {
             safetySettings: SAFETY_SETTINGS
         }
       });
-      return response.text || "";
+      
+      const content = response.text || "";
+
+      if (content) {
+        setDoc(doc(db, "cached_ai_materials", cacheId), {
+            content,
+            type: 'outline',
+            conceptId: concept.id,
+            gradeLevel,
+            timestamp: new Date().toISOString()
+        }).catch(e => console.error("Cache write failed:", e));
+      }
+
+      return content;
     } catch (error) {
       handleGeminiError(error, "Грешка при генерирање на структура за презентација.");
     }

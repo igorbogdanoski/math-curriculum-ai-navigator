@@ -45,9 +45,13 @@ const mockAuthValue = {
     firebaseUser: mockFirebaseUser as unknown as User,
     user: null,
     isLoading: false,
+    isAuthenticated: false,
     login: vi.fn(),
     logout: vi.fn(),
-    isAdmin: false
+    register: vi.fn(),
+    updateProfile: vi.fn(),
+    resendVerificationEmail: vi.fn(),
+    resetPassword: vi.fn(),
 };
 
 const wrapper: React.FC<{children: React.ReactNode}> = ({ children }) => (

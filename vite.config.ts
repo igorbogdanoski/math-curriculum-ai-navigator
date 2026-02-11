@@ -27,8 +27,8 @@ function geminiDevProxy(apiKey: string): Plugin {
         if (req.method !== 'POST') return next();
 
         try {
-          const { GoogleGenAI } = await import('@google/genai');
-          const ai = new GoogleGenAI({ apiKey });
+          const { GoogleGenerativeAI } = await import('@google/generative-ai');
+          const genAI = new GoogleGenerativeAI(apiKey);
           const { model, contents, config } = await readBody(req);
 
           res.writeHead(200, {
@@ -37,15 +37,16 @@ function geminiDevProxy(apiKey: string): Plugin {
             'Connection': 'keep-alive',
           });
 
-          const responseStream = await ai.models.generateContentStream({
-            model,
+          const modelInstance = genAI.getGenerativeModel({ model }, { apiVersion: 'v1beta' });
+          const result = await modelInstance.generateContentStream({
             contents,
-            config,
+            ...config,
           });
           
-          for await (const chunk of responseStream) {
-            if (chunk.text) {
-              res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+          for await (const chunk of result.stream) {
+            const text = chunk.text();
+            if (text) {
+              res.write(`data: ${JSON.stringify({ text })}\n\n`);
             }
           }
           res.write('data: [DONE]\n\n');
@@ -66,19 +67,20 @@ function geminiDevProxy(apiKey: string): Plugin {
         if (req.method !== 'POST') return next();
 
         try {
-          const { GoogleGenAI } = await import('@google/genai');
-          const ai = new GoogleGenAI({ apiKey });
+          const { GoogleGenerativeAI } = await import('@google/generative-ai');
+          const genAI = new GoogleGenerativeAI(apiKey);
           const { model, contents, config } = await readBody(req);
 
-          const response = await ai.models.generateContent({
-            model,
+          const modelInstance = genAI.getGenerativeModel({ model }, { apiVersion: 'v1beta' });
+          const result = await modelInstance.generateContent({
             contents,
-            config,
+            ...config,
           });
+          const response = await result.response;
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ 
-            text: response.text || '', 
+            text: response.text() || '', 
             candidates: response.candidates 
           }));
         } catch (error: any) {
