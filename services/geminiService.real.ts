@@ -86,6 +86,10 @@ async function getAuthToken(): Promise<string> {
 }
 
 async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
+  // Add a small random jitter (0-1500ms) to prevent simultaneous parallel requests 
+  // from hitting the proxy at the exact same millisecond
+  await new Promise(resolve => setTimeout(resolve, Math.random() * 1500));
+
   const token = await getAuthToken();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
@@ -388,13 +392,28 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
 
   } catch (error: any) {
     const errorMessage = error.message?.toLowerCase() || "";
+    
+    // Detect Rate Limit (429) or Quota issues
+    const isRateLimit = errorMessage.includes("429") || 
+                        errorMessage.includes("quota") || 
+                        errorMessage.includes("too many requests");
+
     const isFatal = errorMessage.includes("api key") || 
                     errorMessage.includes("permission") || 
                     errorMessage.includes("403");
 
     if (retries > 0 && !isFatal) {
-        const delay = 1000 * Math.pow(2, 3 - retries); 
-        console.warn(`AI Generation/Validation failed, retrying in ${delay}ms... Error:`, errorMessage);
+        // IF RATE LIMIT: Wait much longer (Free Tier cooldown)
+        // OTHERWISE: Standard exponential backoff
+        let delay = 1000 * Math.pow(2, 3 - retries); 
+        
+        if (isRateLimit) {
+            console.warn(`⏳ Rate Limit погоден. Чекам 12 секунди пред повторен обид... (Retries left: ${retries})`);
+            delay = 12000; 
+        } else {
+            console.warn(`AI Generation failed, retrying in ${delay}ms... Error:`, errorMessage);
+        }
+
         await new Promise(resolve => setTimeout(resolve, delay));
         return generateAndParseJSON<T>(contents, schema, model, zodSchema, retries - 1, useThinking);
     }
