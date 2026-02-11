@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenerativeAI, Content, GenerationConfig } from "@google/genai";
+import { GoogleGenAI, Content } from "@google/genai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -14,16 +14,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const client = new GoogleGenAI({ apiKey });
     const { model, contents, config } = validated;
 
-    // Use v1beta for better compatibility with all models including flash 2.0 and thinking
-    const modelInstance = genAI.getGenerativeModel(
-      { model }, 
-      { apiVersion: 'v1beta' }
-    );
-
-    // Normalize contents
+    // Normalize contents to SDK structure
     const normalizedContents: Content[] = (typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as any[]).map(c => ({
@@ -43,42 +37,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }));
 
-    // Map config to the structure expected by the SDK
+    // Map config to SDK v1 structure
     const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
-    // Generate content
-    const result = await modelInstance.generateContent({
+    const result = await client.models.generateContent({
+      model,
       contents: normalizedContents,
       systemInstruction,
       safetySettings,
-      generationConfig,
+      ...generationConfig,
     });
 
-    const response = result.response;
-    
-    // Check for candidates
-    if (!response.candidates || response.candidates.length === 0) {
-      const blockReason = response.promptFeedback?.blockReason;
-      throw new Error(blockReason ? `Content blocked: ${blockReason}` : "No candidates returned from AI.");
-    }
-
-    // Safely extract text (can throw if blocked)
-    let text = "";
-    try {
-      text = response.text();
-    } catch (e) {
-      console.error('[/api/gemini] Text extraction failed:', e);
-      // If we have a candidate but text() fails, it's often a safety finishReason
-      const finishReason = response.candidates[0]?.finishReason;
-      if (finishReason && finishReason !== 'STOP') {
-        throw new Error(`AI generation stopped early: ${finishReason}`);
-      }
-      throw e;
+    if (!result) {
+      throw new Error("No response from AI service.");
     }
 
     res.status(200).json({
-      text: text,
-      candidates: response.candidates,
+      text: result.text,
+      candidates: result.candidates,
     });
   } catch (error) {
     console.error('[/api/gemini] Error:', error);
