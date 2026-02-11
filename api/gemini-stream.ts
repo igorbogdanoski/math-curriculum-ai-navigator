@@ -23,72 +23,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const ai = new GoogleGenAI({ 
-      apiKey,
-      apiVersion: 'v1'
-    });
+    const ai = new GoogleGenAI({ apiKey });
     const { model, contents, config } = validated;
 
-    const targetModel = model.startsWith('models/') ? model : `models/${model}`;
-
+    // Normalize contents to Part format expected by the SDK
     const normalizedContents: Content[] = (typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as any[]).map(c => ({
         role: c.role || 'user',
         parts: c.parts.map((p: any) => {
-          const part: any = {};
-          if (p.text) part.text = p.text;
+          if (p.text) return { text: p.text };
           if (p.inlineData || p.inline_data) {
             const data = p.inlineData || p.inline_data;
-            part.inline_data = {
-              mime_type: data.mimeType || data.mime_type,
-              data: data.data
+            return {
+              inlineData: {
+                mimeType: data.mimeType || data.mime_type,
+                data: data.data
+              }
             };
           }
-          return part;
+          return p;
         })
       }));
-
-    // Extract systemInstruction from config if present (support both camelCase and snake_case)
-    const { systemInstruction, system_instruction, ...restConfig } = (config || {}) as any;
-    let finalSystemInstruction = systemInstruction || system_instruction;
-
-    // Normalize system instruction to Content object if it's a string
-    if (typeof finalSystemInstruction === 'string') {
-        finalSystemInstruction = { role: 'system', parts: [{ text: finalSystemInstruction }] };
-    }
-
-    // Map camelCase to snake_case for new SDK v1
-    const mappedConfig = {
-      temperature: restConfig.temperature,
-      top_p: restConfig.topP || restConfig.top_p,
-      top_k: restConfig.topK || restConfig.top_k,
-      candidate_count: restConfig.candidateCount || restConfig.candidate_count,
-      max_output_tokens: restConfig.maxOutputTokens || restConfig.max_output_tokens,
-      stop_sequences: restConfig.stopSequences || restConfig.stop_sequences,
-      response_mime_type: restConfig.responseMimeType || restConfig.response_mime_type,
-      response_schema: restConfig.responseSchema || restConfig.response_schema,
-      presence_penalty: restConfig.presencePenalty || restConfig.presence_penalty,
-      frequency_penalty: restConfig.frequencyPenalty || restConfig.frequency_penalty,
-      thinking_config: restConfig.thinkingConfig ? {
-        thinking_budget: restConfig.thinkingConfig.thinkingBudget || restConfig.thinkingConfig.thinking_budget,
-        include_thoughts: restConfig.thinkingConfig.includeThoughts || restConfig.thinkingConfig.include_thoughts,
-      } : undefined,
-    };
-
-    // Remove undefined fields
-    Object.keys(mappedConfig).forEach(key => (mappedConfig as any)[key] === undefined && delete (mappedConfig as any)[key]);
 
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const responseStream = await (ai.models as any).generateContentStream({
-      model: targetModel,
+    // The @google/genai SDK (v1) expects parameters in camelCase
+    // and they are passed as a single object to generateContentStream.
+    const responseStream = await ai.models.generateContentStream({
+      model,
       contents: normalizedContents,
-      system_instruction: finalSystemInstruction,
-      config: mappedConfig as any,
+      ...config, // This already contains systemInstruction, temperature, maxOutputTokens, etc. in camelCase from Zod
     });
 
     for await (const chunk of responseStream) {
