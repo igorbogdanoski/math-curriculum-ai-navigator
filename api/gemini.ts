@@ -14,10 +14,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    // Force stable v1 API version
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      apiVersion: 'v1' 
+    });
     const { model, contents, config } = validated;
 
-    // Normalize contents to Part format expected by the SDK
+    // Normalize contents
     const normalizedContents: Content[] = (typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as any[]).map(c => ({
@@ -37,12 +41,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }));
 
-    // The @google/genai SDK (v1) expects parameters in camelCase
-    // and they are passed as a single object to generateContent.
+    // Pass parameters directly to the model
     const response = await ai.models.generateContent({
-      model,
+      model: model.replace('models/', ''), // Ensure no double prefix
       contents: normalizedContents,
-      ...config, // This already contains systemInstruction, temperature, maxOutputTokens, etc. in camelCase from Zod
+      ...config,
     });
 
     res.status(200).json({
