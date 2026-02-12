@@ -1,3 +1,63 @@
+        async explainSpecificStep(problem: string, stepExplanation: string, stepExpression: string): Promise<string> {
+            const prompt = `
+                Како наставник по математика, објасни му на ученик ЗОШТО го направивме овој чекор:
+                - Проблем: ${problem}
+                - Чекор (објаснување): ${stepExplanation}
+                - Резултат од чекорот: ${stepExpression}
+
+                Одговори со максимум 2-3 реченици. Фокусирај се на математичкото правило (пр. дестрибутивност, својство на равенство...). 
+                Јазик: Македонски.
+            `;
+            const response = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        model: 'gemini-1.5-flash', 
+                        contents: prompt,
+                        config: { temperature: 0.5 }
+                    })
+            });
+            const data = await response.json();
+            return data.text;
+        },
+    async generateStepByStepSolution(conceptTitle: string, gradeLevel: number): Promise<{ problem: string, strategy?: string, steps: any[] }> {
+        const cacheKey = `solver_${conceptTitle.replace(/\s+/g, '_')}_g${gradeLevel}`;
+        try {
+                const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+                if (cachedDoc.exists()) return cachedDoc.data().content;
+        } catch (e) { console.warn(e); }
+        const prompt = `
+            1. Генерирај задача за "${conceptTitle}" за ${gradeLevel} одд.
+            2. Реши ја користејќи ToT (Tree of Thoughts) и CoT (Chain of Thought).
+            3. СЕГА, делувај како строг математички рецензент: Провери дали има грешки во пресметките или во логиката. 
+                 Ако најдеш грешка, коригирај ја веднаш во финалниот одговор.
+            4. Форматирај го резултатот за визуелизација на ментална мапа (nodes и edges).
+
+            Врати JSON:
+            {
+                "problem": "...",
+                "strategy": "...",
+                "steps": [...],
+                "mentalMap": {
+                    "nodes": [{ "id": 1, "label": "Почетен израз" }, { "id": 2, "label": "Трансформација 1" }],
+                    "edges": [{ "from": 1, "to": 2, "label": "Примена на правило" }]
+                }
+            }
+        `;
+        const response = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: 'gemini-1.5-flash', contents: prompt })
+        });
+        const data = await response.json();
+        const result = JSON.parse(data.text.replace(/```json/g, '').replace(/```/g, '').trim());
+        await setDoc(doc(db, CACHE_COLLECTION, cacheKey), {
+                content: result,
+                type: 'solver',
+                createdAt: serverTimestamp()
+        });
+        return result;
+    },
 
 import { Concept, Topic, AIGeneratedIdeas, AIGeneratedPracticeMaterial } from '../types';
 import { db } from '../firebaseConfig';
@@ -77,13 +137,42 @@ export const realGeminiService = {
     return text;
   },
 
-  async generatePracticeMaterials(concept: Concept, gradeLevel: number, type: string): Promise<AIGeneratedPracticeMaterial> {
-     // Слична логика како горе...
-     // 1. Провери кеш
-     // 2. Повикај API со соодветен промпт и JSON схема
-     // 3. Зачувај во кеш
-     // 4. Врати резултат
-     return { title: "Тест", items: [] };
+  async generatePracticeMaterials(concept: Concept, gradeLevel: number, type: 'problems' | 'questions'): Promise<AIGeneratedPracticeMaterial> {
+     const prefix = type === 'problems' ? 'quiz' : 'discussion';
+     const cacheKey = getCacheKey(prefix, concept.id, gradeLevel);
+     try {
+         const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+         if (cachedDoc.exists()) {
+             console.log(`🟢 Cache HIT for ${type}!`);
+             return cachedDoc.data().content as AIGeneratedPracticeMaterial;
+         }
+     } catch (e) { console.warn(e); }
+     console.log(`🟠 Cache MISS for ${type}. Calling API...`);
+     const prompt = `\n        Create a math ${type === 'problems' ? 'quiz with 5 multiple-choice problems' : 'discussion guide'} \n        for the concept \"${concept.title}\" (Grade ${gradeLevel}).\n        Language: Macedonian.\n        Strictly return JSON with this structure:\n        {\n          \"title\": \"Naslov\",\n          \"items\": [\n            { \"text\": \"Prasanje...\", \"answer\": \"Tocen odgovor\", \"solution\": \"Objasnuvanje...\" }\n          ]\n        }\n     `;
+     const response = await fetch('/api/gemini', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+             model: 'gemini-1.5-flash',
+             contents: prompt
+         })
+     });
+     if (!response.ok) throw new Error("AI Busy or Error");
+     const data = await response.json();
+     let cleanText = data.text.replace(/```json/g, '').replace(/```/g, '').trim();
+     const result = JSON.parse(cleanText);
+     try {
+        await setDoc(doc(db, CACHE_COLLECTION, cacheKey), {
+            content: result,
+            type: prefix,
+            conceptId: concept.id,
+            gradeLevel,
+            createdAt: serverTimestamp()
+        });
+     } catch(e) {
+         console.error("Save to cache failed:", e);
+     }
+     return result;
   }
 };
   const auth = getAuth();

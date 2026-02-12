@@ -1,3 +1,19 @@
+import { useVoice } from '../hooks/useVoice';
+const [solverData, setSolverData] = useState<{problem: string, strategy?: string, steps: any[]} | null>(null);
+const [isGeneratingSolver, setIsGeneratingSolver] = useState(false);
+const handleGenerateSolver = async () => {
+    if (!concept || !grade) return;
+    setIsGeneratingSolver(true);
+    try {
+        const data = await geminiService.generateStepByStepSolution(concept.title, grade.level);
+        setSolverData(data);
+    } catch (e) {
+        addNotification("Грешка при генерирање на решението.", "error");
+    } finally {
+        setIsGeneratingSolver(false);
+    }
+};
+import { StepByStepSolver } from '../components/StepByStepSolver';
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
@@ -16,6 +32,10 @@ import { usePlanner } from '../contexts/PlannerContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrowser';
 import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
+import { PrintableQuiz } from '../components/PrintableQuiz';
+import { Printer } from 'lucide-react';
+import { useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { QuestionType } from '../types';
 
 declare global {
@@ -311,6 +331,34 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                 <div className="text-lg text-gray-700 leading-relaxed"><MathRenderer text={concept.description} /></div>
                             </Card>
 
+                            {/* --- НОВО: ГЕОМЕТРИСКИ ЕКСПЛОРЕР --- */}
+                                     <div className="mt-6">
+                                         <GeometryExplorer />
+                                     </div>
+
+                                    <Card className="mt-8 border-indigo-200 bg-indigo-50/30">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h2 className="text-2xl font-bold text-indigo-800 tracking-tight">🔢 Решавач во живо</h2>
+                                            {!solverData && (
+                                                <button 
+                                                    onClick={handleGenerateSolver}
+                                                    disabled={isGeneratingSolver}
+                                                    className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50"
+                                                >
+                                                    {isGeneratingSolver ? '⏳ Се генерира...' : '🪄 Генерирај задача'}
+                                                </button>
+                                            )}
+                                        </div>
+                                        {solverData && (
+                                            <StepByStepSolver 
+                                                problem={solverData.problem}
+                                                steps={solverData.steps}
+                                                strategy={solverData.strategy}
+                                                mentalMap={solverData.mentalMap}
+                                            />
+                                        )}
+                                    </Card>
+
                             {concept.content && concept.content.length > 0 && (
                                 <Card>
                                     <h2 className="text-2xl font-semibold text-brand-primary mb-3">Детални содржини</h2>
@@ -375,7 +423,9 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                     <button onClick={() => handleGeneratePracticeMaterial('problems')} className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold">Задачи за вежбање</button>
                                     <button onClick={() => handleGeneratePracticeMaterial('questions')} className="flex-1 bg-pink-600 text-white py-2 rounded-lg font-semibold">Дискусија</button>
                                 </div>
+                                {/* PDF PRINT LOGIC */}
                                 {practiceMaterial && (
+                                    <>
                                     <div className="space-y-4">
                                         <h4 className="font-bold text-indigo-800">{practiceMaterial.title}</h4>
                                         <div className="prose prose-sm max-w-none text-gray-800 space-y-4">
@@ -386,12 +436,56 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                                 </div>
                                             ))}
                                         </div>
-                                        <button onClick={() => setIsPlayingQuiz(true)} className="w-full bg-brand-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><ICONS.play className="w-5 h-5" /> Стартувај Квиз</button>
+                                        <div className="flex gap-2 justify-center">
+                                            <button 
+                                                onClick={() => setIsPlayingQuiz(true)} 
+                                                className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:scale-105 transition flex items-center gap-2"
+                                            >
+                                                <ICONS.play className="w-5 h-5" /> Преглед (Наставник)
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    if (!concept || !grade) return;
+                                                    const quizId = `quiz_${concept.id}_g${grade.level}`;
+                                                    const shareLink = `${window.location.origin}/play/${quizId}`;
+                                                    navigator.clipboard.writeText(shareLink);
+                                                    addNotification('🔗 Линкот е копиран! Пратете го на учениците.', 'success');
+                                                }}
+                                                className="bg-blue-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 transition flex items-center gap-2"
+                                            >
+                                                <ICONS.share className="w-5 h-5" /> Сподели со ученици
+                                            </button>
+                                            <button 
+                                                onClick={handlePrint}
+                                                className="bg-gray-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-700 transition flex items-center gap-2"
+                                            >
+                                                <Printer className="w-5 h-5" /> Испечати PDF
+                                            </button>
+                                        </div>
                                     </div>
+                                    {/* Hidden printable component */}
+                                    <div className="hidden">
+                                        <PrintableQuiz 
+                                            ref={printComponentRef} 
+                                            title={practiceMaterial?.title || concept.title}
+                                            grade={grade?.level}
+                                            questions={practiceMaterial?.items.map((item: any) => ({
+                                                question: item.text,
+                                                options: [item.answer, "Опција 2", "Опција 3", "Опција 4"].sort(() => Math.random() - 0.5)
+                                            })) || []}
+                                        />
+                                    </div>
+                                    </>
                                 )}
                             </Card>
                         </div>
                     )}
+                // PDF Print logic
+                const printComponentRef = useRef(null);
+                const handlePrint = useReactToPrint({
+                    content: () => printComponentRef.current,
+                    documentTitle: `Kviz_${concept?.title}`,
+                });
                 </div>
 
                 <div className="space-y-6">

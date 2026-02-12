@@ -1,0 +1,8 @@
+.timer-bar {
+  width: 100%;
+  transition: width 1s linear;
+}
+
+.timer-bar[data-width] {
+  width: calc(var(--timer-width, 100) * 1%);
+}

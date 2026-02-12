@@ -24,12 +24,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Breadcrumbs } from './components/common/Breadcrumbs';
 import { GlobalSearchBar } from './components/common/GlobalSearchBar';
 import { Card } from './components/common/Card';
-import { ICONS } from './constants';
-import { AppSkeleton } from './components/common/AppSkeleton';
-import { ContextualFAB } from './components/common/ContextualFAB';
-import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
-import { OfflineBanner } from './components/common/OfflineBanner';
-import { SilentErrorBoundary } from './components/common/SilentErrorBoundary';
+import { StudentPlayView } from './views/StudentPlayView';
 
 // Helper for safe lazy loading to prevent module resolution crashes
 const safeLazy = (importFunc: () => Promise<any>) => {
@@ -91,6 +86,7 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
 };
 
 const routes = [
+    { path: '/play/:id', component: StudentPlayView }, // Student Mode route
     { path: '/', component: HomeView },
     { path: '/explore', component: ExploreView },
     { path: '/topic/:id', component: TopicView },

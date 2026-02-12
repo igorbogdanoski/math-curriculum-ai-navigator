@@ -1,8 +1,10 @@
-import { realGeminiService } from './geminiService.real';
 
-// Switched to the real Gemini service as per user request to get non-mock results.
+/**
+ * Единствена точка за извоз на Gemini сервисот.
+ * Користиме 'realGeminiService' за продукција и реални податоци.
+ */
 export const geminiService = realGeminiService;
 
-// To switch back to mock data for offline development, you can use:
-// import { mockGeminiService } from './geminiService.mock';
-// export const geminiService = mockGeminiService;
+// Забелешка: Доколку некогаш ви требаат тест податоци (mock), 
+// само сменете го импортот погоре во: 
+// import { mockGeminiService as realGeminiService } from './geminiService.mock';
