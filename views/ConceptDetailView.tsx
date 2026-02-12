@@ -41,20 +41,8 @@ const convertToStandardLatex = (text: string | undefined): string => {
 const cleanTextForPresentation = (text: string): string => {
     if (!text) return '';
     let clean = text;
-    // ...existing code...
+    // ... твојата логика за чистење тука ...
     return clean;
-    import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrowser';
-    // import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer'; // Uncomment if needed
-    import { QuestionType } from '../types';
-        script.src = "https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js";
-        script.onload = () => {
-            if (window.PptxGenJS) resolve(window.PptxGenJS);
-            else if (window.pptxgen) resolve(window.pptxgen);
-            else reject(new Error("Библиотеката е вчитана но конструкторот не е пронајден."));
-        };
-        script.onerror = () => reject(new Error("Неуспешно преземање на библиотеката за PowerPoint. Проверете ја интернет конекцијата."));
-        document.head.appendChild(script);
-    });
 };
 
 interface ConceptDetailViewProps {
