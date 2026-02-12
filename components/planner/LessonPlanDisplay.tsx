@@ -17,6 +17,34 @@ const ListItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <li className="pb-1">{children}</li>
 );
 
+const BloomBadge: React.FC<{ level?: string }> = ({ level }) => {
+    if (!level) return null;
+    
+    const colors: Record<string, string> = {
+        'Remembering': 'bg-blue-100 text-blue-700 border-blue-200',
+        'Understanding': 'bg-green-100 text-green-700 border-green-200',
+        'Applying': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        'Analyzing': 'bg-orange-100 text-orange-700 border-orange-200',
+        'Evaluating': 'bg-purple-100 text-purple-700 border-purple-200',
+        'Creating': 'bg-pink-100 text-pink-700 border-pink-200'
+    };
+
+    const mkLabels: Record<string, string> = {
+        'Remembering': 'Паметење',
+        'Understanding': 'Разбирање',
+        'Applying': 'Примена',
+        'Analyzing': 'Анализа',
+        'Evaluating': 'Евалуација',
+        'Creating': 'Креирање'
+    };
+
+    return (
+        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase border ml-1.5 ${colors[level] || 'bg-gray-100 text-gray-600'}`}>
+            {mkLabels[level] || level}
+        </span>
+    );
+};
+
 export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) => {
     const { navigate } = useNavigation();
     const { getConceptDetails } = useCurriculum();
@@ -37,7 +65,12 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                             <div>
                                 <SectionHeader title="Цели" />
                                 <ul className="list-disc list-inside text-gray-700 space-y-1">
-                                    {plan.objectives.map((obj: string, i: number) => <ListItem key={i}><MathRenderer text={obj} /></ListItem>)}
+                                    {plan.objectives.map((obj: any, i: number) => (
+                                        <ListItem key={i}>
+                                            <MathRenderer text={typeof obj === 'string' ? obj : obj.text} />
+                                            {typeof obj !== 'string' && <BloomBadge level={obj.bloomsLevel} />}
+                                        </ListItem>
+                                    ))}
                                 </ul>
                             </div>
                             <div>
@@ -53,18 +86,23 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                             <SectionHeader title="Сценарио за часот" />
                             <div className="space-y-3 text-gray-700">
                                 <div>
-                                    <h4 className="font-semibold">Воведна активност:</h4>
-                                    <p><MathRenderer text={plan.scenario.introductory} /></p>
+                                    <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-tighter">Воведна активност:</h4>
+                                    <p className="mt-1"><MathRenderer text={typeof plan.scenario.introductory === 'string' ? plan.scenario.introductory : plan.scenario.introductory.text} /></p>
                                 </div>
                                 <div>
-                                    <h4 className="font-semibold">Главни активности:</h4>
-                                    <ul className="list-decimal list-inside space-y-1">
-                                        {plan.scenario.main.map((act: string, i: number) => <ListItem key={i}><MathRenderer text={act} /></ListItem>)}
+                                    <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-tighter">Главни активности:</h4>
+                                    <ul className="list-decimal list-inside space-y-2 mt-1">
+                                        {plan.scenario.main.map((act: any, i: number) => (
+                                            <ListItem key={i}>
+                                                <MathRenderer text={typeof act === 'string' ? act : act.text} />
+                                                {typeof act !== 'string' && <BloomBadge level={act.bloomsLevel} />}
+                                            </ListItem>
+                                        ))}
                                     </ul>
                                 </div>
                                 <div>
-                                    <h4 className="font-semibold">Завршна активност:</h4>
-                                    <p><MathRenderer text={plan.scenario.concluding} /></p>
+                                    <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-tighter">Завршна активност:</h4>
+                                    <p className="mt-1"><MathRenderer text={typeof plan.scenario.concluding === 'string' ? plan.scenario.concluding : plan.scenario.concluding.text} /></p>
                                 </div>
                             </div>
                         </div>

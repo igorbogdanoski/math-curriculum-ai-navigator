@@ -7,7 +7,10 @@ declare const pako: any; // pako is loaded from a script tag in index.html
 const SharedLessonPlanSchema = z.object({
   id: z.string(),
   title: z.string(),
-  objectives: z.array(z.string()),
+  objectives: z.array(z.object({
+    text: z.string(),
+    bloomsLevel: z.string().optional()
+  })).or(z.array(z.string())), // Allow migration from old format
   grade: z.number(),
   topicId: z.string(),
   conceptIds: z.array(z.string()),
@@ -16,10 +19,10 @@ const SharedLessonPlanSchema = z.object({
   theme: z.string().default(''),
   assessmentStandards: z.array(z.string()).default([]),
   scenario: z.object({
-    introductory: z.string().default(''),
-    main: z.array(z.string()).default([]),
-    concluding: z.string().default(''),
-  }).default({ introductory: '', main: [], concluding: '' }),
+    introductory: z.object({ text: z.string() }).or(z.string()).default(''),
+    main: z.array(z.object({ text: z.string(), bloomsLevel: z.string().optional() })).or(z.array(z.string())).default([]),
+    concluding: z.object({ text: z.string() }).or(z.string()).default(''),
+  }).default({ introductory: { text: '' }, main: [], concluding: { text: '' } }),
   progressMonitoring: z.array(z.string()).default([]),
 }).passthrough();
 
@@ -31,6 +34,19 @@ const SharedAnnualPlanSchema = z.object({
     title: z.string(),
   }).passthrough()),
   lessonPlans: z.array(SharedLessonPlanSchema),
+});
+
+const SharedQuizSchema = z.object({
+  title: z.string(),
+  questions: z.array(z.object({
+    id: z.number().optional(),
+    type: z.string(),
+    question: z.string(),
+    options: z.array(z.string()).optional(),
+    answer: z.string(),
+    solution: z.string().optional(),
+    cognitiveLevel: z.string().optional()
+  }))
 });
 
 export const shareService = {
@@ -94,6 +110,46 @@ export const shareService = {
       return parsed.data as SharedAnnualPlan;
     } catch (error) {
       console.error("Error decoding annual share data:", error);
+      return null;
+    }
+  },
+
+  generateQuizShareData(quizData: any): string {
+    try {
+      const jsonString = JSON.stringify(quizData);
+      if (typeof pako !== 'undefined') {
+        const compressed = pako.deflate(jsonString, { to: 'string' });
+        return btoa(compressed);
+      }
+      return btoa(encodeURIComponent(jsonString));
+    } catch (error) {
+      console.error("Error generating quiz share data:", error);
+      return '';
+    }
+  },
+
+  decodeQuizShareData(data: string): any | null {
+    try {
+      let jsonString;
+      const rawData = atob(data);
+      if (typeof pako !== 'undefined') {
+        try {
+          jsonString = pako.inflate(rawData, { to: 'string' });
+        } catch (e) {
+          jsonString = decodeURIComponent(rawData);
+        }
+      } else {
+        jsonString = decodeURIComponent(rawData);
+      }
+      
+      const parsed = SharedQuizSchema.safeParse(JSON.parse(jsonString));
+      if (!parsed.success) {
+        console.error("Invalid quiz share data schema:", parsed.error.issues);
+        return null;
+      }
+      return parsed.data;
+    } catch (error) {
+      console.error("Error decoding quiz share data:", error);
       return null;
     }
   }

@@ -58,9 +58,11 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
             objectives: [],
             assessmentStandards: [],
             scenario: {
-                introductory: material.openingActivity,
-                main: material.mainActivity.split('\n').filter((line: string) => line.trim() !== ''),
-                concluding: material.assessmentIdea,
+                introductory: { text: material.openingActivity },
+                main: Array.isArray(material.mainActivity) 
+                    ? material.mainActivity.map(item => ({ text: item.text, bloomsLevel: item.bloomsLevel }))
+                    : [{ text: String(material.mainActivity), bloomsLevel: 'Understanding' as const }],
+                concluding: { text: material.assessmentIdea },
             },
             materials: [],
             progressMonitoring: [material.assessmentIdea].filter(Boolean),
@@ -85,7 +87,11 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
         
         const { title, openingActivity, mainActivity, differentiation, assessmentIdea } = material;
     
-        const fullText = `Наслов: ${title}\n\nВоведна активност:\n${openingActivity}\n\nГлавна активност:\n${mainActivity}\n\nДиференцијација:\n${differentiation}\n\nИдеја за оценување:\n${assessmentIdea}`;
+        const mainActivitiesStr = Array.isArray(mainActivity) 
+            ? mainActivity.map(a => `- ${a.text} [${a.bloomsLevel}]`).join('\n')
+            : mainActivity;
+
+        const fullText = `Наслов: ${title}\n\nВоведна активност:\n${openingActivity}\n\nГлавна активност:\n${mainActivitiesStr}\n\nДиференцијација:\n${differentiation}\n\nИдеја за оценување:\n${assessmentIdea}`;
         
         const standardLatexText = convertToStandardLatex(fullText);
     

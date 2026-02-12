@@ -61,10 +61,22 @@ export enum PlannerItemType {
 
 export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH';
 
+export type BloomsLevel = 'Remembering' | 'Understanding' | 'Applying' | 'Analyzing' | 'Evaluating' | 'Creating';
+
 export interface LessonScenario {
-  introductory: string;
-  main: string[];
-  concluding: string;
+  introductory: {
+    text: string;
+    activityType?: string;
+  };
+  main: Array<{
+    text: string;
+    bloomsLevel?: BloomsLevel;
+    activityType?: string;
+  }>;
+  concluding: {
+    text: string;
+    activityType?: string;
+  };
 }
 
 export interface LessonPlan {
@@ -73,7 +85,10 @@ export interface LessonPlan {
   grade: number;
   topicId: string;
   conceptIds: string[];
-  objectives: string[];
+  objectives: Array<{
+    text: string;
+    bloomsLevel?: BloomsLevel;
+  }>;
   materials: string[];
 
   // Expanded fields to match official lesson plan structure
@@ -217,7 +232,10 @@ export interface AIGeneratedAssessment {
 export interface AIGeneratedIdeas {
   title: string;
   openingActivity: string;
-  mainActivity: string;
+  mainActivity: Array<{
+    text: string;
+    bloomsLevel: BloomsLevel;
+  }>;
   differentiation: string;
   assessmentIdea: string;
   error?: string;
@@ -344,6 +362,7 @@ export interface AIPedagogicalAnalysis {
     alignment: PedagogicalAnalysisCriteria;
     engagement: PedagogicalAnalysisCriteria;
     cognitiveLevels: PedagogicalAnalysisCriteria;
+    balanceRecommendations?: string;
   };
   error?: string;
 }

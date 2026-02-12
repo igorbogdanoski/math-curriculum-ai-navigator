@@ -217,8 +217,13 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
         return;
     }
     
-    const arrayToLines = (arr: string[] = []) => arr.map(item => `- ${item}`).join('\n');
-    const fullText = `Наслов: ${title}\nОдделение: ${grade}\nТема: ${theme}\n\nЦЕЛИ:\n${(objectives || []).join('\n')}\n\nСТАНДАРДИ ЗА ОЦЕНУВАЊЕ:\n${(assessmentStandards || []).join('\n')}\n\nСЦЕНАРИО:\nВовед: ${scenario.introductory}\nГлавни: ${(scenario.main || []).join('; ')}\nЗавршна: ${scenario.concluding}\n\nМАТЕРИЈАЛИ:\n${(materials || []).join('\n')}\n\nСЛЕДЕЊЕ НА НАПРЕДОК:\n${(progressMonitoring || []).join('\n')}\n`;
+    const arrayToLines = (arr: any[] = []) => arr.map(item => `- ${typeof item === 'string' ? item : item.text}${item.bloomsLevel ? ` [${item.bloomsLevel}]` : ''}`).join('\n');
+    
+    const introductoryText = typeof scenario?.introductory === 'string' ? scenario.introductory : scenario?.introductory?.text || '';
+    const concludingText = typeof scenario?.concluding === 'string' ? scenario.concluding : scenario?.concluding?.text || '';
+    const mainActivitiesText = (scenario?.main || []).map((a: any) => typeof a === 'string' ? a : `${a.text}${a.bloomsLevel ? ` [${a.bloomsLevel}]` : ''}`).join('; ');
+
+    const fullText = `Наслов: ${title}\nОдделение: ${grade}\nТема: ${theme}\n\nЦЕЛИ:\n${arrayToLines(objectives || [])}\n\nСТАНДАРДИ ЗА ОЦЕНУВАЊЕ:\n${(assessmentStandards || []).join('\n')}\n\nСЦЕНАРИО:\nВовед: ${introductoryText}\nГлавни: ${mainActivitiesText}\nЗавршна: ${concludingText}\n\nМАТЕРИЈАЛИ:\n${(materials || []).join('\n')}\n\nСЛЕДЕЊЕ НА НАПРЕДОК:\n${(progressMonitoring || []).join('\n')}\n`;
     
     const standardLatexText = convertToStandardLatex(fullText);
 
@@ -239,16 +244,16 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
         case 'md':
             mimeType = 'text/markdown;charset=utf-8';
             extension = 'md';
-            content = `# ${title}\n\n**Одделение:** ${grade}\n**Тема:** ${theme}\n\n---\n\n## Цели\n${arrayToLines(objectives)}\n\n## Стандарди за оценување\n${arrayToLines(assessmentStandards)}\n\n## Сценарио\n### Вовед\n${scenario.introductory}\n### Главни активности\n${arrayToLines(scenario.main)}\n### Завршна активност\n${scenario.concluding}\n\n---\n\n## Материјали\n${arrayToLines(materials)}\n\n## Следење на напредокот\n${arrayToLines(progressMonitoring)}`;
+            content = `# ${title}\n\n**Одделение:** ${grade}\n**Тема:** ${theme}\n\n---\n\n## Цели\n${arrayToLines(objectives)}\n\n## Стандарди за оценување\n${arrayToLines(assessmentStandards)}\n\n## Сценарио\n### Вовед\n${introductoryText}\n### Главни активности\n${arrayToLines(scenario.main)}\n### Завршна активност\n${concludingText}\n\n---\n\n## Материјали\n${arrayToLines(materials)}\n\n## Следење на напредокот\n${arrayToLines(progressMonitoring)}`;
             content = convertToStandardLatex(content);
             break;
         case 'tex':
             mimeType = 'application/x-tex;charset=utf-8';
             extension = 'tex';
-            content = `\\documentclass[12pt, a4paper]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\title{${escapeLatexAware(title)}}\n\\author{${escapeLatexAware(String(grade))}. одделение}\n\\date{}\n\\begin{document}\n\\maketitle\n\\section*{Цели}\n\\begin{itemize}\n${(objectives || []).map((item: string) => `\\item ${escapeLatexAware(item)}`).join('\n')}\n\\end{itemize}\n\\section*{Сценарио}\n\\subsection*{Вовед}\n${escapeLatexAware(scenario.introductory)}\n\\subsection*{Главни активности}\n\\begin{enumerate}\n${(scenario.main || []).map((item: string) => `\\item ${escapeLatexAware(item)}`).join('\n')}\n\\end{enumerate}\n\\subsection*{Завршна активност}\n${escapeLatexAware(scenario.concluding)}\n\\end{document}`;
+            content = `\\documentclass[12pt, a4paper]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\title{${escapeLatexAware(title)}}\n\\author{${escapeLatexAware(String(grade))}. одделение}\n\\date{}\n\\begin{document}\n\\maketitle\n\\section*{Цели}\n\\begin{itemize}\n${(objectives || []).map((item: any) => `\\item ${escapeLatexAware(typeof item === 'string' ? item : item.text)}`).join('\n')}\n\\end{itemize}\n\\section*{Сценарио}\n\\subsection*{Вовед}\n${escapeLatexAware(introductoryText)}\n\\subsection*{Главни активности}\n\\begin{enumerate}\n${(scenario.main || []).map((item: any) => `\\item ${escapeLatexAware(typeof item === 'string' ? item : item.text)}`).join('\n')}\n\\end{enumerate}\n\\subsection*{Завршна активност}\n${escapeLatexAware(concludingText)}\n\\end{document}`;
             break;
         case 'doc': {
-            const listHtml = (items: string[] = []) => items.length ? `<ul>${items.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>` : '<p><i>Нема</i></p>';
+            const listHtml = (items: any[] = []) => items.length ? `<ul>${items.map(i => `<li>${escapeHtml(typeof i === 'string' ? i : i.text)}${i.bloomsLevel ? ` <i>[${i.bloomsLevel}]</i>` : ''}</li>`).join('')}</ul>` : '<p><i>Нема</i></p>';
             
             const htmlContent = `
             <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -283,15 +288,15 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
 
                 <h2>Сценарио</h2>
                 <h3>Воведна активност</h3>
-                <p>${escapeHtml(scenario?.introductory)}</p>
+                <p>${escapeHtml(introductoryText)}</p>
                 
                 <h3>Главни активности</h3>
                 <ol>
-                    ${(scenario?.main || []).map((m: string) => `<li>${escapeHtml(m)}</li>`).join('')}
+                    ${(scenario?.main || []).map((m: any) => `<li>${escapeHtml(typeof m === 'string' ? m : m.text)}${m.bloomsLevel ? ` <i>[${m.bloomsLevel}]</i>` : ''}</li>`).join('')}
                 </ol>
 
                 <h3>Завршна активност</h3>
-                <p>${escapeHtml(scenario?.concluding)}</p>
+                <p>${escapeHtml(concludingText)}</p>
 
                 <h2>Средства и Материјали</h2>
                 ${listHtml(materials)}

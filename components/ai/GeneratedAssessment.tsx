@@ -5,6 +5,8 @@ import { MathRenderer } from '../common/MathRenderer';
 import type { AIGeneratedAssessment, AssessmentQuestion, DifferentiationLevel } from '../../types';
 import { FlashcardViewer } from './FlashcardViewer';
 import { QuizViewer } from './QuizViewer';
+import { InteractiveQuizPlayer } from './InteractiveQuizPlayer';
+import { shareService } from '../../services/shareService';
 import { useNotification } from '../../contexts/NotificationContext';
 
 type DifferentiatedVersion = { profileName: string; questions: AssessmentQuestion[] };
@@ -140,6 +142,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
     const [isEditing, setIsEditing] = useState(false);
     const [showFlashcards, setShowFlashcards] = useState(false);
     const [showQuiz, setShowQuiz] = useState(false);
+    const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
     const [activeTab, setActiveTab] = useState('standard');
     const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
     const actionsMenuRef = useRef<HTMLDivElement>(null);
@@ -397,7 +400,24 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                                             <ICONS.flashcards className="w-5 h-5 mr-3" /> Отвори флеш-картички
                                         </button>
                                         <button onClick={() => { setShowQuiz(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.quiz className="w-5 h-5 mr-3" /> Започни квиз
+                                            <ICONS.quiz className="w-5 h-5 mr-3" /> Отвори квиз (Преглед)
+                                        </button>
+                                        <button onClick={() => { setIsPlayingQuiz(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <ICONS.play className="w-5 h-5 mr-3" /> Интерактивен квиз (Игра)
+                                        </button>
+                                        <button 
+                                            onClick={() => { 
+                                                const shareData = shareService.generateQuizShareData({ 
+                                                    title: editableMaterial.title, 
+                                                    questions: activeTab === 'standard' ? editableMaterial.questions : (editableMaterial.differentiatedVersions?.find(v => v.profileName === activeTab)?.questions || editableMaterial.questions) 
+                                                });
+                                                const shareUrl = `${window.location.origin}/#/quiz/${shareData}`;
+                                                navigator.clipboard.writeText(shareUrl).then(() => addNotification('Линкот за квизот е копиран!', 'success'));
+                                                setIsActionsMenuOpen(false);
+                                            }} 
+                                            className="w-full text-left flex items-center px-4 py-2 text-sm text-brand-primary hover:bg-brand-bg font-medium"
+                                        >
+                                            <ICONS.share className="w-5 h-5 mr-3" /> Сподели линк за ученици
                                         </button>
                                         <div className="border-t my-1"></div>
                                         <button onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -479,6 +499,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         </Card>
         {showFlashcards && <FlashcardViewer questions={editableMaterial.questions} title={editableMaterial.title} onClose={() => setShowFlashcards(false)} />}
         {showQuiz && <QuizViewer questions={editableMaterial.questions} onClose={() => setShowQuiz(false)} />}
+        {isPlayingQuiz && <InteractiveQuizPlayer questions={editableMaterial.questions} title={editableMaterial.title} onClose={() => setIsPlayingQuiz(false)} />}
         </>
     );
 };

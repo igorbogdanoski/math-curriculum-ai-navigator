@@ -10,8 +10,11 @@ interface LessonPlanFormFieldsProps {
     enhancingField: string | null;
 }
 
-const arrayToString = (arr: string[] = []) => arr.join('\n');
+const arrayToString = (arr: any[] = []) => arr.map(item => typeof item === 'string' ? item : (item.text || '')).join('\n');
 const stringToArray = (str: string = '') => str.split('\n').filter(line => line.trim() !== '');
+
+const stringToObjectives = (str: string = []) => stringToArray(str).map(text => ({ text }));
+const stringToMainActivities = (str: string = []) => stringToArray(str).map(text => ({ text, bloomsLevel: 'Understanding' as const }));
 
 interface EnhancedTextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     fieldName: string;
@@ -84,8 +87,10 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
         setPlan((prev: Partial<LessonPlan>) => ({
           ...prev,
           scenario: {
-            ...(prev.scenario || { introductory: '', main: [], concluding: '' }),
-            [name]: name === 'main' ? stringToArray(value) : value,
+            ...(prev.scenario || { introductory: { text: '' }, main: [], concluding: { text: '' } }),
+            [name]: name === 'main' 
+                ? stringToMainActivities(value) 
+                : { ...(prev.scenario?.[name as 'introductory' | 'concluding'] || { text: '' }), text: value },
           },
         }));
     }, [setPlan]);
@@ -191,7 +196,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     fieldName="objectives"
                     label="Наставни цели"
                     value={arrayToString(plan.objectives || [])}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPlan((p: Partial<LessonPlan>) => ({...p, objectives: stringToArray(e.target.value)}))}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPlan((p: Partial<LessonPlan>) => ({...p, objectives: stringToObjectives(e.target.value)}))}
                     onEnhance={onEnhanceField}
                     isEnhancing={enhancingField === 'objectives'}
                     rows={5}
@@ -217,7 +222,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                         id="introductory"
                         fieldName="scenario.introductory"
                         label="Воведна активност"
-                        value={plan.scenario?.introductory || ''}
+                        value={plan.scenario?.introductory?.text || ''}
                         onChange={handleScenarioChange}
                         onEnhance={onEnhanceField}
                         isEnhancing={enhancingField === 'scenario.introductory'}
@@ -240,7 +245,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                         id="concluding"
                         fieldName="scenario.concluding"
                         label="Завршна активност"
-                        value={plan.scenario?.concluding || ''}
+                        value={plan.scenario?.concluding?.text || ''}
                         onChange={handleScenarioChange}
                         onEnhance={onEnhanceField}
                         isEnhancing={enhancingField === 'scenario.concluding'}

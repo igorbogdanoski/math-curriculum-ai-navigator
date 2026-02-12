@@ -62,20 +62,20 @@ export const LessonPlanQuickViewModal: React.FC<LessonPlanQuickViewModalProps> =
           <div>
             <h3 className="font-semibold text-brand-secondary mb-2">Наставни цели:</h3>
             <ul className="list-disc list-inside text-gray-700 text-sm space-y-1">
-              {lessonPlan.objectives.map((obj: string, i: number) => <li key={i}><MathRenderer text={obj} /></li>)}
+              {lessonPlan.objectives.map((obj: any, i: number) => <li key={i}><MathRenderer text={typeof obj === 'string' ? obj : obj.text} /></li>)}
             </ul>
           </div>
           <div>
             <h3 className="font-semibold text-brand-secondary mb-2">Сценарио:</h3>
             <div className="text-gray-700 text-sm space-y-2">
-              <p><strong>Вовед:</strong> <MathRenderer text={lessonPlan.scenario.introductory} /></p>
+              <p><strong>Вовед:</strong> <MathRenderer text={typeof lessonPlan.scenario.introductory === 'string' ? lessonPlan.scenario.introductory : lessonPlan.scenario.introductory.text} /></p>
               <div>
                 <strong>Главни активности:</strong>
                 <ul className="list-decimal list-inside ml-4">
-                  {lessonPlan.scenario.main.map((act: string, i: number) => <li key={i}><MathRenderer text={act} /></li>)}
+                  {lessonPlan.scenario.main.map((act: any, i: number) => <li key={i}><MathRenderer text={typeof act === 'string' ? act : act.text} /></li>)}
                 </ul>
               </div>
-              <p><strong>Завршна активност:</strong> <MathRenderer text={lessonPlan.scenario.concluding} /></p>
+              <p><strong>Завршна активност:</strong> <MathRenderer text={typeof lessonPlan.scenario.concluding === 'string' ? lessonPlan.scenario.concluding : lessonPlan.scenario.concluding.text} /></p>
             </div>
           </div>
         </div>

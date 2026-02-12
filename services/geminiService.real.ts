@@ -460,7 +460,8 @@ export const realGeminiService = {
     const conceptList = concepts.length > 0 ? concepts.map(c => c.title).join(', ') : "недефинирани";
     const topicTitle = topic?.title || "Општа математичка тема";
     
-    let prompt = `Генерирај идеи за час на македонски јазик.
+    let prompt = `Генерирај идеи за час на македонски јазик. 
+    Обезбеди конкретни активности кои се усогласени со таксономијата на Блум (Bloom's Taxonomy).
     Контекст: Одделение ${gradeLevel}, Тема: ${topicTitle}.
     Поими: ${conceptList}.
     
@@ -479,7 +480,17 @@ export const realGeminiService = {
         properties: {
             title: { type: Type.STRING },
             openingActivity: { type: Type.STRING },
-            mainActivity: { type: Type.STRING },
+            mainActivity: { 
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        text: { type: Type.STRING },
+                        bloomsLevel: { type: Type.STRING, enum: ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'] }
+                    },
+                    required: ["text", "bloomsLevel"]
+                }
+            },
             differentiation: { type: Type.STRING },
             assessmentIdea: { type: Type.STRING },
         },
@@ -725,7 +736,8 @@ export const realGeminiService = {
   },
 
   async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingProfile, image?: { base64: string, mimeType: string }): Promise<Partial<LessonPlan>> {
-      const prompt = `Генерирај детална подготовка за час.`;
+      const prompt = `Генерирај детална подготовка за час на македонски јазик.
+      Целите и активностите мора да бидат прецизно класифицирани според таксономијата на Блум (Bloom's Taxonomy).`;
       const contents: Part[] = [{text: prompt}, {text: `Контекст: ${JSON.stringify({context: minifyContext(context), profile})}`}];
        if (image) {
         contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
@@ -735,14 +747,49 @@ export const realGeminiService = {
         type: Type.OBJECT,
         properties: {
             title: { type: Type.STRING },
-            objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+            objectives: { 
+                type: Type.ARRAY, 
+                items: { 
+                    type: Type.OBJECT,
+                    properties: {
+                        text: { type: Type.STRING },
+                        bloomsLevel: { type: Type.STRING, enum: ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'] }
+                    },
+                    required: ["text", "bloomsLevel"]
+                } 
+            },
             assessmentStandards: { type: Type.ARRAY, items: { type: Type.STRING } },
             scenario: {
                 type: Type.OBJECT,
                 properties: {
-                    introductory: { type: Type.STRING },
-                    main: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    concluding: { type: Type.STRING },
+                    introductory: { 
+                        type: Type.OBJECT,
+                        properties: {
+                            text: { type: Type.STRING },
+                            activityType: { type: Type.STRING }
+                        },
+                        required: ["text"]
+                    },
+                    main: { 
+                        type: Type.ARRAY, 
+                        items: { 
+                            type: Type.OBJECT,
+                            properties: {
+                                text: { type: Type.STRING },
+                                bloomsLevel: { type: Type.STRING, enum: ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'] },
+                                activityType: { type: Type.STRING }
+                            },
+                            required: ["text", "bloomsLevel"]
+                        } 
+                    },
+                    concluding: { 
+                        type: Type.OBJECT,
+                        properties: {
+                            text: { type: Type.STRING },
+                            activityType: { type: Type.STRING }
+                        },
+                        required: ["text"]
+                    },
                 },
                 required: ["introductory", "main", "concluding"]
             },
@@ -774,7 +821,9 @@ export const realGeminiService = {
   },
 
   async analyzeLessonPlan(plan: Partial<LessonPlan>, profile?: TeachingProfile): Promise<AIPedagogicalAnalysis> {
-    const prompt = `Направи педагошка анализа на следнава подготовка за час. Користи го својот "budget" за размислување за длабоко да ги оцениш усогласеноста, ангажманот и когнитивните нивоа пред да го генерираш финалниот JSON.`;
+    const prompt = `Направи педагошка анализа на следнава подготовка за час. 
+    Користи го својот "budget" за размислување за длабоко да ги оцениш усогласеноста, ангажманот и когнитивните нивоа (Блумова таксономија).
+    Понуди и конкретни препораки за балансирање на часот доколку е потребно.`;
     const schema = {
         type: Type.OBJECT,
         properties: {
@@ -785,8 +834,9 @@ export const realGeminiService = {
                     alignment: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } }, required: ["status", "details"] },
                     engagement: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } }, required: ["status", "details"] },
                     cognitiveLevels: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } }, required: ["status", "details"] },
+                    balanceRecommendations: { type: Type.STRING },
                 },
-                required: ["overallImpression", "alignment", "engagement", "cognitiveLevels"]
+                required: ["overallImpression", "alignment", "engagement", "cognitiveLevels", "balanceRecommendations"]
             }
         },
         required: ["pedagogicalAnalysis"]

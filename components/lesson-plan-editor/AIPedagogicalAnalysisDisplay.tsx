@@ -205,6 +205,17 @@ export const AIPedagogicalAnalysisDisplay: React.FC<AIPedagogicalAnalysisDisplay
                                 <AnalysisCriteriaDisplay title="Ангажман на ученици" data={analysis.pedagogicalAnalysis.engagement} />
                                 <AnalysisCriteriaDisplay title="Когнитивни нивоа" data={analysis.pedagogicalAnalysis.cognitiveLevels} />
                             </div>
+                            {analysis.pedagogicalAnalysis.balanceRecommendations && (
+                                <div className="mt-4 pt-4 border-t">
+                                    <h4 className="font-semibold text-purple-800 flex items-center gap-2">
+                                        <ICONS.lightbulb className="w-5 h-5" />
+                                        Препораки за балансирање на часот
+                                    </h4>
+                                    <div className="text-sm text-gray-700 mt-2 bg-purple-50 p-3 rounded-lg border border-purple-100 italic">
+                                        <MathRenderer text={analysis.pedagogicalAnalysis.balanceRecommendations} />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </Card>
                 </div>

@@ -1,6 +1,17 @@
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
+
+export interface CachedMaterial {
+  id: string;
+  content: string;
+  type: 'analogy' | 'outline' | 'quiz' | 'problems';
+  conceptId: string;
+  gradeLevel: number;
+  timestamp: string;
+  helpfulCount?: number;
+  notHelpfulCount?: number;
+}
 
 // Овој сервис сега користи вистински Firebase SDK за да ги вчита податоците.
 // Тој пристапува до колекцијата 'curriculum' и документот 'v1' што го креиравме.
@@ -39,6 +50,43 @@ export const firestoreService = {
       console.error("...Error fetching document from Firestore:", error);
       const errorMessage = error.message || "An unknown network error occurred.";
       throw new Error(`Грешка при комуникација со базата на податоци: ${errorMessage}`);
+    }
+  },
+
+  /**
+   * Fetches AI cached materials for community reuse
+   */
+  fetchCachedMaterials: async (maxCount: number = 50): Promise<CachedMaterial[]> => {
+    try {
+      const q = query(
+        collection(db, "cached_ai_materials"),
+        orderBy("timestamp", "desc"),
+        limit(maxCount)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as CachedMaterial[];
+    } catch (error) {
+      console.error("Error fetching cached materials:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Rates a cached material
+   */
+  rateCachedMaterial: async (materialId: string, isHelpful: boolean): Promise<boolean> => {
+    try {
+      const docRef = doc(db, "cached_ai_materials", materialId);
+      await updateDoc(docRef, {
+        [isHelpful ? "helpfulCount" : "notHelpfulCount"]: increment(1)
+      });
+      return true;
+    } catch (error) {
+      console.error("Error rating material:", error);
+      return false;
     }
   }
 };

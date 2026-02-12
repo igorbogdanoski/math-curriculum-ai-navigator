@@ -71,6 +71,7 @@ const LessonPlanLibraryView = safeLazy(() => import('./views/LessonPlanLibraryVi
 const LessonPlanDetailView = safeLazy(() => import('./views/LessonPlanDetailView').then(module => ({ default: module.LessonPlanDetailView })));
 const SharedPlanView = safeLazy(() => import('./views/SharedPlanView').then(module => ({ default: module.SharedPlanView })));
 const SharedAnnualPlanView = safeLazy(() => import('./views/SharedAnnualPlanView').then(module => ({ default: module.SharedAnnualPlanView })));
+const SharedQuizView = safeLazy(() => import('./views/SharedQuizView').then(module => ({ default: module.SharedQuizView })));
 const FavoritesView = safeLazy(() => import('./views/FavoritesView').then(module => ({ default: module.FavoritesView })));
 const CurriculumGraphView = safeLazy(() => import('./views/CurriculumGraphView').then(module => ({ default: module.CurriculumGraphView })));
 const CoverageAnalyzerView = safeLazy(() => import('./views/CoverageAnalyzerView').then(module => ({ default: module.CoverageAnalyzerView })));
@@ -110,6 +111,7 @@ const routes = [
     { path: '/reports/coverage', component: CoverageAnalyzerView },
     { path: '/share/:data', component: SharedPlanView },
     { path: '/share/annual/:data', component: SharedAnnualPlanView },
+    { path: '/quiz/:data', component: SharedQuizView },
     { path: '/mindmap/:topicId', component: MindMapView },
 ];
 

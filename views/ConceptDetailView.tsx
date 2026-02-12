@@ -14,6 +14,9 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { useLastVisited } from '../contexts/LastVisitedContext';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
+import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrowser';
+import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
+import { QuestionType, type AssessmentQuestion } from '../types';
 
 declare global {
     interface Window {
@@ -97,6 +100,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   
   const [isGeneratingProblems, setIsGeneratingProblems] = useState(false);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
   const [isExportingPptx, setIsExportingPptx] = useState(false);
   const [isThrottled, setIsThrottled] = useState(false);
   
@@ -209,7 +213,10 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   };
 
   const formatIdeasToText = (ideas: AIGeneratedIdeas) => {
-    return `### ${ideas.title}\n\n**Вовед:** ${ideas.openingActivity}\n\n**Главна активност:** ${ideas.mainActivity}\n\n**Диференцијација:** ${ideas.differentiation}\n\n**Оценување:** ${ideas.assessmentIdea}`;
+    const mainActivities = Array.isArray(ideas.mainActivity)
+        ? ideas.mainActivity.map(a => `- ${a.text} [${a.bloomsLevel}]`).join('\n')
+        : ideas.mainActivity;
+    return `### ${ideas.title}\n\n**Вовед:** ${ideas.openingActivity}\n\n**Главна активност:**\n${mainActivities}\n\n**Диференцијација:** ${ideas.differentiation}\n\n**Оценување:** ${ideas.assessmentIdea}`;
   };
 
   const handleSaveAsPlan = async () => {
@@ -225,9 +232,14 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
         objectives: [],
         assessmentStandards: [],
         scenario: {
-            introductory: aiSuggestions.openingActivity,
-            main: aiSuggestions.mainActivity.split('\n').filter((line: string) => line.trim() !== ''),
-            concluding: aiSuggestions.assessmentIdea,
+            introductory: { text: aiSuggestions.openingActivity },
+            main: Array.isArray(aiSuggestions.mainActivity) 
+                ? aiSuggestions.mainActivity.map(item => ({
+                    text: item.text,
+                    bloomsLevel: item.bloomsLevel
+                }))
+                : [{ text: String(aiSuggestions.mainActivity) }],
+            concluding: { text: aiSuggestions.assessmentIdea },
         },
         materials: [],
         progressMonitoring: [aiSuggestions.assessmentIdea].filter(Boolean),
@@ -557,6 +569,26 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                         ))}
                     </div>
                 </Card>
+
+                <Card>
+                    <h2 className="text-2xl font-semibold text-brand-primary mb-3 flex items-center">
+                        <ICONS.explore className="w-6 h-6 mr-2 text-brand-primary" />
+                        Библиотека на ресурси
+                    </h2>
+                    <p className="text-sm text-gray-500 mb-4 italic">
+                        Проверете ги веќе генерираните материјали од други наставници за да заштедите време и AI кредити.
+                    </p>
+                    <CachedResourcesBrowser 
+                        conceptId={concept.id} 
+                        onSelect={(content) => {
+                            // Automatically handle based on the content type if possible, 
+                            // but for now, we just copy it and notify.
+                            navigator.clipboard.writeText(content);
+                            addNotification('Содржината е копирана. Можете да ја зачувате како белешка или да ја користите во подготовка.', 'success');
+                        }} 
+                    />
+                </Card>
+
                 <Card>
                     <h2 className="text-2xl font-semibold text-brand-primary mb-3 flex items-center">
                         <ICONS.sparkles className="w-6 h-6 mr-2 text-brand-accent" />
@@ -610,7 +642,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                         <div className="mt-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg animate-fade-in">
                             <div className="prose prose-sm max-w-none">
                                 {aiSuggestions.error ? <p className="text-red-500">{aiSuggestions.error}</p> : (
-                                    <MathRenderer text={`### ${aiSuggestions.title}\n\n**Вовед:** ${aiSuggestions.openingActivity}\n\n**Главна активност:** ${aiSuggestions.mainActivity}\n\n**Диференцијација:** ${aiSuggestions.differentiation}\n\n**Оценување:** ${aiSuggestions.assessmentIdea}`} />
+                                    <MathRenderer text={formatIdeasToText(aiSuggestions)} />
                                 )}
                             </div>
                             {!aiSuggestions.error && (
@@ -702,14 +734,29 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                     </div>
                                 ))}
                             </div>
-                             <div className="mt-3">
+                             <div className="mt-3 flex gap-2">
                                 <button onClick={() => handleSaveAsNote(practiceMaterial.title, practiceMaterial.items.map((it: any) => `${it.text} (Одг: ${it.answer || 'N/A'})`).join('\n'))} className="flex items-center text-sm bg-yellow-500 text-white px-3 py-1 rounded-lg shadow hover:bg-yellow-600"><ICONS.edit className="w-4 h-4 mr-1"/> Зачувај како белешка</button>
+                                <button onClick={() => setIsPlayingQuiz(true)} className="flex items-center text-sm bg-brand-primary text-white px-3 py-1 rounded-lg shadow hover:bg-brand-secondary"><ICONS.play className="w-4 h-4 mr-1"/> Интерактивен квиз</button>
                             </div>
                         </Card>
                     )}
                 </Card>
             </div>
         </div>
+        {isPlayingQuiz && practiceMaterial && (
+            <InteractiveQuizPlayer 
+                title={practiceMaterial.title}
+                questions={practiceMaterial.items.map((item: any, i: number) => ({
+                    id: i,
+                    type: QuestionType.SHORT_ANSWER,
+                    question: item.text,
+                    answer: item.answer,
+                    solution: item.solution,
+                    cognitiveLevel: 'Applying'
+                }))}
+                onClose={() => setIsPlayingQuiz(false)}
+            />
+        )}
     </div>
   );
 };

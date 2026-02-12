@@ -14,6 +14,8 @@ import { AIPedagogicalAnalysisDisplay } from '../components/lesson-plan-editor/A
 import { LessonPlanFormFields } from '../components/lesson-plan-editor/LessonPlanFormFields';
 import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 import { LessonPlanDisplay } from '../components/planner/LessonPlanDisplay';
+import { usePersistentState } from '../hooks/usePersistentState';
+import { PedagogicalDashboard } from '../components/lesson-plan-editor/PedagogicalDashboard';
 
 
 interface LessonPlanEditorViewProps {
@@ -30,7 +32,7 @@ const initialPlanState: Partial<LessonPlan> = {
   lessonNumber: 1,
   objectives: [],
   assessmentStandards: [],
-  scenario: { introductory: '', main: [], concluding: '' },
+  scenario: { introductory: { text: '' }, main: [], concluding: { text: '' } },
   materials: [],
   progressMonitoring: [],
   differentiation: '',
@@ -47,7 +49,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
   const { addNotification } = useNotification();
   const { user } = useAuth();
   const { isOnline } = useNetworkStatus();
-  const [plan, setPlan] = useState<Partial<LessonPlan>>(initialPlanState);
+  
+  // Use persistent state for drafts
+  const [plan, setPlan, clearDraft, lastSaved] = usePersistentState<Partial<LessonPlan>>(
+    id ? `lesson-plan-draft-${id}` : 'lesson-plan-new-draft',
+    initialPlanState
+  );
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<AIPedagogicalAnalysis | null>(null);
@@ -162,26 +170,29 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         if (isMounted.current) {
             setPlan((prev: Partial<LessonPlan>) => {
                 const newPlan = { ...prev };
-                const isArrayField = ['objectives', 'assessmentStandards', 'materials', 'progressMonitoring'].includes(fieldName);
-
-                if (fieldName.startsWith('scenario.')) {
+                
+                if (fieldName === 'objectives') {
+                    newPlan.objectives = enhancedText.split('\n')
+                        .filter(line => line.trim() !== '')
+                        .map(text => ({ text }));
+                } else if (fieldName === 'assessmentStandards' || fieldName === 'materials' || fieldName === 'progressMonitoring') {
+                    const key = fieldName as 'assessmentStandards' | 'materials' | 'progressMonitoring';
+                    newPlan[key] = enhancedText.split('\n').filter(line => line.trim() !== '');
+                } else if (fieldName.startsWith('scenario.')) {
                     const scenarioField = fieldName.split('.')[1] as keyof LessonPlan['scenario'];
-                    const scenario = { ...(newPlan.scenario || { introductory: '', main: [], concluding: '' }) };
+                    const scenario = { ...(newPlan.scenario || { introductory: { text: '' }, main: [], concluding: { text: '' } }) };
                     
                     if (scenarioField === 'main') {
-                        scenario.main = stringToArray(enhancedText);
+                        scenario.main = enhancedText.split('\n')
+                            .filter(line => line.trim() !== '')
+                            .map(text => ({ text, bloomsLevel: 'Understanding' }));
                     } else if (scenarioField === 'introductory' || scenarioField === 'concluding') {
-                        scenario[scenarioField] = enhancedText;
+                        scenario[scenarioField] = { text: enhancedText };
                     }
                     newPlan.scenario = scenario;
                 } else {
-                    if (isArrayField) {
-                        const key = fieldName as 'objectives' | 'assessmentStandards' | 'materials' | 'progressMonitoring';
-                        newPlan[key] = stringToArray(enhancedText);
-                    } else {
-                        const key = fieldName as 'title' | 'subject' | 'theme' | 'differentiation' | 'reflectionPrompt' | 'selfAssessmentPrompt';
-                        newPlan[key] = enhancedText;
-                    }
+                    const key = fieldName as 'title' | 'subject' | 'theme' | 'differentiation' | 'reflectionPrompt' | 'selfAssessmentPrompt';
+                    newPlan[key] = enhancedText;
                 }
                 return newPlan;
             });
@@ -237,12 +248,14 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     try {
         if (isEditing) {
             await updateLessonPlan(plan as LessonPlan);
+            clearDraft();
             if (isMounted.current) {
                 addNotification('Подготовката е успешно ажурирана!', 'success');
                 navigate('/my-lessons');
             }
         } else {
             const newPlanId = await addLessonPlan(plan as Omit<LessonPlan, 'id'>);
+            clearDraft();
             if (isMounted.current) {
                 addNotification('Подготовката е успешно креирана!', 'success');
                 navigate(`/planner/lesson/${newPlanId}`);
@@ -260,7 +273,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     }
   };
   
-    const arrayToLines = (arr: string[] = []) => arr.map(item => `- ${item}`).join('\n');
+    const arrayToLines = (arr: any[] = []) => arr.map(item => `- ${typeof item === 'string' ? item : item.text}${item.bloomsLevel ? ` [${item.bloomsLevel}]` : ''}`).join('\n');
 
   const handleExport = (format: 'md' | 'pdf' | 'doc' | 'clipboard') => {
     if (!plan || !plan.title) {
@@ -277,7 +290,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     
     const { title, grade, theme, objectives, assessmentStandards, scenario, materials, progressMonitoring, differentiation, reflectionPrompt } = plan;
 
-    const fullText = `Наслов: ${title}\nОдделение: ${grade}\nТема: ${theme}\n\nЦЕЛИ:\n${(objectives || []).join('\n')}\n\nСТАНДАРДИ ЗА ОЦЕНУВАЊЕ:\n${(assessmentStandards || []).join('\n')}\n\nСЦЕНАРИО:\nВовед: ${scenario?.introductory}\nГлавни: ${(scenario?.main || []).join('; ')}\nЗавршна: ${scenario?.concluding}\n\nМАТЕРИЈАЛИ:\n${(materials || []).join('\n')}\n\nСЛЕДЕЊЕ НА НАПРЕДОК:\n${(progressMonitoring || []).join('\n')}\n`;
+    const introductoryText = typeof scenario?.introductory === 'string' ? scenario.introductory : scenario?.introductory?.text;
+    const concludingText = typeof scenario?.concluding === 'string' ? scenario.concluding : scenario?.concluding?.text;
+    const mainActivitiesText = (scenario?.main || []).map((a: any) => typeof a === 'string' ? a : `${a.text}${a.bloomsLevel ? ` [${a.bloomsLevel}]` : ''}`).join('; ');
+
+    const fullText = `Наслов: ${title}\nОдделение: ${grade}\nТема: ${theme}\n\nЦЕЛИ:\n${arrayToLines(objectives || [])}\n\nСТАНДАРДИ ЗА ОЦЕНУВАЊЕ:\n${(assessmentStandards || []).join('\n')}\n\nСЦЕНАРИО:\nВовед: ${introductoryText}\nГлавни: ${mainActivitiesText}\nЗавршна: ${concludingText}\n\nМАТЕРИЈАЛИ:\n${(materials || []).join('\n')}\n\nСЛЕДЕЊЕ НА НАПРЕДОК:\n${(progressMonitoring || []).join('\n')}\n`;
     
     if (format === 'clipboard') {
         navigator.clipboard.writeText(fullText)
@@ -293,11 +310,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     const escapeHtml = (unsafe: string = '') => unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     
     if (format === 'md') {
-        content = `# ${title || 'Без наслов'}\n\n**Одделение:** ${grade || ''}\n**Тема:** ${theme || ''}\n\n---\n\n## Цели\n${arrayToLines(objectives)}\n\n## Стандарди за оценување\n${arrayToLines(assessmentStandards)}\n\n## Сценарио\n### Вовед\n${scenario?.introductory || ''}\n### Главни активности\n${arrayToLines(scenario?.main)}\n### Завршна активност\n${scenario?.concluding || ''}\n\n---\n\n## Материјали\n${arrayToLines(materials)}\n\n## Следење на напредокот\n${arrayToLines(progressMonitoring)}`;
+        content = `# ${title || 'Без наслов'}\n\n**Одделение:** ${grade || ''}\n**Тема:** ${theme || ''}\n\n---\n\n## Цели\n${arrayToLines(objectives)}\n\n## Стандарди за оценување\n${arrayToLines(assessmentStandards)}\n\n## Сценарио\n### Вовед\n${introductoryText || ''}\n### Главни активности\n${arrayToLines(scenario?.main)}\n### Завршна активност\n${concludingText || ''}\n\n---\n\n## Материјали\n${arrayToLines(materials)}\n\n## Следење на напредокот\n${arrayToLines(progressMonitoring)}`;
         mimeType = 'text/markdown;charset=utf-8';
         extension = 'md';
     } else if (format === 'doc') {
-        const listHtml = (items: string[] = []) => items.length ? `<ul>${items.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>` : '<p><i>Нема</i></p>';
+        const listHtml = (items: any[] = []) => items.length ? `<ul>${items.map(i => `<li>${escapeHtml(typeof i === 'string' ? i : i.text)}${i.bloomsLevel ? ` <i>[${i.bloomsLevel}]</i>` : ''}</li>`).join('')}</ul>` : '<p><i>Нема</i></p>';
         
         // Construct a full HTML document for Word with proper styling
         const htmlContent = `
@@ -333,15 +350,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
 
             <h2>Сценарио</h2>
             <h3>Воведна активност</h3>
-            <p>${escapeHtml(scenario?.introductory)}</p>
+            <p>${escapeHtml(introductoryText)}</p>
             
             <h3>Главни активности</h3>
-            <ol>
-                ${(scenario?.main || []).map((m: string) => `<li>${escapeHtml(m)}</li>`).join('')}
-            </ol>
+            ${listHtml(scenario?.main)}
 
             <h3>Завршна активност</h3>
-            <p>${escapeHtml(scenario?.concluding)}</p>
+            <p>${escapeHtml(concludingText)}</p>
 
             <h2>Средства и Материјали</h2>
             ${listHtml(materials)}
@@ -412,96 +427,126 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
 
   return (
     <div className="p-8 animate-fade-in">
-      <header className="mb-6 no-print">
-        <button onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">
-            &larr; Назад кон моите подготовки
-        </button>
-        <h1 className="text-4xl font-bold text-brand-primary">
-            {isEditing ? 'Уреди подготовка за час' : 'Креирај нова подготовка'}
-        </h1>
+      <header className="mb-6 no-print flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <button onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">
+                &larr; Назад кон моите подготовки
+            </button>
+            <h1 className="text-4xl font-bold text-brand-primary">
+                {isEditing ? 'Уреди подготовка за час' : 'Креирај нова подготовка'}
+            </h1>
+        </div>
+
+        {lastSaved && (
+            <div className="flex flex-col items-end gap-2 text-sm">
+                <div className="flex items-center text-gray-500 gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full border">
+                    <ICONS.check className="w-4 h-4 text-green-500" />
+                    <span>Автоматски зачувано во {new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <button 
+                    onClick={() => {
+                        if (window.confirm('Дали сте сигурни дека сакате да го отфрлите нацртот? Сите промени ќе бидат изгубени.')) {
+                            clearDraft();
+                        }
+                    }}
+                    className="text-red-600 hover:text-red-700 hover:underline transition-colors flex items-center gap-1"
+                >
+                    <ICONS.trash className="w-3.5 h-3.5" />
+                    Отфрли нацрт
+                </button>
+            </div>
+        )}
       </header>
 
       <div className="no-print">
-        <Card>
-            <form onSubmit={handleSubmit} className="space-y-6">
-            <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
-                {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
-                <AIContextSelector
-                    plan={plan}
-                    onGenerate={handleGenerateWithAI}
-                    isGenerating={isGenerating}
-                />
-            </div>
-            
-            <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
-                {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
-                <AIPedagogicalAnalysisDisplay
-                    analysis={aiAnalysis}
-                    onAnalyze={handleAnalyze}
-                    isAnalyzing={isAnalyzing}
-                    planTitle={plan.title}
-                />
+        <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1">
+                <Card>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
+                        {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
+                        <AIContextSelector
+                            plan={plan}
+                            onGenerate={handleGenerateWithAI}
+                            isGenerating={isGenerating}
+                        />
+                    </div>
+                    
+                    <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
+                        {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
+                        <AIPedagogicalAnalysisDisplay
+                            analysis={aiAnalysis}
+                            onAnalyze={handleAnalyze}
+                            isAnalyzing={isAnalyzing}
+                            planTitle={plan.title}
+                        />
+                    </div>
+
+                    <LessonPlanFormFields 
+                        plan={plan}
+                        setPlan={setPlan}
+                        onEnhanceField={handleEnhanceField}
+                        enhancingField={enhancingField}
+                    />
+                    
+                    <div className="flex justify-end items-center pt-4 gap-3 border-t mt-6">
+                        <div className="relative" ref={exportMenuRef}>
+                            <button
+                                type="button"
+                                onClick={() => setIsExportMenuOpen((prev: boolean) => !prev)}
+                                disabled={!plan.title}
+                                className="flex items-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-lg shadow hover:bg-gray-700 transition-colors font-semibold disabled:bg-gray-400"
+                                title="Извези ја оваа нацрт-подготовка"
+                            >
+                                <ICONS.download className="w-5 h-5" />
+                                Извези
+                                <ICONS.chevronDown className={`w-4 h-4 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            {isExportMenuOpen && (
+                                <div className="absolute bottom-full right-0 mb-2 w-72 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 animate-fade-in-up">
+                                    <div className="py-1">
+                                        <button type="button" onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)
+                                        </button>
+                                        <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <ICONS.edit className="w-5 h-5 mr-3" /> Сними како Word (.doc)
+                                        </button>
+                                        <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
+                                        </button>
+                                        <button type="button" onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={isSaving}
+                            className="flex items-center bg-brand-primary text-white px-6 py-3 rounded-lg shadow hover:bg-brand-secondary transition-colors font-semibold disabled:bg-gray-400"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <ICONS.spinner className="w-5 h-5 mr-2 animate-spin" />
+                                    <span>Зачувувам...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <ICONS.check className="w-5 h-5 mr-2" />
+                                    {isEditing ? 'Зачувај промени' : 'Зачувај подготовка'}
+                                </>
+                            )}
+                        </button>
+                    </div>
+                    </form>
+                </Card>
             </div>
 
-            <LessonPlanFormFields 
-                plan={plan}
-                setPlan={setPlan}
-                onEnhanceField={handleEnhanceField}
-                enhancingField={enhancingField}
-            />
-            
-            <div className="flex justify-end items-center pt-4 gap-3 border-t mt-6">
-                <div className="relative" ref={exportMenuRef}>
-                    <button
-                        type="button"
-                        onClick={() => setIsExportMenuOpen((prev: boolean) => !prev)}
-                        disabled={!plan.title}
-                        className="flex items-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-lg shadow hover:bg-gray-700 transition-colors font-semibold disabled:bg-gray-400"
-                        title="Извези ја оваа нацрт-подготовка"
-                    >
-                        <ICONS.download className="w-5 h-5" />
-                        Извези
-                        <ICONS.chevronDown className={`w-4 h-4 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isExportMenuOpen && (
-                        <div className="absolute bottom-full right-0 mb-2 w-72 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 animate-fade-in-up">
-                            <div className="py-1">
-                                <button type="button" onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)
-                                </button>
-                                <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <ICONS.edit className="w-5 h-5 mr-3" /> Сними како Word (.doc)
-                                </button>
-                                <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
-                                </button>
-                                <button type="button" onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-                <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="flex items-center bg-brand-primary text-white px-6 py-3 rounded-lg shadow hover:bg-brand-secondary transition-colors font-semibold disabled:bg-gray-400"
-                >
-                    {isSaving ? (
-                        <>
-                            <ICONS.spinner className="w-5 h-5 mr-2 animate-spin" />
-                            <span>Зачувувам...</span>
-                        </>
-                    ) : (
-                        <>
-                            <ICONS.check className="w-5 h-5 mr-2" />
-                            {isEditing ? 'Зачувај промени' : 'Зачувај подготовка'}
-                        </>
-                    )}
-                </button>
-            </div>
-            </form>
-        </Card>
+            <aside className="w-full lg:w-80 space-y-4">
+                <PedagogicalDashboard activities={plan.scenario?.main || []} />
+            </aside>
+        </div>
       </div>
 
       {/* Specialized print view - Hidden on screen, visible on print. 

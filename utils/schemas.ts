@@ -4,15 +4,41 @@ import { z } from 'zod';
 // Helper for flexible numbers (sometimes AI returns "5" instead of 5)
 const FlexibleNumber = z.union([z.number(), z.string().transform((val) => Number(val))]);
 
+export const BloomsLevelSchema = z.enum([
+    'Remembering',
+    'Understanding',
+    'Applying',
+    'Analyzing',
+    'Evaluating',
+    'Creating'
+]);
+
 export const LessonPlanSchema = z.object({
     title: z.string().default('Untitled Lesson Plan'),
-    objectives: z.array(z.string()).default([]),
+    objectives: z.array(z.object({
+        text: z.string(),
+        bloomsLevel: BloomsLevelSchema.optional()
+    })).default([]),
     assessmentStandards: z.array(z.string()).default([]),
     scenario: z.object({
-        introductory: z.string().default(''),
-        main: z.array(z.string()).default([]),
-        concluding: z.string().default('')
-    }).default({ introductory: '', main: [], concluding: '' }),
+        introductory: z.object({
+            text: z.string(),
+            activityType: z.string().optional()
+        }).default({ text: '' }),
+        main: z.array(z.object({
+            text: z.string(),
+            bloomsLevel: BloomsLevelSchema.optional(),
+            activityType: z.string().optional()
+        })).default([]),
+        concluding: z.object({
+            text: z.string(),
+            activityType: z.string().optional()
+        }).default({ text: '' })
+    }).default({ 
+        introductory: { text: '' }, 
+        main: [], 
+        concluding: { text: '' } 
+    }),
     materials: z.array(z.string()).default([]),
     progressMonitoring: z.array(z.string()).default([]),
     differentiation: z.string().default(''),
@@ -23,7 +49,10 @@ export const LessonPlanSchema = z.object({
 export const AIGeneratedIdeasSchema = z.object({
     title: z.string(),
     openingActivity: z.string(),
-    mainActivity: z.string(),
+    mainActivity: z.array(z.object({
+        text: z.string(),
+        bloomsLevel: BloomsLevelSchema
+    })),
     differentiation: z.string(),
     assessmentIdea: z.string()
 });
@@ -132,7 +161,8 @@ export const AIPedagogicalAnalysisSchema = z.object({
         overallImpression: z.string(),
         alignment: z.object({ status: z.string(), details: z.string() }),
         engagement: z.object({ status: z.string(), details: z.string() }),
-        cognitiveLevels: z.object({ status: z.string(), details: z.string() })
+        cognitiveLevels: z.object({ status: z.string(), details: z.string() }),
+        balanceRecommendations: z.string().optional()
     })
 });
 

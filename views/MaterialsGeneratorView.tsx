@@ -18,6 +18,7 @@ import { GeneratedRubric } from '../components/ai/GeneratedRubric';
 import { usePlanner } from '../contexts/PlannerContext';
 import { GeneratedLearningPaths } from '../components/ai/GeneratedLearningPaths';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
+import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { generatorTourSteps } from '../tours/tour-steps';
 import { useModal } from '../contexts/ModalContext';
 import { useGeneratorState, type GeneratorState, getInitialState } from '../hooks/useGeneratorState';
@@ -56,6 +57,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const [isGenerating, setIsLoading] = useState(false);
     const [generatedMaterial, setGeneratedMaterial] = useState<AIGeneratedIdeas | AIGeneratedAssessment | AIGeneratedRubric | AIGeneratedIllustration | AIGeneratedLearningPaths | null>(null);
     const [isThrottled, setIsThrottled] = useState(false);
+    const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
 
     const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
     const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
