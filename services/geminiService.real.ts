@@ -1,103 +1,91 @@
 
-// Schema type constants (matches @google/genai Type enum values, avoids bundling SDK on client)
-const Type = {
-  OBJECT: 'OBJECT' as const,
-  STRING: 'STRING' as const,
-  ARRAY: 'ARRAY' as const,
-  INTEGER: 'INTEGER' as const,
-  NUMBER: 'NUMBER' as const,
-  BOOLEAN: 'BOOLEAN' as const,
+import { Concept, Topic, AIGeneratedIdeas, AIGeneratedPracticeMaterial } from '../types';
+import { db } from '../firebaseConfig';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+
+const CACHE_COLLECTION = 'cached_ai_materials';
+const getCacheKey = (type: string, conceptId: string, grade: number) => {
+    return `${type}_${conceptId}_g${grade}`;
 };
 
-interface Part {
-  text?: string;
-  inlineData?: { mimeType: string; data: string };
-}
+export const realGeminiService = {
+  async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: number, user?: any): Promise<AIGeneratedIdeas> {
+    const conceptId = concepts[0].id;
+    const cacheKey = getCacheKey('ideas', conceptId, gradeLevel);
+    try {
+        const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+        if (cachedDoc.exists()) {
+            console.log("🟢 Cache HIT for Ideas!");
+            return cachedDoc.data().content as AIGeneratedIdeas;
+        }
+    } catch (e) {
+        console.warn("Cache read error (permissions?):", e);
+    }
+    console.log("🟠 Cache MISS. Calling Gemini API...");
+    const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: 'gemini-1.5-flash',
+            contents: `Генерирај идеи за лекција... (Твојот промпт тука)...`
+        })
+    });
+    if (!response.ok) throw new Error(`AI Error: ${response.statusText}`);
+    const data = await response.json();
+    const result = JSON.parse(data.text);
+    try {
+        await setDoc(doc(db, CACHE_COLLECTION, cacheKey), {
+            content: result,
+            type: 'ideas',
+            conceptId,
+            gradeLevel,
+            topicId: topic.id,
+            createdAt: serverTimestamp()
+        });
+    } catch (e) {
+        console.error("Failed to save to cache:", e);
+    }
+    return result;
+  },
 
-interface SafetySetting {
-  category: string;
-  threshold: string;
-}
+  async generateAnalogy(concept: Concept, gradeLevel: number): Promise<string> {
+    const cacheKey = getCacheKey('analogy', concept.id, gradeLevel);
+    try {
+        const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+        if (cachedDoc.exists()) {
+            return cachedDoc.data().content;
+        }
+    } catch (e) { console.warn(e); }
+    const prompt = `Објасни го поимот "${concept.title}" за ${gradeLevel} одделение преку едноставна аналогија од реалниот живот.`;
+    const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: 'gemini-1.5-flash',
+            contents: prompt
+        })
+    });
+    if (!response.ok) throw new Error("AI Busy");
+    const data = await response.json();
+    const text = data.text;
+    await setDoc(doc(db, CACHE_COLLECTION, cacheKey), {
+        content: text,
+        type: 'analogy',
+        conceptId: concept.id,
+        createdAt: serverTimestamp()
+    });
+    return text;
+  },
 
-interface Content {
-  role?: string;
-  parts: Part[];
-}
-
-import { QuestionType } from '../types';
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from '../firebaseConfig';
-import type {
-  ChatMessage,
-  Concept,
-  Topic,
-  AIGeneratedAssessment,
-  AIGeneratedIdeas,
-  TeachingProfile,
-  Grade,
-  PlannerItem,
-  LessonPlan,
-  AIGeneratedThematicPlan,
-  AIGeneratedRubric,
-  GenerationContext,
-  CoverageAnalysisReport,
-  NationalStandard,
-  AIRecommendation,
-  DifferentiationLevel,
-  StudentProfile,
-  AIPedagogicalAnalysis,
-  AIGeneratedLearningPaths,
-  AIGeneratedIllustration,
-  AIGeneratedPracticeMaterial,
-} from '../types';
-import { ApiError, AuthError, RateLimitError, ServerError } from "./apiErrors";
-import { z } from 'zod';
-import {
-    AIGeneratedIdeasSchema,
-    AIGeneratedAssessmentSchema,
-    AIGeneratedRubricSchema,
-    AIGeneratedLearningPathsSchema,
-    AIGeneratedPracticeMaterialSchema,
-    AIGeneratedThematicPlanSchema,
-    CoverageAnalysisSchema,
-    AIRecommendationSchema,
-    LessonPlanSchema,
-    AIPedagogicalAnalysisSchema,
-    AnnualPlanSchema
-} from '../utils/schemas';
-
-// --- API PROXY ---
-// All Gemini API calls go through server-side proxy.
-// The API key NEVER reaches the client bundle.
-// Every request is authenticated with Firebase ID token.
-const PROXY_TIMEOUT_MS = 60_000; // 60 s – generous for Gemini thinking models
-const DEFAULT_MODEL = 'gemini-2.0-flash'; // Reverting to 2.0-flash as requested for better capabilities
-
-// --- REQUEST QUEUEING ---
-// Gemini Free Tier has a limit of 15 RPM. 
-// To prevent 429s, we process requests sequentially using a simple queue.
-let requestQueue: Promise<any> = Promise.resolve();
-
-async function queueRequest<T>(requestFn: () => Promise<T>): Promise<T> {
-  // Chain the request to the current queue
-  const result = requestQueue.then(async () => {
-    // Add a larger safety gap between requests (2000ms) for Free Tier limits
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    return requestFn();
-  });
-  
-  // Update the queue head, catching errors so the queue doesn't get stuck
-  requestQueue = result.catch(() => {});
-  
-  return result;
-}
-
-/**
- * Get a Firebase ID token for the currently signed-in user.
- * Lazily imports firebase/auth to avoid circular deps.
- */
-async function getAuthToken(): Promise<string> {
-  const { getAuth } = await import('firebase/auth');
+  async generatePracticeMaterials(concept: Concept, gradeLevel: number, type: string): Promise<AIGeneratedPracticeMaterial> {
+     // Слична логика како горе...
+     // 1. Провери кеш
+     // 2. Повикај API со соодветен промпт и JSON схема
+     // 3. Зачувај во кеш
+     // 4. Врати резултат
+     return { title: "Тест", items: [] };
+  }
+};
   const auth = getAuth();
   const user = auth.currentUser;
   if (!user) {

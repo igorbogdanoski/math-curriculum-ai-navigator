@@ -33,25 +33,24 @@ const convertToStandardLatex = (text: string | undefined): string => {
 const cleanTextForPresentation = (text: string): string => {
     if (!text) return '';
     let clean = text;
-    clean = clean.replace(/\*\*(.*?)\*\*/g, '$1');
-    clean = clean.replace(/\*(.*?)\*/g, '$1');
-    clean = clean.replace(/\$\$\\frac\{(.*?)\}\{(.*?)\}\$\$/g, '($1)/($2)');
-    clean = clean.replace(/\$\\frac\{(.*?)\}\{(.*?)\}\$/g, '($1)/($2)');
-    clean = clean.replace(/\\frac\{(.*?)\}\{(.*?)\}/g, '($1)/($2)');
-    clean = clean.replace(/\\sqrt\{(.*?)\}/g, 'sqrt($1)');
-    clean = clean.replace(/\\cdot/g, '*');
-    clean = clean.replace(/\\le/g, '<=');
-    clean = clean.replace(/\\ge/g, '>=');
-    clean = clean.replace(/\\pi/g, 'π');
-    clean = clean.replace(/\$/g, '');
-    return clean.trim();
-};
-
-const ensurePptxLib = async (): Promise<any> => {
-    if (window.PptxGenJS) return window.PptxGenJS;
-    if (window.pptxgen) return window.pptxgen;
-    return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
+    import React, { useMemo, useState, useEffect } from 'react';
+    import { useCurriculum } from '../hooks/useCurriculum';
+    import { Card } from '../components/common/Card';
+    import { ICONS } from '../constants';
+    import { geminiService } from '../services/geminiService';
+    import type { AIGeneratedIdeas, LessonPlan, AIGeneratedPracticeMaterial } from '../types';
+    import { PlannerItemType } from '../types';
+    import { useAuth } from '../contexts/AuthContext';
+    import { useUserPreferences } from '../contexts/UserPreferencesContext';
+    import { MathRenderer } from '../components/common/MathRenderer';
+    import { useNotification } from '../contexts/NotificationContext';
+    import { useNavigation } from '../contexts/NavigationContext';
+    import { useLastVisited } from '../contexts/LastVisitedContext';
+    import { usePlanner } from '../contexts/PlannerContext';
+    import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
+    import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrowser';
+    // import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer'; // Uncomment if needed
+    import { QuestionType } from '../types';
         script.src = "https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js";
         script.onload = () => {
             if (window.PptxGenJS) resolve(window.PptxGenJS);
