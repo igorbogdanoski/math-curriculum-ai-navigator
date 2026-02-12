@@ -103,11 +103,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     }
   }, [concept, id, setLastVisited]);
 
-  useEffect(() => {
-    if (activeTab === 'analogy' && !analogy && concept && grade) {
-        handleGenerateAnalogy();
-    }
-  }, [activeTab, analogy, concept, grade]);
+    // 🚨 Removed auto-call to AI for analogy tab. Now only triggers on tab click.
 
   useEffect(() => {
     if (activeTab === 'activities' && !aiSuggestions && concept && topic && grade) {
@@ -287,18 +283,24 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
             <div className="flex flex-wrap gap-2 border-b border-gray-100 pb-4">
                 {[
                   { id: 'overview', label: '📖 Преглед', color: 'bg-brand-primary' },
-                  { id: 'activities', label: '💡 Активности (AI)', color: 'bg-brand-secondary' },
-                  { id: 'analogy', label: '🤝 Аналогија (AI)', color: 'bg-purple-600' },
-                  { id: 'quiz', label: '🎮 Квиз', color: 'bg-indigo-600' }
-                ].map(tab => (
-                    <button 
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeTab === tab.id ? `${tab.color} text-white` : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+                                    { id: 'activities', label: '💡 Активности (AI)', color: 'bg-brand-secondary' },
+                                    { id: 'analogy', label: '🤝 Аналогија (AI)', color: 'bg-purple-600' },
+                                    { id: 'quiz', label: '🎮 Квиз', color: 'bg-indigo-600' }
+                                ].map(tab => (
+                                        <button 
+                                                key={tab.id}
+                                                onClick={() => {
+                                                    setActiveTab(tab.id as any);
+                                                    if (tab.id === 'analogy' && !analogy && concept && grade) {
+                                                        console.log("🖱️ Кликнато на табот Аналогија -> Дури сега повикувам AI...");
+                                                        handleGenerateAnalogy();
+                                                    }
+                                                }}
+                                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeTab === tab.id ? `${tab.color} text-white` : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                        >
+                                                {tab.label}
+                                        </button>
+                                ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
