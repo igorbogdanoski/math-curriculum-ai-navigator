@@ -1,11 +1,9 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { useVoice } from '../hooks/useVoice';
-import { StepByStepSolver } from '../components/StepByStepSolver';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
-import type { AIGeneratedIdeas, LessonPlan, AIGeneratedPracticeMaterial, Concept, NationalStandard } from '../types';
+import type { AIGeneratedIdeas, LessonPlan, AIGeneratedPracticeMaterial } from '../types';
 import { PlannerItemType } from '../types';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,59 +16,133 @@ import { usePlanner } from '../contexts/PlannerContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrowser';
 import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
-import { PrintableQuiz } from '../components/PrintableQuiz';
-import { Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
-import { QuestionType } from '../types';
+import { StepByStepSolver } from '../components/StepByStepSolver';
 import { GeometryExplorer } from '../components/GeometryExplorer';
+import { useReactToPrint } from 'react-to-print';
+import { Printer, Share2, Sparkles, Brain, GraduationCap } from 'lucide-react';
 
-declare global {
-    interface Window {
-        PptxGenJS: any;
-        pptxgen: any;
-    }
-}
-
-const convertToStandardLatex = (text: string | undefined): string => {
-    if (!text) return '';
-    return text.replace(/\\\\/g, '\\');
-};
-
-const cleanTextForPresentation = (text: string): string => {
-    if (!text) return '';
-    let clean = text;
-    // ... твојата логика за чистење тука ...
-    return clean;
+// --- ПОМОШНИ ФУНКЦИИ ---
+const formatIdeasToText = (ideas: AIGeneratedIdeas) => {
+        const mainActivities = Array.isArray(ideas.mainActivity)
+                ? ideas.mainActivity.map(a => `- ${a.text} [${a.bloomsLevel}]`).join('\n')
+                : ideas.mainActivity;
+        return `### ${ideas.title}\n\n**Вовед:** ${ideas.openingActivity}\n\n**Главна активност:**\n${mainActivities}\n\n**Диференцијација:** ${ideas.differentiation}\n\n**Оценување:** ${ideas.assessmentIdea}`;
 };
 
 interface ConceptDetailViewProps {
-  id: string;
+    id: string;
 }
 
 export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
-    // PDF Print logic
-    const printComponentRef = useRef(null);
-    // Solver state
-    const [solverData, setSolverData] = useState<any>(null);
-    const [isGeneratingSolver, setIsGeneratingSolver] = useState(false);
-
+    // 1. Hooks
     const { navigate } = useNavigation();
     const { openGeneratorPanel } = useGeneratorPanel();
-    const { getConceptDetails, allConcepts, getStandardsByIds } = useCurriculum();
+    const { getConceptDetails } = useCurriculum();
     const { user } = useAuth();
     const { isFavoriteConcept, toggleFavoriteConcept } = useUserPreferences();
     const { addNotification } = useNotification();
     const { setLastVisited } = useLastVisited();
     const { addItem, addLessonPlan } = usePlanner();
 
+    // 2. Data Memo
     const { grade, topic, concept } = useMemo(() => getConceptDetails(id), [getConceptDetails, id]);
-
-    // useReactToPrint must be called after concept is available
-    const handlePrint = useReactToPrint({
-        content: () => printComponentRef.current,
-        documentTitle: concept ? `Kviz_${concept.title}` : 'Kviz',
+  
+    // 3. States
+    const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'analogy' | 'quiz'>('overview');
+    const [aiSuggestions, setAiSuggestions] = useState<AIGeneratedIdeas | null>(null);
+    const [analogy, setAnalogy] = useState<string | null>(null);
+    const [practiceMaterial, setPracticeMaterial] = useState<AIGeneratedPracticeMaterial | null>(null);
+    const [solverData, setSolverData] = useState<any>(null);
+    const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
+  
+    const [loadingState, setLoadingState] = useState({
+        ideas: false,
+        analogy: false,
+        quiz: false,
+        solver: false
     });
 
+    const printComponentRef = useRef<HTMLDivElement>(null);
+
+    // 4. Print Logic
+    const handlePrint = useReactToPrint({
+        content: () => printComponentRef.current,
+        documentTitle: `Kviz_${concept?.title || 'dokument'}`,
+    });
+
+    // 5. Effects
+    useEffect(() => {
+        if (concept) {
+            setLastVisited({ path: `/concept/${id}`, label: concept.title, type: 'concept' });
+        }
+    }, [concept, id, setLastVisited]);
+
+    // 6. Handlers
+    const handleGenerateIdeas = async () => {
+        if (!concept || !topic || !grade) return;
+        setLoadingState(prev => ({ ...prev, ideas: true }));
+        try {
+            const ideas = await geminiService.generateLessonPlanIdeas([concept], topic, grade.level, user ?? undefined);
+            setAiSuggestions(ideas);
+        } catch(e) { addNotification((e as Error).message, 'error'); }
+        finally { setLoadingState(prev => ({ ...prev, ideas: false })); }
+    };
+
+    const handleGenerateAnalogy = async () => {
+        if (!concept || !grade) return;
+        setLoadingState(prev => ({ ...prev, analogy: true }));
+        try {
+            const result = await geminiService.generateAnalogy(concept, grade.level);
+            setAnalogy(result);
+        } catch(e) { addNotification((e as Error).message, 'error'); }
+        finally { setLoadingState(prev => ({ ...prev, analogy: false })); }
+    };
+
+    const handleGenerateQuiz = async () => {
+        if (!concept || !grade) return;
+        setLoadingState(prev => ({ ...prev, quiz: true }));
+        try {
+            const result = await geminiService.generatePracticeMaterials(concept, grade.level, 'problems');
+            setPracticeMaterial(result);
+        } catch(e) { addNotification((e as Error).message, 'error'); }
+        finally { setLoadingState(prev => ({ ...prev, quiz: false })); }
+    };
+
+    const handleGenerateSolver = async () => {
+        if (!concept || !grade) return;
+        setLoadingState(prev => ({ ...prev, solver: true }));
+        try {
+            const data = await geminiService.generateStepByStepSolution(concept.title, grade.level);
+            setSolverData(data);
+        } catch (e) { addNotification("Грешка при генерирање на решението.", "error"); }
+        finally { setLoadingState(prev => ({ ...prev, solver: false })); }
+    };
+
+    const handleShareQuiz = () => {
+        if (!concept || !topic || !grade) return null;
+        return null;
+    };
+    // All additional state/hooks must be declared here for scope
+    const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
+    const [aiSuggestions, setAiSuggestions] = useState<AIGeneratedIdeas | null>(null);
+    const [isGeneratingAnalogy, setIsGeneratingAnalogy] = useState(false);
+    const [analogy, setAnalogy] = useState<string | null>(null);
+    const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
+    const [presentationOutline, setPresentationOutline] = useState<string | null>(null);
+    const [isGeneratingProblems, setIsGeneratingProblems] = useState(false);
+    const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+    const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
+    const [isExportingPptx, setIsExportingPptx] = useState(false);
+    const [isThrottled, setIsThrottled] = useState(false);
+    const [practiceMaterial, setPracticeMaterial] = useState<AIGeneratedPracticeMaterial | null>(null);
+    const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'analogy' | 'quiz'>('overview');
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+    // useReactToPrint must be called after concept is available
+    const handlePrint = useReactToPrint({
+        contentRef: printComponentRef,
+        documentTitle: concept ? `Kviz_${concept.title}` : 'Kviz',
+    });
     const handleGenerateSolver = async () => {
         if (!concept || !grade || checkThrottle()) return;
         setIsGeneratingSolver(true);
@@ -85,34 +157,12 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
         }
     };
 
-  const { navigate } = useNavigation();
-  const { openGeneratorPanel } = useGeneratorPanel();
-  const { getConceptDetails, allConcepts, getStandardsByIds } = useCurriculum();
-  const { user } = useAuth();
-  const { isFavoriteConcept, toggleFavoriteConcept } = useUserPreferences();
-  const { addNotification } = useNotification();
-  const { setLastVisited } = useLastVisited();
-  const { addItem, addLessonPlan } = usePlanner();
-
-  const { grade, topic, concept } = useMemo(() => getConceptDetails(id), [getConceptDetails, id]);
-  
-  const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState<AIGeneratedIdeas | null>(null);
-  const [isGeneratingAnalogy, setIsGeneratingAnalogy] = useState(false);
-  const [analogy, setAnalogy] = useState<string | null>(null);
-  const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
-  const [presentationOutline, setPresentationOutline] = useState<string | null>(null);
-  
-  const [isGeneratingProblems, setIsGeneratingProblems] = useState(false);
-  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
-  const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
-  const [isExportingPptx, setIsExportingPptx] = useState(false);
-  const [isThrottled, setIsThrottled] = useState(false);
-  
-  const [practiceMaterial, setPracticeMaterial] = useState<AIGeneratedPracticeMaterial | null>(null);
-  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'analogy' | 'quiz'>('overview');
-  const exportMenuRef = useRef<HTMLDivElement>(null);
+    return (
+        <div className="border-b-4 border-black pb-4 mb-8">
+            <h1 className="text-4xl font-black uppercase">{concept.title}</h1>
+            <p className="text-xl font-bold text-gray-600">Наставен лист за вежбање • {grade.title}</p>
+        </div>
+    );
 
   useEffect(() => {
     if (concept) {
@@ -481,16 +531,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
 
         {isPlayingQuiz && practiceMaterial && (
             <InteractiveQuizPlayer 
-                title={practiceMaterial.title}
-                questions={practiceMaterial.items.map((item: any, i: number) => ({
-                    id: i,
-                    type: QuestionType.SHORT_ANSWER,
-                    question: item.text,
-                    answer: item.answer,
-                    solution: item.solution,
-                    cognitiveLevel: 'Applying',
-                    options: [item.answer, "Опција 2", "Опција 3", "Опција 4"].sort(() => Math.random() - 0.5)
-                }))}
+                quiz={practiceMaterial}
                 onClose={() => setIsPlayingQuiz(false)}
             />
         )}
