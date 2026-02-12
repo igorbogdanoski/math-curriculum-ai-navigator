@@ -1,20 +1,7 @@
-import { useVoice } from '../hooks/useVoice';
-const [solverData, setSolverData] = useState<{problem: string, strategy?: string, steps: any[]} | null>(null);
-const [isGeneratingSolver, setIsGeneratingSolver] = useState(false);
-const handleGenerateSolver = async () => {
-    if (!concept || !grade) return;
-    setIsGeneratingSolver(true);
-    try {
-        const data = await geminiService.generateStepByStepSolution(concept.title, grade.level);
-        setSolverData(data);
-    } catch (e) {
-        addNotification("Грешка при генерирање на решението.", "error");
-    } finally {
-        setIsGeneratingSolver(false);
-    }
-};
-import { StepByStepSolver } from '../components/StepByStepSolver';
+
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useVoice } from '../hooks/useVoice';
+import { StepByStepSolver } from '../components/StepByStepSolver';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -34,9 +21,10 @@ import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrow
 import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { PrintableQuiz } from '../components/PrintableQuiz';
 import { Printer } from 'lucide-react';
-import { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { QuestionType } from '../types';
+
+// ...existing code...
 
 declare global {
     interface Window {
@@ -53,21 +41,8 @@ const convertToStandardLatex = (text: string | undefined): string => {
 const cleanTextForPresentation = (text: string): string => {
     if (!text) return '';
     let clean = text;
-    import React, { useMemo, useState, useEffect } from 'react';
-    import { useCurriculum } from '../hooks/useCurriculum';
-    import { Card } from '../components/common/Card';
-    import { ICONS } from '../constants';
-    import { geminiService } from '../services/geminiService';
-    import type { AIGeneratedIdeas, LessonPlan, AIGeneratedPracticeMaterial } from '../types';
-    import { PlannerItemType } from '../types';
-    import { useAuth } from '../contexts/AuthContext';
-    import { useUserPreferences } from '../contexts/UserPreferencesContext';
-    import { MathRenderer } from '../components/common/MathRenderer';
-    import { useNotification } from '../contexts/NotificationContext';
-    import { useNavigation } from '../contexts/NavigationContext';
-    import { useLastVisited } from '../contexts/LastVisitedContext';
-    import { usePlanner } from '../contexts/PlannerContext';
-    import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
+    // ...existing code...
+    return clean;
     import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrowser';
     // import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer'; // Uncomment if needed
     import { QuestionType } from '../types';
