@@ -93,11 +93,15 @@ self.addEventListener('fetch', (event) => {
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
         }
+        
+        // Scheme check to avoid chrome-extension:// errors
+        if (!event.request.url.startsWith('http')) {
+          return networkResponse;
+        }
+
         const responseToCache = networkResponse.clone();
         caches.open(CACHE_NAME).then(cache => {
-          if (event.request.url.startsWith('http')) {
-            cache.put(event.request, responseToCache);
-          }
+          cache.put(event.request, responseToCache);
         });
         return networkResponse;
       });

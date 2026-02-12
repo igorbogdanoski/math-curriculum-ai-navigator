@@ -22,21 +22,25 @@ const initializeDbWithPersistence = () => {
         console.log("Attempting to enable Firestore offline persistence...");
         // Initialize Cloud Firestore with offline persistence enabled using the recommended 'initializeFirestore'.
         // The property is 'localCache', not 'cache'.
-        return initializeFirestore(app, {
+        const firestore = initializeFirestore(app, {
             localCache: persistentLocalCache({})
         });
+        
+        // Catch async errors from persistence that might happen later
+        firestore._getInternalData().indexManager?.configure?.({}).catch(() => {
+             console.warn("Firestore indexing/persistence could not be fully configured due to storage restrictions.");
+        });
+        
+        return firestore;
     } catch (err: any) {
-        if (err.code === 'failed-precondition') {
-            // This can happen if multiple tabs are open.
-            console.warn('Firestore persistence failed: multiple tabs open. Falling back to default persistence.');
+        if (err.code === 'failed-precondition' || err.name === 'FirebaseError' && err.message.includes('storage')) {
+            // This can happen if multiple tabs are open or tracking prevention is active
+            console.warn('Firestore persistence failed or blocked by browser. Falling back to default persistence.');
         } else if (err.code === 'unimplemented') {
-            // The current browser does not support all of the features required to enable persistence.
-            console.warn('Firestore persistence is not available in this browser. Offline functionality will be limited.');
+            console.warn('Firestore persistence is not available in this browser.');
         } else {
             console.error("An unknown error occurred while enabling Firestore persistence:", err);
         }
-        // If initializeFirestore fails (e.g., already initialized, or preconditions fail),
-        // we can safely get the existing instance.
         return getFirestore(app);
     }
 };
