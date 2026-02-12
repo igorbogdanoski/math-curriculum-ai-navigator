@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'math-nav-cache-v2.0';
+const CACHE_NAME = 'math-nav-cache-v2.1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -48,6 +48,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Ignore non-http/https requests (like chrome-extension://)
+  if (!event.request.url.startsWith('http')) return;
+
   if (event.request.method !== 'GET') return;
   
   const url = new URL(event.request.url);
@@ -63,7 +66,10 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((networkResponse) => {
             return caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, networkResponse.clone());
+                // Scheme check to avoid chrome-extension:// errors
+                if (event.request.url.startsWith('http')) {
+                    cache.put(event.request, networkResponse.clone());
+                }
                 return networkResponse;
             });
         })
@@ -89,7 +95,9 @@ self.addEventListener('fetch', (event) => {
         }
         const responseToCache = networkResponse.clone();
         caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseToCache);
+          if (event.request.url.startsWith('http')) {
+            cache.put(event.request, responseToCache);
+          }
         });
         return networkResponse;
       });

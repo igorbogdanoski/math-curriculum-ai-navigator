@@ -354,7 +354,7 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 
 
 // Helper to safely parse JSON responses from the model with INTELLIGENT RETRY logic and Zod Validation
-async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 3, useThinking = false): Promise<T> {
+async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 7, useThinking = false): Promise<T> {
   const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
   
   try {
@@ -442,8 +442,8 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
                 delay = 20000; 
             }
         } else {
-             // Exponential backoff for other errors (2s, 4s, 8s)
-             delay = 1000 * Math.pow(2, 4 - retries); 
+             // Exponential backoff for other errors (2s, 4s, 8s, 16s...)
+             delay = 1000 * Math.pow(2, 8 - retries); 
         }
 
         console.log(`...Чекам ${delay}ms пред повторен обид...`);
@@ -993,7 +993,7 @@ export const realGeminiService = {
         return cacheSnap.data().content;
       }
     } catch (err) {
-      console.warn("Cache read failed, proceeding with AI:", err);
+      console.warn("Cache read failed (Check Firestore Rules if permission error):", err);
     }
 
     const prompt = `Објасни го математичкиот поим "${concept.title}" за ${gradeLevel} одделение користејќи едноставна и лесно разбирлива аналогија.`;
@@ -1036,7 +1036,7 @@ export const realGeminiService = {
         return cacheSnap.data().content;
       }
     } catch (err) {
-      console.warn("Cache read failed, proceeding with AI:", err);
+      console.warn("Cache read failed (Check Firestore Rules if permission error):", err);
     }
 
     const prompt = `Креирај кратка структура (outline) за презентација за математичкиот поим "${concept.title}" за ${gradeLevel} одделение.`;

@@ -249,6 +249,15 @@
 
 ---
 
+### Фаза 21 — Quota Hardening & Service Worker Noise Reduction
+- **Проблем**: Постојани 429 грешки поради неуспешно читање од кеш (Permission Error) и „шум“ во Service Worker од Chrome екстензии.
+- **Решение**:
+  1. **Dynamic Retry Extension**: Зголемен број на обиди (retries) на **5** за подобро справување со долги казни од Google API.
+  2. **SW Filter**: Сервис вокерот сега ги игнорира сите повици кои не се http/https (фикс за `chrome-extension` грешките).
+  3. **Permission Guidance**: Идентификувана потреба од ажурирање на Firestore Rules (рачна акција во Firebase Console).
+
+---
+
 ## Експертска оценка (11 февруари 2026)
 
 | Категорија | Оценка | Белешки |
