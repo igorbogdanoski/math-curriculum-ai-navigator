@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useVoice } from '../hooks/useVoice';
 import { StepByStepSolver } from '../components/StepByStepSolver';
@@ -23,8 +22,7 @@ import { PrintableQuiz } from '../components/PrintableQuiz';
 import { Printer } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { QuestionType } from '../types';
-
-// ...existing code...
+import { GeometryExplorer } from '../components/GeometryExplorer';
 
 declare global {
     interface Window {
@@ -50,6 +48,43 @@ interface ConceptDetailViewProps {
 }
 
 export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
+    // PDF Print logic
+    const printComponentRef = useRef(null);
+    // Solver state
+    const [solverData, setSolverData] = useState<any>(null);
+    const [isGeneratingSolver, setIsGeneratingSolver] = useState(false);
+
+    const { navigate } = useNavigation();
+    const { openGeneratorPanel } = useGeneratorPanel();
+    const { getConceptDetails, allConcepts, getStandardsByIds } = useCurriculum();
+    const { user } = useAuth();
+    const { isFavoriteConcept, toggleFavoriteConcept } = useUserPreferences();
+    const { addNotification } = useNotification();
+    const { setLastVisited } = useLastVisited();
+    const { addItem, addLessonPlan } = usePlanner();
+
+    const { grade, topic, concept } = useMemo(() => getConceptDetails(id), [getConceptDetails, id]);
+
+    // useReactToPrint must be called after concept is available
+    const handlePrint = useReactToPrint({
+        content: () => printComponentRef.current,
+        documentTitle: concept ? `Kviz_${concept.title}` : 'Kviz',
+    });
+
+    const handleGenerateSolver = async () => {
+        if (!concept || !grade || checkThrottle()) return;
+        setIsGeneratingSolver(true);
+        try {
+            // Replace with actual Gemini call
+            const result = await geminiService.generateStepByStepSolution(concept, grade.level);
+            setSolverData(result);
+        } catch (e) {
+            addNotification((e as Error).message, 'error');
+        } finally {
+            setIsGeneratingSolver(false);
+        }
+    };
+
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
   const { getConceptDetails, allConcepts, getStandardsByIds } = useCurriculum();
@@ -295,32 +330,33 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                             </Card>
 
                             {/* --- НОВО: ГЕОМЕТРИСКИ ЕКСПЛОРЕР --- */}
-                                     <div className="mt-6">
-                                         <GeometryExplorer />
-                                     </div>
+        <div className="mt-6">
+            <GeometryExplorer />
+        </div>
 
-                                    <Card className="mt-8 border-indigo-200 bg-indigo-50/30">
-                                        <div className="flex justify-between items-center mb-6">
-                                            <h2 className="text-2xl font-bold text-indigo-800 tracking-tight">🔢 Решавач во живо</h2>
-                                            {!solverData && (
-                                                <button 
-                                                    onClick={handleGenerateSolver}
-                                                    disabled={isGeneratingSolver}
-                                                    className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50"
-                                                >
-                                                    {isGeneratingSolver ? '⏳ Се генерира...' : '🪄 Генерирај задача'}
-                                                </button>
-                                            )}
-                                        </div>
-                                        {solverData && (
-                                            <StepByStepSolver 
-                                                problem={solverData.problem}
-                                                steps={solverData.steps}
-                                                strategy={solverData.strategy}
-                                                mentalMap={solverData.mentalMap}
-                                            />
-                                        )}
-                                    </Card>
+                            {/* --- Решавач во живо --- */}
+                            <Card className="mt-8 border-indigo-200 bg-indigo-50/30">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-indigo-800 tracking-tight">🔢 Решавач во живо</h2>
+                                    {!solverData && (
+                                        <button 
+                                            onClick={handleGenerateSolver}
+                                            disabled={isGeneratingSolver}
+                                            className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50"
+                                        >
+                                            {isGeneratingSolver ? '⏳ Се генерира...' : '🪄 Генерирај задача'}
+                                        </button>
+                                    )}
+                                </div>
+                                {solverData && (
+                                    <StepByStepSolver 
+                                        problem={solverData.problem}
+                                        steps={solverData.steps}
+                                        strategy={solverData.strategy}
+                                        mentalMap={solverData.mentalMap}
+                                    />
+                                )}
+                            </Card>
 
                             {concept.content && concept.content.length > 0 && (
                                 <Card>
@@ -336,7 +372,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                 <ul className="space-y-1">
                                     {concept.assessmentStandards.map((standard: string, i: number) => (
                                         <li key={i}>
-                                            <button onClick={() => handleStandardClick(standard)} className="w-full text-left p-2 rounded-md hover:bg-blue-50 transition-colors flex items-start group">
+                                            <button onClick={() => handleStandardClick(standard)} className="w-full text-left p-2 rounded-md hover:bg-blue-50 transition-colors flex items-start group" title="Стандарди за оценување">
                                                 <ICONS.check className="w-4 h-4 mr-2 mt-0.5 text-brand-secondary" />
                                                 <span className="text-gray-700 group-hover:text-brand-primary flex-1"><MathRenderer text={standard} /></span>
                                             </button>
@@ -351,7 +387,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                         <div className="space-y-6 animate-fade-in">
                             <Card>
                                 <h2 className="text-2xl font-semibold text-brand-primary mb-3">AI Предлози за активности</h2>
-                                {!aiSuggestions && isLoadingIdeas ? <SkeletonLoader type="card" /> : aiSuggestions && (
+                                {!aiSuggestions && isLoadingIdeas ? <SkeletonLoader type="ideas" /> : aiSuggestions && (
                                     <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
                                         <div className="prose prose-sm max-w-none"><MathRenderer text={formatIdeasToText(aiSuggestions)} /></div>
                                         <div className="mt-4 flex gap-2">
@@ -368,7 +404,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                         <div className="space-y-6 animate-fade-in">
                             <Card>
                                 <h2 className="text-2xl font-semibold text-brand-primary mb-3">AI Аналогија</h2>
-                                {!analogy && isGeneratingAnalogy ? <SkeletonLoader type="card" /> : analogy && (
+                                {!analogy && isGeneratingAnalogy ? <SkeletonLoader type="paragraph" /> : analogy && (
                                     <div className="bg-purple-50 border-purple-200 p-4 rounded-lg">
                                         <div className="prose prose-sm max-w-none text-gray-800"><MathRenderer text={analogy} /></div>
                                         <div className="mt-4"><button onClick={() => handleSaveAsNote(`Аналогија за ${concept.title}`, analogy)} className="bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm">Зачувај како белешка</button></div>
@@ -401,24 +437,6 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                         </div>
                                         <div className="flex gap-2 justify-center">
                                             <button 
-                                                onClick={() => setIsPlayingQuiz(true)} 
-                                                className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:scale-105 transition flex items-center gap-2"
-                                            >
-                                                <ICONS.play className="w-5 h-5" /> Преглед (Наставник)
-                                            </button>
-                                            <button 
-                                                onClick={() => {
-                                                    if (!concept || !grade) return;
-                                                    const quizId = `quiz_${concept.id}_g${grade.level}`;
-                                                    const shareLink = `${window.location.origin}/play/${quizId}`;
-                                                    navigator.clipboard.writeText(shareLink);
-                                                    addNotification('🔗 Линкот е копиран! Пратете го на учениците.', 'success');
-                                                }}
-                                                className="bg-blue-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 transition flex items-center gap-2"
-                                            >
-                                                <ICONS.share className="w-5 h-5" /> Сподели со ученици
-                                            </button>
-                                            <button 
                                                 onClick={handlePrint}
                                                 className="bg-gray-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-700 transition flex items-center gap-2"
                                             >
@@ -430,7 +448,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                     <div className="hidden">
                                         <PrintableQuiz 
                                             ref={printComponentRef} 
-                                            title={practiceMaterial?.title || concept.title}
+                                            title={practiceMaterial?.title || (concept ? concept.title : '')}
                                             grade={grade?.level}
                                             questions={practiceMaterial?.items.map((item: any) => ({
                                                 question: item.text,
@@ -443,12 +461,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                             </Card>
                         </div>
                     )}
-                // PDF Print logic
-                const printComponentRef = useRef(null);
-                const handlePrint = useReactToPrint({
-                    content: () => printComponentRef.current,
-                    documentTitle: `Kviz_${concept?.title}`,
-                });
+
                 </div>
 
                 <div className="space-y-6">
@@ -475,7 +488,8 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                     question: item.text,
                     answer: item.answer,
                     solution: item.solution,
-                    cognitiveLevel: 'Applying'
+                    cognitiveLevel: 'Applying',
+                    options: [item.answer, "Опција 2", "Опција 3", "Опција 4"].sort(() => Math.random() - 0.5)
                 }))}
                 onClose={() => setIsPlayingQuiz(false)}
             />
