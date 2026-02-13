@@ -1,10 +1,10 @@
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 
 export interface CachedMaterial {
   id: string;
-  content: string;
+  content: any; // Changed from string to any to support objects
   type: 'analogy' | 'outline' | 'quiz' | 'problems';
   conceptId: string;
   gradeLevel: number;
@@ -71,6 +71,33 @@ export const firestoreService = {
     } catch (error) {
       console.error("Error fetching cached materials:", error);
       return [];
+    }
+  },
+
+  /**
+   * Fetches the latest quiz for a specific concept
+   */
+  fetchLatestQuizByConcept: async (conceptId: string): Promise<CachedMaterial | null> => {
+    try {
+      const q = query(
+        collection(db, "cached_ai_materials"),
+        where("conceptId", "==", conceptId),
+        where("type", "==", "quiz"),
+        orderBy("timestamp", "desc"),
+        limit(1)
+      );
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const d = querySnapshot.docs[0];
+        return {
+          id: d.id,
+          ...d.data()
+        } as CachedMaterial;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching latest quiz:", error);
+      return null;
     }
   },
 

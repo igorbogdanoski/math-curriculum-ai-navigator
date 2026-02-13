@@ -1,12 +1,9 @@
-
-// FINAL DEDUPLICATED VERSION PROVIDED BY USER
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
-import type { AIGeneratedIdeas, LessonPlan, AIGeneratedPracticeMaterial } from '../types';
-import { PlannerItemType } from '../types';
+import type { AIGeneratedIdeas, AIGeneratedPracticeMaterial, LessonPlan } from '../types';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -21,389 +18,295 @@ import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { StepByStepSolver } from '../components/StepByStepSolver';
 import { GeometryExplorer } from '../components/GeometryExplorer';
 import { useReactToPrint } from 'react-to-print';
-import { Printer } from 'lucide-react';
+import { Printer, Share2, Brain, GraduationCap, Sparkles, Lightbulb } from 'lucide-react';
+
+// --- Помошни функции ---
+const formatIdeasToText = (ideas: AIGeneratedIdeas) => {
+    const mainActivities = Array.isArray(ideas.mainActivity)
+        ? ideas.mainActivity.map(a => `- ${a.text} [${a.bloomsLevel}]`).join('\n')
+        : ideas.mainActivity;
+    return `### ${ideas.title}\n\n**Вовед:** ${ideas.openingActivity}\n\n**Главна активност:**\n${mainActivities}\n\n**Диференцијација:** ${ideas.differentiation}\n\n**Оценување:** ${ideas.assessmentIdea}`;
+};
 
 interface ConceptDetailViewProps {
-    id: string;
+  id: string;
 }
 
 export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
-    // Hooks
-    const { navigate } = useNavigation();
-    const { openGeneratorPanel } = useGeneratorPanel();
-    const { getConceptDetails } = useCurriculum();
-    const { user } = useAuth();
-    const { isFavoriteConcept, toggleFavoriteConcept } = useUserPreferences();
-    const { addNotification } = useNotification();
-    const { setLastVisited } = useLastVisited();
-    const { addItem, addLessonPlan } = usePlanner();
+  // 1. Hooks (Подредени за стабилност)
+  const { navigate } = useNavigation();
+  const { openGeneratorPanel } = useGeneratorPanel();
+  const { getConceptDetails } = useCurriculum();
+  const { user } = useAuth();
+  const { isFavoriteConcept, toggleFavoriteConcept } = useUserPreferences();
+  const { addNotification } = useNotification();
+  const { setLastVisited } = useLastVisited();
 
-    // Data Memo
-    const { grade, topic, concept } = useMemo(() => getConceptDetails(id), [getConceptDetails, id]);
+  const { grade, topic, concept } = useMemo(() => getConceptDetails(id), [getConceptDetails, id]);
+  
+  // 2. State
+  const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'analogy' | 'quiz'>('overview');
+  const [aiSuggestions, setAiSuggestions] = useState<AIGeneratedIdeas | null>(null);
+  const [analogy, setAnalogy] = useState<string | null>(null);
+  const [practiceMaterial, setPracticeMaterial] = useState<AIGeneratedPracticeMaterial | null>(null);
+  const [solverData, setSolverData] = useState<any>(null);
+  const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
+  const [isThrottled, setIsThrottled] = useState(false);
+  
+  const [loadingState, setLoadingState] = useState({
+    ideas: false, analogy: false, quiz: false, solver: false
+  });
 
-    // State
-    const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'analogy' | 'quiz'>('overview');
-    const [aiSuggestions, setAiSuggestions] = useState<AIGeneratedIdeas | null>(null);
-    const [analogy, setAnalogy] = useState<string | null>(null);
-    const [practiceMaterial, setPracticeMaterial] = useState<AIGeneratedPracticeMaterial | null>(null);
-    const [solverData, setSolverData] = useState<any>(null);
-    const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
-    const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
-    const [isGeneratingAnalogy, setIsGeneratingAnalogy] = useState(false);
-    const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
-    const [presentationOutline, setPresentationOutline] = useState<string | null>(null);
-    const [isGeneratingProblems, setIsGeneratingProblems] = useState(false);
-    const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
-    const [isExportingPptx, setIsExportingPptx] = useState(false);
-    const [isThrottled, setIsThrottled] = useState(false);
-    const printComponentRef = useRef<HTMLDivElement>(null);
+  const printComponentRef = useRef<HTMLDivElement>(null);
 
-    // Print Logic
-    const handlePrint = useReactToPrint({
-        content: () => printComponentRef.current,
-        documentTitle: `Kviz_${concept?.title || 'dokument'}`,
-    });
+  // 3. Handlers
+  const checkThrottle = () => {
+    if (isThrottled) {
+      addNotification("Ве молиме почекајте 3 секунди меѓу барањата.", 'warning');
+      return true;
+    }
+    setIsThrottled(true);
+    setTimeout(() => setIsThrottled(false), 3000);
+    return false;
+  };
 
-    // Effects
-    useEffect(() => {
-        if (concept) {
-            setLastVisited({ path: `/concept/${id}`, label: concept.title, type: 'concept' });
-        }
-    }, [concept, id, setLastVisited]);
+  const handlePrint = useReactToPrint({
+    contentRef: printComponentRef,
+    documentTitle: concept ? `Kviz_${concept.title}` : 'Kviz',
+  });
 
-    // Throttle
-    const checkThrottle = () => {
-        if (isThrottled) {
-            addNotification('Ве молиме почекајте малку пред следното барање.', 'warning');
-            return true;
-        }
-        setIsThrottled(true);
-        setTimeout(() => setIsThrottled(false), 3000);
-        return false;
-    };
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/#/play/${id}`;
+    navigator.clipboard.writeText(shareUrl);
+    addNotification('Линкот за споделување е копиран!', 'success');
+  };
 
-    // Handlers
-    const handleGenerateIdeas = async () => {
-        if (!concept || !topic || !grade || checkThrottle()) return;
-        setIsLoadingIdeas(true);
-        try {
-            const ideas = await geminiService.generateLessonPlanIdeas([concept], topic, grade.level, user ?? undefined);
-            setAiSuggestions(ideas);
-        } catch (e) {
-            addNotification((e as Error).message, 'error');
-        } finally {
-            setIsLoadingIdeas(false);
-        }
-    };
+  const handleGenerateIdeas = async () => {
+    if (!concept || !topic || !grade || checkThrottle()) return;
+    setLoadingState(p => ({ ...p, ideas: true }));
+    try {
+      const ideas = await geminiService.generateLessonPlanIdeas([concept], topic, grade.level, user ?? undefined);
+      setAiSuggestions(ideas);
+    } catch(e) { addNotification("Грешка при генерирање идеи.", 'error'); }
+    finally { setLoadingState(p => ({ ...p, ideas: false })); }
+  };
 
-    const handleGenerateAnalogy = async () => {
-        if (!concept || !grade || checkThrottle()) return;
-        setIsGeneratingAnalogy(true);
-        setAnalogy(null);
-        try {
-            const result = await geminiService.generateAnalogy(concept, grade.level);
-            setAnalogy(result);
-        } catch (e) {
-            addNotification((e as Error).message, 'error');
-        } finally {
-            setIsGeneratingAnalogy(false);
-        }
-    };
+  const handleGenerateAnalogy = async () => {
+    if (!concept || !grade || checkThrottle()) return;
+    setLoadingState(p => ({ ...p, analogy: true }));
+    try {
+      const res = await geminiService.generateAnalogy(concept, grade.level);
+      setAnalogy(res);
+    } catch(e) { addNotification("Грешка при генерирање аналогија.", 'error'); }
+    finally { setLoadingState(p => ({ ...p, analogy: false })); }
+  };
 
-    const handleGenerateOutline = async () => {
-        if (!concept || !grade || checkThrottle()) return;
-        setIsGeneratingOutline(true);
-        setPresentationOutline(null);
-        try {
-            const result = await geminiService.generatePresentationOutline(concept, grade.level);
-            setPresentationOutline(result);
-        } catch (e) {
-            addNotification((e as Error).message, 'error');
-        } finally {
-            setIsGeneratingOutline(false);
-        }
-    };
+  const handleGenerateQuiz = async () => {
+    if (!concept || !grade || checkThrottle()) return;
+    setLoadingState(p => ({ ...p, quiz: true }));
+    try {
+      const res = await geminiService.generatePracticeMaterials(concept, grade.level, 'problems');
+      setPracticeMaterial(res);
+    } catch(e) { addNotification("Грешка при креирање квиз.", 'error'); }
+    finally { setLoadingState(p => ({ ...p, quiz: false })); }
+  };
 
-    const handleGeneratePracticeMaterial = async (type: 'problems' | 'questions') => {
-        if (!concept || !grade || checkThrottle()) return;
-        if (type === 'problems') setIsGeneratingProblems(true);
-        else setIsGeneratingQuestions(true);
-        try {
-            const result = await geminiService.generatePracticeMaterials(concept, grade.level, type);
-            setPracticeMaterial(result);
-        } catch (e) {
-            addNotification((e as Error).message, 'error');
-        } finally {
-            if (type === 'problems') setIsGeneratingProblems(false);
-            else setIsGeneratingQuestions(false);
-        }
-    };
+  const handleGenerateSolver = async () => {
+    if (!concept || !grade || checkThrottle()) return;
+    setLoadingState(p => ({ ...p, solver: true }));
+    try {
+      const res = await geminiService.generateStepByStepSolution(concept.title, grade.level);
+      setSolverData(res);
+    } catch(e) { addNotification("Грешка во AI Туторот.", "error"); }
+    finally { setLoadingState(p => ({ ...p, solver: false })); }
+  };
 
-    const handleSaveAsNote = async (title: string, content: string) => {
-        if (!content) return;
-        try {
-            await addItem({
-                title: `Белешка: ${title}`,
-                date: new Date().toISOString().split('T')[0],
-                type: PlannerItemType.EVENT,
-                description: content,
-            });
-            addNotification('Содржината е успешно зачувана како белешка во планерот!', 'success');
-        } catch (error) {
-            addNotification('Грешка при зачувување на белешката.', 'error');
-        }
-    };
+  useEffect(() => {
+    if (concept) setLastVisited({ path: `/concept/${id}`, label: concept.title, type: 'concept' });
+  }, [concept, id, setLastVisited]);
 
-    const formatIdeasToText = (ideas: AIGeneratedIdeas) => {
-        const mainActivities = Array.isArray(ideas.mainActivity)
-            ? ideas.mainActivity.map(a => `- ${a.text} [${a.bloomsLevel}]`).join('\n')
-            : ideas.mainActivity;
-        return `### ${ideas.title}\n\n**Вовед:** ${ideas.openingActivity}\n\n**Главна активност:**\n${mainActivities}\n\n**Диференцијација:** ${ideas.differentiation}\n\n**Оценување:** ${ideas.assessmentIdea}`;
-    };
+  if (!concept || !topic || !grade) return <SkeletonLoader type="page" />;
 
-    const handleSaveAsPlan = async () => {
-        if (!aiSuggestions || !grade || !topic || !concept) return;
-        const newPlan: Omit<LessonPlan, 'id'> = {
-            title: aiSuggestions.title,
-            grade: grade.level,
-            topicId: topic.id,
-            conceptIds: [concept.id],
-            subject: 'Математика',
-            theme: topic.title,
-            objectives: [],
-            assessmentStandards: [],
-            scenario: {
-                introductory: { text: aiSuggestions.openingActivity },
-                main: Array.isArray(aiSuggestions.mainActivity)
-                    ? aiSuggestions.mainActivity.map(item => ({ text: item.text, bloomsLevel: item.bloomsLevel }))
-                    : [{ text: String(aiSuggestions.mainActivity) }],
-                concluding: { text: aiSuggestions.assessmentIdea },
-            },
-            materials: [],
-            progressMonitoring: [aiSuggestions.assessmentIdea].filter(Boolean),
-            differentiation: aiSuggestions.differentiation,
-        };
-        try {
-            const newPlanId = await addLessonPlan(newPlan);
-            addNotification('Подготовката е успешно зачувана!', 'success');
-            navigate(`/planner/lesson/${newPlanId}`);
-        } catch (error) {
-            addNotification('Грешка при зачувување.', 'error');
-        }
-    };
-
-    const handleStandardClick = (standardText: string) => {
-        if (!grade || !topic || !concept) return;
-        openGeneratorPanel({
-            grade: String(grade.level),
-            topicId: topic.id,
-            conceptId: concept.id,
-            contextType: 'SCENARIO',
-            scenario: standardText,
-        });
-    };
-
-    if (!concept || !topic || !grade) return null;
-    const isAnyGenerating = isLoadingIdeas || isGeneratingAnalogy || isGeneratingOutline || isGeneratingProblems || isGeneratingQuestions || isExportingPptx;
-    const isFavorite = isFavoriteConcept(concept.id);
-
-    return (
-        <div className="p-8 animate-fade-in">
-            <header className="mb-8">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-4xl font-bold text-brand-primary"><MathRenderer text={concept.title} /></h1>
-                    <button onClick={() => toggleFavoriteConcept(concept.id)} className="text-yellow-500 hover:text-yellow-600">
-                        {isFavorite ? <ICONS.starSolid className="w-7 h-7" /> : <ICONS.star className="w-7 h-7" />}
-                    </button>
+  return (
+    <div className="p-8 animate-fade-in pb-24 text-left">
+        <header className="mb-10">
+              <div className="flex items-center gap-4">
+                <h1 className="text-4xl font-black text-brand-primary tracking-tight">
+                  <MathRenderer text={concept.title} />
+                </h1>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => toggleFavoriteConcept(concept.id)} className="text-yellow-500 hover:scale-110 transition">
+                    {isFavoriteConcept(concept.id) ? <ICONS.starSolid className="w-8 h-8" /> : <ICONS.star className="w-8 h-8" />}
+                  </button>
+                  <button onClick={handleShare} className="text-blue-500 hover:scale-110 transition p-2 rounded-full hover:bg-blue-50" title="Сподели со ученици">
+                    <Share2 className="w-8 h-8" />
+                  </button>
                 </div>
-                <p className="text-xl text-gray-500">{grade.title} | {topic.title}</p>
-            </header>
+              </div>
+              <p className="text-xl text-gray-400 font-bold mt-2 uppercase tracking-wide">
+                {grade.title} • {topic.title}
+              </p>
+        </header>
 
-            <div className="flex flex-col gap-6">
-                <div className="flex flex-wrap gap-2 border-b border-gray-100 pb-4">
-                    {[
-                        { id: 'overview', label: '📖 Преглед', color: 'bg-brand-primary' },
-                        { id: 'activities', label: '💡 Активности (AI)', color: 'bg-brand-secondary' },
-                        { id: 'analogy', label: '🤝 Аналогија (AI)', color: 'bg-purple-600' },
-                        { id: 'quiz', label: '🎮 Квиз', color: 'bg-indigo-600' },
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => {
-                                setActiveTab(tab.id as any);
-                                if (tab.id === 'analogy' && !analogy && concept && grade) {
-                                    handleGenerateAnalogy();
-                                }
-                            }}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeTab === tab.id ? `${tab.color} text-white` : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
+        {/* Навигација низ табови */}
+        <div className="flex flex-wrap gap-3 border-b border-gray-100 pb-5 mb-10">
+            {[
+                { id: 'overview', label: '📖 Преглед', color: 'bg-blue-600' },
+                { id: 'activities', label: '💡 Активности', color: 'bg-emerald-600' },
+                { id: 'analogy', label: '🧠 Аналогија', color: 'bg-purple-600' },
+                { id: 'quiz', label: '🎮 Квиз', color: 'bg-indigo-600' }
+            ].map(t => (
+                <button 
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id as any)}
+                    className={`px-8 py-3 rounded-2xl text-sm font-black transition-all transform hover:scale-105 ${activeTab === t.id ? `${t.color} text-white shadow-xl` : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'}`}
+                >
+                    {t.label}
+                </button>
+            ))}
+        </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-6">
-                        {activeTab === 'overview' && (
-                            <div className="space-y-6 animate-fade-in">
-                                <Card>
-                                    <h2 className="text-2xl font-semibold text-brand-primary mb-3">Опис на концептот</h2>
-                                    <div className="text-lg text-gray-700 leading-relaxed"><MathRenderer text={concept.description} /></div>
-                                </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="lg:col-span-2 space-y-10">
+                {/* ТАБ: ПРЕГЛЕД */}
+                {activeTab === 'overview' && (
+                  <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <Card className="shadow-sm border-none">
+                        <h2 className="text-2xl font-black text-blue-600 mb-6 flex items-center gap-3">
+                           <GraduationCap className="w-7 h-7" /> Дефиниција и опис
+                        </h2>
+                        <div className="text-lg leading-relaxed text-gray-700">
+                          <MathRenderer text={concept.description} />
+                        </div>
+                    </Card>
+                    
+                    <GeometryExplorer />
 
-                                <div className="mt-6">
-                                    <GeometryExplorer />
-                                </div>
+                    <Card className="border-indigo-100 bg-indigo-50/20 ring-1 ring-indigo-100">
+                        <div className="flex justify-between items-center mb-8">
+                          <h2 className="text-2xl font-black text-indigo-900 flex items-center gap-3">
+                             <Brain className="w-7 h-7 text-indigo-600" /> AI Тутор (ToT + CoT)
+                          </h2>
+                          {!solverData && (
+                            <button onClick={handleGenerateSolver} disabled={loadingState.solver} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-sm font-black shadow-lg hover:bg-indigo-700 transition active:scale-95">
+                              {loadingState.solver ? '⏳ Смислувам...' : '🪄 Генерирај задача'}
+                            </button>
+                          )}
+                        </div>
+                        {solverData && <StepByStepSolver problem={solverData.problem} steps={solverData.steps} strategy={solverData.strategy} />}
+                    </Card>
+                  </div>
+                )}
 
-                                <Card className="mt-8 border-indigo-200 bg-indigo-50/30">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className="text-2xl font-bold text-indigo-800 tracking-tight">🔢 Решавач во живо</h2>
-                                        {!solverData && (
-                                            <button
-                                                onClick={async () => {
-                                                    setIsGeneratingProblems(true);
-                                                    try {
-                                                        const data = await geminiService.generateStepByStepSolution(concept.title, grade.level);
-                                                        setSolverData(data);
-                                                    } catch (e) {
-                                                        addNotification('Грешка при генерирање на решението.', 'error');
-                                                    } finally {
-                                                        setIsGeneratingProblems(false);
-                                                    }
-                                                }}
-                                                disabled={isGeneratingProblems}
-                                                className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50"
-                                            >
-                                                {isGeneratingProblems ? '⏳ Се генерира...' : '🪄 Генерирај задача'}
-                                            </button>
-                                        )}
-                                    </div>
-                                    {solverData && (
-                                        <StepByStepSolver
-                                            problem={solverData.problem}
-                                            steps={solverData.steps}
-                                            strategy={solverData.strategy}
-                                            mentalMap={solverData.mentalMap}
-                                        />
-                                    )}
-                                </Card>
-
-                                {concept.content && concept.content.length > 0 && (
-                                    <Card>
-                                        <h2 className="text-2xl font-semibold text-brand-primary mb-3">Детални содржини</h2>
-                                        <ul className="list-disc list-inside text-gray-700 space-y-1">
-                                            {concept.content.map((item: string, i: number) => <li key={i}><MathRenderer text={item} /></li>)}
-                                        </ul>
-                                    </Card>
-                                )}
-
-                                <Card>
-                                    <h2 className="text-2xl font-semibold text-brand-primary mb-3">Стандарди за оценување</h2>
-                                    <ul className="space-y-1">
-                                        {concept.assessmentStandards.map((standard: string, i: number) => (
-                                            <li key={i}>
-                                                <button onClick={() => handleStandardClick(standard)} className="w-full text-left p-2 rounded-md hover:bg-blue-50 transition-colors flex items-start group" title="Стандарди за оценување">
-                                                    <ICONS.check className="w-4 h-4 mr-2 mt-0.5 text-brand-secondary" />
-                                                    <span className="text-gray-700 group-hover:text-brand-primary flex-1"><MathRenderer text={standard} /></span>
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </Card>
-                            </div>
-                        )}
-
-                        {activeTab === 'activities' && (
-                            <div className="space-y-6 animate-fade-in">
-                                <Card>
-                                    <h2 className="text-2xl font-semibold text-brand-primary mb-3">AI Предлози за активности</h2>
-                                    {!aiSuggestions && isLoadingIdeas ? <SkeletonLoader type="ideas" /> : aiSuggestions && (
-                                        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-                                            <div className="prose prose-sm max-w-none"><MathRenderer text={formatIdeasToText(aiSuggestions)} /></div>
-                                            <div className="mt-4 flex gap-2">
-                                                <button onClick={handleSaveAsPlan} className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm">Зачувај како подготовка</button>
-                                                <button onClick={() => handleSaveAsNote(aiSuggestions.title, formatIdeasToText(aiSuggestions))} className="bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm">Зачувај како белешка</button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </Card>
-                            </div>
-                        )}
-
-                        {activeTab === 'analogy' && (
-                            <div className="space-y-6 animate-fade-in">
-                                <Card>
-                                    <h2 className="text-2xl font-semibold text-brand-primary mb-3">AI Аналогија</h2>
-                                    {!analogy && isGeneratingAnalogy ? <SkeletonLoader type="paragraph" /> : analogy && (
-                                        <div className="bg-purple-50 border-purple-200 p-4 rounded-lg">
-                                            <div className="prose prose-sm max-w-none text-gray-800"><MathRenderer text={analogy} /></div>
-                                            <div className="mt-4"><button onClick={() => handleSaveAsNote(`Аналогија за ${concept.title}`, analogy)} className="bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm">Зачувај како белешка</button></div>
-                                        </div>
-                                    )}
-                                </Card>
-                            </div>
-                        )}
-
-                        {activeTab === 'quiz' && (
-                            <div className="space-y-6 animate-fade-in">
-                                <Card>
-                                    <h2 className="text-2xl font-semibold text-brand-primary mb-3">Квиз и задачи</h2>
-                                    <div className="flex gap-2 mb-6">
-                                        <button onClick={() => handleGeneratePracticeMaterial('problems')} className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold">Задачи за вежбање</button>
-                                        <button onClick={() => handleGeneratePracticeMaterial('questions')} className="flex-1 bg-pink-600 text-white py-2 rounded-lg font-semibold">Дискусија</button>
-                                    </div>
-                                    {practiceMaterial && (
-                                        <>
-                                            <div className="space-y-4">
-                                                <h4 className="font-bold text-indigo-800">{practiceMaterial.title}</h4>
-                                                <div className="prose prose-sm max-w-none text-gray-800 space-y-4">
-                                                    {practiceMaterial.items.map((item: any, index: number) => (
-                                                        <div key={index} className="pb-3 border-b last:border-b-0 border-indigo-50">
-                                                            <p className="mb-1"><strong>{index + 1}. <MathRenderer text={item.text} /></strong></p>
-                                                            {item.answer && <p className="text-sm bg-indigo-100 p-1 rounded inline-block">Одговор: <MathRenderer text={item.answer} /></p>}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="flex gap-2 justify-center">
-                                                    <button
-                                                        onClick={handlePrint}
-                                                        className="bg-gray-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-700 transition flex items-center gap-2"
-                                                    >
-                                                        <Printer className="w-5 h-5" /> Испечати PDF
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="hidden">
-                                                {/* PrintableQuiz component would go here if needed */}
-                                            </div>
-                                        </>
-                                    )}
-                                </Card>
-                            </div>
+                {/* ТАБ: АКТИВНОСТИ */}
+                {activeTab === 'activities' && (
+                  <Card className="animate-in fade-in duration-500">
+                    <div className="flex justify-between items-center mb-8">
+                        <h2 className="text-2xl font-black text-emerald-700 flex items-center gap-3">
+                          <Lightbulb className="w-7 h-7" /> Предлози за часот
+                        </h2>
+                        {!aiSuggestions && (
+                            <button onClick={handleGenerateIdeas} disabled={loadingState.ideas} className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-black shadow-md">
+                                {loadingState.ideas ? '⏳ Се генерира...' : '✨ Креирај идеи'}
+                            </button>
                         )}
                     </div>
+                    {aiSuggestions && (
+                      <div className="bg-emerald-50 p-8 rounded-3xl border-l-8 border-emerald-400">
+                        <MathRenderer text={formatIdeasToText(aiSuggestions)} />
+                      </div>
+                    )}
+                  </Card>
+                )}
 
-                    <div className="space-y-6">
-                        <Card className="bg-teal-50 border-teal-100">
-                            <div className="flex justify-between items-center mb-3">
-                                <h3 className="font-bold text-teal-800">Презентација</h3>
-                            </div>
-                            {presentationOutline ? <div className="text-xs text-gray-600 max-h-[150px] overflow-y-auto"><MathRenderer text={presentationOutline} /></div> : <button onClick={handleGenerateOutline} className="w-full py-2 bg-teal-600 text-white rounded-lg text-sm font-bold">Креирај структура</button>}
-                        </Card>
-                        <Card>
-                            <h3 className="font-bold text-gray-800 mb-2 text-sm">Библиотека на ресурси</h3>
-                            <CachedResourcesBrowser conceptId={concept.id} onSelect={(c) => { navigator.clipboard.writeText(c); addNotification('Копирано!', 'success'); }} />
-                        </Card>
+                {/* ТАБ: АНАЛОГИЈА */}
+                {activeTab === 'analogy' && (
+                  <Card className="animate-in fade-in duration-500">
+                    <div className="flex justify-between items-center mb-8">
+                        <h2 className="text-2xl font-black text-purple-700 flex items-center gap-3">
+                           <Sparkles className="w-7 h-7" /> Едноставно објаснување
+                        </h2>
+                        {!analogy && (
+                            <button onClick={handleGenerateAnalogy} disabled={loadingState.analogy} className="bg-purple-600 text-white px-6 py-2.5 rounded-xl font-black">
+                                {loadingState.analogy ? '⏳ Размислувам...' : '🧠 Направи аналогија'}
+                            </button>
+                        )}
                     </div>
-                </div>
+                    {analogy && (
+                      <div className="bg-purple-50 p-8 rounded-3xl text-purple-900 font-medium text-lg italic leading-relaxed shadow-inner">
+                        <MathRenderer text={analogy} />
+                      </div>
+                    )}
+                  </Card>
+                )}
+
+                {/* ТАБ: КВИЗ */}
+                {activeTab === 'quiz' && (
+                  <Card className="animate-in fade-in duration-500">
+                    <div className="flex justify-between items-center mb-8">
+                        <h2 className="text-2xl font-black text-indigo-700">Интерактивно Вежбање</h2>
+                        {!practiceMaterial && (
+                            <button onClick={handleGenerateQuiz} disabled={loadingState.quiz} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-black">
+                                {loadingState.quiz ? '⏳ Се подготвува...' : '🎲 Креирај квиз'}
+                            </button>
+                        )}
+                    </div>
+                    {practiceMaterial && !isPlayingQuiz && (
+                        <div className="flex flex-col items-center py-16 bg-slate-50 rounded-3xl border-4 border-dashed border-slate-200">
+                            <h3 className="text-3xl font-black text-slate-800 mb-8 tracking-tighter">{practiceMaterial.title}</h3>
+                            <div className="flex flex-wrap justify-center gap-4">
+                                <button onClick={() => setIsPlayingQuiz(true)} className="bg-green-600 text-white px-10 py-5 rounded-3xl font-black text-xl shadow-xl hover:scale-105 transition">▶️ ИГРАЈ</button>
+                                <button onClick={handlePrint} className="bg-slate-800 text-white px-8 py-5 rounded-3xl font-black flex items-center gap-2 hover:bg-black transition shadow-lg">
+                                    <Printer className="w-6 h-6" /> ПЕЧАТИ PDF
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    {isPlayingQuiz && practiceMaterial && (
+                        <div className="relative pt-10">
+                            <button onClick={() => setIsPlayingQuiz(false)} className="absolute top-0 right-0 bg-red-50 text-red-500 font-black px-4 py-2 rounded-xl hover:bg-red-500 hover:text-white transition">ЗАТВОРИ ✕</button>
+                            <InteractiveQuizPlayer 
+                                title={practiceMaterial.title}
+                                questions={practiceMaterial.items.map((item: any) => ({
+                                    question: item.text,
+                                    options: item.options || [item.answer, "Грешка 1", "Грешка 2", "Грешка 3"].sort(() => Math.random() - 0.5),
+                                    answer: item.answer,
+                                    explanation: item.solution
+                                }))}
+                            />
+                        </div>
+                    )}
+                  </Card>
+                )}
             </div>
 
-            {isPlayingQuiz && practiceMaterial && (
-                <InteractiveQuizPlayer
-                    quiz={practiceMaterial}
-                    onClose={() => setIsPlayingQuiz(false)}
-                />
-            )}
+            {/* ДЕСНА КОЛОНА */}
+            <aside className="space-y-8">
+                <Card className="bg-slate-900 border-none text-white overflow-hidden ring-4 ring-blue-500/20">
+                    <div className="flex items-center gap-2 mb-6">
+                       <Sparkles className="w-5 h-5 text-blue-400" />
+                       <h3 className="font-black text-blue-400 uppercase tracking-widest text-xs">Дигитална Архива</h3>
+                    </div>
+                    <CachedResourcesBrowser conceptId={concept.id} onSelect={() => {}} />
+                </Card>
+            </aside>
         </div>
-    );
+        
+        {/* СКРИЕН ДЕЛ ЗА PDF ЕКСПОРТ (Оптимизиран) */}
+        <div style={{ display: 'none' }}>
+            <div ref={printComponentRef} className="p-16 text-black bg-white">
+                <div className="border-b-8 border-black pb-6 mb-12">
+                    <h1 className="text-5xl font-black uppercase tracking-tighter">{concept.title}</h1>
+                    <p className="text-2xl font-bold text-gray-500 mt-2">Наставен лист за вежбање • {grade.title}</p>
+                </div>
+                {practiceMaterial?.items.map((q: any, i: number) => (
+                    <div key={i} className="mb-14 break-inside-avoid">
+                        <p className="text-2xl font-bold mb-6">{i+1}. {q.text}</p>
+                        <div className="h-40 border-4 border-black/5 rounded-3xl"></div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+  );
 };

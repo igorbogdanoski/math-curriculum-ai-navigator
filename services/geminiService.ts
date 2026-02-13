@@ -1,3 +1,4 @@
+import { realGeminiService } from './geminiService.real';
 
 /**
  * Единствена точка за извоз на Gemini сервисот.

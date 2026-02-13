@@ -188,13 +188,16 @@ const AuthenticatedApp: React.FC = () => {
 }
 
 const AppCore: React.FC = () => {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isLoading, path } = useAuth() as any; // Adding path from useAuth or useRouter
     
     if (isLoading) {
         return <AppSkeleton />;
     }
 
-    if (!isAuthenticated) {
+    // Allow student play mode without authentication
+    const isPublicRoute = window.location.hash.startsWith('#/play/');
+
+    if (!isAuthenticated && !isPublicRoute) {
         return (
             <Suspense fallback={<AppSkeleton />}>
                 <LoginView />

@@ -1,109 +1,109 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { InteractiveQuizPlayer } from '../components/InteractiveQuizPlayer';
+import { useParams, useNavigate } from 'react-router-dom';
+import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { db } from '../firebaseConfig';
 import { ICONS } from '../constants';
+import { Loader2, AlertCircle, Home } from 'lucide-react';
 
-export const StudentPlayView = () => {
-  const { id } = useParams();
+export const StudentPlayView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  // Helper for hash-based routing if needed, but we'll try to stick to the project's navigate
   const [quizData, setQuizData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchQuiz = async () => {
-      if (!id) return;
+      if (!id) {
+        setError('Невалиден линк за квиз.');
+        setLoading(false);
+        return;
+      }
+
       try {
-        const docRef = doc(db, 'cached_ai_materials', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.content && data.content.items) {
-             setQuizData(data.content);
-          } else {
-             setError('Овој материјал не е квиз.');
-          }
+        setLoading(true);
+        // Квизовите се зачувани во cached_ai_materials
+        const quizDoc = await getDoc(doc(db, "cached_ai_materials", id));
+        
+        if (quizDoc.exists()) {
+          const data = quizDoc.data();
+          // Support both direct content or nested content
+          setQuizData(data.content || data);
         } else {
-          setError('Квизот не е пронајден. Проверете го линкот.');
+          setError('Квизот не е пронајден. Проверете го линкот со вашиот наставник.');
         }
       } catch (err) {
-        console.error(err);
-        setError('Грешка при вчитување. Можеби немате пристап.'); 
+        console.error("Грешка при вчитување на квизот:", err);
+        setError('Проблем со поврзувањето. Проверете ја интернет конекцијата.');
       } finally {
         setLoading(false);
       }
     };
+
     fetchQuiz();
   }, [id]);
 
   if (loading) {
     return (
-        <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center text-blue-600">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-xl font-bold">Се подготвува квизот...</p>
-        </div>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-4" />
+        <p className="text-slate-600 font-bold animate-pulse">Се подготвува квизот...</p>
+      </div>
     );
   }
 
   if (error) {
     return (
-        <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
-            <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-md">
-                <div className="text-red-500 mb-4 flex justify-center">
-                    <ICONS.warning className="w-12 h-12" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Опс!</h2>
-                <p className="text-gray-600">{error}</p>
-            </div>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md border border-red-100">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-black text-slate-800 mb-2">Грешка!</h2>
+          <p className="text-slate-500 mb-6">{error}</p>
+          <button 
+            onClick={() => window.location.hash = '/'}
+            className="flex items-center gap-2 bg-slate-800 text-white px-6 py-3 rounded-2xl font-bold mx-auto hover:bg-black transition"
+          >
+            <Home className="w-5 h-5" /> Назад кон почетна
+          </button>
         </div>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8 px-4">
-      <div className="max-w-3xl mx-auto">
-        <header className="mb-8 text-center animate-fade-in">
-          <div className="inline-block bg-white p-3 rounded-full shadow-sm mb-4">
-             <span className="text-4xl">🎓</span>
+    <div className="min-h-screen bg-indigo-600 p-4 md:p-8 flex flex-col items-center">
+      {/* Мини Header за ученици */}
+      <div className="w-full max-w-4xl flex justify-between items-center mb-8 text-white">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
+            <ICONS.logo className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-blue-900 mb-2 tracking-tight">
-            Математички Предизвик
-          </h1>
-          <p className="text-blue-600 font-medium">
-            Реши ги задачите и освој поени!
-          </p>
-        </header>
-        {quizData && (
-          <div className="animate-slide-up">
-            <InteractiveQuizPlayer 
-                title={quizData.title || "Квиз"}
-                questions={quizData.items.map((item: any, index: number) => ({
-                    question: item.text,
-                    options: item.options || [
-                        item.answer, 
-                        generateFakeAnswer(item.answer), 
-                        generateFakeAnswer(item.answer), 
-                        generateFakeAnswer(item.answer)
-                    ].sort(() => Math.random() - 0.5),
-                    answer: item.answer,
-                    explanation: item.solution
-                }))}
-            />
-          </div>
-        )}
-        <footer className="text-center text-gray-400 text-sm mt-12">
-            Powered by Math Curriculum AI
-        </footer>
+          <h1 className="font-black text-xl tracking-tighter uppercase">Ученички Портал</h1>
+        </div>
+        <div className="text-xs font-bold bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">
+          МАТЕМАТИЧКИ ПРЕДИЗВИК 🏆
+        </div>
       </div>
+
+      <main className="w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-white/20 relative min-h-[500px]">
+        {quizData && (
+          <InteractiveQuizPlayer 
+            title={quizData.title || 'Квиз'}
+            questions={(quizData.items || quizData.questions || []).map((item: any) => ({
+              question: item.text || item.question,
+              options: item.options || [item.answer, "Грешка 1", "Грешка 2", "Грешка 3"].sort(() => Math.random() - 0.5),
+              answer: item.answer,
+              explanation: item.solution || item.explanation
+            }))}
+            onClose={() => window.location.hash = '/'}
+          />
+        )}
+      </main>
+
+      <footer className="mt-8 text-white/50 text-[10px] font-bold uppercase tracking-widest">
+        Powered by Math Curriculum AI Navigator • ООУ „Блаже Конески“ - Прилеп
+      </footer>
     </div>
   );
 };
-
-function generateFakeAnswer(correct: string): string {
-    const num = parseFloat(correct);
-    if (!isNaN(num)) {
-        return (num + Math.floor(Math.random() * 10) - 5).toString();
-    }
-    return correct + " (Неточно)";
-}
