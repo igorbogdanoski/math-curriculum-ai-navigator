@@ -1,11 +1,29 @@
 import React from 'react';
 
 interface SkeletonLoaderProps {
-  type: 'assessment' | 'ideas' | 'paragraph' | 'rubric';
+  type: 'assessment' | 'ideas' | 'paragraph' | 'rubric' | 'page';
 }
 
 const SkeletonLine: React.FC<{ width?: string; className?: string }> = ({ width = '100%', className = '' }) => (
   <div className={`bg-gray-200 rounded-md animate-pulse ${className}`} style={{ width }}></div>
+);
+
+const PageSkeleton: React.FC = () => (
+  <div className="p-8 space-y-10">
+    <div className="space-y-4">
+      <SkeletonLine width="40%" className="h-12 rounded-xl" />
+      <SkeletonLine width="20%" className="h-6 rounded-lg" />
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="lg:col-span-2 space-y-10">
+        <div className="h-64 bg-gray-100 rounded-[2.5rem]"></div>
+        <div className="h-96 bg-gray-50 rounded-[2.5rem]"></div>
+      </div>
+      <div className="space-y-8">
+        <div className="h-80 bg-gray-100 rounded-[2.5rem]"></div>
+      </div>
+    </div>
+  </div>
 );
 
 const AssessmentSkeleton: React.FC = () => (
@@ -79,6 +97,8 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ type }) => {
     case 'rubric':
         content = <RubricSkeleton />;
         break;
+    case 'page':
+        return <PageSkeleton />;
     default:
       content = <ParagraphSkeleton />;
   }

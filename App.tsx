@@ -26,6 +26,20 @@ import { GlobalSearchBar } from './components/common/GlobalSearchBar';
 import { Card } from './components/common/Card';
 import { StudentPlayView } from './views/StudentPlayView';
 
+// --- LOADING SKELETON ---
+const AppSkeleton = () => (
+  <div className="flex h-screen bg-brand-bg items-center justify-center p-8">
+    <div className="w-full max-w-4xl space-y-8 animate-pulse">
+      <div className="h-12 bg-gray-200 rounded-2xl w-1/3"></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 h-64 bg-gray-100 rounded-[2.5rem]"></div>
+        <div className="h-64 bg-gray-100 rounded-[2.5rem]"></div>
+      </div>
+      <div className="h-32 bg-gray-50 rounded-[2rem]"></div>
+    </div>
+  </div>
+);
+
 // Helper for safe lazy loading to prevent module resolution crashes
 const safeLazy = (importFunc: () => Promise<any>) => {
   return React.lazy(() =>
