@@ -27,6 +27,7 @@ import { Breadcrumbs } from './components/common/Breadcrumbs';
 import { GlobalSearchBar } from './components/common/GlobalSearchBar';
 import { Card } from './components/common/Card';
 import { OfflineBanner } from './src/components/common/OfflineBanner';
+import { ContextualFAB } from './src/components/common/ContextualFAB';
 import { StudentPlayView } from './views/StudentPlayView';
 
 // --- LOADING SKELETON ---
