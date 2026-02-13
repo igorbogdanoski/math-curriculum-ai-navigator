@@ -287,7 +287,20 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                        <Sparkles className="w-5 h-5 text-blue-400" />
                        <h3 className="font-black text-blue-400 uppercase tracking-widest text-xs">Дигитална Архива</h3>
                     </div>
-                    <CachedResourcesBrowser conceptId={concept.id} onSelect={() => {}} />
+                    <CachedResourcesBrowser 
+                        conceptId={concept.id} 
+                        onSelect={(content) => {
+                            if (typeof content === 'string') {
+                                if (activeTab === 'analogy') setAnalogy(content);
+                                else if (activeTab === 'activities') setAiSuggestions(JSON.parse(content));
+                            } else {
+                                if (content.items || content.questions) setPracticeMaterial(content);
+                                else if (content.steps) setSolverData(content);
+                                else if (content.openingActivity) setAiSuggestions(content);
+                            }
+                            addNotification("Материјалот е преземен од архивата!", "success");
+                        }} 
+                    />
                 </Card>
             </aside>
         </div>
