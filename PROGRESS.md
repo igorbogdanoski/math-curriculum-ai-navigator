@@ -278,6 +278,13 @@
   4. **Import Fixes**: Ажурирани `App.tsx`, `views/StudentPlayView.tsx` и `views/ConceptDetailView.tsx` за да ги користат поправените константи.
 - **Резултат**: Елиминирани критичните runtime грешки; иконите и Error Boundary системот работат правилно.
 
+### Фаза 24 — Фикс за ReferenceError (OfflineBanner) (commit `current`)
+- **Проблем**: Апликацијата паѓаше со `ReferenceError: OfflineBanner is not defined`.
+- **Решение**:
+  1. **OfflineBanner**: Креирана нова компонента во `src/components/common/OfflineBanner.tsx` која следи статус на интернет конекција.
+  2. **Import Fix**: Додаден импорт за `OfflineBanner` во `App.tsx`.
+- **Резултат**: Поправена грешката при вчитување; апликацијата сега правилно го прикажува статусот на конекција.
+
 ---
 
 ## Експертска оценка (13 февруари 2026)
