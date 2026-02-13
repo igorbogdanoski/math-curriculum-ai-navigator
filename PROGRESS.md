@@ -269,7 +269,18 @@
 
 ---
 
-## Експертска оценка (12 февруари 2026)
+### Фаза 23 — Фикс за ReferenceError (SilentErrorBoundary & ICONS) (commit `current`)
+- **Проблем**: Апликацијата паѓаше со `ReferenceError: SilentErrorBoundary is not defined` и `ReferenceError: ICONS is not defined` по деплојмент.
+- **Решение**:
+  1. **SilentErrorBoundary**: Креирана компонента во `src/components/common/SilentErrorBoundary.tsx` и правилно импортирана во `App.tsx` и `src/components/layout/Layout.tsx`.
+  2. **ICONS**: Креиран нов централизиран регистар на икони во `src/constants/index.ts` користејќи `lucide-react`.
+  3. **Constants Рефактор**: Коренот `constants.tsx` сега служи како експортер за сите константи од `src/constants/`, со што се обезбедува компатибилност со постоечките импорти низ целата апликација.
+  4. **Import Fixes**: Ажурирани `App.tsx`, `views/StudentPlayView.tsx` и `views/ConceptDetailView.tsx` за да ги користат поправените константи.
+- **Резултат**: Елиминирани критичните runtime грешки; иконите и Error Boundary системот работат правилно.
+
+---
+
+## Експертска оценка (13 февруари 2026)
 
 | Категорија | Оценка | Белешки |
 |------------|--------|---------|
