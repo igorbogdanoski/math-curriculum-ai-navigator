@@ -19,6 +19,7 @@ import { useRouter } from './hooks/useRouter';
 import { useBreadcrumbs } from './hooks/useBreadcrumbs';
 
 // Components
+import { ICONS } from './constants';
 import { Sidebar } from './components/Sidebar';
 import { SilentErrorBoundary } from './components/common/SilentErrorBoundary';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
