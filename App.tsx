@@ -20,6 +20,7 @@ import { useBreadcrumbs } from './hooks/useBreadcrumbs';
 
 // Components
 import { Sidebar } from './components/Sidebar';
+import { SilentErrorBoundary } from './components/common/SilentErrorBoundary';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Breadcrumbs } from './components/common/Breadcrumbs';
 import { GlobalSearchBar } from './components/common/GlobalSearchBar';
