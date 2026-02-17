@@ -13,7 +13,7 @@ const firebaseConfig = {
 };
 
 // Иницијализација на апликацијата
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 // Иницијализација на сервисите
 // ВАЖНО: Користиме само getFirestore() без enableIndexedDbPersistence за да избегнеме грешки
