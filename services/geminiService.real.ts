@@ -97,18 +97,25 @@ async function getAuthToken(): Promise<string> {
 async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      const { systemInstruction, safetySettings, ...generationConfig } = params.config || {};
-      const isThinkingModel = params.model.includes('thinking');
+      // Извлекување на системската инструкција и безбедносните поставки
+      const { systemInstruction, safetySettings, ...rawConfig } = params.config || {};
+      
+      // Чистење на конфигурацијата - испраќаме само тоа што SDK-то го поддржува
+      const generationConfig: any = {};
+      if (rawConfig.responseMimeType) generationConfig.responseMimeType = rawConfig.responseMimeType;
+      if (rawConfig.responseSchema) generationConfig.responseSchema = rawConfig.responseSchema;
+      if (rawConfig.temperature !== undefined) generationConfig.temperature = rawConfig.temperature;
+      if (rawConfig.maxOutputTokens !== undefined) generationConfig.maxOutputTokens = rawConfig.maxOutputTokens;
 
       const model = genAI.getGenerativeModel({ 
         model: params.model,
-        systemInstruction
-      }, { apiVersion: isThinkingModel ? 'v1beta' : 'v1' });
+        systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
+        safetySettings
+      }, { apiVersion: 'v1beta' }); // Мораме v1beta за responseSchema
 
       const result = await model.generateContent({
         contents: params.contents,
-        generationConfig,
-        safetySettings
+        generationConfig
       });
 
       const response = await result.response;
@@ -126,18 +133,22 @@ async function callGeminiProxy(params: { model: string; contents: any; config?: 
 }
 
 async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
-  const { systemInstruction, safetySettings, ...generationConfig } = params.config || {};
-  const isThinkingModel = params.model.includes('thinking');
+  const { systemInstruction, safetySettings, ...rawConfig } = params.config || {};
+  
+  const generationConfig: any = {};
+  if (rawConfig.responseMimeType) generationConfig.responseMimeType = rawConfig.responseMimeType;
+  if (rawConfig.responseSchema) generationConfig.responseSchema = rawConfig.responseSchema;
+  if (rawConfig.temperature !== undefined) generationConfig.temperature = rawConfig.temperature;
 
   const model = genAI.getGenerativeModel({ 
     model: params.model,
-    systemInstruction
-  }, { apiVersion: isThinkingModel ? 'v1beta' : 'v1' });
+    systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
+    safetySettings
+  }, { apiVersion: 'v1beta' });
 
   const result = await model.generateContentStream({
     contents: params.contents,
-    generationConfig,
-    safetySettings
+    generationConfig
   });
 
   for await (const chunk of result.stream) {
