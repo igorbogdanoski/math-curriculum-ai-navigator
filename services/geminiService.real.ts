@@ -97,15 +97,17 @@ async function getAuthToken(): Promise<string> {
 async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
+      const { systemInstruction, safetySettings, ...generationConfig } = params.config || {};
+
       const model = genAI.getGenerativeModel({ 
         model: params.model,
-        systemInstruction: params.config?.systemInstruction,
-        safetySettings: params.config?.safetySettings
+        systemInstruction
       });
 
       const result = await model.generateContent({
         contents: params.contents,
-        generationConfig: params.config
+        generationConfig,
+        safetySettings
       });
 
       const response = await result.response;
@@ -123,15 +125,17 @@ async function callGeminiProxy(params: { model: string; contents: any; config?: 
 }
 
 async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
+  const { systemInstruction, safetySettings, ...generationConfig } = params.config || {};
+
   const model = genAI.getGenerativeModel({ 
     model: params.model,
-    systemInstruction: params.config?.systemInstruction,
-    safetySettings: params.config?.safetySettings
+    systemInstruction
   });
 
   const result = await model.generateContentStream({
     contents: params.contents,
-    generationConfig: params.config
+    generationConfig,
+    safetySettings
   });
 
   for await (const chunk of result.stream) {
