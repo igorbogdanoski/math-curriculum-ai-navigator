@@ -98,11 +98,12 @@ async function callGeminiProxy(params: { model: string; contents: any; config?: 
   return queueRequest(async () => {
     try {
       const { systemInstruction, safetySettings, ...generationConfig } = params.config || {};
+      const isThinkingModel = params.model.includes('thinking');
 
       const model = genAI.getGenerativeModel({ 
         model: params.model,
         systemInstruction
-      });
+      }, { apiVersion: isThinkingModel ? 'v1beta' : 'v1' });
 
       const result = await model.generateContent({
         contents: params.contents,
@@ -126,11 +127,12 @@ async function callGeminiProxy(params: { model: string; contents: any; config?: 
 
 async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
   const { systemInstruction, safetySettings, ...generationConfig } = params.config || {};
+  const isThinkingModel = params.model.includes('thinking');
 
   const model = genAI.getGenerativeModel({ 
     model: params.model,
     systemInstruction
-  });
+  }, { apiVersion: isThinkingModel ? 'v1beta' : 'v1' });
 
   const result = await model.generateContentStream({
     contents: params.contents,
