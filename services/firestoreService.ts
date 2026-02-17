@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 
@@ -50,6 +50,22 @@ export const firestoreService = {
       console.error("...Error fetching document from Firestore:", error);
       const errorMessage = error.message || "An unknown network error occurred.";
       throw new Error(`Грешка при комуникација со базата на податоци: ${errorMessage}`);
+    }
+  },
+
+  /**
+   * Saves the entire curriculum data module to Firestore.
+   * Useful for initial setup or migrations.
+   */
+  saveFullCurriculum: async (data: CurriculumModule): Promise<void> => {
+    console.log("Attempting to save curriculum data to Firestore...");
+    const docRef = doc(db, "curriculum", "v1");
+    try {
+      await setDoc(docRef, data);
+      console.log("Curriculum data successfully saved to Firestore.");
+    } catch (error) {
+      console.error("Error saving curriculum data to Firestore:", error);
+      throw error;
     }
   },
 

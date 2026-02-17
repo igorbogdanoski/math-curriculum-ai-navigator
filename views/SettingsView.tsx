@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 import type { TeachingProfile, StudentProfile } from '../types';
 import { ICONS } from '../constants';
 import { InstallApp } from '../components/common/InstallApp';
+import { firestoreService } from '../services/firestoreService';
+import { fullCurriculumData } from '../data/curriculum';
 
 const initialProfile: TeachingProfile = {
     name: '',
@@ -21,6 +23,7 @@ export const SettingsView: React.FC = () => {
     const [newProfileName, setNewProfileName] = useState('');
     const [newProfileDesc, setNewProfileDesc] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isMigrating, setIsMigrating] = useState(false);
     const { addNotification } = useNotification();
 
     useEffect(() => {
@@ -66,6 +69,23 @@ export const SettingsView: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setProfile((prev: TeachingProfile) => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleMigrateCurriculum = async () => {
+        if (!window.confirm("Дали сте сигурни дека сакате да ја пополните Firestore базата со локалната наставна програма? Ова ќе ги пребрише постоечките податоци во 'curriculum/v1'.")) {
+            return;
+        }
+
+        setIsMigrating(true);
+        try {
+            await firestoreService.saveFullCurriculum(fullCurriculumData);
+            addNotification('Наставната програма е успешно префрлена во Firestore!', 'success');
+        } catch (error) {
+            addNotification('Грешка при миграција на податоците.', 'error');
+            console.error("Migration failed:", error);
+        } finally {
+            setIsMigrating(false);
+        }
     };
 
     if (!user) {
@@ -204,6 +224,43 @@ export const SettingsView: React.FC = () => {
                              {isSaving ? 'Зачувувам...' : 'Зачувај ги сите промени'}
                         </button>
                     </div>
+            </Card>
+
+            <Card className="max-w-2xl border-orange-200 bg-orange-50/30">
+                <h2 className="text-2xl font-semibold text-orange-800 mb-4 flex items-center gap-2">
+                    <ICONS.settings className="w-6 h-6" />
+                    Администрација на податоци
+                </h2>
+                <p className="text-sm text-orange-700 mb-6">
+                    Оваа алатка овозможува синхронизација на локалната наставна програма со облакот (Firestore). 
+                    Користете ја за иницијално поставување или кога сакате да ги обновите податоците во базата.
+                </p>
+                
+                <div className="bg-white p-4 rounded-xl border border-orange-200 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <h3 className="font-bold text-gray-900">Миграција на наставна програма</h3>
+                            <p className="text-xs text-gray-500 mt-1">Верзија: v1 (Математика 6-9 одд.)</p>
+                        </div>
+                        <button
+                            onClick={handleMigrateCurriculum}
+                            disabled={isMigrating}
+                            className="bg-orange-600 text-white px-6 py-2.5 rounded-xl shadow-lg hover:bg-orange-700 transition-all flex items-center gap-2 disabled:bg-gray-400 font-bold"
+                        >
+                            {isMigrating ? (
+                                <>
+                                    <ICONS.spinner className="w-5 h-5 animate-spin" />
+                                    Синхронизирам...
+                                </>
+                            ) : (
+                                <>
+                                    <ICONS.zap className="w-5 h-5" />
+                                    Синхронизирај со Firestore
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
             </Card>
         </div>
     );
