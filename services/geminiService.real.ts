@@ -2,6 +2,7 @@ import { getAuth } from 'firebase/auth';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { 
     Concept, 
     Topic, 
@@ -44,6 +45,8 @@ import { ApiError, RateLimitError, AuthError, ServerError } from './apiErrors';
 const CACHE_COLLECTION = 'cached_ai_materials';
 const DEFAULT_MODEL = 'gemini-1.5-flash';
 const PROXY_TIMEOUT_MS = 60000;
+
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 // --- TYPES FOR INTERNAL USE ---
 export enum Type {
@@ -90,98 +93,50 @@ async function getAuthToken(): Promise<string> {
   return user.getIdToken();
 }
 
-// --- PROXY HELPERS ---
+// --- DIRECT SDK HELPERS ---
 async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
-    const token = await getAuthToken();
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
     try {
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(params),
-        signal: controller.signal,
+      const model = genAI.getGenerativeModel({ 
+        model: params.model,
+        systemInstruction: params.config?.systemInstruction,
+        safetySettings: params.config?.safetySettings
       });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: `Proxy error: ${response.status}` }));
-        throw new Error(errorData.error || `Proxy error: ${response.status}`);
-      }
-      return response.json();
+
+      const result = await model.generateContent({
+        contents: params.contents,
+        generationConfig: params.config
+      });
+
+      const response = await result.response;
+      const text = response.text();
+      
+      return { 
+        text, 
+        candidates: [{ content: { parts: [{ text }] } }] 
+      };
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        throw new Error('AI барањето истече (timeout 60s). Обидете се повторно.');
-      }
+      console.error("Gemini Direct Error:", err);
       throw err;
-    } finally {
-      clearTimeout(timer);
     }
   });
 }
 
 async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
-  const token = await getAuthToken();
-  const controller = new AbortController();
-  
-  const streamSetup = await queueRequest(async () => {
-    const response = await fetch('/api/gemini-stream', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(params),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `Stream proxy error: ${response.status}` }));
-      throw new Error(errorData.error || `Stream proxy error: ${response.status}`);
-    }
-
-    if (!response.body) {
-      throw new Error('Stream response body is null');
-    }
-    
-    return response.body;
+  const model = genAI.getGenerativeModel({ 
+    model: params.model,
+    systemInstruction: params.config?.systemInstruction,
+    safetySettings: params.config?.safetySettings
   });
 
-  const reader = streamSetup.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+  const result = await model.generateContentStream({
+    contents: params.contents,
+    generationConfig: params.config
+  });
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      clearTimeout(timer);
-      const chunkTimer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
-      
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') { clearTimeout(chunkTimer); return; }
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.error) throw new Error(parsed.error);
-            if (parsed.text) yield parsed.text;
-          } catch (e) {
-            if (e instanceof Error && e.message !== data) throw e;
-          }
-        }
-      }
-      clearTimeout(chunkTimer);
-    }
-  } finally {
-    clearTimeout(timer);
+  for await (const chunk of result.stream) {
+    const chunkText = chunk.text();
+    yield chunkText;
   }
 }
 

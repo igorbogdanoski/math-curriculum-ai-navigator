@@ -275,7 +275,27 @@
   1. **SilentErrorBoundary**: Креирана компонента во `src/components/common/SilentErrorBoundary.tsx` и правилно импортирана во `App.tsx` и `src/components/layout/Layout.tsx`.
   2. **ICONS**: Креиран нов централизиран регистар на икони во `src/constants/index.ts` користејќи `lucide-react`.
   3. **Constants Рефактор**: Коренот `constants.tsx` сега служи како експортер за сите константи од `src/constants/`, со што се обезбедува компатибилност со постоечките импорти низ целата апликација.
-  4. **Import Fixes**: Ажурирани `App.tsx`, `views/StudentPlayView.tsx` и `views/ConceptDetailView.tsx` за да ги користат поправените константи.
+  4. **Import Fixes**: Ажурирани патеките низ целата апликација за конзистентност.
+
+---
+
+### Фаза 27 — Gemini Client-Side Migration (commit `current`)
+- **Проблем**: Постојани `Error 500 (Internal Server Error)` на Vercel при повикување на `/api/gemini`.
+- **Решение**: 
+  1. **Direct SDK**: Рефакториран `services/geminiService.real.ts` за директна комуникација со `@google/generative-ai` од прелистувачот.
+  2. **VITE_ Prefixes**: Мигрирано користење на API клучеви кон `import.meta.env.VITE_GEMINI_API_KEY` за безбедна клиентска достапност.
+  3. **Proxy Removal**: Целосно отстранета зависноста од серверски прокси функции.
+- **Резултат**: АИ функциите сега работат директно и стабилно.
+
+---
+
+### Фаза 28 — Firebase Persistence & Env Hardening (commit `current`)
+- **Проблем**: `Failed to obtain exclusive access` грешки при отворени повеќе табови.
+- **Решение**:
+  1. **Simplified Config**: Исчистен `firebaseConfig.ts` од hardcoded вредности; користи Environment Variables.
+  2. **Persistence Fix**: Оневозможена `enableIndexedDbPersistence` за стабилна паралелна работа.
+- **Резултат**: Подобрена стабилност на апликацијата.
+ `App.tsx`, `views/StudentPlayView.tsx` и `views/ConceptDetailView.tsx` за да ги користат поправените константи.
 - **Резултат**: Елиминирани критичните runtime грешки; иконите и Error Boundary системот работат правилно.
 
 ### Фаза 24 — Фикс за ReferenceError (OfflineBanner) (commit `current`)
