@@ -111,7 +111,7 @@ async function callGeminiProxy(params: { model: string; contents: any; config?: 
         model: params.model,
         systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
         safetySettings
-      }, { apiVersion: 'v1beta' }); // Мораме v1beta за responseSchema
+      }, { apiVersion: 'v1' }); // Префрлено на v1 за стабилност
 
       const result = await model.generateContent({
         contents: params.contents,
@@ -144,7 +144,7 @@ async function* streamGeminiProxy(params: { model: string; contents: any; config
     model: params.model,
     systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
     safetySettings
-  }, { apiVersion: 'v1beta' });
+  }, { apiVersion: 'v1' });
 
   const result = await model.generateContentStream({
     contents: params.contents,
