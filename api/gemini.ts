@@ -17,10 +17,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const { model, contents, config } = validated;
 
-    // Use v1beta for widest model support (including 2.0 and thinking)
+    // Map config to generationConfig
+    const { systemInstruction, safetySettings, ...generationConfig } = config || {};
+
+    // Use v1 for most stable models, or keep v1beta if required for Thinking/2.0
     const modelInstance = genAI.getGenerativeModel(
-      { model }, 
-      { apiVersion: 'v1beta' }
+      { 
+        model,
+        systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction as string }] } : undefined,
+        safetySettings: safetySettings as any,
+      }, 
+      { apiVersion: 'v1' }
     );
 
     // Normalize contents to content objects
@@ -43,13 +50,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }));
 
-    // Map config to generationConfig
-    const { systemInstruction, safetySettings, ...generationConfig } = config || {};
-
     const result = await modelInstance.generateContent({
       contents: normalizedContents,
-      systemInstruction: systemInstruction as any,
-      safetySettings: safetySettings as any,
       generationConfig: generationConfig as any,
     });
 

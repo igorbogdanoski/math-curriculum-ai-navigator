@@ -26,10 +26,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const { model, contents, config } = validated;
 
-    // Use v1beta for widest model support
+    // Map config to SDK structure
+    const { systemInstruction, safetySettings, ...generationConfig } = config || {};
+
+    // Use v1 for stable models
     const modelInstance = genAI.getGenerativeModel(
-      { model }, 
-      { apiVersion: 'v1beta' }
+      { 
+        model,
+        systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction as string }] } : undefined,
+        safetySettings: safetySettings as any,
+      }, 
+      { apiVersion: 'v1' }
     );
 
     // Normalize contents
@@ -57,13 +64,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    // Map config to SDK structure
-    const { systemInstruction, safetySettings, ...generationConfig } = config || {};
-
     const result = await modelInstance.generateContentStream({
       contents: normalizedContents,
-      systemInstruction: systemInstruction as any,
-      safetySettings: safetySettings as any,
       generationConfig: generationConfig as any,
     });
 
