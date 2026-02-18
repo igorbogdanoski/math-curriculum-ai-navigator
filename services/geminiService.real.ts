@@ -231,22 +231,23 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 7, useThinking = false): Promise<T> {
   const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
   try {
-    // 1. КОНФИГУРАЦИЈА: Овде ги оставаме САМО параметрите за генерација
+    // 1. ЕКСТРЕМНО ЧИСТА КОНФИГУРАЦИЈА (за избегнување Error 400)
     const generationConfig: any = { 
       temperature: 0.7,
+      topP: 0.95,
       maxOutputTokens: 8192,
-      responseMimeType: "application/json"
+      // responseMimeType: "application/json" // Го исклучуваме ако прави проблем во проксито
     };
     
-    // За максимална стабилност, ја вметнуваме шемата во системската инструкција
-    const systemInstruction = `${JSON_SYSTEM_INSTRUCTION}\nВРАТИ JSON СПОРЕД ОВАА ШЕМА: ${JSON.stringify(schema)}`;
+    // Ја вметнуваме шемата во системската инструкција како примарен метод
+    const systemInstruction = `${JSON_SYSTEM_INSTRUCTION}\nОДГОВОРИ ИСКЛУЧИВО СО ВАЛИДЕН JSON СПОРЕД ОВАА ШЕМА: ${JSON.stringify(schema)}`;
 
     if (useThinking) generationConfig.thinkingConfig = { thinkingBudget: 16000 };
 
-    // 2. ПОВИК: Ги раздвојуваме системските инструкции од конфигурацијата
+    // 2. ПОВИК СО ПРАВИЛНА СТРУКТУРА
     const response = await callGeminiProxy({ 
       model: activeModel, 
-      contents: [{ parts: contents }], 
+      contents: [{ role: 'user', parts: contents }], // Експлицитна ролја
       generationConfig,
       systemInstruction,
       safetySettings: SAFETY_SETTINGS
@@ -264,6 +265,12 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
     return parsedJson as T;
   } catch (error: any) {
     const errorMessage = error.message?.toLowerCase() || "";
+    // Ако е структурна грешка 400, нема смисла да пробаме пак со истиот payload
+    if (errorMessage.includes("400") || errorMessage.includes("invalid")) {
+        console.error("Critical structural error (400):", error);
+        throw error;
+    }
+
     if (retries > 0 && !errorMessage.includes("api key") && !errorMessage.includes("permission")) {
         let delay = 2000;
         const match = errorMessage.match(/retry in (\d+(\.\d+)?)s/i);
@@ -388,19 +395,26 @@ export const realGeminiService = {
       Реши ја задачата преку Chain of Thought (CoT).
       
       Внимавај на точноста! Направи само-корекција пред да го пратиш одговорот.
+
+      ВРАТИ ГИ ПОДАТОЦИТЕ ИСКЛУЧИВО ВО ОВОЈ JSON ФОРМАТ:
+      {
+        "problem": "текст на задачата",
+        "strategy": "зошто ја избравме оваа метода",
+        "steps": [{"explanation": "чекор", "expression": "LaTeX"}]
+      }
     `;
     const schema = { 
         type: Type.OBJECT, 
         properties: { 
-            problem: { type: Type.STRING, description: "Текст на задачата" }, 
-            strategy: { type: Type.STRING, description: "Зошто ја избравме оваа метода (ToT размислување)" }, 
+            problem: { type: Type.STRING }, 
+            strategy: { type: Type.STRING }, 
             steps: { 
                 type: Type.ARRAY, 
                 items: { 
                     type: Type.OBJECT, 
                     properties: { 
-                        explanation: { type: Type.STRING, description: "Кратко објаснување на македонски" }, 
-                        expression: { type: Type.STRING, description: "Математички израз (LaTeX)" } 
+                        explanation: { type: Type.STRING }, 
+                        expression: { type: Type.STRING } 
                     }, 
                     required: ["explanation", "expression"] 
                 } 
