@@ -94,30 +94,26 @@ async function getAuthToken(): Promise<string> {
 }
 
 // --- DIRECT SDK HELPERS ---
-async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
+async function callGeminiProxy(params: { 
+  model: string; 
+  contents: any; 
+  generationConfig?: any; 
+  systemInstruction?: string; 
+  safetySettings?: any;
+}): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // Издвојување на системската инструкција и безбедносните поставки
-      const { systemInstruction, safetySettings, ...rawConfig } = params.config || {};
-      
-      // Иницијализација на моделот со системските поставки (v1 стабилна верзија)
+      // 1. Иницијализација на моделот со системските поставки (v1 стабилна верзија)
       const model = genAI.getGenerativeModel({ 
         model: params.model,
-        systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
-        safetySettings
+        systemInstruction: params.systemInstruction ? { role: 'system', parts: [{ text: params.systemInstruction }] } : undefined,
+        safetySettings: params.safetySettings
       }, { apiVersion: 'v1' });
 
-      // Конфигурација на генерирањето - само дозволени полиња
-      const generationConfig: any = {};
-      if (rawConfig.responseMimeType) generationConfig.responseMimeType = rawConfig.responseMimeType;
-      if (rawConfig.responseSchema) generationConfig.responseSchema = rawConfig.responseSchema;
-      if (rawConfig.temperature !== undefined) generationConfig.temperature = rawConfig.temperature;
-      if (rawConfig.maxOutputTokens !== undefined) generationConfig.maxOutputTokens = rawConfig.maxOutputTokens;
-      if (rawConfig.thinkingConfig) generationConfig.thinkingConfig = rawConfig.thinkingConfig;
-
+      // 2. Генерирање со исчистена конфигурација
       const result = await model.generateContent({
         contents: params.contents,
-        generationConfig
+        generationConfig: params.generationConfig
       });
 
       const response = await result.response;
@@ -134,23 +130,22 @@ async function callGeminiProxy(params: { model: string; contents: any; config?: 
   });
 }
 
-async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
-  const { systemInstruction, safetySettings, ...rawConfig } = params.config || {};
-  
+async function* streamGeminiProxy(params: { 
+  model: string; 
+  contents: any; 
+  generationConfig?: any;
+  systemInstruction?: string;
+  safetySettings?: any;
+}): AsyncGenerator<string, void, unknown> {
   const model = genAI.getGenerativeModel({ 
     model: params.model,
-    systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
-    safetySettings
+    systemInstruction: params.systemInstruction ? { role: 'system', parts: [{ text: params.systemInstruction }] } : undefined,
+    safetySettings: params.safetySettings
   }, { apiVersion: 'v1' });
-
-  const generationConfig: any = {};
-  if (rawConfig.responseMimeType) generationConfig.responseMimeType = rawConfig.responseMimeType;
-  if (rawConfig.responseSchema) generationConfig.responseSchema = rawConfig.responseSchema;
-  if (rawConfig.temperature !== undefined) generationConfig.temperature = rawConfig.temperature;
 
   const result = await model.generateContentStream({
     contents: params.contents,
-    generationConfig
+    generationConfig: params.generationConfig
   });
 
   for await (const chunk of result.stream) {
@@ -235,12 +230,31 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 7, useThinking = false): Promise<T> {
   const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
   try {
-    const config: any = { responseMimeType: "application/json", responseSchema: schema, systemInstruction: JSON_SYSTEM_INSTRUCTION, safetySettings: SAFETY_SETTINGS };
-    if (useThinking) config.thinkingConfig = { thinkingBudget: 16000 };
-    const response = await callGeminiProxy({ model: activeModel, contents: [{ parts: contents }], config });
+    // 1. КОНФИГУРАЦИЈА: Овде ги оставаме САМО параметрите за генерација
+    const generationConfig: any = { 
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+      responseMimeType: "application/json"
+    };
+    
+    // За максимална стабилност, ја вметнуваме шемата во системската инструкција
+    const systemInstruction = `${JSON_SYSTEM_INSTRUCTION}\nВРАТИ JSON СПОРЕД ОВАА ШЕМА: ${JSON.stringify(schema)}`;
+
+    if (useThinking) generationConfig.thinkingConfig = { thinkingBudget: 16000 };
+
+    // 2. ПОВИК: Ги раздвојуваме системските инструкции од конфигурацијата
+    const response = await callGeminiProxy({ 
+      model: activeModel, 
+      contents: [{ parts: contents }], 
+      generationConfig,
+      systemInstruction,
+      safetySettings: SAFETY_SETTINGS
+    });
+
     const jsonString = cleanJsonString(response.text || "");
     if (!jsonString) throw new Error("AI returned empty response");
     const parsedJson = JSON.parse(jsonString);
+
     if (zodSchema) {
         const validation = zodSchema.safeParse(parsedJson);
         if (!validation.success) throw new Error(`Validation failed: ${validation.error.message}`);
@@ -310,13 +324,23 @@ export const realGeminiService = {
         const lastMessage = contents[contents.length - 1];
         if (lastMessage.role === 'user') lastMessage.parts.push({ inlineData: { mimeType: attachment.mimeType, data: attachment.base64 } });
     }
-    yield* streamGeminiProxy({ model: DEFAULT_MODEL, contents, config: { systemInstruction, safetySettings: SAFETY_SETTINGS } });
+    yield* streamGeminiProxy({ 
+        model: DEFAULT_MODEL, 
+        contents, 
+        systemInstruction, 
+        safetySettings: SAFETY_SETTINGS 
+    });
   },
 
   async generateIllustration(prompt: string, image?: { base64: string, mimeType: string }): Promise<AIGeneratedIllustration> {
     const contents: Part[] = [{ text: prompt }];
     if (image) contents.unshift({ inlineData: { data: image.base64, mimeType: image.mimeType } });
-    const response = await callGeminiProxy({ model: DEFAULT_MODEL, contents: [{ parts: contents }], config: { responseModalities: ['IMAGE'], safetySettings: SAFETY_SETTINGS } });
+    const response = await callGeminiProxy({ 
+        model: DEFAULT_MODEL, 
+        contents: [{ parts: contents }], 
+        generationConfig: { responseModalities: ['IMAGE'] }, 
+        safetySettings: SAFETY_SETTINGS 
+    });
     const candidate = response.candidates[0];
     if (candidate && candidate.content.parts[0].inlineData) {
         const data = candidate.content.parts[0].inlineData;
@@ -339,7 +363,12 @@ export const realGeminiService = {
     } catch (e) { console.warn(e); }
 
     const prompt = `Објасни го поимот "${concept.title}" за ${gradeLevel} одделение преку аналогија.`;
-    const response = await callGeminiProxy({ model: DEFAULT_MODEL, contents: [{ parts: [{ text: prompt }] }], config: { systemInstruction: TEXT_SYSTEM_INSTRUCTION, safetySettings: SAFETY_SETTINGS } });
+    const response = await callGeminiProxy({ 
+        model: DEFAULT_MODEL, 
+        contents: [{ parts: [{ text: prompt }] }], 
+        systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+        safetySettings: SAFETY_SETTINGS 
+    });
     const text = response.text || "";
     await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: text, type: 'analogy', conceptId: concept.id, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return text;
@@ -400,7 +429,8 @@ export const realGeminiService = {
     const response = await callGeminiProxy({ 
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 
-        config: { systemInstruction: TEXT_SYSTEM_INSTRUCTION, safetySettings: SAFETY_SETTINGS } 
+        systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+        safetySettings: SAFETY_SETTINGS 
     });
     return response.text || "";
   },
@@ -447,7 +477,12 @@ export const realGeminiService = {
     } catch (e) { console.warn(e); }
 
     const prompt = `Креирај структура за презентација за "${concept.title}" (${gradeLevel} одд.).`;
-    const response = await callGeminiProxy({ model: DEFAULT_MODEL, contents: [{ parts: [{ text: prompt }] }], config: { systemInstruction: TEXT_SYSTEM_INSTRUCTION, safetySettings: SAFETY_SETTINGS } });
+    const response = await callGeminiProxy({ 
+        model: DEFAULT_MODEL, 
+        contents: [{ parts: [{ text: prompt }] }], 
+        systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+        safetySettings: SAFETY_SETTINGS 
+    });
     const text = response.text || "";
     await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: text, type: 'outline', conceptId: concept.id, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return text;
@@ -463,7 +498,12 @@ export const realGeminiService = {
 
   async enhanceText(textToEnhance: string, fieldType: string, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
     const prompt = `Подобри го текстот за '${fieldType}' (${gradeLevel} одд). Оригинален текст: "${textToEnhance}"`;
-    const response = await callGeminiProxy({ model: DEFAULT_MODEL, contents: [{ parts: [{ text: prompt }] }], config: { systemInstruction: TEXT_SYSTEM_INSTRUCTION, safetySettings: SAFETY_SETTINGS } });
+    const response = await callGeminiProxy({ 
+        model: DEFAULT_MODEL, 
+        contents: [{ parts: [{ text: prompt }] }], 
+        systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+        safetySettings: SAFETY_SETTINGS 
+    });
     return response.text || "";
   },
 
@@ -475,7 +515,12 @@ export const realGeminiService = {
 
   async generateProactiveSuggestion(concept: Concept, profile?: TeachingProfile): Promise<string> {
       const prompt = `Генерирај проактивен предлог за "${concept.title}".`;
-      const response = await callGeminiProxy({ model: DEFAULT_MODEL, contents: [{ parts: [{ text: prompt }] }], config: { systemInstruction: TEXT_SYSTEM_INSTRUCTION, safetySettings: SAFETY_SETTINGS } });
+      const response = await callGeminiProxy({ 
+          model: DEFAULT_MODEL, 
+          contents: [{ parts: [{ text: prompt }] }], 
+          systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+          safetySettings: SAFETY_SETTINGS 
+      });
       return response.text || "";
   },
 
@@ -493,7 +538,12 @@ export const realGeminiService = {
 
   async analyzeReflection(wentWell: string, challenges: string, profile?: TeachingProfile): Promise<string> {
       const prompt = `Анализирај рефлексија: "${wentWell}". Предизвици: "${challenges}".`;
-      const response = await callGeminiProxy({ model: DEFAULT_MODEL, contents: [{ parts: [{ text: prompt }] }], config: { systemInstruction: TEXT_SYSTEM_INSTRUCTION, safetySettings: SAFETY_SETTINGS } });
+      const response = await callGeminiProxy({ 
+          model: DEFAULT_MODEL, 
+          contents: [{ parts: [{ text: prompt }] }], 
+          systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+          safetySettings: SAFETY_SETTINGS 
+      });
       return response.text || "";
   },
 
