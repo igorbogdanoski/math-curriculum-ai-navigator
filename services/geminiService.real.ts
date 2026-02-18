@@ -43,7 +43,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from './apiErrors';
 
 // --- CONSTANTS ---
 const CACHE_COLLECTION = 'cached_ai_materials';
-const DEFAULT_MODEL = 'gemini-1.5-flash-latest';
+const DEFAULT_MODEL = 'gemini-1.5-flash';
 const PROXY_TIMEOUT_MS = 60000;
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
@@ -98,13 +98,12 @@ function normalizeContents(contents: any): any[] {
   if (!Array.isArray(contents)) {
     return [{ role: 'user', parts: [{ text: String(contents) }] }];
   }
-  if (contents.length > 0 && (contents[0].parts || contents[0].role)) {
-    return contents.map(c => ({
-      role: c.role || 'user',
-      parts: Array.isArray(c.parts) ? c.parts : [{ text: String(c.text || '') }]
-    }));
-  }
-  return [{ role: 'user', parts: contents }];
+  return contents.map(c => {
+    if (typeof c === 'string') return { role: 'user', parts: [{ text: c }] };
+    if (c.parts) return { role: c.role || 'user', parts: c.parts };
+    if (c.text) return { role: c.role || 'user', parts: [{ text: c.text }] };
+    return { role: 'user', parts: [{ text: String(c) }] };
+  });
 }
 
 async function callGeminiProxy(params: { 
@@ -117,6 +116,12 @@ async function callGeminiProxy(params: {
   return queueRequest(async () => {
     try {
       const token = await getAuthToken();
+      
+      // Мапирање на моделот за Vercel Whitelist
+      let modelName = params.model;
+      if (modelName.includes('flash')) modelName = 'gemini-1.5-flash';
+      if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking';
+
       const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: {
@@ -124,8 +129,8 @@ async function callGeminiProxy(params: {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          model: params.model,
-          contents: params.contents,
+          model: modelName,
+          contents: normalizeContents(params.contents),
           config: {
             ...params.generationConfig,
             systemInstruction: params.systemInstruction,
@@ -155,6 +160,11 @@ async function* streamGeminiProxy(params: {
   safetySettings?: any;
 }): AsyncGenerator<string, void, unknown> {
   const token = await getAuthToken();
+  
+  let modelName = params.model;
+  if (modelName.includes('flash')) modelName = 'gemini-1.5-flash';
+  if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking';
+
   const response = await fetch('/api/gemini-stream', {
     method: 'POST',
     headers: {
@@ -162,8 +172,8 @@ async function* streamGeminiProxy(params: {
       'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify({
-      model: params.model,
-      contents: params.contents,
+      model: modelName,
+      contents: normalizeContents(params.contents),
       config: {
         ...params.generationConfig,
         systemInstruction: params.systemInstruction,
