@@ -251,7 +251,7 @@ const TEXT_SYSTEM_INSTRUCTION = `
 `;
 
 const JSON_SYSTEM_INSTRUCTION = `Ти си API кое генерира строго валиден JSON за наставни материјали по математика. 
-ОДГОВОРИ ИСКЛУЧИВО СО RAW JSON ОБЈЕКТ. БЕЗ MARKDOWN (```json) И БЕЗ ДОПОЛНИТЕЛЕН ТЕКСТ.`;
+ОДГОВОРИ ИСКЛУЧИВО СО RAW JSON ОБЈЕКТ. БЕЗ MARKDOWN (\`\`\`json) И БЕЗ ДОПОЛНИТЕЛЕН ТЕКСТ.`;
 
 const SAFETY_SETTINGS: SafetySetting[] = [
     { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
