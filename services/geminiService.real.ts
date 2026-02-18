@@ -103,18 +103,26 @@ async function callGeminiProxy(params: {
 }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // 1. Иницијализација на моделот со системските поставки (v1 стабилна верзија)
+      // 1. Исчистете го generationConfig од потенцијално проблематични полиња
+      const cleanConfig = { ...params.generationConfig };
+      if (cleanConfig.systemInstruction) delete cleanConfig.systemInstruction;
+      if (cleanConfig.responseMimeType) delete cleanConfig.responseMimeType;
+      if (cleanConfig.responseSchema) delete cleanConfig.responseSchema;
+
+      // 2. Иницијализација на моделот според строгиот в1 стандард
       const model = genAI.getGenerativeModel({ 
         model: params.model,
-        // ТОЧЕН ФОРМАТ: Само parts, без 'role: system'
-        systemInstruction: params.systemInstruction ? { parts: [{ text: params.systemInstruction }] } : undefined,
+        // ТОЧЕН ФОРМАТ: Само parts
+        systemInstruction: params.systemInstruction 
+          ? { parts: [{ text: params.systemInstruction }] } 
+          : undefined,
         safetySettings: params.safetySettings
       }, { apiVersion: 'v1' });
 
-      // 2. Генерирање со исчистена конфигурација
+      // 3. Повик со исчистена конфигурација
       const result = await model.generateContent({
         contents: params.contents,
-        generationConfig: params.generationConfig
+        generationConfig: cleanConfig
       });
 
       const response = await result.response;
@@ -125,7 +133,7 @@ async function callGeminiProxy(params: {
         candidates: response.candidates || [{ content: { parts: [{ text }] } }] 
       };
     } catch (err) {
-      console.error("Gemini Direct Error:", err);
+      console.error("КРИТИЧНА ГРЕШКА (400/404):", err);
       throw err;
     }
   });
@@ -138,15 +146,22 @@ async function* streamGeminiProxy(params: {
   systemInstruction?: string;
   safetySettings?: any;
 }): AsyncGenerator<string, void, unknown> {
+  const cleanConfig = { ...params.generationConfig };
+  if (cleanConfig.systemInstruction) delete cleanConfig.systemInstruction;
+  if (cleanConfig.responseMimeType) delete cleanConfig.responseMimeType;
+  if (cleanConfig.responseSchema) delete cleanConfig.responseSchema;
+
   const model = genAI.getGenerativeModel({ 
     model: params.model,
-    systemInstruction: params.systemInstruction ? { parts: [{ text: params.systemInstruction }] } : undefined,
+    systemInstruction: params.systemInstruction 
+      ? { parts: [{ text: params.systemInstruction }] } 
+      : undefined,
     safetySettings: params.safetySettings
   }, { apiVersion: 'v1' });
 
   const result = await model.generateContentStream({
     contents: params.contents,
-    generationConfig: params.generationConfig
+    generationConfig: cleanConfig
   });
 
   for await (const chunk of result.stream) {
