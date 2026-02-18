@@ -103,23 +103,22 @@ async function callGeminiProxy(params: {
 }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // 1. Исчистете го generationConfig од потенцијално проблематични полиња
-      const cleanConfig = { ...params.generationConfig };
-      if (cleanConfig.systemInstruction) delete cleanConfig.systemInstruction;
-      if (cleanConfig.responseMimeType) delete cleanConfig.responseMimeType;
-      if (cleanConfig.responseSchema) delete cleanConfig.responseSchema;
-
-      // 2. Иницијализација на моделот според строгиот в1 стандард
+      // 1. Иницијализација на моделот
+      // Инструкциите и безбедноста се поставуваат ТУКА
       const model = genAI.getGenerativeModel({ 
         model: params.model,
-        // ТОЧЕН ФОРМАТ: Само parts
-        systemInstruction: params.systemInstruction 
-          ? { parts: [{ text: params.systemInstruction }] } 
-          : undefined,
+        systemInstruction: params.systemInstruction,
         safetySettings: params.safetySettings
       }, { apiVersion: 'v1' });
 
-      // 3. Повик со исчистена конфигурација
+      // 2. Исчистете го generationConfig од сè што не е параметар за генерација
+      const cleanConfig = { ...params.generationConfig };
+      delete cleanConfig.systemInstruction;
+      delete cleanConfig.safetySettings;
+      delete cleanConfig.model;
+      delete cleanConfig.contents;
+
+      // 3. Генерирање на содржина
       const result = await model.generateContent({
         contents: params.contents,
         generationConfig: cleanConfig
@@ -130,10 +129,10 @@ async function callGeminiProxy(params: {
       
       return { 
         text, 
-        candidates: response.candidates || [{ content: { parts: [{ text }] } }] 
+        candidates: response.candidates || [] 
       };
-    } catch (err) {
-      console.error("КРИТИЧНА ГРЕШКА (400/404):", err);
+    } catch (err: any) {
+      console.error("Gemini Direct Error (400/404):", err);
       throw err;
     }
   });
@@ -146,18 +145,15 @@ async function* streamGeminiProxy(params: {
   systemInstruction?: string;
   safetySettings?: any;
 }): AsyncGenerator<string, void, unknown> {
-  const cleanConfig = { ...params.generationConfig };
-  if (cleanConfig.systemInstruction) delete cleanConfig.systemInstruction;
-  if (cleanConfig.responseMimeType) delete cleanConfig.responseMimeType;
-  if (cleanConfig.responseSchema) delete cleanConfig.responseSchema;
-
   const model = genAI.getGenerativeModel({ 
     model: params.model,
-    systemInstruction: params.systemInstruction 
-      ? { parts: [{ text: params.systemInstruction }] } 
-      : undefined,
+    systemInstruction: params.systemInstruction,
     safetySettings: params.safetySettings
   }, { apiVersion: 'v1' });
+
+  const cleanConfig = { ...params.generationConfig };
+  delete cleanConfig.systemInstruction;
+  delete cleanConfig.safetySettings;
 
   const result = await model.generateContentStream({
     contents: params.contents,
@@ -246,23 +242,27 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 7, useThinking = false): Promise<T> {
   const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
   try {
-    // 1. ЕКСТРЕМНО ЧИСТА КОНФИГУРАЦИЈА (за избегнување Error 400)
+    // 1. ЕКСТРЕМНО ЧИСТА КОНФИГУРАЦИЈА
     const generationConfig: any = { 
       temperature: 0.7,
       topP: 0.95,
       maxOutputTokens: 8192,
-      // responseMimeType: "application/json" // Го исклучуваме ако прави проблем во проксито
+      responseMimeType: "application/json"
     };
     
-    // Ја вметнуваме шемата во системската инструкција како примарен метод
+    // Ако користиме Thinking модел,responseMimeType може да не е поддржан на ист начин
+    if (useThinking) {
+        delete generationConfig.responseMimeType;
+        generationConfig.thinkingConfig = { thinkingBudget: 16000 };
+    }
+
+    // Ја вметнуваме шемата во системската инструкција како најсигурен метод
     const systemInstruction = `${JSON_SYSTEM_INSTRUCTION}\nОДГОВОРИ ИСКЛУЧИВО СО ВАЛИДЕН JSON СПОРЕД ОВАА ШЕМА: ${JSON.stringify(schema)}`;
 
-    if (useThinking) generationConfig.thinkingConfig = { thinkingBudget: 16000 };
-
-    // 2. ПОВИК СО ПРАВИЛНА СТРУКТУРА
+    // 2. ПОВИК
     const response = await callGeminiProxy({ 
       model: activeModel, 
-      contents: [{ role: 'user', parts: contents }], // Експлицитна ролја
+      contents: [{ role: 'user', parts: contents }],
       generationConfig,
       systemInstruction,
       safetySettings: SAFETY_SETTINGS
@@ -270,6 +270,7 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
 
     const jsonString = cleanJsonString(response.text || "");
     if (!jsonString) throw new Error("AI returned empty response");
+    
     const parsedJson = JSON.parse(jsonString);
 
     if (zodSchema) {
@@ -280,7 +281,8 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
     return parsedJson as T;
   } catch (error: any) {
     const errorMessage = error.message?.toLowerCase() || "";
-    // Ако е структурна грешка 400, нема смисла да пробаме пак со истиот payload
+    
+    // Ако е структурна грешка 400, нема смисла да пробаме пак
     if (errorMessage.includes("400") || errorMessage.includes("invalid")) {
         console.error("Critical structural error (400):", error);
         throw error;
