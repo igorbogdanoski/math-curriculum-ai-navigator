@@ -116,9 +116,8 @@ async function callGeminiProxy(params: {
 }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // Динамичен избор на верзија: v1 за стабилни, v1beta за експериментални модели
-      const isExperimental = params.model.includes('thinking') || params.model.includes('2.0') || params.model.includes('exp');
-      const apiVersion = isExperimental ? 'v1beta' : 'v1';
+      // ФОРСИРАМЕ v1 за стабилност на 1.5-flash
+      const apiVersion = (params.model.includes('thinking') || params.model.includes('2.0')) ? 'v1beta' : 'v1';
 
       const model = genAI.getGenerativeModel({ 
         model: params.model,
@@ -168,8 +167,8 @@ async function* streamGeminiProxy(params: {
   systemInstruction?: string;
   safetySettings?: any;
 }): AsyncGenerator<string, void, unknown> {
-  const isExperimental = params.model.includes('thinking') || params.model.includes('2.0') || params.model.includes('exp');
-  const apiVersion = isExperimental ? 'v1beta' : 'v1';
+  // ФОРСИРАМЕ v1 за стабилност
+  const apiVersion = (params.model.includes('thinking') || params.model.includes('2.0')) ? 'v1beta' : 'v1';
 
   const model = genAI.getGenerativeModel({ 
     model: params.model,

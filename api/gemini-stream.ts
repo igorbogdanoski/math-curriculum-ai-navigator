@@ -29,9 +29,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Map config to SDK structure
     const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
-    // Dynamic API version selection
-    const isExperimental = model.includes('thinking') || model.includes('2.0') || model.includes('exp');
-    const apiVersion = isExperimental ? 'v1beta' : 'v1';
+    // Use v1 for stable (flash), v1beta for experimental (thinking)
+    const apiVersion = (model.includes('thinking') || model.includes('2.0')) ? 'v1beta' : 'v1';
 
     const modelInstance = genAI.getGenerativeModel(
       { 
