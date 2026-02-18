@@ -119,7 +119,7 @@ async function callGeminiProxy(params: {
       const model = genAI.getGenerativeModel({ 
         model: params.model,
         safetySettings: params.safetySettings
-      }, { apiVersion: 'v1' });
+      }, { apiVersion: 'v1beta' });
 
       let normalized = normalizeContents(params.contents);
       
@@ -167,7 +167,7 @@ async function* streamGeminiProxy(params: {
   const model = genAI.getGenerativeModel({ 
     model: params.model,
     safetySettings: params.safetySettings
-  }, { apiVersion: 'v1' });
+  }, { apiVersion: 'v1beta' });
 
   let normalized = normalizeContents(params.contents);
   if (params.systemInstruction) {

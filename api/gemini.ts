@@ -20,14 +20,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Map config to generationConfig
     const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
-    // Use v1 for most stable models, or keep v1beta if required for Thinking/2.0
+    // Use v1beta for widest model support (including 2.0 and thinking)
     const modelInstance = genAI.getGenerativeModel(
       { 
         model,
         systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction as string }] } : undefined,
         safetySettings: safetySettings as any,
       }, 
-      { apiVersion: 'v1' }
+      { apiVersion: 'v1beta' }
     );
 
     // Normalize contents to content objects
