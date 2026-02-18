@@ -95,14 +95,16 @@ async function getAuthToken(): Promise<string> {
 
 // --- DIRECT SDK HELPERS ---
 function normalizeContents(contents: any): any[] {
-  if (!Array.isArray(contents)) {
-    return [{ role: 'user', parts: [{ text: String(contents) }] }];
-  }
+  if (!contents) return [];
+  if (typeof contents === 'string') return [{ role: 'user', parts: [{ text: contents }] }];
+  if (!Array.isArray(contents)) return [{ role: 'user', parts: [{ text: String(contents) }] }];
+  
   return contents.map(c => {
     if (typeof c === 'string') return { role: 'user', parts: [{ text: c }] };
-    if (c.parts) return { role: c.role || 'user', parts: c.parts };
-    if (c.text) return { role: c.role || 'user', parts: [{ text: c.text }] };
-    return { role: 'user', parts: [{ text: String(c) }] };
+    if (c.role && c.parts) return c;
+    if (c.parts) return { role: 'user', parts: c.parts };
+    if (c.text) return { role: 'user', parts: [{ text: c.text }] };
+    return { role: 'user', parts: [{ text: String(JSON.stringify(c)) }] };
   });
 }
 
@@ -119,8 +121,9 @@ async function callGeminiProxy(params: {
       
       // Мапирање на моделот за Vercel Whitelist
       let modelName = params.model;
-      if (modelName.includes('flash')) modelName = 'gemini-1.5-flash';
-      if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking';
+      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-1.5-flash';
+      else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking';
+      // Остави ги другите како што се (на пр. gemini-2.0-flash)
 
       const response = await fetch('/api/gemini', {
         method: 'POST',
@@ -162,8 +165,9 @@ async function* streamGeminiProxy(params: {
   const token = await getAuthToken();
   
   let modelName = params.model;
-  if (modelName.includes('flash')) modelName = 'gemini-1.5-flash';
-  if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking';
+  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-1.5-flash';
+  else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking';
+  // Остави ги другите како што се (на пр. gemini-2.0-flash)
 
   const response = await fetch('/api/gemini-stream', {
     method: 'POST',

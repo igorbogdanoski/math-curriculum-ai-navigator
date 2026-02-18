@@ -8,9 +8,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const validated = await authenticateAndValidate(req, res);
   if (!validated) return;
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
+    const envKeys = Object.keys(process.env).filter(k => k.includes('GEMINI'));
+    return res.status(500).json({ 
+      error: 'GEMINI_API_KEY not configured on server.',
+      diagnostics: {
+        foundKeys: envKeys,
+        nodeEnv: process.env.NODE_ENV,
+        message: 'Please rename VITE_GEMINI_API_KEY to GEMINI_API_KEY in Vercel settings if missing.'
+      }
+    });
   }
 
   try {
@@ -33,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const normalizedContents: Content[] = (typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
       : contents as any[]).map(c => ({
-        role: c.role || 'user',
+        role: (c.role === 'assistant' || c.role === 'model') ? 'model' : 'user',
         parts: c.parts.map((p: any) => {
           if (p.text) return { text: p.text };
           if (p.inlineData || p.inline_data) {

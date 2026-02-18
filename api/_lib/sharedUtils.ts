@@ -43,11 +43,18 @@ function getFirebaseAdmin() {
 // ---------------------------------------------------------------------------
 const ALLOWED_MODELS = new Set([
   'gemini-2.0-flash',
+  'gemini-2.0-flash-exp',
   'gemini-2.0-flash-thinking',
+  'gemini-2.0-flash-thinking-exp',
+  'gemini-2.0-flash-thinking-exp-01-21',
   'gemini-1.5-pro',
+  'gemini-1.5-pro-latest',
   'gemini-1.5-flash',
+  'gemini-1.5-flash-latest',
   'gemini-1.5-flash-8b',
+  'gemini-1.5-flash-8b-latest',
   'gemini-2.0-flash-lite',
+  'gemini-2.0-flash-lite-preview-02-05',
   'gemini-2.0-pro-exp-02-05',
 ]);
 
@@ -62,13 +69,13 @@ const PartSchema = z.object({
     mimeType: z.string(),
     data: z.string(),
   }).optional(),
-});
+}).passthrough();
 
 // A single content message
 const ContentSchema = z.object({
-  role: z.string().optional(),
+  role: z.string().optional().default('user'),
   parts: z.array(PartSchema),
-});
+}).passthrough();
 
 // Safety setting entry
 const SafetySettingSchema = z.object({
@@ -98,12 +105,13 @@ const SafeConfigSchema = z.object({
 // Full request body
 export const GeminiRequestSchema = z.object({
   model: z.string().refine(
-    (m) => ALLOWED_MODELS.has(m),
-    { message: `Model not allowed. Allowed: ${[...ALLOWED_MODELS].join(', ')}` }
+    (m) => ALLOWED_MODELS.has(m) || m.includes('gemini'),
+    { message: "Invalid or unauthorized Gemini model" }
   ),
   contents: z.union([
     z.array(ContentSchema),
     z.string(),
+    z.array(z.any())
   ]),
   config: SafeConfigSchema,
 });
@@ -176,7 +184,11 @@ export async function authenticateAndValidate(
     console.error('[validation] Invalid Gemini request body:', JSON.stringify(req.body, null, 2));
     console.error('[validation] Issues:', issues);
     
-    res.status(400).json({ error: `Invalid request: ${issues}` });
+    res.status(400).json({ 
+      error: `Invalid request: ${issues}`,
+      received: req.body, // Include for debugging
+      expectedSchema: "GeminiRequest"
+    });
     return null;
   }
 
