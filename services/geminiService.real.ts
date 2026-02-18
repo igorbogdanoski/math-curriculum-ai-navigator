@@ -43,7 +43,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from './apiErrors';
 
 // --- CONSTANTS ---
 const CACHE_COLLECTION = 'cached_ai_materials';
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = 'gemini-2.0-flash';
 const PROXY_TIMEOUT_MS = 60000;
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
@@ -121,7 +121,7 @@ async function callGeminiProxy(params: {
       
       // Мапирање на моделот за Vercel Whitelist
       let modelName = params.model;
-      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-1.5-flash';
+      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-1.5-flash-8b' || modelName === 'gemini-1.5-flash-8b-latest') modelName = 'gemini-2.0-flash';
       else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking';
       // Остави ги другите како што се (на пр. gemini-2.0-flash)
 
@@ -165,7 +165,7 @@ async function* streamGeminiProxy(params: {
   const token = await getAuthToken();
   
   let modelName = params.model;
-  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-1.5-flash';
+  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-1.5-flash-8b' || modelName === 'gemini-1.5-flash-8b-latest') modelName = 'gemini-2.0-flash';
   else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking';
   // Остави ги другите како што се (на пр. gemini-2.0-flash)
 
