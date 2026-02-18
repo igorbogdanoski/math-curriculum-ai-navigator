@@ -97,21 +97,23 @@ async function getAuthToken(): Promise<string> {
 async function callGeminiProxy(params: { model: string; contents: any; config?: any }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // Извлекување на системската инструкција и безбедносните поставки
+      // Издвојување на системската инструкција и безбедносните поставки
       const { systemInstruction, safetySettings, ...rawConfig } = params.config || {};
       
-      // Чистење на конфигурацијата - испраќаме само тоа што SDK-то го поддржува
+      // Иницијализација на моделот со системските поставки (v1 стабилна верзија)
+      const model = genAI.getGenerativeModel({ 
+        model: params.model,
+        systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
+        safetySettings
+      }, { apiVersion: 'v1' });
+
+      // Конфигурација на генерирањето - само дозволени полиња
       const generationConfig: any = {};
       if (rawConfig.responseMimeType) generationConfig.responseMimeType = rawConfig.responseMimeType;
       if (rawConfig.responseSchema) generationConfig.responseSchema = rawConfig.responseSchema;
       if (rawConfig.temperature !== undefined) generationConfig.temperature = rawConfig.temperature;
       if (rawConfig.maxOutputTokens !== undefined) generationConfig.maxOutputTokens = rawConfig.maxOutputTokens;
-
-      const model = genAI.getGenerativeModel({ 
-        model: params.model,
-        systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
-        safetySettings
-      }, { apiVersion: 'v1' }); // Префрлено на v1 за стабилност
+      if (rawConfig.thinkingConfig) generationConfig.thinkingConfig = rawConfig.thinkingConfig;
 
       const result = await model.generateContent({
         contents: params.contents,
@@ -135,16 +137,16 @@ async function callGeminiProxy(params: { model: string; contents: any; config?: 
 async function* streamGeminiProxy(params: { model: string; contents: any; config?: any }): AsyncGenerator<string, void, unknown> {
   const { systemInstruction, safetySettings, ...rawConfig } = params.config || {};
   
-  const generationConfig: any = {};
-  if (rawConfig.responseMimeType) generationConfig.responseMimeType = rawConfig.responseMimeType;
-  if (rawConfig.responseSchema) generationConfig.responseSchema = rawConfig.responseSchema;
-  if (rawConfig.temperature !== undefined) generationConfig.temperature = rawConfig.temperature;
-
   const model = genAI.getGenerativeModel({ 
     model: params.model,
     systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } : undefined,
     safetySettings
   }, { apiVersion: 'v1' });
+
+  const generationConfig: any = {};
+  if (rawConfig.responseMimeType) generationConfig.responseMimeType = rawConfig.responseMimeType;
+  if (rawConfig.responseSchema) generationConfig.responseSchema = rawConfig.responseSchema;
+  if (rawConfig.temperature !== undefined) generationConfig.temperature = rawConfig.temperature;
 
   const result = await model.generateContentStream({
     contents: params.contents,
