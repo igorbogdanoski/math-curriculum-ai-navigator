@@ -94,6 +94,19 @@ async function getAuthToken(): Promise<string> {
 }
 
 // --- DIRECT SDK HELPERS ---
+function normalizeContents(contents: any): any[] {
+  if (!Array.isArray(contents)) {
+    return [{ role: 'user', parts: [{ text: String(contents) }] }];
+  }
+  if (contents.length > 0 && (contents[0].parts || contents[0].role)) {
+    return contents.map(c => ({
+      role: c.role || 'user',
+      parts: Array.isArray(c.parts) ? c.parts : [{ text: String(c.text || '') }]
+    }));
+  }
+  return [{ role: 'user', parts: contents }];
+}
+
 async function callGeminiProxy(params: { 
   model: string; 
   contents: any; 
@@ -103,39 +116,30 @@ async function callGeminiProxy(params: {
 }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // 1. ИНИЦИЈАЛИЗАЦИЈА: Го повикуваме моделот БЕЗ systemInstruction
       const model = genAI.getGenerativeModel({ 
         model: params.model,
         safetySettings: params.safetySettings
       }, { apiVersion: 'v1' });
 
-      // 2. ВМЕТНУВАЊЕ (INJECTION):
-      // Рачно го додаваме системскиот текст на почетокот на промптот.
-      let finalContents = JSON.parse(JSON.stringify(params.contents)); // Deep copy
+      let normalized = normalizeContents(params.contents);
       
       if (params.systemInstruction) {
          const instructionText = `SYSTEM INSTRUCTIONS:\n${params.systemInstruction}\n\nUSER REQUEST:\n`;
-         
-         if (finalContents.length > 0 && finalContents[0].parts) {
-             if (finalContents[0].parts[0] && typeof finalContents[0].parts[0].text === 'string') {
-                 finalContents[0].parts[0].text = instructionText + finalContents[0].parts[0].text;
-             } 
-             else if (typeof finalContents[0].parts[0] === 'string') {
-                 finalContents[0].parts[0] = instructionText + finalContents[0].parts[0];
+         if (normalized.length > 0 && normalized[0].parts && normalized[0].parts[0]) {
+             if (typeof normalized[0].parts[0].text === 'string') {
+                 normalized[0].parts[0].text = instructionText + normalized[0].parts[0].text;
              }
          }
       }
 
-      // 3. СТРИКТНО ФИЛТРИРАЊЕ НА КОНФИГУРАЦИЈАТА
       const safeConfig = {
         temperature: params.generationConfig?.temperature ?? 0.7,
         topP: params.generationConfig?.topP ?? 0.95,
         maxOutputTokens: params.generationConfig?.maxOutputTokens ?? 8192,
       };
 
-      // 4. ПОВИК
       const result = await model.generateContent({
-        contents: finalContents,
+        contents: normalized,
         generationConfig: safeConfig
       });
 
@@ -165,12 +169,12 @@ async function* streamGeminiProxy(params: {
     safetySettings: params.safetySettings
   }, { apiVersion: 'v1' });
 
-  let finalContents = JSON.parse(JSON.stringify(params.contents));
+  let normalized = normalizeContents(params.contents);
   if (params.systemInstruction) {
     const instructionText = `SYSTEM INSTRUCTIONS:\n${params.systemInstruction}\n\nUSER REQUEST:\n`;
-    if (finalContents.length > 0 && finalContents[0].parts) {
-      if (finalContents[0].parts[0] && typeof finalContents[0].parts[0].text === 'string') {
-        finalContents[0].parts[0].text = instructionText + finalContents[0].parts[0].text;
+    if (normalized.length > 0 && normalized[0].parts && normalized[0].parts[0]) {
+      if (typeof normalized[0].parts[0].text === 'string') {
+        normalized[0].parts[0].text = instructionText + normalized[0].parts[0].text;
       }
     }
   }
@@ -182,7 +186,7 @@ async function* streamGeminiProxy(params: {
   };
 
   const result = await model.generateContentStream({
-    contents: finalContents,
+    contents: normalized,
     generationConfig: safeConfig
   });
 
