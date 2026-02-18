@@ -116,42 +116,32 @@ async function callGeminiProxy(params: {
 }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      const model = genAI.getGenerativeModel({ 
-        model: params.model,
-        safetySettings: params.safetySettings
+      const token = await getAuthToken();
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          model: params.model,
+          contents: params.contents,
+          config: {
+            ...params.generationConfig,
+            systemInstruction: params.systemInstruction,
+            safetySettings: params.safetySettings
+          }
+        })
       });
 
-      let normalized = normalizeContents(params.contents);
-      
-      if (params.systemInstruction) {
-         const instructionText = `SYSTEM INSTRUCTIONS:\n${params.systemInstruction}\n\nUSER REQUEST:\n`;
-         if (normalized.length > 0 && normalized[0].parts && normalized[0].parts[0]) {
-             if (typeof normalized[0].parts[0].text === 'string') {
-                 normalized[0].parts[0].text = instructionText + normalized[0].parts[0].text;
-             }
-         }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
-      const safeConfig = {
-        temperature: params.generationConfig?.temperature ?? 0.7,
-        topP: params.generationConfig?.topP ?? 0.95,
-        maxOutputTokens: params.generationConfig?.maxOutputTokens ?? 8192,
-      };
-
-      const result = await model.generateContent({
-        contents: normalized,
-        generationConfig: safeConfig
-      });
-
-      const response = await result.response;
-      const text = response.text();
-      
-      return { 
-        text, 
-        candidates: response.candidates || [] 
-      };
+      return await response.json();
     } catch (err: any) {
-      console.error("Gemini Critical Error:", err.message || err);
+      console.error("Gemini Proxy Error:", err.message || err);
       throw err;
     }
   });
@@ -164,35 +154,51 @@ async function* streamGeminiProxy(params: {
   systemInstruction?: string;
   safetySettings?: any;
 }): AsyncGenerator<string, void, unknown> {
-  const model = genAI.getGenerativeModel({ 
-    model: params.model,
-    safetySettings: params.safetySettings
+  const token = await getAuthToken();
+  const response = await fetch('/api/gemini-stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      model: params.model,
+      contents: params.contents,
+      config: {
+        ...params.generationConfig,
+        systemInstruction: params.systemInstruction,
+        safetySettings: params.safetySettings
+      }
+    })
   });
 
-  let normalized = normalizeContents(params.contents);
-  if (params.systemInstruction) {
-    const instructionText = `SYSTEM INSTRUCTIONS:\n${params.systemInstruction}\n\nUSER REQUEST:\n`;
-    if (normalized.length > 0 && normalized[0].parts && normalized[0].parts[0]) {
-      if (typeof normalized[0].parts[0].text === 'string') {
-        normalized[0].parts[0].text = instructionText + normalized[0].parts[0].text;
-      }
-    }
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Stream error: ${response.status}`);
   }
 
-  const safeConfig = {
-    temperature: params.generationConfig?.temperature ?? 0.7,
-    topP: params.generationConfig?.topP ?? 0.95,
-    maxOutputTokens: params.generationConfig?.maxOutputTokens ?? 8192,
-  };
+  const reader = response.body?.getReader();
+  const decoder = new TextDecoder();
+  if (!reader) throw new Error("No reader available");
 
-  const result = await model.generateContentStream({
-    contents: normalized,
-    generationConfig: safeConfig
-  });
-
-  for await (const chunk of result.stream) {
-    const chunkText = chunk.text();
-    yield chunkText;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value);
+    const lines = chunk.split('\n');
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.text) yield parsed.text;
+          if (parsed.error) throw new Error(parsed.error);
+        } catch (e) {
+          console.warn("Error parsing stream chunk", e);
+        }
+      }
+    }
   }
 }
 
