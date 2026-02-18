@@ -48,6 +48,7 @@ const NavItem: React.FC<{
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }) => {
     const { user, logout } = useAuth();
+    const { navigate } = useNavigation();
   return (
     <aside className={`w-64 bg-white text-gray-800 flex flex-col h-screen fixed shadow-2xl z-30 no-print transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 border-r border-gray-100`}>
       <div className="px-6 py-4 border-b flex justify-between items-center">
@@ -81,7 +82,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label="Поставки" onClick={onClose} />
       </nav>
       <div className="p-2 border-t bg-gray-50/50">
-        <div className="rounded-lg p-2 hover:bg-gray-100 transition-colors cursor-pointer group">
+        <div 
+          onClick={() => {
+            navigate('/settings');
+            onClose();
+          }}
+          className="rounded-lg p-2 hover:bg-gray-100 transition-colors cursor-pointer group"
+        >
             <div className="flex items-center gap-3">
                 {user?.photoURL ? (
                     <img src={user.photoURL} alt={user.name} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
@@ -92,7 +99,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
                 )}
                 <div className="overflow-hidden">
                     <p className="font-semibold text-sm text-brand-text truncate">{user?.name || 'Корисник'}</p>
-                    <button onClick={logout} className="text-xs text-gray-500 hover:text-brand-primary transition-colors">Одјави се</button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        logout();
+                      }} 
+                      className="text-xs text-gray-500 hover:text-brand-primary transition-colors"
+                    >
+                      Одјави се
+                    </button>
                 </div>
             </div>
         </div>

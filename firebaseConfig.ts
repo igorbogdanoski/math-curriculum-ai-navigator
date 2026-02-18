@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
@@ -16,8 +16,10 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 
 // Иницијализација на сервисите
-// ВАЖНО: Користиме само getFirestore() без enableIndexedDbPersistence за да избегнеме грешки
-export const db = getFirestore(app);
+// Овозможуваме ignoreUndefinedProperties за постабилна синхронизација
+export const db = initializeFirestore(app, {
+  ignoreUndefinedProperties: true,
+});
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
