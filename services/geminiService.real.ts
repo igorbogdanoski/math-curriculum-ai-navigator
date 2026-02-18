@@ -45,6 +45,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from './apiErrors';
 const CACHE_COLLECTION = 'cached_ai_materials';
 const DEFAULT_MODEL = 'gemini-2.0-flash';
 const PROXY_TIMEOUT_MS = 60000;
+const MAX_RETRIES = 2;
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
@@ -290,7 +291,7 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 ];
 
 // --- CORE JSON HELPER ---
-async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 7, useThinking = false): Promise<T> {
+async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false): Promise<T> {
   const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
   try {
     // 1. ЕКСТРЕМНО ЧИСТА КОНФИГУРАЦИЈА (Whitelist-от во callGeminiProxy ќе ги тргне сите не-дирекни полиња)
@@ -335,20 +336,29 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
     return parsedJson as T;
   } catch (error: any) {
     const errorMessage = error.message?.toLowerCase() || "";
-    
-    // Ако е структурна грешка 400, нема смисла да пробаме пак
-    if (errorMessage.includes("400") || errorMessage.includes("invalid")) {
-        console.error("Critical structural error (400):", error);
-        throw error;
+
+    const isNonRetryable =
+      errorMessage.includes("400") ||
+      errorMessage.includes("404") ||
+      errorMessage.includes("not found") ||
+      errorMessage.includes("invalid") ||
+      errorMessage.includes("403") ||
+      errorMessage.includes("api key") ||
+      errorMessage.includes("permission");
+
+    if (isNonRetryable) {
+      console.error("Non-retryable AI error:", error);
+      throw error;
     }
 
-    if (retries > 0 && !errorMessage.includes("api key") && !errorMessage.includes("permission")) {
-        let delay = 2000;
-        const match = errorMessage.match(/retry in (\d+(\.\d+)?)s/i);
-        if (match) delay = (parseFloat(match[1]) + 2) * 1000;
-        else delay = 1000 * Math.pow(2, 8 - retries);
-        await new Promise(r => setTimeout(r, delay));
-        return generateAndParseJSON<T>(contents, schema, model, zodSchema, retries - 1, useThinking);
+    if (retries > 0) {
+      const match = errorMessage.match(/retry in (\d+(\.\d+)?)s/i);
+      const delay = match
+        ? (parseFloat(match[1]) + 1) * 1000
+        : 2000 * Math.pow(2, MAX_RETRIES - retries);
+      console.warn(`[AI] Retry in ${delay}ms, ${retries} attempt(s) left.`);
+      await new Promise(r => setTimeout(r, delay));
+      return generateAndParseJSON<T>(contents, schema, model, zodSchema, retries - 1, useThinking);
     }
     handleGeminiError(error);
   }
@@ -431,7 +441,7 @@ export const realGeminiService = {
   async generateLearningPaths(context: GenerationContext, studentProfiles: StudentProfile[], profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedLearningPaths> {
     const prompt = `Креирај диференцирани патеки за учење. ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, paths: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { profileName: { type: Type.STRING }, steps: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { stepNumber: { type: Type.INTEGER }, activity: { type: Type.STRING }, type: { type: Type.STRING } }, required: ["stepNumber", "activity"] } } }, required: ["profileName", "steps"] } } }, required: ["title", "paths"] };
-    return generateAndParseJSON<AIGeneratedLearningPaths>([{ text: prompt }, { text: JSON.stringify(minifyContext(context)) }], schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, 3, true);
+    return generateAndParseJSON<AIGeneratedLearningPaths>([{ text: prompt }, { text: JSON.stringify(minifyContext(context)) }], schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, MAX_RETRIES, true);
   },
 
   async generateAnalogy(concept: Concept, gradeLevel: number): Promise<string> {
@@ -596,7 +606,7 @@ export const realGeminiService = {
   async analyzeLessonPlan(plan: Partial<LessonPlan>, profile?: TeachingProfile): Promise<AIPedagogicalAnalysis> {
     const prompt = `Направи педагошка анализа на подготовка за час.`;
     const schema = { type: Type.OBJECT, properties: { pedagogicalAnalysis: { type: Type.OBJECT, properties: { overallImpression: { type: Type.STRING }, alignment: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } }, engagement: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } }, cognitiveLevels: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } } } } }, required: ["pedagogicalAnalysis"] };
-    return generateAndParseJSON<AIPedagogicalAnalysis>([{ text: prompt }, { text: `План: ${JSON.stringify(plan)}` }], schema, DEFAULT_MODEL, AIPedagogicalAnalysisSchema, 3, true);
+    return generateAndParseJSON<AIPedagogicalAnalysis>([{ text: prompt }, { text: `План: ${JSON.stringify(plan)}` }], schema, DEFAULT_MODEL, AIPedagogicalAnalysisSchema, MAX_RETRIES, true);
   },
 
   async generateProactiveSuggestion(concept: Concept, profile?: TeachingProfile): Promise<string> {
