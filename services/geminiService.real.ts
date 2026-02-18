@@ -290,38 +290,42 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false): Promise<T> {
   const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
   try {
-    // 1. ЕКСТРЕМНО ЧИСТА КОНФИГУРАЦИЈА (Whitelist-от во callGeminiProxy ќе ги тргне сите не-дирекни полиња)
-    const generationConfig: any = { 
+    const generationConfig: any = {
       temperature: 0.7,
       topP: 0.95,
       maxOutputTokens: 8192
     };
-    
+
     if (useThinking) {
-        generationConfig.thinkingConfig = { thinkingBudget: 16000 };
+      generationConfig.thinkingConfig = { thinkingBudget: 16000 };
+    } else {
+      // Force the model to output raw JSON — no markdown wrappers possible
+      generationConfig.responseMimeType = 'application/json';
     }
 
-    // JSON ENFORCEMENT: Додаваме експлицитно барање за JSON во содржината
-    const jsonEnforcement = "\n\nIMPORTANT: Return the result as a raw JSON object only. No Markdown code blocks. Use the following schema: " + JSON.stringify(schema);
+    // Keep schema as a structural hint in the prompt
+    const schemaHint = "\n\nFollow this JSON schema exactly: " + JSON.stringify(schema);
     const enrichedContents = [...contents];
     if (enrichedContents.length > 0 && enrichedContents[0].text) {
-        enrichedContents[0].text += jsonEnforcement;
+        enrichedContents[0].text += schemaHint;
     } else {
-        enrichedContents.push({ text: jsonEnforcement });
+        enrichedContents.push({ text: schemaHint });
     }
 
-    // 2. ПОВИК
-    const response = await callGeminiProxy({ 
-      model: activeModel, 
+    const response = await callGeminiProxy({
+      model: activeModel,
       contents: enrichedContents,
       generationConfig,
       systemInstruction: JSON_SYSTEM_INSTRUCTION,
       safetySettings: SAFETY_SETTINGS
     });
 
-    const jsonString = cleanJsonString(response.text || "");
+    // responseMimeType guarantees clean JSON for the standard model.
+    // For the thinking model (no responseMimeType support), cleanJsonString strips any markdown.
+    const rawText = response.text || "";
+    const jsonString = useThinking ? cleanJsonString(rawText) : rawText.trim();
     if (!jsonString) throw new Error("AI returned empty response");
-    
+
     const parsedJson = JSON.parse(jsonString);
 
     if (zodSchema) {
