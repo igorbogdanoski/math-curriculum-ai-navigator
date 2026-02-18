@@ -37,13 +37,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Map config to SDK structure
     const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
-    const targetModel = model === 'gemini-1.5-flash' ? 'gemini-1.5-flash-latest' : model;
-
     const modelInstance = genAI.getGenerativeModel({ 
-      model: targetModel,
+      model: model,
       systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction as string }] } : undefined,
       safetySettings: safetySettings as any,
-    });
+    }, { apiVersion: 'v1beta' });
 
     // Normalize contents
     const normalizedContents: Content[] = (typeof contents === 'string'
