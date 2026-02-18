@@ -103,22 +103,38 @@ async function callGeminiProxy(params: {
 }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // 1. Иницијализација на моделот
-      // Инструкциите и безбедноста се поставуваат ТУКА
+      // 1. Иницијализација на Моделот (Системските инструкции одат ТУКА)
       const model = genAI.getGenerativeModel({ 
         model: params.model,
-        systemInstruction: params.systemInstruction,
+        systemInstruction: params.systemInstruction 
+          ? { parts: [{ text: params.systemInstruction }] } 
+          : undefined,
         safetySettings: params.safetySettings
       }, { apiVersion: 'v1' });
 
-      // 2. Исчистете го generationConfig од сè што не е параметар за генерација
-      const cleanConfig = { ...params.generationConfig };
-      delete cleanConfig.systemInstruction;
-      delete cleanConfig.safetySettings;
-      delete cleanConfig.model;
-      delete cleanConfig.contents;
+      // 2. СТРИКТНО ФИЛТРИРАЊЕ НА КОНФИГУРАЦИЈАТА (Whitelist)
+      const validKeys = [
+        "temperature", 
+        "topP", 
+        "topK", 
+        "candidateCount", 
+        "maxOutputTokens", 
+        "stopSequences",
+        // Привремено оневозможени за стабилност
+        // "responseMimeType", 
+        // "responseSchema"
+      ];
 
-      // 3. Генерирање на содржина
+      const cleanConfig: any = {};
+      if (params.generationConfig) {
+        validKeys.forEach(key => {
+          if (params.generationConfig[key] !== undefined) {
+            cleanConfig[key] = params.generationConfig[key];
+          }
+        });
+      }
+
+      // 3. Генерирање содржина
       const result = await model.generateContent({
         contents: params.contents,
         generationConfig: cleanConfig
@@ -132,7 +148,7 @@ async function callGeminiProxy(params: {
         candidates: response.candidates || [] 
       };
     } catch (err: any) {
-      console.error("Gemini Direct Error (400/404):", err);
+      console.error("Gemini Proxy Error:", err.message || err);
       throw err;
     }
   });
@@ -151,9 +167,15 @@ async function* streamGeminiProxy(params: {
     safetySettings: params.safetySettings
   }, { apiVersion: 'v1' });
 
-  const cleanConfig = { ...params.generationConfig };
-  delete cleanConfig.systemInstruction;
-  delete cleanConfig.safetySettings;
+  const validKeys = ["temperature", "topP", "topK", "maxOutputTokens", "stopSequences"];
+  const cleanConfig: any = {};
+  if (params.generationConfig) {
+    validKeys.forEach(key => {
+      if (params.generationConfig[key] !== undefined) {
+        cleanConfig[key] = params.generationConfig[key];
+      }
+    });
+  }
 
   const result = await model.generateContentStream({
     contents: params.contents,
@@ -228,7 +250,8 @@ const TEXT_SYSTEM_INSTRUCTION = `
 3. Математички формули: Користи стандарден LaTeX со $ за инлајн и $$ за блок. Користи \\cdot за множење и : за делење. Користи децимална запирка (,).
 `;
 
-const JSON_SYSTEM_INSTRUCTION = `Ти си API кое генерира строго валиден JSON за наставни материјали по математика.`;
+const JSON_SYSTEM_INSTRUCTION = `Ти си API кое генерира строго валиден JSON за наставни материјали по математика. 
+ОДГОВОРИ ИСКЛУЧИВО СО RAW JSON ОБЈЕКТ. БЕЗ MARKDOWN (```json) И БЕЗ ДОПОЛНИТЕЛЕН ТЕКСТ.`;
 
 const SAFETY_SETTINGS: SafetySetting[] = [
     { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
@@ -242,22 +265,19 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 7, useThinking = false): Promise<T> {
   const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
   try {
-    // 1. ЕКСТРЕМНО ЧИСТА КОНФИГУРАЦИЈА
+    // 1. ЕКСТРЕМНО ЧИСТА КОНФИГУРАЦИЈА (Whitelist-от во callGeminiProxy ќе го тргне responseMimeType)
     const generationConfig: any = { 
       temperature: 0.7,
       topP: 0.95,
-      maxOutputTokens: 8192,
-      responseMimeType: "application/json"
+      maxOutputTokens: 8192
     };
     
-    // Ако користиме Thinking модел,responseMimeType може да не е поддржан на ист начин
     if (useThinking) {
-        delete generationConfig.responseMimeType;
         generationConfig.thinkingConfig = { thinkingBudget: 16000 };
     }
 
     // Ја вметнуваме шемата во системската инструкција како најсигурен метод
-    const systemInstruction = `${JSON_SYSTEM_INSTRUCTION}\nОДГОВОРИ ИСКЛУЧИВО СО ВАЛИДЕН JSON СПОРЕД ОВАА ШЕМА: ${JSON.stringify(schema)}`;
+    const systemInstruction = `${JSON_SYSTEM_INSTRUCTION}\nШЕМА: ${JSON.stringify(schema)}`;
 
     // 2. ПОВИК
     const response = await callGeminiProxy({ 
