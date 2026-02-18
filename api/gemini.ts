@@ -25,15 +25,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const { model, contents, config } = validated;
 
-    // Map config to generationConfig
+    // 1. УНИВЕРЗАЛНО ВМЕТНУВАЊЕ (Content Injection)
+    // Ова гарантира дека нема 400 или 404 грешки за "systemInstruction"
     const { systemInstruction, safetySettings, ...generationConfig } = config || {};
-
-    const modelInstance = genAI.getGenerativeModel({ 
-      model: model,
-      systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction as string }] } : undefined,
-      safetySettings: safetySettings as any,
-    }, { apiVersion: 'v1beta' });
-
+    
     // Normalize contents to content objects
     const normalizedContents: Content[] = (typeof contents === 'string'
       ? [{ role: 'user', parts: [{ text: contents }] }]
@@ -53,6 +48,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return p;
         })
       }));
+
+    // Ако има инструкции, ги лепиме на почетокот на првата порака
+    if (systemInstruction && typeof systemInstruction === 'string' && normalizedContents.length > 0) {
+      const instructionText = `[SYSTEM INSTRUCTIONS]\n${systemInstruction}\n\n[USER REQUEST]\n`;
+      normalizedContents[0].parts[0].text = instructionText + (normalizedContents[0].parts[0].text || '');
+    }
+
+    // 2. Иницијализација на моделот БЕЗ systemInstruction (за да избегнеме 400/404)
+    const modelInstance = genAI.getGenerativeModel({ 
+      model: model,
+      safetySettings: safetySettings as any,
+    }); // Стандардна v1 (без apiVersion: 'v1beta' во RequestOptions)
 
     const result = await modelInstance.generateContent({
       contents: normalizedContents,

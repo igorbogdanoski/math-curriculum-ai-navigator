@@ -2,15 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI, Content } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
-/**
- * Vercel Serverless Function: Gemini Streaming API Proxy
- * 
- * Security layers:
- * 1. CORS — only allowed origin
- * 2. Firebase ID token verification
- * 3. Zod request body validation (model whitelist, config sanitization)
- * 4. GEMINI_API_KEY server-side only
- */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
 
@@ -34,14 +25,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const { model, contents, config } = validated;
 
-    // Map config to SDK structure
+    // 1. УНИВЕРЗАЛНО ВМЕТНУВАЊЕ (Content Injection)
     const { systemInstruction, safetySettings, ...generationConfig } = config || {};
-
-    const modelInstance = genAI.getGenerativeModel({ 
-      model: model,
-      systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction as string }] } : undefined,
-      safetySettings: safetySettings as any,
-    }, { apiVersion: 'v1beta' });
 
     // Normalize contents
     const normalizedContents: Content[] = (typeof contents === 'string'
@@ -62,6 +47,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return p;
         })
       }));
+
+    // Ако има инструкции, ги лепиме на почетокот на првата порака
+    if (systemInstruction && typeof systemInstruction === 'string' && normalizedContents.length > 0) {
+      const instructionText = `[SYSTEM INSTRUCTIONS]\n${systemInstruction}\n\n[USER REQUEST]\n`;
+      normalizedContents[0].parts[0].text = instructionText + (normalizedContents[0].parts[0].text || '');
+    }
+
+    // 2. Иницијализација БЕЗ systemInstruction (за да избегнеме 400/404)
+    const modelInstance = genAI.getGenerativeModel({ 
+      model: model,
+      safetySettings: safetySettings as any,
+    });
 
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
@@ -86,14 +83,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[/api/gemini-stream] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
     
-    // If headers haven't been sent yet, send error as JSON
     if (!res.headersSent) {
       const status = message.includes('429') ? 429 :
                      message.includes('403') ? 403 : 500;
       return res.status(status).json({ error: message });
     }
     
-    // If streaming already started, send error as SSE event
     res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
     res.end();
   }
