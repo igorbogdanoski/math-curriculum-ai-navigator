@@ -106,7 +106,8 @@ async function callGeminiProxy(params: {
       // 1. Иницијализација на моделот со системските поставки (v1 стабилна верзија)
       const model = genAI.getGenerativeModel({ 
         model: params.model,
-        systemInstruction: params.systemInstruction ? { role: 'system', parts: [{ text: params.systemInstruction }] } : undefined,
+        // ТОЧЕН ФОРМАТ: Само parts, без 'role: system'
+        systemInstruction: params.systemInstruction ? { parts: [{ text: params.systemInstruction }] } : undefined,
         safetySettings: params.safetySettings
       }, { apiVersion: 'v1' });
 
@@ -121,7 +122,7 @@ async function callGeminiProxy(params: {
       
       return { 
         text, 
-        candidates: [{ content: { parts: [{ text }] } }] 
+        candidates: response.candidates || [{ content: { parts: [{ text }] } }] 
       };
     } catch (err) {
       console.error("Gemini Direct Error:", err);
@@ -139,7 +140,7 @@ async function* streamGeminiProxy(params: {
 }): AsyncGenerator<string, void, unknown> {
   const model = genAI.getGenerativeModel({ 
     model: params.model,
-    systemInstruction: params.systemInstruction ? { role: 'system', parts: [{ text: params.systemInstruction }] } : undefined,
+    systemInstruction: params.systemInstruction ? { parts: [{ text: params.systemInstruction }] } : undefined,
     safetySettings: params.safetySettings
   }, { apiVersion: 'v1' });
 
