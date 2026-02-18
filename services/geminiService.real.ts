@@ -43,7 +43,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from './apiErrors';
 
 // --- CONSTANTS ---
 const CACHE_COLLECTION = 'cached_ai_materials';
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = 'gemini-1.5-flash-latest';
 const PROXY_TIMEOUT_MS = 60000;
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
@@ -116,13 +116,10 @@ async function callGeminiProxy(params: {
 }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // ФОРСИРАМЕ v1 за стабилност на 1.5-flash
-      const apiVersion = (params.model.includes('thinking') || params.model.includes('2.0')) ? 'v1beta' : 'v1';
-
       const model = genAI.getGenerativeModel({ 
         model: params.model,
         safetySettings: params.safetySettings
-      }, { apiVersion });
+      });
 
       let normalized = normalizeContents(params.contents);
       
@@ -167,13 +164,10 @@ async function* streamGeminiProxy(params: {
   systemInstruction?: string;
   safetySettings?: any;
 }): AsyncGenerator<string, void, unknown> {
-  // ФОРСИРАМЕ v1 за стабилност
-  const apiVersion = (params.model.includes('thinking') || params.model.includes('2.0')) ? 'v1beta' : 'v1';
-
   const model = genAI.getGenerativeModel({ 
     model: params.model,
     safetySettings: params.safetySettings
-  }, { apiVersion });
+  });
 
   let normalized = normalizeContents(params.contents);
   if (params.systemInstruction) {

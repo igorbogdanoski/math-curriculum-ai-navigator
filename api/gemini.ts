@@ -20,17 +20,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Map config to generationConfig
     const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
-    // Use v1 for stable models (flash), and v1beta ONLY for experimental/thinking
-    const apiVersion = (model.includes('thinking') || model.includes('2.0')) ? 'v1beta' : 'v1';
+    // Use the latest flash model name which is more robust against 404s
+    const targetModel = model === 'gemini-1.5-flash' ? 'gemini-1.5-flash-latest' : model;
 
-    const modelInstance = genAI.getGenerativeModel(
-      { 
-        model,
-        systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction as string }] } : undefined,
-        safetySettings: safetySettings as any,
-      }, 
-      { apiVersion }
-    );
+    const modelInstance = genAI.getGenerativeModel({ 
+      model: targetModel,
+      systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction as string }] } : undefined,
+      safetySettings: safetySettings as any,
+    });
 
     // Normalize contents to content objects
     const normalizedContents: Content[] = (typeof contents === 'string'
