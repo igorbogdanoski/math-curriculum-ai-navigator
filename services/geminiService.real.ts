@@ -103,41 +103,40 @@ async function callGeminiProxy(params: {
 }): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // 1. Иницијализација на Моделот (Системските инструкции одат ТУКА)
+      // 1. ИНИЦИЈАЛИЗАЦИЈА: Го повикуваме моделот БЕЗ systemInstruction
       const model = genAI.getGenerativeModel({ 
         model: params.model,
-        systemInstruction: params.systemInstruction 
-          ? { parts: [{ text: params.systemInstruction }] } 
-          : undefined,
         safetySettings: params.safetySettings
       }, { apiVersion: 'v1' });
 
-      // 2. СТРИКТНО ФИЛТРИРАЊЕ НА КОНФИГУРАЦИЈАТА (Whitelist)
-      const validKeys = [
-        "temperature", 
-        "topP", 
-        "topK", 
-        "candidateCount", 
-        "maxOutputTokens", 
-        "stopSequences",
-        // Привремено оневозможени за стабилност
-        // "responseMimeType", 
-        // "responseSchema"
-      ];
-
-      const cleanConfig: any = {};
-      if (params.generationConfig) {
-        validKeys.forEach(key => {
-          if (params.generationConfig[key] !== undefined) {
-            cleanConfig[key] = params.generationConfig[key];
-          }
-        });
+      // 2. ВМЕТНУВАЊЕ (INJECTION):
+      // Рачно го додаваме системскиот текст на почетокот на промптот.
+      let finalContents = JSON.parse(JSON.stringify(params.contents)); // Deep copy
+      
+      if (params.systemInstruction) {
+         const instructionText = `SYSTEM INSTRUCTIONS:\n${params.systemInstruction}\n\nUSER REQUEST:\n`;
+         
+         if (finalContents.length > 0 && finalContents[0].parts) {
+             if (finalContents[0].parts[0] && typeof finalContents[0].parts[0].text === 'string') {
+                 finalContents[0].parts[0].text = instructionText + finalContents[0].parts[0].text;
+             } 
+             else if (typeof finalContents[0].parts[0] === 'string') {
+                 finalContents[0].parts[0] = instructionText + finalContents[0].parts[0];
+             }
+         }
       }
 
-      // 3. Генерирање содржина
+      // 3. СТРИКТНО ФИЛТРИРАЊЕ НА КОНФИГУРАЦИЈАТА
+      const safeConfig = {
+        temperature: params.generationConfig?.temperature ?? 0.7,
+        topP: params.generationConfig?.topP ?? 0.95,
+        maxOutputTokens: params.generationConfig?.maxOutputTokens ?? 8192,
+      };
+
+      // 4. ПОВИК
       const result = await model.generateContent({
-        contents: params.contents,
-        generationConfig: cleanConfig
+        contents: finalContents,
+        generationConfig: safeConfig
       });
 
       const response = await result.response;
@@ -148,7 +147,7 @@ async function callGeminiProxy(params: {
         candidates: response.candidates || [] 
       };
     } catch (err: any) {
-      console.error("Gemini Proxy Error:", err.message || err);
+      console.error("Gemini Critical Error:", err.message || err);
       throw err;
     }
   });
@@ -163,23 +162,28 @@ async function* streamGeminiProxy(params: {
 }): AsyncGenerator<string, void, unknown> {
   const model = genAI.getGenerativeModel({ 
     model: params.model,
-    systemInstruction: params.systemInstruction,
     safetySettings: params.safetySettings
   }, { apiVersion: 'v1' });
 
-  const validKeys = ["temperature", "topP", "topK", "maxOutputTokens", "stopSequences"];
-  const cleanConfig: any = {};
-  if (params.generationConfig) {
-    validKeys.forEach(key => {
-      if (params.generationConfig[key] !== undefined) {
-        cleanConfig[key] = params.generationConfig[key];
+  let finalContents = JSON.parse(JSON.stringify(params.contents));
+  if (params.systemInstruction) {
+    const instructionText = `SYSTEM INSTRUCTIONS:\n${params.systemInstruction}\n\nUSER REQUEST:\n`;
+    if (finalContents.length > 0 && finalContents[0].parts) {
+      if (finalContents[0].parts[0] && typeof finalContents[0].parts[0].text === 'string') {
+        finalContents[0].parts[0].text = instructionText + finalContents[0].parts[0].text;
       }
-    });
+    }
   }
 
+  const safeConfig = {
+    temperature: params.generationConfig?.temperature ?? 0.7,
+    topP: params.generationConfig?.topP ?? 0.95,
+    maxOutputTokens: params.generationConfig?.maxOutputTokens ?? 8192,
+  };
+
   const result = await model.generateContentStream({
-    contents: params.contents,
-    generationConfig: cleanConfig
+    contents: finalContents,
+    generationConfig: safeConfig
   });
 
   for await (const chunk of result.stream) {
@@ -265,7 +269,7 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = 7, useThinking = false): Promise<T> {
   const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
   try {
-    // 1. ЕКСТРЕМНО ЧИСТА КОНФИГУРАЦИЈА (Whitelist-от во callGeminiProxy ќе го тргне responseMimeType)
+    // 1. ЕКСТРЕМНО ЧИСТА КОНФИГУРАЦИЈА (Whitelist-от во callGeminiProxy ќе ги тргне сите не-дирекни полиња)
     const generationConfig: any = { 
       temperature: 0.7,
       topP: 0.95,
@@ -276,15 +280,21 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
         generationConfig.thinkingConfig = { thinkingBudget: 16000 };
     }
 
-    // Ја вметнуваме шемата во системската инструкција како најсигурен метод
-    const systemInstruction = `${JSON_SYSTEM_INSTRUCTION}\nШЕМА: ${JSON.stringify(schema)}`;
+    // JSON ENFORCEMENT: Додаваме експлицитно барање за JSON во содржината
+    const jsonEnforcement = "\n\nIMPORTANT: Return the result as a raw JSON object only. No Markdown code blocks. Use the following schema: " + JSON.stringify(schema);
+    const enrichedContents = [...contents];
+    if (enrichedContents.length > 0 && enrichedContents[0].text) {
+        enrichedContents[0].text += jsonEnforcement;
+    } else {
+        enrichedContents.push({ text: jsonEnforcement });
+    }
 
     // 2. ПОВИК
     const response = await callGeminiProxy({ 
       model: activeModel, 
-      contents: [{ role: 'user', parts: contents }],
+      contents: enrichedContents,
       generationConfig,
-      systemInstruction,
+      systemInstruction: JSON_SYSTEM_INSTRUCTION,
       safetySettings: SAFETY_SETTINGS
     });
 
