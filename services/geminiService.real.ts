@@ -2,8 +2,7 @@ import { getAuth } from 'firebase/auth';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { 
+import {
     Concept, 
     Topic, 
     Grade,
@@ -44,10 +43,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from './apiErrors';
 // --- CONSTANTS ---
 const CACHE_COLLECTION = 'cached_ai_materials';
 const DEFAULT_MODEL = 'gemini-2.0-flash';
-const PROXY_TIMEOUT_MS = 60000;
 const MAX_RETRIES = 2;
-
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 // --- TYPES FOR INTERNAL USE ---
 export enum Type {
