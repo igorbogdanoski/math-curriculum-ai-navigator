@@ -229,32 +229,36 @@ const AppCore: React.FC = () => {
 }
 
 
-const App: React.FC = () => {
-  return (
-    <ErrorBoundary>
+const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <ErrorBoundary>
     <NetworkStatusProvider>
-        <NotificationProvider>
+      <NotificationProvider>
         <AuthProvider>
-            <UserPreferencesProvider>
+          <UserPreferencesProvider>
             <CurriculumProvider>
-                <PlannerProvider>
-                    <ModalProvider>
-                        <LastVisitedProvider>
-                            <UIProvider>
-                            <GeneratorPanelProvider>
-                                <AppCore />
-                            </GeneratorPanelProvider>
-                            </UIProvider>
-                        </LastVisitedProvider>
-                    </ModalProvider>
-                </PlannerProvider>
+              <PlannerProvider>
+                <ModalProvider>
+                  <LastVisitedProvider>
+                    <UIProvider>
+                      <GeneratorPanelProvider>
+                        {children}
+                      </GeneratorPanelProvider>
+                    </UIProvider>
+                  </LastVisitedProvider>
+                </ModalProvider>
+              </PlannerProvider>
             </CurriculumProvider>
-            </UserPreferencesProvider>
+          </UserPreferencesProvider>
         </AuthProvider>
-        </NotificationProvider>
+      </NotificationProvider>
     </NetworkStatusProvider>
-    </ErrorBoundary>
-  );
-};
+  </ErrorBoundary>
+);
+
+const App: React.FC = () => (
+  <AppProviders>
+    <AppCore />
+  </AppProviders>
+);
 
 export default App;

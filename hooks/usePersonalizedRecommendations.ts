@@ -48,6 +48,13 @@ export function usePersonalizedRecommendations() {
             } catch (err) {
                 console.error("Failed to fetch personalized recommendations:", err);
                 setError((err as Error).message);
+                // Cache the failure for 1 hour so we don't hammer the API on every page load
+                // when the quota is exhausted or the service is unavailable
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    data: [],
+                    timestamp: Date.now() - (11 * 60 * 60 * 1000), // 11h ago → expires in 1h
+                    failed: true,
+                }));
             } finally {
                 setIsLoading(false);
             }

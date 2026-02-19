@@ -340,7 +340,15 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
   } catch (error: any) {
     const errorMessage = error.message?.toLowerCase() || "";
 
+    // Daily quota exhaustion is not retryable — it resets at midnight UTC, not in seconds
+    const isDailyQuotaExhausted = errorMessage.includes("429") && (
+      errorMessage.includes("perday") ||
+      errorMessage.includes("per_day") ||
+      errorMessage.includes("requests_per_day")
+    );
+
     const isNonRetryable =
+      isDailyQuotaExhausted ||
       errorMessage.includes("400") ||
       errorMessage.includes("404") ||
       errorMessage.includes("not found") ||
@@ -350,6 +358,9 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
       errorMessage.includes("permission");
 
     if (isNonRetryable) {
+      if (isDailyQuotaExhausted) {
+        throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или контактирајте го администраторот за надградба на планот.");
+      }
       console.error("Non-retryable AI error:", error);
       throw error;
     }
