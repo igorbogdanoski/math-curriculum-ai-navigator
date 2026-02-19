@@ -261,6 +261,9 @@ function minifyContext(context: GenerationContext): any {
         concepts: context.concepts?.map(c => ({ title: c.title, description: safeString(c.description, 150), assessmentStandards: c.assessmentStandards?.slice(0, 5) })),
         standard: context.standard ? { code: context.standard.code, description: safeString(context.standard.description, 200) } : undefined,
         scenario: safeString(context.scenario, 500),
+        bloomEmphasis: context.bloomDistribution && Object.keys(context.bloomDistribution).length > 0
+            ? Object.keys(context.bloomDistribution)
+            : undefined,
     };
 }
 
@@ -548,7 +551,11 @@ export const realGeminiService = {
   },
 
   async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string): Promise<AIGeneratedAssessment> {
-    const prompt = `Генерирај ${type} со ${numQuestions} прашања. Типови: ${questionTypes.join(', ')}. Диференцијација: ${differentiationLevel}. ${customInstruction || ''}`;
+    const bloomLevels = context.bloomDistribution && Object.keys(context.bloomDistribution).length > 0
+      ? Object.keys(context.bloomDistribution)
+      : null;
+    const bloomPart = bloomLevels ? ` Нагласени Блумови нивоа: ${bloomLevels.join(', ')}.` : '';
+    const prompt = `Генерирај ${type} со ${numQuestions} прашања. Типови: ${questionTypes.join(', ')}. Диференцијација: ${differentiationLevel}.${bloomPart} ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING } }, required: ["type", "question", "answer"] } } }, required: ["title", "questions"] };
     const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });

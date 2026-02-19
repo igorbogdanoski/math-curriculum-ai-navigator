@@ -1,12 +1,65 @@
 import React from 'react';
 import type { GeneratorState, GeneratorAction } from '../../hooks/useGeneratorState';
-import { QuestionType, type DifferentiationLevel, type TeachingProfile, type StudentProfile } from '../../types';
+import { QuestionType, type DifferentiationLevel, type TeachingProfile, type StudentProfile, type BloomDistribution } from '../../types';
 
 interface MaterialOptionsProps {
     state: GeneratorState;
     dispatch: React.Dispatch<GeneratorAction>;
     user: TeachingProfile | null;
 }
+
+const BLOOM_LEVELS: { key: keyof BloomDistribution; label: string; inactiveClass: string; activeClass: string }[] = [
+    { key: 'Remembering',   label: 'Паметење',   inactiveClass: 'border-pink-300 text-pink-700',   activeClass: 'bg-pink-500 border-pink-500 text-white' },
+    { key: 'Understanding', label: 'Разбирање',  inactiveClass: 'border-orange-300 text-orange-700', activeClass: 'bg-orange-500 border-orange-500 text-white' },
+    { key: 'Applying',      label: 'Примена',    inactiveClass: 'border-yellow-400 text-yellow-700', activeClass: 'bg-yellow-500 border-yellow-500 text-white' },
+    { key: 'Analyzing',     label: 'Анализа',    inactiveClass: 'border-green-400 text-green-700',   activeClass: 'bg-green-500 border-green-500 text-white' },
+    { key: 'Evaluating',    label: 'Евалуација', inactiveClass: 'border-blue-400 text-blue-700',    activeClass: 'bg-blue-500 border-blue-500 text-white' },
+    { key: 'Creating',      label: 'Создавање',  inactiveClass: 'border-purple-400 text-purple-700', activeClass: 'bg-purple-500 border-purple-500 text-white' },
+];
+
+const BloomDistributionSelector: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispatch'>> = ({ state, dispatch }) => {
+    const { bloomDistribution } = state;
+    const selectedLevels = Object.keys(bloomDistribution) as (keyof BloomDistribution)[];
+
+    const toggleLevel = (key: keyof BloomDistribution) => {
+        const newDist = { ...bloomDistribution };
+        if (newDist[key] !== undefined) {
+            delete newDist[key];
+        } else {
+            newDist[key] = 1;
+        }
+        dispatch({ type: 'SET_FIELD', payload: { field: 'bloomDistribution', value: newDist } });
+    };
+
+    return (
+        <div className="md:col-span-2 pt-4 border-t mt-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+                Нагласок по Блумова таксономија
+                <span className="ml-2 text-xs font-normal text-gray-400">(опционално — AI ги вклучува сите нивоа ако не е избрано)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+                {BLOOM_LEVELS.map(({ key, label, inactiveClass, activeClass }) => {
+                    const isActive = bloomDistribution[key] !== undefined;
+                    return (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => toggleLevel(key)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${isActive ? activeClass : `bg-white ${inactiveClass} hover:opacity-80`}`}
+                        >
+                            {label}
+                        </button>
+                    );
+                })}
+            </div>
+            {selectedLevels.length > 0 && (
+                <p className="text-xs text-indigo-600 font-medium mt-2">
+                    ✓ AI ќе нагласи: {selectedLevels.map(k => BLOOM_LEVELS.find(b => b.key === k)?.label).join(' → ')}
+                </p>
+            )}
+        </div>
+    );
+};
 
 const ScenarioOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispatch'>> = ({ state, dispatch }) => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
@@ -60,6 +113,7 @@ const AssessmentOptions: React.FC<MaterialOptionsProps> = ({ state, dispatch, us
         <div><label htmlFor="numQuestions" className="block text-sm font-medium text-gray-700">Број на прашања</label><input id="numQuestions" type="number" value={state.numQuestions} onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'numQuestions', value: Math.max(1, parseInt(e.target.value) || 1)}})} min="1" max="20" className="mt-1 block w-full p-2 border-gray-300 rounded-md" /></div>
         <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700">Ниво на диференцијација</label><div className="flex items-center space-x-4 mt-2"><div className="flex items-center"><input id="diff-type-standard" name="diff-type" type="radio" checked={!state.useStudentProfiles} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'useStudentProfiles', value: false }})} className="h-4 w-4 text-brand-primary focus:ring-brand-secondary border-gray-300" /><label htmlFor="diff-type-standard" className="ml-2 block text-sm text-gray-900">Според ниво (поддршка/стандард/напредни)</label></div><div className="flex items-center"><input id="diff-type-profile" name="diff-type" type="radio" checked={state.useStudentProfiles} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'useStudentProfiles', value: true }})} className="h-4 w-4 text-brand-primary focus:ring-brand-secondary border-gray-300" disabled={!user?.studentProfiles || user.studentProfiles.length === 0}/><label htmlFor="diff-type-profile" className="ml-2 block text-sm text-gray-900">Според профили на ученици</label></div></div></div>
         <div className="md:col-span-2">{state.useStudentProfiles ? (<div className="animate-fade-in"><label htmlFor="student-profiles" className="block text-sm font-medium text-gray-700">Избери профили</label><select id="student-profiles" multiple value={state.selectedStudentProfileIds} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedStudentProfileIds', value: Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value) }})} className="mt-1 block w-full p-2 border-gray-300 rounded-md h-24">{user?.studentProfiles?.map((p: StudentProfile) => <option key={p.id} value={p.id}>{p.name}</option>)}</select><p className="text-xs text-gray-500 mt-1">Држете Ctrl (или Cmd) за да изберете повеќе профили.</p></div>) : (<div className="animate-fade-in"><div className="flex flex-col space-y-2 mt-2">{(['standard', 'support', 'advanced'] as DifferentiationLevel[]).map(level => { const labels: Record<DifferentiationLevel, string> = { standard: 'Стандардно', support: 'Верзија за поддршка', advanced: 'Верзија за напредни ученици', }; return (<div key={level} className="flex items-center"><input id={`diff-level-${level}`} name="differentiationLevel" type="radio" value={level} checked={state.differentiationLevel === level} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: level }})} className="h-4 w-4 text-brand-primary focus:ring-brand-secondary border-gray-300" /><label htmlFor={`diff-level-${level}`} className="ml-2 block text-sm text-gray-900">{labels[level]}</label></div>)})}</div></div>)}</div>
+        <BloomDistributionSelector state={state} dispatch={dispatch} />
         <div className="md:col-span-2 pt-2 border-t mt-2">
              <div className="relative flex items-start">
                 <div className="flex items-center h-5">

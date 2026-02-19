@@ -51,7 +51,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const { showModal, hideModal } = useModal();
     
     const [state, dispatch] = useGeneratorState(props);
-    const { materialType, contextType, selectedGrade, selectedTopic, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile, illustrationPrompt, activityTitle, useStudentProfiles, selectedStudentProfileIds, questionTypes, includeSelfAssessment } = state;
+    const { materialType, contextType, selectedGrade, selectedTopic, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile, illustrationPrompt, activityTitle, useStudentProfiles, selectedStudentProfileIds, questionTypes, includeSelfAssessment, bloomDistribution } = state;
 
     // API State
     const [isGenerating, setIsLoading] = useState(false);
@@ -231,7 +231,8 @@ ${generatedMaterial.assessmentIdea}
                 }
                 
                 const scenario = contextType === 'ACTIVITY' ? `Креирај материјал за учење базиран на следнава активност од наставната програма: "${selectedActivity}"` : undefined;
-                context = { type: contextType, grade: gradeData!, topic, concepts, scenario };
+                const activeBlooms = Object.keys(bloomDistribution).length > 0 ? bloomDistribution : undefined;
+                context = { type: contextType, grade: gradeData!, topic, concepts, scenario, bloomDistribution: activeBlooms };
                 if (!tempActivityTitle && materialType === 'RUBRIC') {
                     tempActivityTitle = contextType === 'ACTIVITY' ? selectedActivity : `Активност за ${concepts[0]?.title || topic.title}`;
                 }
