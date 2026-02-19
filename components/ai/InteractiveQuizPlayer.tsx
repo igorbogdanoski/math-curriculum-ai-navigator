@@ -14,11 +14,17 @@ export interface Question {
   type?: QuestionType | string;
 }
 
+export interface QuizCompletionResult {
+  score: number;
+  correctCount: number;
+  totalQuestions: number;
+}
+
 interface Props {
   title?: string;
   questions?: Question[];
   quiz?: AIGeneratedAssessment | AIGeneratedPracticeMaterial | any;
-  onComplete?: (score: number) => void;
+  onComplete?: (result: QuizCompletionResult) => void;
   onClose?: () => void;
 }
 
@@ -49,6 +55,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   // State
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
   const [streak, setStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
@@ -93,8 +100,9 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       const timeBonus = timeLeft * 10;
       const streakBonus = streak * 50;
       const totalPoints = 100 + timeBonus + streakBonus;
-      
+
       setScore(prev => prev + totalPoints);
+      setCorrectCount(prev => prev + 1);
       setPointsEarned(totalPoints);
       setStreak(prev => prev + 1);
       triggerConfetti(streak + 1);
@@ -128,13 +136,18 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
   const finishQuiz = () => {
     setShowResult(true);
-    if (onComplete) onComplete(score);
+    if (onComplete) onComplete({
+      score,
+      correctCount,
+      totalQuestions: normalizedQuestions.length,
+    });
     confetti({ particleCount: 200, spread: 100 });
   };
 
   const resetQuiz = () => {
     setCurrentIndex(0);
     setScore(0);
+    setCorrectCount(0);
     setStreak(0);
     setShowResult(false);
     setSelectedOption(null);
@@ -174,6 +187,10 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
           <div className="bg-blue-50 rounded-2xl p-6 mb-8 border border-blue-100">
             <p className="text-xs text-blue-600 font-black uppercase tracking-widest mb-1">Вкупно Поени</p>
             <div className="text-6xl font-black text-blue-900">{score.toLocaleString()}</div>
+            <p className="text-sm text-blue-500 font-bold mt-2">
+              {correctCount} / {normalizedQuestions.length} точни одговори
+              ({Math.round((correctCount / normalizedQuestions.length) * 100)}%)
+            </p>
           </div>
 
           <div className="flex flex-col gap-3">

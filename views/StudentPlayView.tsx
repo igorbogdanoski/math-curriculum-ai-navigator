@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
+import { firestoreService } from '../services/firestoreService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { ICONS } from '../constants';
@@ -88,7 +89,7 @@ export const StudentPlayView: React.FC = () => {
 
       <main className="w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-white/20 relative min-h-[500px]">
         {quizData && (
-          <InteractiveQuizPlayer 
+          <InteractiveQuizPlayer
             title={quizData.title || 'Квиз'}
             questions={(quizData.items || quizData.questions || []).map((item: any) => ({
               question: item.text || item.question,
@@ -96,6 +97,16 @@ export const StudentPlayView: React.FC = () => {
               answer: item.answer,
               explanation: item.solution || item.explanation
             }))}
+            onComplete={({ score, correctCount, totalQuestions }) => {
+              firestoreService.saveQuizResult({
+                quizId: id || 'unknown',
+                quizTitle: quizData.title || 'Квиз',
+                score,
+                correctCount,
+                totalQuestions,
+                percentage: Math.round((correctCount / totalQuestions) * 100),
+              });
+            }}
             onClose={() => window.location.hash = '/'}
           />
         )}

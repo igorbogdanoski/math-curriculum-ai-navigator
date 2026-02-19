@@ -1,6 +1,16 @@
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
+
+export interface QuizResult {
+  quizId: string;
+  quizTitle: string;
+  score: number;
+  correctCount: number;
+  totalQuestions: number;
+  percentage: number;
+  playedAt?: any;
+}
 
 export interface CachedMaterial {
   id: string;
@@ -114,6 +124,21 @@ export const firestoreService = {
     } catch (error) {
       console.error("Error fetching latest quiz:", error);
       return null;
+    }
+  },
+
+  /**
+   * Saves a quiz result to the quiz_results collection.
+   * Works for anonymous students (no auth required).
+   */
+  saveQuizResult: async (result: QuizResult): Promise<void> => {
+    try {
+      await addDoc(collection(db, "quiz_results"), {
+        ...result,
+        playedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error saving quiz result:", error);
     }
   },
 
