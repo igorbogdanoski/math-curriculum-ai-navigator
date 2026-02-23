@@ -21,14 +21,15 @@ import { dashboardTourSteps } from '../tours/tour-steps';
 import { useProactiveSuggestions } from '../hooks/useProactiveSuggestions';
 import { ProactiveSuggestionCard } from '../components/ai/ProactiveSuggestionCard';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
+import { useNavigation } from '../contexts/NavigationContext';
 import { ICONS } from '../constants';
 
 declare var introJs: any;
 
-const ChartTabs: React.FC<{ 
-    monthlyActivity: any; 
-    topicCoverage: any; 
-    isLoading: boolean 
+const ChartTabs: React.FC<{
+    monthlyActivity: any;
+    topicCoverage: any;
+    isLoading: boolean;
 }> = ({ monthlyActivity, topicCoverage, isLoading }) => {
     const [activeTab, setActiveTab] = useState<'activity' | 'topics'>('activity');
 
@@ -36,14 +37,16 @@ const ChartTabs: React.FC<{
         <Card className="h-full flex flex-col min-h-[320px]">
             <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-1">
                 <div className="flex space-x-6">
-                    <button 
+                    <button
+                        type="button"
                         onClick={() => setActiveTab('activity')}
                         className={`text-sm font-semibold pb-3 -mb-1.5 transition-all duration-200 flex items-center gap-2 ${activeTab === 'activity' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         <ICONS.chart className="w-4 h-4" />
                         Месечна Активност
                     </button>
-                    <button 
+                    <button
+                        type="button"
                         onClick={() => setActiveTab('topics')}
                         className={`text-sm font-semibold pb-3 -mb-1.5 transition-all duration-200 flex items-center gap-2 ${activeTab === 'topics' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-400 hover:text-gray-600'}`}
                     >
@@ -52,7 +55,7 @@ const ChartTabs: React.FC<{
                     </button>
                 </div>
             </div>
-            
+
             <div className="flex-1 relative w-full">
                 {isLoading ? (
                     <div className="w-full h-full flex items-center justify-center">
@@ -60,11 +63,11 @@ const ChartTabs: React.FC<{
                     </div>
                 ) : (
                     <div className="absolute inset-0 w-full h-full">
-                         {activeTab === 'activity' ? (
-                             <MonthlyActivityChart data={monthlyActivity} />
-                         ) : (
-                             <TopicCoverageChart data={topicCoverage} />
-                         )}
+                        {activeTab === 'activity' ? (
+                            <MonthlyActivityChart data={monthlyActivity} />
+                        ) : (
+                            <TopicCoverageChart data={topicCoverage} />
+                        )}
                     </div>
                 )}
             </div>
@@ -74,6 +77,7 @@ const ChartTabs: React.FC<{
 
 export const HomeView: React.FC = () => {
   const { user } = useAuth();
+  const { navigate } = useNavigation();
   const { getLessonPlan, todaysLesson, tomorrowsLesson } = usePlanner();
   const { lastVisited } = useLastVisited();
   const { monthlyActivity, topicCoverage, overallStats, isLoading: isStatsLoading } = useDashboardStats();
@@ -81,12 +85,9 @@ export const HomeView: React.FC = () => {
   const { toursSeen, markTourAsSeen } = useUserPreferences();
   const { suggestion, isLoading: isSuggestionLoading, dismissSuggestion } = useProactiveSuggestions();
   const { openGeneratorPanel } = useGeneratorPanel();
-  
-  useEffect(() => {
-    // Only start tour if data is loaded and user hasn't seen it
-    if (toursSeen.dashboard === true || typeof introJs === 'undefined' || isStatsLoading || isRecsLoading) return;
 
-    // Short timeout to ensure DOM paint is complete after loading becomes false
+  useEffect(() => {
+    if (toursSeen.dashboard === true || typeof introJs === 'undefined' || isStatsLoading || isRecsLoading) return;
     const timer = setTimeout(() => {
         const tour = introJs();
         tour.setOptions({
@@ -101,8 +102,7 @@ export const HomeView: React.FC = () => {
         tour.oncomplete(() => markTourAsSeen('dashboard'));
         tour.onexit(() => markTourAsSeen('dashboard'));
         tour.start();
-    }, 500); 
-
+    }, 500);
     return () => clearTimeout(timer);
   }, [toursSeen, markTourAsSeen, isStatsLoading, isRecsLoading]);
 
@@ -122,20 +122,74 @@ export const HomeView: React.FC = () => {
 
   const firstName = user?.name?.split(' ')[0] || 'Корисник';
 
+  // Macedonian date, first letter capitalised
+  const todayFormatted = new Date().toLocaleDateString('mk-MK', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  }).replace(/^\w/, (c) => c.toUpperCase());
+
   return (
-    <div className="p-4 md:p-6 max-w-[1600px] mx-auto animate-fade-in space-y-6">
-      
-      {/* Modern Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
-        <header data-tour="dashboard-header">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-brand-primary tracking-tight">
-                Здраво, <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-accent">{firstName}</span>! 👋
+    <div className="min-h-full bg-slate-50/70 p-4 md:p-6 max-w-[1600px] mx-auto animate-fade-in space-y-5">
+
+      {/* ── HERO HEADER ──────────────────────────────────────────── */}
+      <div
+        data-tour="dashboard-header"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-primary via-blue-700 to-indigo-700 px-6 py-6 shadow-lg text-white"
+      >
+        {/* dot-grid texture overlay */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle,white_1.5px,transparent_0)] [background-size:22px_22px]" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          {/* Date + greeting + today's lesson */}
+          <div>
+            <p className="text-white/60 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <ICONS.planner className="w-3.5 h-3.5" />
+              {todayFormatted}
+            </p>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-tight">
+              Здраво, {firstName}
             </h1>
-            <p className="text-gray-500 text-md mt-1">Подготвени за нов продуктивен ден?</p>
-        </header>
+            {todaysLesson ? (
+              <p className="mt-1.5 text-white/80 text-sm flex items-center gap-1.5">
+                <ICONS.bookOpen className="w-4 h-4 flex-shrink-0" />
+                <span>Денес: <span className="text-white font-semibold">{todaysLesson.title}</span></span>
+              </p>
+            ) : (
+              <p className="mt-1.5 text-white/60 text-sm">
+                Нема закажани лекции денес —{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/planner')}
+                  className="underline hover:text-white transition-colors"
+                >
+                  додај во планерот
+                </button>
+              </p>
+            )}
+          </div>
+
+          {/* Primary CTAs */}
+          <div className="flex flex-row sm:flex-col gap-2 sm:items-end flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => openGeneratorPanel({})}
+              className="flex items-center gap-2 bg-white text-brand-primary text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-white/90 transition shadow-md active:scale-95 whitespace-nowrap"
+            >
+              <ICONS.sparkles className="w-4 h-4" />
+              AI Генератор
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/planner/lesson/new')}
+              className="flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-white/20 whitespace-nowrap"
+            >
+              <ICONS.plus className="w-4 h-4" />
+              Нова подготовка
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Proactive AI Suggestion Banner */}
+      {/* Proactive AI Suggestion */}
       {!isSuggestionLoading && suggestion && (
         <div className="animate-slide-in-from-right">
             <ProactiveSuggestionCard
@@ -146,49 +200,49 @@ export const HomeView: React.FC = () => {
         </div>
       )}
 
-      {/* BENTO GRID LAYOUT */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        
-        {/* CELL 1: Launchpad (Tall on desktop) */}
+      {/* ── BENTO GRID ───────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+
+        {/* CELL 1: Quick AI Start */}
         <div className="md:col-span-1 lg:col-span-1 row-span-2 h-full" data-tour="dashboard-quick-start">
-             <QuickAIStart todaysLesson={todaysLesson} tomorrowsLesson={tomorrowsLesson} getLessonPlan={getLessonPlan} />
+            <QuickAIStart todaysLesson={todaysLesson} tomorrowsLesson={tomorrowsLesson} getLessonPlan={getLessonPlan} />
         </div>
 
-        {/* CELL 2: Stats Overview (Wide on desktop) */}
+        {/* CELL 2: Stats Overview */}
         <div className="md:col-span-2 lg:col-span-2 h-full" data-tour="dashboard-progress">
-             {isStatsLoading ? (
+            {isStatsLoading ? (
                 <Card><SkeletonLoader type="paragraph" /></Card>
             ) : (
                 <OverallProgress stats={overallStats} />
             )}
         </div>
 
-         {/* CELL 3: Schedule (Tall column on large screens) */}
-         <div className="md:col-span-3 lg:col-span-1 md:row-span-2 h-full min-h-[300px]" data-tour="dashboard-schedule">
-             <WeeklySchedule />
+        {/* CELL 3: Weekly Schedule */}
+        <div className="md:col-span-3 lg:col-span-1 md:row-span-2 h-full min-h-[300px]" data-tour="dashboard-schedule">
+            <WeeklySchedule />
         </div>
 
-        {/* CELL 4: Charts (Combined Tabbed Interface) */}
+        {/* CELL 4: Charts */}
         <div className="md:col-span-2 lg:col-span-2 h-80">
             <ChartTabs monthlyActivity={monthlyActivity} topicCoverage={topicCoverage} isLoading={isStatsLoading} />
         </div>
-        
-         {/* CELL 5: Standards Coverage (Teacher's Portfolio Killer Feature) */}
-         <div className="md:col-span-1" data-tour="dashboard-standards">
+
+        {/* CELL 5: Standards Coverage */}
+        <div className="md:col-span-1" data-tour="dashboard-standards">
             {isStatsLoading ? (
                 <Card><SkeletonLoader type="paragraph" /></Card>
             ) : (
                 <StandardsCoverageCard data={overallStats.gradePercentages} />
             )}
-         </div>
+        </div>
 
-         {/* CELL 6: Continue Browsing */}
-         <div className="md:col-span-1">
+        {/* CELL 6: Continue Browsing */}
+        <div className="md:col-span-1">
             <ContinueBrowsing lastVisited={lastVisited} />
-         </div>
+        </div>
 
-         {/* CELL 6: Recommendations (Wide Bottom) */}
-         <div className="md:col-span-2 lg:col-span-3" data-tour="dashboard-recommendations">
+        {/* CELL 7: AI Recommendations */}
+        <div className="md:col-span-2 lg:col-span-3" data-tour="dashboard-recommendations">
             <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-bold text-brand-primary flex items-center gap-2">
                     <ICONS.sparkles className="w-5 h-5 text-brand-accent" />
@@ -203,7 +257,10 @@ export const HomeView: React.FC = () => {
                 </button>
             </div>
             {isRecsLoading ? (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><Card><SkeletonLoader type="paragraph"/></Card><Card><SkeletonLoader type="paragraph"/></Card></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card><SkeletonLoader type="paragraph"/></Card>
+                    <Card><SkeletonLoader type="paragraph"/></Card>
+                </div>
             ) : recsError || recommendations.length === 0 ? (
                 <Card className="flex items-center justify-center bg-gray-50 border-dashed border-2 border-gray-200 py-8">
                     <div className="text-center">
@@ -219,7 +276,8 @@ export const HomeView: React.FC = () => {
                     ))}
                 </div>
             )}
-         </div>
+        </div>
+
       </div>
     </div>
   );
