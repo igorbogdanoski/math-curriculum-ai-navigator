@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
+import { useNavigation } from '../../contexts/NavigationContext';
 
 interface GradePercentage {
     grade: number;
@@ -12,6 +13,7 @@ interface StandardsCoverageCardProps {
 }
 
 export const StandardsCoverageCard: React.FC<StandardsCoverageCardProps> = ({ data }) => {
+    const { navigate } = useNavigation();
     return (
         <Card className="h-full flex flex-col">
             <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
@@ -45,9 +47,13 @@ export const StandardsCoverageCard: React.FC<StandardsCoverageCardProps> = ({ da
             
             <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
                 <p className="text-[10px] text-gray-400 leading-tight">
-                    Процентот се пресметува врз основа на мапирани концепти во вашите подготовки.
+                    Врз основа на концепти мапирани во вашите подготовки.
                 </p>
-                <button className="text-brand-primary hover:text-brand-dark transition-colors">
+                <button
+                    onClick={() => navigate('/reports/coverage')}
+                    title="Детална анализа на покриеност"
+                    className="text-brand-primary hover:text-brand-dark transition-colors hover:bg-blue-50 rounded-full p-1"
+                >
                     <ICONS.arrowRight className="w-4 h-4" />
                 </button>
             </div>

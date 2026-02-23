@@ -19,7 +19,7 @@ export const ContinueBrowsing: React.FC<ContinueBrowsingProps> = ({ lastVisited 
 
     return (
         <Card onClick={lastVisited ? () => navigate(lastVisited.path) : () => navigate('/explore')}>
-             <h2 className="text-2xl font-semibold text-brand-primary mb-4">Продолжи каде што застана</h2>
+             <h2 className="text-lg font-bold text-brand-primary mb-3">Продолжи каде што застана</h2>
              {lastVisited ? (
                 <div className="flex items-center gap-3">
                     <Icon className="w-6 h-6 text-brand-secondary flex-shrink-0" />

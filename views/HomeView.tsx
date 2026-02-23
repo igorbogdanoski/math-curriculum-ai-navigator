@@ -189,17 +189,31 @@ export const HomeView: React.FC = () => {
 
          {/* CELL 6: Recommendations (Wide Bottom) */}
          <div className="md:col-span-2 lg:col-span-3" data-tour="dashboard-recommendations">
+            <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold text-brand-primary flex items-center gap-2">
+                    <ICONS.sparkles className="w-5 h-5 text-brand-accent" />
+                    AI Препораки
+                </h2>
+                <button
+                    type="button"
+                    onClick={() => window.location.hash = '#/explore'}
+                    className="text-xs font-bold text-brand-secondary hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors"
+                >
+                    Истражи сè &rarr;
+                </button>
+            </div>
             {isRecsLoading ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><Card><SkeletonLoader type="paragraph"/></Card><Card><SkeletonLoader type="paragraph"/></Card></div>
             ) : recsError || recommendations.length === 0 ? (
-                <Card className="h-full flex items-center justify-center bg-gray-50 border-dashed border-2 border-gray-200 py-8">
+                <Card className="flex items-center justify-center bg-gray-50 border-dashed border-2 border-gray-200 py-8">
                     <div className="text-center">
-                        <ICONS.check className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                        <p className="text-gray-500 font-medium">Сите препораки се завршени за денес!</p>
+                        <ICONS.sparkles className="w-8 h-8 text-brand-accent mx-auto mb-2 opacity-50" />
+                        <p className="text-gray-500 font-medium">Нема нови препораки за денес.</p>
+                        <p className="text-gray-400 text-sm mt-1">Додај лекции во планерот за персонализирани предлози.</p>
                     </div>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 h-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {recommendations.slice(0, 3).map((rec: AIRecommendation, index: number) => (
                         <RecommendationCard key={index} recommendation={rec} />
                     ))}
