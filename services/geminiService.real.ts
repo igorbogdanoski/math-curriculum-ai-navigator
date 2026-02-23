@@ -647,7 +647,7 @@ export const realGeminiService = {
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
     const result = await generateAndParseJSON<AIGeneratedAssessment>(contents, schema, DEFAULT_MODEL, AIGeneratedAssessmentSchema);
     if (canCache && cacheKey) {
-        await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'assessment', gradeLevel: context.grade.level, createdAt: serverTimestamp() }).catch(console.error);
+        await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'assessment', conceptId: conceptCacheId !== 'gen' ? conceptCacheId : undefined, gradeLevel: context.grade.level, createdAt: serverTimestamp() }).catch(console.error);
     }
     return result;
   },

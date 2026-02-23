@@ -8,6 +8,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { useNotification } from '../contexts/NotificationContext';
 
 interface ExamplesGalleryViewProps {
 }
@@ -76,30 +77,80 @@ const LessonPlanCard: React.FC<{ plan: LessonPlan; navigate: (path: string) => v
     );
 };
 
+const TYPE_LABELS: Record<string, string> = {
+    analogy: 'Аналогија',
+    outline: 'Презентација',
+    quiz: 'Квиз',
+    discussion: 'Прашања за дискусија',
+    problems: 'Задачи',
+    assessment: 'Тест / Проценка',
+    rubric: 'Рубрика',
+    thematicplan: 'Тематски план',
+    ideas: 'Идеи за час',
+    solver: 'Решен пример',
+};
+
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+    analogy: <ICONS.lightbulb className="w-4 h-4" />,
+    outline: <ICONS.mindmap className="w-4 h-4" />,
+    quiz: <ICONS.check className="w-4 h-4" />,
+    discussion: <ICONS.assistant className="w-4 h-4" />,
+    problems: <ICONS.edit className="w-4 h-4" />,
+    assessment: <ICONS.chart className="w-4 h-4" />,
+    rubric: <ICONS.check className="w-4 h-4" />,
+    thematicplan: <ICONS.planner className="w-4 h-4" />,
+    ideas: <ICONS.sparkles className="w-4 h-4" />,
+    solver: <ICONS.bookOpen className="w-4 h-4" />,
+};
+
+const formatCachedDate = (createdAt: any): string => {
+    if (!createdAt) return '';
+    // Firestore Timestamp object
+    if (typeof createdAt?.toDate === 'function') return createdAt.toDate().toLocaleDateString('mk-MK');
+    // ISO string or parseable date
+    const d = new Date(createdAt);
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('mk-MK');
+};
+
+const renderMaterialContent = (material: CachedMaterial) => {
+    const c = material.content;
+    if (typeof c === 'string') {
+        return <MathRenderer text={c} />;
+    }
+    if (c && typeof c === 'object') {
+        // Structured content — show title + item count summary
+        const title = c.title || c.thematicUnit || '';
+        const count = c.questions?.length ?? c.items?.length ?? c.lessons?.length ?? null;
+        return (
+            <div>
+                {title && <p className="font-semibold text-gray-800">{title}</p>}
+                {count !== null && (
+                    <p className="text-xs text-gray-500 mt-1">
+                        {count} {material.type === 'assessment' ? 'прашања' : material.type === 'rubric' ? 'критериуми' : 'ставки'}
+                    </p>
+                )}
+                {!title && !count && <p className="italic text-gray-400 text-xs">Структурирана содржина</p>}
+            </div>
+        );
+    }
+    return null;
+};
+
+const getMaterialCopyText = (content: any): string => {
+    if (typeof content === 'string') return content;
+    return JSON.stringify(content, null, 2);
+};
+
 const MaterialCard: React.FC<{ material: CachedMaterial; conceptName: string }> = ({ material, conceptName }) => {
+    const { addNotification } = useNotification();
     const [hasRated, setHasRated] = useState(false);
-    const [ratings, setRatings] = useState({ 
-        helpful: material.helpfulCount || 0, 
-        notHelpful: material.notHelpfulCount || 0 
+    const [ratings, setRatings] = useState({
+        helpful: material.helpfulCount || 0,
+        notHelpful: material.notHelpfulCount || 0
     });
-
-    const typeLabels = {
-        analogy: 'Аналогија',
-        outline: 'Презентација',
-        quiz: 'Квиз',
-        problems: 'Задачи'
-    };
-
-    const typeIcons = {
-        analogy: <ICONS.sparkles className="w-4 h-4" />,
-        outline: <ICONS.mindmap className="w-4 h-4" />,
-        quiz: <ICONS.check className="w-4 h-4" />,
-        problems: <ICONS.edit className="w-4 h-4" />
-    };
 
     const handleRate = async (isHelpful: boolean) => {
         if (hasRated) return;
-        
         const success = await firestoreService.rateCachedMaterial(material.id, isHelpful);
         if (success) {
             setHasRated(true);
@@ -110,15 +161,24 @@ const MaterialCard: React.FC<{ material: CachedMaterial; conceptName: string }> 
         }
     };
 
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(getMaterialCopyText(material.content));
+            addNotification('Копирано во меморија!', 'success');
+        } catch {
+            addNotification('Копирањето не успеа.', 'error');
+        }
+    };
+
     return (
         <Card className="flex flex-col h-full border-l-4 border-l-brand-accent">
             <div className="flex justify-between items-start mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-brand-accent flex items-center gap-1">
-                    {typeIcons[material.type] || <ICONS.sparkles className="w-4 h-4" />}
-                    {typeLabels[material.type] || material.type}
+                    {TYPE_ICONS[material.type] ?? <ICONS.sparkles className="w-4 h-4" />}
+                    {TYPE_LABELS[material.type] ?? material.type}
                 </span>
                 <span className="text-xs text-gray-400">
-                    {new Date(material.timestamp).toLocaleDateString('mk-MK')}
+                    {formatCachedDate(material.createdAt)}
                 </span>
             </div>
             <h3 className="text-lg font-bold text-gray-800 mb-1">{conceptName}</h3>
@@ -127,7 +187,8 @@ const MaterialCard: React.FC<{ material: CachedMaterial; conceptName: string }> 
                     {material.gradeLevel}. одделение
                 </span>
                 <div className="flex items-center gap-2 ml-auto no-print">
-                    <button 
+                    <button
+                        type="button"
                         onClick={() => handleRate(true)}
                         disabled={hasRated}
                         className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-colors ${hasRated ? 'bg-green-50 text-green-700 border-green-200' : 'hover:bg-green-50 text-gray-500 hover:text-green-600 border-gray-200'}`}
@@ -135,7 +196,8 @@ const MaterialCard: React.FC<{ material: CachedMaterial; conceptName: string }> 
                     >
                         <ICONS.check className="w-3 h-3" /> {ratings.helpful}
                     </button>
-                    <button 
+                    <button
+                        type="button"
                         onClick={() => handleRate(false)}
                         disabled={hasRated}
                         className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-colors ${hasRated ? 'bg-red-50 text-red-700 border-red-200' : 'hover:bg-red-50 text-gray-500 hover:text-red-600 border-gray-200'}`}
@@ -146,14 +208,12 @@ const MaterialCard: React.FC<{ material: CachedMaterial; conceptName: string }> 
                 </div>
             </div>
             <div className="text-sm text-gray-600 line-clamp-6 flex-1 bg-gray-50 p-3 rounded-lg overflow-hidden relative">
-                <MathRenderer text={material.content} />
+                {renderMaterialContent(material)}
                 <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-gray-50 to-transparent"></div>
             </div>
-            <button 
-                onClick={() => {
-                    navigator.clipboard.writeText(material.content);
-                    alert('Копирано во меморија!');
-                }}
+            <button
+                type="button"
+                onClick={handleCopy}
                 className="mt-4 w-full flex items-center justify-center gap-2 text-sm font-semibold text-brand-primary hover:text-brand-secondary transition-colors"
             >
                 <ICONS.copy className="w-4 h-4" />

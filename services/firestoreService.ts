@@ -14,11 +14,12 @@ export interface QuizResult {
 
 export interface CachedMaterial {
   id: string;
-  content: any; // Changed from string to any to support objects
-  type: 'analogy' | 'outline' | 'quiz' | 'problems';
-  conceptId: string;
+  content: any;
+  type: 'analogy' | 'outline' | 'quiz' | 'discussion' | 'problems' | 'assessment' | 'rubric' | 'thematicplan' | 'ideas' | 'solver';
+  conceptId?: string;
+  topicId?: string;
   gradeLevel: number;
-  timestamp: string;
+  createdAt: any; // Firestore Timestamp or date string
   helpfulCount?: number;
   notHelpfulCount?: number;
 }
@@ -86,7 +87,7 @@ export const firestoreService = {
     try {
       const q = query(
         collection(db, "cached_ai_materials"),
-        orderBy("timestamp", "desc"),
+        orderBy("createdAt", "desc"),
         limit(maxCount)
       );
       const querySnapshot = await getDocs(q);
