@@ -105,7 +105,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }, [curriculum]);
 
     const conceptMap = useMemo(() => {
-        if (!curriculum) return new Map();
+        if (!curriculum) return new Map<string, { grade: Grade; topic: Topic; concept: Concept }>();
         const map = new Map<string, { grade: Grade; topic: Topic; concept: Concept }>();
         curriculum.grades.forEach((grade: Grade) => {
             grade.topics.forEach((topic: Topic) => {
