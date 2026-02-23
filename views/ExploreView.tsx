@@ -36,9 +36,9 @@ const GradeSelector: React.FC<{
 );
 
 const TopicCard: React.FC<{ topic: Topic; onSelect: () => void }> = ({ topic, onSelect }) => (
-  <Card 
-    onClick={onSelect} 
-    className="flex flex-col h-full group hover:scale-105 hover:shadow-xl"
+  <Card
+    onClick={onSelect}
+    className="flex flex-col h-full group"
   >
     <div className="flex-shrink-0 mb-3">
       <ICONS.bookOpen className="w-8 h-8 text-brand-accent" />
@@ -169,17 +169,22 @@ export const ExploreView: React.FC = () => {
             <div data-tour="explore-grade-selector" className="w-full md:w-64 p-4 bg-white border-b md:border-b-0 md:border-r flex-shrink-0">
                 <h2 className="text-xl font-bold text-brand-primary mb-4 px-2 hidden md:block">Одделенија</h2>
                 <div className="md:hidden">
-                     <label htmlFor="grade-select-mobile" className="sr-only">Избери одделение</label>
+                    <label htmlFor="grade-select-mobile" className="sr-only">Избери одделение</label>
+                    <div className="relative">
                         <select
                             id="grade-select-mobile"
                             value={selectedGradeId}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleGradeSelect(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-secondary focus:border-brand-secondary"
+                            className="w-full appearance-none bg-brand-primary text-white font-semibold px-4 py-3 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                         >
                             {curriculum.grades.map((grade: Grade) => (
                                 <option key={grade.id} value={grade.id}>{grade.title}</option>
                             ))}
                         </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                            <ICONS.chevronDown className="w-4 h-4 text-white" />
+                        </div>
+                    </div>
                 </div>
                 <div className="hidden md:block">
                     <GradeSelector grades={curriculum.grades} selectedGradeId={selectedGradeId} onSelect={handleGradeSelect} />
@@ -200,22 +205,54 @@ export const ExploreView: React.FC = () => {
                             </button>
                         )}
                     </div>
-                    <div data-tour="explore-search" className="relative mt-4">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3"><ICONS.search className="w-5 h-5 text-gray-400" /></span>
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                            placeholder="Пребарај теми или поими..."
-                            className="w-full max-w-md pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                        />
+                    <div data-tour="explore-search" className="mt-4">
+                        <div className="relative">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3"><ICONS.search className="w-5 h-5 text-gray-400" /></span>
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                                placeholder="Пребарај теми или поими..."
+                                className="w-full pl-10 pr-10 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                                    aria-label="Исчисти пребарување"
+                                >
+                                    <ICONS.close className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                        {searchQuery.trim() && (
+                            <p className="mt-2 text-sm text-gray-500">
+                                Пронајдени <span className="font-semibold text-brand-primary">{filteredTopics.length}</span> {filteredTopics.length === 1 ? 'тема' : 'теми'}
+                            </p>
+                        )}
                     </div>
                 </header>
 
                 <div data-tour="explore-topics-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in-up">
-                    {filteredTopics.map((topic: Topic) => (
-                        <TopicCard key={topic.id} topic={topic} onSelect={() => navigate(`/topic/${topic.id}`)} />
-                    ))}
+                    {filteredTopics.length > 0 ? (
+                        filteredTopics.map((topic: Topic) => (
+                            <TopicCard key={topic.id} topic={topic} onSelect={() => navigate(`/topic/${topic.id}`)} />
+                        ))
+                    ) : searchQuery.trim() ? (
+                        <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                            <ICONS.search className="w-12 h-12 text-gray-300 mb-4" />
+                            <p className="text-xl font-semibold text-gray-600">Нема резултати за „{searchQuery}"</p>
+                            <p className="text-gray-400 mt-2 text-sm">Обиди се со друг поим или тема.</p>
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery('')}
+                                className="mt-4 text-sm font-semibold text-brand-primary hover:underline"
+                            >
+                                Исчисти пребарување
+                            </button>
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </div>
