@@ -178,8 +178,16 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   if (!concept || !topic || !grade) return <SkeletonLoader type="page" />;
 
   return (
-    <div className="p-8 animate-fade-in pb-24 text-left">
-        <header className="mb-10">
+    <div className="p-4 md:p-8 animate-fade-in pb-24 text-left">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-sm text-gray-500 mb-4 flex-wrap">
+            <button type="button" onClick={() => navigate('/explore')} className="hover:text-brand-primary transition-colors">Програма</button>
+            <ICONS.chevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+            <button type="button" onClick={() => navigate(`/topic/${topic.id}`)} className="hover:text-brand-primary transition-colors max-w-[180px] truncate">{topic.title}</button>
+            <ICONS.chevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+            <span className="text-brand-primary font-semibold max-w-[180px] truncate">{concept.title}</span>
+        </nav>
+        <header className="mb-8 md:mb-10">
               <div className="flex items-center gap-4">
                 <h1 className="text-4xl font-black text-brand-primary tracking-tight">
                   <MathRenderer text={concept.title} />
@@ -207,18 +215,20 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
         </header>
 
         {/* Навигација низ табови */}
-        <div className="flex flex-wrap gap-3 border-b border-gray-100 pb-5 mb-10">
-            {[
-                { id: 'overview', label: '📖 Преглед', color: 'bg-blue-600' },
-                { id: 'activities', label: '💡 Активности', color: 'bg-emerald-600' },
-                { id: 'analogy', label: '🧠 Аналогија', color: 'bg-purple-600' },
-                { id: 'quiz', label: '🎮 Квиз', color: 'bg-indigo-600' }
-            ].map(t => (
-                <button 
+        <div className="flex flex-wrap gap-2 border-b border-gray-100 pb-4 mb-8 md:mb-10">
+            {([
+                { id: 'overview',    icon: GraduationCap, label: 'Преглед',     color: 'bg-blue-600' },
+                { id: 'activities',  icon: Lightbulb,     label: 'Активности',  color: 'bg-emerald-600' },
+                { id: 'analogy',     icon: Brain,         label: 'Аналогија',   color: 'bg-purple-600' },
+                { id: 'quiz',        icon: ICONS.quiz,    label: 'Квиз',        color: 'bg-indigo-600' },
+            ] as const).map(t => (
+                <button
                     key={t.id}
-                    onClick={() => setActiveTab(t.id as any)}
-                    className={`px-8 py-3 rounded-2xl text-sm font-black transition-all transform hover:scale-105 ${activeTab === t.id ? `${t.color} text-white shadow-xl` : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'}`}
+                    type="button"
+                    onClick={() => setActiveTab(t.id as typeof activeTab)}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold transition-all ${activeTab === t.id ? `${t.color} text-white shadow-lg` : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 hover:text-gray-700 hover:shadow-sm'}`}
                 >
+                    <t.icon className="w-4 h-4" />
                     {t.label}
                 </button>
             ))}
@@ -243,7 +253,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                     <Card className="border-indigo-100 bg-indigo-50/20 ring-1 ring-indigo-100">
                         <div className="flex justify-between items-center mb-8">
                           <h2 className="text-2xl font-black text-indigo-900 flex items-center gap-3">
-                             <Brain className="w-7 h-7 text-indigo-600" /> AI Тутор (ToT + CoT)
+                             <Brain className="w-7 h-7 text-indigo-600" /> AI Тутор — Решавање чекор по чекор
                           </h2>
                           {!solverData && (
                             <button onClick={handleGenerateSolver} disabled={loadingState.solver} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-sm font-black shadow-lg hover:bg-indigo-700 transition active:scale-95">
@@ -263,11 +273,14 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                         <h2 className="text-2xl font-black text-emerald-700 flex items-center gap-3">
                           <Lightbulb className="w-7 h-7" /> Предлози за часот
                         </h2>
-                        {!aiSuggestions && (
-                            <button onClick={handleGenerateIdeas} disabled={loadingState.ideas} className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-black shadow-md">
-                                {loadingState.ideas ? '⏳ Се генерира...' : '✨ Креирај идеи'}
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            onClick={() => { setAiSuggestions(null); handleGenerateIdeas(); }}
+                            disabled={loadingState.ideas}
+                            className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-emerald-700 transition disabled:opacity-60"
+                        >
+                            {loadingState.ideas ? 'Се генерира...' : aiSuggestions ? 'Регенерирај' : 'Креирај идеи'}
+                        </button>
                     </div>
                     {aiSuggestions && (
                       <div className="bg-emerald-50 p-8 rounded-3xl border-l-8 border-emerald-400">
@@ -284,11 +297,14 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                         <h2 className="text-2xl font-black text-purple-700 flex items-center gap-3">
                            <Sparkles className="w-7 h-7" /> Едноставно објаснување
                         </h2>
-                        {!analogy && (
-                            <button onClick={handleGenerateAnalogy} disabled={loadingState.analogy} className="bg-purple-600 text-white px-6 py-2.5 rounded-xl font-black">
-                                {loadingState.analogy ? '⏳ Размислувам...' : '🧠 Направи аналогија'}
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            onClick={() => { setAnalogy(null); handleGenerateAnalogy(); }}
+                            disabled={loadingState.analogy}
+                            className="bg-purple-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-60"
+                        >
+                            {loadingState.analogy ? 'Размислувам...' : analogy ? 'Регенерирај' : 'Направи аналогија'}
+                        </button>
                     </div>
                     {analogy && (
                       <div className="bg-purple-50 p-8 rounded-3xl text-purple-900 font-medium text-lg italic leading-relaxed shadow-inner">
@@ -303,9 +319,14 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                   <Card className="animate-in fade-in duration-500">
                     <div className="flex justify-between items-center mb-8">
                         <h2 className="text-2xl font-black text-indigo-700">Интерактивно Вежбање</h2>
-                        {!practiceMaterial && (
-                            <button onClick={handleGenerateQuiz} disabled={loadingState.quiz} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-black">
-                                {loadingState.quiz ? '⏳ Се подготвува...' : '🎲 Креирај квиз'}
+                        {!isPlayingQuiz && (
+                            <button
+                                type="button"
+                                onClick={() => { setPracticeMaterial(null); handleGenerateQuiz(); }}
+                                disabled={loadingState.quiz}
+                                className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-60"
+                            >
+                                {loadingState.quiz ? 'Се подготвува...' : practiceMaterial ? 'Нов квиз' : 'Креирај квиз'}
                             </button>
                         )}
                     </div>
