@@ -74,6 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         <NavItem path="/assistant" currentPath={currentPath} icon={ICONS.assistant} label="AI Асистент" onClick={onClose} />
         <NavItem path="/generator" currentPath={currentPath} icon={ICONS.generator} label="Генератор" onClick={onClose} isGenerator={true} />
         <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label="Анализа на Покриеност" onClick={onClose} />
+        <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label="Аналитика на Квизови" onClick={onClose} />
         <hr className="my-2 border-gray-200"/>
         <h2 className="px-4 pt-4 pb-1 text-xs font-bold text-gray-400 uppercase tracking-widest">Ресурси</h2>
         <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label="Мои подготовки" onClick={onClose} />

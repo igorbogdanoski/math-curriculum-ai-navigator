@@ -171,6 +171,25 @@ export const firestoreService = {
   },
 
   /**
+   * Fetches quiz results for the teacher analytics dashboard.
+   * Returns the most recent results, newest first.
+   */
+  fetchQuizResults: async (maxCount: number = 200): Promise<QuizResult[]> => {
+    try {
+      const q = query(
+        collection(db, "quiz_results"),
+        orderBy("playedAt", "desc"),
+        limit(maxCount)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(d => d.data() as QuizResult);
+    } catch (error) {
+      console.error("Error fetching quiz results:", error);
+      return [];
+    }
+  },
+
+  /**
    * Rates a cached material
    */
   rateCachedMaterial: async (materialId: string, isHelpful: boolean): Promise<boolean> => {

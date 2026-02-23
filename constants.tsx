@@ -89,6 +89,7 @@ export const ICONS: Record<string, any> = {
   arrowRight: ArrowRight,
   target: Target,
   chartBar: BarChart3,
+  analytics: BarChart3,
 };
 
 export const SUBJECTS = [
