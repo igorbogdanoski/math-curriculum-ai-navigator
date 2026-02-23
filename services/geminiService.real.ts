@@ -72,9 +72,50 @@ interface SafetySetting {
     threshold: string;
 }
 
+// --- DAILY QUOTA GUARD ---
+// Once the daily free-tier quota is exhausted, all calls fail immediately until the next UTC day.
+// This prevents wasted retries and auto-fetch drain.
+const DAILY_QUOTA_KEY = 'ai_daily_quota_exhausted';
+
+function checkDailyQuotaGuard(): void {
+  try {
+    const stored = localStorage.getItem(DAILY_QUOTA_KEY);
+    if (!stored) return;
+    const { date } = JSON.parse(stored);
+    const today = new Date().toISOString().slice(0, 10);
+    if (date === today) {
+      throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.");
+    }
+    localStorage.removeItem(DAILY_QUOTA_KEY); // New day — clear the flag
+  } catch (e) {
+    if (e instanceof RateLimitError) throw e;
+    // Ignore localStorage read errors silently
+  }
+}
+
+function markDailyQuotaExhausted(): void {
+  try {
+    localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify({
+      date: new Date().toISOString().slice(0, 10),
+      exhaustedAt: new Date().toISOString(),
+    }));
+  } catch { /* ignore write errors */ }
+}
+
+// Exported so the UI can check quota state without making an API call
+export function isDailyQuotaKnownExhausted(): boolean {
+  try {
+    const stored = localStorage.getItem(DAILY_QUOTA_KEY);
+    if (!stored) return false;
+    const { date } = JSON.parse(stored);
+    return date === new Date().toISOString().slice(0, 10);
+  } catch { return false; }
+}
+
 // --- QUEUE SYSTEM ---
-let lastRequest = Promise.resolve();
+let lastRequest: Promise<any> = Promise.resolve();
 async function queueRequest<T>(fn: () => Promise<T>): Promise<T> {
+  checkDailyQuotaGuard(); // Block immediately if daily quota is known exhausted
   const result = lastRequest.then(fn);
   lastRequest = result.catch(() => {});
   return result;
@@ -141,6 +182,11 @@ async function callGeminiProxy(params: {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        // If the proxy flagged this as a daily quota error, mark it and throw immediately
+        if (response.status === 429 && errorData.quotaType === 'daily') {
+          markDailyQuotaExhausted();
+          throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.");
+        }
         throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
@@ -340,12 +386,17 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
   } catch (error: any) {
     const errorMessage = error.message?.toLowerCase() || "";
 
-    // Daily quota exhaustion is not retryable — it resets at midnight UTC, not in seconds
-    const isDailyQuotaExhausted = errorMessage.includes("429") && (
-      errorMessage.includes("perday") ||
-      errorMessage.includes("per_day") ||
-      errorMessage.includes("requests_per_day")
-    );
+    // Daily quota exhaustion is not retryable — it resets at midnight UTC, not in seconds.
+    // Check both: (a) already a RateLimitError thrown by callGeminiProxy, or
+    // (b) fallback string matching for cases where proxy quotaType wasn't available (e.g. old build).
+    const isDailyQuotaExhausted =
+      error instanceof RateLimitError ||
+      (errorMessage.includes("429") && (
+        errorMessage.includes("perday") ||
+        errorMessage.includes("per_day") ||
+        errorMessage.includes("requests_per_day") ||
+        errorMessage.includes("free_tier_requests")  // actual metric name from Google API
+      ));
 
     const isNonRetryable =
       isDailyQuotaExhausted ||
@@ -359,6 +410,7 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
 
     if (isNonRetryable) {
       if (isDailyQuotaExhausted) {
+        if (!(error instanceof RateLimitError)) markDailyQuotaExhausted(); // Fallback: mark if not already marked
         throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или контактирајте го администраторот за надградба на планот.");
       }
       console.error("Non-retryable AI error:", error);

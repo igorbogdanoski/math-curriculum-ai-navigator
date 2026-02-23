@@ -85,6 +85,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const status = message.includes('429') ? 429 :
                    message.includes('403') ? 403 :
                    message.includes('400') ? 400 : 500;
-    res.status(status).json({ error: message });
+    // Signal whether this is a daily quota exhaustion (not retryable) or a per-minute rate limit (retryable)
+    const isDailyQuota = status === 429 && (
+      message.includes('PerDay') || message.includes('per_day') || message.includes('free_tier_requests')
+    );
+    res.status(status).json({ error: message, quotaType: isDailyQuota ? 'daily' : 'rate' });
   }
 }

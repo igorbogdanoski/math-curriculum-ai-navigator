@@ -27,6 +27,7 @@ import { Breadcrumbs } from './components/common/Breadcrumbs';
 import { GlobalSearchBar } from './components/common/GlobalSearchBar';
 import { Card } from './components/common/Card';
 import { OfflineBanner } from './components/common/OfflineBanner';
+import { QuotaBanner } from './components/common/QuotaBanner';
 import { ContextualFAB } from './components/common/ContextualFAB';
 import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
 import { StudentPlayView } from './views/StudentPlayView';
@@ -172,6 +173,7 @@ const AppContent: React.FC = () => {
                         </ErrorBoundary>
                     </div>
                     <OfflineBanner />
+                    <QuotaBanner />
                 </main>
                 <SilentErrorBoundary name="ContextualFAB">
                     <ContextualFAB path={path} params={params} />
