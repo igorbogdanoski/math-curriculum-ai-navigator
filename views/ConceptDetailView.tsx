@@ -18,7 +18,7 @@ import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { StepByStepSolver } from '../components/StepByStepSolver';
 import { GeometryExplorer } from '../components/GeometryExplorer';
 import { useReactToPrint } from 'react-to-print';
-import { Printer, Share2, Brain, GraduationCap, Sparkles, Lightbulb } from 'lucide-react';
+import { Printer, Share2, Brain, GraduationCap, Sparkles, Lightbulb, Zap } from 'lucide-react';
 
 // --- Помошни функции ---
 const formatIdeasToText = (ideas: AIGeneratedIdeas) => {
@@ -81,6 +81,23 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     addNotification('Линкот за споделување е копиран!', 'success');
   };
 
+  const handleOpenGenerator = () => {
+    if (!concept || !topic || !grade) return;
+    const standardsText = concept.assessmentStandards?.length
+        ? `Цели на учење:\n${concept.assessmentStandards.map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}`
+        : '';
+    const activitiesText = concept.activities?.length
+        ? `\n\nПредложени активности од програмата:\n${concept.activities.slice(0, 5).map((a: string) => `• ${a}`).join('\n')}`
+        : '';
+    openGeneratorPanel({
+        grade: String(grade.level),
+        topicId: topic.id,
+        conceptId: concept.id,
+        contextType: 'CONCEPT',
+        customInstruction: `${standardsText}${activitiesText}`.trim(),
+    });
+  };
+
   const handleGenerateIdeas = async () => {
     if (!concept || !topic || !grade || checkThrottle()) return;
     setLoadingState(p => ({ ...p, ideas: true }));
@@ -140,6 +157,14 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                   </button>
                   <button onClick={handleShare} className="text-blue-500 hover:scale-110 transition p-2 rounded-full hover:bg-blue-50" title="Сподели со ученици">
                     <Share2 className="w-8 h-8" />
+                  </button>
+                  <button
+                    onClick={handleOpenGenerator}
+                    className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-xl font-bold text-sm shadow-md hover:bg-brand-secondary transition active:scale-95"
+                    title="Отвори го Генераторот за овој поим"
+                  >
+                    <Zap className="w-4 h-4" />
+                    Генерирај Материјали
                   </button>
                 </div>
               </div>

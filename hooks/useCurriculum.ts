@@ -5,6 +5,8 @@ import type { CurriculumModule } from '../data/curriculum';
 import { firestoreService } from '../services/firestoreService';
 import { useNotification } from '../contexts/NotificationContext';
 
+interface ConceptChainEntry { grade: Grade; topic: Topic; concept: Concept; }
+
 interface CurriculumContextType {
     curriculum: Curriculum | undefined;
     verticalProgression: VerticalProgressionAnalysis | undefined;
@@ -16,6 +18,7 @@ interface CurriculumContextType {
     getConceptDetails: (conceptId: string) => { grade?: Grade; topic?: Topic; concept?: Concept };
     getStandardsByIds: (ids: string[]) => NationalStandard[];
     findConceptAcrossGrades: (conceptId: string) => ConceptProgression | undefined;
+    getConceptChain: (conceptId: string) => { priors: ConceptChainEntry[]; futures: ConceptChainEntry[] };
     allConcepts: (Concept & { gradeLevel: number; topicId: string; })[];
 }
 
@@ -153,6 +156,24 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         );
     }, [curriculum]);
 
+    const getConceptChain = useCallback((conceptId: string): { priors: ConceptChainEntry[]; futures: ConceptChainEntry[] } => {
+        const entry = conceptMap.get(conceptId);
+        if (!entry) return { priors: [], futures: [] };
+
+        // Predecessors: concepts this one explicitly depends on
+        const priors = (entry.concept.priorKnowledgeIds || [])
+            .map((id: string) => conceptMap.get(id) as ConceptChainEntry | undefined)
+            .filter((r): r is ConceptChainEntry => r !== undefined);
+
+        // Successors: concepts anywhere in the curriculum that list this one as a prerequisite
+        const futures = allConcepts
+            .filter((c) => (c.priorKnowledgeIds || []).includes(conceptId))
+            .map((c) => conceptMap.get(c.id) as ConceptChainEntry | undefined)
+            .filter((r): r is ConceptChainEntry => r !== undefined);
+
+        return { priors, futures };
+    }, [conceptMap, allConcepts]);
+
     const findConceptAcrossGrades = useCallback((conceptId: string): ConceptProgression | undefined => {
         if (!curriculum || allConcepts.length === 0) return undefined;
 
@@ -190,6 +211,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         getConceptDetails,
         getStandardsByIds,
         findConceptAcrossGrades,
+        getConceptChain,
         allConcepts
     };
 

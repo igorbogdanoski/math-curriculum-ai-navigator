@@ -8,6 +8,8 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { useModal } from '../contexts/ModalContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
+import { useAuth } from '../contexts/AuthContext';
+import { firestoreService } from '../services/firestoreService';
 
 interface TopicViewProps {
   id: string;
@@ -115,11 +117,18 @@ const ConceptCard: React.FC<{
   }), []);
 
   const handleGenerateMaterials = () => {
+    const standardsText = concept.assessmentStandards?.length
+        ? `Цели на учење:\n${concept.assessmentStandards.map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}`
+        : '';
+    const activitiesText = concept.activities?.length
+        ? `\n\nПредложени активности од програмата:\n${concept.activities.slice(0, 5).map((a: string) => `• ${a}`).join('\n')}`
+        : '';
     openGeneratorPanel({
         grade: String(gradeLevel),
         topicId: topicId,
         conceptId: concept.id,
-        contextType: 'CONCEPT'
+        contextType: 'CONCEPT',
+        customInstruction: `${standardsText}${activitiesText}`.trim(),
     });
   };
 
@@ -243,22 +252,36 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
   const { showModal } = useModal();
   const [expandedConceptId, setExpandedConceptId] = useState<string | null>(null);
   const { addNotification } = useNotification();
-  
+  const { firebaseUser } = useAuth();
+
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editedTopicData, setEditedTopicData] = useState<Topic | null>(null);
+  const [userEdits, setUserEdits] = useState<Record<string, { assessmentStandards?: string[]; activities?: string[] }>>({});
   const initializedIdRef = useRef<string | null>(null);
 
   const { grade, topic } = useMemo(() => getTopic(id), [getTopic, id]);
 
+  // Load user's saved edits from Firestore and merge them into the topic data
   useEffect(() => {
-    // This effect ensures that the form is populated with the initial topic data
-    // when the component mounts or the topic ID changes, but it prevents
-    // subsequent background data fetches from overwriting user's edits.
+    if (!firebaseUser || !topic) return;
+    firestoreService.loadUserCurriculumEdits(firebaseUser.uid).then(edits => {
+      setUserEdits(edits);
+    });
+  }, [firebaseUser?.uid, topic?.id]);
+
+  useEffect(() => {
     if (topic && initializedIdRef.current !== id) {
-      setEditedTopicData(JSON.parse(JSON.stringify(topic)));
+      // Merge any saved user edits into the local copy
+      const merged: Topic = JSON.parse(JSON.stringify(topic));
+      merged.concepts = merged.concepts.map((c: Concept) => ({
+        ...c,
+        ...(userEdits[c.id] ?? {}),
+      }));
+      setEditedTopicData(merged);
       initializedIdRef.current = id;
     }
-  }, [topic, id]);
+  }, [topic, id, userEdits]);
 
   const handleToggleConcept = (conceptId: string) => {
     setExpandedConceptId((prevId: string | null) => (prevId === conceptId ? null : conceptId));
@@ -292,10 +315,34 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
     });
   }, []);
 
-  const handleSaveChanges = () => {
-    console.log("Saving changes:", editedTopicData);
-    addNotification('Промените се зачувани (симулација).', 'success');
-    setIsEditing(false);
+  const handleSaveChanges = async () => {
+    if (!firebaseUser || !editedTopicData) return;
+    setIsSaving(true);
+    try {
+      // Save only the concepts that differ from the original topic
+      const original = topic;
+      const savePromises = editedTopicData.concepts
+        .filter((c: Concept) => {
+          const orig = original?.concepts.find((o: Concept) => o.id === c.id);
+          return orig && (
+            JSON.stringify(c.assessmentStandards) !== JSON.stringify(orig.assessmentStandards) ||
+            JSON.stringify(c.activities) !== JSON.stringify(orig.activities)
+          );
+        })
+        .map((c: Concept) =>
+          firestoreService.saveUserCurriculumEdit(firebaseUser.uid, c.id, {
+            assessmentStandards: c.assessmentStandards,
+            activities: c.activities,
+          })
+        );
+      await Promise.all(savePromises);
+      addNotification('Промените се зачувани!', 'success');
+      setIsEditing(false);
+    } catch {
+      addNotification('Грешка при зачувување. Обидете се повторно.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   const handleCancelEdit = () => {
@@ -338,8 +385,8 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
                         <button onClick={handleCancelEdit} className="flex items-center bg-gray-200 text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium">
                             <ICONS.close className="w-5 h-5 mr-2" /> Откажи
                         </button>
-                        <button onClick={handleSaveChanges} className="flex items-center bg-green-600 text-white px-3 py-2 rounded-lg shadow hover:bg-green-700 transition-colors text-sm font-medium">
-                            <ICONS.check className="w-5 h-5 mr-2" /> Зачувај
+                        <button onClick={handleSaveChanges} disabled={isSaving} className="flex items-center bg-green-600 text-white px-3 py-2 rounded-lg shadow hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-60">
+                            <ICONS.check className="w-5 h-5 mr-2" /> {isSaving ? 'Зачувување...' : 'Зачувај'}
                         </button>
                     </>
                 ) : (

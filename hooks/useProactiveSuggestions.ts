@@ -40,31 +40,26 @@ export function useProactiveSuggestions() {
         return itemDate >= today && itemDate <= nextWeek;
       });
 
-      let triggerItem: PlannerItem | undefined;
       let triggerPlan: LessonPlan | undefined;
       let triggerConcept: Concept | undefined;
 
+      // Find the first upcoming planner item that has a lesson plan with at least one concept
       for (const item of upcomingItems) {
         if (item.lessonPlanId) {
           const plan = getLessonPlan(item.lessonPlanId);
-          if (plan) {
-            for (const conceptId of plan.conceptIds) {
-              const { concept } = getConceptDetails(conceptId);
-              // Trigger based on concept title for robustness
-              if (concept && concept.title.toLowerCase().includes('питагорова теорема')) {
-                triggerItem = item;
-                triggerPlan = plan;
-                triggerConcept = concept;
-                break;
-              }
+          if (plan?.conceptIds?.length) {
+            const { concept } = getConceptDetails(plan.conceptIds[0]);
+            if (concept) {
+              triggerPlan = plan;
+              triggerConcept = concept;
+              break;
             }
           }
         }
-        if (triggerItem) break;
       }
 
-      if (triggerItem && triggerPlan && triggerConcept) {
-        const suggestionId = `suggestion-${triggerItem.id}`;
+      if (triggerPlan && triggerConcept) {
+        const suggestionId = `suggestion-${triggerPlan.id}-${triggerConcept.id}`;
         const isDismissed = sessionStorage.getItem(suggestionId);
         
         if (!isDismissed) {

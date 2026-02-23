@@ -143,6 +143,34 @@ export const firestoreService = {
   },
 
   /**
+   * Saves a teacher's custom edits to a concept (assessmentStandards and/or activities)
+   * stored under users/{userId}/curriculumEdits/{conceptId}
+   */
+  saveUserCurriculumEdit: async (
+    userId: string,
+    conceptId: string,
+    updates: { assessmentStandards?: string[]; activities?: string[] }
+  ): Promise<void> => {
+    const ref = doc(db, "users", userId, "curriculumEdits", conceptId);
+    await setDoc(ref, { ...updates, updatedAt: serverTimestamp() }, { merge: true });
+  },
+
+  /**
+   * Loads all curriculum edits saved by a teacher
+   * Returns a map of conceptId → { assessmentStandards?, activities? }
+   */
+  loadUserCurriculumEdits: async (userId: string): Promise<Record<string, { assessmentStandards?: string[]; activities?: string[] }>> => {
+    try {
+      const snap = await getDocs(collection(db, "users", userId, "curriculumEdits"));
+      const edits: Record<string, { assessmentStandards?: string[]; activities?: string[] }> = {};
+      snap.forEach(d => { edits[d.id] = d.data() as { assessmentStandards?: string[]; activities?: string[] }; });
+      return edits;
+    } catch {
+      return {};
+    }
+  },
+
+  /**
    * Rates a cached material
    */
   rateCachedMaterial: async (materialId: string, isHelpful: boolean): Promise<boolean> => {
