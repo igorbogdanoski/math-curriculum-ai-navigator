@@ -4,6 +4,7 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
+import { RateLimitError } from '../services/apiErrors';
 import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType } from '../types';
 import { ModalType, PlannerItemType } from '../types';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
@@ -350,7 +351,13 @@ ${generatedMaterial.assessmentIdea}
                 setGeneratedMaterial(result || null);
             }
         } catch (error) {
-            addNotification((error as Error).message, 'error');
+            console.error("[AI Generator]", error);
+            const msg = error instanceof RateLimitError
+                ? "AI квотата е исцрпена. Обидете се повторно утре."
+                : (error instanceof Error && error.message)
+                    ? error.message
+                    : "Грешка при генерирање. Обидете се повторно.";
+            addNotification(msg, 'error');
             setGeneratedMaterial(null); // Clear on error
         } finally {
             setIsLoading(false);

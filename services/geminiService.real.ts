@@ -435,10 +435,13 @@ export const realGeminiService = {
   async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: number, profile?: TeachingProfile, options?: { focus: string; tone: string; learningDesign?: string; }, customInstruction?: string): Promise<AIGeneratedIdeas> {
     const conceptId = concepts[0].id;
     const cacheKey = `ideas_${conceptId}_g${gradeLevel}`;
-    try {
-        const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
-        if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedIdeas;
-    } catch (e) { console.warn(e); }
+    // Skip cache when custom instruction is provided — user wants specific generation, not community cache
+    if (!customInstruction) {
+      try {
+          const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+          if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedIdeas;
+      } catch (e) { console.warn("Cache read error:", e); }
+    }
 
     const conceptList = concepts.map(c => c.title).join(', ');
     const topicTitle = topic?.title || "Општа математичка тема";
@@ -529,55 +532,63 @@ export const realGeminiService = {
     return text;
   },
 
-  async generateStepByStepSolution(conceptTitle: string, gradeLevel: number): Promise<{ problem: string, strategy?: string, steps: any[] }> {
-    const cacheKey = `solver_${conceptTitle.replace(/\s+/g, '_')}_g${gradeLevel}`;
-    try {
-        const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
-        if (cachedDoc.exists()) return cachedDoc.data().content;
-    } catch (e) { console.warn("Cache error:", e); }
+  async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, customInstruction?: string): Promise<{ problem: string, strategy?: string, steps: any[] }> {
+    // Cache is skipped when customInstruction is provided (user wants specific problem)
+    const cacheKey = `solver_thinking_${conceptTitle.replace(/\s+/g, '_')}_g${gradeLevel}`;
+    if (!customInstruction) {
+      try {
+          const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+          if (cachedDoc.exists()) return cachedDoc.data().content;
+      } catch (e) { console.warn("Cache error:", e); }
+    }
 
     const prompt = `
       Ти си експерт за математичка педагогија. Креирај една типична задача за "${conceptTitle}" за ${gradeLevel} одделение.
-      Користи Tree of Thoughts (ToT) пристап: разгледај 2 методи и избери ја најјасната.
-      Реши ја задачата преку Chain of Thought (CoT).
-      
-      Внимавај на точноста! Направи само-корекција пред да го пратиш одговорот.
+      Користи Tree of Thoughts (ToT) пристап: размисли за 2 различни методи на решавање и избери ја онаа која е најјасна за ученик.
+      Реши ја задачата детално преку Chain of Thought (CoT) — секој чекор мора да биде логично поврзан.
 
-      ВРАТИ ГИ ПОДАТОЦИТЕ ИСКЛУЧИВО ВО ОВОЈ JSON ФОРМАТ:
+      Внимавај на математичката точност! Направи само-проверка пред финалниот одговор.
+      ${customInstruction ? `\nКонтекст од курикулумот:\n${customInstruction}` : ''}
+
+      Врати JSON точно по овој формат:
       {
         "problem": "текст на задачата",
-        "strategy": "зошто ја избравме оваа метода",
-        "steps": [{"explanation": "чекор", "expression": "LaTeX"}]
+        "strategy": "зошто ја избравме оваа метода наспроти алтернативата",
+        "steps": [{"explanation": "зошто го правиме овој чекор", "expression": "LaTeX или чист текст"}]
       }
     `;
-    const schema = { 
-        type: Type.OBJECT, 
-        properties: { 
-            problem: { type: Type.STRING }, 
-            strategy: { type: Type.STRING }, 
-            steps: { 
-                type: Type.ARRAY, 
-                items: { 
-                    type: Type.OBJECT, 
-                    properties: { 
-                        explanation: { type: Type.STRING }, 
-                        expression: { type: Type.STRING } 
-                    }, 
-                    required: ["explanation", "expression"] 
-                } 
-            } 
-        }, 
-        required: ["problem", "steps", "strategy"] 
+    const schema = {
+        type: Type.OBJECT,
+        properties: {
+            problem: { type: Type.STRING },
+            strategy: { type: Type.STRING },
+            steps: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        explanation: { type: Type.STRING },
+                        expression: { type: Type.STRING }
+                    },
+                    required: ["explanation", "expression"]
+                }
+            }
+        },
+        required: ["problem", "steps", "strategy"]
     };
-    
-    const result = await generateAndParseJSON<any>([{ text: prompt }], schema);
-    await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { 
-        content: result, 
-        type: 'solver', 
-        conceptTitle,
-        gradeLevel,
-        createdAt: serverTimestamp() 
-    }).catch(console.error);
+
+    // Use thinking model for genuine ToT+CoT quality — better multi-step reasoning
+    const result = await generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true);
+    // Only cache non-custom results for community reuse
+    if (!customInstruction && result) {
+      await setDoc(doc(db, CACHE_COLLECTION, cacheKey), {
+          content: result,
+          type: 'solver',
+          conceptTitle,
+          gradeLevel,
+          createdAt: serverTimestamp()
+      }).catch(console.error);
+    }
     return result;
   },
 
@@ -613,12 +624,13 @@ export const realGeminiService = {
     return result;
   },
 
-  async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string): Promise<AIGeneratedAssessment> {
+  async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean): Promise<AIGeneratedAssessment> {
     const bloomLevels = context.bloomDistribution && Object.keys(context.bloomDistribution).length > 0
       ? Object.keys(context.bloomDistribution)
       : null;
     const bloomPart = bloomLevels ? ` Нагласени Блумови нивоа: ${bloomLevels.join(', ')}.` : '';
-    const prompt = `Генерирај ${type} со ${numQuestions} прашања. Типови: ${questionTypes.join(', ')}. Диференцијација: ${differentiationLevel}.${bloomPart} ${customInstruction || ''}`;
+    const selfAssessmentPart = includeSelfAssessment ? ' Додај 2-3 метакогнитивни прашања за само-оценување на крајот.' : '';
+    const prompt = `Генерирај ${type} со ${numQuestions} прашања. Типови: ${questionTypes.join(', ')}. Диференцијација: ${differentiationLevel}.${bloomPart}${selfAssessmentPart} ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING } }, required: ["type", "question", "answer"] } } }, required: ["title", "questions"] };
     const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });

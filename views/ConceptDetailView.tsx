@@ -3,6 +3,7 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
+import { RateLimitError } from '../services/apiErrors';
 import type { AIGeneratedIdeas, AIGeneratedPracticeMaterial, LessonPlan } from '../types';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useAuth } from '../contexts/AuthContext';
@@ -98,13 +99,35 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     });
   };
 
+  // Helper: extract a user-friendly message from any caught error
+  const aiErrMsg = (e: unknown, fallback: string): string => {
+    if (e instanceof RateLimitError) return "AI квотата е исцрпена. Обидете се повторно утре.";
+    if (e instanceof Error && e.message) return e.message;
+    return fallback;
+  };
+
+  // Build curriculum context string for AI Tutor (same as generator panel)
+  const conceptCustomInstruction = useMemo(() => {
+    if (!concept) return '';
+    const standardsText = concept.assessmentStandards?.length
+        ? `Цели на учење:\n${concept.assessmentStandards.map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}`
+        : '';
+    const activitiesText = concept.activities?.length
+        ? `\nПредложени активности:\n${concept.activities.slice(0, 4).map((a: string) => `• ${a}`).join('\n')}`
+        : '';
+    return `${standardsText}${activitiesText}`.trim();
+  }, [concept]);
+
   const handleGenerateIdeas = async () => {
     if (!concept || !topic || !grade || checkThrottle()) return;
     setLoadingState(p => ({ ...p, ideas: true }));
     try {
-      const ideas = await geminiService.generateLessonPlanIdeas([concept], topic, grade.level, user ?? undefined);
+      const ideas = await geminiService.generateLessonPlanIdeas([concept], topic, grade.level, user ?? undefined, undefined, conceptCustomInstruction || undefined);
       setAiSuggestions(ideas);
-    } catch(e) { addNotification("Грешка при генерирање идеи.", 'error'); }
+    } catch(e) {
+      console.error("[AI Ideas]", e);
+      addNotification(aiErrMsg(e, "Грешка при генерирање идеи."), 'error');
+    }
     finally { setLoadingState(p => ({ ...p, ideas: false })); }
   };
 
@@ -114,7 +137,10 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     try {
       const res = await geminiService.generateAnalogy(concept, grade.level);
       setAnalogy(res);
-    } catch(e) { addNotification("Грешка при генерирање аналогија.", 'error'); }
+    } catch(e) {
+      console.error("[AI Analogy]", e);
+      addNotification(aiErrMsg(e, "Грешка при генерирање аналогија."), 'error');
+    }
     finally { setLoadingState(p => ({ ...p, analogy: false })); }
   };
 
@@ -124,7 +150,10 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     try {
       const res = await geminiService.generatePracticeMaterials(concept, grade.level, 'problems');
       setPracticeMaterial(res);
-    } catch(e) { addNotification("Грешка при креирање квиз.", 'error'); }
+    } catch(e) {
+      console.error("[AI Quiz]", e);
+      addNotification(aiErrMsg(e, "Грешка при креирање квиз."), 'error');
+    }
     finally { setLoadingState(p => ({ ...p, quiz: false })); }
   };
 
@@ -132,9 +161,13 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     if (!concept || !grade || checkThrottle()) return;
     setLoadingState(p => ({ ...p, solver: true }));
     try {
-      const res = await geminiService.generateStepByStepSolution(concept.title, grade.level);
+      // Pass curriculum context so AI Tutor generates a problem relevant to the specific concept goals
+      const res = await geminiService.generateStepByStepSolution(concept.title, grade.level, conceptCustomInstruction || undefined);
       setSolverData(res);
-    } catch(e) { addNotification("Грешка во AI Туторот.", "error"); }
+    } catch(e) {
+      console.error("[AI Solver]", e);
+      addNotification(aiErrMsg(e, "Грешка во AI Туторот."), "error");
+    }
     finally { setLoadingState(p => ({ ...p, solver: false })); }
   };
 
