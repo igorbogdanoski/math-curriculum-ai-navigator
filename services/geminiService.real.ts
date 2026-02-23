@@ -630,11 +630,26 @@ export const realGeminiService = {
       : null;
     const bloomPart = bloomLevels ? ` Нагласени Блумови нивоа: ${bloomLevels.join(', ')}.` : '';
     const selfAssessmentPart = includeSelfAssessment ? ' Додај 2-3 метакогнитивни прашања за само-оценување на крајот.' : '';
-    const prompt = `Генерирај ${type} со ${numQuestions} прашања. Типови: ${questionTypes.join(', ')}. Диференцијација: ${differentiationLevel}.${bloomPart}${selfAssessmentPart} ${customInstruction || ''}`;
-    const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING } }, required: ["type", "question", "answer"] } } }, required: ["title", "questions"] };
+    const prompt = `Генерирај ${type} со ${numQuestions} прашања на македонски. Типови: ${questionTypes.join(', ')}. Диференцијација: ${differentiationLevel}.${bloomPart}${selfAssessmentPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (лесно/средно/тешко). ${customInstruction || ''}`;
+    const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, alignment_goal: { type: Type.STRING }, selfAssessmentQuestions: { type: Type.ARRAY, items: { type: Type.STRING } }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, cognitiveLevel: { type: Type.STRING }, difficulty_level: { type: Type.STRING }, concept_evaluated: { type: Type.STRING } }, required: ["type", "question", "answer", "cognitiveLevel"] } } }, required: ["title", "questions"] };
+
+    const canCache = !customInstruction && !studentProfiles?.length && differentiationLevel === 'standard';
+    const conceptCacheId = context.concepts?.[0]?.id || 'gen';
+    const cacheKey = canCache ? `assessment_${type}_${conceptCacheId}_g${context.grade.level}_${[...questionTypes].sort().join('_')}_n${numQuestions}` : '';
+    if (canCache && cacheKey) {
+        try {
+            const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+            if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedAssessment;
+        } catch (e) { console.warn(e); }
+    }
+
     const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
-    return generateAndParseJSON<AIGeneratedAssessment>(contents, schema, DEFAULT_MODEL, AIGeneratedAssessmentSchema);
+    const result = await generateAndParseJSON<AIGeneratedAssessment>(contents, schema, DEFAULT_MODEL, AIGeneratedAssessmentSchema);
+    if (canCache && cacheKey) {
+        await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'assessment', gradeLevel: context.grade.level, createdAt: serverTimestamp() }).catch(console.error);
+    }
+    return result;
   },
 
   async generateExitTicket(numQuestions: number, focus: string, context: GenerationContext, profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedAssessment> {
@@ -644,6 +659,17 @@ export const realGeminiService = {
   async generateRubric(gradeLevel: number, activityTitle: string, activityType: string, criteriaHints: string, profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedRubric> {
     const prompt = `Креирај рубрика за ${activityTitle} (${activityType}). ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, criteria: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { criterion: { type: Type.STRING }, levels: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { levelName: { type: Type.STRING }, description: { type: Type.STRING }, points: { type: Type.STRING } }, required: ["levelName", "description"] } } }, required: ["criterion", "levels"] } } }, required: ["title", "criteria"] };
+
+    if (!customInstruction) {
+        const cacheKey = `rubric_g${gradeLevel}_${activityTitle.replace(/\W/g, '_').toLowerCase().substring(0, 40)}`;
+        try {
+            const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+            if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedRubric;
+        } catch (e) { console.warn(e); }
+        const result = await generateAndParseJSON<AIGeneratedRubric>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedRubricSchema);
+        await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'rubric', gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
+        return result;
+    }
     return generateAndParseJSON<AIGeneratedRubric>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedRubricSchema);
   },
 
@@ -709,9 +735,17 @@ export const realGeminiService = {
   },
 
   async generateThematicPlan(grade: Grade, topic: Topic): Promise<AIGeneratedThematicPlan> {
+      const cacheKey = `thematic_${topic.id}_g${grade.level}`;
+      try {
+          const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+          if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedThematicPlan;
+      } catch (e) { console.warn(e); }
+
       const prompt = `Генерирај тематски план за "${topic.title}" (${grade.level} одд.).`;
       const schema = { type: Type.OBJECT, properties: { thematicUnit: { type: Type.STRING }, lessons: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { lessonNumber: { type: Type.INTEGER }, lessonUnit: { type: Type.STRING }, learningOutcomes: { type: Type.STRING }, keyActivities: { type: Type.STRING }, assessment: { type: Type.STRING } }, required: ["lessonNumber", "lessonUnit"] } } }, required: ["thematicUnit", "lessons"] };
-      return generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema);
+      const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema);
+      await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id, createdAt: serverTimestamp() }).catch(console.error);
+      return result;
   },
 
   async analyzeReflection(wentWell: string, challenges: string, profile?: TeachingProfile): Promise<string> {
