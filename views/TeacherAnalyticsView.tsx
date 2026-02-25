@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
+import { geminiService } from '../services/geminiService';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle, Zap, QrCode, Copy, CheckCheck, Trophy } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle, Zap, QrCode, Copy, CheckCheck, Trophy, Sparkles, ChevronRight } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
@@ -105,6 +106,32 @@ export const TeacherAnalyticsView: React.FC = () => {
     const { getConceptDetails } = useCurriculum();
     const { openGeneratorPanel } = useGeneratorPanel();
     const [copiedName, setCopiedName] = useState<string | null>(null);
+    const [aiRecs, setAiRecs] = useState<any[] | null>(null);
+    const [isLoadingRecs, setIsLoadingRecs] = useState(false);
+
+    const handleGetRecommendations = async () => {
+        if (isLoadingRecs || results.length === 0) return;
+        setIsLoadingRecs(true);
+        setAiRecs(null);
+        try {
+            const uniqueStudents = new Set(results.filter(r => r.studentName).map(r => r.studentName!));
+            const recs = await geminiService.generateClassRecommendations({
+                totalAttempts: results.length,
+                avgScore: results.reduce((s, r) => s + r.percentage, 0) / results.length,
+                passRate: (results.filter(r => r.percentage >= 70).length / results.length) * 100,
+                weakConcepts: weakConcepts,
+                masteredCount: masteryStats?.mastered.length ?? 0,
+                inProgressCount: masteryStats?.inProgress.length ?? 0,
+                strugglingCount: masteryStats?.struggling.length ?? 0,
+                uniqueStudentCount: uniqueStudents.size,
+            });
+            setAiRecs(recs);
+        } catch (err) {
+            console.error('Error generating class recommendations:', err);
+        } finally {
+            setIsLoadingRecs(false);
+        }
+    };
 
     const handleGenerateRemedial = (conceptId: string, conceptTitle: string, avgPct: number) => {
         const { grade, topic } = getConceptDetails(conceptId);
@@ -351,6 +378,93 @@ export const TeacherAnalyticsView: React.FC = () => {
                             )}
                         </Card>
                     )}
+
+                    {/* AI Class Recommendation Engine */}
+                    <Card className="mb-8 border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-indigo-500 flex-shrink-0" />
+                                <h2 className="text-sm font-bold text-indigo-800 uppercase tracking-widest">AI препорачува за следниот час</h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleGetRecommendations}
+                                disabled={isLoadingRecs || results.length === 0}
+                                className="flex items-center gap-1.5 text-xs font-bold bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition disabled:opacity-40"
+                            >
+                                {isLoadingRecs
+                                    ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Анализира...</>
+                                    : <><Sparkles className="w-3.5 h-3.5" /> {aiRecs ? 'Освежи' : 'Генерирај препораки'}</>}
+                            </button>
+                        </div>
+
+                        {!aiRecs && !isLoadingRecs && (
+                            <p className="text-sm text-indigo-600 text-center py-4 opacity-70">
+                                Кликни „Генерирај препораки" за да добиеш конкретни совети базирани на реалните резултати на класата.
+                            </p>
+                        )}
+
+                        {isLoadingRecs && (
+                            <div className="flex items-center justify-center gap-2 py-6 text-indigo-600">
+                                <Sparkles className="w-5 h-5 animate-pulse" />
+                                <span className="text-sm font-semibold">AI ги анализира резултатите...</span>
+                            </div>
+                        )}
+
+                        {aiRecs && (
+                            <div className="space-y-3">
+                                {aiRecs.sort((a, b) => a.priority - b.priority).map((rec, i) => {
+                                    const priorityColors = [
+                                        'border-red-200 bg-red-50',
+                                        'border-amber-200 bg-amber-50',
+                                        'border-blue-200 bg-blue-50',
+                                    ];
+                                    const labelColors = [
+                                        'bg-red-100 text-red-700',
+                                        'bg-amber-100 text-amber-700',
+                                        'bg-blue-100 text-blue-700',
+                                    ];
+                                    const priorityLabels = ['Итно', 'Важно', 'Препорачано'];
+                                    const idx = Math.min(rec.priority - 1, 2);
+                                    return (
+                                        <div key={i} className={`rounded-xl border p-4 ${priorityColors[idx]}`}>
+                                            <div className="flex items-start gap-3">
+                                                <span className="text-2xl flex-shrink-0 leading-none mt-0.5">{rec.icon}</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${labelColors[idx]}`}>
+                                                            {priorityLabels[idx]}
+                                                        </span>
+                                                        <span className="text-xs font-semibold text-slate-500 capitalize">{rec.differentiationLevel}</span>
+                                                    </div>
+                                                    <p className="font-bold text-slate-800 text-sm">{rec.title}</p>
+                                                    <p className="text-xs text-slate-600 mt-1">{rec.explanation}</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const { grade, topic } = rec.conceptId ? getConceptDetails(rec.conceptId) : { grade: undefined, topic: undefined };
+                                                        openGeneratorPanel({
+                                                            selectedGrade: grade?.id || '',
+                                                            selectedTopic: topic?.id || '',
+                                                            selectedConcepts: rec.conceptId ? [rec.conceptId] : [],
+                                                            contextType: 'CONCEPT',
+                                                            materialType: 'ASSESSMENT',
+                                                            differentiationLevel: rec.differentiationLevel,
+                                                            customInstruction: rec.explanation,
+                                                        });
+                                                    }}
+                                                    className="flex items-center gap-1 text-xs font-bold bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition flex-shrink-0"
+                                                >
+                                                    {rec.actionLabel} <ChevronRight className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </Card>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                         {/* Score distribution card */}

@@ -829,5 +829,76 @@ ${customInstruction || ''}`;
     const prompt = `Extract details: "${input}".`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, date: { type: Type.STRING }, type: { type: Type.STRING }, description: { type: Type.STRING } }, required: ["title", "date", "type"] };
     return generateAndParseJSON<any>([{ text: prompt }], schema);
-  }
+  },
+
+  /**
+   * Generates 3 concrete, actionable class-level pedagogical recommendations
+   * based on real quiz result analytics and mastery tracking data.
+   *
+   * Called on-demand from TeacherAnalyticsView (not auto-called to save quota).
+   */
+  async generateClassRecommendations(analyticsData: {
+    totalAttempts: number;
+    avgScore: number;
+    passRate: number;
+    weakConcepts: Array<{ conceptId: string; title: string; avgPct: number; attempts: number }>;
+    masteredCount: number;
+    inProgressCount: number;
+    strugglingCount: number;
+    uniqueStudentCount: number;
+  }): Promise<Array<{
+    priority: number;
+    icon: string;
+    title: string;
+    explanation: string;
+    actionLabel: string;
+    differentiationLevel: 'support' | 'standard' | 'advanced';
+    conceptId?: string;
+    conceptTitle?: string;
+  }>> {
+    const weakList = analyticsData.weakConcepts.slice(0, 3)
+      .map(c => `"${c.title}" (просек ${c.avgPct}%, ${c.attempts} обид${c.attempts === 1 ? '' : 'и'})`)
+      .join('; ') || 'нема идентификувани слаби концепти';
+
+    const prompt = `Ти си педагошки советник за математика (одд. 6-9, Македонија).
+Класата има следните реални резултати:
+- Вкупно обиди: ${analyticsData.totalAttempts}
+- Просечен резултат: ${analyticsData.avgScore.toFixed(1)}%
+- Стапка на положување (≥70%): ${analyticsData.passRate.toFixed(1)}%
+- Слаби концепти (под 70%): ${weakList}
+- Совладани концепти: ${analyticsData.masteredCount}
+- Во напредок (streak): ${analyticsData.inProgressCount}
+- Потребна помош (повеќе обиди, нема напредок): ${analyticsData.strugglingCount}
+- Различни ученици: ${analyticsData.uniqueStudentCount}
+
+Генерирај точно 3 конкретни, акциски педагошки препораки за СЛЕДНИОТ ЧАС/НЕДЕЛА.
+Секоја препорака мора:
+- Да е директно базирана на горните бројки (не генерички совети)
+- Да предложи конкретна акција (генерирај материјал, изведи активност, ремедијација)
+- Да укаже на ниво на диференцијација: support/standard/advanced
+- icon: само еден емоџи
+- priority: 1=итно, 2=важно, 3=препорачано
+
+Врати JSON array со 3 елементи.`;
+
+    const schema = {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          priority: { type: Type.INTEGER },
+          icon: { type: Type.STRING },
+          title: { type: Type.STRING },
+          explanation: { type: Type.STRING },
+          actionLabel: { type: Type.STRING },
+          differentiationLevel: { type: Type.STRING },
+          conceptId: { type: Type.STRING },
+          conceptTitle: { type: Type.STRING },
+        },
+        required: ['priority', 'icon', 'title', 'explanation', 'actionLabel', 'differentiationLevel'],
+      },
+    };
+
+    return generateAndParseJSON<any[]>([{ text: prompt }], schema, DEFAULT_MODEL);
+  },
 };
