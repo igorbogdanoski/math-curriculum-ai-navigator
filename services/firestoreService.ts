@@ -2,6 +2,27 @@ import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, inc
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 
+/**
+ * Tracks a student's mastery of a specific concept over time.
+ * Stored in Firestore under: concept_mastery/{studentName}_{conceptId}
+ *
+ * Mastery is achieved when the student scores ≥85% on 3+ consecutive attempts.
+ */
+export interface ConceptMastery {
+  studentName: string;
+  conceptId: string;
+  conceptTitle?: string;
+  topicId?: string;
+  gradeLevel?: number;
+  attempts: number;          // total attempts
+  consecutiveHighScores: number; // consecutive attempts ≥85%
+  bestScore: number;
+  lastScore: number;
+  mastered: boolean;         // true when consecutiveHighScores ≥ 3
+  masteredAt?: any;          // Firestore Timestamp
+  updatedAt?: any;
+}
+
 export interface QuizResult {
   quizId: string;
   quizTitle: string;
@@ -254,6 +275,111 @@ export const firestoreService = {
     } catch (error) {
       console.error("Error rating material:", error);
       return false;
+    }
+  },
+
+  // ── Mastery Tracking ────────────────────────────────────────────────────────
+
+  /**
+   * Updates concept mastery for a student after a quiz attempt.
+   * Called automatically by StudentPlayView after each quiz completion.
+   *
+   * Mastery logic:
+   * - 3+ consecutive scores ≥85% → mastered = true
+   * - Any score <85% resets the consecutive counter
+   */
+  updateConceptMastery: async (
+    studentName: string,
+    conceptId: string,
+    score: number,
+    meta?: { conceptTitle?: string; topicId?: string; gradeLevel?: number }
+  ): Promise<ConceptMastery> => {
+    const docId = `${studentName.replace(/\s+/g, '_')}_${conceptId}`;
+    const ref = doc(db, 'concept_mastery', docId);
+
+    try {
+      const snap = await getDoc(ref);
+      const existing = snap.exists() ? (snap.data() as ConceptMastery) : null;
+
+      const prevConsecutive = existing?.consecutiveHighScores ?? 0;
+      const newConsecutive = score >= 85 ? prevConsecutive + 1 : 0;
+      const mastered = newConsecutive >= 3;
+      const wasAlreadyMastered = existing?.mastered ?? false;
+
+      const updated: Partial<ConceptMastery> = {
+        studentName,
+        conceptId,
+        conceptTitle: meta?.conceptTitle ?? existing?.conceptTitle,
+        topicId: meta?.topicId ?? existing?.topicId,
+        gradeLevel: meta?.gradeLevel ?? existing?.gradeLevel,
+        attempts: (existing?.attempts ?? 0) + 1,
+        consecutiveHighScores: newConsecutive,
+        bestScore: Math.max(score, existing?.bestScore ?? 0),
+        lastScore: score,
+        mastered,
+        updatedAt: serverTimestamp(),
+        ...(mastered && !wasAlreadyMastered ? { masteredAt: serverTimestamp() } : {}),
+      };
+
+      await setDoc(ref, updated, { merge: true });
+      return { ...updated, attempts: updated.attempts! } as ConceptMastery;
+    } catch (error) {
+      console.error('Error updating concept mastery:', error);
+      return {
+        studentName, conceptId, attempts: 1,
+        consecutiveHighScores: score >= 85 ? 1 : 0,
+        bestScore: score, lastScore: score,
+        mastered: false,
+      } as ConceptMastery;
+    }
+  },
+
+  /**
+   * Fetches all mastery records for a given student.
+   */
+  fetchMasteryByStudent: async (studentName: string): Promise<ConceptMastery[]> => {
+    try {
+      const q = query(
+        collection(db, 'concept_mastery'),
+        where('studentName', '==', studentName)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => d.data() as ConceptMastery);
+    } catch (error) {
+      console.error('Error fetching mastery by student:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Fetches all mastery records for a given concept (class-wide view).
+   * Used in TeacherAnalyticsView to show how many students mastered a concept.
+   */
+  fetchMasteryByConcept: async (conceptId: string): Promise<ConceptMastery[]> => {
+    try {
+      const q = query(
+        collection(db, 'concept_mastery'),
+        where('conceptId', '==', conceptId)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => d.data() as ConceptMastery);
+    } catch (error) {
+      console.error('Error fetching mastery by concept:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Fetches mastery records for all students across all concepts.
+   * Used in TeacherAnalyticsView for class-wide mastery overview.
+   */
+  fetchAllMastery: async (): Promise<ConceptMastery[]> => {
+    try {
+      const snap = await getDocs(collection(db, 'concept_mastery'));
+      return snap.docs.map(d => d.data() as ConceptMastery);
+    } catch (error) {
+      console.error('Error fetching all mastery:', error);
+      return [];
     }
   }
 };

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { firestoreService, type QuizResult } from '../services/firestoreService';
+import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
 import { ICONS } from '../constants';
 import {
-  Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle, Calendar, RefreshCw,
+  Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
+  Calendar, RefreshCw, Trophy, Flame,
 } from 'lucide-react';
 
 const formatDate = (ts: any): string => {
@@ -26,6 +27,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     () => nameProp || localStorage.getItem('studentName') || ''
   );
   const [results, setResults] = useState<QuizResult[]>([]);
+  const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -34,10 +36,15 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     setLoading(true);
     setSearched(true);
     try {
-      const data = await firestoreService.fetchQuizResultsByStudentName(name.trim());
-      setResults(data);
+      const [quizData, masteryData] = await Promise.all([
+        firestoreService.fetchQuizResultsByStudentName(name.trim()),
+        firestoreService.fetchMasteryByStudent(name.trim()),
+      ]);
+      setResults(quizData);
+      setMasteryRecords(masteryData);
     } catch {
       setResults([]);
+      setMasteryRecords([]);
     } finally {
       setLoading(false);
     }
@@ -64,6 +71,9 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const avgPct = totalQuizzes > 0
     ? Math.round(results.reduce((s, r) => s + r.percentage, 0) / totalQuizzes)
     : 0;
+
+  const masteredCount = masteryRecords.filter(m => m.mastered).length;
+  const inProgressCount = masteryRecords.filter(m => !m.mastered && m.consecutiveHighScores > 0).length;
 
   return (
     <div className="min-h-screen bg-indigo-600 p-4 md:p-8 flex flex-col items-center">
@@ -137,7 +147,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
 
       {/* Stats summary */}
       {searched && !loading && totalQuizzes > 0 && (
-        <div className="w-full max-w-2xl grid grid-cols-3 gap-3 mb-6">
+        <div className="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-white rounded-2xl p-4 text-center shadow">
             <BarChart2 className="w-6 h-6 text-indigo-500 mx-auto mb-1" />
             <p className="text-2xl font-black text-slate-800">{totalQuizzes}</p>
@@ -152,6 +162,57 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             <Star className="w-6 h-6 text-yellow-400 mx-auto mb-1" fill="currentColor" />
             <p className="text-2xl font-black text-slate-800">{avgPct}%</p>
             <p className="text-xs text-slate-500 font-semibold">Просек</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 text-center shadow">
+            <Trophy className="w-6 h-6 text-yellow-500 mx-auto mb-1" fill="currentColor" />
+            <p className="text-2xl font-black text-slate-800">{masteredCount}</p>
+            <p className="text-xs text-slate-500 font-semibold">Совладани</p>
+          </div>
+        </div>
+      )}
+
+      {/* Mastery section */}
+      {searched && !loading && masteryRecords.length > 0 && (
+        <div className="w-full max-w-2xl mb-6">
+          <div className="bg-white rounded-2xl shadow p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Trophy className="w-5 h-5 text-yellow-500" fill="currentColor" />
+              <p className="font-bold text-slate-800 text-sm">Совладување на концепти</p>
+            </div>
+            <div className="space-y-2">
+              {masteryRecords
+                .sort((a, b) => (b.mastered ? 1 : 0) - (a.mastered ? 1 : 0) || b.consecutiveHighScores - a.consecutiveHighScores)
+                .map((m) => (
+                  <div key={m.conceptId} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${m.mastered ? 'bg-yellow-100' : 'bg-blue-50'}`}>
+                      {m.mastered
+                        ? <Trophy className="w-4 h-4 text-yellow-500" fill="currentColor" />
+                        : <Flame className="w-4 h-4 text-blue-400" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-700 truncate">{m.conceptTitle || m.conceptId}</p>
+                      <p className="text-xs text-slate-400">
+                        {m.mastered
+                          ? `Совладан! Најдобар резултат: ${m.bestScore}%`
+                          : `${m.consecutiveHighScores}/3 по ред ≥85% — Последен: ${m.lastScore}%`}
+                      </p>
+                    </div>
+                    {m.mastered && (
+                      <span className="text-xs font-black text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full flex-shrink-0">✓ Совладан</span>
+                    )}
+                    {!m.mastered && m.consecutiveHighScores > 0 && (
+                      <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full flex-shrink-0">
+                        {3 - m.consecutiveHighScores} уште
+                      </span>
+                    )}
+                  </div>
+                ))}
+            </div>
+            {inProgressCount > 0 && (
+              <p className="text-xs text-slate-400 mt-3 text-center">
+                🔥 {inProgressCount} концепт{inProgressCount === 1 ? '' : 'и'} во напредок — продолжи со вежбање!
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -179,10 +240,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             results.map((r, i) => {
               const isPassed = r.percentage >= 70;
               return (
-                <div
-                  key={i}
-                  className="bg-white rounded-2xl p-4 shadow flex items-center gap-4"
-                >
+                <div key={i} className="bg-white rounded-2xl p-4 shadow flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isPassed ? 'bg-green-100' : 'bg-amber-100'}`}>
                     {isPassed
                       ? <CheckCircle2 className="w-6 h-6 text-green-600" />

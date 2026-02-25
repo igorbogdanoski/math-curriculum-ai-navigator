@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
-import { firestoreService } from '../services/firestoreService';
+import { firestoreService, type ConceptMastery } from '../services/firestoreService';
 import { geminiService } from '../services/geminiService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -9,7 +9,7 @@ import { ICONS } from '../constants';
 import { useCurriculum } from '../hooks/useCurriculum';
 import {
   Loader2, AlertCircle, Home, Star, RefreshCw, BookOpen,
-  User, ArrowRight, BarChart2, Sparkles, ExternalLink,
+  User, ArrowRight, BarChart2, Sparkles, ExternalLink, Trophy,
 } from 'lucide-react';
 import { QuestionType } from '../types';
 
@@ -23,6 +23,9 @@ export const StudentPlayView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
+
+  // Mastery state — updated after each quiz
+  const [masteryUpdate, setMasteryUpdate] = useState<ConceptMastery | null>(null);
 
   // Adaptive remediation state
   const [remediaQuizId, setRemediaQuizId] = useState<string | null>(null);
@@ -116,6 +119,48 @@ export const StudentPlayView: React.FC = () => {
     }
   };
 
+  const handleQuizComplete = async (score: number, correctCount: number, totalQuestions: number) => {
+    const percentage = Math.round((correctCount / totalQuestions) * 100);
+    const meta = quizData._meta || {};
+
+    // 1. Save quiz result
+    firestoreService.saveQuizResult({
+      quizId: id || 'unknown',
+      quizTitle: quizData.title || 'Квиз',
+      score,
+      correctCount,
+      totalQuestions,
+      percentage,
+      conceptId: meta.conceptId,
+      topicId: meta.topicId,
+      gradeLevel: meta.gradeLevel,
+      studentName: studentName || undefined,
+    });
+
+    // 2. Update concept mastery (only if we have student name + concept)
+    if (studentName && meta.conceptId) {
+      const { concept } = getConceptDetails(meta.conceptId);
+      const mastery = await firestoreService.updateConceptMastery(
+        studentName,
+        meta.conceptId,
+        percentage,
+        {
+          conceptTitle: concept?.title ?? quizData.title,
+          topicId: meta.topicId,
+          gradeLevel: meta.gradeLevel,
+        }
+      );
+      setMasteryUpdate(mastery);
+    }
+
+    setQuizResult({ percentage, correctCount, totalQuestions });
+
+    // 3. Adaptive remediation on failure
+    if (percentage < 70) {
+      generateRemediaQuiz(meta);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
@@ -149,6 +194,10 @@ export const StudentPlayView: React.FC = () => {
     ? 'w-full max-w-4xl mt-6 rounded-2xl p-5 border-2 animate-fade-in bg-green-50 border-green-300'
     : 'w-full max-w-4xl mt-6 rounded-2xl p-5 border-2 animate-fade-in bg-amber-50 border-amber-300';
 
+  // Mastery milestone badges
+  const justMastered = masteryUpdate?.mastered && masteryUpdate.consecutiveHighScores === 3;
+  const consecutive = masteryUpdate?.consecutiveHighScores ?? 0;
+
   return (
     <div className="min-h-screen bg-indigo-600 p-4 md:p-8 flex flex-col items-center">
       <div className="w-full max-w-4xl flex justify-between items-center mb-8 text-white">
@@ -164,7 +213,7 @@ export const StudentPlayView: React.FC = () => {
       </div>
 
       <main className="w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-white/20 relative min-h-[500px]">
-        {/* Name entry splash — shown only if name not yet confirmed */}
+        {/* Name entry splash */}
         {!nameConfirmed && (
           <div className="flex flex-col items-center justify-center min-h-[500px] p-8 text-center">
             <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mb-6">
@@ -196,10 +245,9 @@ export const StudentPlayView: React.FC = () => {
           </div>
         )}
 
-        {/* Quiz — shown only once name is confirmed */}
+        {/* Quiz */}
         {nameConfirmed && quizData && (
           <>
-            {/* Student name badge */}
             <div className="flex items-center gap-2 px-6 pt-5 pb-0">
               <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
                 <User className="w-3.5 h-3.5 text-indigo-500" />
@@ -207,10 +255,7 @@ export const StudentPlayView: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setNameConfirmed(false);
-                  setNameInput(studentName);
-                }}
+                onClick={() => { setNameConfirmed(false); setNameInput(studentName); }}
                 className="text-xs text-slate-400 hover:text-slate-600 underline transition"
               >
                 Промени
@@ -225,30 +270,37 @@ export const StudentPlayView: React.FC = () => {
                 explanation: item.solution || item.explanation,
               }))}
               onComplete={({ score, correctCount, totalQuestions }) => {
-                const percentage = Math.round((correctCount / totalQuestions) * 100);
-                firestoreService.saveQuizResult({
-                  quizId: id || 'unknown',
-                  quizTitle: quizData.title || 'Квиз',
-                  score,
-                  correctCount,
-                  totalQuestions,
-                  percentage,
-                  conceptId: quizData._meta?.conceptId,
-                  topicId: quizData._meta?.topicId,
-                  gradeLevel: quizData._meta?.gradeLevel,
-                  studentName: studentName || undefined,
-                });
-                setQuizResult({ percentage, correctCount, totalQuestions });
-                // Adaptive Remediation Engine — auto-generate support quiz on failure
-                if (percentage < 70) {
-                  generateRemediaQuiz(quizData._meta || {});
-                }
+                handleQuizComplete(score, correctCount, totalQuestions);
               }}
               onClose={() => { window.location.hash = '/'; }}
             />
           </>
         )}
       </main>
+
+      {/* Mastery milestone banner */}
+      {justMastered && (
+        <div className="w-full max-w-4xl mt-4 bg-yellow-400 rounded-2xl p-4 flex items-center gap-3 animate-fade-in shadow-lg">
+          <Trophy className="w-8 h-8 text-yellow-900 flex-shrink-0" fill="currentColor" />
+          <div>
+            <p className="font-black text-yellow-900 text-lg">Концептот е СОВЛАДАН! 🏆</p>
+            <p className="text-yellow-800 text-sm">
+              Го постигна 85%+ три пати по ред. Кажи му на твојот наставник — ова е голем успех!
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Streak badge (non-mastery) */}
+      {!justMastered && consecutive > 0 && passed && (
+        <div className="w-full max-w-4xl mt-4 bg-white/10 border border-white/20 rounded-2xl px-4 py-2.5 flex items-center gap-2">
+          <Star className="w-4 h-4 text-yellow-300" fill="currentColor" />
+<p className="text-white text-sm font-bold">
+            Одличен резултат {consecutive} пат{consecutive === 1 ? '' : 'и'} по ред
+            {consecutive < 3 ? ` — уште ${3 - consecutive} за да го совладаш концептот!` : ''}
+          </p>
+        </div>
+      )}
 
       {quizResult && (
         <div className={resultCardClass}>
@@ -283,7 +335,6 @@ export const StudentPlayView: React.FC = () => {
                   Оваа тема бара малку повеќе вежба. Подготвуваме полесни прашања специјално за тебе...
                 </p>
 
-                {/* Adaptive Remediation Engine — CTA */}
                 {isGeneratingRemedia && (
                   <div className="mt-3 flex items-center gap-2 text-xs font-bold text-amber-700">
                     <Sparkles className="w-3.5 h-3.5 animate-pulse" />
@@ -303,7 +354,7 @@ export const StudentPlayView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); }}
+                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); }}
                   className="mt-2 flex items-center gap-2 text-xs font-bold bg-amber-200 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-300 transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />

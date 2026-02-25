@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { firestoreService, type QuizResult } from '../services/firestoreService';
+import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle, Zap, QrCode, Copy, CheckCheck } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle, Zap, QrCode, Copy, CheckCheck, Trophy } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
@@ -97,6 +97,7 @@ const QuizRow: React.FC<{ agg: QuizAggregate }> = ({ agg }) => {
 
 export const TeacherAnalyticsView: React.FC = () => {
     const [results, setResults] = useState<QuizResult[]>([]);
+    const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -122,8 +123,12 @@ export const TeacherAnalyticsView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await firestoreService.fetchQuizResults(200);
+            const [data, mastery] = await Promise.all([
+                firestoreService.fetchQuizResults(200),
+                firestoreService.fetchAllMastery(),
+            ]);
             setResults(data);
+            setMasteryRecords(mastery);
             setLastRefresh(new Date());
         } catch (err) {
             setError('Не можеше да се вчитаат резултатите. Проверете ја врската.');
@@ -196,6 +201,29 @@ export const TeacherAnalyticsView: React.FC = () => {
 
         return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, uniqueStudents };
     }, [results, getConceptDetails]);
+
+    // Mastery aggregations
+    const masteryStats = useMemo(() => {
+        if (masteryRecords.length === 0) return null;
+        const mastered = masteryRecords.filter(m => m.mastered);
+        const inProgress = masteryRecords.filter(m => !m.mastered && m.consecutiveHighScores > 0);
+        const struggling = masteryRecords.filter(m => !m.mastered && m.consecutiveHighScores === 0 && m.attempts > 1);
+
+        // Group mastered by concept for leaderboard
+        const masteredByConcept = mastered.reduce((acc, m) => {
+            const key = m.conceptId;
+            if (!acc[key]) acc[key] = { title: m.conceptTitle || m.conceptId, count: 0, students: [] };
+            acc[key].count++;
+            acc[key].students.push(m.studentName);
+            return acc;
+        }, {} as Record<string, { title: string; count: number; students: string[] }>);
+
+        const topMasteredConcepts = Object.entries(masteredByConcept)
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 5);
+
+        return { mastered, inProgress, struggling, topMasteredConcepts };
+    }, [masteryRecords]);
 
     // ── Render ─────────────────────────────────────────────────────────────
 
@@ -282,6 +310,47 @@ export const TeacherAnalyticsView: React.FC = () => {
                             color="bg-orange-50"
                         />
                     </div>
+
+                    {/* Mastery Overview */}
+                    {masteryStats && (
+                        <Card className="mb-8 border-yellow-200 bg-gradient-to-br from-yellow-50 to-amber-50">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Trophy className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                                <h2 className="text-sm font-bold text-yellow-800 uppercase tracking-widest">Совладување на концепти</h2>
+                                <span className="ml-auto text-xs text-yellow-600 font-semibold">≥85% три пати по ред = Совладан</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 mb-5">
+                                <div className="bg-white rounded-xl p-3 text-center border border-yellow-100">
+                                    <p className="text-2xl font-black text-yellow-600">{masteryStats.mastered.length}</p>
+                                    <p className="text-xs text-gray-500 font-semibold mt-0.5">Совладани</p>
+                                </div>
+                                <div className="bg-white rounded-xl p-3 text-center border border-yellow-100">
+                                    <p className="text-2xl font-black text-blue-500">{masteryStats.inProgress.length}</p>
+                                    <p className="text-xs text-gray-500 font-semibold mt-0.5">Во напредок</p>
+                                </div>
+                                <div className="bg-white rounded-xl p-3 text-center border border-yellow-100">
+                                    <p className="text-2xl font-black text-red-400">{masteryStats.struggling.length}</p>
+                                    <p className="text-xs text-gray-500 font-semibold mt-0.5">Потребна помош</p>
+                                </div>
+                            </div>
+                            {masteryStats.topMasteredConcepts.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-bold text-yellow-700 uppercase tracking-wide mb-2">Најсовладани концепти</p>
+                                    <div className="space-y-1.5">
+                                        {masteryStats.topMasteredConcepts.map(([conceptId, data]) => (
+                                            <div key={conceptId} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-yellow-100">
+                                                <span className="text-sm font-semibold text-slate-700 truncate">{data.title}</span>
+                                                <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                                                    <Trophy className="w-3.5 h-3.5 text-yellow-400" fill="currentColor" />
+                                                    <span className="text-xs font-bold text-yellow-700">{data.count} уч.</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </Card>
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                         {/* Score distribution card */}
