@@ -13,6 +13,7 @@ export interface QuizResult {
   conceptId?: string;
   topicId?: string;
   gradeLevel?: number;
+  studentName?: string;
 }
 
 export interface CachedMaterial {
@@ -189,6 +190,53 @@ export const firestoreService = {
       return querySnapshot.docs.map(d => d.data() as QuizResult);
     } catch (error) {
       console.error("Error fetching quiz results:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Saves an AI-generated remedial quiz to cached_ai_materials and returns the new document ID.
+   * Used by the Adaptive Remediation Engine in StudentPlayView.
+   */
+  saveRemediaQuiz: async (content: any, meta: {
+    conceptId?: string;
+    topicId?: string;
+    gradeLevel?: number;
+    sourceQuizId?: string;
+  }): Promise<string | null> => {
+    try {
+      const docRef = await addDoc(collection(db, 'cached_ai_materials'), {
+        content,
+        type: 'quiz',
+        isRemedial: true,
+        sourceQuizId: meta.sourceQuizId,
+        conceptId: meta.conceptId,
+        topicId: meta.topicId,
+        gradeLevel: meta.gradeLevel,
+        createdAt: serverTimestamp(),
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error saving remedial quiz:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Fetches quiz results for a specific student by name (case-insensitive client-side filter).
+   */
+  fetchQuizResultsByStudentName: async (studentName: string): Promise<QuizResult[]> => {
+    try {
+      const q = query(
+        collection(db, "quiz_results"),
+        where("studentName", "==", studentName),
+        orderBy("playedAt", "desc"),
+        limit(100)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(d => d.data() as QuizResult);
+    } catch (error) {
+      console.error("Error fetching quiz results by student name:", error);
       return [];
     }
   },

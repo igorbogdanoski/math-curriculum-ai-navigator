@@ -31,6 +31,7 @@ import { QuotaBanner } from './components/common/QuotaBanner';
 import { ContextualFAB } from './components/common/ContextualFAB';
 import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
 import { StudentPlayView } from './views/StudentPlayView';
+import { StudentProgressView } from './views/StudentProgressView';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -108,6 +109,7 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
 
 const routes = [
     { path: '/play/:id', component: StudentPlayView }, // Student Mode route
+    { path: '/my-progress', component: StudentProgressView }, // Student Progress route
     { path: '/', component: HomeView },
     { path: '/explore', component: ExploreView },
     { path: '/topic/:id', component: TopicView },
@@ -217,8 +219,10 @@ const AppCore: React.FC = () => {
         return <AppSkeleton />;
     }
 
-    // Allow student play mode without authentication
-    const isPublicRoute = window.location.hash.startsWith('#/play/');
+    // Allow student play mode and student progress without authentication
+    const isPublicRoute =
+      window.location.hash.startsWith('#/play/') ||
+      window.location.hash.startsWith('#/my-progress');
 
     if (!isAuthenticated && !isPublicRoute) {
         return (
