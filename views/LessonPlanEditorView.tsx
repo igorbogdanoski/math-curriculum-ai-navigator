@@ -391,15 +391,21 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         return;
     }
 
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filename}.${extension}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.${extension}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        addNotification('Документот е преземен.', 'success');
+    } catch (error) {
+        console.error('Export failed:', error);
+        addNotification('Грешка при преземање на документот.', 'error');
+    }
   };
   
   if (isCurriculumLoading) {

@@ -2,7 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
-import { geminiService } from '../services/geminiService';
+import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
+import { RateLimitError } from '../services/apiErrors';
 import type { ChatMessage } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { MathRenderer } from '../components/common/MathRenderer';
@@ -67,6 +68,12 @@ export const AssistantView: React.FC = () => {
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const initializedRef = useRef(false);
+    const isMountedRef = useRef(true);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     // Context Awareness Logic (Phase 1)
     useEffect(() => {
@@ -121,6 +128,12 @@ export const AssistantView: React.FC = () => {
     const handleSend = async () => {
         if ((!input.trim() && !attachment) || isLoading || !isOnline) return;
 
+        if (isDailyQuotaKnownExhausted()) {
+            const quotaMessage: ChatMessage = { role: 'model', text: 'Дневната AI квота е исцрпена. Обидете се повторно утре или побарајте го администраторот да ја провери состојбата.' };
+            setHistory((prev: ChatMessage[]) => [...prev, quotaMessage]);
+            return;
+        }
+
         if (isThrottled) {
             return; // Silent throttle for chat
         }
@@ -159,10 +172,11 @@ export const AssistantView: React.FC = () => {
             );
             
             for await (const chunk of stream) {
+                if (!isMountedRef.current) break;
                 setHistory((prev: ChatMessage[]) => {
                     const newHistory = [...prev];
                     const lastMessageIndex = newHistory.length - 1;
-            
+
                     if (lastMessageIndex >= 0 && newHistory[lastMessageIndex].role === 'model') {
                         newHistory[lastMessageIndex] = {
                             ...newHistory[lastMessageIndex],
@@ -173,10 +187,14 @@ export const AssistantView: React.FC = () => {
                 });
             }
         } catch (error) {
-            const errorMessage: ChatMessage = { role: 'model', text: (error as Error).message };
+            if (!isMountedRef.current) return;
+            const userFacingText = error instanceof RateLimitError
+                ? 'Дневната AI квота е исцрпена. Обидете се повторно утре.'
+                : 'Се случи грешка при генерирање. Обидете се повторно.';
+            const errorMessage: ChatMessage = { role: 'model', text: userFacingText };
             setHistory((prev: ChatMessage[]) => [...prev.slice(0, -1), errorMessage]);
         } finally {
-            setIsLoading(false);
+            if (isMountedRef.current) setIsLoading(false);
         }
     };
 
