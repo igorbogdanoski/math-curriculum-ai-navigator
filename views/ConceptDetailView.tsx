@@ -91,9 +91,9 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
         ? `\n\nПредложени активности од програмата:\n${concept.activities.slice(0, 5).map((a: string) => `• ${a}`).join('\n')}`
         : '';
     openGeneratorPanel({
-        grade: String(grade.level),
-        topicId: topic.id,
-        conceptId: concept.id,
+        selectedGrade: grade.id,
+        selectedTopic: topic.id,
+        selectedConcepts: [concept.id],
         contextType: 'CONCEPT',
         customInstruction: `${standardsText}${activitiesText}`.trim(),
     });

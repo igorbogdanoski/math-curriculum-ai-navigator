@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { firestoreService, type QuizResult } from '../services/firestoreService';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle, Zap } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -101,6 +102,20 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
     const { navigate } = useNavigation();
     const { getConceptDetails } = useCurriculum();
+    const { openGeneratorPanel } = useGeneratorPanel();
+
+    const handleGenerateRemedial = (conceptId: string, conceptTitle: string, avgPct: number) => {
+        const { grade, topic } = getConceptDetails(conceptId);
+        openGeneratorPanel({
+            selectedGrade: grade?.id || '',
+            selectedTopic: topic?.id || '',
+            selectedConcepts: [conceptId],
+            contextType: 'CONCEPT',
+            materialType: 'ASSESSMENT',
+            differentiationLevel: 'support',
+            customInstruction: `РЕМЕДИЈАЛНА ВЕЖБА: Класата постигна само ${avgPct}% за концептот "${conceptTitle}". Генерирај работен лист со ПОДДРШКА ниво — поедноставени прашања, чекор-по-чекор упатства, детални примери, и визуелни помагала каде е можно.`,
+        });
+    };
 
     const loadResults = async () => {
         setIsLoading(true);
@@ -334,8 +349,17 @@ export const TeacherAnalyticsView: React.FC = () => {
                                             <p className="text-sm font-semibold text-gray-700 truncate">{c.title}</p>
                                             <p className="text-xs text-gray-400">{c.attempts} обид{c.attempts === 1 ? '' : 'и'}</p>
                                         </div>
-                                        <div className="flex items-center gap-3 flex-shrink-0">
+                                        <div className="flex items-center gap-2 flex-shrink-0">
                                             <span className={`text-lg font-bold ${c.avgPct < 50 ? 'text-red-500' : 'text-orange-500'}`}>{c.avgPct}%</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleGenerateRemedial(c.conceptId, c.title, c.avgPct)}
+                                                className="flex items-center gap-1 text-xs px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-semibold transition-colors"
+                                                title="Генерирај ремедијален работен лист (Поддршка ниво)"
+                                            >
+                                                <Zap className="w-3.5 h-3.5" />
+                                                Ремедијален
+                                            </button>
                                             <button
                                                 type="button"
                                                 onClick={() => navigate(`/concept/${c.conceptId}`)}

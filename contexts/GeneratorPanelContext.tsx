@@ -1,16 +1,8 @@
 import React, { useState, createContext, useContext, useCallback, useMemo } from 'react';
-import type { GenerationContextType, MaterialType } from '../types';
+import type { GeneratorState } from '../hooks/useGeneratorState';
 
-interface GeneratorPanelProps {
-    grade?: string; 
-    topicId?: string; 
-    conceptId?: string;
-    contextType?: GenerationContextType | 'ACTIVITY';
-    scenario?: string;
-    standardId?: string;
-    materialType?: MaterialType;
-    customInstruction?: string;
-}
+/** Full GeneratorState fields can be passed to pre-populate the generator panel */
+export type GeneratorPanelProps = Partial<GeneratorState>;
 
 interface GeneratorPanelContextType {
   isOpen: boolean;

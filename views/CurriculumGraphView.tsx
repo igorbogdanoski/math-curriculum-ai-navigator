@@ -495,10 +495,11 @@ export const CurriculumGraphView: React.FC = () => {
 
   const handleGenerateTest = () => {
       if(menuState.nodeId) {
+          const gradeId = `grade-${menuState.gradeLevel}`;
           openGeneratorPanel({
-              grade: String(menuState.gradeLevel),
-              topicId: menuState.topicId,
-              conceptId: menuState.nodeId,
+              selectedGrade: gradeId,
+              selectedTopic: menuState.topicId,
+              selectedConcepts: [menuState.nodeId],
               contextType: 'CONCEPT',
               materialType: 'ASSESSMENT'
           });
@@ -508,10 +509,11 @@ export const CurriculumGraphView: React.FC = () => {
 
   const handleGenerateIdeas = () => {
       if(menuState.nodeId) {
+          const gradeId = `grade-${menuState.gradeLevel}`;
           openGeneratorPanel({
-              grade: String(menuState.gradeLevel),
-              topicId: menuState.topicId,
-              conceptId: menuState.nodeId,
+              selectedGrade: gradeId,
+              selectedTopic: menuState.topicId,
+              selectedConcepts: [menuState.nodeId],
               contextType: 'CONCEPT',
               materialType: 'SCENARIO'
           });
