@@ -10,6 +10,9 @@ export interface QuizResult {
   totalQuestions: number;
   percentage: number;
   playedAt?: any;
+  conceptId?: string;
+  topicId?: string;
+  gradeLevel?: number;
 }
 
 export interface CachedMaterial {

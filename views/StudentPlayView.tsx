@@ -30,7 +30,7 @@ export const StudentPlayView: React.FC = () => {
         if (quizDoc.exists()) {
           const data = quizDoc.data();
           // Support both direct content or nested content
-          setQuizData(data.content || data);
+          setQuizData({ ...(data.content || data), _meta: { conceptId: data.conceptId, topicId: data.topicId, gradeLevel: data.gradeLevel } });
         } else {
           setError('Квизот не е пронајден. Проверете го линкот со вашиот наставник.');
         }
@@ -105,6 +105,9 @@ export const StudentPlayView: React.FC = () => {
                 correctCount,
                 totalQuestions,
                 percentage: Math.round((correctCount / totalQuestions) * 100),
+                conceptId: quizData._meta?.conceptId,
+                topicId: quizData._meta?.topicId,
+                gradeLevel: quizData._meta?.gradeLevel,
               });
             }}
             onClose={() => window.location.hash = '/'}

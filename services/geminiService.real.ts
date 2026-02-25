@@ -640,7 +640,13 @@ export const realGeminiService = {
       : null;
     const bloomPart = bloomLevels ? ` Нагласени Блумови нивоа: ${bloomLevels.join(', ')}.` : '';
     const selfAssessmentPart = includeSelfAssessment ? ' Додај 2-3 метакогнитивни прашања за само-оценување на крајот.' : '';
-    const prompt = `Генерирај ${type} со ${numQuestions} прашања на македонски. Типови: ${questionTypes.join(', ')}. Диференцијација: ${differentiationLevel}.${bloomPart}${selfAssessmentPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (лесно/средно/тешко). ${customInstruction || ''}`;
+    const diffDescriptions: Record<string, string> = {
+      support: 'ПОДДРШКА: Поедноставени прашања со детални упатства, помал вокабулар, насочување низ решавање чекор по чекор',
+      standard: 'ОСНОВНО: Стандардни прашања соодветни за просечен ученик',
+      advanced: 'ЗБОГАТУВАЊЕ: Предизвикувачки прашања со отворен крај, критичко размислување, меѓупредметни врски и примена во реален контекст',
+    };
+    const diffDesc = diffDescriptions[differentiationLevel] || diffDescriptions.standard;
+    const prompt = `Генерирај ${type} со ${numQuestions} прашања на македонски. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (лесно/средно/тешко). ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, alignment_goal: { type: Type.STRING }, selfAssessmentQuestions: { type: Type.ARRAY, items: { type: Type.STRING } }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, cognitiveLevel: { type: Type.STRING }, difficulty_level: { type: Type.STRING }, concept_evaluated: { type: Type.STRING } }, required: ["type", "question", "answer", "cognitiveLevel"] } } }, required: ["title", "questions"] };
 
     const canCache = !customInstruction && !studentProfiles?.length && differentiationLevel === 'standard';
@@ -767,6 +773,15 @@ export const realGeminiService = {
           safetySettings: SAFETY_SETTINGS 
       });
       return response.text || "";
+  },
+
+  async generateReflectionQuestions(lessonTitle: string, grade: number, theme: string): Promise<{ wentWell: string; challenges: string; nextSteps: string }> {
+      const prompt = `Наставникот штотуку одржа час "${lessonTitle}" (${grade} одд., тема: ${theme}).
+Генерирај конкретни рефлексивни прашања кои ќе му помогнат да размисли за часот.
+Секое поле треба да биде 1-2 насочувачки прашања (не одговори).
+Врати JSON: { "wentWell": "Кои активности беа успешни?...", "challenges": "Кај кои концепти учениците имаа потешкотии?...", "nextSteps": "Кои конкретни промени би ги направиле следниот пат?..." }`;
+      const schema = { type: Type.OBJECT, properties: { wentWell: { type: Type.STRING }, challenges: { type: Type.STRING }, nextSteps: { type: Type.STRING } }, required: ["wentWell", "challenges", "nextSteps"] };
+      return generateAndParseJSON<{ wentWell: string; challenges: string; nextSteps: string }>([{ text: prompt }], schema, DEFAULT_MODEL);
   },
 
   async analyzeCoverage(lessonPlans: LessonPlan[], allNationalStandards: NationalStandard[]): Promise<CoverageAnalysisReport> {

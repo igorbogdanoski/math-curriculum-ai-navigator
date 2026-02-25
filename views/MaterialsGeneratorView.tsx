@@ -60,6 +60,11 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const [isThrottled, setIsThrottled] = useState(false);
     const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
 
+    // 3× Variants state
+    const [variants, setVariants] = useState<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment> | null>(null);
+    const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
+    const [activeVariantTab, setActiveVariantTab] = useState<'support' | 'standard' | 'advanced'>('standard');
+
     const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
     const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
 
@@ -184,6 +189,89 @@ ${generatedMaterial.assessmentIdea}
         });
     };
 
+    const MACEDONIAN_CONTEXT_HINT = 'Користи македонски примери: цени во денари (МКД), градови (Скопје, Битола, Охрид), реки (Вардар, Брегалница), ситуации од македонскиот секојдневен живот.';
+
+    // Shared context builder — used by both handleGenerate and handleGenerateVariants
+    const buildContext = (): { context: GenerationContext; imageParam: any; studentProfilesToPass: StudentProfile[] | undefined; tempActivityTitle: string } | null => {
+        if (!curriculum) return null;
+        const gradeData = curriculum.grades.find((g: Grade) => g.id === selectedGrade) || curriculum.grades.find((g: Grade) => String(g.level) === selectedGrade);
+        if (!gradeData && contextType !== 'STANDARD') return null;
+        let context: GenerationContext | null = null;
+        let tempActivityTitle = activityTitle;
+        switch (contextType) {
+            case 'CONCEPT': case 'TOPIC': case 'ACTIVITY': {
+                const topic = gradeData?.topics.find((t: Topic) => t.id === selectedTopic);
+                if (!topic) return null;
+                const concepts = allConcepts.filter((c: Concept) => selectedConcepts.includes(c.id));
+                if ((contextType === 'CONCEPT' || contextType === 'ACTIVITY') && concepts.length === 0) return null;
+                const scenario = contextType === 'ACTIVITY' ? `Креирај материјал за учење базиран на следнава активност од наставната програма: "${selectedActivity}"` : undefined;
+                const activeBlooms = Object.keys(bloomDistribution).length > 0 ? bloomDistribution : undefined;
+                context = { type: contextType, grade: gradeData!, topic, concepts, scenario, bloomDistribution: activeBlooms };
+                if (!tempActivityTitle && materialType === 'RUBRIC') tempActivityTitle = contextType === 'ACTIVITY' ? selectedActivity : `Активност за ${concepts[0]?.title || topic.title}`;
+                break;
+            }
+            case 'STANDARD': {
+                const standard = allNationalStandards?.find((s: NationalStandard) => s.id === selectedStandard);
+                if (!standard) return null;
+                const standardGradeData = curriculum.grades.find((g: Grade) => g.level === standard.gradeLevel) || gradeData;
+                if (!standardGradeData) return null;
+                let topicForStandard: Topic | undefined;
+                const concepts = standard.relatedConceptIds?.map((id: string) => { const details = getConceptDetails(id); if (!topicForStandard && details.topic) topicForStandard = details.topic; return details.concept; }).filter((c: Concept | undefined): c is Concept => !!c);
+                if (!topicForStandard) topicForStandard = { id: 'standard-topic', title: `Стандарди за ${standardGradeData.title}`, description: `Материјали генерирани врз основа на национален стандард.`, concepts: concepts || [] };
+                context = { type: 'STANDARD', grade: standardGradeData, standard, concepts, topic: topicForStandard };
+                if (!tempActivityTitle && materialType === 'RUBRIC') tempActivityTitle = `Активност за стандард ${standard.code}`;
+                break;
+            }
+            case 'SCENARIO': {
+                if (!scenarioText.trim() && !imageFile) return null;
+                if (!gradeData) return null;
+                context = { type: 'SCENARIO', grade: gradeData, scenario: scenarioText, topic: { id: 'scenario-topic', title: 'Генерирање од идеја', description: scenarioText.substring(0, 100), concepts: [] } };
+                if (!tempActivityTitle && materialType === 'RUBRIC') tempActivityTitle = `Активност според идеја`;
+                break;
+            }
+        }
+        if (!context) return null;
+        return {
+            context,
+            imageParam: imageFile ? { base64: imageFile.base64, mimeType: imageFile.file.type } : undefined,
+            studentProfilesToPass: (useStudentProfiles || materialType === 'LEARNING_PATH') ? user?.studentProfiles?.filter((p: StudentProfile) => selectedStudentProfileIds.includes(p.id)) : undefined,
+            tempActivityTitle,
+        };
+    };
+
+    const handleGenerateVariants = async () => {
+        if (!isOnline) { addNotification("Нема интернет конекција.", 'error'); return; }
+        if (isGeneratingVariants || isGenerateDisabled) return;
+        const built = buildContext();
+        if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
+        const { context: finalContext } = built;
+        const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', state.customInstruction].filter(Boolean).join(' ');
+
+        setIsGeneratingVariants(true);
+        setVariants(null);
+        setGeneratedMaterial(null);
+
+        const levels = ['support', 'standard', 'advanced'] as const;
+        const newVariants: Partial<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>> = {};
+        for (const level of levels) {
+            try {
+                newVariants[level] = await geminiService.generateAssessment(
+                    materialType as 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS',
+                    state.questionTypes, state.numQuestions, finalContext,
+                    user ?? undefined, level, undefined, undefined, effectiveInstruction, state.includeSelfAssessment
+                );
+            } catch (error) {
+                console.warn(`Failed to generate ${level} variant:`, error);
+            }
+        }
+        if (Object.keys(newVariants).length > 0) {
+            setVariants(newVariants as Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>);
+        } else {
+            addNotification('Не можеше да се генерираат варијантите. Обидете се повторно.', 'error');
+        }
+        setIsGeneratingVariants(false);
+    };
+
     const handleGenerate = async () => {
         if (!isOnline) {
             addNotification("Нема интернет конекција. Генераторот е недостапен.", 'error');
@@ -203,111 +291,17 @@ ${generatedMaterial.assessmentIdea}
         setIsThrottled(true);
         setTimeout(() => setIsThrottled(false), 3000); // 3s throttle
 
-        // Robust grade lookup to handle both string IDs and number levels
-        const gradeData = curriculum.grades.find((g: Grade) => g.id === selectedGrade) || curriculum.grades.find((g: Grade) => String(g.level) === selectedGrade);
-        
-        // Only enforce grade selection if NOT using STANDARD context (standard defines grade)
-        if(!gradeData && contextType !== 'STANDARD') {
-             addNotification('Ве молиме изберете валидно одделение.', 'error');
-             return;
+        const built = buildContext();
+        if (!built) {
+            addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error');
+            return;
         }
-
-        let context: GenerationContext | null = null;
-        
-        let tempActivityTitle = activityTitle;
-        switch(contextType) {
-            case 'CONCEPT':
-            case 'TOPIC':
-            case 'ACTIVITY': {
-                // Re-find topic to ensure it's valid object
-                const topic = gradeData?.topics.find((t: Topic) => t.id === selectedTopic);
-                if (!topic) {
-                    addNotification('Ве молиме изберете валидна тема.', 'error');
-                    return;
-                }
-                const concepts = allConcepts.filter((c: Concept) => selectedConcepts.includes(c.id));
-                if ((contextType === 'CONCEPT' || contextType === 'ACTIVITY') && concepts.length === 0) {
-                    addNotification('Ве молиме изберете барем еден поим.', 'error');
-                    return;
-                }
-                
-                const scenario = contextType === 'ACTIVITY' ? `Креирај материјал за учење базиран на следнава активност од наставната програма: "${selectedActivity}"` : undefined;
-                const activeBlooms = Object.keys(bloomDistribution).length > 0 ? bloomDistribution : undefined;
-                context = { type: contextType, grade: gradeData!, topic, concepts, scenario, bloomDistribution: activeBlooms };
-                if (!tempActivityTitle && materialType === 'RUBRIC') {
-                    tempActivityTitle = contextType === 'ACTIVITY' ? selectedActivity : `Активност за ${concepts[0]?.title || topic.title}`;
-                }
-                break;
-            }
-            case 'STANDARD': {
-                const standard = allNationalStandards?.find((s: NationalStandard) => s.id === selectedStandard);
-                if (!standard) {
-                     addNotification('Ве молиме изберете стандард.', 'error');
-                     return;
-                }
-                
-                // Find grade data for standard
-                const standardGradeData = curriculum.grades.find((g: Grade) => g.level === standard.gradeLevel) || gradeData;
-                
-                if (!standardGradeData) {
-                    addNotification('Не може да се одреди одделението за избраниот стандард.', 'error');
-                    return;
-                }
-
-                let topicForStandard: Topic | undefined;
-                const concepts = standard.relatedConceptIds
-                    ?.map((id: string) => {
-                        const details = getConceptDetails(id);
-                        if (!topicForStandard && details.topic) {
-                            topicForStandard = details.topic;
-                        }
-                        return details.concept;
-                    })
-                    .filter((c: Concept | undefined): c is Concept => !!c);
-
-                if (!topicForStandard) {
-                    topicForStandard = {
-                        id: 'standard-topic',
-                        title: `Стандарди за ${standardGradeData.title}`,
-                        description: `Материјали генерирани врз основа на национален стандард.`,
-                        concepts: concepts || []
-                    };
-                }
-                
-                context = { type: 'STANDARD', grade: standardGradeData, standard, concepts, topic: topicForStandard };
-                if(!tempActivityTitle && materialType === 'RUBRIC') tempActivityTitle =`Активност за стандард ${standard.code}`;
-                break;
-            }
-            case 'SCENARIO': {
-                 if (!scenarioText.trim() && !imageFile) {
-                    addNotification('Ве молиме внесете идеја или прикачете слика.', 'error');
-                    return;
-                 }
-                 const placeholderTopic: Topic = {
-                     id: 'scenario-topic',
-                     title: 'Генерирање од идеја',
-                     description: scenarioText.substring(0, 100),
-                     concepts: []
-                 };
-                 // Ensure gradeData is present for SCENARIO context
-                 if (!gradeData) {
-                      addNotification('Ве молиме изберете одделение за вашата идеја.', 'error');
-                      return;
-                 }
-                 context = { type: 'SCENARIO', grade: gradeData, scenario: scenarioText, topic: placeholderTopic };
-                 if(!tempActivityTitle && materialType === 'RUBRIC') tempActivityTitle = `Активност според идеја`;
-                 break;
-            }
-        }
-
-        if (!context) return;
-        
-        const finalContext = context;
-        const imageParam = imageFile ? { base64: imageFile.base64, mimeType: imageFile.file.type } : undefined;
-        const studentProfilesToPass = (useStudentProfiles || materialType === 'LEARNING_PATH') ? user?.studentProfiles?.filter((p: StudentProfile) => selectedStudentProfileIds.includes(p.id)) : undefined;
+        const { context: finalContext, imageParam, studentProfilesToPass, tempActivityTitle } = built;
+        const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', state.customInstruction].filter(Boolean).join(' ');
 
         setIsLoading(true);
         setGeneratedMaterial(null);
+        setVariants(null);
 
         try {
             if (materialType === 'ILLUSTRATION') {
@@ -324,7 +318,7 @@ ${generatedMaterial.assessmentIdea}
                     setIsLoading(false);
                     return;
                 }
-                const result = await geminiService.generateLearningPaths(finalContext, studentProfilesToPass, user ?? undefined, state.customInstruction);
+                const result = await geminiService.generateLearningPaths(finalContext, studentProfilesToPass, user ?? undefined, effectiveInstruction);
                 setGeneratedMaterial(result);
             } else if (materialType) { // SCENARIO, ASSESSMENT, RUBRIC, etc.
                 let result;
@@ -332,20 +326,20 @@ ${generatedMaterial.assessmentIdea}
                     case 'SCENARIO':
                          if (!finalContext.grade) throw new Error("Недостасува информација за одделение.");
                          if (!finalContext.topic) throw new Error("Недостасува информација за тема.");
-                         result = await geminiService.generateLessonPlanIdeas(finalContext.concepts || [], finalContext.topic, finalContext.grade.level, user ?? undefined, { focus: state.activityFocus, tone: state.scenarioTone, learningDesign: state.learningDesignModel }, state.customInstruction);
+                         result = await geminiService.generateLessonPlanIdeas(finalContext.concepts || [], finalContext.topic, finalContext.grade.level, user ?? undefined, { focus: state.activityFocus, tone: state.scenarioTone, learningDesign: state.learningDesignModel }, effectiveInstruction);
                          result.generationContext = finalContext;
                          break;
                     case 'ASSESSMENT':
                     case 'FLASHCARDS':
                     case 'QUIZ':
-                        result = await geminiService.generateAssessment(materialType, state.questionTypes, state.numQuestions, finalContext, user ?? undefined, state.differentiationLevel, studentProfilesToPass, imageParam, state.customInstruction, includeSelfAssessment);
+                        result = await geminiService.generateAssessment(materialType, state.questionTypes, state.numQuestions, finalContext, user ?? undefined, state.differentiationLevel, studentProfilesToPass, imageParam, effectiveInstruction, includeSelfAssessment);
                         break;
                     case 'EXIT_TICKET':
-                        result = await geminiService.generateExitTicket(state.exitTicketQuestions, state.exitTicketFocus, finalContext, user ?? undefined, state.customInstruction);
+                        result = await geminiService.generateExitTicket(state.exitTicketQuestions, state.exitTicketFocus, finalContext, user ?? undefined, effectiveInstruction);
                         break;
                     case 'RUBRIC':
                         if (!finalContext.grade) throw new Error("Недостасува информација за одделение.");
-                        result = await geminiService.generateRubric(finalContext.grade.level, tempActivityTitle, state.activityType, state.criteriaHints, user ?? undefined, state.customInstruction);
+                        result = await geminiService.generateRubric(finalContext.grade.level, tempActivityTitle, state.activityType, state.criteriaHints, user ?? undefined, effectiveInstruction);
                         break;
                 }
                 setGeneratedMaterial(result || null);
@@ -431,21 +425,67 @@ ${generatedMaterial.assessmentIdea}
                             <legend className="text-xl font-bold text-gray-800 px-2 -ml-2">3. Поставете опции</legend>
                             <div className="space-y-4 pt-2">
                                 <MaterialOptions state={state} dispatch={dispatch} user={user} />
+
+                                {/* Differentiation level — only for assessment types */}
+                                {(['ASSESSMENT', 'QUIZ', 'FLASHCARDS', 'LEARNING_PATH'] as const).includes(state.materialType as any) && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Ниво на диференцијација</label>
+                                        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+                                            {([
+                                                { value: 'support' as const, label: '🔵 Поддршка', title: 'Поедноставено со детални упатства' },
+                                                { value: 'standard' as const, label: '⚪ Основно', title: 'Стандардно ниво' },
+                                                { value: 'advanced' as const, label: '🔴 Збогатување', title: 'Предизвикувачко со критичко размислување' },
+                                            ]).map(opt => (
+                                                <button key={opt.value} type="button" title={opt.title}
+                                                    onClick={() => dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: opt.value } })}
+                                                    className={`flex-1 py-2 px-3 font-medium transition-colors border-r last:border-r-0 border-gray-200 ${state.differentiationLevel === opt.value ? 'bg-brand-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                                >{opt.label}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div>
                                     <label htmlFor="customInstruction" className="block text-sm font-medium text-gray-700">Дополнителни инструкции за AI (опционално)</label>
                                     <textarea id="customInstruction" value={state.customInstruction} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'customInstruction', value: e.target.value } })} rows={2} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="На пр. 'Фокусирај се на примери од реалниот живот', 'Направи го текстот забавен', 'Прашањата да бидат потешки'..."></textarea>
                                 </div>
+
+                                {/* Macedonian context toggle */}
+                                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={state.useMacedonianContext}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'useMacedonianContext', value: e.target.checked } })}
+                                        className="rounded border-gray-300 text-brand-primary"
+                                    />
+                                    Користи македонски примери (денари, локални места, македонски контекст)
+                                </label>
                             </div>
                         </fieldset>
                     </fieldset>
 
-                    <div data-tour="generator-generate-button" className="flex justify-end items-center pt-6 border-t mt-6 gap-4">
-                         <button type="button" onClick={handleReset} disabled={isGenerating} className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors">
+                    <div data-tour="generator-generate-button" className="flex flex-wrap justify-end items-center pt-6 border-t mt-6 gap-3">
+                         <button type="button" onClick={handleReset} disabled={isGenerating || isGeneratingVariants} className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors">
                             Ресетирај форма
                         </button>
-                        <button 
-                            type="submit" 
-                            disabled={isGenerateDisabled} 
+                        {/* 3× Variants button — only for assessment material types */}
+                        {(['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as const).includes(state.materialType as any) && (
+                            <button
+                                type="button"
+                                onClick={handleGenerateVariants}
+                                disabled={isGenerateDisabled || isGeneratingVariants || isGenerating}
+                                title="Генерирај материјал на 3 нивоа: Поддршка, Основно и Збогатување"
+                                className="flex items-center gap-2 border-2 border-brand-primary text-brand-primary px-4 py-3 rounded-lg hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-semibold"
+                            >
+                                {isGeneratingVariants
+                                    ? <><ICONS.spinner className="w-5 h-5 animate-spin" /><span>Генерирам 3 варијанти...</span></>
+                                    : <><ICONS.sparkles className="w-5 h-5" /><span>3× Варијанти</span></>
+                                }
+                            </button>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={isGenerateDisabled || isGeneratingVariants}
                             title={!isOnline ? 'Нема интернет конекција' : 'Генерирај'}
                             className="w-full max-w-xs flex justify-center items-center gap-2 bg-brand-secondary text-white px-4 py-3 rounded-lg disabled:bg-gray-400 hover:bg-brand-primary transition-colors font-semibold text-lg"
                         >
@@ -472,7 +512,38 @@ ${generatedMaterial.assessmentIdea}
                 </div>
             )}
 
-            {!isGenerating && !generatedMaterial && (
+            {/* 3× Variants loading indicator */}
+            {isGeneratingVariants && (
+                <div className="mt-6">
+                    <AILoadingIndicator />
+                    <p className="text-center text-sm text-gray-500 mt-3">Генерирам 3 варијанти — Поддршка, Основно и Збогатување...</p>
+                </div>
+            )}
+
+            {/* 3× Variants result tabs */}
+            {!isGeneratingVariants && variants && (
+                <div className="mt-6 animate-fade-in">
+                    <div className="flex items-center gap-2 mb-3">
+                        <ICONS.sparkles className="w-5 h-5 text-brand-primary" />
+                        <h3 className="text-lg font-bold text-gray-800">3 Нивоа на диференцијација</h3>
+                    </div>
+                    <div className="flex rounded-xl border border-gray-200 overflow-hidden mb-4 shadow-sm">
+                        {([
+                            { value: 'support' as const, label: '🔵 Поддршка' },
+                            { value: 'standard' as const, label: '⚪ Основно' },
+                            { value: 'advanced' as const, label: '🔴 Збогатување' },
+                        ]).map(opt => (
+                            <button key={opt.value} type="button"
+                                onClick={() => setActiveVariantTab(opt.value)}
+                                className={`flex-1 py-2.5 px-4 font-semibold text-sm transition-colors border-r last:border-r-0 border-gray-200 ${activeVariantTab === opt.value ? 'bg-brand-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                            >{opt.label}</button>
+                        ))}
+                    </div>
+                    {variants[activeVariantTab] && <GeneratedAssessment material={variants[activeVariantTab]} />}
+                </div>
+            )}
+
+            {!isGenerating && !isGeneratingVariants && !generatedMaterial && !variants && (
                 <div className="mt-6"><EmptyState icon={<ICONS.generator className="w-12 h-12" />} title="Подготвени за создавање?" message="Следете ги чекорите за да го изберете саканиот контекст и параметри, потоа кликнете 'Генерирај' за да добиете материјали креирани од вештачка интелигенција." /></div>
             )}
         </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { firestoreService, type QuizResult } from '../services/firestoreService';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { useNavigation } from '../contexts/NavigationContext';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -97,6 +98,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+    const { navigate } = useNavigation();
 
     const loadResults = async () => {
         setIsLoading(true);
@@ -116,9 +118,9 @@ export const TeacherAnalyticsView: React.FC = () => {
 
     // ── Aggregations ──────────────────────────────────────────────────────
 
-    const { totalAttempts, avgScore, passRate, quizAggregates, distribution } = useMemo(() => {
+    const { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts } = useMemo(() => {
         if (results.length === 0) {
-            return { totalAttempts: 0, avgScore: 0, passRate: 0, quizAggregates: [], distribution: [0, 0, 0, 0] };
+            return { totalAttempts: 0, avgScore: 0, passRate: 0, quizAggregates: [], distribution: [0, 0, 0, 0], weakConcepts: [] };
         }
 
         const totalAttempts = results.length;
@@ -152,7 +154,21 @@ export const TeacherAnalyticsView: React.FC = () => {
             };
         }).sort((a, b) => b.attempts - a.attempts);
 
-        return { totalAttempts, avgScore, passRate, quizAggregates, distribution };
+        // Concept-level aggregation: group by conceptId to find weak concepts
+        const conceptStats = results.filter(r => r.conceptId).reduce((acc, r) => {
+            const key = r.conceptId!;
+            if (!acc[key]) acc[key] = { total: 0, sum: 0, title: r.quizTitle };
+            acc[key].total++;
+            acc[key].sum += r.percentage;
+            return acc;
+        }, {} as Record<string, { total: number; sum: number; title: string }>);
+
+        const weakConcepts = Object.entries(conceptStats)
+            .map(([conceptId, s]) => ({ conceptId, avgPct: Math.round(s.sum / s.total), attempts: s.total, title: s.title }))
+            .filter(c => c.avgPct < 70)
+            .sort((a, b) => a.avgPct - b.avgPct);
+
+        return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts };
     }, [results]);
 
     // ── Render ─────────────────────────────────────────────────────────────
@@ -298,6 +314,37 @@ export const TeacherAnalyticsView: React.FC = () => {
                             </div>
                         </Card>
                     </div>
+
+                    {/* Weak Concepts section — only shown when conceptId data exists */}
+                    {weakConcepts.length > 0 && (
+                        <Card className="mb-8 border-orange-200 bg-orange-50">
+                            <div className="flex items-center gap-2 mb-4">
+                                <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                                <h2 className="text-sm font-bold text-orange-800 uppercase tracking-widest">Концепти под 70% — бараат внимание</h2>
+                            </div>
+                            <div className="space-y-2">
+                                {weakConcepts.map(c => (
+                                    <div key={c.conceptId} className="flex items-center justify-between gap-4 p-3 bg-white rounded-lg border border-orange-100">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-gray-700 truncate">{c.title}</p>
+                                            <p className="text-xs text-gray-400">{c.attempts} обид{c.attempts === 1 ? '' : 'и'}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3 flex-shrink-0">
+                                            <span className={`text-lg font-bold ${c.avgPct < 50 ? 'text-red-500' : 'text-orange-500'}`}>{c.avgPct}%</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate(`/concept/${c.conceptId}`)}
+                                                className="text-xs px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 font-semibold transition-colors"
+                                            >
+                                                Прегледај →
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-xs text-orange-600 mt-3 italic">Овие концепти се базираат на резултатите од квизовите споделени преку Ученичкиот Портал.</p>
+                        </Card>
+                    )}
 
                     {/* Per-quiz table */}
                     <Card>

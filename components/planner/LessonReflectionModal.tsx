@@ -27,6 +27,7 @@ export const LessonReflectionModal: React.FC<LessonReflectionModalProps> = ({ it
   const [formData, setFormData] = useState<LessonReflection>(item.reflection || initialFormData);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+  const [isPreFilling, setIsPreFilling] = useState(false);
 
   useEffect(() => {
     setFormData(item.reflection || initialFormData);
@@ -37,6 +38,23 @@ export const LessonReflectionModal: React.FC<LessonReflectionModalProps> = ({ it
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev: LessonReflection) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePreFillQuestions = async () => {
+    const lessonPlan = item.lessonPlanId ? getLessonPlan(item.lessonPlanId) : null;
+    setIsPreFilling(true);
+    try {
+      const questions = await geminiService.generateReflectionQuestions(
+        item.title,
+        lessonPlan?.grade ?? 6,
+        lessonPlan?.theme ?? item.title
+      );
+      setFormData(questions);
+    } catch (error) {
+      addNotification('Грешка при генерирање на прашањата. Обидете се повторно.', 'error');
+    } finally {
+      setIsPreFilling(false);
+    }
   };
 
   const handleAnalyzeReflection = async () => {
@@ -134,6 +152,20 @@ export const LessonReflectionModal: React.FC<LessonReflectionModalProps> = ({ it
                  </div>
             </div>
             <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                {!item.reflection && (
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                        <ICONS.sparkles className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                        <p className="text-xs text-blue-700 flex-1">AI може да ви предложи водечки прашања за рефлексија.</p>
+                        <button
+                            type="button"
+                            onClick={handlePreFillQuestions}
+                            disabled={isPreFilling}
+                            className="flex-shrink-0 flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                        >
+                            {isPreFilling ? <><ICONS.spinner className="w-3.5 h-3.5 animate-spin" /> Генерирам...</> : 'Предложи прашања'}
+                        </button>
+                    </div>
+                )}
                 <div>
                     <label htmlFor="wentWell" className="block text-sm font-medium text-gray-700">Што помина добро?</label>
                     <textarea

@@ -32,6 +32,7 @@ export interface GeneratorState {
     illustrationPrompt: string;
     imageFile: { file: File, base64: string, previewUrl: string } | null;
     customInstruction: string;
+    useMacedonianContext: boolean;
 }
 
 // Actions
@@ -76,6 +77,7 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         illustrationPrompt: '',
         imageFile: null,
         customInstruction: '',
+        useMacedonianContext: true,
     };
 };
 
