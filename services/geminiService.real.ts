@@ -236,6 +236,11 @@ async function* streamGeminiProxy(params: {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    // Mirror the same daily-quota detection as callGeminiProxy
+    if (response.status === 429 && errorData.quotaType === 'daily') {
+      markDailyQuotaExhausted();
+      throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.");
+    }
     throw new Error(errorData.error || `Stream error: ${response.status}`);
   }
 
@@ -515,7 +520,7 @@ export const realGeminiService = {
   async generateLearningPaths(context: GenerationContext, studentProfiles: StudentProfile[], profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedLearningPaths> {
     const prompt = `Креирај диференцирани патеки за учење. ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, paths: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { profileName: { type: Type.STRING }, steps: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { stepNumber: { type: Type.INTEGER }, activity: { type: Type.STRING }, type: { type: Type.STRING } }, required: ["stepNumber", "activity"] } } }, required: ["profileName", "steps"] } } }, required: ["title", "paths"] };
-    return generateAndParseJSON<AIGeneratedLearningPaths>([{ text: prompt }, { text: JSON.stringify(minifyContext(context)) }], schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, MAX_RETRIES, true);
+    return generateAndParseJSON<AIGeneratedLearningPaths>([{ text: prompt }, { text: JSON.stringify(minifyContext(context)) }], schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, MAX_RETRIES, false);
   },
 
   async generateAnalogy(concept: Concept, gradeLevel: number): Promise<string> {
@@ -582,8 +587,8 @@ export const realGeminiService = {
         required: ["problem", "steps", "strategy"]
     };
 
-    // Use thinking model for genuine ToT+CoT quality — better multi-step reasoning
-    const result = await generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true);
+    // Standard model is sufficient and 3-5x cheaper on quota than thinking model
+    const result = await generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false);
     // Only cache non-custom results for community reuse
     if (!customInstruction && result) {
       await setDoc(doc(db, CACHE_COLLECTION, cacheKey), {
@@ -719,7 +724,7 @@ export const realGeminiService = {
   async analyzeLessonPlan(plan: Partial<LessonPlan>, profile?: TeachingProfile): Promise<AIPedagogicalAnalysis> {
     const prompt = `Направи педагошка анализа на подготовка за час.`;
     const schema = { type: Type.OBJECT, properties: { pedagogicalAnalysis: { type: Type.OBJECT, properties: { overallImpression: { type: Type.STRING }, alignment: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } }, engagement: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } }, cognitiveLevels: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } } } } }, required: ["pedagogicalAnalysis"] };
-    return generateAndParseJSON<AIPedagogicalAnalysis>([{ text: prompt }, { text: `План: ${JSON.stringify(plan)}` }], schema, DEFAULT_MODEL, AIPedagogicalAnalysisSchema, MAX_RETRIES, true);
+    return generateAndParseJSON<AIPedagogicalAnalysis>([{ text: prompt }, { text: `План: ${JSON.stringify(plan)}` }], schema, DEFAULT_MODEL, AIPedagogicalAnalysisSchema, MAX_RETRIES, false);
   },
 
   async generateProactiveSuggestion(concept: Concept, profile?: TeachingProfile): Promise<string> {
