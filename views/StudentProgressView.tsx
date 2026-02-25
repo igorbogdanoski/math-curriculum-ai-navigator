@@ -11,12 +11,19 @@ const formatDate = (ts: any): string => {
   return d.toLocaleDateString('mk-MK', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-export const StudentProgressView: React.FC = () => {
+interface Props {
+  /** Passed from URL query param ?name=... — enables read-only parent view */
+  name?: string;
+}
+
+export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
+  const isReadOnly = !!nameProp;
+
   const [studentName, setStudentName] = useState<string>(
-    () => localStorage.getItem('studentName') || ''
+    () => nameProp || localStorage.getItem('studentName') || ''
   );
   const [nameInput, setNameInput] = useState<string>(
-    () => localStorage.getItem('studentName') || ''
+    () => nameProp || localStorage.getItem('studentName') || ''
   );
   const [results, setResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,7 +43,7 @@ export const StudentProgressView: React.FC = () => {
     }
   };
 
-  // Auto-load if studentName is in localStorage
+  // Auto-load on mount if name is known
   useEffect(() => {
     if (studentName) {
       fetchResults(studentName);
@@ -47,7 +54,7 @@ export const StudentProgressView: React.FC = () => {
   const handleSearch = () => {
     const trimmed = nameInput.trim();
     if (!trimmed) return;
-    localStorage.setItem('studentName', trimmed);
+    if (!isReadOnly) localStorage.setItem('studentName', trimmed);
     setStudentName(trimmed);
     fetchResults(trimmed);
   };
@@ -66,48 +73,67 @@ export const StudentProgressView: React.FC = () => {
           <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
             <ICONS.logo className="w-8 h-8 text-white" />
           </div>
-          <h1 className="font-black text-xl tracking-tighter uppercase">Мој Прогрес</h1>
-        </div>
-        <button
-          type="button"
-          onClick={() => { window.location.hash = '/'; }}
-          className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition"
-        >
-          <Home className="w-4 h-4" /> Почетна
-        </button>
-      </div>
-
-      {/* Search card */}
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-            <User className="w-5 h-5 text-indigo-600" />
-          </div>
           <div>
-            <p className="font-black text-slate-800">Внеси го твоето ime</p>
-            <p className="text-xs text-slate-400">Ги гледаш само твоите резултати</p>
+            <h1 className="font-black text-xl tracking-tighter uppercase">
+              {isReadOnly ? 'Прогрес на Ученик' : 'Мој Прогрес'}
+            </h1>
+            {isReadOnly && (
+              <p className="text-white/60 text-xs font-semibold">Приказ за родители — само за читање</p>
+            )}
           </div>
         </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Ime и презиме..."
-            value={nameInput}
-            onChange={e => setNameInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
-            className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 font-semibold focus:outline-none focus:border-indigo-400 transition"
-          />
+        {!isReadOnly && (
           <button
             type="button"
-            onClick={handleSearch}
-            disabled={!nameInput.trim() || loading}
-            className="flex items-center gap-1.5 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-40"
+            onClick={() => { window.location.hash = '/'; }}
+            className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            Прикажи
+            <Home className="w-4 h-4" /> Почетна
           </button>
-        </div>
+        )}
       </div>
+
+      {/* Search card — hidden in read-only (parent) mode */}
+      {!isReadOnly && (
+        <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+              <User className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <p className="font-black text-slate-800">Внеси го твоето ime</p>
+              <p className="text-xs text-slate-400">Ги гледаш само твоите резултати</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Ime и презиме..."
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+              className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 font-semibold focus:outline-none focus:border-indigo-400 transition"
+            />
+            <button
+              type="button"
+              onClick={handleSearch}
+              disabled={!nameInput.trim() || loading}
+              className="flex items-center gap-1.5 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-40"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              Прикажи
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Parent read-only header */}
+      {isReadOnly && (
+        <div className="w-full max-w-2xl bg-white/10 border border-white/20 rounded-2xl px-5 py-3 mb-6 flex items-center gap-3">
+          <User className="w-5 h-5 text-white/70 flex-shrink-0" />
+          <p className="text-white font-bold">{studentName}</p>
+        </div>
+      )}
 
       {/* Stats summary */}
       {searched && !loading && totalQuizzes > 0 && (
@@ -127,6 +153,14 @@ export const StudentProgressView: React.FC = () => {
             <p className="text-2xl font-black text-slate-800">{avgPct}%</p>
             <p className="text-xs text-slate-500 font-semibold">Просек</p>
           </div>
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex flex-col items-center gap-3 mt-8">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
+          <p className="text-white/70 text-sm font-bold">Вчитување...</p>
         </div>
       )}
 

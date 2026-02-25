@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { firestoreService, type QuizResult } from '../services/firestoreService';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle, Zap } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle, Zap, QrCode, Copy, CheckCheck } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
@@ -103,6 +103,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const { navigate } = useNavigation();
     const { getConceptDetails } = useCurriculum();
     const { openGeneratorPanel } = useGeneratorPanel();
+    const [copiedName, setCopiedName] = useState<string | null>(null);
 
     const handleGenerateRemedial = (conceptId: string, conceptTitle: string, avgPct: number) => {
         const { grade, topic } = getConceptDetails(conceptId);
@@ -135,9 +136,9 @@ export const TeacherAnalyticsView: React.FC = () => {
 
     // ── Aggregations ──────────────────────────────────────────────────────
 
-    const { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts } = useMemo(() => {
+    const { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, uniqueStudents } = useMemo(() => {
         if (results.length === 0) {
-            return { totalAttempts: 0, avgScore: 0, passRate: 0, quizAggregates: [], distribution: [0, 0, 0, 0], weakConcepts: [] };
+            return { totalAttempts: 0, avgScore: 0, passRate: 0, quizAggregates: [], distribution: [0, 0, 0, 0], weakConcepts: [], uniqueStudents: [] };
         }
 
         const totalAttempts = results.length;
@@ -188,7 +189,12 @@ export const TeacherAnalyticsView: React.FC = () => {
             .filter(c => c.avgPct < 70)
             .sort((a, b) => a.avgPct - b.avgPct);
 
-        return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts };
+        // Unique student names from results (for parent QR links)
+        const uniqueStudents = Array.from(
+            new Set(results.filter(r => r.studentName).map(r => r.studentName!))
+        ).sort();
+
+        return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, uniqueStudents };
     }, [results, getConceptDetails]);
 
     // ── Render ─────────────────────────────────────────────────────────────
@@ -372,6 +378,53 @@ export const TeacherAnalyticsView: React.FC = () => {
                                 ))}
                             </div>
                             <p className="text-xs text-orange-600 mt-3 italic">Овие концепти се базираат на резултатите од квизовите споделени преку Ученичкиот Портал.</p>
+                        </Card>
+                    )}
+
+                    {/* Parent QR Code section — only shown when studentName data exists */}
+                    {uniqueStudents.length > 0 && (
+                        <Card className="mb-8 border-purple-200 bg-purple-50">
+                            <div className="flex items-center gap-2 mb-4">
+                                <QrCode className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                                <h2 className="text-sm font-bold text-purple-800 uppercase tracking-widest">Родителски линкови / QR кодови</h2>
+                            </div>
+                            <p className="text-xs text-purple-600 mb-4">Испрати го овој линк или QR код на родителот за да го следи прогресот на нивното дете.</p>
+                            <div className="space-y-4">
+                                {uniqueStudents.map(name => {
+                                    const encoded = encodeURIComponent(name);
+                                    const origin = window.location.origin + window.location.pathname;
+                                    const progressUrl = `${origin}#/my-progress?name=${encoded}`;
+                                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(progressUrl)}`;
+                                    const isCopied = copiedName === name;
+                                    return (
+                                        <div key={name} className="flex items-center gap-4 p-4 bg-white rounded-xl border border-purple-100">
+                                            <img
+                                                src={qrUrl}
+                                                alt={`QR за ${name}`}
+                                                className="w-24 h-24 rounded-lg border border-purple-100 flex-shrink-0"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-bold text-slate-800 mb-1">{name}</p>
+                                                <p className="text-xs text-slate-400 break-all mb-3 font-mono">{progressUrl}</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(progressUrl).then(() => {
+                                                            setCopiedName(name);
+                                                            setTimeout(() => setCopiedName(null), 2000);
+                                                        });
+                                                    }}
+                                                    className="flex items-center gap-1.5 text-xs font-bold bg-purple-100 text-purple-800 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition"
+                                                >
+                                                    {isCopied
+                                                        ? <><CheckCheck className="w-3.5 h-3.5 text-green-600" /> Копирано!</>
+                                                        : <><Copy className="w-3.5 h-3.5" /> Копирај линк</>}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </Card>
                     )}
 
