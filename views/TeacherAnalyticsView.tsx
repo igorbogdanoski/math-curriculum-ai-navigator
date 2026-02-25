@@ -3,6 +3,7 @@ import { firestoreService, type QuizResult } from '../services/firestoreService'
 import { Card } from '../components/common/Card';
 import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useCurriculum } from '../hooks/useCurriculum';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
     const { navigate } = useNavigation();
+    const { getConceptDetails } = useCurriculum();
 
     const loadResults = async () => {
         setIsLoading(true);
@@ -157,19 +159,22 @@ export const TeacherAnalyticsView: React.FC = () => {
         // Concept-level aggregation: group by conceptId to find weak concepts
         const conceptStats = results.filter(r => r.conceptId).reduce((acc, r) => {
             const key = r.conceptId!;
-            if (!acc[key]) acc[key] = { total: 0, sum: 0, title: r.quizTitle };
+            if (!acc[key]) acc[key] = { total: 0, sum: 0, quizTitle: r.quizTitle };
             acc[key].total++;
             acc[key].sum += r.percentage;
             return acc;
-        }, {} as Record<string, { total: number; sum: number; title: string }>);
+        }, {} as Record<string, { total: number; sum: number; quizTitle: string }>);
 
         const weakConcepts = Object.entries(conceptStats)
-            .map(([conceptId, s]) => ({ conceptId, avgPct: Math.round(s.sum / s.total), attempts: s.total, title: s.title }))
+            .map(([conceptId, s]) => {
+                const conceptTitle = getConceptDetails(conceptId).concept?.title || s.quizTitle;
+                return { conceptId, avgPct: Math.round(s.sum / s.total), attempts: s.total, title: conceptTitle };
+            })
             .filter(c => c.avgPct < 70)
             .sort((a, b) => a.avgPct - b.avgPct);
 
         return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts };
-    }, [results]);
+    }, [results, getConceptDetails]);
 
     // ── Render ─────────────────────────────────────────────────────────────
 
