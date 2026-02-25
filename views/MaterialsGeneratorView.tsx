@@ -43,7 +43,7 @@ const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICO
 ];
 
 export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props: Partial<GeneratorState>) => {
-    const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails } = useCurriculum();
+    const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails, findConceptAcrossGrades } = useCurriculum();
     const { user } = useAuth();
     const { addNotification } = useNotification();
     const { addItem } = usePlanner();
@@ -67,6 +67,18 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
 
     const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
     const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
+
+    // Collect relevant national standards for the current selection — shown below generated material
+    const relevantStandards = useMemo((): NationalStandard[] => {
+        if (!allNationalStandards) return [];
+        if (contextType === 'STANDARD' && selectedStandard) {
+            return allNationalStandards.filter((s: NationalStandard) => s.id === selectedStandard);
+        }
+        if (selectedConcepts.length === 0) return [];
+        const conceptObjs = filteredConcepts.filter((c: Concept) => selectedConcepts.includes(c.id));
+        const standardIds = new Set(conceptObjs.flatMap((c: Concept) => c.nationalStandardIds || []));
+        return allNationalStandards.filter((s: NationalStandard) => standardIds.has(s.id));
+    }, [allNationalStandards, contextType, selectedStandard, selectedConcepts, filteredConcepts]);
 
     const tourInstance = React.useRef<any>(null);
     useEffect(() => {
@@ -206,7 +218,28 @@ ${generatedMaterial.assessmentIdea}
                 if ((contextType === 'CONCEPT' || contextType === 'ACTIVITY') && concepts.length === 0) return null;
                 const scenario = contextType === 'ACTIVITY' ? `Креирај материјал за учење базиран на следнава активност од наставната програма: "${selectedActivity}"` : undefined;
                 const activeBlooms = Object.keys(bloomDistribution).length > 0 ? bloomDistribution : undefined;
-                context = { type: contextType, grade: gradeData!, topic, concepts, scenario, bloomDistribution: activeBlooms };
+                // Resolve prerequisite concept titles for each selected concept
+                const prerequisitesByConceptId: Record<string, string[]> = {};
+                concepts.forEach((c: Concept) => {
+                    if (c.priorKnowledgeIds?.length) {
+                        prerequisitesByConceptId[c.id] = c.priorKnowledgeIds
+                            .map((id: string) => getConceptDetails(id).concept?.title)
+                            .filter((t): t is string => !!t);
+                    }
+                });
+                // Resolve vertical progression for each selected concept across grades
+                const verticalProgression = concepts
+                    .map((c: Concept) => {
+                        const prog = findConceptAcrossGrades(c.id);
+                        if (!prog || prog.progression.length < 2) return null;
+                        return {
+                            conceptId: c.id,
+                            title: prog.title,
+                            progression: prog.progression.map(p => ({ grade: p.grade, conceptTitle: p.concept.title })),
+                        };
+                    })
+                    .filter((p): p is NonNullable<typeof p> => p !== null);
+                context = { type: contextType, grade: gradeData!, topic, concepts, scenario, bloomDistribution: activeBlooms, prerequisitesByConceptId, verticalProgression: verticalProgression.length ? verticalProgression : undefined };
                 if (!tempActivityTitle && materialType === 'RUBRIC') tempActivityTitle = contextType === 'ACTIVITY' ? selectedActivity : `Активност за ${concepts[0]?.title || topic.title}`;
                 break;
             }
@@ -540,6 +573,29 @@ ${generatedMaterial.assessmentIdea}
                         ))}
                     </div>
                     {variants[activeVariantTab] && <GeneratedAssessment material={variants[activeVariantTab]} />}
+                </div>
+            )}
+
+            {/* National standards alignment — shown after any result */}
+            {!isGenerating && !isGeneratingVariants && (generatedMaterial || variants) && relevantStandards.length > 0 && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                        <ICONS.check className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-blue-700">Усогласеност со Национални стандарди</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {relevantStandards.map((s: NationalStandard) => (
+                            <div key={s.id} className="group relative">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 cursor-default border border-blue-200 hover:bg-blue-200 transition-colors">
+                                    {s.code}
+                                </span>
+                                <div className="absolute bottom-full left-0 mb-1.5 w-72 bg-gray-900 text-white text-xs rounded-lg p-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
+                                    <span className="font-semibold text-blue-300">{s.code}</span>
+                                    <p className="mt-0.5">{s.description}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 

@@ -395,4 +395,12 @@ export interface GenerationContext {
     standard?: NationalStandard;
     scenario?: string;
     bloomDistribution?: BloomDistribution;
+    /** Resolved prerequisite titles per conceptId — populated by buildContext() */
+    prerequisitesByConceptId?: Record<string, string[]>;
+    /** Vertical progression for each selected concept across grades — populated by buildContext() */
+    verticalProgression?: Array<{
+        conceptId: string;
+        title: string;
+        progression: Array<{ grade: number; conceptTitle: string }>;
+    }>;
 }

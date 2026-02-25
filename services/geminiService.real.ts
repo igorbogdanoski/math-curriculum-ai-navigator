@@ -314,11 +314,21 @@ function minifyContext(context: GenerationContext): any {
         type: context.type,
         gradeLevel: context.grade?.level,
         topic: context.topic ? { title: context.topic.title, description: safeString(context.topic.description, 200) } : undefined,
-        concepts: context.concepts?.map(c => ({ title: c.title, description: safeString(c.description, 150), assessmentStandards: c.assessmentStandards?.slice(0, 5) })),
+        concepts: context.concepts?.map(c => ({
+            title: c.title,
+            description: safeString(c.description, 150),
+            contentPoints: c.content?.slice(0, 5),
+            assessmentStandards: c.assessmentStandards,
+            suggestedActivities: c.activities?.slice(0, 4),
+            prerequisiteConcepts: context.prerequisitesByConceptId?.[c.id] ?? [],
+        })),
         standard: context.standard ? { code: context.standard.code, description: safeString(context.standard.description, 200) } : undefined,
         scenario: safeString(context.scenario, 500),
         bloomEmphasis: context.bloomDistribution && Object.keys(context.bloomDistribution).length > 0
             ? Object.keys(context.bloomDistribution)
+            : undefined,
+        verticalProgression: context.verticalProgression?.length
+            ? context.verticalProgression
             : undefined,
     };
 }
@@ -332,6 +342,12 @@ const TEXT_SYSTEM_INSTRUCTION = `
 1. Јазик: Користи литературен македонски јазик.
 2. Форматирање: Користи Markdown за добра читливост.
 3. Математички формули: Користи стандарден LaTeX со $ за инлајн и $$ за блок. Користи \\cdot за множење и : за делење. Користи децимална запирка (,).
+
+УПОТРЕБА НА КОНТЕКСТ:
+- contentPoints: точна математичка содржина која треба да ја покриеш — задолжително ја вклучи.
+- assessmentStandards: конкретни исходи за оценување — генерираните прашања/задачи МОРА да ги покриваат.
+- suggestedActivities: педагошки активности од наставната програма — инспирирај се, адаптирај, не копирај буквално.
+- prerequisiteConcepts: листа на концепти кои учениците мора да ги знаат однапред — ако не е празна, вклучи кратка 'Активирање предзнаење' секција (5 мин) со конкретна активност за тие концепти.
 `;
 
 const JSON_SYSTEM_INSTRUCTION = `Ти си API кое генерира строго валиден JSON за наставни материјали по математика. 
@@ -518,7 +534,20 @@ export const realGeminiService = {
   },
 
   async generateLearningPaths(context: GenerationContext, studentProfiles: StudentProfile[], profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedLearningPaths> {
-    const prompt = `Креирај диференцирани патеки за учење. ${customInstruction || ''}`;
+    const profileNames = studentProfiles.map(p => p.name).join(', ');
+    const vertProgText = context.verticalProgression?.length
+        ? `\nВЕРТИКАЛНА ПРОГРЕСИЈА (развој на концептот низ годините):\n${context.verticalProgression.map(vp => `- ${vp.title}: ${vp.progression.map(p => `${p.grade} одд. → "${p.conceptTitle}"`).join(' → ')}`).join('\n')}`
+        : '';
+    const prompt = `Креирај индивидуализирани патеки за учење за следните профили на ученици: ${profileNames || 'основно ниво'}.
+
+БАРАЊА:
+1. Секоја патека мора да има 5–7 конкретни чекори (активности).
+2. Типови на чекори: "WARM_UP" (загревање/предзнаење), "EXPLANATION" (ново знаење), "GUIDED_PRACTICE" (водена вежба), "INDEPENDENT_PRACTICE" (самостојна вежба), "EXTENSION" (збогатување), "ASSESSMENT" (самопроверка).
+3. Чекорите треба да бидат конкретни и изводливи — не само „реши задачи", туку опиши ЧТО конкретно прави ученикот.
+4. Патеките треба да се диференцирани — различно темпо, сложеност и поддршка за секој профил.
+5. Ако постои вертикална прогресија, поврзи го тековното знаење со претходното и идното учење.
+${vertProgText}
+${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, paths: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { profileName: { type: Type.STRING }, steps: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { stepNumber: { type: Type.INTEGER }, activity: { type: Type.STRING }, type: { type: Type.STRING } }, required: ["stepNumber", "activity"] } } }, required: ["profileName", "steps"] } } }, required: ["title", "paths"] };
     return generateAndParseJSON<AIGeneratedLearningPaths>([{ text: prompt }, { text: JSON.stringify(minifyContext(context)) }], schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, MAX_RETRIES, false);
   },
