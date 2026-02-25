@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlanner } from '../contexts/PlannerContext';
-import { geminiService } from '../services/geminiService';
+import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
+import { RateLimitError } from '../services/apiErrors';
 import type { AIRecommendation } from '../types';
 
 export function usePersonalizedRecommendations() {
@@ -15,6 +16,13 @@ export function usePersonalizedRecommendations() {
     useEffect(() => {
         const fetchRecommendations = async () => {
             if (!firebaseUser || !user) {
+                setIsLoading(false);
+                return;
+            }
+
+            // FIX: Skip immediately if the daily quota is already known to be exhausted.
+            // This prevents a wasted API probe call on every app open when quota is gone.
+            if (isDailyQuotaKnownExhausted()) {
                 setIsLoading(false);
                 return;
             }
@@ -48,11 +56,13 @@ export function usePersonalizedRecommendations() {
             } catch (err) {
                 console.error("Failed to fetch personalized recommendations:", err);
                 setError((err as Error).message);
-                // Cache the failure for 1 hour so we don't hammer the API on every page load
-                // when the quota is exhausted or the service is unavailable
+                // FIX: If quota is exhausted, cache failure for a full 12h (same as success)
+                // so we don't probe the API every hour. Previously it was only 1h,
+                // causing up to 9 wasted calls per exhausted day.
+                const isQuotaError = err instanceof RateLimitError;
                 localStorage.setItem(cacheKey, JSON.stringify({
                     data: [],
-                    timestamp: Date.now() - (11 * 60 * 60 * 1000), // 11h ago → expires in 1h
+                    timestamp: isQuotaError ? Date.now() : Date.now() - (11 * 60 * 60 * 1000),
                     failed: true,
                 }));
             } finally {

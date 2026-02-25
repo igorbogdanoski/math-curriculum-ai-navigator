@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurriculum } from './useCurriculum';
-import { geminiService } from '../services/geminiService';
+import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
 import type { PlannerItem, LessonPlan, Concept } from '../types';
 
 export interface Suggestion {
@@ -24,8 +24,8 @@ export function useProactiveSuggestions() {
 
   useEffect(() => {
     const findAndGenerateSuggestion = async () => {
-      // Don't run suggestions if not logged in
-      if (!firebaseUser || !user) {
+      // Don't run suggestions if not logged in or quota is known exhausted
+      if (!firebaseUser || !user || isDailyQuotaKnownExhausted()) {
         setIsLoading(false);
         return;
       }
