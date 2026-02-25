@@ -112,6 +112,11 @@ export function isDailyQuotaKnownExhausted(): boolean {
   } catch { return false; }
 }
 
+// Exported so the user can manually clear a stale or false-positive quota flag
+export function clearDailyQuotaFlag(): void {
+  try { localStorage.removeItem(DAILY_QUOTA_KEY); } catch { /* ignore */ }
+}
+
 // --- QUEUE SYSTEM ---
 let lastRequest: Promise<any> = Promise.resolve();
 async function queueRequest<T>(fn: () => Promise<T>): Promise<T> {

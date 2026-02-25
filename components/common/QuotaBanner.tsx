@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, X } from 'lucide-react';
-import { isDailyQuotaKnownExhausted } from '../../services/geminiService';
+import { AlertCircle, X, RefreshCw } from 'lucide-react';
+import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../../services/geminiService';
 
 function getMidnightUTCCountdown(): string {
     const now = new Date();
@@ -30,6 +30,13 @@ export const QuotaBanner: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const handleDismiss = () => {
+        // Clear the localStorage flag so a stale/false-positive quota mark
+        // does not re-appear every time the app is opened.
+        clearDailyQuotaFlag();
+        setVisible(false);
+    };
+
     if (!visible) return null;
 
     return (
@@ -39,7 +46,17 @@ export const QuotaBanner: React.FC = () => {
                 Дневната AI квота е исцрпена. Генерирањето ќе се обнови за <strong>{countdown}</strong> (полноќ UTC).
             </span>
             <button
-                onClick={() => setVisible(false)}
+                type="button"
+                onClick={handleDismiss}
+                title="Исчисти ознаката и провери повторно"
+                className="ml-2 flex items-center gap-1 underline underline-offset-2 opacity-80 hover:opacity-100 transition text-xs font-semibold flex-shrink-0"
+            >
+                <RefreshCw className="w-3 h-3" />
+                Провери повторно
+            </button>
+            <button
+                type="button"
+                onClick={handleDismiss}
                 className="ml-auto flex-shrink-0 hover:opacity-75 transition"
                 aria-label="Затвори"
             >
