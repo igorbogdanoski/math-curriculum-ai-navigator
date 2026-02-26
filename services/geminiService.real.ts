@@ -73,31 +73,57 @@ interface SafetySetting {
 }
 
 // --- DAILY QUOTA GUARD ---
-// Once the daily free-tier quota is exhausted, all calls fail immediately until the next UTC day.
-// This prevents wasted retries and auto-fetch drain.
+// Once the daily free-tier quota is exhausted, all calls fail immediately until the next
+// Pacific midnight (= actual Gemini reset time = 09:00 MK time).
+// BUG FIX: Previously used UTC date comparison → cleared at 01:00 MK, but Gemini resets at
+// 09:00 MK. Auto-calls in the 01:00–09:00 window re-exhausted quota every day for 10+ days.
 const DAILY_QUOTA_KEY = 'ai_daily_quota_exhausted';
+
+/** Returns the Unix timestamp (ms) of the next Pacific midnight (Gemini's reset point). */
+function getNextPacificMidnightMs(): number {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+
+  // US Pacific DST: starts 2nd Sunday in March at 02:00 PST (= 10:00 UTC)
+  //                 ends   1st Sunday in November at 02:00 PDT (= 09:00 UTC)
+  const march1Day = new Date(Date.UTC(year, 2, 1)).getUTCDay();
+  const dstStart  = new Date(Date.UTC(year, 2, (7 - march1Day) % 7 + 8, 10)); // 2nd Sun Mar 10:00 UTC
+  const nov1Day   = new Date(Date.UTC(year, 10, 1)).getUTCDay();
+  const dstEnd    = new Date(Date.UTC(year, 10, (7 - nov1Day) % 7 + 1, 9));   // 1st Sun Nov 09:00 UTC
+
+  const isPDT = now >= dstStart && now < dstEnd;
+  // Pacific midnight in UTC: PST → 08:00 UTC, PDT → 07:00 UTC
+  const utcHour = isPDT ? 7 : 8;
+
+  const nextMidnight = new Date();
+  nextMidnight.setUTCHours(utcHour, 0, 0, 0);
+  if (nextMidnight.getTime() <= now.getTime()) {
+    nextMidnight.setUTCDate(nextMidnight.getUTCDate() + 1);
+  }
+  return nextMidnight.getTime();
+}
 
 function checkDailyQuotaGuard(): void {
   try {
     const stored = localStorage.getItem(DAILY_QUOTA_KEY);
     if (!stored) return;
-    const { date } = JSON.parse(stored);
-    const today = new Date().toISOString().slice(0, 10);
-    if (date === today) {
+    const parsed = JSON.parse(stored);
+    const nextResetMs: number = parsed.nextResetMs ?? 0;
+    if (Date.now() < nextResetMs) {
       throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.");
     }
-    localStorage.removeItem(DAILY_QUOTA_KEY); // New day — clear the flag
+    localStorage.removeItem(DAILY_QUOTA_KEY); // Pacific midnight passed — clear the flag
   } catch (e) {
     if (e instanceof RateLimitError) throw e;
-    // Ignore localStorage read errors silently
+    // Ignore localStorage read/parse errors silently
   }
 }
 
 function markDailyQuotaExhausted(): void {
   try {
     localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify({
-      date: new Date().toISOString().slice(0, 10),
       exhaustedAt: new Date().toISOString(),
+      nextResetMs: getNextPacificMidnightMs(),
     }));
   } catch { /* ignore write errors */ }
 }
@@ -107,8 +133,9 @@ export function isDailyQuotaKnownExhausted(): boolean {
   try {
     const stored = localStorage.getItem(DAILY_QUOTA_KEY);
     if (!stored) return false;
-    const { date } = JSON.parse(stored);
-    return date === new Date().toISOString().slice(0, 10);
+    const parsed = JSON.parse(stored);
+    const nextResetMs: number = parsed.nextResetMs ?? 0;
+    return Date.now() < nextResetMs;
   } catch { return false; }
 }
 
