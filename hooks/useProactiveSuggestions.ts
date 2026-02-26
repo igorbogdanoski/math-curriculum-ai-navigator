@@ -30,6 +30,12 @@ export function useProactiveSuggestions() {
         return;
       }
 
+      // Respect the "Auto AI Suggestions" toggle in Settings
+      if (localStorage.getItem('auto_ai_suggestions') === 'false') {
+        setIsLoading(false);
+        return;
+      }
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const nextWeek = new Date(today);
@@ -69,8 +75,8 @@ export function useProactiveSuggestions() {
           if (cached) {
              try {
                 const { text, timestamp } = JSON.parse(cached);
-                // 24 hour cache for the same suggestion text
-                if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+                // 72 hour cache (was 24h) — reduces auto-calls to max 1 per 3 days
+                if (Date.now() - timestamp < 72 * 60 * 60 * 1000) {
                    setSuggestion({
                       id: suggestionId,
                       text: text,

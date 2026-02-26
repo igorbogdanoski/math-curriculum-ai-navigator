@@ -1,9 +1,10 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
-import { geminiService } from '../services/geminiService';
+import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
 import { RateLimitError } from '../services/apiErrors';
 import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType } from '../types';
 import { ModalType, PlannerItemType } from '../types';
@@ -59,6 +60,12 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const [generatedMaterial, setGeneratedMaterial] = useState<AIGeneratedIdeas | AIGeneratedAssessment | AIGeneratedRubric | AIGeneratedIllustration | AIGeneratedLearningPaths | null>(null);
     const [isThrottled, setIsThrottled] = useState(false);
     const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
+
+    // Quota error state — shown as persistent inline banner instead of fleeting toast
+    const [quotaError, setQuotaError] = useState<{ resetTime: string; resetMs: number } | null>(null);
+    const [quotaCountdown, setQuotaCountdown] = useState('');
+    // Cancel ref — abort() sets isGenerating=false visually; underlying request finishes in bg
+    const cancelRef = useRef(false);
 
     // 3× Variants state
     const [variants, setVariants] = useState<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment> | null>(null);
@@ -147,7 +154,22 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         }
         dispatch({ type: 'SET_FIELD', payload: { field: 'illustrationPrompt', value: newPrompt } });
     }, [materialType, contextType, selectedConcepts, selectedStandard, scenarioText, selectedActivity, filteredConcepts, allNationalStandards, dispatch]);
-    
+
+    // Live countdown for quota reset banner
+    useEffect(() => {
+        if (!quotaError?.resetMs) { setQuotaCountdown(''); return; }
+        const update = () => {
+            const diff = quotaError.resetMs - Date.now();
+            if (diff <= 0) { setQuotaCountdown(''); return; }
+            const h = Math.floor(diff / 3_600_000);
+            const m = Math.floor((diff % 3_600_000) / 60_000);
+            setQuotaCountdown(h > 0 ? `${h}ч ${m}мин` : `${m}мин`);
+        };
+        update();
+        const id = setInterval(update, 60_000);
+        return () => clearInterval(id);
+    }, [quotaError]);
+
     const handleSaveAsNote = async () => {
         if (!generatedMaterial || !('openingActivity' in generatedMaterial)) {
             addNotification('Нема генерирани идеи за зачувување.', 'error');
@@ -305,9 +327,34 @@ ${generatedMaterial.assessmentIdea}
         setIsGeneratingVariants(false);
     };
 
+    const handleCancel = () => {
+        cancelRef.current = true;
+        setIsLoading(false);
+    };
+
+    // Helper to extract quota reset info from localStorage and set the inline banner
+    const setQuotaBannerFromStorage = () => {
+        try {
+            const stored = localStorage.getItem('ai_daily_quota_exhausted');
+            const { nextResetMs } = stored ? JSON.parse(stored) : {};
+            const resetTime = nextResetMs
+                ? new Date(nextResetMs).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })
+                : '09:00';
+            setQuotaError({ resetTime, resetMs: nextResetMs ?? 0 });
+        } catch {
+            setQuotaError({ resetTime: '09:00', resetMs: 0 });
+        }
+    };
+
     const handleGenerate = async () => {
         if (!isOnline) {
             addNotification("Нема интернет конекција. Генераторот е недостапен.", 'error');
+            return;
+        }
+
+        // Check quota upfront — show inline banner immediately instead of waiting for 429
+        if (isDailyQuotaKnownExhausted()) {
+            setQuotaBannerFromStorage();
             return;
         }
 
@@ -315,7 +362,7 @@ ${generatedMaterial.assessmentIdea}
             addNotification("Ве молиме почекајте малку пред следното барање.", 'warning');
             return;
         }
-        
+
         if(!curriculum) {
             addNotification('Наставната програма се уште се вчитува.', 'warning');
             return;
@@ -378,15 +425,19 @@ ${generatedMaterial.assessmentIdea}
                 setGeneratedMaterial(result || null);
             }
         } catch (error) {
+            if (cancelRef.current) { cancelRef.current = false; return; } // user cancelled — no error shown
             console.error("[AI Generator]", error);
-            const msg = error instanceof RateLimitError
-                ? "AI квотата е исцрпена. Обидете се повторно утре."
-                : (error instanceof Error && error.message)
+            if (error instanceof RateLimitError) {
+                setQuotaBannerFromStorage(); // persistent inline banner instead of toast
+            } else {
+                const msg = (error instanceof Error && error.message)
                     ? error.message
                     : "Грешка при генерирање. Обидете се повторно.";
-            addNotification(msg, 'error');
-            setGeneratedMaterial(null); // Clear on error
+                addNotification(msg, 'error');
+            }
+            setGeneratedMaterial(null);
         } finally {
+            cancelRef.current = false;
             setIsLoading(false);
         }
     }
@@ -429,6 +480,27 @@ ${generatedMaterial.assessmentIdea}
     
     return (
         <div className="p-4 md:p-6">
+            {/* Inline quota exhaustion banner — persistent, shows countdown */}
+            {quotaError && (
+                <div className="mb-4 flex items-start gap-3 p-4 rounded-xl border border-orange-200 bg-orange-50">
+                    <span className="text-xl flex-shrink-0">⛔</span>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-orange-800">AI квотата е исцрпена за денес</p>
+                        <p className="text-xs text-orange-700 mt-0.5">
+                            Генерирањето ќе биде достапно утре во <strong>09:00 МК</strong>
+                            {quotaCountdown ? ` — уште ${quotaCountdown}` : ''}.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setQuotaError(null)}
+                        className="flex-shrink-0 text-orange-400 hover:text-orange-600 transition"
+                        aria-label="Затвори"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
             <Card>
                 <form onSubmit={(e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); handleGenerate(); }}>
                     <fieldset disabled={isGenerating} className="space-y-6">
@@ -528,10 +600,18 @@ ${generatedMaterial.assessmentIdea}
                 </form>
             </Card>
 
-            {/* Use New Smart Loading Indicator */}
+            {/* Smart Loading Indicator + Cancel button */}
             {isGenerating && !generatedMaterial && (
-                <div className="mt-6">
+                <div className="mt-6 flex flex-col items-center gap-3">
                     <AILoadingIndicator />
+                    <button
+                        type="button"
+                        onClick={handleCancel}
+                        className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-red-500 transition"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                        Откажи генерирање
+                    </button>
                 </div>
             )}
             

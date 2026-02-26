@@ -44,6 +44,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from './apiErrors';
 const CACHE_COLLECTION = 'cached_ai_materials';
 const DEFAULT_MODEL = 'gemini-2.0-flash';
 const MAX_RETRIES = 2;
+const GENERATION_TIMEOUT_MS = 45_000; // 45 seconds per attempt before aborting
 
 // --- TYPES FOR INTERNAL USE ---
 export enum Type {
@@ -194,13 +195,13 @@ function normalizeContents(contents: any): any[] {
   });
 }
 
-async function callGeminiProxy(params: { 
-  model: string; 
-  contents: any; 
-  generationConfig?: any; 
-  systemInstruction?: string; 
+async function callGeminiProxy(params: {
+  model: string;
+  contents: any;
+  generationConfig?: any;
+  systemInstruction?: string;
   safetySettings?: any;
-}): Promise<{ text: string; candidates: any[] }> {
+}, signal?: AbortSignal): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
       const token = await getAuthToken();
@@ -225,7 +226,8 @@ async function callGeminiProxy(params: {
             systemInstruction: params.systemInstruction,
             safetySettings: params.safetySettings
           }
-        })
+        }),
+        signal,
       });
 
       if (!response.ok) {
@@ -407,6 +409,8 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 // --- CORE JSON HELPER ---
 async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false): Promise<T> {
   const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
+  const _controller = new AbortController();
+  const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
   try {
     const generationConfig: any = {
       temperature: 0.7,
@@ -436,7 +440,7 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
       generationConfig,
       systemInstruction: JSON_SYSTEM_INSTRUCTION,
       safetySettings: SAFETY_SETTINGS
-    });
+    }, _controller.signal);
 
     // responseMimeType guarantees clean JSON for the standard model.
     // For the thinking model (no responseMimeType support), cleanJsonString strips any markdown.
@@ -453,6 +457,10 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
     }
     return parsedJson as T;
   } catch (error: any) {
+    // Timeout: AbortController fired after GENERATION_TIMEOUT_MS — not retryable
+    if (error?.name === 'AbortError') {
+      throw new Error('Генерирањето траеше предолго. Обидете се повторно.');
+    }
     const errorMessage = error.message?.toLowerCase() || "";
 
     // Daily quota exhaustion is not retryable — it resets at midnight UTC, not in seconds.
@@ -496,6 +504,8 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
       return generateAndParseJSON<T>(contents, schema, model, zodSchema, retries - 1, useThinking);
     }
     handleGeminiError(error);
+  } finally {
+    clearTimeout(_timeoutId);
   }
 }
 

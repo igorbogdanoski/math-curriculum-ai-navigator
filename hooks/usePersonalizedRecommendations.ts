@@ -27,14 +27,20 @@ export function usePersonalizedRecommendations() {
                 return;
             }
 
+            // Respect the "Auto AI Suggestions" toggle in Settings
+            if (localStorage.getItem('auto_ai_suggestions') === 'false') {
+                setIsLoading(false);
+                return;
+            }
+
             // More robust caching with timestamp to avoid re-fetching constantly
             const cacheKey = `personalized-recs-${firebaseUser.uid}`;
             const cached = localStorage.getItem(cacheKey);
             if (cached) {
                 try {
                     const { data, timestamp } = JSON.parse(cached);
-                    // 12 hour cache
-                    if (Date.now() - timestamp < 12 * 60 * 60 * 1000) {
+                    // 48 hour cache (was 12h) — reduces auto-calls to max 1 per 2 days
+                    if (Date.now() - timestamp < 48 * 60 * 60 * 1000) {
                         setRecommendations(data);
                         setIsLoading(false);
                         return;

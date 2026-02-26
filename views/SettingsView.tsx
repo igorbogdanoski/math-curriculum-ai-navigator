@@ -29,7 +29,16 @@ export const SettingsView: React.FC = () => {
     const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
         typeof Notification !== 'undefined' ? Notification.permission : 'default'
     );
+    const [autoAiEnabled, setAutoAiEnabled] = useState(() =>
+        localStorage.getItem('auto_ai_suggestions') !== 'false'
+    );
     const { addNotification } = useNotification();
+
+    const toggleAutoAi = () => {
+        const next = !autoAiEnabled;
+        setAutoAiEnabled(next);
+        localStorage.setItem('auto_ai_suggestions', String(next));
+    };
 
     useEffect(() => {
         if (user) {
@@ -195,6 +204,21 @@ export const SettingsView: React.FC = () => {
                             <option value="Intermediate">Средно искуство</option>
                             <option value="Expert">Експерт</option>
                         </select>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-t">
+                        <div>
+                            <p className="text-sm font-medium text-gray-700">Авто AI предлози</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Препораки за часови и проактивни сугестии се генерираат во позадина</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={toggleAutoAi}
+                            title={autoAiEnabled ? 'Исклучи авто AI предлози' : 'Вклучи авто AI предлози'}
+                            aria-label={autoAiEnabled ? 'Исклучи авто AI предлози' : 'Вклучи авто AI предлози'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${autoAiEnabled ? 'bg-brand-primary' : 'bg-gray-300'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoAiEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
                     </div>
                     <div className="flex justify-end pt-4 border-t">
                         <button
