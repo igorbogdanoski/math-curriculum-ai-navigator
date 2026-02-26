@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Помошни функции ──────────────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // ── Приватни Teacher податоци (lesson plans, planner, curriculum edits) ──
+    // Само наставникот-сопственик може да чита и пишува
+    match /users/{uid}/{collection=**} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // ── Квиз резултати (quiz_results) ────────────────────────────────────
+    // Анонимни ученици можат да CREATE, никој не може да брише/менува
+    // Читање: сите (наставникот ги гледа преку апликацијата)
+    match /quiz_results/{doc} {
+      allow create: if true;
+      allow read:   if true;
+      allow update, delete: if false;
+    }
+
+    // ── Кеширани AI материјали (cached_ai_materials) ─────────────────────
+    // Читање: сите (учениците треба да читаат квизови преку линк)
+    // Пишување: само автентицирани наставници
+    match /cached_ai_materials/{doc} {
+      allow read:  if true;
+      allow write: if isAuthenticated();
+    }
+
+    // ── Совладување на концепти (concept_mastery) ────────────────────────
+    // Учениците (анонимни) пишуваат свој напредок, сите можат да читаат
+    match /concept_mastery/{doc} {
+      allow read:   if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false;
+    }
+
+    // ── Заедничка библиотека на планови (communityLessonPlans) ───────────
+    // Читање: сите, пишување: само автентицирани наставници
+    match /communityLessonPlans/{doc} {
+      allow read:  if true;
+      allow write: if isAuthenticated();
+    }
+
+    // ── Сè друго: одбиено ────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
