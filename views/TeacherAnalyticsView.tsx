@@ -5,12 +5,13 @@ import { Card } from '../components/common/Card';
 import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
-import { StatCard, QuizAggregate, ConceptStat, PerStudentStat, groupBy, fmt } from './analytics/shared';
+import { StatCard, QuizAggregate, ConceptStat, PerStudentStat, GradeStat, groupBy, fmt } from './analytics/shared';
 import { OverviewTab } from './analytics/OverviewTab';
 import { TrendTab } from './analytics/TrendTab';
 import { StudentsTab } from './analytics/StudentsTab';
 import { StandardsTab } from './analytics/StandardsTab';
 import { ConceptsTab } from './analytics/ConceptsTab';
+import { GradeTab } from './analytics/GradeTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
     const [results, setResults] = useState<QuizResult[]>([]);
@@ -23,7 +24,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades'>('overview');
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -241,6 +242,19 @@ export const TeacherAnalyticsView: React.FC = () => {
         }).sort((a, b) => a.avg - b.avg);
     }, [results, masteryRecords]);
 
+    const gradeStats = useMemo((): GradeStat[] => {
+        if (results.length === 0) return [];
+        const grouped = groupBy(results, r => String(r.gradeLevel ?? 'N/A'));
+        return Object.entries(grouped).map(([grade, quizzes]) => {
+            const avgs = quizzes.map(q => q.percentage);
+            const avgPct = Math.round(avgs.reduce((a, b) => a + b, 0) / avgs.length);
+            const passRate = Math.round(quizzes.filter(q => q.percentage >= 70).length / quizzes.length * 100);
+            const uniqueStudents = new Set(quizzes.map(q => q.studentName).filter(Boolean)).size;
+            const masteredCount = masteryRecords.filter(m => m.gradeLevel === Number(grade) && m.mastered).length;
+            return { grade, attempts: quizzes.length, avgPct, passRate, uniqueStudents, masteredCount };
+        }).sort((a, b) => Number(a.grade) - Number(b.grade));
+    }, [results, masteryRecords]);
+
     const standardsCoverage = useMemo(() => {
         if (results.length === 0) return { tested: [], notTested: [] };
 
@@ -341,6 +355,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'overview', label: 'Преглед' },
                             { id: 'trend', label: 'Тренд' },
                             { id: 'students', label: 'По ученик' },
+                            { id: 'grades', label: 'По одд.' },
                             { id: 'standards', label: 'Стандарди' },
                             { id: 'concepts', label: 'Концепти' },
                         ] as const).map(tab => (
@@ -413,6 +428,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                     )}
                     {activeTab === 'trend' && <TrendTab weeklyTrend={weeklyTrend} />}
                     {activeTab === 'students' && <StudentsTab perStudentStats={perStudentStats} />}
+                    {activeTab === 'grades' && <GradeTab gradeStats={gradeStats} />}
                     {activeTab === 'standards' && <StandardsTab standardsCoverage={standardsCoverage} />}
                     {activeTab === 'concepts' && <ConceptsTab allConceptStats={allConceptStats} onGenerateRemedial={handleGenerateRemedial} />}
                 </>

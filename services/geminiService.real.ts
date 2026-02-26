@@ -121,11 +121,27 @@ function checkDailyQuotaGuard(): void {
 
 function markDailyQuotaExhausted(): void {
   try {
+    const nextResetMs = getNextPacificMidnightMs();
     localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify({
       exhaustedAt: new Date().toISOString(),
-      nextResetMs: getNextPacificMidnightMs(),
+      nextResetMs,
     }));
+    scheduleQuotaNotification(nextResetMs);
   } catch { /* ignore write errors */ }
+}
+
+// Schedules a browser notification when the quota resets (exported for manual testing)
+export function scheduleQuotaNotification(nextResetMs: number): void {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  const delay = nextResetMs - Date.now();
+  if (delay <= 0 || delay > 24 * 60 * 60 * 1000) return;
+  setTimeout(() => {
+    new Notification('AI Квотата е обновена!', {
+      body: 'Gemini AI е повторно достапен. Можете да генерирате материјали.',
+      icon: '/icons/icon-192.png',
+      tag: 'quota-reset',
+    });
+  }, delay);
 }
 
 // Exported so the UI can check quota state without making an API call

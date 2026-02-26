@@ -56,6 +56,15 @@ export interface PerStudentStat {
     lastAttempt: any;
 }
 
+export interface GradeStat {
+    grade: string;
+    attempts: number;
+    avgPct: number;
+    passRate: number;
+    uniqueStudents: number;
+    masteredCount: number;
+}
+
 // ── Sub-components ───────────────────────────────────────────────────────────
 
 export const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string; sub?: string; color: string }> = ({ icon, label, value, sub, color }) => (

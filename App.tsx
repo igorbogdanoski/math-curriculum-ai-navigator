@@ -30,6 +30,7 @@ import { OfflineBanner } from './components/common/OfflineBanner';
 import { QuotaBanner } from './components/common/QuotaBanner';
 import { ContextualFAB } from './components/common/ContextualFAB';
 import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
+import { AIChatPanel } from './components/ai/AIChatPanel';
 import { StudentPlayView } from './views/StudentPlayView';
 import { StudentProgressView } from './views/StudentProgressView';
 
@@ -183,6 +184,9 @@ const AppContent: React.FC = () => {
             </div>
             <SilentErrorBoundary name="AIGeneratorPanel">
                 <AIGeneratorPanel />
+            </SilentErrorBoundary>
+            <SilentErrorBoundary name="AIChatPanel">
+                <AIChatPanel />
             </SilentErrorBoundary>
         </NavigationContext.Provider>
     );

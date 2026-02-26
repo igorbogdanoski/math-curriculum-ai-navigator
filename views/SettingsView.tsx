@@ -8,7 +8,7 @@ import { ICONS } from '../constants';
 import { InstallApp } from '../components/common/InstallApp';
 import { firestoreService } from '../services/firestoreService';
 import { fullCurriculumData } from '../data/curriculum';
-import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
+import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification } from '../services/geminiService';
 
 const initialProfile: TeachingProfile = {
     name: '',
@@ -26,6 +26,9 @@ export const SettingsView: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [isMigrating, setIsMigrating] = useState(false);
     const [quotaStatus, setQuotaStatus] = useState<{ exhausted: boolean; resetTime: string }>({ exhausted: false, resetTime: '' });
+    const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
+        typeof Notification !== 'undefined' ? Notification.permission : 'default'
+    );
     const { addNotification } = useNotification();
 
     useEffect(() => {
@@ -59,6 +62,26 @@ export const SettingsView: React.FC = () => {
         clearDailyQuotaFlag();
         setQuotaStatus({ exhausted: false, resetTime: '' });
         addNotification('AI квота флагот е очистен. Следниот повик ќе го провери статусот.', 'success');
+    };
+
+    const handleEnableNotifications = async () => {
+        if (typeof Notification === 'undefined') {
+            addNotification('Вашиот пребарувач не поддржува нотификации.', 'error');
+            return;
+        }
+        const result = await Notification.requestPermission();
+        setNotifPermission(result);
+        if (result === 'granted') {
+            addNotification('Нотификациите се овозможени! Ќе добиете порака кога AI квотата ќе се обнови.', 'success');
+            // If quota is currently exhausted, schedule the notification now
+            try {
+                const stored = localStorage.getItem('ai_daily_quota_exhausted');
+                const { nextResetMs } = stored ? JSON.parse(stored) : {};
+                if (nextResetMs) scheduleQuotaNotification(nextResetMs);
+            } catch { /* ignore */ }
+        } else {
+            addNotification('Нотификациите се одбиени. Може да ги овозможите преку поставките на пребарувачот.', 'warning');
+        }
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -311,6 +334,22 @@ export const SettingsView: React.FC = () => {
                     <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-500">Gemini reset (секој ден)</span>
                         <span className="font-semibold text-gray-700">09:00 МК (полноќ Pacific)</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm pt-1 border-t border-gray-100">
+                        <span className="text-gray-500">Нотификација при обновување</span>
+                        {notifPermission === 'granted' ? (
+                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700">✅ Овозможени</span>
+                        ) : notifPermission === 'denied' ? (
+                            <span className="text-xs font-semibold text-red-500">Одбиени (одбл. пребарувач)</span>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={handleEnableNotifications}
+                                className="text-xs font-bold px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition"
+                            >
+                                Овозможи нотификации
+                            </button>
+                        )}
                     </div>
                     {quotaStatus.exhausted && (
                         <>
