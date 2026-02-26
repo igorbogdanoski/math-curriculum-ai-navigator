@@ -1,0 +1,46 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "quiz_results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentName", "order": "ASCENDING" },
+        { "fieldPath": "playedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "quiz_results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "quizId", "order": "ASCENDING" },
+        { "fieldPath": "playedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cached_ai_materials",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "conceptId", "order": "ASCENDING" },
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "concept_mastery",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentName", "order": "ASCENDING" },
+        { "fieldPath": "mastered", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "concept_mastery",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "conceptId", "order": "ASCENDING" },
+        { "fieldPath": "mastered", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
