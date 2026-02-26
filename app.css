@@ -344,3 +344,147 @@ button:active:not(:disabled) {
   font-style: italic;
   color: #4B5563;
 }
+
+/* ═══════════════════════════════════════════════════
+   Printable Student Progress Report
+   Used by StudentProgressView — hidden on screen,
+   visible only when printing (via printable-root)
+   ═══════════════════════════════════════════════════ */
+.rpt-header {
+  border-bottom: 2px solid #0D47A1;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+.rpt-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.rpt-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0D47A1;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.rpt-subtitle {
+  font-size: 13px;
+  color: #555;
+  margin-top: 4px;
+}
+.rpt-meta {
+  text-align: right;
+  font-size: 12px;
+  color: #555;
+}
+.rpt-meta-date {
+  margin-top: 4px;
+}
+.rpt-student-box {
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+.rpt-student-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1D4ED8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.rpt-student-name {
+  font-size: 18px;
+  font-weight: 900;
+  color: #1E3A5F;
+  margin: 4px 0 0;
+}
+.rpt-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.rpt-stat-card {
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.rpt-stat-value {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0D47A1;
+  margin: 0;
+}
+.rpt-stat-label {
+  font-size: 11px;
+  color: #6B7280;
+  margin: 3px 0 0;
+  font-weight: 600;
+}
+.rpt-section {
+  margin-bottom: 24px;
+}
+.rpt-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0D47A1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #BFDBFE;
+  padding-bottom: 6px;
+}
+.rpt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.rpt-th {
+  padding: 6px 10px;
+  font-weight: 700;
+  color: #1D4ED8;
+  border: 1px solid #DBEAFE;
+  background: #EFF6FF;
+}
+.rpt-th-left { text-align: left; }
+.rpt-th-center { text-align: center; }
+.rpt-td {
+  padding: 6px 10px;
+  border: 1px solid #E5E7EB;
+}
+.rpt-td-center { text-align: center; }
+.rpt-td-bold { font-weight: 700; }
+.rpt-td-green { color: #16A34A; }
+.rpt-td-amber { color: #D97706; }
+.rpt-td-blue { color: #2563EB; }
+.rpt-row-even { background: #fff; }
+.rpt-row-odd { background: #F9FAFB; }
+.rpt-footer-bar {
+  margin-top: 32px;
+  padding-top: 12px;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #9CA3AF;
+}
+.rpt-signatures {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  font-size: 12px;
+}
+.rpt-signature-line {
+  border-bottom: 1px solid #000;
+  margin-bottom: 4px;
+  height: 30px;
+}
+.rpt-signature-label {
+  margin: 0;
+  color: #374151;
+}

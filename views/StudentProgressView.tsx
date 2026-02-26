@@ -3,7 +3,7 @@ import { firestoreService, type QuizResult, type ConceptMastery } from '../servi
 import { ICONS } from '../constants';
 import {
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
-  Calendar, RefreshCw, Trophy, Flame, PlayCircle,
+  Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer,
 } from 'lucide-react';
 
 const formatDate = (ts: any): string => {
@@ -92,6 +92,10 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const masteredCount = masteryRecords.filter(m => m.mastered).length;
   const inProgressCount = masteryRecords.filter(m => !m.mastered && m.consecutiveHighScores > 0).length;
 
+  const handlePrint = () => window.print();
+
+  const printDate = new Date().toLocaleDateString('mk-MK', { day: 'numeric', month: 'long', year: 'numeric' });
+
   return (
     <div className="min-h-screen bg-indigo-600 p-4 md:p-8 flex flex-col items-center">
       {/* Header */}
@@ -109,15 +113,26 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             )}
           </div>
         </div>
-        {!isReadOnly && (
-          <button
-            type="button"
-            onClick={() => { window.location.hash = '/'; }}
-            className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition"
-          >
-            <Home className="w-4 h-4" /> Почетна
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {searched && totalQuizzes > 0 && (
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition no-print"
+            >
+              <Printer className="w-4 h-4" /> Печати извештај
+            </button>
+          )}
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={() => { window.location.hash = '/'; }}
+              className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition no-print"
+            >
+              <Home className="w-4 h-4" /> Почетна
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search card — hidden in read-only (parent) mode */}
@@ -293,9 +308,127 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         </div>
       )}
 
-      <footer className="mt-10 text-white/50 text-xs font-bold uppercase tracking-widest">
+      <footer className="mt-10 text-white/50 text-xs font-bold uppercase tracking-widest no-print">
         Powered by Math Curriculum AI Navigator
       </footer>
+
+      {/* ── Printable Parent Report (hidden on screen, visible on print) ── */}
+      {searched && totalQuizzes > 0 && (
+        <div className="printable-root hidden" aria-hidden="true">
+          {/* Page header */}
+          <div className="rpt-header">
+            <div className="rpt-header-row">
+              <div>
+                <h1 className="rpt-title">Извештај за Напредок на Ученик</h1>
+                <p className="rpt-subtitle">Математика — Math Curriculum AI Navigator</p>
+              </div>
+              <div className="rpt-meta">
+                <div>Датум: <strong>{printDate}</strong></div>
+                <div className="rpt-meta-date">Документ генериран автоматски</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Student info */}
+          <div className="rpt-student-box">
+            <span className="rpt-student-label">Ученик</span>
+            <p className="rpt-student-name">{studentName}</p>
+          </div>
+
+          {/* Summary stats */}
+          <div className="rpt-stats-grid">
+            {[
+              { label: 'Вкупно квизови', value: String(totalQuizzes) },
+              { label: 'Положени (≥70%)', value: String(passed) },
+              { label: 'Просечен резултат', value: `${avgPct}%` },
+              { label: 'Совладани концепти', value: String(masteredCount) },
+            ].map(s => (
+              <div key={s.label} className="rpt-stat-card">
+                <p className="rpt-stat-value">{s.value}</p>
+                <p className="rpt-stat-label">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Mastery section */}
+          {masteryRecords.length > 0 && (
+            <div className="rpt-section">
+              <h2 className="rpt-section-title">Совладување на концепти</h2>
+              <table className="rpt-table">
+                <thead>
+                  <tr>
+                    <th className="rpt-th rpt-th-left">Концепт</th>
+                    <th className="rpt-th rpt-th-center">Обиди</th>
+                    <th className="rpt-th rpt-th-center">Најдобар резултат</th>
+                    <th className="rpt-th rpt-th-center">Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {masteryRecords
+                    .sort((a, b) => (b.mastered ? 1 : 0) - (a.mastered ? 1 : 0))
+                    .map((m) => (
+                      <tr key={m.conceptId}>
+                        <td className="rpt-td">{m.conceptTitle || m.conceptId}</td>
+                        <td className="rpt-td rpt-td-center">{m.attempts}</td>
+                        <td className={`rpt-td rpt-td-center rpt-td-bold ${m.bestScore >= 85 ? 'rpt-td-green' : 'rpt-td-amber'}`}>{m.bestScore}%</td>
+                        <td className={`rpt-td rpt-td-center rpt-td-bold ${m.mastered ? 'rpt-td-green' : 'rpt-td-blue'}`}>
+                          {m.mastered ? '✓ Совладан' : `${m.consecutiveHighScores}/3 во тек`}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Quiz history */}
+          <div className="rpt-section">
+            <h2 className="rpt-section-title">Историја на квизови</h2>
+            <table className="rpt-table">
+              <thead>
+                <tr>
+                  <th className="rpt-th rpt-th-left">Квиз</th>
+                  <th className="rpt-th rpt-th-center">Датум</th>
+                  <th className="rpt-th rpt-th-center">Резултат</th>
+                  <th className="rpt-th rpt-th-center">Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'rpt-row-even' : 'rpt-row-odd'}>
+                    <td className="rpt-td">{r.quizTitle}</td>
+                    <td className="rpt-td rpt-td-center">{formatDate(r.playedAt)}</td>
+                    <td className={`rpt-td rpt-td-center rpt-td-bold ${r.percentage >= 70 ? 'rpt-td-green' : 'rpt-td-amber'}`}>
+                      {r.percentage}% ({r.correctCount}/{r.totalQuestions})
+                    </td>
+                    <td className={`rpt-td rpt-td-center rpt-td-bold ${r.percentage >= 70 ? 'rpt-td-green' : 'rpt-td-amber'}`}>
+                      {r.percentage >= 70 ? 'Положен' : 'Не положен'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Print footer */}
+          <div className="rpt-footer-bar">
+            <span>Math Curriculum AI Navigator — Педагошки систем за следење на напредок</span>
+            <span>Извештај генериран на {printDate}</span>
+          </div>
+
+          {/* Signature lines */}
+          <div className="rpt-signatures">
+            <div>
+              <div className="rpt-signature-line" />
+              <p className="rpt-signature-label">Потпис на наставник</p>
+            </div>
+            <div>
+              <div className="rpt-signature-line" />
+              <p className="rpt-signature-label">Потпис на родител / старател</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

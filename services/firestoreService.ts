@@ -135,7 +135,7 @@ export const firestoreService = {
         collection(db, "cached_ai_materials"),
         where("conceptId", "==", conceptId),
         where("type", "==", "quiz"),
-        orderBy("timestamp", "desc"),
+        orderBy("createdAt", "desc"),
         limit(1)
       );
       const querySnapshot = await getDocs(q);
