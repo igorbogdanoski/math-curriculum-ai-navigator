@@ -233,6 +233,7 @@ export const TeacherAnalyticsView: React.FC = () => {
 
         const allConceptStats = Object.entries(conceptStats).map(([conceptId, s]) => {
             const conceptTitle = getConceptDetails(conceptId).concept?.title || s.quizTitle;
+            const masteredCount = masteryRecords.filter(m => m.conceptId === conceptId && m.mastered).length;
             return {
                 conceptId,
                 title: conceptTitle,
@@ -240,6 +241,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                 attempts: s.total,
                 passRate: Math.round((s.passCount / s.total) * 100),
                 uniqueStudents: s.students.size,
+                masteredCount,
             };
         }).sort((a, b) => a.avgPct - b.avgPct);
 
@@ -251,7 +253,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         ).sort();
 
         return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, allConceptStats, uniqueStudents };
-    }, [results, getConceptDetails]);
+    }, [results, masteryRecords, getConceptDetails]);
 
     // Mastery aggregations
     const masteryStats = useMemo(() => {
@@ -947,6 +949,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                                                 <th className="py-2 px-3 text-center font-semibold">Просек</th>
                                                 <th className="py-2 px-3 text-center font-semibold">Положиле</th>
                                                 <th className="py-2 px-3 text-center font-semibold">Ученици</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Совладани</th>
                                                 <th className="py-2 px-3 font-semibold">Акција</th>
                                             </tr>
                                         </thead>
@@ -973,6 +976,14 @@ export const TeacherAnalyticsView: React.FC = () => {
                                                         </td>
                                                         <td className="py-2.5 px-3 text-center text-gray-600">{c.passRate}%</td>
                                                         <td className="py-2.5 px-3 text-center text-gray-600">{c.uniqueStudents || '—'}</td>
+                                                        <td className="py-2.5 px-3 text-center">
+                                                            {c.masteredCount > 0
+                                                                ? <span className="flex items-center justify-center gap-1 text-yellow-700 font-bold text-xs">
+                                                                    <Trophy className="w-3.5 h-3.5 text-yellow-500" fill="currentColor" />
+                                                                    {c.masteredCount}
+                                                                  </span>
+                                                                : <span className="text-gray-300">—</span>}
+                                                        </td>
                                                         <td className="py-2.5 px-3">
                                                             <button
                                                                 type="button"
