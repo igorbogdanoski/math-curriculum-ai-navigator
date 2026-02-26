@@ -1,6 +1,6 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Card } from './Card';
-import { ICONS } from '../../constants';
+import { AlertTriangle } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -60,7 +60,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div className="w-full h-full flex items-center justify-center bg-brand-bg p-4 min-h-screen">
             <Card className="max-w-xl text-center w-full shadow-lg border-red-100">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-6">
-                     <ICONS.sparkles className="w-10 h-10 text-red-600" />
+                     <AlertTriangle className="w-10 h-10 text-red-600" />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mt-2 mb-2">Настана грешка</h1>
                 <p className="text-gray-600 mb-8 text-lg">

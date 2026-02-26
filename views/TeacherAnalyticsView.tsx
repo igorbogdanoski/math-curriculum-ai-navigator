@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
 import { geminiService } from '../services/geminiService';
 import { Card } from '../components/common/Card';
+import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import { BarChart3, Users, Award, TrendingUp, RefreshCw, Clock, CheckCircle, XCircle, AlertTriangle, Zap, QrCode, Copy, CheckCheck, Trophy, Sparkles, ChevronRight } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -754,6 +755,7 @@ export const TeacherAnalyticsView: React.FC = () => {
 
                     {/* ── TAB: Тренд ── */}
                     {activeTab === 'trend' && (
+                        <SilentErrorBoundary name="TrendTab">
                         <Card>
                             <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-6">Неделен тренд — просечен резултат</h2>
                             {weeklyTrend.length < 2 ? (
@@ -795,10 +797,12 @@ export const TeacherAnalyticsView: React.FC = () => {
                                 </div>
                             )}
                         </Card>
+                        </SilentErrorBoundary>
                     )}
 
                     {/* ── TAB: По ученик ── */}
                     {activeTab === 'students' && (
+                        <SilentErrorBoundary name="StudentsTab">
                         <Card>
                             <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Индивидуален преглед по ученик</h2>
                             {perStudentStats.length === 0 ? (
@@ -861,9 +865,11 @@ export const TeacherAnalyticsView: React.FC = () => {
                                 </div>
                             )}
                         </Card>
+                        </SilentErrorBoundary>
                     )}
                     {/* ── TAB: Стандарди ── */}
                     {activeTab === 'standards' && (
+                        <SilentErrorBoundary name="StandardsTab">
                         <div className="space-y-4">
                             <Card>
                                 <div className="flex items-center justify-between mb-4">
@@ -907,6 +913,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                                 </p>
                             </Card>
                         </div>
+                        </SilentErrorBoundary>
                     )}
                 </>
             )}
