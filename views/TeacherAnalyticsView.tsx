@@ -108,6 +108,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students'>('overview');
 
     const handleGetRecommendations = async () => {
         if (isLoadingRecs || results.length === 0) return;
@@ -252,6 +253,46 @@ export const TeacherAnalyticsView: React.FC = () => {
         return { mastered, inProgress, struggling, topMasteredConcepts };
     }, [masteryRecords]);
 
+    // Weekly trend (last 8 weeks)
+    const weeklyTrend = useMemo(() => {
+        if (results.length === 0) return [];
+        const weeks: Record<string, { sum: number; count: number; label: string }> = {};
+        results.forEach(r => {
+            if (!r.playedAt) return;
+            const d = r.playedAt.toDate ? r.playedAt.toDate() : new Date(r.playedAt);
+            const weekStart = new Date(d);
+            weekStart.setDate(d.getDate() - d.getDay());
+            const key = weekStart.toISOString().slice(0, 10);
+            const label = weekStart.toLocaleDateString('mk-MK', { day: 'numeric', month: 'short' });
+            if (!weeks[key]) weeks[key] = { sum: 0, count: 0, label };
+            weeks[key].sum += r.percentage;
+            weeks[key].count++;
+        });
+        return Object.entries(weeks)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .slice(-8)
+            .map(([, v]) => ({ label: v.label, avg: Math.round(v.sum / v.count), count: v.count }));
+    }, [results]);
+
+    // Per-student stats
+    const perStudentStats = useMemo(() => {
+        if (results.length === 0) return [];
+        const grouped = groupBy(results.filter(r => r.studentName), r => r.studentName!);
+        return Object.entries(grouped).map(([name, items]) => {
+            const avg = Math.round(items.reduce((s, r) => s + r.percentage, 0) / items.length);
+            const passedCount = items.filter(r => r.percentage >= 70).length;
+            const mastery = masteryRecords.filter(m => m.studentName === name);
+            return {
+                name,
+                attempts: items.length,
+                avg,
+                passRate: Math.round((passedCount / items.length) * 100),
+                masteredCount: mastery.filter(m => m.mastered).length,
+                lastAttempt: items[0]?.playedAt,
+            };
+        }).sort((a, b) => a.avg - b.avg);
+    }, [results, masteryRecords]);
+
     // ── Render ─────────────────────────────────────────────────────────────
 
     if (isLoading) {
@@ -282,6 +323,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                     </p>
                 </div>
                 <button
+                    type="button"
                     onClick={loadResults}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition active:scale-95"
                 >
@@ -306,7 +348,29 @@ export const TeacherAnalyticsView: React.FC = () => {
                 </Card>
             ) : (
                 <>
-                    {/* Summary stats */}
+                    {/* Tab navigation */}
+                    <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
+                        {([
+                            { id: 'overview', label: 'Преглед' },
+                            { id: 'trend', label: 'Тренд' },
+                            { id: 'students', label: 'По ученик' },
+                        ] as const).map(tab => (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`px-5 py-2 rounded-lg text-sm font-bold transition ${
+                                    activeTab === tab.id
+                                        ? 'bg-white text-slate-800 shadow'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Summary stats — always visible */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                         <StatCard
                             icon={<Users className="w-6 h-6 text-blue-600" />}
@@ -337,6 +401,8 @@ export const TeacherAnalyticsView: React.FC = () => {
                             color="bg-orange-50"
                         />
                     </div>
+
+                    {activeTab === 'overview' && <>
 
                     {/* Mastery Overview */}
                     {masteryStats && (
@@ -632,6 +698,119 @@ export const TeacherAnalyticsView: React.FC = () => {
                             </table>
                         </div>
                     </Card>
+
+                    </>}
+
+                    {/* ── TAB: Тренд ── */}
+                    {activeTab === 'trend' && (
+                        <Card>
+                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-6">Неделен тренд — просечен резултат</h2>
+                            {weeklyTrend.length < 2 ? (
+                                <p className="text-sm text-gray-400 text-center py-8">
+                                    Потребни се резултати од барем 2 недели за да се прикаже трендот.
+                                </p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {weeklyTrend.map((w, i) => {
+                                        const barColor = w.avg >= 70 ? 'bg-green-400' : w.avg >= 50 ? 'bg-yellow-400' : 'bg-red-400';
+                                        const prev = i > 0 ? weeklyTrend[i - 1].avg : w.avg;
+                                        const delta = w.avg - prev;
+                                        return (
+                                            <div key={w.label} className="flex items-center gap-3">
+                                                <span className="text-xs text-gray-400 w-16 flex-shrink-0">{w.label}</span>
+                                                <div className="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full ${barColor} transition-all`}
+                                                        style={{ width: `${w.avg}%` }}
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-700">
+                                                        {w.avg}%
+                                                    </span>
+                                                </div>
+                                                <span className="text-xs w-16 flex-shrink-0 text-right">
+                                                    <span className={delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-500' : 'text-gray-400'}>
+                                                        {i > 0 && delta !== 0 ? `${delta > 0 ? '+' : ''}${delta}%` : ''}
+                                                    </span>
+                                                </span>
+                                                <span className="text-xs text-gray-400 w-16 flex-shrink-0">{w.count} обид{w.count === 1 ? '' : 'и'}</span>
+                                            </div>
+                                        );
+                                    })}
+                                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-4 text-xs text-gray-400">
+                                        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-400 inline-block" /> ≥70%</span>
+                                        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-400 inline-block" /> 50–69%</span>
+                                        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-400 inline-block" /> &lt;50%</span>
+                                    </div>
+                                </div>
+                            )}
+                        </Card>
+                    )}
+
+                    {/* ── TAB: По ученик ── */}
+                    {activeTab === 'students' && (
+                        <Card>
+                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Индивидуален преглед по ученик</h2>
+                            {perStudentStats.length === 0 ? (
+                                <p className="text-sm text-gray-400 text-center py-8">
+                                    Нема ученици со внесено ime. Учениците треба да го внесат своето ime при играње квиз.
+                                </p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="text-xs text-gray-400 uppercase tracking-widest text-left border-b border-gray-100">
+                                                <th className="py-2 px-3 font-semibold">Ученик</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Обиди</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Просек</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Положиле</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Совладани</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Статус</th>
+                                                <th className="py-2 px-3 font-semibold">Акција</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {perStudentStats.map(s => {
+                                                const status = s.avg >= 85 ? { label: 'Одличен', cls: 'bg-green-100 text-green-700' }
+                                                    : s.avg >= 70 ? { label: 'Добар', cls: 'bg-blue-100 text-blue-700' }
+                                                    : s.avg >= 50 ? { label: 'Во напредок', cls: 'bg-yellow-100 text-yellow-700' }
+                                                    : { label: 'Потребна помош', cls: 'bg-red-100 text-red-700' };
+                                                return (
+                                                    <tr key={s.name} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                                        <td className="py-2.5 px-3 font-semibold text-slate-700">{s.name}</td>
+                                                        <td className="py-2.5 px-3 text-center text-gray-600">{s.attempts}</td>
+                                                        <td className="py-2.5 px-3 text-center">
+                                                            <span className={`font-bold ${s.avg >= 70 ? 'text-green-600' : s.avg >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
+                                                                {s.avg}%
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-2.5 px-3 text-center text-gray-600">{s.passRate}%</td>
+                                                        <td className="py-2.5 px-3 text-center">
+                                                            <span className="flex items-center justify-center gap-1">
+                                                                {s.masteredCount > 0 && <Trophy className="w-3.5 h-3.5 text-yellow-500" fill="currentColor" />}
+                                                                {s.masteredCount}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-2.5 px-3">
+                                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${status.cls}`}>{status.label}</span>
+                                                        </td>
+                                                        <td className="py-2.5 px-3">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => { window.location.hash = `/my-progress?name=${encodeURIComponent(s.name)}`; }}
+                                                                className="text-xs font-bold text-indigo-600 hover:underline"
+                                                            >
+                                                                Прогрес →
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </Card>
+                    )}
                 </>
             )}
         </div>
