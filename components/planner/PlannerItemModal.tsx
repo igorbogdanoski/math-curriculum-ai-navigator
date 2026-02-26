@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import type { PlannerItem, LessonPlan } from '../../types';
 import { PlannerItemType, QuestionType } from '../../types';
+import { HomeworkPanel } from './HomeworkPanel';
 import { ICONS } from '../../constants';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { useModal } from '../../contexts/ModalContext';
@@ -405,6 +406,13 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
                             </div>
                         )}
                     </div>
+                )}
+                {/* ── Homework Tasks (only for saved lessons) ── */}
+                {!isNew && formData.type === PlannerItemType.LESSON && (
+                    <HomeworkPanel
+                        tasks={formData.tasks ?? []}
+                        onChange={(tasks) => setFormData(prev => ({ ...prev, tasks }))}
+                    />
                 )}
                  <div>
                     <label htmlFor="description" className="block text-sm font-medium text-gray-700">Опис (опционално)</label>

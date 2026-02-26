@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
 import { geminiService } from '../services/geminiService';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { StatCard, QuizAggregate, ConceptStat, PerStudentStat, groupBy, fmt } from './analytics/shared';
@@ -80,6 +80,35 @@ export const TeacherAnalyticsView: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleExportCSV = () => {
+        const rows: string[][] = [
+            ['Квиз', 'Ученик', 'Точни', 'Вкупно', 'Проценти', 'Датум', 'Концепт ID'],
+            ...results.map(r => [
+                r.quizTitle,
+                r.studentName || 'Анонимен',
+                String(r.correctCount),
+                String(r.totalQuestions),
+                `${Math.round(r.percentage)}%`,
+                r.playedAt?.toDate?.()?.toLocaleDateString('mk-MK') || '',
+                r.conceptId || '',
+            ]),
+        ];
+        const csv = rows.map(row =>
+            row.map(cell => cell.includes(',') || cell.includes('"')
+                ? `"${cell.replace(/"/g, '""')}"` : cell
+            ).join(',')
+        ).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `quiz-results-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     useEffect(() => { loadResults(); }, []);
@@ -269,6 +298,16 @@ export const TeacherAnalyticsView: React.FC = () => {
                         Преглед на резултатите на учениците — во реално време.
                     </p>
                 </div>
+                <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={handleExportCSV}
+                    disabled={results.length === 0}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition active:scale-95 disabled:opacity-40"
+                >
+                    <Download className="w-4 h-4" />
+                    Извези CSV
+                </button>
                 <button
                     type="button"
                     onClick={loadResults}
@@ -277,6 +316,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                     <RefreshCw className="w-4 h-4" />
                     Освежи
                 </button>
+                </div>
             </header>
 
             {error && (

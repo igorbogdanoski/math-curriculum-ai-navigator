@@ -118,6 +118,13 @@ export interface LessonReflection {
   nextSteps: string;
 }
 
+export interface HomeworkTask {
+  id: string;       // crypto.randomUUID()
+  title: string;
+  dueDate?: string; // YYYY-MM-DD
+  done: boolean;
+}
+
 export interface PlannerItem {
   id: string;
   type: PlannerItemType;
@@ -129,6 +136,8 @@ export interface PlannerItem {
   levelDescription?: string;
   /** cached_ai_materials doc ID of a linked exit ticket quiz */
   exitTicketCacheId?: string;
+  /** Домашни задачи поврзани со оваа лекција */
+  tasks?: HomeworkTask[];
 }
 
 export interface SharedAnnualPlan {
