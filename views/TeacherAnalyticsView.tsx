@@ -123,7 +123,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts'>('overview');
 
     const handleGetRecommendations = async () => {
         if (isLoadingRecs || results.length === 0) return;
@@ -184,9 +184,9 @@ export const TeacherAnalyticsView: React.FC = () => {
 
     // ── Aggregations ──────────────────────────────────────────────────────
 
-    const { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, uniqueStudents } = useMemo(() => {
+    const { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, allConceptStats, uniqueStudents } = useMemo(() => {
         if (results.length === 0) {
-            return { totalAttempts: 0, avgScore: 0, passRate: 0, quizAggregates: [], distribution: [0, 0, 0, 0], weakConcepts: [], uniqueStudents: [] };
+            return { totalAttempts: 0, avgScore: 0, passRate: 0, quizAggregates: [], distribution: [0, 0, 0, 0], weakConcepts: [], allConceptStats: [], uniqueStudents: [] };
         }
 
         const totalAttempts = results.length;
@@ -220,29 +220,37 @@ export const TeacherAnalyticsView: React.FC = () => {
             };
         }).sort((a, b) => b.attempts - a.attempts);
 
-        // Concept-level aggregation: group by conceptId to find weak concepts
+        // Concept-level aggregation: group by conceptId
         const conceptStats = results.filter(r => r.conceptId).reduce((acc, r) => {
             const key = r.conceptId!;
-            if (!acc[key]) acc[key] = { total: 0, sum: 0, quizTitle: r.quizTitle };
+            if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), quizTitle: r.quizTitle };
             acc[key].total++;
             acc[key].sum += r.percentage;
+            if (r.percentage >= 70) acc[key].passCount++;
+            if (r.studentName) acc[key].students.add(r.studentName);
             return acc;
-        }, {} as Record<string, { total: number; sum: number; quizTitle: string }>);
+        }, {} as Record<string, { total: number; sum: number; passCount: number; students: Set<string>; quizTitle: string }>);
 
-        const weakConcepts = Object.entries(conceptStats)
-            .map(([conceptId, s]) => {
-                const conceptTitle = getConceptDetails(conceptId).concept?.title || s.quizTitle;
-                return { conceptId, avgPct: Math.round(s.sum / s.total), attempts: s.total, title: conceptTitle };
-            })
-            .filter(c => c.avgPct < 70)
-            .sort((a, b) => a.avgPct - b.avgPct);
+        const allConceptStats = Object.entries(conceptStats).map(([conceptId, s]) => {
+            const conceptTitle = getConceptDetails(conceptId).concept?.title || s.quizTitle;
+            return {
+                conceptId,
+                title: conceptTitle,
+                avgPct: Math.round(s.sum / s.total),
+                attempts: s.total,
+                passRate: Math.round((s.passCount / s.total) * 100),
+                uniqueStudents: s.students.size,
+            };
+        }).sort((a, b) => a.avgPct - b.avgPct);
+
+        const weakConcepts = allConceptStats.filter(c => c.avgPct < 70);
 
         // Unique student names from results (for parent QR links)
         const uniqueStudents = Array.from(
             new Set(results.filter(r => r.studentName).map(r => r.studentName!))
         ).sort();
 
-        return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, uniqueStudents };
+        return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, allConceptStats, uniqueStudents };
     }, [results, getConceptDetails]);
 
     // Mastery aggregations
@@ -405,7 +413,8 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'overview', label: 'Преглед' },
                             { id: 'trend', label: 'Тренд' },
                             { id: 'students', label: 'По ученик' },
-                        { id: 'standards', label: 'Стандарди' },
+                            { id: 'standards', label: 'Стандарди' },
+                            { id: 'concepts', label: 'Концепти' },
                         ] as const).map(tab => (
                             <button
                                 key={tab.id}
@@ -913,6 +922,81 @@ export const TeacherAnalyticsView: React.FC = () => {
                                 </p>
                             </Card>
                         </div>
+                        </SilentErrorBoundary>
+                    )}
+
+                    {/* ── TAB: Концепти ── */}
+                    {activeTab === 'concepts' && (
+                        <SilentErrorBoundary name="ConceptsTab">
+                        <Card>
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Перформанси по концепт</h2>
+                                <span className="text-xs font-semibold text-gray-400">{allConceptStats.length} концепт{allConceptStats.length === 1 ? '' : 'и'}</span>
+                            </div>
+                            {allConceptStats.length === 0 ? (
+                                <p className="text-sm text-gray-400 text-center py-8">
+                                    Нема квизови поврзани со концепти. Квизовите треба да бидат генерирани преку конкретен концепт за да се прикажат тука.
+                                </p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="text-xs text-gray-400 uppercase tracking-widest text-left border-b border-gray-100">
+                                                <th className="py-2 px-3 font-semibold">Концепт</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Обиди</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Просек</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Положиле</th>
+                                                <th className="py-2 px-3 text-center font-semibold">Ученици</th>
+                                                <th className="py-2 px-3 font-semibold">Акција</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {allConceptStats.map(c => {
+                                                const avgColor = c.avgPct >= 70 ? 'text-green-600' : c.avgPct >= 50 ? 'text-yellow-600' : 'text-red-500';
+                                                const rowBg = c.avgPct >= 70 ? '' : c.avgPct >= 50 ? 'bg-yellow-50/40' : 'bg-red-50/40';
+                                                return (
+                                                    <tr key={c.conceptId} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${rowBg}`}>
+                                                        <td className="py-2.5 px-3">
+                                                            <div className="flex items-center gap-2">
+                                                                {c.avgPct < 50 && <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
+                                                                <span className="font-semibold text-slate-700 text-xs leading-tight">{c.title}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2.5 px-3 text-center text-gray-600">{c.attempts}</td>
+                                                        <td className="py-2.5 px-3 text-center">
+                                                            <div className="flex flex-col items-center gap-1">
+                                                                <span className={`font-bold text-base ${avgColor}`}>{c.avgPct}%</span>
+                                                                <div className="w-16">
+                                                                    <ScoreBar pct={Math.max(c.avgPct, 2)} color={c.avgPct >= 70 ? 'bg-green-400' : c.avgPct >= 50 ? 'bg-yellow-400' : 'bg-red-400'} />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2.5 px-3 text-center text-gray-600">{c.passRate}%</td>
+                                                        <td className="py-2.5 px-3 text-center text-gray-600">{c.uniqueStudents || '—'}</td>
+                                                        <td className="py-2.5 px-3">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleGenerateRemedial(c.conceptId, c.title, c.avgPct)}
+                                                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
+                                                                    c.avgPct < 70
+                                                                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                                                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                                                }`}
+                                                            >
+                                                                {c.avgPct < 70 ? 'Ремедијален' : 'Збогатување'}
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                    <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-100">
+                                        Концептите се сортирани по просечен резултат — најслабите се прикажани прво. Бојата на редот: <span className="text-red-400 font-semibold">Под 50%</span> · <span className="text-yellow-600 font-semibold">50–69%</span> · <span className="text-green-600 font-semibold">≥70%</span>.
+                                    </p>
+                                </div>
+                            )}
+                        </Card>
                         </SilentErrorBoundary>
                     )}
                 </>
