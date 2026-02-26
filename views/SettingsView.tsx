@@ -8,6 +8,7 @@ import { ICONS } from '../constants';
 import { InstallApp } from '../components/common/InstallApp';
 import { firestoreService } from '../services/firestoreService';
 import { fullCurriculumData } from '../data/curriculum';
+import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
 
 const initialProfile: TeachingProfile = {
     name: '',
@@ -24,6 +25,7 @@ export const SettingsView: React.FC = () => {
     const [newProfileDesc, setNewProfileDesc] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isMigrating, setIsMigrating] = useState(false);
+    const [quotaStatus, setQuotaStatus] = useState<{ exhausted: boolean; resetTime: string }>({ exhausted: false, resetTime: '' });
     const { addNotification } = useNotification();
 
     useEffect(() => {
@@ -32,6 +34,32 @@ export const SettingsView: React.FC = () => {
             setStudentProfiles(user.studentProfiles || []);
         }
     }, [user]);
+
+    useEffect(() => {
+        const update = () => {
+            const exhausted = isDailyQuotaKnownExhausted();
+            if (!exhausted) { setQuotaStatus({ exhausted: false, resetTime: '' }); return; }
+            try {
+                const stored = localStorage.getItem('ai_daily_quota_exhausted');
+                const { nextResetMs } = stored ? JSON.parse(stored) : {};
+                const resetTime = nextResetMs
+                    ? new Date(nextResetMs).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })
+                    : '09:00';
+                setQuotaStatus({ exhausted: true, resetTime });
+            } catch {
+                setQuotaStatus({ exhausted: true, resetTime: '09:00' });
+            }
+        };
+        update();
+        const id = setInterval(update, 60_000);
+        return () => clearInterval(id);
+    }, []);
+
+    const handleClearQuotaFlag = () => {
+        clearDailyQuotaFlag();
+        setQuotaStatus({ exhausted: false, resetTime: '' });
+        addNotification('AI квота флагот е очистен. Следниот повик ќе го провери статусот.', 'success');
+    };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -261,6 +289,53 @@ export const SettingsView: React.FC = () => {
                         </button>
                     </div>
                 </div>
+            </Card>
+
+            {/* ── AI Quota Dashboard ── */}
+            <Card className={`max-w-2xl ${quotaStatus.exhausted ? 'border-red-200 bg-red-50/30' : 'border-green-200 bg-green-50/30'}`}>
+                <h2 className={`text-2xl font-semibold mb-4 flex items-center gap-2 ${quotaStatus.exhausted ? 'text-red-800' : 'text-green-800'}`}>
+                    <ICONS.zap className="w-6 h-6" />
+                    AI Статус на квота
+                </h2>
+                <div className="bg-white rounded-xl border p-4 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-700">Статус на Gemini API</span>
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                            quotaStatus.exhausted
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-green-100 text-green-700'
+                        }`}>
+                            {quotaStatus.exhausted ? '⛔ Исцрпена' : '✅ Активна'}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Gemini reset (секој ден)</span>
+                        <span className="font-semibold text-gray-700">09:00 МК (полноќ Pacific)</span>
+                    </div>
+                    {quotaStatus.exhausted && (
+                        <>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500">Следно обновување</span>
+                                <span className="font-bold text-red-600">{quotaStatus.resetTime} МК</span>
+                            </div>
+                            <div className="pt-2 border-t border-gray-100">
+                                <p className="text-xs text-gray-400 mb-2">
+                                    Рачно очистување на флагот ќе дозволи нов обид. Употреби го само ако сметаш дека квотата е обновена.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={handleClearQuotaFlag}
+                                    className="text-xs font-bold px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
+                                >
+                                    Рачно очисти флаг
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+                <p className="text-xs text-gray-400 mt-3">
+                    Gemini free tier: ~50 барања/ден. При исцрпување, AI функциите се блокирани до 09:00 МК.
+                </p>
             </Card>
         </div>
     );
