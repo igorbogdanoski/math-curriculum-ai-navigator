@@ -256,6 +256,15 @@ button:active:not(:disabled) {
 }
 
 /* ═══════════════════════════════════════════════════
+   Analytics progress bars (dynamic width via data attr)
+   Used by ScoreBar and TrendBar in TeacherAnalyticsView
+   ═══════════════════════════════════════════════════ */
+.analytics-bar[data-pct] {
+  width: calc(var(--bar-pct, 0) * 1%);
+  transition: width 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════
    KaTeX math rendering
    ═══════════════════════════════════════════════════ */
 .katex {

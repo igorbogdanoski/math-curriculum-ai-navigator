@@ -3,7 +3,7 @@ import { firestoreService, type QuizResult, type ConceptMastery } from '../servi
 import { ICONS } from '../constants';
 import {
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
-  Calendar, RefreshCw, Trophy, Flame,
+  Calendar, RefreshCw, Trophy, Flame, PlayCircle,
 } from 'lucide-react';
 
 const formatDate = (ts: any): string => {
@@ -28,6 +28,8 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   );
   const [results, setResults] = useState<QuizResult[]>([]);
   const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
+  // conceptId → quizId for "play again" self-navigation
+  const [nextQuizIds, setNextQuizIds] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -42,6 +44,21 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       ]);
       setResults(quizData);
       setMasteryRecords(masteryData);
+
+      // Pre-fetch quiz links for failed concepts (self-navigation)
+      const failedConceptIds = Array.from(
+        new Set(quizData.filter(r => r.percentage < 70 && r.conceptId).map(r => r.conceptId!))
+      );
+      if (failedConceptIds.length > 0) {
+        const quizLookups = await Promise.all(
+          failedConceptIds.map(cid =>
+            firestoreService.fetchLatestQuizByConcept(cid).then(q => ({ cid, id: q?.id }))
+          )
+        );
+        const map: Record<string, string> = {};
+        quizLookups.forEach(({ cid, id }) => { if (id) map[cid] = id; });
+        setNextQuizIds(map);
+      }
     } catch {
       setResults([]);
       setMasteryRecords([]);
@@ -239,6 +256,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           ) : (
             results.map((r, i) => {
               const isPassed = r.percentage >= 70;
+              const nextQuizId = r.conceptId ? nextQuizIds[r.conceptId] : undefined;
               return (
                 <div key={i} className="bg-white rounded-2xl p-4 shadow flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isPassed ? 'bg-green-100' : 'bg-amber-100'}`}>
@@ -253,11 +271,20 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                       <span className="text-xs text-slate-400">{formatDate(r.playedAt)}</span>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
                     <p className={`text-xl font-black ${isPassed ? 'text-green-600' : 'text-amber-500'}`}>
                       {r.percentage}%
                     </p>
                     <p className="text-xs text-slate-400">{r.correctCount}/{r.totalQuestions}</p>
+                    {!isPassed && nextQuizId && (
+                      <button
+                        type="button"
+                        onClick={() => { window.location.hash = `/play/${nextQuizId}`; }}
+                        className="flex items-center gap-1 text-xs font-bold bg-indigo-600 text-white px-2.5 py-1 rounded-lg hover:bg-indigo-700 transition mt-0.5"
+                      >
+                        <PlayCircle className="w-3 h-3" /> Вежбај
+                      </button>
+                    )}
                   </div>
                 </div>
               );

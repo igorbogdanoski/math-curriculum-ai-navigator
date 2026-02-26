@@ -48,11 +48,25 @@ const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string; 
     </Card>
 );
 
+// Progress bar components use style= for dynamic widths (CSS custom properties).
+// This is React-idiomatic for runtime values — Tailwind can't generate arbitrary
+// runtime classes. Same pattern as InteractiveQuizPlayer.tsx line 257.
+
+/** Horizontal bar for the weekly trend chart (h-6, overlaid % label) */
+// eslint-disable-next-line react/forbid-component-props
+const TrendBar: React.FC<{ pct: number; color: string; label: string }> = ({ pct, color, label }) => (
+    <div className="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
+        <div className={`analytics-bar h-full rounded-full ${color}`} data-pct={pct} style={{ '--bar-pct': pct } as React.CSSProperties} />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-700">{label}</span>
+    </div>
+);
+
 /** Horizontal score distribution bar */
+// eslint-disable-next-line react/forbid-component-props
 const ScoreBar: React.FC<{ pct: number; color: string }> = ({ pct, color }) => (
     <div className="flex items-center gap-2 text-xs">
         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${Math.max(pct, 0)}%` }} />
+            <div className={`analytics-bar h-full ${color} rounded-full`} data-pct={Math.max(pct, 0)} style={{ '--bar-pct': Math.max(pct, 0) } as React.CSSProperties} />
         </div>
         <span className="w-8 text-right text-gray-500">{fmt(pct, 0)}%</span>
     </div>
@@ -103,12 +117,12 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
     const { navigate } = useNavigation();
-    const { getConceptDetails } = useCurriculum();
+    const { getConceptDetails, getStandardsByIds } = useCurriculum();
     const { openGeneratorPanel } = useGeneratorPanel();
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards'>('overview');
 
     const handleGetRecommendations = async () => {
         if (isLoadingRecs || results.length === 0) return;
@@ -293,6 +307,42 @@ export const TeacherAnalyticsView: React.FC = () => {
         }).sort((a, b) => a.avg - b.avg);
     }, [results, masteryRecords]);
 
+    // Standards coverage — based on actual quiz results (not lesson plans)
+    const standardsCoverage = useMemo(() => {
+        if (results.length === 0) return { tested: [], notTested: [] };
+
+        // Collect unique conceptIds from all quiz results
+        const testedConceptIds = Array.from(new Set(results.filter(r => r.conceptId).map(r => r.conceptId!)));
+
+        // For each concept, resolve its nationalStandardIds
+        const testedStandardIds = new Set<string>();
+        const conceptAvg: Record<string, number> = {};
+
+        testedConceptIds.forEach(cid => {
+            const { concept } = getConceptDetails(cid);
+            concept?.nationalStandardIds?.forEach(sid => testedStandardIds.add(sid));
+
+            // Avg score per concept
+            const conceptResults = results.filter(r => r.conceptId === cid);
+            if (conceptResults.length > 0) {
+                conceptAvg[cid] = Math.round(conceptResults.reduce((s, r) => s + r.percentage, 0) / conceptResults.length);
+            }
+        });
+
+        const testedStandards = getStandardsByIds(Array.from(testedStandardIds)).map(s => {
+            // Find concepts for this standard and their avg scores
+            const linkedConcepts = testedConceptIds
+                .filter(cid => getConceptDetails(cid).concept?.nationalStandardIds?.includes(s.id))
+                .map(cid => ({ cid, avg: conceptAvg[cid] ?? 0 }));
+            const avgScore = linkedConcepts.length > 0
+                ? Math.round(linkedConcepts.reduce((sum, c) => sum + c.avg, 0) / linkedConcepts.length)
+                : 0;
+            return { standard: s, avgScore, conceptCount: linkedConcepts.length };
+        }).sort((a, b) => a.avgScore - b.avgScore);
+
+        return { tested: testedStandards, notTested: [] };
+    }, [results, getConceptDetails, getStandardsByIds]);
+
     // ── Render ─────────────────────────────────────────────────────────────
 
     if (isLoading) {
@@ -354,6 +404,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'overview', label: 'Преглед' },
                             { id: 'trend', label: 'Тренд' },
                             { id: 'students', label: 'По ученик' },
+                        { id: 'standards', label: 'Стандарди' },
                         ] as const).map(tab => (
                             <button
                                 key={tab.id}
@@ -810,6 +861,52 @@ export const TeacherAnalyticsView: React.FC = () => {
                                 </div>
                             )}
                         </Card>
+                    )}
+                    {/* ── TAB: Стандарди ── */}
+                    {activeTab === 'standards' && (
+                        <div className="space-y-4">
+                            <Card>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                                        Покриеност на Национални стандарди — врз основа на реални квизови
+                                    </h2>
+                                    <span className="text-xs font-semibold text-gray-400">{standardsCoverage.tested.length} тестирани</span>
+                                </div>
+                                {standardsCoverage.tested.length === 0 ? (
+                                    <p className="text-sm text-gray-400 text-center py-8">
+                                        Нема концепти со nationalStandardIds во резултатите. Потребни се квизови поврзани со концепти.
+                                    </p>
+                                ) : (
+                                    <div className="space-y-2.5">
+                                        {standardsCoverage.tested.map(({ standard, avgScore, conceptCount }) => {
+                                            const barColor = avgScore >= 70 ? 'bg-green-400' : avgScore >= 50 ? 'bg-yellow-400' : 'bg-red-400';
+                                            const textColor = avgScore >= 70 ? 'text-green-600' : avgScore >= 50 ? 'text-yellow-600' : 'text-red-500';
+                                            return (
+                                                <div key={standard.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                    <div className="flex-shrink-0 w-16 text-center">
+                                                        <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                                                            {standard.code}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-semibold text-slate-700 truncate mb-1">{standard.description}</p>
+                                                        <ScoreBar pct={Math.max(avgScore, 3)} color={barColor} />
+                                                    </div>
+                                                    <div className="flex-shrink-0 text-right w-20">
+                                                        <p className={`text-lg font-black ${textColor}`}>{avgScore}%</p>
+                                                        <p className="text-xs text-gray-400">{conceptCount} концепт{conceptCount === 1 ? '' : 'и'}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                                <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-100">
+                                    Прикажани се само стандарди кои се директно поврзани со концепти тестирани преку Ученичкиот Портал.
+                                    За целосна анализа на покриеноста (вклучувајќи lesson plans) посети ја страницата Анализа на Покриеност.
+                                </p>
+                            </Card>
+                        </div>
                     )}
                 </>
             )}
