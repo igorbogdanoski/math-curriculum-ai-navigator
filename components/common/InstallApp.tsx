@@ -72,7 +72,8 @@ export const InstallApp: React.FC = () => {
                     <p className="text-blue-100 text-sm">За побрз пристап, работа офлајн и подобро искуство на цел екран.</p>
                 </div>
             </div>
-            <button 
+            <button
+                type="button"
                 onClick={handleInstallClick}
                 className="px-6 py-2.5 bg-white text-brand-primary font-bold rounded-lg shadow-md hover:bg-gray-50 transition-colors whitespace-nowrap w-full sm:w-auto"
             >

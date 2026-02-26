@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'math-nav-cache-v2.1';
+const CACHE_NAME = 'math-nav-cache-v2.2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

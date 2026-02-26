@@ -1,16 +1,37 @@
 {
   "short_name": "Math Navigator",
   "name": "Math Curriculum AI Navigator",
-  "description": "An interactive web application for math teachers (grades VI-IX) to track the development and progression of key mathematical concepts and national standards throughout the school years, assisted by AI.",
+  "description": "Педагошки AI систем за наставници по математика (VI-IX одд.) — следење на концепти, напредок на ученици и генерирање материјали.",
+  "lang": "mk",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/vite.svg",
       "type": "image/svg+xml",
-      "sizes": "192x192 512x512"
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
   "theme_color": "#0D47A1",
-  "background_color": "#F5F5F5"
+  "background_color": "#F9FAFB",
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Генерирај материјали",
+      "short_name": "Генерирај",
+      "url": "/#/generator",
+      "icons": [{ "src": "/vite.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Аналитика",
+      "short_name": "Аналитика",
+      "url": "/#/analytics",
+      "icons": [{ "src": "/vite.svg", "sizes": "96x96" }]
+    }
+  ]
 }
