@@ -1,13 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import type { PlannerItem, LessonPlan } from '../../types';
-import { PlannerItemType } from '../../types';
+import { PlannerItemType, QuestionType } from '../../types';
 import { ICONS } from '../../constants';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { useModal } from '../../contexts/ModalContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { geminiService } from '../../services/geminiService';
+import { firestoreService, type QuizResult } from '../../services/firestoreService';
+import { Sparkles, TicketCheck, ExternalLink, Users, CheckCircle2, Copy, CheckCheck } from 'lucide-react';
 
 interface PlannerItemModalProps {
   item?: Partial<PlannerItem>;
@@ -48,9 +50,19 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
+  // Exit ticket state
+  const [isGeneratingTicket, setIsGeneratingTicket] = useState(false);
+  const [ticketResults, setTicketResults] = useState<QuizResult[] | null>(null);
+  const [copiedTicket, setCopiedTicket] = useState(false);
+
   useEffect(() => {
     setFormData(getInitialFormData(item));
     setIsConfirmingDelete(false);
+    setTicketResults(null);
+    // Load existing exit ticket results
+    if (item?.exitTicketCacheId) {
+      firestoreService.fetchQuizResultsByQuizId(item.exitTicketCacheId).then(setTicketResults).catch(() => {});
+    }
   }, [item]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -113,6 +125,61 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
     recognition.start();
   };
 
+
+  const handleGenerateExitTicket = async () => {
+    const lessonPlan = formData.lessonPlanId ? getLessonPlan(formData.lessonPlanId) : null;
+    if (!lessonPlan && !formData.title) return;
+
+    setIsGeneratingTicket(true);
+    try {
+      const grade = lessonPlan?.grade ?? 6;
+      const theme = lessonPlan?.theme ?? formData.title ?? '';
+      const context = {
+        type: 'SCENARIO' as const,
+        grade: { id: `g${grade}`, level: grade, title: `${grade}. одделение`, topics: [] },
+        scenario: `Час на тема "${theme}". ${lessonPlan?.title ?? ''}`,
+      };
+      const result = await geminiService.generateAssessment(
+        'QUIZ',
+        [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER],
+        5,
+        context,
+        undefined,
+        'standard',
+        undefined,
+        undefined,
+        `EXIT TICKET: 5 кратки прашања за крај на час за да се провери разбирањето. Прашањата мора да бидат директно поврзани со темата: "${theme}".`
+      );
+
+      const ticketId = await firestoreService.saveExitTicketQuiz(result, {
+        lessonTitle: formData.title ?? '',
+        gradeLevel: grade,
+        topicId: lessonPlan?.topicId,
+        conceptId: lessonPlan?.conceptIds?.[0],
+      });
+
+      if (ticketId && formData.id) {
+        const updatedItem = { ...formData, exitTicketCacheId: ticketId } as PlannerItem;
+        await updateItem(updatedItem);
+        setFormData(updatedItem);
+        setTicketResults([]);
+        addNotification('Exit ticket генериран и зачуван!', 'success');
+      }
+    } catch (err) {
+      addNotification('Грешка при генерирање на exit ticket.', 'error');
+      console.error(err);
+    } finally {
+      setIsGeneratingTicket(false);
+    }
+  };
+
+  const handleCopyTicketLink = () => {
+    if (!formData.exitTicketCacheId) return;
+    const url = `${window.location.origin}${window.location.pathname}#/play/${formData.exitTicketCacheId}`;
+    navigator.clipboard.writeText(url).catch(() => {});
+    setCopiedTicket(true);
+    setTimeout(() => setCopiedTicket(false), 2000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -270,6 +337,73 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
                             <option value="">-- Избери подготовка --</option>
                             {lessonPlans.map((lp: LessonPlan) => <option key={lp.id} value={lp.id}>{lp.title} ({lp.grade}. одд)</option>)}
                         </select>
+                    </div>
+                )}
+
+                {/* ── Exit Ticket Section (only for saved lessons) ── */}
+                {!isNew && formData.type === PlannerItemType.LESSON && (
+                    <div className="animate-fade-in border border-indigo-100 bg-indigo-50 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                            <TicketCheck className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                            <span className="text-sm font-bold text-indigo-800">Exit Ticket</span>
+                            {formData.exitTicketCacheId && (
+                                <span className="ml-auto text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">✓ Генериран</span>
+                            )}
+                        </div>
+
+                        {!formData.exitTicketCacheId ? (
+                            <div>
+                                <p className="text-xs text-indigo-700 mb-3">
+                                    Генерирај 5-прашалник за крај на часот. Учениците го играат, ти го гледаш резултатот.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={handleGenerateExitTicket}
+                                    disabled={isGeneratingTicket}
+                                    className="flex items-center gap-1.5 text-xs font-bold bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
+                                >
+                                    {isGeneratingTicket
+                                        ? <><ICONS.spinner className="w-3.5 h-3.5 animate-spin" /> Генерирам...</>
+                                        : <><Sparkles className="w-3.5 h-3.5" /> Генерирај Exit Ticket</>}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {/* Results summary */}
+                                {ticketResults !== null && (
+                                    <div className="flex items-center gap-4 text-xs font-semibold">
+                                        <span className="flex items-center gap-1 text-slate-600">
+                                            <Users className="w-3.5 h-3.5" />
+                                            {ticketResults.length} {ticketResults.length === 1 ? 'ученик' : 'ученици'}
+                                        </span>
+                                        {ticketResults.length > 0 && (
+                                            <span className="flex items-center gap-1 text-green-700">
+                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                {Math.round(ticketResults.reduce((s, r) => s + r.percentage, 0) / ticketResults.length)}% просек
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                                {/* Link actions */}
+                                <div className="flex gap-2 flex-wrap">
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyTicketLink}
+                                        className="flex items-center gap-1.5 text-xs font-bold bg-white border border-indigo-200 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition"
+                                    >
+                                        {copiedTicket ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                        {copiedTicket ? 'Копирано!' : 'Копирај линк'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { window.open(`#/play/${formData.exitTicketCacheId}`, '_blank'); }}
+                                        className="flex items-center gap-1.5 text-xs font-bold bg-white border border-indigo-200 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" /> Отвори квиз
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
                  <div>

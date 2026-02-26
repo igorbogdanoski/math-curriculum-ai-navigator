@@ -127,6 +127,8 @@ export interface PlannerItem {
   lessonPlanId?: string;
   reflection?: LessonReflection;
   levelDescription?: string;
+  /** cached_ai_materials doc ID of a linked exit ticket quiz */
+  exitTicketCacheId?: string;
 }
 
 export interface SharedAnnualPlan {

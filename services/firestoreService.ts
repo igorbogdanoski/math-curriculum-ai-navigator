@@ -263,6 +263,53 @@ export const firestoreService = {
   },
 
   /**
+   * Fetches quiz results for a specific quiz (exit ticket analytics).
+   */
+  fetchQuizResultsByQuizId: async (quizId: string): Promise<QuizResult[]> => {
+    try {
+      const q = query(
+        collection(db, "quiz_results"),
+        where("quizId", "==", quizId),
+        orderBy("playedAt", "desc"),
+        limit(200)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(d => d.data() as QuizResult);
+    } catch (error) {
+      console.error("Error fetching quiz results by quiz ID:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Saves an exit ticket quiz (linked to a planner lesson) to cached_ai_materials.
+   * Returns the new document ID.
+   */
+  saveExitTicketQuiz: async (content: any, meta: {
+    lessonTitle: string;
+    gradeLevel?: number;
+    topicId?: string;
+    conceptId?: string;
+  }): Promise<string | null> => {
+    try {
+      const docRef = await addDoc(collection(db, 'cached_ai_materials'), {
+        content,
+        type: 'quiz',
+        isExitTicket: true,
+        lessonTitle: meta.lessonTitle,
+        gradeLevel: meta.gradeLevel,
+        topicId: meta.topicId,
+        conceptId: meta.conceptId,
+        createdAt: serverTimestamp(),
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error saving exit ticket quiz:', error);
+      return null;
+    }
+  },
+
+  /**
    * Rates a cached material
    */
   rateCachedMaterial: async (materialId: string, isHelpful: boolean): Promise<boolean> => {

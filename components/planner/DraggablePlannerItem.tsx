@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { PlannerItem } from '../../types';
 import { PlannerItemType } from '../../types';
 import { ICONS } from '../../constants';
+import { TicketCheck } from 'lucide-react';
 
 interface DraggablePlannerItemProps {
   item: PlannerItem;
@@ -85,18 +86,25 @@ export const DraggablePlannerItem: React.FC<DraggablePlannerItemProps> = memo(({
         </div>
       </div>
 
-      {onAddReflection && (
-         <div className="flex justify-end mt-0.5">
-             <button 
-                onClick={handleReflectionClick} 
-                className={`p-0.5 rounded-full hover:bg-white/50 transition-all ${reflectionClasses}`}
-                aria-label={hasReflection ? 'Види рефлексија' : 'Додади рефлексија'}
-                title="Рефлексија"
-            >
-                 <ICONS.chatBubble className="w-3.5 h-3.5" />
-            </button>
-         </div>
-      )}
+      <div className="flex justify-between items-center mt-0.5">
+        {item.exitTicketCacheId && (
+          <span className="flex items-center gap-0.5 text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full" title="Exit ticket генериран">
+            <TicketCheck className="w-2.5 h-2.5" /> Ticket
+          </span>
+        )}
+        {!item.exitTicketCacheId && <span />}
+        {onAddReflection && (
+          <button
+            type="button"
+            onClick={handleReflectionClick}
+            className={`p-0.5 rounded-full hover:bg-white/50 transition-all ${reflectionClasses}`}
+            aria-label={hasReflection ? 'Види рефлексија' : 'Додади рефлексија'}
+            title="Рефлексија"
+          >
+            <ICONS.chatBubble className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 });
