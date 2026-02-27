@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 
@@ -21,6 +21,15 @@ export interface ConceptMastery {
   mastered: boolean;         // true when consecutiveHighScores ≥ 3
   masteredAt?: any;          // Firestore Timestamp
   updatedAt?: any;
+}
+
+// ── Student Groups ────────────────────────────────────────────────────────────
+export interface StudentGroup {
+  id: string;
+  name: string;
+  color: 'green' | 'blue' | 'orange' | 'red' | 'purple';
+  studentNames: string[];
+  createdAt?: any;
 }
 
 // ── Gamification ─────────────────────────────────────────────────────────────
@@ -529,5 +538,34 @@ export const firestoreService = {
 
     await setDoc(ref, updated, { merge: false });
     return { xpGained, newAchievements, gamification: updated };
+  },
+
+  // ── Student Groups ────────────────────────────────────────────────────────
+  fetchStudentGroups: async (): Promise<StudentGroup[]> => {
+    try {
+      const snap = await getDocs(collection(db, 'student_groups'));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as StudentGroup));
+    } catch (error) {
+      console.error('Error fetching student groups:', error);
+      return [];
+    }
+  },
+
+  createStudentGroup: async (name: string, color: string): Promise<string> => {
+    const ref = await addDoc(collection(db, 'student_groups'), {
+      name,
+      color,
+      studentNames: [],
+      createdAt: serverTimestamp(),
+    });
+    return ref.id;
+  },
+
+  updateGroupStudents: async (groupId: string, studentNames: string[]): Promise<void> => {
+    await updateDoc(doc(db, 'student_groups', groupId), { studentNames });
+  },
+
+  deleteStudentGroup: async (groupId: string): Promise<void> => {
+    await deleteDoc(doc(db, 'student_groups', groupId));
   },
 };
