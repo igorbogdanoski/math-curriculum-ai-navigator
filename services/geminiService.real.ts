@@ -80,6 +80,35 @@ interface SafetySetting {
 // 09:00 MK. Auto-calls in the 01:00–09:00 window re-exhausted quota every day for 10+ days.
 const DAILY_QUOTA_KEY = 'ai_daily_quota_exhausted';
 
+// ---------------------------------------------------------------------------
+// Quota storage helpers — dual write: cookie (primary) + localStorage (fallback)
+// Edge/Firefox Tracking Prevention often blocks localStorage for *.vercel.app
+// but first-party SameSite=Strict cookies are never blocked by Tracking Prevention.
+// ---------------------------------------------------------------------------
+function quotaRead(): string | null {
+  // Try cookie first (immune to Tracking Prevention)
+  try {
+    const match = document.cookie.split('; ').find(r => r.startsWith('ai_quota='));
+    if (match) return decodeURIComponent(match.slice('ai_quota='.length));
+  } catch { /* ignore */ }
+  // Fallback to localStorage
+  try { return localStorage.getItem(DAILY_QUOTA_KEY); } catch { return null; }
+}
+
+function quotaWrite(value: string, expiresMs: number): void {
+  // Write to cookie (primary — survives Tracking Prevention)
+  try {
+    document.cookie = `ai_quota=${encodeURIComponent(value)}; expires=${new Date(expiresMs).toUTCString()}; SameSite=Strict; path=/`;
+  } catch { /* ignore */ }
+  // Also write to localStorage for environments that support it
+  try { localStorage.setItem(DAILY_QUOTA_KEY, value); } catch { /* ignore */ }
+}
+
+function quotaClear(): void {
+  try { document.cookie = 'ai_quota=; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Strict; path=/'; } catch { /* ignore */ }
+  try { localStorage.removeItem(DAILY_QUOTA_KEY); } catch { /* ignore */ }
+}
+
 /** Returns the Unix timestamp (ms) of the next Pacific midnight (Gemini's reset point). */
 function getNextPacificMidnightMs(): number {
   const now = new Date();
@@ -106,27 +135,27 @@ function getNextPacificMidnightMs(): number {
 
 function checkDailyQuotaGuard(): void {
   try {
-    const stored = localStorage.getItem(DAILY_QUOTA_KEY);
+    const stored = quotaRead();
     if (!stored) return;
     const parsed = JSON.parse(stored);
     const nextResetMs: number = parsed.nextResetMs ?? 0;
     if (Date.now() < nextResetMs) {
       throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.");
     }
-    localStorage.removeItem(DAILY_QUOTA_KEY); // Pacific midnight passed — clear the flag
+    quotaClear(); // Pacific midnight passed — clear the flag
   } catch (e) {
     if (e instanceof RateLimitError) throw e;
-    // Ignore localStorage read/parse errors silently
+    // Ignore storage read/parse errors silently
   }
 }
 
 function markDailyQuotaExhausted(): void {
   try {
     const nextResetMs = getNextPacificMidnightMs();
-    localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify({
+    quotaWrite(JSON.stringify({
       exhaustedAt: new Date().toISOString(),
       nextResetMs,
-    }));
+    }), nextResetMs);
     scheduleQuotaNotification(nextResetMs);
   } catch { /* ignore write errors */ }
 }
@@ -148,7 +177,7 @@ export function scheduleQuotaNotification(nextResetMs: number): void {
 // Exported so the UI can check quota state without making an API call
 export function isDailyQuotaKnownExhausted(): boolean {
   try {
-    const stored = localStorage.getItem(DAILY_QUOTA_KEY);
+    const stored = quotaRead();
     if (!stored) return false;
     const parsed = JSON.parse(stored);
     const nextResetMs: number = parsed.nextResetMs ?? 0;
@@ -158,7 +187,7 @@ export function isDailyQuotaKnownExhausted(): boolean {
 
 // Exported so the user can manually clear a stale or false-positive quota flag
 export function clearDailyQuotaFlag(): void {
-  try { localStorage.removeItem(DAILY_QUOTA_KEY); } catch { /* ignore */ }
+  quotaClear();
 }
 
 // --- QUEUE SYSTEM ---

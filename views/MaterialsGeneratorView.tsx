@@ -404,10 +404,13 @@ ${generatedMaterial.assessmentIdea}
         setIsLoading(false);
     };
 
-    // Helper to extract quota reset info from localStorage and set the inline banner
+    // Helper to extract quota reset info (cookie first, then localStorage) and set the inline banner
     const setQuotaBannerFromStorage = () => {
         try {
-            const stored = localStorage.getItem('ai_daily_quota_exhausted');
+            const cookieMatch = document.cookie.split('; ').find(r => r.startsWith('ai_quota='));
+            const stored = cookieMatch
+                ? decodeURIComponent(cookieMatch.slice('ai_quota='.length))
+                : localStorage.getItem('ai_daily_quota_exhausted');
             const { nextResetMs, exhaustedAt } = stored ? JSON.parse(stored) : {};
             const resetTime = nextResetMs
                 ? new Date(nextResetMs).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })
