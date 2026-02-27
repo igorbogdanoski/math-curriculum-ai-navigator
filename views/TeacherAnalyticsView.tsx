@@ -12,6 +12,7 @@ import { StudentsTab } from './analytics/StudentsTab';
 import { StandardsTab } from './analytics/StandardsTab';
 import { ConceptsTab } from './analytics/ConceptsTab';
 import { GradeTab } from './analytics/GradeTab';
+import { AlertsTab } from './analytics/AlertsTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
     const [results, setResults] = useState<QuizResult[]>([]);
@@ -24,7 +25,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts'>('overview');
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -358,6 +359,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'grades', label: 'По одд.' },
                             { id: 'standards', label: 'Стандарди' },
                             { id: 'concepts', label: 'Концепти' },
+                            { id: 'alerts', label: '⚠️ Внимание' },
                         ] as const).map(tab => (
                             <button
                                 key={tab.id}
@@ -431,6 +433,13 @@ export const TeacherAnalyticsView: React.FC = () => {
                     {activeTab === 'grades' && <GradeTab gradeStats={gradeStats} />}
                     {activeTab === 'standards' && <StandardsTab standardsCoverage={standardsCoverage} />}
                     {activeTab === 'concepts' && <ConceptsTab allConceptStats={allConceptStats} onGenerateRemedial={handleGenerateRemedial} />}
+                    {activeTab === 'alerts' && (
+                        <AlertsTab
+                            perStudentStats={perStudentStats}
+                            weakConcepts={weakConcepts}
+                            onGenerateRemedial={handleGenerateRemedial}
+                        />
+                    )}
                 </>
             )}
         </div>
