@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
+import { firestoreService, type QuizResult, type ConceptMastery, type StudentGamification, ACHIEVEMENTS } from '../services/firestoreService';
 import { ICONS } from '../constants';
 import {
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
@@ -33,6 +33,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
   // conceptId → quizId for "play again" self-navigation
   const [nextQuizIds, setNextQuizIds] = useState<Record<string, string>>({});
+  const [gamification, setGamification] = useState<StudentGamification | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -41,12 +42,14 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     setLoading(true);
     setSearched(true);
     try {
-      const [quizData, masteryData] = await Promise.all([
+      const [quizData, masteryData, gamificationData] = await Promise.all([
         firestoreService.fetchQuizResultsByStudentName(name.trim()),
         firestoreService.fetchMasteryByStudent(name.trim()),
+        firestoreService.fetchStudentGamification(name.trim()),
       ]);
       setResults(quizData);
       setMasteryRecords(masteryData);
+      setGamification(gamificationData);
 
       // Pre-fetch quiz links for failed concepts (self-navigation)
       const failedConceptIds = Array.from(
@@ -228,6 +231,51 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             <Trophy className="w-6 h-6 text-yellow-500 mx-auto mb-1" fill="currentColor" />
             <p className="text-2xl font-black text-slate-800">{masteredCount}</p>
             <p className="text-xs text-slate-500 font-semibold">Совладани</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Правец 15: Gamification — XP + Streak + Achievements ──────────── */}
+      {searched && !loading && gamification && (
+        <div className="w-full max-w-2xl mb-4">
+          <div className="bg-white rounded-2xl shadow p-4">
+            {/* XP bar + streak */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚡</span>
+                <div>
+                  <p className="font-black text-slate-800 text-sm">{gamification.totalXP} XP</p>
+                  <p className="text-xs text-slate-400">вкупно поени</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔥</span>
+                <div className="text-right">
+                  <p className="font-black text-slate-800 text-sm">{gamification.currentStreak} {gamification.currentStreak === 1 ? 'ден' : 'дена'}</p>
+                  <p className="text-xs text-slate-400">тековен стрик</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-slate-600 text-sm">{gamification.totalQuizzes} квизови</p>
+                <p className="text-xs text-slate-400">решени вкупно</p>
+              </div>
+            </div>
+            {/* Achievements */}
+            {gamification.achievements.length > 0 && (
+              <div className="border-t border-slate-100 pt-3">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Достигнувања</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {gamification.achievements.map(id => {
+                    const a = ACHIEVEMENTS[id];
+                    return a ? (
+                      <span key={id} title={a.label} className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded-full">
+                        {a.icon} {a.label}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

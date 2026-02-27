@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
-import { firestoreService, type ConceptMastery } from '../services/firestoreService';
+import { firestoreService, type ConceptMastery, ACHIEVEMENTS, type StudentGamification } from '../services/firestoreService';
 import { geminiService } from '../services/geminiService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -26,6 +26,13 @@ export const StudentPlayView: React.FC = () => {
 
   // Mastery state — updated after each quiz
   const [masteryUpdate, setMasteryUpdate] = useState<ConceptMastery | null>(null);
+
+  // Gamification state — XP + streak + achievements earned this quiz
+  const [gamificationUpdate, setGamificationUpdate] = useState<{
+    xpGained: number;
+    newAchievements: string[];
+    gamification: StudentGamification;
+  } | null>(null);
 
   // Adaptive remediation state
   const [remediaQuizId, setRemediaQuizId] = useState<string | null>(null);
@@ -155,7 +162,18 @@ export const StudentPlayView: React.FC = () => {
 
     setQuizResult({ percentage, correctCount, totalQuestions });
 
-    // 3. Adaptive remediation on failure
+    // 3. Gamification update (fire-and-forget — don't block UX)
+    if (studentName) {
+      const justMastered = !!(masteryUpdate?.mastered && masteryUpdate.consecutiveHighScores === 3);
+      const totalMastered = masteryUpdate ? (masteryUpdate.mastered ? 1 : 0) : 0;
+      firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered)
+        .then(({ xpGained, newAchievements, gamification }) => {
+          setGamificationUpdate({ xpGained, newAchievements, gamification });
+        })
+        .catch(err => console.warn('[Gamification] update failed:', err));
+    }
+
+    // 4. Adaptive remediation on failure
     if (percentage < 70) {
       generateRemediaQuiz(meta);
     }
@@ -354,12 +372,46 @@ export const StudentPlayView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); }}
+                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); }}
                   className="mt-2 flex items-center gap-2 text-xs font-bold bg-amber-200 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-300 transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   Обиди се повторно
                 </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Gamification: XP + Streak + New Achievements ─────────────────── */}
+      {gamificationUpdate && quizResult && (
+        <div className="w-full max-w-lg mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⚡</span>
+              <span className="font-black text-white text-sm">+{gamificationUpdate.xpGained} XP</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">🔥</span>
+              <span className="text-white font-bold text-sm">{gamificationUpdate.gamification.currentStreak} {gamificationUpdate.gamification.currentStreak === 1 ? 'ден' : 'дена'} по ред</span>
+            </div>
+            <div className="text-white/60 text-xs font-semibold">
+              {gamificationUpdate.gamification.totalXP} XP вкупно
+            </div>
+          </div>
+          {gamificationUpdate.newAchievements.length > 0 && (
+            <div className="border-t border-white/20 pt-3">
+              <p className="text-white/80 text-xs font-bold mb-2">Ново достигнување!</p>
+              <div className="flex flex-wrap gap-2">
+                {gamificationUpdate.newAchievements.map(id => {
+                  const a = ACHIEVEMENTS[id];
+                  return a ? (
+                    <span key={id} className="flex items-center gap-1.5 bg-yellow-400/20 border border-yellow-400/40 text-yellow-200 text-xs font-bold px-2.5 py-1 rounded-full">
+                      {a.icon} {a.label}
+                    </span>
+                  ) : null;
+                })}
               </div>
             </div>
           )}

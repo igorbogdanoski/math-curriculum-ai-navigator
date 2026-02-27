@@ -23,6 +23,29 @@ export interface ConceptMastery {
   updatedAt?: any;
 }
 
+// ── Gamification ─────────────────────────────────────────────────────────────
+export interface StudentGamification {
+  studentName: string;
+  totalXP: number;
+  currentStreak: number;    // consecutive days with ≥1 quiz
+  longestStreak: number;
+  lastActivityDate: string; // 'YYYY-MM-DD' local date
+  achievements: string[];   // unlocked achievement IDs
+  totalQuizzes: number;     // running total across all time
+}
+
+export const ACHIEVEMENTS: Record<string, { label: string; icon: string; condition: (g: StudentGamification) => boolean }> = {
+  first_quiz:  { label: 'Прво знаење',      icon: '🎯', condition: g => g.totalQuizzes >= 1 },
+  quiz_10:     { label: 'Упорен ученик',     icon: '📚', condition: g => g.totalQuizzes >= 10 },
+  quiz_50:     { label: 'Математичар',       icon: '🧮', condition: g => g.totalQuizzes >= 50 },
+  streak_3:    { label: 'Редовен ученик',    icon: '🔥', condition: g => g.longestStreak >= 3 },
+  streak_7:    { label: 'Недела упорност',   icon: '⚡', condition: g => g.longestStreak >= 7 },
+  score_90:    { label: 'Одличен',           icon: '⭐', condition: () => false }, // set ad-hoc on score
+  mastered_1:  { label: 'Мајстор',           icon: '🏆', condition: () => false }, // set ad-hoc on mastery
+  mastered_5:  { label: 'Напреден',          icon: '🥇', condition: () => false },
+  mastered_10: { label: 'Виртуоз',           icon: '💎', condition: () => false },
+};
+
 export interface QuizResult {
   quizId: string;
   quizTitle: string;
@@ -428,5 +451,83 @@ export const firestoreService = {
       console.error('Error fetching all mastery:', error);
       return [];
     }
-  }
+  },
+
+  // ── Gamification: fetch ───────────────────────────────────────────────────
+  fetchStudentGamification: async (studentName: string): Promise<StudentGamification | null> => {
+    try {
+      const ref = doc(db, 'student_gamification', studentName);
+      const snap = await getDoc(ref);
+      return snap.exists() ? (snap.data() as StudentGamification) : null;
+    } catch (error) {
+      console.error('Error fetching gamification:', error);
+      return null;
+    }
+  },
+
+  // ── Gamification: update after quiz ──────────────────────────────────────
+  updateStudentGamification: async (
+    studentName: string,
+    percentage: number,
+    justMastered: boolean,
+    totalMastered: number,
+  ): Promise<{ xpGained: number; newAchievements: string[]; gamification: StudentGamification }> => {
+    const ref = doc(db, 'student_gamification', studentName);
+    const snap = await getDoc(ref);
+    const today = new Date().toLocaleDateString('sv-SE'); // 'YYYY-MM-DD'
+
+    const existing: StudentGamification = snap.exists()
+      ? (snap.data() as StudentGamification)
+      : { studentName, totalXP: 0, currentStreak: 0, longestStreak: 0, lastActivityDate: '', achievements: [], totalQuizzes: 0 };
+
+    // XP calculation
+    let xpGained = 10;
+    if (percentage >= 70) xpGained += 10;
+    if (percentage >= 90) xpGained += 20;
+    if (justMastered) xpGained += 50;
+
+    // Streak calculation
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('sv-SE');
+    let newStreak = 1;
+    if (existing.lastActivityDate === today) {
+      newStreak = existing.currentStreak; // same day — no increment
+    } else if (existing.lastActivityDate === yesterdayStr) {
+      newStreak = existing.currentStreak + 1; // consecutive day
+    }
+    const newLongest = Math.max(existing.longestStreak, newStreak);
+    const newTotalQuizzes = existing.totalQuizzes + 1;
+
+    // Achievement detection
+    const updated: StudentGamification = {
+      ...existing,
+      totalXP: existing.totalXP + xpGained,
+      currentStreak: newStreak,
+      longestStreak: newLongest,
+      lastActivityDate: today,
+      totalQuizzes: newTotalQuizzes,
+    };
+
+    const newAchievements: string[] = [];
+    const check = (id: string, cond: boolean) => {
+      if (cond && !updated.achievements.includes(id)) {
+        updated.achievements = [...updated.achievements, id];
+        newAchievements.push(id);
+      }
+    };
+
+    check('first_quiz',  updated.totalQuizzes >= 1);
+    check('quiz_10',     updated.totalQuizzes >= 10);
+    check('quiz_50',     updated.totalQuizzes >= 50);
+    check('streak_3',    updated.longestStreak >= 3);
+    check('streak_7',    updated.longestStreak >= 7);
+    check('score_90',    percentage >= 90);
+    check('mastered_1',  totalMastered >= 1);
+    check('mastered_5',  totalMastered >= 5);
+    check('mastered_10', totalMastered >= 10);
+
+    await setDoc(ref, updated, { merge: false });
+    return { xpGained, newAchievements, gamification: updated };
+  },
 };
