@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
 import { ICONS } from '../constants';
 import {
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
-  Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer,
+  Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw,
 } from 'lucide-react';
+import { useCurriculum } from '../hooks/useCurriculum';
 import { GradeBadge } from '../components/common/GradeBadge';
 
 const formatDate = (ts: any): string => {
@@ -20,6 +21,7 @@ interface Props {
 
 export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const isReadOnly = !!nameProp;
+  const { getConceptChain } = useCurriculum();
 
   const [studentName, setStudentName] = useState<string>(
     () => nameProp || localStorage.getItem('studentName') || ''
@@ -92,6 +94,32 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
 
   const masteredCount = masteryRecords.filter(m => m.mastered).length;
   const inProgressCount = masteryRecords.filter(m => !m.mastered && m.consecutiveHighScores > 0).length;
+
+  // ── Правец 13: Prerequisite Gap Analysis ─────────────────────────────────
+  const prereqGaps = useMemo(() => {
+    if (masteryRecords.length === 0) return [];
+    const masteredIds = new Set(masteryRecords.filter(m => m.mastered).map(m => m.conceptId));
+    return masteryRecords
+      .filter(m => !m.mastered && m.attempts > 0)
+      .flatMap(m => {
+        const { priors } = getConceptChain(m.conceptId);
+        const missing = priors.filter(p => !masteredIds.has(p.concept.id));
+        return missing.length > 0
+          ? [{ conceptTitle: m.conceptTitle || m.conceptId, missing: missing.map(p => p.concept.title) }]
+          : [];
+      });
+  }, [masteryRecords, getConceptChain]);
+
+  // ── Правец 14: Spaced Repetition ─────────────────────────────────────────
+  const reviewToday = useMemo(() => {
+    const now = Date.now();
+    return masteryRecords.filter(m => {
+      if (!m.updatedAt) return false;
+      const lastMs = (m.updatedAt.toDate ? m.updatedAt.toDate() : new Date(m.updatedAt)).getTime();
+      const daysSince = (now - lastMs) / 86_400_000;
+      return m.mastered ? daysSince > 30 : (daysSince > 7 && m.attempts > 0);
+    });
+  }, [masteryRecords]);
 
   const handlePrint = () => window.print();
 
@@ -200,6 +228,73 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             <Trophy className="w-6 h-6 text-yellow-500 mx-auto mb-1" fill="currentColor" />
             <p className="text-2xl font-black text-slate-800">{masteredCount}</p>
             <p className="text-xs text-slate-500 font-semibold">Совладани</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Правец 14: Повтори денес (Spaced Repetition) ───────────────────── */}
+      {searched && !loading && reviewToday.length > 0 && (
+        <div className="w-full max-w-2xl mb-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <RotateCcw className="w-5 h-5 text-blue-600" />
+              <p className="font-bold text-blue-800 text-sm">Повтори денес</p>
+              <span className="px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 text-xs font-bold">{reviewToday.length}</span>
+            </div>
+            <p className="text-xs text-blue-600 mb-3">Овие концепти не сте ги вежбале долго — освежете го знаењето!</p>
+            <div className="space-y-2">
+              {reviewToday.map(m => {
+                const nextId = nextQuizIds[m.conceptId];
+                return (
+                  <div key={m.conceptId} className="flex items-center gap-3 bg-white rounded-xl px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-700 truncate">{m.conceptTitle || m.conceptId}</p>
+                      <p className="text-xs text-slate-400">
+                        {m.mastered ? 'Совладан — освежи по 30+ дена' : `${m.consecutiveHighScores}/3 по ред — вежбај повторно`}
+                      </p>
+                    </div>
+                    {nextId && (
+                      <button
+                        type="button"
+                        onClick={() => { window.location.hash = `/play/${nextId}`; }}
+                        className="flex items-center gap-1 text-xs font-bold bg-blue-600 text-white px-2.5 py-1 rounded-lg hover:bg-blue-700 transition flex-shrink-0"
+                      >
+                        <PlayCircle className="w-3 h-3" /> Вежбај
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Правец 13: Prerequisite Gap Analysis ───────────────────────────── */}
+      {searched && !loading && prereqGaps.length > 0 && (
+        <div className="w-full max-w-2xl mb-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+              <p className="font-bold text-orange-800 text-sm">Пропуштени предуслови</p>
+              <span className="px-2 py-0.5 rounded-full bg-orange-200 text-orange-800 text-xs font-bold">{prereqGaps.length}</span>
+            </div>
+            <p className="text-xs text-orange-600 mb-3">Овие концепти зависат од претходни теми кои сè уште не се совладани:</p>
+            <div className="space-y-3">
+              {prereqGaps.map((gap, i) => (
+                <div key={i} className="bg-white rounded-xl px-3 py-2.5">
+                  <p className="text-sm font-bold text-orange-900 mb-1">{gap.conceptTitle}</p>
+                  <p className="text-xs text-slate-500 mb-1">Прво совладај:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {gap.missing.map((pre, j) => (
+                      <span key={j} className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                        {pre}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
