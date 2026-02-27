@@ -81,7 +81,8 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
     const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'clipboard') => {
         setIsExportMenuOpen(false);
         if (format === 'pdf') {
-            addNotification("За да испечатите, користете го копчето за печатење на прелистувачот (Ctrl/Cmd + P).", 'info');
+            addNotification("Се отвора дијалогот за печатење. Изберете 'Save as PDF' за да го зачувате фајлот.", 'info');
+            window.print();
             return;
         }
         

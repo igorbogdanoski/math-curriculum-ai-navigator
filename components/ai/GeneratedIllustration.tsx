@@ -22,25 +22,37 @@ export const GeneratedIllustration: React.FC<GeneratedIllustrationProps> = ({ ma
     };
 
     return (
-        <Card className="mt-6 border-l-4 border-teal-500">
+        <Card id="printable-area" className="mt-6 border-l-4 border-teal-500">
              <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-2xl font-bold">AI Генерирана илустрација</h3>
                     <p className="text-sm text-gray-500 mt-1">Промпт: "{material.prompt}"</p>
                 </div>
-                <button 
-                    onClick={handleDownload}
-                    className="flex items-center bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm"
-                    title="Сними ја сликата"
-                >
-                    <ICONS.download className="w-5 h-5 mr-1" />
-                    Сними
-                </button>
+                <div className="no-print flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="flex items-center bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm"
+                        title="Печати/Сними како PDF"
+                    >
+                        <ICONS.printer className="w-5 h-5 mr-1" />
+                        Печати
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleDownload}
+                        className="flex items-center bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm"
+                        title="Сними ја сликата"
+                    >
+                        <ICONS.download className="w-5 h-5 mr-1" />
+                        Сними
+                    </button>
+                </div>
             </div>
             <div className="flex justify-center items-center bg-gray-100 p-4 rounded-lg">
-                <img 
-                    src={material.imageUrl} 
-                    alt={material.prompt} 
+                <img
+                    src={material.imageUrl}
+                    alt={material.prompt}
                     className="max-w-full max-h-[500px] object-contain rounded-md shadow-md"
                 />
             </div>
