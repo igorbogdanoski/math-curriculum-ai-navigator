@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 
@@ -21,6 +21,23 @@ export interface ConceptMastery {
   mastered: boolean;         // true when consecutiveHighScores ≥ 3
   masteredAt?: any;          // Firestore Timestamp
   updatedAt?: any;
+}
+
+// ── Live Session ──────────────────────────────────────────────────────────────
+export interface LiveSession {
+  id: string;
+  hostUid: string;
+  quizId: string;
+  quizTitle: string;
+  conceptId?: string;
+  status: 'active' | 'ended';
+  joinCode: string;         // 4-char alphanumeric, e.g. 'AB3K'
+  studentResponses: Record<string, {
+    status: 'joined' | 'in_progress' | 'completed';
+    percentage?: number;
+    completedAt?: any;
+  }>;
+  createdAt?: any;
 }
 
 // ── Student Groups ────────────────────────────────────────────────────────────
@@ -567,5 +584,72 @@ export const firestoreService = {
 
   deleteStudentGroup: async (groupId: string): Promise<void> => {
     await deleteDoc(doc(db, 'student_groups', groupId));
+  },
+
+  // ── Live Sessions ─────────────────────────────────────────────────────────
+  fetchCachedQuizList: async (): Promise<{ id: string; title: string; conceptId?: string }[]> => {
+    try {
+      const q = query(collection(db, 'cached_ai_materials'), orderBy('createdAt', 'desc'), limit(40));
+      const snap = await getDocs(q);
+      return snap.docs
+        .map(d => ({
+          id: d.id,
+          title: d.data().content?.title ?? d.data().conceptId ?? d.id,
+          conceptId: d.data().conceptId as string | undefined,
+          type: d.data().type as string,
+        }))
+        .filter(q => q.type === 'QUIZ' || q.type === 'ASSESSMENT')
+        .slice(0, 20);
+    } catch (error) {
+      console.error('Error fetching cached quiz list:', error);
+      return [];
+    }
+  },
+
+  createLiveSession: async (hostUid: string, quizId: string, quizTitle: string, conceptId?: string): Promise<string> => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let joinCode = '';
+    for (let i = 0; i < 4; i++) joinCode += chars[Math.floor(Math.random() * chars.length)];
+    const ref = await addDoc(collection(db, 'live_sessions'), {
+      hostUid, quizId, quizTitle, conceptId: conceptId ?? null,
+      status: 'active', joinCode, studentResponses: {}, createdAt: serverTimestamp(),
+    });
+    return ref.id;
+  },
+
+  getLiveSessionByCode: async (joinCode: string): Promise<LiveSession | null> => {
+    try {
+      const q = query(collection(db, 'live_sessions'), where('joinCode', '==', joinCode.toUpperCase()), where('status', '==', 'active'), limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      const d = snap.docs[0];
+      return { id: d.id, ...d.data() } as LiveSession;
+    } catch (error) {
+      console.error('Error fetching live session by code:', error);
+      return null;
+    }
+  },
+
+  updateLiveSessionStatus: async (sessionId: string, status: 'active' | 'ended'): Promise<void> => {
+    await updateDoc(doc(db, 'live_sessions', sessionId), { status });
+  },
+
+  joinLiveSession: async (sessionId: string, studentName: string): Promise<void> => {
+    await updateDoc(doc(db, 'live_sessions', sessionId), {
+      [`studentResponses.${studentName}`]: { status: 'joined' },
+    });
+  },
+
+  submitLiveResponse: async (sessionId: string, studentName: string, percentage: number): Promise<void> => {
+    await updateDoc(doc(db, 'live_sessions', sessionId), {
+      [`studentResponses.${studentName}`]: { status: 'completed', percentage, completedAt: serverTimestamp() },
+    }).catch(err => console.warn('[Live] submitLiveResponse failed:', err));
+  },
+
+  subscribeLiveSession: (sessionId: string, callback: (session: LiveSession | null) => void): (() => void) => {
+    const ref = doc(db, 'live_sessions', sessionId);
+    return onSnapshot(ref, snap => {
+      callback(snap.exists() ? ({ id: snap.id, ...snap.data() } as LiveSession) : null);
+    });
   },
 };

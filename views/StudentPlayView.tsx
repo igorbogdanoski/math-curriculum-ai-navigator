@@ -19,6 +19,12 @@ export const StudentPlayView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { getConceptDetails } = useCurriculum();
 
+  // Live session support — read sessionId from URL hash query params
+  const sessionId = (() => {
+    const search = window.location.hash.split('?')[1] ?? '';
+    return new URLSearchParams(search).get('sessionId');
+  })();
+
   const [quizData, setQuizData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -173,7 +179,12 @@ export const StudentPlayView: React.FC = () => {
         .catch(err => console.warn('[Gamification] update failed:', err));
     }
 
-    // 4. Adaptive remediation on failure
+    // 4. Submit live response if this quiz is part of a live session
+    if (sessionId && studentName) {
+      firestoreService.submitLiveResponse(sessionId, studentName, percentage);
+    }
+
+    // 5. Adaptive remediation on failure
     if (percentage < 70) {
       generateRemediaQuiz(meta);
     }

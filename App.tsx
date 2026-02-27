@@ -33,6 +33,7 @@ import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
 import { AIChatPanel } from './components/ai/AIChatPanel';
 import { StudentPlayView } from './views/StudentPlayView';
 import { StudentProgressView } from './views/StudentProgressView';
+import { StudentLiveView } from './views/StudentLiveView';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -111,6 +112,7 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
 const routes = [
     { path: '/play/:id', component: StudentPlayView }, // Student Mode route
     { path: '/my-progress', component: StudentProgressView }, // Student Progress route
+    { path: '/live', component: StudentLiveView }, // Live session join route
     { path: '/', component: HomeView },
     { path: '/explore', component: ExploreView },
     { path: '/topic/:id', component: TopicView },
@@ -226,7 +228,8 @@ const AppCore: React.FC = () => {
     // Allow student play mode and student progress without authentication
     const isPublicRoute =
       window.location.hash.startsWith('#/play/') ||
-      window.location.hash.startsWith('#/my-progress');
+      window.location.hash.startsWith('#/my-progress') ||
+      window.location.hash.startsWith('#/live');
 
     if (!isAuthenticated && !isPublicRoute) {
         return (

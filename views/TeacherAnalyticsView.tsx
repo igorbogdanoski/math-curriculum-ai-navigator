@@ -14,6 +14,7 @@ import { ConceptsTab } from './analytics/ConceptsTab';
 import { GradeTab } from './analytics/GradeTab';
 import { AlertsTab } from './analytics/AlertsTab';
 import { GroupsTab } from './analytics/GroupsTab';
+import { LiveTab } from './analytics/LiveTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
     const [results, setResults] = useState<QuizResult[]>([]);
@@ -26,7 +27,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live'>('overview');
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -362,6 +363,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'concepts', label: 'Концепти' },
                             { id: 'alerts', label: '⚠️ Внимание' },
                             { id: 'groups', label: '👥 Групи' },
+                            { id: 'live', label: '🔴 Live' },
                         ] as const).map(tab => (
                             <button
                                 key={tab.id}
@@ -445,6 +447,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                     {activeTab === 'groups' && (
                         <GroupsTab perStudentStats={perStudentStats} />
                     )}
+                    {activeTab === 'live' && <LiveTab />}
                 </>
             )}
         </div>
