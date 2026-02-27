@@ -72,6 +72,15 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
     const [activeVariantTab, setActiveVariantTab] = useState<'support' | 'standard' | 'advanced'>('standard');
 
+    // Bulk generation state
+    const [isGeneratingBulk, setIsGeneratingBulk] = useState(false);
+    const [bulkStep, setBulkStep] = useState<'QUIZ' | 'ASSESSMENT' | 'RUBRIC' | null>(null);
+    const [bulkResults, setBulkResults] = useState<{
+        quiz?: AIGeneratedAssessment;
+        assessment?: AIGeneratedAssessment;
+        rubric?: AIGeneratedRubric;
+    } | null>(null);
+
     const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
     const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
 
@@ -335,6 +344,61 @@ ${generatedMaterial.assessmentIdea}
         setIsGeneratingVariants(false);
     };
 
+    const handleBulkGenerate = async () => {
+        if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
+        if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
+        const built = buildContext();
+        if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
+        const { context, tempActivityTitle } = built;
+        const effectiveInstruction = [
+            state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '',
+            state.customInstruction,
+        ].filter(Boolean).join(' ');
+
+        setIsGeneratingBulk(true);
+        setBulkResults(null);
+        setGeneratedMaterial(null);
+        const acc: { quiz?: AIGeneratedAssessment; assessment?: AIGeneratedAssessment; rubric?: AIGeneratedRubric } = {};
+
+        const steps: Array<{ key: 'QUIZ' | 'ASSESSMENT' | 'RUBRIC'; fn: () => Promise<void> }> = [
+            { key: 'QUIZ', fn: async () => {
+                acc.quiz = await geminiService.generateAssessment(
+                    'QUIZ', ['MULTIPLE_CHOICE'], 5, context, user ?? undefined,
+                    undefined, undefined, undefined, effectiveInstruction, false
+                );
+            }},
+            { key: 'ASSESSMENT', fn: async () => {
+                acc.assessment = await geminiService.generateAssessment(
+                    'ASSESSMENT',
+                    state.questionTypes.length ? state.questionTypes : ['MULTIPLE_CHOICE', 'SHORT_ANSWER'],
+                    10, context, user ?? undefined,
+                    undefined, undefined, undefined, effectiveInstruction, false
+                );
+            }},
+            { key: 'RUBRIC', fn: async () => {
+                acc.rubric = await geminiService.generateRubric(
+                    context.grade.level,
+                    tempActivityTitle || `Активност за ${context.topic?.title ?? ''}`,
+                    state.activityType, [], user ?? undefined, effectiveInstruction
+                );
+            }},
+        ];
+
+        for (const step of steps) {
+            setBulkStep(step.key);
+            try {
+                await step.fn();
+                setBulkResults({ ...acc });
+            } catch (error) {
+                if (error instanceof RateLimitError) { setQuotaBannerFromStorage(); break; }
+                console.error(`[Bulk] ${step.key} failed:`, error);
+            }
+        }
+
+        setBulkStep(null);
+        setIsGeneratingBulk(false);
+    };
+
     const handleCancel = () => {
         cancelRef.current = true;
         setIsLoading(false);
@@ -451,7 +515,7 @@ ${generatedMaterial.assessmentIdea}
     }
     
     const isGenerateDisabled = useMemo(() => {
-        if (isGenerating || !isOnline) return true;
+        if (isGenerating || isGeneratingBulk || !isOnline) return true;
         
         let contextIsValid = false;
         switch (contextType) {
@@ -472,7 +536,7 @@ ${generatedMaterial.assessmentIdea}
         if (materialType === 'ILLUSTRATION' && !illustrationPrompt.trim() && !imageFile) return true;
         
         return false;
-    }, [isGenerating, materialType, contextType, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile, questionTypes, useStudentProfiles, selectedStudentProfileIds, activityTitle, illustrationPrompt, isOnline]);
+    }, [isGenerating, isGeneratingBulk, materialType, contextType, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile, questionTypes, useStudentProfiles, selectedStudentProfileIds, activityTitle, illustrationPrompt, isOnline]);
     
     if (isCurriculumLoading) {
          return (
@@ -578,7 +642,7 @@ ${generatedMaterial.assessmentIdea}
                     </fieldset>
 
                     <div data-tour="generator-generate-button" className="flex flex-wrap justify-end items-center pt-6 border-t mt-6 gap-3">
-                         <button type="button" onClick={handleReset} disabled={isGenerating || isGeneratingVariants} className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors">
+                         <button type="button" onClick={handleReset} disabled={isGenerating || isGeneratingVariants || isGeneratingBulk} className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors">
                             Ресетирај форма
                         </button>
                         {/* 3× Variants button — only for assessment material types */}
@@ -597,8 +661,20 @@ ${generatedMaterial.assessmentIdea}
                             </button>
                         )}
                         <button
+                            type="button"
+                            onClick={handleBulkGenerate}
+                            disabled={isGenerateDisabled || isGenerating || isGeneratingVariants || isGeneratingBulk}
+                            title="Генерирај Квиз + Тест/Лист + Рубрика одеднаш (3 AI кредити)"
+                            className="flex items-center gap-2 border-2 border-purple-500 text-purple-700 px-4 py-3 rounded-lg hover:bg-purple-50 disabled:opacity-40 transition-colors font-semibold"
+                        >
+                            {isGeneratingBulk
+                                ? <><ICONS.spinner className="w-5 h-5 animate-spin" /><span>Пакет...</span></>
+                                : <><ICONS.sparkles className="w-5 h-5" /><span>📦 Пакет</span></>
+                            }
+                        </button>
+                        <button
                             type="submit"
-                            disabled={isGenerateDisabled || isGeneratingVariants}
+                            disabled={isGenerateDisabled || isGeneratingVariants || isGeneratingBulk}
                             title={!isOnline ? 'Нема интернет конекција' : 'Генерирај'}
                             className="w-full max-w-xs flex justify-center items-center gap-2 bg-brand-secondary text-white px-4 py-3 rounded-lg disabled:bg-gray-400 hover:bg-brand-primary transition-colors font-semibold text-lg"
                         >
@@ -623,6 +699,30 @@ ${generatedMaterial.assessmentIdea}
                 </div>
             )}
             
+            {isGeneratingBulk && (
+                <div className="mt-6 p-4 bg-purple-50 rounded-xl border border-purple-200">
+                    <p className="text-sm font-bold text-purple-800 mb-3">Генерирам пакет материјали...</p>
+                    {(['QUIZ', 'ASSESSMENT', 'RUBRIC'] as const).map((step, i) => {
+                        const labels = { QUIZ: 'Квиз', ASSESSMENT: 'Тест/Лист', RUBRIC: 'Рубрика' };
+                        const done = !!bulkResults?.[step === 'QUIZ' ? 'quiz' : step === 'ASSESSMENT' ? 'assessment' : 'rubric'];
+                        const active = bulkStep === step;
+                        return (
+                            <div key={step} className="flex items-center gap-2 py-1">
+                                {done
+                                    ? <ICONS.check className="w-4 h-4 text-green-500" />
+                                    : active
+                                        ? <ICONS.spinner className="w-4 h-4 animate-spin text-purple-600" />
+                                        : <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                                }
+                                <span className={`text-sm ${done ? 'text-green-700 font-semibold' : active ? 'text-purple-700 font-bold' : 'text-gray-400'}`}>
+                                    {i + 1}. {labels[step]}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
             {!isGenerating && generatedMaterial && (
                 <div className="mt-6">
                     {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
@@ -664,6 +764,19 @@ ${generatedMaterial.assessmentIdea}
                 </div>
             )}
 
+            {/* Bulk results */}
+            {!isGeneratingBulk && bulkResults && Object.keys(bulkResults).length > 0 && (
+                <div className="mt-6 space-y-6">
+                    <h3 className="text-xl font-bold text-purple-800 flex items-center gap-2">
+                        <ICONS.sparkles className="w-5 h-5" />
+                        Генериран пакет материјали
+                    </h3>
+                    {bulkResults.quiz && <GeneratedAssessment material={bulkResults.quiz} />}
+                    {bulkResults.assessment && <GeneratedAssessment material={bulkResults.assessment} />}
+                    {bulkResults.rubric && <GeneratedRubric material={bulkResults.rubric} />}
+                </div>
+            )}
+
             {/* National standards alignment — shown after any result */}
             {!isGenerating && !isGeneratingVariants && (generatedMaterial || variants) && relevantStandards.length > 0 && (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
@@ -687,7 +800,7 @@ ${generatedMaterial.assessmentIdea}
                 </div>
             )}
 
-            {!isGenerating && !isGeneratingVariants && !generatedMaterial && !variants && (
+            {!isGenerating && !isGeneratingVariants && !isGeneratingBulk && !generatedMaterial && !variants && !bulkResults && (
                 <div className="mt-6"><EmptyState icon={<ICONS.generator className="w-12 h-12" />} title="Подготвени за создавање?" message="Следете ги чекорите за да го изберете саканиот контекст и параметри, потоа кликнете 'Генерирај' за да добиете материјали креирани од вештачка интелигенција." /></div>
             )}
         </div>
