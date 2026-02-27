@@ -5,6 +5,7 @@ import {
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
   Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer,
 } from 'lucide-react';
+import { GradeBadge } from '../components/common/GradeBadge';
 
 const formatDate = (ts: any): string => {
   if (!ts) return '—';
@@ -290,6 +291,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     <p className={`text-xl font-black ${isPassed ? 'text-green-600' : 'text-amber-500'}`}>
                       {r.percentage}%
                     </p>
+                    <GradeBadge pct={r.percentage} showLabel={true} />
                     <p className="text-xs text-slate-400">{r.correctCount}/{r.totalQuestions}</p>
                     {!isPassed && nextQuizId && (
                       <button

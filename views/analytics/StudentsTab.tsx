@@ -2,6 +2,7 @@ import React from 'react';
 import { Trophy } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
+import { GradeBadge } from '../../components/common/GradeBadge';
 import type { PerStudentStat } from './shared';
 
 interface StudentsTabProps {
@@ -32,17 +33,16 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => 
                         </thead>
                         <tbody>
                             {perStudentStats.map(s => {
-                                const status = s.avg >= 85 ? { label: 'Одличен', cls: 'bg-green-100 text-green-700' }
-                                    : s.avg >= 70 ? { label: 'Добар', cls: 'bg-blue-100 text-blue-700' }
-                                    : s.avg >= 50 ? { label: 'Во напредок', cls: 'bg-yellow-100 text-yellow-700' }
-                                    : { label: 'Потребна помош', cls: 'bg-red-100 text-red-700' };
                                 return (
                                     <tr key={s.name} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                                         <td className="py-2.5 px-3 font-semibold text-slate-700">{s.name}</td>
                                         <td className="py-2.5 px-3 text-center text-gray-600">{s.attempts}</td>
                                         <td className="py-2.5 px-3 text-center">
-                                            <span className={`font-bold ${s.avg >= 70 ? 'text-green-600' : s.avg >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
-                                                {s.avg}%
+                                            <span className="flex items-center justify-center gap-1.5">
+                                                <span className={`font-bold ${s.avg >= 70 ? 'text-green-600' : s.avg >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
+                                                    {s.avg}%
+                                                </span>
+                                                <GradeBadge pct={s.avg} />
                                             </span>
                                         </td>
                                         <td className="py-2.5 px-3 text-center text-gray-600">{s.passRate}%</td>
@@ -53,7 +53,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => 
                                             </span>
                                         </td>
                                         <td className="py-2.5 px-3">
-                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${status.cls}`}>{status.label}</span>
+                                            <GradeBadge pct={s.avg} showLabel={true} className="px-2 py-0.5 rounded-full" />
                                         </td>
                                         <td className="py-2.5 px-3">
                                             <button

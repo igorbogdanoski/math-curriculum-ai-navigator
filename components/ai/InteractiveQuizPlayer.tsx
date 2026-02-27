@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
+import { GradeBadge } from '../common/GradeBadge';
 import { type AssessmentQuestion, QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial } from '../../types';
 
 export interface Question {
@@ -191,6 +192,13 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
               {correctCount} / {normalizedQuestions.length} точни одговори
               ({Math.round((correctCount / normalizedQuestions.length) * 100)}%)
             </p>
+            <div className="mt-3">
+              <GradeBadge
+                pct={Math.round((correctCount / normalizedQuestions.length) * 100)}
+                showLabel={true}
+                className="text-sm px-3 py-1"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">

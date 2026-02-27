@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card } from '../../components/common/Card';
+import { GradeBadge } from '../../components/common/GradeBadge';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ export const ScoreBar: React.FC<{ pct: number; color: string }> = ({ pct, color 
             <div className={`analytics-bar h-full ${color} rounded-full`} data-pct={Math.max(pct, 0)} style={{ '--bar-pct': Math.max(pct, 0) } as React.CSSProperties} />
         </div>
         <span className="w-8 text-right text-gray-500">{fmt(pct, 0)}%</span>
+        <GradeBadge pct={pct} />
     </div>
 );
 
@@ -106,7 +108,10 @@ export const QuizRow: React.FC<{ agg: QuizAggregate }> = ({ agg }) => {
                 <span className="font-bold text-gray-700">{agg.attempts}</span>
             </td>
             <td className={`py-3 px-4 text-center font-bold text-lg ${scoreColor}`}>
-                {fmt(agg.avgPct, 0)}%
+                <span className="flex items-center justify-center gap-1.5">
+                    {fmt(agg.avgPct, 0)}%
+                    <GradeBadge pct={agg.avgPct} />
+                </span>
             </td>
             <td className="py-3 px-4 text-center text-green-600 font-semibold">{fmt(agg.bestPct, 0)}%</td>
             <td className="py-3 px-4 text-center text-red-500 font-semibold">{fmt(agg.worstPct, 0)}%</td>
