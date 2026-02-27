@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
-import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
+import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
 import { RateLimitError } from '../services/apiErrors';
 import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType } from '../types';
 import { ModalType, PlannerItemType } from '../types';
@@ -62,7 +62,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
 
     // Quota error state — shown as persistent inline banner instead of fleeting toast
-    const [quotaError, setQuotaError] = useState<{ resetTime: string; resetMs: number } | null>(null);
+    const [quotaError, setQuotaError] = useState<{ resetTime: string; resetMs: number; exhaustedAt?: string } | null>(null);
     const [quotaCountdown, setQuotaCountdown] = useState('');
     // Cancel ref — abort() sets isGenerating=false visually; underlying request finishes in bg
     const cancelRef = useRef(false);
@@ -408,11 +408,14 @@ ${generatedMaterial.assessmentIdea}
     const setQuotaBannerFromStorage = () => {
         try {
             const stored = localStorage.getItem('ai_daily_quota_exhausted');
-            const { nextResetMs } = stored ? JSON.parse(stored) : {};
+            const { nextResetMs, exhaustedAt } = stored ? JSON.parse(stored) : {};
             const resetTime = nextResetMs
                 ? new Date(nextResetMs).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })
                 : '09:00';
-            setQuotaError({ resetTime, resetMs: nextResetMs ?? 0 });
+            const exhaustedAtStr = exhaustedAt
+                ? new Date(exhaustedAt).toLocaleString('mk-MK', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                : undefined;
+            setQuotaError({ resetTime, resetMs: nextResetMs ?? 0, exhaustedAt: exhaustedAtStr });
         } catch {
             setQuotaError({ resetTime: '09:00', resetMs: 0 });
         }
@@ -559,9 +562,17 @@ ${generatedMaterial.assessmentIdea}
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-orange-800">AI квотата е исцрпена за денес</p>
                         <p className="text-xs text-orange-700 mt-0.5">
-                            Генерирањето ќе биде достапно утре во <strong>09:00 МК</strong>
+                            {quotaError.exhaustedAt && <span>Исцрпена во <strong>{quotaError.exhaustedAt}</strong>. </span>}
+                            Генерирањето ќе биде достапно во <strong>09:00 МК</strong>
                             {quotaCountdown ? ` — уште ${quotaCountdown}` : ''}.
                         </p>
+                        <button
+                            type="button"
+                            onClick={() => { clearDailyQuotaFlag(); setQuotaError(null); addNotification('Квота флагот е ресетиран. Обидете се со генерирање.', 'success'); }}
+                            className="mt-1.5 text-xs text-orange-600 underline hover:text-orange-800 transition"
+                        >
+                            Ресетирај рачно ако е грешка
+                        </button>
                     </div>
                     <button
                         type="button"
