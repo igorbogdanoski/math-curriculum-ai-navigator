@@ -36,6 +36,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [gamification, setGamification] = useState<StudentGamification | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState<'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH'>('THIS_WEEK');
 
   const fetchResults = async (name: string) => {
     if (!name.trim()) return;
@@ -124,6 +125,39 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     });
   }, [masteryRecords]);
 
+  // ── Правец 16: Period report data ─────────────────────────────────────────
+  const { periodLabel, periodQuizzes, periodStats } = useMemo(() => {
+    const now = new Date();
+    let start: Date;
+    let end: Date = now;
+    let label: string;
+    if (reportPeriod === 'THIS_WEEK') {
+      start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0, 0, 0, 0);
+      label = 'Оваа недела';
+    } else if (reportPeriod === 'LAST_WEEK') {
+      start = new Date(now); start.setDate(now.getDate() - now.getDay() - 7); start.setHours(0, 0, 0, 0);
+      end = new Date(start); end.setDate(start.getDate() + 7);
+      label = 'Минатата недела';
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      label = now.toLocaleDateString('mk-MK', { month: 'long', year: 'numeric' });
+    }
+    const pq = results.filter(r => {
+      if (!r.playedAt) return false;
+      const d = r.playedAt.toDate ? r.playedAt.toDate() : new Date(r.playedAt);
+      return d >= start && d <= end;
+    });
+    const total = pq.length;
+    const avg = total > 0 ? Math.round(pq.reduce((s, r) => s + r.percentage, 0) / total) : 0;
+    const passedCount = pq.filter(r => r.percentage >= 70).length;
+    const newlyMastered = masteryRecords.filter(m => {
+      if (!m.mastered || !m.masteredAt) return false;
+      const d = m.masteredAt.toDate ? m.masteredAt.toDate() : new Date(m.masteredAt);
+      return d >= start && d <= end;
+    }).length;
+    return { periodLabel: label, periodQuizzes: pq, periodStats: { total, avg, passed: passedCount, newlyMastered } };
+  }, [results, masteryRecords, reportPeriod]);
+
   const handlePrint = () => window.print();
 
   const printDate = new Date().toLocaleDateString('mk-MK', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -147,13 +181,25 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         </div>
         <div className="flex items-center gap-2">
           {searched && totalQuizzes > 0 && (
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition no-print"
-            >
-              <Printer className="w-4 h-4" /> Печати извештај
-            </button>
+            <div className="flex items-center gap-2 no-print">
+              <select
+                value={reportPeriod}
+                onChange={e => setReportPeriod(e.target.value as 'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH')}
+                aria-label="Избери период за извештај"
+                className="text-xs font-bold bg-white/10 border border-white/20 text-white px-3 py-2 rounded-full cursor-pointer"
+              >
+                <option value="THIS_WEEK" className="text-slate-800 bg-white">Оваа недела</option>
+                <option value="LAST_WEEK" className="text-slate-800 bg-white">Минатата недела</option>
+                <option value="THIS_MONTH" className="text-slate-800 bg-white">Овој месец</option>
+              </select>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition"
+              >
+                <Printer className="w-4 h-4" /> Печати извештај
+              </button>
+            </div>
           )}
           {!isReadOnly && (
             <button
@@ -464,8 +510,11 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           <div className="rpt-header">
             <div className="rpt-header-row">
               <div>
-                <h1 className="rpt-title">Извештај за Напредок на Ученик</h1>
+                <h1 className="rpt-title">
+                  {reportPeriod === 'THIS_MONTH' ? 'Месечен' : 'Неделен'} извештај за Напредок
+                </h1>
                 <p className="rpt-subtitle">Математика — Math Curriculum AI Navigator</p>
+                <p className="rpt-subtitle">Период: <strong>{periodLabel}</strong></p>
               </div>
               <div className="rpt-meta">
                 <div>Датум: <strong>{printDate}</strong></div>
@@ -480,13 +529,13 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             <p className="rpt-student-name">{studentName}</p>
           </div>
 
-          {/* Summary stats */}
+          {/* Period stats */}
           <div className="rpt-stats-grid">
             {[
-              { label: 'Вкупно квизови', value: String(totalQuizzes) },
-              { label: 'Положени (≥70%)', value: String(passed) },
-              { label: 'Просечен резултат', value: `${avgPct}%` },
-              { label: 'Совладани концепти', value: String(masteredCount) },
+              { label: `Квизови (${periodLabel})`, value: String(periodStats.total) },
+              { label: 'Положени (≥70%)', value: String(periodStats.passed) },
+              { label: 'Просечен резултат', value: periodStats.total > 0 ? `${periodStats.avg}%` : '—' },
+              { label: 'Новосовладани концепти', value: String(periodStats.newlyMastered) },
             ].map(s => (
               <div key={s.label} className="rpt-stat-card">
                 <p className="rpt-stat-value">{s.value}</p>
@@ -495,10 +544,43 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             ))}
           </div>
 
+          {/* Period quiz history */}
+          <div className="rpt-section">
+            <h2 className="rpt-section-title">Квизови за периодот</h2>
+            {periodQuizzes.length === 0 ? (
+              <p className="rpt-empty-msg">Нема решени квизови во овој период.</p>
+            ) : (
+              <table className="rpt-table">
+                <thead>
+                  <tr>
+                    <th className="rpt-th rpt-th-left">Квиз</th>
+                    <th className="rpt-th rpt-th-center">Датум</th>
+                    <th className="rpt-th rpt-th-center">Резултат</th>
+                    <th className="rpt-th rpt-th-center">Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {periodQuizzes.map((r, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'rpt-row-even' : 'rpt-row-odd'}>
+                      <td className="rpt-td">{r.quizTitle}</td>
+                      <td className="rpt-td rpt-td-center">{formatDate(r.playedAt)}</td>
+                      <td className={`rpt-td rpt-td-center rpt-td-bold ${r.percentage >= 70 ? 'rpt-td-green' : 'rpt-td-amber'}`}>
+                        {r.percentage}% ({r.correctCount}/{r.totalQuestions})
+                      </td>
+                      <td className={`rpt-td rpt-td-center rpt-td-bold ${r.percentage >= 70 ? 'rpt-td-green' : 'rpt-td-amber'}`}>
+                        {r.percentage >= 70 ? 'Положен' : 'Не положен'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
           {/* Mastery section */}
           {masteryRecords.length > 0 && (
             <div className="rpt-section">
-              <h2 className="rpt-section-title">Совладување на концепти</h2>
+              <h2 className="rpt-section-title">Вкупно совладување на концепти</h2>
               <table className="rpt-table">
                 <thead>
                   <tr>
@@ -526,34 +608,36 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             </div>
           )}
 
-          {/* Quiz history */}
-          <div className="rpt-section">
-            <h2 className="rpt-section-title">Историја на квизови</h2>
-            <table className="rpt-table">
-              <thead>
-                <tr>
-                  <th className="rpt-th rpt-th-left">Квиз</th>
-                  <th className="rpt-th rpt-th-center">Датум</th>
-                  <th className="rpt-th rpt-th-center">Резултат</th>
-                  <th className="rpt-th rpt-th-center">Статус</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => (
-                  <tr key={i} className={i % 2 === 0 ? 'rpt-row-even' : 'rpt-row-odd'}>
-                    <td className="rpt-td">{r.quizTitle}</td>
-                    <td className="rpt-td rpt-td-center">{formatDate(r.playedAt)}</td>
-                    <td className={`rpt-td rpt-td-center rpt-td-bold ${r.percentage >= 70 ? 'rpt-td-green' : 'rpt-td-amber'}`}>
-                      {r.percentage}% ({r.correctCount}/{r.totalQuestions})
-                    </td>
-                    <td className={`rpt-td rpt-td-center rpt-td-bold ${r.percentage >= 70 ? 'rpt-td-green' : 'rpt-td-amber'}`}>
-                      {r.percentage >= 70 ? 'Положен' : 'Не положен'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/* Recommendations */}
+          {(prereqGaps.length > 0 || reviewToday.length > 0) && (
+            <div className="rpt-section">
+              <h2 className="rpt-section-title">Препораки за следниот период</h2>
+              {prereqGaps.length > 0 && (
+                <>
+                  <p className="rpt-rec-prereq-heading">
+                    Пропуштени предуслови ({prereqGaps.length}):
+                  </p>
+                  {prereqGaps.map((gap, i) => (
+                    <p key={i} className="rpt-rec-item">
+                      • <strong>{gap.conceptTitle}</strong> — прво совладај: {gap.missing.join(', ')}
+                    </p>
+                  ))}
+                </>
+              )}
+              {reviewToday.length > 0 && (
+                <>
+                  <p className="rpt-rec-review-heading">
+                    Концепти за повторување ({reviewToday.length}):
+                  </p>
+                  {reviewToday.map((m, i) => (
+                    <p key={i} className="rpt-rec-item">
+                      • {m.conceptTitle || m.conceptId} {m.mastered ? '(совладан — освежи)' : '(во напредок — вежбај)'}
+                    </p>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Print footer */}
           <div className="rpt-footer-bar">

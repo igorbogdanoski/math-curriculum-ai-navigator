@@ -488,3 +488,25 @@ button:active:not(:disabled) {
   margin: 0;
   color: #374151;
 }
+.rpt-empty-msg {
+  font-size: 11pt;
+  color: #6b7280;
+  padding: 8pt 0;
+  margin: 0;
+}
+.rpt-rec-prereq-heading {
+  font-size: 10pt;
+  font-weight: bold;
+  color: #c2410c;
+  margin: 0 0 4pt 0;
+}
+.rpt-rec-review-heading {
+  font-size: 10pt;
+  font-weight: bold;
+  color: #1d4ed8;
+  margin: 8pt 0 4pt 0;
+}
+.rpt-rec-item {
+  font-size: 10pt;
+  margin: 0 0 2pt 0;
+}
