@@ -17,6 +17,7 @@
     "firebase": "^12.4.0",
     "firebase-admin": "^13.6.1",
     "lucide-react": "^0.563.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-router-dom": "^7.13.0",
