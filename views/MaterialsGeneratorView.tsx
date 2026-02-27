@@ -297,6 +297,7 @@ ${generatedMaterial.assessmentIdea}
     const handleGenerateVariants = async () => {
         if (!isOnline) { addNotification("Нема интернет конекција.", 'error'); return; }
         if (isGeneratingVariants || isGenerateDisabled) return;
+        if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
         const built = buildContext();
         if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
         const { context: finalContext } = built;
@@ -308,7 +309,9 @@ ${generatedMaterial.assessmentIdea}
 
         const levels = ['support', 'standard', 'advanced'] as const;
         const newVariants: Partial<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>> = {};
+        let quotaHit = false;
         for (const level of levels) {
+            if (quotaHit) break;
             try {
                 newVariants[level] = await geminiService.generateAssessment(
                     materialType as 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS',
@@ -316,12 +319,17 @@ ${generatedMaterial.assessmentIdea}
                     user ?? undefined, level, undefined, undefined, effectiveInstruction, state.includeSelfAssessment
                 );
             } catch (error) {
-                console.warn(`Failed to generate ${level} variant:`, error);
+                if (error instanceof RateLimitError) {
+                    setQuotaBannerFromStorage();
+                    quotaHit = true;
+                } else {
+                    console.warn(`Failed to generate ${level} variant:`, error);
+                }
             }
         }
-        if (Object.keys(newVariants).length > 0) {
+        if (!quotaHit && Object.keys(newVariants).length > 0) {
             setVariants(newVariants as Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>);
-        } else {
+        } else if (!quotaHit) {
             addNotification('Не можеше да се генерираат варијантите. Обидете се повторно.', 'error');
         }
         setIsGeneratingVariants(false);
