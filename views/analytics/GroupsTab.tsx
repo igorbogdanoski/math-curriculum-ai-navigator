@@ -7,6 +7,7 @@ import type { PerStudentStat } from './shared';
 
 interface GroupsTabProps {
     perStudentStats: PerStudentStat[];
+    teacherUid?: string;
 }
 
 const COLOR_CLASSES: Record<string, { bg: string; border: string; badge: string; btn: string }> = {
@@ -23,7 +24,7 @@ const COLOR_DOT: Record<string, string> = {
     red: 'bg-red-500', purple: 'bg-purple-500',
 };
 
-export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats }) => {
+export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUid }) => {
     const [groups, setGroups] = useState<StudentGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -34,12 +35,12 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats }) => {
 
     const loadGroups = async () => {
         setLoading(true);
-        const g = await firestoreService.fetchStudentGroups();
+        const g = await firestoreService.fetchStudentGroups(teacherUid);
         setGroups(g);
         setLoading(false);
     };
 
-    useEffect(() => { loadGroups(); }, []);
+    useEffect(() => { loadGroups(); }, [teacherUid]);
 
     // Students already assigned to any group
     const assignedNames = useMemo(() => {
@@ -83,7 +84,7 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats }) => {
     const handleCreate = async () => {
         if (!newName.trim()) return;
         setSaving(true);
-        await firestoreService.createStudentGroup(newName.trim(), newColor);
+        await firestoreService.createStudentGroup(newName.trim(), newColor, teacherUid);
         setNewName('');
         setNewColor('blue');
         setShowForm(false);

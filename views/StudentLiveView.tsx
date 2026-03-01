@@ -29,8 +29,8 @@ export const StudentLiveView: React.FC = () => {
             // Save name + join session
             localStorage.setItem('studentName', name);
             await firestoreService.joinLiveSession(session.id, name);
-            // Navigate to quiz with sessionId param
-            window.location.hash = `/play/${session.quizId}?sessionId=${encodeURIComponent(session.id)}`;
+            // Navigate to quiz with sessionId + teacher-tag params
+            window.location.hash = `/play/${session.quizId}?sessionId=${encodeURIComponent(session.id)}&tid=${encodeURIComponent(session.hostUid)}`;
         } catch {
             setError('Грешка при поврзување. Обиди се повторно.');
             setLoading(false);

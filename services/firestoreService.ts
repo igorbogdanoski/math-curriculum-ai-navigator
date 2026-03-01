@@ -14,6 +14,7 @@ export interface ConceptMastery {
   conceptTitle?: string;
   topicId?: string;
   gradeLevel?: number;
+  teacherUid?: string;       // set for new records; undefined for legacy shared records
   attempts: number;          // total attempts
   consecutiveHighScores: number; // consecutive attempts ≥85%
   bestScore: number;
@@ -45,6 +46,17 @@ export interface StudentGroup {
   id: string;
   name: string;
   color: 'green' | 'blue' | 'orange' | 'red' | 'purple';
+  studentNames: string[];
+  teacherUid?: string;
+  createdAt?: any;
+}
+
+// ── School Classes ────────────────────────────────────────────────────────────
+export interface SchoolClass {
+  id: string;
+  name: string;
+  gradeLevel: number;
+  teacherUid: string;
   studentNames: string[];
   createdAt?: any;
 }
@@ -84,6 +96,7 @@ export interface QuizResult {
   topicId?: string;
   gradeLevel?: number;
   studentName?: string;
+  teacherUid?: string;       // set when student arrives via teacher-tagged link
 }
 
 export interface CachedMaterial {
@@ -249,13 +262,11 @@ export const firestoreService = {
    * Fetches quiz results for the teacher analytics dashboard.
    * Returns the most recent results, newest first.
    */
-  fetchQuizResults: async (maxCount: number = 200): Promise<QuizResult[]> => {
+  fetchQuizResults: async (maxCount: number = 200, teacherUid?: string): Promise<QuizResult[]> => {
     try {
-      const q = query(
-        collection(db, "quiz_results"),
-        orderBy("playedAt", "desc"),
-        limit(maxCount)
-      );
+      const q = teacherUid
+        ? query(collection(db, "quiz_results"), where("teacherUid", "==", teacherUid), orderBy("playedAt", "desc"), limit(maxCount))
+        : query(collection(db, "quiz_results"), orderBy("playedAt", "desc"), limit(maxCount));
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(d => d.data() as QuizResult);
     } catch (error) {
@@ -273,7 +284,7 @@ export const firestoreService = {
     topicId?: string;
     gradeLevel?: number;
     sourceQuizId?: string;
-  }): Promise<string | null> => {
+  }, teacherUid?: string): Promise<string | null> => {
     try {
       const docRef = await addDoc(collection(db, 'cached_ai_materials'), {
         content,
@@ -283,6 +294,7 @@ export const firestoreService = {
         conceptId: meta.conceptId,
         topicId: meta.topicId,
         gradeLevel: meta.gradeLevel,
+        ...(teacherUid ? { teacherUid } : {}),
         createdAt: serverTimestamp(),
       });
       return docRef.id;
@@ -339,7 +351,7 @@ export const firestoreService = {
     gradeLevel?: number;
     topicId?: string;
     conceptId?: string;
-  }): Promise<string | null> => {
+  }, teacherUid?: string): Promise<string | null> => {
     try {
       const docRef = await addDoc(collection(db, 'cached_ai_materials'), {
         content,
@@ -349,6 +361,7 @@ export const firestoreService = {
         gradeLevel: meta.gradeLevel,
         topicId: meta.topicId,
         conceptId: meta.conceptId,
+        ...(teacherUid ? { teacherUid } : {}),
         createdAt: serverTimestamp(),
       });
       return docRef.id;
@@ -388,9 +401,13 @@ export const firestoreService = {
     studentName: string,
     conceptId: string,
     score: number,
-    meta?: { conceptTitle?: string; topicId?: string; gradeLevel?: number }
+    meta?: { conceptTitle?: string; topicId?: string; gradeLevel?: number },
+    teacherUid?: string
   ): Promise<ConceptMastery> => {
-    const docId = `${studentName.replace(/\s+/g, '_')}_${conceptId}`;
+    const safeName = studentName.replace(/\s+/g, '_');
+    const docId = teacherUid
+      ? `${teacherUid}_${safeName}_${conceptId}`
+      : `${safeName}_${conceptId}`;
     const ref = doc(db, 'concept_mastery', docId);
 
     try {
@@ -408,6 +425,7 @@ export const firestoreService = {
         conceptTitle: meta?.conceptTitle ?? existing?.conceptTitle,
         topicId: meta?.topicId ?? existing?.topicId,
         gradeLevel: meta?.gradeLevel ?? existing?.gradeLevel,
+        ...(teacherUid ? { teacherUid } : {}),
         attempts: (existing?.attempts ?? 0) + 1,
         consecutiveHighScores: newConsecutive,
         bestScore: Math.max(score, existing?.bestScore ?? 0),
@@ -469,9 +487,12 @@ export const firestoreService = {
    * Fetches mastery records for all students across all concepts.
    * Used in TeacherAnalyticsView for class-wide mastery overview.
    */
-  fetchAllMastery: async (): Promise<ConceptMastery[]> => {
+  fetchAllMastery: async (teacherUid?: string): Promise<ConceptMastery[]> => {
     try {
-      const snap = await getDocs(collection(db, 'concept_mastery'));
+      const q = teacherUid
+        ? query(collection(db, 'concept_mastery'), where('teacherUid', '==', teacherUid))
+        : collection(db, 'concept_mastery');
+      const snap = await getDocs(q);
       return snap.docs.map(d => d.data() as ConceptMastery);
     } catch (error) {
       console.error('Error fetching all mastery:', error);
@@ -558,9 +579,12 @@ export const firestoreService = {
   },
 
   // ── Student Groups ────────────────────────────────────────────────────────
-  fetchStudentGroups: async (): Promise<StudentGroup[]> => {
+  fetchStudentGroups: async (teacherUid?: string): Promise<StudentGroup[]> => {
     try {
-      const snap = await getDocs(collection(db, 'student_groups'));
+      const q = teacherUid
+        ? query(collection(db, 'student_groups'), where('teacherUid', '==', teacherUid))
+        : collection(db, 'student_groups');
+      const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as StudentGroup));
     } catch (error) {
       console.error('Error fetching student groups:', error);
@@ -568,11 +592,12 @@ export const firestoreService = {
     }
   },
 
-  createStudentGroup: async (name: string, color: string): Promise<string> => {
+  createStudentGroup: async (name: string, color: string, teacherUid?: string): Promise<string> => {
     const ref = await addDoc(collection(db, 'student_groups'), {
       name,
       color,
       studentNames: [],
+      ...(teacherUid ? { teacherUid } : {}),
       createdAt: serverTimestamp(),
     });
     return ref.id;
@@ -651,5 +676,33 @@ export const firestoreService = {
     return onSnapshot(ref, snap => {
       callback(snap.exists() ? ({ id: snap.id, ...snap.data() } as LiveSession) : null);
     });
+  },
+
+  // ── School Classes ─────────────────────────────────────────────────────────
+  fetchClasses: async (teacherUid: string): Promise<SchoolClass[]> => {
+    try {
+      const q = query(collection(db, 'classes'), where('teacherUid', '==', teacherUid), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as SchoolClass));
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      return [];
+    }
+  },
+
+  createClass: async (cls: Omit<SchoolClass, 'id' | 'createdAt'>): Promise<string> => {
+    const ref = await addDoc(collection(db, 'classes'), {
+      ...cls,
+      createdAt: serverTimestamp(),
+    });
+    return ref.id;
+  },
+
+  updateClass: async (classId: string, updates: Partial<Pick<SchoolClass, 'name' | 'gradeLevel' | 'studentNames'>>): Promise<void> => {
+    await updateDoc(doc(db, 'classes', classId), updates);
+  },
+
+  deleteClass: async (classId: string): Promise<void> => {
+    await deleteDoc(doc(db, 'classes', classId));
   },
 };

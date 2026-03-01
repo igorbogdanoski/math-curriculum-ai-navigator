@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
 import { geminiService } from '../services/geminiService';
+import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -15,8 +16,10 @@ import { GradeTab } from './analytics/GradeTab';
 import { AlertsTab } from './analytics/AlertsTab';
 import { GroupsTab } from './analytics/GroupsTab';
 import { LiveTab } from './analytics/LiveTab';
+import { ClassesTab } from './analytics/ClassesTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
+    const { firebaseUser } = useAuth();
     const [results, setResults] = useState<QuizResult[]>([]);
     const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +30,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes'>('overview');
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -72,9 +75,10 @@ export const TeacherAnalyticsView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
+            const uid = firebaseUser?.uid;
             const [data, mastery] = await Promise.all([
-                firestoreService.fetchQuizResults(200),
-                firestoreService.fetchAllMastery(),
+                firestoreService.fetchQuizResults(200, uid),
+                firestoreService.fetchAllMastery(uid),
             ]);
             setResults(data);
             setMasteryRecords(mastery);
@@ -364,6 +368,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'alerts', label: '⚠️ Внимание' },
                             { id: 'groups', label: '👥 Групи' },
                             { id: 'live', label: '🔴 Live' },
+                            { id: 'classes', label: '🏫 Класи' },
                         ] as const).map(tab => (
                             <button
                                 key={tab.id}
@@ -445,9 +450,12 @@ export const TeacherAnalyticsView: React.FC = () => {
                         />
                     )}
                     {activeTab === 'groups' && (
-                        <GroupsTab perStudentStats={perStudentStats} />
+                        <GroupsTab perStudentStats={perStudentStats} teacherUid={firebaseUser?.uid} />
                     )}
                     {activeTab === 'live' && <LiveTab />}
+                    {activeTab === 'classes' && (
+                        <ClassesTab teacherUid={firebaseUser?.uid ?? ''} />
+                    )}
                 </>
             )}
         </div>

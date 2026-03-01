@@ -19,10 +19,11 @@ export const StudentPlayView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { getConceptDetails } = useCurriculum();
 
-  // Live session support — read sessionId from URL hash query params
-  const sessionId = (() => {
+  // Live session + teacher-tagging support — read params from URL hash query string
+  const { sessionId, tid } = (() => {
     const search = window.location.hash.split('?')[1] ?? '';
-    return new URLSearchParams(search).get('sessionId');
+    const p = new URLSearchParams(search);
+    return { sessionId: p.get('sessionId'), tid: p.get('tid') ?? undefined };
   })();
 
   const [quizData, setQuizData] = useState<any>(null);
@@ -69,7 +70,12 @@ export const StudentPlayView: React.FC = () => {
           const data = quizDoc.data();
           setQuizData({
             ...(data.content || data),
-            _meta: { conceptId: data.conceptId, topicId: data.topicId, gradeLevel: data.gradeLevel },
+            _meta: {
+              conceptId: data.conceptId,
+              topicId: data.topicId,
+              gradeLevel: data.gradeLevel,
+              teacherUid: tid ?? data.teacherUid ?? undefined,
+            },
           });
         } else {
           setError('Квизот не е пронајден. Проверете го линкот со вашиот наставник.');
@@ -148,6 +154,7 @@ export const StudentPlayView: React.FC = () => {
       topicId: meta.topicId,
       gradeLevel: meta.gradeLevel,
       studentName: studentName || undefined,
+      teacherUid: meta.teacherUid,
     });
 
     // 2. Update concept mastery (only if we have student name + concept)
@@ -161,7 +168,8 @@ export const StudentPlayView: React.FC = () => {
           conceptTitle: concept?.title ?? quizData.title,
           topicId: meta.topicId,
           gradeLevel: meta.gradeLevel,
-        }
+        },
+        meta.teacherUid
       );
       setMasteryUpdate(mastery);
     }

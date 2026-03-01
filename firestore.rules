@@ -50,6 +50,37 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
+    // ── Гамификација (student_gamification) ──────────────────────────────
+    // Ученици (анонимни) пишуваат свој XP/стрик, сите можат да читаат
+    match /student_gamification/{doc} {
+      allow read:   if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false;
+    }
+
+    // ── Групи на ученици (student_groups) ────────────────────────────────
+    // Само автентицирани наставници
+    match /student_groups/{doc} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ── Live сесии (live_sessions) ────────────────────────────────────────
+    // Читање: сите (учениците се приклучуваат по код)
+    // Пишување: сите (ученикот поднесува резултати анонимно)
+    match /live_sessions/{doc} {
+      allow read:   if true;
+      allow create: if isAuthenticated();
+      allow update: if true;
+      allow delete: if isAuthenticated();
+    }
+
+    // ── Класи (classes) ───────────────────────────────────────────────────
+    // Само автентицирани наставници
+    match /classes/{doc} {
+      allow read, write: if isAuthenticated();
+    }
+
     // ── Сè друго: одбиено ────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
