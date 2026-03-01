@@ -34,6 +34,7 @@ import { AIChatPanel } from './components/ai/AIChatPanel';
 import { StudentPlayView } from './views/StudentPlayView';
 import { StudentProgressView } from './views/StudentProgressView';
 import { StudentLiveView } from './views/StudentLiveView';
+import { ParentPortalView } from './views/ParentPortalView';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -113,6 +114,7 @@ const routes = [
     { path: '/play/:id', component: StudentPlayView }, // Student Mode route
     { path: '/my-progress', component: StudentProgressView }, // Student Progress route
     { path: '/live', component: StudentLiveView }, // Live session join route
+    { path: '/parent', component: ParentPortalView }, // Parent Portal — public
     { path: '/', component: HomeView },
     { path: '/explore', component: ExploreView },
     { path: '/topic/:id', component: TopicView },
