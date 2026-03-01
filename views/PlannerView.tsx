@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { Target, X } from 'lucide-react';
+import { geminiService } from '../services/geminiService';
 import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { Card } from '../components/common/Card';
@@ -38,12 +40,14 @@ export const PlannerView: React.FC = () => {
     const { navigate } = useNavigation();
     const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
     const [currentDate, setCurrentDate] = useState(new Date()); // Default to today
-    const { items, updateItem, getLessonPlan, isLoading, lessonPlans } = usePlanner();
+    const { items, updateItem, addItem, getLessonPlan, isLoading, lessonPlans } = usePlanner();
     const { showModal } = useModal();
     const { addNotification } = useNotification();
     const { toursSeen, markTourAsSeen } = useUserPreferences();
     const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
     const aiMenuRef = useRef<HTMLDivElement>(null);
+    const [suggestions, setSuggestions] = useState<Array<{ title: string; description: string; conceptHint: string }> | null>(null);
+    const [isSuggesting, setIsSuggesting] = useState(false);
 
 
     useEffect(() => {
@@ -137,6 +141,40 @@ export const PlannerView: React.FC = () => {
     const startDayIndex = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
     
     const weekDays = ['Пон', 'Вто', 'Сре', 'Чет', 'Пет', 'Саб', 'Нед'];
+
+    const handleSuggestLessons = async () => {
+        setIsAiMenuOpen(false);
+        if (isSuggesting) return;
+        const recentLessons = items
+            .filter((i: PlannerItem) => i.type === PlannerItemType.LESSON)
+            .slice(-10)
+            .map((i: PlannerItem) => ({ title: i.title, date: i.date, description: i.description }));
+        if (recentLessons.length === 0) {
+            addNotification('Немате лекции во планот за анализа.', 'error');
+            return;
+        }
+        setIsSuggesting(true);
+        setSuggestions(null);
+        try {
+            const result = await geminiService.suggestNextLessons(recentLessons);
+            setSuggestions(result.length > 0 ? result : []);
+        } catch {
+            addNotification('Грешка при генерирање предлози.', 'error');
+        } finally {
+            setIsSuggesting(false);
+        }
+    };
+
+    const handleAddSuggestion = async (s: { title: string; description: string }) => {
+        // Get next Monday
+        const now = new Date();
+        const daysToMonday = (8 - now.getDay()) % 7 || 7;
+        const nextMonday = new Date(now);
+        nextMonday.setDate(now.getDate() + daysToMonday);
+        const dateStr = nextMonday.toISOString().split('T')[0];
+        await addItem({ type: PlannerItemType.LESSON, title: s.title, description: s.description, date: dateStr });
+        addNotification(`„${s.title}" додадена во планот за ${dateStr}!`, 'success');
+    };
 
     const changePeriod = (offset: number) => {
         setCurrentDate((prev: Date) => {
@@ -349,13 +387,64 @@ export const PlannerView: React.FC = () => {
                                             <ICONS.planner className="w-5 h-5 mr-3 text-purple-500" />
                                             Годишен план
                                         </button>
+                                        <button
+                                            onClick={handleSuggestLessons}
+                                            className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            role="menuitem"
+                                        >
+                                            <Target className="w-5 h-5 mr-3 text-teal-500" />
+                                            Предложи следна лекција
+                                        </button>
                                     </div>
                                 </div>
                             )}
                         </div>
                     </div>
                 </header>
-                
+
+                {/* П25 — AI Suggestions Panel */}
+                {(isSuggesting || suggestions !== null) && (
+                    <div className="mt-4 mb-2 bg-teal-50 border border-teal-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-bold text-teal-800 flex items-center gap-2">
+                                <Target className="w-5 h-5" />
+                                Предлози за следната недела
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setSuggestions(null)}
+                                className="text-teal-400 hover:text-teal-700 transition"
+                                aria-label="Затвори"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        {isSuggesting ? (
+                            <div className="flex items-center gap-2 text-sm text-teal-700 py-2">
+                                <ICONS.spinner className="w-4 h-4 animate-spin" />
+                                Генерирам предлози...
+                            </div>
+                        ) : suggestions && suggestions.length === 0 ? (
+                            <p className="text-sm text-teal-700">Немаше доволно лекции за анализа.</p>
+                        ) : suggestions?.map((s, i) => (
+                            <div key={i} className="flex items-start justify-between gap-3 py-2 border-t border-teal-100 first:border-t-0">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-800">{i + 1}. {s.title}</p>
+                                    <p className="text-xs text-gray-600 mt-0.5">{s.description}</p>
+                                    <p className="text-xs text-teal-600 mt-0.5 italic">💡 {s.conceptHint}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleAddSuggestion(s)}
+                                    className="flex-shrink-0 text-xs px-3 py-1.5 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition"
+                                >
+                                    + Додај
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {hasItems ? (
                     <Card>
                         <div className="flex justify-between items-center mb-4">

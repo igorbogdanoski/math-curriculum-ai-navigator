@@ -983,4 +983,55 @@ ${customInstruction || ''}`;
 
     return generateAndParseJSON<any[]>([{ text: prompt }], schema, DEFAULT_MODEL);
   },
+
+  /**
+   * П25 — Предложи следна лекција врз основа на последните лекции во планот.
+   * Returns 3 lesson suggestions (title, description, conceptHint).
+   */
+  async suggestNextLessons(
+    recentLessons: Array<{ title: string; date: string; description?: string }>
+  ): Promise<Array<{ title: string; description: string; conceptHint: string }>> {
+    if (recentLessons.length === 0) {
+      return [];
+    }
+
+    const lessonsText = recentLessons
+      .map(l => `- ${l.date}: ${l.title}${l.description ? ` (${l.description.slice(0, 80)})` : ''}`)
+      .join('\n');
+
+    const prompt = `Си наставник по математика. Последните лекции во планот беа:
+${lessonsText}
+
+Врз основа на оваа прогресија, предложи 3 логични теми за следната недела.
+За секоја тема дај:
+- Краток наслов на лекцијата (на македонски)
+- Кратко опис (2-3 реченици, на македонски)
+- Совет за поврзан концепт или вештина (conceptHint, 1 реченица)
+
+Одговори само во JSON формат.`;
+
+    const schema = {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title:       { type: Type.STRING },
+          description: { type: Type.STRING },
+          conceptHint: { type: Type.STRING },
+        },
+        required: ['title', 'description', 'conceptHint'],
+      },
+    };
+
+    try {
+      const result = await generateAndParseJSON<Array<{ title: string; description: string; conceptHint: string }>>(
+        [{ text: prompt }],
+        schema,
+        DEFAULT_MODEL
+      );
+      return Array.isArray(result) ? result.slice(0, 3) : [];
+    } catch {
+      return [];
+    }
+  },
 };
