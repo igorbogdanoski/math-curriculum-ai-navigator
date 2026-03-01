@@ -17,6 +17,7 @@ import { AlertsTab } from './analytics/AlertsTab';
 import { GroupsTab } from './analytics/GroupsTab';
 import { LiveTab } from './analytics/LiveTab';
 import { ClassesTab } from './analytics/ClassesTab';
+import { QuestionBankTab } from './analytics/QuestionBankTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
     const { firebaseUser } = useAuth();
@@ -30,7 +31,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank'>('overview');
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -369,6 +370,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'groups', label: '👥 Групи' },
                             { id: 'live', label: '🔴 Live' },
                             { id: 'classes', label: '🏫 Класи' },
+                            { id: 'questionBank', label: '📚 Банка' },
                         ] as const).map(tab => (
                             <button
                                 key={tab.id}
@@ -455,6 +457,9 @@ export const TeacherAnalyticsView: React.FC = () => {
                     {activeTab === 'live' && <LiveTab />}
                     {activeTab === 'classes' && (
                         <ClassesTab teacherUid={firebaseUser?.uid ?? ''} />
+                    )}
+                    {activeTab === 'questionBank' && (
+                        <QuestionBankTab teacherUid={firebaseUser?.uid ?? ''} />
                     )}
                 </>
             )}

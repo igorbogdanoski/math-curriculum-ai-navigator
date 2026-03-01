@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Bookmark } from 'lucide-react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
@@ -13,6 +14,7 @@ type DifferentiatedVersion = { profileName: string; questions: AssessmentQuestio
 
 interface GeneratedAssessmentProps {
   material: AIGeneratedAssessment;
+  onSaveQuestion?: (q: AssessmentQuestion) => void;
 }
 
 const convertToStandardLatex = (text: string): string => {
@@ -28,12 +30,13 @@ const cognitiveLevelConfig: Record<string, { label: string; color: string; }> = 
     Creating: { label: 'Креирање', color: 'bg-pink-100 text-pink-800' },
 };
 
-const QuestionList: React.FC<{ 
+const QuestionList: React.FC<{
     questions: AssessmentQuestion[];
     isEditing: boolean;
     handleQuestionFieldChange: (qIndex: number, field: keyof AssessmentQuestion, value: string) => void;
     handleOptionChange: (qIndex: number, optIndex: number, value: string) => void;
-}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange }) => {
+    onSaveQuestion?: (q: AssessmentQuestion) => void;
+}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion }) => {
     const questionTypeIcons: Record<string, React.ComponentType<{className?: string}>> = {
         MULTIPLE_CHOICE: ICONS.myLessons,
         SHORT_ANSWER: ICONS.edit,
@@ -53,7 +56,7 @@ const QuestionList: React.FC<{
                             <Icon className="w-4 h-4 text-brand-secondary mt-1 flex-shrink-0" />
                             <div className="flex-1">
                                 {isEditing ? (
-                                    <textarea 
+                                    <textarea
                                         value={q.question}
                                         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleQuestionFieldChange(index, 'question', e.target.value)}
                                         className="w-full p-2 border rounded-md"
@@ -63,6 +66,16 @@ const QuestionList: React.FC<{
                                     <span>{index + 1}. <MathRenderer text={q.question} /></span>
                                 )}
                             </div>
+                            {onSaveQuestion && (
+                                <button
+                                    type="button"
+                                    onClick={() => onSaveQuestion(q)}
+                                    title="Зачувај во банка"
+                                    className="p-1 text-gray-300 hover:text-indigo-600 transition flex-shrink-0 no-print"
+                                >
+                                    <Bookmark className="w-4 h-4" />
+                                </button>
+                            )}
                         </div>
                         
                         <div className="ml-8 mt-1 space-y-2">
@@ -137,7 +150,7 @@ const QuestionList: React.FC<{
 };
 
 
-export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ material }) => {
+export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ material, onSaveQuestion }) => {
     const [editableMaterial, setEditableMaterial] = useState<AIGeneratedAssessment>(material);
     const [isEditing, setIsEditing] = useState(false);
     const [showFlashcards, setShowFlashcards] = useState(false);
@@ -470,6 +483,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                     isEditing={isEditing}
                     handleQuestionFieldChange={(qIndex: number, field: keyof AssessmentQuestion, value: string) => handleQuestionFieldChangeForVersion(activeTab, qIndex, field, value)}
                     handleOptionChange={(qIndex: number, optIndex: number, value: string) => handleOptionChangeForVersion(activeTab, qIndex, optIndex, value)}
+                    onSaveQuestion={onSaveQuestion}
                 />
                 {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
             </div>

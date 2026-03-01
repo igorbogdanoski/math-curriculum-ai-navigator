@@ -6,7 +6,7 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
 import { RateLimitError } from '../services/apiErrors';
-import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType, DifferentiationLevel } from '../types';
+import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType, DifferentiationLevel, AssessmentQuestion } from '../types';
 import { ModalType, PlannerItemType } from '../types';
 import { firestoreService } from '../services/firestoreService';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
@@ -444,6 +444,34 @@ ${generatedMaterial.assessmentIdea}
         }
     };
 
+    const handleSaveQuestion = async (q: AssessmentQuestion) => {
+        if (!user?.uid) {
+            addNotification('Мора да бидете логирани за да зачувате прашања.', 'error');
+            return;
+        }
+        try {
+            const conceptId = state.selectedConcepts[0];
+            await firestoreService.saveQuestion({
+                teacherUid: user.uid,
+                question: q.question,
+                type: q.type,
+                options: q.options,
+                answer: q.answer,
+                solution: q.solution,
+                cognitiveLevel: q.cognitiveLevel,
+                difficulty_level: q.difficulty_level,
+                conceptId,
+                conceptTitle: filteredConcepts.find((c: Concept) => c.id === conceptId)?.title,
+                topicId: state.selectedTopic,
+                gradeLevel: curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level,
+            });
+            addNotification('Прашањето е зачувано во банката! 📌', 'success');
+        } catch (err) {
+            console.error('Error saving question:', err);
+            addNotification('Грешка при зачувување на прашањето.', 'error');
+        }
+    };
+
     const handleGenerate = async () => {
         if (!isOnline) {
             addNotification("Нема интернет конекција. Генераторот е недостапен.", 'error');
@@ -767,7 +795,7 @@ ${generatedMaterial.assessmentIdea}
                 <div className="mt-6">
                     {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
                     {'openingActivity' in generatedMaterial && <GeneratedIdeas material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />}
-                    {'questions' in generatedMaterial && <GeneratedAssessment material={generatedMaterial} />}
+                    {'questions' in generatedMaterial && <GeneratedAssessment material={generatedMaterial} onSaveQuestion={handleSaveQuestion} />}
                     {'criteria' in generatedMaterial && <GeneratedRubric material={generatedMaterial} />}
                     {'paths' in generatedMaterial && <GeneratedLearningPaths material={generatedMaterial} />}
                 </div>
@@ -800,7 +828,7 @@ ${generatedMaterial.assessmentIdea}
                             >{opt.label}</button>
                         ))}
                     </div>
-                    {variants[activeVariantTab] && <GeneratedAssessment material={variants[activeVariantTab]} />}
+                    {variants[activeVariantTab] && <GeneratedAssessment material={variants[activeVariantTab]} onSaveQuestion={handleSaveQuestion} />}
                 </div>
             )}
 
@@ -811,8 +839,8 @@ ${generatedMaterial.assessmentIdea}
                         <ICONS.sparkles className="w-5 h-5" />
                         Генериран пакет материјали
                     </h3>
-                    {bulkResults.quiz && <GeneratedAssessment material={bulkResults.quiz} />}
-                    {bulkResults.assessment && <GeneratedAssessment material={bulkResults.assessment} />}
+                    {bulkResults.quiz && <GeneratedAssessment material={bulkResults.quiz} onSaveQuestion={handleSaveQuestion} />}
+                    {bulkResults.assessment && <GeneratedAssessment material={bulkResults.assessment} onSaveQuestion={handleSaveQuestion} />}
                     {bulkResults.rubric && <GeneratedRubric material={bulkResults.rubric} />}
                 </div>
             )}

@@ -1,7 +1,7 @@
 import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
-import { type DifferentiationLevel } from '../types';
+import { type DifferentiationLevel, type SavedQuestion } from '../types';
 
 /**
  * Tracks a student's mastery of a specific concept over time.
@@ -724,5 +724,34 @@ export const firestoreService = {
       console.error('Error fetching quiz results by concept:', error);
       return [];
     }
+  },
+
+  // ── Question Bank ─────────────────────────────────────────────────────────
+  saveQuestion: async (q: Omit<SavedQuestion, 'id'>): Promise<string> => {
+    const ref = await addDoc(collection(db, 'saved_questions'), {
+      ...q,
+      savedAt: serverTimestamp(),
+    });
+    return ref.id;
+  },
+
+  fetchSavedQuestions: async (teacherUid: string): Promise<SavedQuestion[]> => {
+    try {
+      const q = query(
+        collection(db, 'saved_questions'),
+        where('teacherUid', '==', teacherUid),
+        orderBy('savedAt', 'desc'),
+        limit(200)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedQuestion));
+    } catch (error) {
+      console.error('Error fetching saved questions:', error);
+      return [];
+    }
+  },
+
+  deleteQuestion: async (questionId: string): Promise<void> => {
+    await deleteDoc(doc(db, 'saved_questions', questionId));
   },
 };

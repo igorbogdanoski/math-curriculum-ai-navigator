@@ -209,7 +209,7 @@ export interface AssessmentQuestion {
   options?: string[];
   answer: string;
   levelDescription?: string;
-  
+
   solution?: string;
 
   // For context-based generation
@@ -219,6 +219,22 @@ export interface AssessmentQuestion {
   concept_evaluated?: string;
 }
 
+export interface SavedQuestion {
+  id: string;
+  teacherUid: string;
+  question: string;
+  type: string;
+  options?: string[];
+  answer: string;
+  solution?: string;
+  cognitiveLevel?: string;
+  difficulty_level?: string;
+  conceptId?: string;
+  conceptTitle?: string;
+  topicId?: string;
+  gradeLevel?: number;
+  savedAt?: any;
+}
 
 export interface AIGeneratedAssessment {
   title: string;
