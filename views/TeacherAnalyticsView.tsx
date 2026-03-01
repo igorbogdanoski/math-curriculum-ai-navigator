@@ -18,6 +18,7 @@ import { GroupsTab } from './analytics/GroupsTab';
 import { LiveTab } from './analytics/LiveTab';
 import { ClassesTab } from './analytics/ClassesTab';
 import { QuestionBankTab } from './analytics/QuestionBankTab';
+import { QuizCoverageTab } from './analytics/QuizCoverageTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
     const { firebaseUser } = useAuth();
@@ -26,12 +27,12 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-    const { getConceptDetails, getStandardsByIds } = useCurriculum();
+    const { getConceptDetails, getStandardsByIds, allConcepts } = useCurriculum();
     const { openGeneratorPanel } = useGeneratorPanel();
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage'>('overview');
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -371,6 +372,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'live', label: '🔴 Live' },
                             { id: 'classes', label: '🏫 Класи' },
                             { id: 'questionBank', label: '📚 Банка' },
+                            { id: 'coverage', label: '📊 Покриеност' },
                         ] as const).map(tab => (
                             <button
                                 key={tab.id}
@@ -460,6 +462,13 @@ export const TeacherAnalyticsView: React.FC = () => {
                     )}
                     {activeTab === 'questionBank' && (
                         <QuestionBankTab teacherUid={firebaseUser?.uid ?? ''} />
+                    )}
+                    {activeTab === 'coverage' && (
+                        <QuizCoverageTab
+                            allConceptStats={allConceptStats}
+                            allConcepts={allConcepts ?? []}
+                            onGenerateRemedial={handleGenerateRemedial}
+                        />
                     )}
                 </>
             )}
