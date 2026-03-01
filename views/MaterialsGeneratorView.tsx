@@ -6,8 +6,9 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
 import { RateLimitError } from '../services/apiErrors';
-import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType } from '../types';
+import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType, DifferentiationLevel } from '../types';
 import { ModalType, PlannerItemType } from '../types';
+import { firestoreService } from '../services/firestoreService';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { AILoadingIndicator } from '../components/common/AILoadingIndicator';
 import { useAuth } from '../contexts/AuthContext';
@@ -80,6 +81,25 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         assessment?: AIGeneratedAssessment;
         rubric?: AIGeneratedRubric;
     } | null>(null);
+
+    // Adaptive difficulty recommendation
+    const [diffRec, setDiffRec] = useState<DifferentiationLevel | null>(null);
+    useEffect(() => {
+        const conceptId = state.selectedConcepts[0];
+        if (!conceptId) { setDiffRec(null); return; }
+        let cancelled = false;
+        firestoreService.fetchQuizResultsByConcept(conceptId, user?.uid ?? undefined, 30).then(results => {
+            if (cancelled || results.length === 0) return;
+            const avg = results.reduce((s, r) => s + r.percentage, 0) / results.length;
+            const rec: DifferentiationLevel = avg < 60 ? 'support' : avg < 85 ? 'standard' : 'advanced';
+            setDiffRec(rec);
+            // Auto-pre-select only if teacher hasn't manually changed from default 'standard'
+            if (state.differentiationLevel === 'standard') {
+                dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: rec } });
+            }
+        });
+        return () => { cancelled = true; };
+    }, [state.selectedConcepts[0], user?.uid]);
 
     const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
     const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
@@ -621,6 +641,12 @@ ${generatedMaterial.assessmentIdea}
                                 {(['ASSESSMENT', 'QUIZ', 'FLASHCARDS', 'LEARNING_PATH'] as const).includes(state.materialType as any) && (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Ниво на диференцијација</label>
+                                        {diffRec && (
+                                            <p className="text-xs font-semibold text-indigo-600 mb-1.5">
+                                                💡 Препорачано (врз основа на претходни резултати):&nbsp;
+                                                {diffRec === 'support' ? '🔵 Поддршка' : diffRec === 'advanced' ? '🔴 Збогатување' : '⚪ Основно'}
+                                            </p>
+                                        )}
                                         <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
                                             {([
                                                 { value: 'support' as const, label: '🔵 Поддршка', title: 'Поедноставено со детални упатства' },

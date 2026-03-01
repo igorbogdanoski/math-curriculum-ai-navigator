@@ -11,7 +11,7 @@ import {
   Loader2, AlertCircle, Home, Star, RefreshCw, BookOpen,
   User, ArrowRight, BarChart2, Sparkles, ExternalLink, Trophy,
 } from 'lucide-react';
-import { QuestionType } from '../types';
+import { QuestionType, type DifferentiationLevel } from '../types';
 
 type QuizResult = { percentage: number; correctCount: number; totalQuestions: number };
 
@@ -75,6 +75,7 @@ export const StudentPlayView: React.FC = () => {
               topicId: data.topicId,
               gradeLevel: data.gradeLevel,
               teacherUid: tid ?? data.teacherUid ?? undefined,
+              differentiationLevel: data.differentiationLevel as DifferentiationLevel | undefined,
             },
           });
         } else {
@@ -98,7 +99,7 @@ export const StudentPlayView: React.FC = () => {
     setNameConfirmed(true);
   };
 
-  const generateRemediaQuiz = async (meta: { conceptId?: string; topicId?: string; gradeLevel?: number }) => {
+  const generateRemediaQuiz = async (meta: { conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid?: string }, percentage: number) => {
     if (!meta.conceptId) return;
     setIsGeneratingRemedia(true);
     try {
@@ -112,16 +113,24 @@ export const StudentPlayView: React.FC = () => {
         concepts: [concept],
       };
 
+      const adaptiveLevel: DifferentiationLevel =
+        percentage < 60 ? 'support' : percentage < 85 ? 'standard' : 'advanced';
+      const customInstr = adaptiveLevel === 'support'
+        ? 'РЕМЕДИЈАЛНА ВЕЖБА: Поедноставени прашања, чекор-по-чекор упатства, помал вокабулар. Ученикот не ги положи стандардните прашања.'
+        : adaptiveLevel === 'advanced'
+        ? 'ЗБОГАТУВАЊЕ: Предизвикувачки прашања со критичко размислување, реален контекст и повеќекорачни решенија.'
+        : 'ВЕЖБА: Стандардни прашања за дополнително вежбање на концептот.';
+
       const result = await geminiService.generateAssessment(
         'QUIZ',
         [QuestionType.MULTIPLE_CHOICE],
         6,
         context,
         undefined,
-        'support',
+        adaptiveLevel,
         undefined,
         undefined,
-        'РЕМЕДИЈАЛНА ВЕЖБА: Прашањата мора да бидат поедноставени, со детални упатства, помал вокабулар и чекор-по-чекор примери. Ученикот не ги положи стандардните прашања.',
+        customInstr,
       );
 
       const newId = await firestoreService.saveRemediaQuiz(result, {
@@ -129,10 +138,10 @@ export const StudentPlayView: React.FC = () => {
         topicId: meta.topicId,
         gradeLevel: meta.gradeLevel,
         sourceQuizId: id,
-      });
+      }, meta.teacherUid);
       if (newId) setRemediaQuizId(newId);
     } catch (err) {
-      console.error('Грешка при генерирање ремедијален квиз:', err);
+      console.error('Грешка при генерирање следен квиз:', err);
     } finally {
       setIsGeneratingRemedia(false);
     }
@@ -155,6 +164,7 @@ export const StudentPlayView: React.FC = () => {
       gradeLevel: meta.gradeLevel,
       studentName: studentName || undefined,
       teacherUid: meta.teacherUid,
+      differentiationLevel: meta.differentiationLevel,
     });
 
     // 2. Update concept mastery (only if we have student name + concept)
@@ -192,10 +202,8 @@ export const StudentPlayView: React.FC = () => {
       firestoreService.submitLiveResponse(sessionId, studentName, percentage);
     }
 
-    // 5. Adaptive remediation on failure
-    if (percentage < 70) {
-      generateRemediaQuiz(meta);
-    }
+    // 5. Adaptive next quiz (all scores — level depends on percentage)
+    generateRemediaQuiz(meta, percentage);
   };
 
   if (loading) {
@@ -351,14 +359,32 @@ export const StudentPlayView: React.FC = () => {
                 <p className="text-green-700 text-sm mt-1">
                   Браво{studentName ? `, ${studentName}` : ''}! Ги совладавте прашањата одлично. Кажи му на твојот наставник за резултатот.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => { window.location.hash = '/my-progress'; }}
-                  className="mt-3 flex items-center gap-2 text-xs font-bold bg-green-200 text-green-900 px-4 py-2 rounded-xl hover:bg-green-300 transition"
-                >
-                  <BarChart2 className="w-3.5 h-3.5" />
-                  Погледни го мојот прогрес
-                </button>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => { window.location.hash = '/my-progress'; }}
+                    className="flex items-center gap-2 text-xs font-bold bg-green-200 text-green-900 px-4 py-2 rounded-xl hover:bg-green-300 transition"
+                  >
+                    <BarChart2 className="w-3.5 h-3.5" />
+                    Погледни го мојот прогрес
+                  </button>
+                  {isGeneratingRemedia && (
+                    <div className="flex items-center gap-2 text-xs font-bold text-green-700 px-3 py-2">
+                      <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                      AI подготвува предизвик...
+                    </div>
+                  )}
+                  {remediaQuizId && !isGeneratingRemedia && (
+                    <button
+                      type="button"
+                      onClick={() => { window.location.hash = `/play/${remediaQuizId}`; window.location.reload(); }}
+                      className="flex items-center gap-2 text-xs font-bold bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      🚀 Предизвик (напредни прашања)
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
@@ -369,13 +395,15 @@ export const StudentPlayView: React.FC = () => {
                   Не се откажуј! {quizResult.correctCount} / {quizResult.totalQuestions} точни
                 </p>
                 <p className="text-amber-700 text-sm mt-1">
-                  Оваа тема бара малку повеќе вежба. Подготвуваме полесни прашања специјално за тебе...
+                  {quizResult.percentage < 60
+                    ? 'Подготвуваме полесни прашања специјално за тебе...'
+                    : 'Уште малку вежба за да го совладаш концептот...'}
                 </p>
 
                 {isGeneratingRemedia && (
                   <div className="mt-3 flex items-center gap-2 text-xs font-bold text-amber-700">
                     <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                    AI подготвува полесен квиз за тебе...
+                    AI подготвува следен квиз за тебе...
                   </div>
                 )}
                 {remediaQuizId && !isGeneratingRemedia && (
@@ -385,7 +413,7 @@ export const StudentPlayView: React.FC = () => {
                     className="mt-3 flex items-center gap-2 text-xs font-bold bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Вежбај со полесни прашања
+                    {quizResult.percentage < 60 ? '📘 Поддршка (полесни прашања)' : '📖 Вежбај повторно'}
                   </button>
                 )}
 

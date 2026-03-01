@@ -1,6 +1,7 @@
 import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
+import { type DifferentiationLevel } from '../types';
 
 /**
  * Tracks a student's mastery of a specific concept over time.
@@ -97,6 +98,7 @@ export interface QuizResult {
   gradeLevel?: number;
   studentName?: string;
   teacherUid?: string;       // set when student arrives via teacher-tagged link
+  differentiationLevel?: DifferentiationLevel; // level of the quiz that was played
 }
 
 export interface CachedMaterial {
@@ -704,5 +706,23 @@ export const firestoreService = {
 
   deleteClass: async (classId: string): Promise<void> => {
     await deleteDoc(doc(db, 'classes', classId));
+  },
+
+  // ── Adaptive Difficulty ───────────────────────────────────────────────────
+  /**
+   * Fetches recent quiz results for a specific concept.
+   * Used by MaterialsGeneratorView to recommend difficulty level.
+   */
+  fetchQuizResultsByConcept: async (conceptId: string, teacherUid?: string, maxCount = 50): Promise<QuizResult[]> => {
+    try {
+      const q = teacherUid
+        ? query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), where('teacherUid', '==', teacherUid), orderBy('playedAt', 'desc'), limit(maxCount))
+        : query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), orderBy('playedAt', 'desc'), limit(maxCount));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => d.data() as QuizResult);
+    } catch (error) {
+      console.error('Error fetching quiz results by concept:', error);
+      return [];
+    }
   },
 };

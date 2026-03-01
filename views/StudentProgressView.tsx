@@ -404,7 +404,12 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             <div className="space-y-2">
               {masteryRecords
                 .sort((a, b) => (b.mastered ? 1 : 0) - (a.mastered ? 1 : 0) || b.consecutiveHighScores - a.consecutiveHighScores)
-                .map((m) => (
+                .map((m) => {
+                  const db = m.lastScore === undefined ? null
+                    : m.lastScore < 60  ? { label: '🔵 Поддршка',    cls: 'text-blue-700 bg-blue-50 border-blue-100' }
+                    : m.lastScore < 85  ? { label: '⚪ Основно',      cls: 'text-slate-600 bg-slate-100 border-slate-200' }
+                    :                    { label: '🔴 Збогатување',   cls: 'text-red-700 bg-red-50 border-red-100' };
+                  return (
                   <div key={m.conceptId} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${m.mastered ? 'bg-yellow-100' : 'bg-blue-50'}`}>
                       {m.mastered
@@ -419,6 +424,9 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                           : `${m.consecutiveHighScores}/3 по ред ≥85% — Последен: ${m.lastScore}%`}
                       </p>
                     </div>
+                    {db && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${db.cls}`} title="Следно ниво">{db.label}</span>
+                    )}
                     {m.mastered && (
                       <span className="text-xs font-black text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full flex-shrink-0">✓ Совладан</span>
                     )}
@@ -428,7 +436,8 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                       </span>
                     )}
                   </div>
-                ))}
+                  );
+                })}
             </div>
             {inProgressCount > 0 && (
               <p className="text-xs text-slate-400 mt-3 text-center">
