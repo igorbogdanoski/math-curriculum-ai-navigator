@@ -3,7 +3,7 @@ import { firestoreService, type QuizResult, type ConceptMastery, type StudentGam
 import { ICONS } from '../constants';
 import {
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
-  Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw,
+  Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw, Target,
 } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { GradeBadge } from '../components/common/GradeBadge';
@@ -21,7 +21,7 @@ interface Props {
 
 export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const isReadOnly = !!nameProp;
-  const { getConceptChain } = useCurriculum();
+  const { getConceptChain, getConceptDetails, allConcepts } = useCurriculum();
 
   const [studentName, setStudentName] = useState<string>(
     () => nameProp || localStorage.getItem('studentName') || ''
@@ -124,6 +124,27 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       return m.mastered ? daysSince > 30 : (daysSince > 7 && m.attempts > 0);
     });
   }, [masteryRecords]);
+
+  // ── Правец 21: Персонализирана патека „Следни чекори" ────────────────────
+  const nextUpConcepts = useMemo(() => {
+    if (!allConcepts || allConcepts.length === 0 || masteryRecords.length === 0) return [];
+    const masteredIds = new Set(masteryRecords.filter(m => m.mastered).map(m => m.conceptId));
+    const attemptedIds = new Set(masteryRecords.map(m => m.conceptId));
+    const ready = allConcepts.filter(c => {
+      if (masteredIds.has(c.id)) return false;
+      const prereqs: string[] = c.priorKnowledgeIds || [];
+      if (prereqs.length === 0) return attemptedIds.has(c.id); // foundational: only if student has tried it
+      return prereqs.every(pid => masteredIds.has(pid));       // chained: all prereqs mastered
+    });
+    return ready
+      .map(c => {
+        const mastery = masteryRecords.find(m => m.conceptId === c.id);
+        const { grade } = getConceptDetails(c.id);
+        return { concept: c, mastery, grade };
+      })
+      .sort((a, b) => (b.mastery?.consecutiveHighScores ?? -1) - (a.mastery?.consecutiveHighScores ?? -1))
+      .slice(0, 6);
+  }, [allConcepts, masteryRecords, getConceptDetails]);
 
   // ── Правец 16: Period report data ─────────────────────────────────────────
   const { periodLabel, periodQuizzes, periodStats } = useMemo(() => {
@@ -386,6 +407,51 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                       </span>
                     ))}
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Правец 21: Следни чекори (Learning Path) ────────────────────────── */}
+      {searched && !loading && nextUpConcepts.length > 0 && (
+        <div className="w-full max-w-2xl mb-4">
+          <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Target className="w-5 h-5 text-teal-600" />
+              <p className="font-bold text-teal-800 text-sm">🎯 Следни чекори</p>
+              <span className="px-2 py-0.5 rounded-full bg-teal-200 text-teal-800 text-xs font-bold">{nextUpConcepts.length}</span>
+            </div>
+            <p className="text-xs text-teal-600 mb-3">Концепти за кои сте подготвени — сите предуслови се совладани!</p>
+            <div className="space-y-2">
+              {nextUpConcepts.map(({ concept, mastery, grade }) => (
+                <div key={concept.id} className="flex items-center gap-3 bg-white rounded-xl px-3 py-2.5 border border-teal-100">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-700 truncate">{concept.title}</p>
+                    <p className="text-xs text-slate-400">
+                      {grade ? `${grade.level}. одделение` : ''}
+                      {mastery ? ` · ${mastery.consecutiveHighScores}/3 по ред` : ' · Ново'}
+                    </p>
+                  </div>
+                  {mastery && mastery.consecutiveHighScores > 0 && (
+                    <div className="flex gap-0.5 flex-shrink-0">
+                      {[0, 1, 2].map(i => (
+                        <div key={i} className={`w-2 h-5 rounded-sm ${i < mastery.consecutiveHighScores ? 'bg-teal-500' : 'bg-teal-100'}`} />
+                      ))}
+                    </div>
+                  )}
+                  {nextQuizIds[concept.id] ? (
+                    <button
+                      type="button"
+                      onClick={() => { window.location.hash = `/play/${nextQuizIds[concept.id]}`; }}
+                      className="flex-shrink-0 text-xs font-bold text-teal-700 bg-teal-100 hover:bg-teal-200 px-2.5 py-1 rounded-lg transition"
+                    >
+                      Вежбај →
+                    </button>
+                  ) : (
+                    <span className="flex-shrink-0 text-xs text-teal-400 font-semibold px-2">Побарај квиз</span>
+                  )}
                 </div>
               ))}
             </div>
