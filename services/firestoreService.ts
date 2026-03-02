@@ -743,13 +743,20 @@ export const firestoreService = {
    */
   fetchQuizResultsByConcept: async (conceptId: string, teacherUid?: string, maxCount = 50): Promise<QuizResult[]> => {
     try {
-      const q = teacherUid
-        ? query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), where('teacherUid', '==', teacherUid), orderBy('playedAt', 'desc'), limit(maxCount))
-        : query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), orderBy('playedAt', 'desc'), limit(maxCount));
+      if (teacherUid) {
+        try {
+          const q = query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), where('teacherUid', '==', teacherUid), orderBy('playedAt', 'desc'), limit(maxCount));
+          const snap = await getDocs(q);
+          return snap.docs.map(d => d.data() as QuizResult);
+        } catch {
+          // Composite index not yet built — fall back to conceptId-only query
+        }
+      }
+      const q = query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), orderBy('playedAt', 'desc'), limit(maxCount));
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data() as QuizResult);
     } catch (error) {
-      console.error('Error fetching quiz results by concept:', error);
+      console.warn('fetchQuizResultsByConcept failed (non-critical):', error);
       return [];
     }
   },
