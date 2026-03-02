@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, type DocumentSnapshot } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
@@ -21,8 +21,8 @@ export interface ConceptMastery {
   bestScore: number;
   lastScore: number;
   mastered: boolean;         // true when consecutiveHighScores ≥ 3
-  masteredAt?: any;          // Firestore Timestamp
-  updatedAt?: any;
+  masteredAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 // ── Live Session ──────────────────────────────────────────────────────────────
@@ -37,9 +37,9 @@ export interface LiveSession {
   studentResponses: Record<string, {
     status: 'joined' | 'in_progress' | 'completed';
     percentage?: number;
-    completedAt?: any;
+    completedAt?: Timestamp;
   }>;
-  createdAt?: any;
+  createdAt?: Timestamp;
 }
 
 // ── Student Groups ────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ export interface StudentGroup {
   color: 'green' | 'blue' | 'orange' | 'red' | 'purple';
   studentNames: string[];
   teacherUid?: string;
-  createdAt?: any;
+  createdAt?: Timestamp;
 }
 
 // ── School Classes ────────────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ export interface SchoolClass {
   gradeLevel: number;
   teacherUid: string;
   studentNames: string[];
-  createdAt?: any;
+  createdAt?: Timestamp;
 }
 
 // ── Gamification ─────────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ export interface QuizResult {
   correctCount: number;
   totalQuestions: number;
   percentage: number;
-  playedAt?: any;
+  playedAt?: Timestamp;
   conceptId?: string;
   topicId?: string;
   gradeLevel?: number;
@@ -107,17 +107,17 @@ export interface Announcement {
   teacherUid: string;
   message: string;
   gradeLevel?: number;
-  createdAt?: any;
+  createdAt?: Timestamp;
 }
 
 export interface CachedMaterial {
   id: string;
-  content: any;
+  content: unknown;
   type: 'analogy' | 'outline' | 'quiz' | 'discussion' | 'problems' | 'assessment' | 'rubric' | 'thematicplan' | 'ideas' | 'solver';
   conceptId?: string;
   topicId?: string;
   gradeLevel: number;
-  createdAt: any; // Firestore Timestamp or date string
+  createdAt: Timestamp;
   helpfulCount?: number;
   notHelpfulCount?: number;
 }
