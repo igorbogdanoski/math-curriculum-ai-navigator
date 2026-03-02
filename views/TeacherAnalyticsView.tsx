@@ -472,35 +472,39 @@ export const TeacherAnalyticsView: React.FC = () => {
                         )}
                     </Card>
 
-                    {/* Tab navigation */}
-                    <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
-                        {([
-                            { id: 'overview', label: 'Преглед' },
-                            { id: 'trend', label: 'Тренд' },
-                            { id: 'students', label: 'По ученик' },
-                            { id: 'grades', label: 'По одд.' },
-                            { id: 'standards', label: 'Стандарди' },
-                            { id: 'concepts', label: 'Концепти' },
-                            { id: 'alerts', label: '⚠️ Внимание' },
-                            { id: 'groups', label: '👥 Групи' },
-                            { id: 'live', label: '🔴 Live' },
-                            { id: 'classes', label: '🏫 Класи' },
-                            { id: 'questionBank', label: '📚 Банка' },
-                            { id: 'coverage', label: '📊 Покриеност' },
-                        ] as const).map(tab => (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`px-5 py-2 rounded-lg text-sm font-bold transition ${
-                                    activeTab === tab.id
-                                        ? 'bg-white text-slate-800 shadow'
-                                        : 'text-slate-500 hover:text-slate-700'
-                                }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
+                    {/* Tab navigation — horizontal scroll on mobile */}
+                    <div className="mb-6 -mx-1">
+                        <div className="overflow-x-auto scrollbar-hide pb-1">
+                            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-max min-w-full">
+                                {([
+                                    { id: 'overview', label: 'Преглед' },
+                                    { id: 'trend', label: 'Тренд' },
+                                    { id: 'students', label: 'По ученик' },
+                                    { id: 'grades', label: 'По одд.' },
+                                    { id: 'standards', label: 'Стандарди' },
+                                    { id: 'concepts', label: 'Концепти' },
+                                    { id: 'alerts', label: '⚠️ Внимание' },
+                                    { id: 'groups', label: '👥 Групи' },
+                                    { id: 'live', label: '🔴 Live' },
+                                    { id: 'classes', label: '🏫 Класи' },
+                                    { id: 'questionBank', label: '📚 Банка' },
+                                    { id: 'coverage', label: '📊 Покриеност' },
+                                ] as const).map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition whitespace-nowrap ${
+                                            activeTab === tab.id
+                                                ? 'bg-white text-slate-800 shadow'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Summary stats — always visible */}
