@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery, type Announcement } from '../services/firestoreService';
 import type { DocumentSnapshot } from 'firebase/firestore';
+import { useNotification } from '../contexts/NotificationContext';
 import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
@@ -23,6 +24,7 @@ import { QuizCoverageTab } from './analytics/QuizCoverageTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
     const { firebaseUser } = useAuth();
+    const { addNotification } = useNotification();
     const [results, setResults] = useState<QuizResult[]>([]);
     const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -64,6 +66,7 @@ export const TeacherAnalyticsView: React.FC = () => {
             setAiRecs(recs);
         } catch (err) {
             console.error('Error generating class recommendations:', err);
+            addNotification('Грешка при генерирање препораки. Проверете ја AI квотата.', 'error');
         } finally {
             setIsLoadingRecs(false);
         }
@@ -160,16 +163,28 @@ export const TeacherAnalyticsView: React.FC = () => {
     const handlePostAnnouncement = async () => {
         if (!newMsg.trim() || !firebaseUser?.uid) return;
         setIsPostingAnnouncement(true);
-        await firestoreService.addAnnouncement(firebaseUser.uid, newMsg);
-        setNewMsg('');
-        const updated = await firestoreService.fetchAnnouncements(firebaseUser.uid);
-        setAnnouncements(updated);
-        setIsPostingAnnouncement(false);
+        try {
+            await firestoreService.addAnnouncement(firebaseUser.uid, newMsg);
+            setNewMsg('');
+            const updated = await firestoreService.fetchAnnouncements(firebaseUser.uid);
+            setAnnouncements(updated);
+            addNotification('Огласот е објавен! 📢', 'success');
+        } catch (err) {
+            console.error('Error posting announcement:', err);
+            addNotification('Грешка при објавување на огласот.', 'error');
+        } finally {
+            setIsPostingAnnouncement(false);
+        }
     };
 
     const handleDeleteAnnouncement = async (id: string) => {
-        await firestoreService.deleteAnnouncement(id);
-        setAnnouncements(prev => prev.filter(a => a.id !== id));
+        try {
+            await firestoreService.deleteAnnouncement(id);
+            setAnnouncements(prev => prev.filter(a => a.id !== id));
+        } catch (err) {
+            console.error('Error deleting announcement:', err);
+            addNotification('Грешка при бришење на огласот.', 'error');
+        }
     };
 
     // ── Aggregations ──────────────────────────────────────────────────────────

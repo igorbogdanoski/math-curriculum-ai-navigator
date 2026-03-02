@@ -24,12 +24,12 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const isReadOnly = !!nameProp;
   const { getConceptChain, getConceptDetails, allConcepts } = useCurriculum();
 
-  const [studentName, setStudentName] = useState<string>(
-    () => nameProp || localStorage.getItem('studentName') || ''
-  );
-  const [nameInput, setNameInput] = useState<string>(
-    () => nameProp || localStorage.getItem('studentName') || ''
-  );
+  const [studentName, setStudentName] = useState<string>(() => {
+    try { return nameProp || localStorage.getItem('studentName') || ''; } catch { return nameProp || ''; }
+  });
+  const [nameInput, setNameInput] = useState<string>(() => {
+    try { return nameProp || localStorage.getItem('studentName') || ''; } catch { return nameProp || ''; }
+  });
   const [results, setResults] = useState<QuizResult[]>([]);
   const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
   // conceptId → quizId for "play again" self-navigation
@@ -88,9 +88,12 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         quizLookups.forEach(({ cid, id }) => { if (id) map[cid] = id; });
         setNextQuizIds(map);
       }
-    } catch {
+    } catch (err) {
+      console.error('[StudentProgress] fetchResults failed:', err);
       setResults([]);
       setMasteryRecords([]);
+      // Show inline error — visible without toast since this is a public/student page
+      setSearched(true);
     } finally {
       setLoading(false);
     }
