@@ -8,6 +8,82 @@ import type { CoverageAnalysisReport, GradeCoverageAnalysis, NationalStandard, P
 import { EmptyState } from '../components/common/EmptyState';
 import { useNavigation } from '../contexts/NavigationContext';
 
+const CoverageDashboard: React.FC<{ reports: GradeCoverageAnalysis[] }> = ({ reports }) => {
+    return (
+        <Card className="mb-8">
+            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <ICONS.chart className="w-6 h-6 text-brand-primary" />
+                Визуелен Dashboard: Покриеност на Стандарди
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {reports.map(gradeReport => {
+                    const covered = gradeReport.coveredStandardIds.length;
+                    const partial = gradeReport.partiallyCoveredStandards.length;
+                    const uncovered = gradeReport.uncoveredStandardIds.length;
+                    const total = covered + partial + uncovered;
+                    
+                    const pct = total === 0 ? 0 : Math.round(((covered + partial * 0.5) / total) * 100);
+                    
+                    // Tailwind colors based on percentage
+                    let colorClass = "bg-red-500";
+                    let textClass = "text-red-600";
+                    if (pct >= 80) { colorClass = "bg-green-500"; textClass = "text-green-600"; }
+                    else if (pct >= 50) { colorClass = "bg-yellow-500"; textClass = "text-yellow-600"; }
+                    else if (pct >= 20) { colorClass = "bg-orange-500"; textClass = "text-orange-600"; }
+
+                    return (
+                        <div key={gradeReport.gradeLevel} className="flex flex-col items-center p-4 border rounded-xl bg-gray-50/50">
+                            <div className="text-4xl font-black text-gray-800 mb-1">{gradeReport.gradeLevel}</div>
+                            <div className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-widest">Одделение</div>
+                            
+                            <div className="relative w-24 h-24 mb-4">
+                                {/* Background circle */}
+                                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                    <path
+                                        className="text-gray-200"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="3"
+                                    />
+                                    {/* Foreground circle */}
+                                    <path
+                                        className={`${textClass} transition-all duration-1000 ease-out`}
+                                        strokeDasharray={`${pct}, 100`}
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="3.5"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className={`text-xl font-bold ${textClass}`}>{pct}%</span>
+                                </div>
+                            </div>
+                            
+                            <div className="flex flex-col gap-1 w-full text-xs">
+                                <div className="flex justify-between items-center text-gray-600">
+                                    <span>Покриени:</span>
+                                    <span className="font-bold text-green-600">{covered}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-gray-600">
+                                    <span>Делумни:</span>
+                                    <span className="font-bold text-yellow-600">{partial}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-gray-600">
+                                    <span>Непокриени:</span>
+                                    <span className="font-bold text-red-500">{uncovered}</span>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </Card>
+    );
+};
+
 const StandardItem: React.FC<{ standard: NationalStandard; reason?: string }> = ({ standard, reason }) => (
     <div className="p-2 border-b last:border-b-0">
         <p className="font-semibold text-sm text-gray-800">{standard.code}: {standard.description}</p>
@@ -146,11 +222,15 @@ export const CoverageAnalyzerView: React.FC = () => {
         }
 
         if (report?.analysis && report.analysis.length > 0) {
+            const sortedAnalysis = [...report.analysis].sort((a: GradeCoverageAnalysis, b: GradeCoverageAnalysis) => a.gradeLevel - b.gradeLevel);
             return (
-                <div className="space-y-6">
-                    {report.analysis.sort((a: GradeCoverageAnalysis, b: GradeCoverageAnalysis) => a.gradeLevel - b.gradeLevel).map((gradeAnalysis: GradeCoverageAnalysis) => (
-                        <GradeAnalysisCard key={gradeAnalysis.gradeLevel} analysis={gradeAnalysis} />
-                    ))}
+                <div>
+                    <CoverageDashboard reports={sortedAnalysis} />
+                    <div className="space-y-6">
+                        {sortedAnalysis.map((gradeAnalysis: GradeCoverageAnalysis) => (
+                            <GradeAnalysisCard key={gradeAnalysis.gradeLevel} analysis={gradeAnalysis} />
+                        ))}
+                    </div>
                 </div>
             );
         }

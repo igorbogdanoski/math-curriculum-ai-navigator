@@ -14,6 +14,7 @@ import { TopicCoverageChart } from '../components/dashboard/TopicCoverageChart';
 import { OverallProgress } from '../components/dashboard/OverallProgress';
 import { WeeklySchedule } from '../components/dashboard/WeeklySchedule';
 import { StandardsCoverageCard } from '../components/dashboard/StandardsCoverageCard';
+import { WeakConceptsWidget } from '../components/dashboard/WeakConceptsWidget';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useLastVisited } from '../contexts/LastVisitedContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -199,6 +200,10 @@ export const HomeView: React.FC = () => {
             />
         </div>
       )}
+      
+      <div className="mb-6 animate-fade-in">
+        <WeakConceptsWidget />
+      </div>
 
       {/* ── BENTO GRID ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
