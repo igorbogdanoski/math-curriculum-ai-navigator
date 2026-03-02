@@ -12,6 +12,8 @@ import {
   User, ArrowRight, BarChart2, Sparkles, ExternalLink, Trophy,
 } from 'lucide-react';
 import { QuestionType, type DifferentiationLevel } from '../types';
+import { getAdaptiveLevel } from '../utils/adaptiveDifficulty';
+import { validateStudentName } from '../utils/validation';
 
 type QuizResult = { percentage: number; correctCount: number; totalQuestions: number };
 
@@ -97,19 +99,13 @@ export const StudentPlayView: React.FC = () => {
   }, [id]);
 
   const handleConfirmName = () => {
-    const trimmed = nameInput.trim();
-    if (!trimmed) return;
-    // П39 — Validate: letters (Latin + Cyrillic), spaces, hyphens, apostrophes; max 80 chars
-    // Prevents XSS injection and arbitrary string storage in Firestore
-    if (trimmed.length > 80) {
-      setError('Името е предолго (максимум 80 знаци).');
-      return;
-    }
-    if (!/^[\p{L}\p{M}'\-\s]+$/u.test(trimmed)) {
-      setError('Името смее да содржи само букви, простор и цртичка.');
+    const result = validateStudentName(nameInput);
+    if (!result.valid) {
+      if (result.error) setError(result.error);
       return;
     }
     setError('');
+    const trimmed = nameInput.trim();
     try { localStorage.setItem('studentName', trimmed); } catch { /* incognito */ }
     setStudentName(trimmed);
     setNameConfirmed(true);
@@ -129,8 +125,7 @@ export const StudentPlayView: React.FC = () => {
         concepts: [concept],
       };
 
-      const adaptiveLevel: DifferentiationLevel =
-        percentage < 60 ? 'support' : percentage < 85 ? 'standard' : 'advanced';
+      const adaptiveLevel: DifferentiationLevel = getAdaptiveLevel(percentage);
       const customInstr = adaptiveLevel === 'support'
         ? 'РЕМЕДИЈАЛНА ВЕЖБА: Поедноставени прашања, чекор-по-чекор упатства, помал вокабулар. Ученикот не ги положи стандардните прашања.'
         : adaptiveLevel === 'advanced'

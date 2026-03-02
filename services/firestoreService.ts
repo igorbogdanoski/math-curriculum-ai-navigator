@@ -2,6 +2,7 @@ import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, inc
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
+import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 
 /**
  * Tracks a student's mastery of a specific concept over time.
@@ -576,26 +577,18 @@ export const firestoreService = {
       ? (snap.data() as StudentGamification)
       : { studentName, totalXP: 0, currentStreak: 0, longestStreak: 0, lastActivityDate: '', achievements: [], totalQuizzes: 0 };
 
-    // XP calculation
-    let xpGained = 10;
-    if (percentage >= 70) xpGained += 10;
-    if (percentage >= 90) xpGained += 20;
-    if (justMastered) xpGained += 50;
+    // XP + streak via pure utils (utils/gamification.ts)
+    const xpGained = calcXP(percentage, justMastered);
 
-    // Streak calculation
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString('sv-SE');
-    let newStreak = 1;
-    if (existing.lastActivityDate === today) {
-      newStreak = existing.currentStreak; // same day — no increment
-    } else if (existing.lastActivityDate === yesterdayStr) {
-      newStreak = existing.currentStreak + 1; // consecutive day
-    }
+    const newStreak = calcStreak(existing.currentStreak, existing.lastActivityDate, today, yesterdayStr);
+
     const newLongest = Math.max(existing.longestStreak, newStreak);
     const newTotalQuizzes = existing.totalQuizzes + 1;
 
-    // Achievement detection
+    // Achievement detection via pure util
     const updated: StudentGamification = {
       ...existing,
       totalXP: existing.totalXP + xpGained,
@@ -605,23 +598,11 @@ export const firestoreService = {
       totalQuizzes: newTotalQuizzes,
     };
 
-    const newAchievements: string[] = [];
-    const check = (id: string, cond: boolean) => {
-      if (cond && !updated.achievements.includes(id)) {
-        updated.achievements = [...updated.achievements, id];
-        newAchievements.push(id);
-      }
-    };
-
-    check('first_quiz',  updated.totalQuizzes >= 1);
-    check('quiz_10',     updated.totalQuizzes >= 10);
-    check('quiz_50',     updated.totalQuizzes >= 50);
-    check('streak_3',    updated.longestStreak >= 3);
-    check('streak_7',    updated.longestStreak >= 7);
-    check('score_90',    percentage >= 90);
-    check('mastered_1',  totalMastered >= 1);
-    check('mastered_5',  totalMastered >= 5);
-    check('mastered_10', totalMastered >= 10);
+    const freshAchievements = computeNewAchievements(
+      updated.totalQuizzes, updated.longestStreak, percentage, totalMastered, updated.achievements,
+    );
+    const newAchievements = freshAchievements;
+    updated.achievements = [...updated.achievements, ...freshAchievements];
 
     await setDoc(ref, updated, { merge: false });
     return { xpGained, newAchievements, gamification: updated };

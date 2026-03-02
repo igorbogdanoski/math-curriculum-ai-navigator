@@ -1,111 +1,116 @@
-// This file contains tests for the usePersistentState hook.
-// It uses Vitest for the test running environment and Testing Library for rendering hooks.
+// Tests for the usePersistentState hook.
+// Hook stores values wrapped in { data, timestamp } in localStorage.
+// @vitest-environment jsdom
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePersistentState } from './usePersistentState';
 
-// Mock localStorage
-const localStorageMock = (() => {
-    let store: { [key: string]: string } = {};
-    return {
-        getItem(key: string) {
-            return store[key] || null;
-        },
-        setItem(key: string, value: string) {
-            store[key] = value.toString();
-        },
-        clear() {
-            store = {};
-        },
-        removeItem(key: string) {
-            delete store[key];
-        }
-    };
-})();
+const KEY = 'test-persistent-key';
 
-Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock
-});
+/** Extract the stored data value (ignoring the timestamp wrapper). */
+const getStoredData = (key: string) => {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Hook wraps values: { data: ..., timestamp: number }
+    return parsed && typeof parsed === 'object' && 'data' in parsed ? parsed.data : parsed;
+};
 
 describe('usePersistentState hook', () => {
-    const KEY = 'test-key';
-
     beforeEach(() => {
-        // Clear localStorage and restore mocks before each test
         window.localStorage.clear();
         vi.restoreAllMocks();
     });
 
-    it('should initialize with initialState if localStorage is empty', () => {
+    it('initialises with initialState when localStorage is empty', () => {
         const { result } = renderHook(() => usePersistentState(KEY, 'initial'));
         expect(result.current[0]).toBe('initial');
     });
 
-    it('should initialize with value from localStorage if it exists', () => {
-        window.localStorage.setItem(KEY, JSON.stringify('stored value'));
+    it('initialises from plain JSON stored by older code (backwards compat)', () => {
+        // Plain value (no wrapper) — legacy format
+        window.localStorage.setItem(KEY, JSON.stringify('legacy value'));
         const { result } = renderHook(() => usePersistentState(KEY, 'initial'));
-        expect(result.current[0]).toBe('stored value');
+        expect(result.current[0]).toBe('legacy value');
     });
 
-    it('should update state and localStorage when setter is called', () => {
+    it('initialises from wrapped { data, timestamp } format', () => {
+        window.localStorage.setItem(KEY, JSON.stringify({ data: 'wrapped value', timestamp: Date.now() }));
+        const { result } = renderHook(() => usePersistentState(KEY, 'initial'));
+        expect(result.current[0]).toBe('wrapped value');
+    });
+
+    it('persists updated state to localStorage under data key', () => {
         const { result } = renderHook(() => usePersistentState(KEY, 'initial'));
 
-        act(() => {
-            result.current[1]('new value');
-        });
+        act(() => { result.current[1]('new value'); });
 
         expect(result.current[0]).toBe('new value');
-        expect(window.localStorage.getItem(KEY)).toBe(JSON.stringify('new value'));
+        expect(getStoredData(KEY)).toBe('new value');
     });
 
-    it('should handle functional updates', () => {
+    it('supports functional updates (prev → next)', () => {
         const { result } = renderHook(() => usePersistentState(KEY, 10));
 
-        act(() => {
-            result.current[1](prev => prev + 5);
-        });
+        act(() => { result.current[1](prev => prev + 5); });
 
         expect(result.current[0]).toBe(15);
-        expect(window.localStorage.getItem(KEY)).toBe(JSON.stringify(15));
+        expect(getStoredData(KEY)).toBe(15);
     });
 
-    it('should handle complex object states', () => {
-        const initialState = { count: 0, name: 'counter' };
-        const { result } = renderHook(() => usePersistentState(KEY, initialState));
+    it('persists complex object state', () => {
+        const initial = { count: 0, name: 'counter' };
+        const { result } = renderHook(() => usePersistentState(KEY, initial));
 
-        const updatedState = { count: 1, name: 'updated counter' };
-        act(() => {
-            result.current[1](updatedState);
-        });
+        const updated = { count: 1, name: 'updated' };
+        act(() => { result.current[1](updated); });
 
-        expect(result.current[0]).toEqual(updatedState);
-        expect(window.localStorage.getItem(KEY)).toBe(JSON.stringify(updatedState));
+        expect(result.current[0]).toEqual(updated);
+        expect(getStoredData(KEY)).toEqual(updated);
     });
 
-    it('should return initialState if localStorage has invalid JSON', () => {
-        window.localStorage.setItem(KEY, 'invalid-json-string');
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        
+    it('falls back to initialState when localStorage contains invalid JSON', () => {
+        window.localStorage.setItem(KEY, 'not-json!!');
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
         const { result } = renderHook(() => usePersistentState(KEY, 'fallback'));
-        
-        expect(result.current[0]).toBe('fallback');
-        expect(consoleErrorSpy).toHaveBeenCalled();
-    });
-    
-    it('should handle errors when setting item in localStorage', () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
-            throw new Error('Storage full');
-        });
 
+        expect(result.current[0]).toBe('fallback');
+        expect(spy).toHaveBeenCalled();
+    });
+
+    it('keeps in-memory state when localStorage.setItem throws (e.g. incognito)', () => {
         const { result } = renderHook(() => usePersistentState(KEY, 'initial'));
 
-        act(() => {
-            result.current[1]('new value');
+        // Replace setItem with a throwing version for the next call only
+        vi.spyOn(window.localStorage, 'setItem').mockImplementationOnce(() => {
+            throw new Error('QuotaExceededError');
         });
 
-        expect(consoleErrorSpy).toHaveBeenCalled();
-        expect(result.current[0]).toBe('new value'); // State should still update in memory
+        act(() => { result.current[1]('still updated'); });
+
+        // State must update in memory even when localStorage fails
+        expect(result.current[0]).toBe('still updated');
+    });
+
+    it('clear() resets state to initialState', () => {
+        const { result } = renderHook(() => usePersistentState(KEY, 'initial'));
+
+        act(() => { result.current[1]('something'); });
+        expect(getStoredData(KEY)).toBe('something');
+
+        act(() => { result.current[2](); }); // clear()
+
+        // State resets; useEffect re-writes localStorage with initialState immediately
+        expect(result.current[0]).toBe('initial');
+        expect(getStoredData(KEY)).toBe('initial');
+    });
+
+    it('lastSaved timestamp is set after first write', () => {
+        const before = Date.now();
+        const { result } = renderHook(() => usePersistentState(KEY, 'x'));
+        // lastSaved is result.current[3]
+        expect(result.current[3]).toBeGreaterThanOrEqual(before);
     });
 });

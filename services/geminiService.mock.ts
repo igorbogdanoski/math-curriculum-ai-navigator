@@ -343,7 +343,9 @@ ${titlePrefix}
   },
   // FIX: Added mocks for functions that were missing and causing tests to fail.
   generateAssessment: async function(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean): Promise<AIGeneratedAssessment> {
-    const response = await mockApiCall(`генерирај ${type}`, { ...context, numQuestions, differentiationLevel, studentProfiles, includeSelfAssessment });
+    // Map English type to Macedonian keyword so mockApiCall routes to generateMockAssessment
+    const mkKeyword = type === 'QUIZ' ? 'квиз' : type === 'FLASHCARDS' ? 'флеш-картички' : 'тест';
+    const response = await mockApiCall(`генерирај ${mkKeyword}`, { ...context, numQuestions, differentiationLevel, studentProfiles, includeSelfAssessment });
     try {
         return JSON.parse(response.text) as AIGeneratedAssessment;
     } catch(e) {
