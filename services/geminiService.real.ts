@@ -134,6 +134,12 @@ function getNextPacificMidnightMs(): number {
 }
 
 function checkDailyQuotaGuard(): void {
+  // PAID TIER MODIFICATION:
+  // Со платен клуч, немаме потреба од строг client-side лимит.
+  // Ја прескокнуваме оваа проверка за да не го блокираме корисникот непотребно.
+  return; 
+
+  /* ORIGINAL CODE (Disabled for Paid Tier):
   try {
     const stored = quotaRead();
     if (!stored) return;
@@ -147,6 +153,7 @@ function checkDailyQuotaGuard(): void {
     if (e instanceof RateLimitError) throw e;
     // Ignore storage read/parse errors silently
   }
+  */
 }
 
 function markDailyQuotaExhausted(): void {
@@ -575,6 +582,30 @@ async function generateAndParseJSON<T>(contents: Part[], schema: any, model: str
 }
 
 // --- SERVICE IMPLEMENTATION ---
+// --- HELPER FUNCTIONS FOR CACHING ---
+async function getCached<T>(key: string): Promise<T | null> {
+    try {
+        const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, key));
+        if (cachedDoc.exists()) return cachedDoc.data().content as T;
+    } catch (e) {
+        // console.warn('Cache read error:', e); 
+        // Silent fail on cache read is okay, we just regenerate
+    }
+    return null;
+}
+
+async function setCached(key: string, content: any, metadata: any = {}) {
+    try {
+        await setDoc(doc(db, CACHE_COLLECTION, key), {
+            content,
+            ...metadata,
+            createdAt: serverTimestamp()
+        });
+    } catch (e) {
+        console.error('Cache write error:', e);
+    }
+}
+
 export const realGeminiService = {
   async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: number, profile?: TeachingProfile, options?: { focus: string; tone: string; learningDesign?: string; }, customInstruction?: string): Promise<AIGeneratedIdeas> {
     const conceptId = concepts[0].id;
@@ -769,16 +800,15 @@ ${customInstruction || ''}`;
   async generatePracticeMaterials(concept: Concept, gradeLevel: number, materialType: 'problems' | 'questions'): Promise<AIGeneratedPracticeMaterial> {
     const typeKey = materialType === 'problems' ? 'quiz' : 'discussion';
     const cacheKey = `${typeKey}_${concept.id}_g${gradeLevel}`;
-    try {
-        const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
-        if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedPracticeMaterial;
-    } catch (e) { console.warn(e); }
+    
+    const cached = await getCached<AIGeneratedPracticeMaterial>(cacheKey);
+    if (cached) return cached;
 
     const task = materialType === 'problems' ? 'quiz with 5 multiple-choice problems' : 'discussion guide with 5 questions';
     const prompt = `Create a ${task} for "${concept.title}" (${gradeLevel} od.). Врати JSON: { "title": "...", "items": [{"text": "...", "answer": "...", "solution": "...", "options": ["...", "..."]}] }`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, items: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ["text", "answer"] } } }, required: ["title", "items"] };
     const result = await generateAndParseJSON<AIGeneratedPracticeMaterial>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedPracticeMaterialSchema);
-    await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: typeKey, conceptId: concept.id, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
+    await setCached(cacheKey, result, { type: typeKey, conceptId: concept.id, gradeLevel });
     return result;
   },
 
@@ -797,21 +827,21 @@ ${customInstruction || ''}`;
     const prompt = `Генерирај ${type} со ${numQuestions} прашања на македонски. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (лесно/средно/тешко). ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, alignment_goal: { type: Type.STRING }, selfAssessmentQuestions: { type: Type.ARRAY, items: { type: Type.STRING } }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, cognitiveLevel: { type: Type.STRING }, difficulty_level: { type: Type.STRING }, concept_evaluated: { type: Type.STRING } }, required: ["type", "question", "answer", "cognitiveLevel"] } } }, required: ["title", "questions"] };
 
-    const canCache = !customInstruction && !studentProfiles?.length && differentiationLevel === 'standard';
+    const canCache = !customInstruction && !studentProfiles?.length && differentiationLevel === 'standard' && !image;
     const conceptCacheId = context.concepts?.[0]?.id || 'gen';
     const cacheKey = canCache ? `assessment_${type}_${conceptCacheId}_g${context.grade.level}_${[...questionTypes].sort().join('_')}_n${numQuestions}` : '';
+    
     if (canCache && cacheKey) {
-        try {
-            const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
-            if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedAssessment;
-        } catch (e) { console.warn(e); }
+        const cached = await getCached<AIGeneratedAssessment>(cacheKey);
+        if (cached) return cached;
     }
 
     const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
     const result = await generateAndParseJSON<AIGeneratedAssessment>(contents, schema, DEFAULT_MODEL, AIGeneratedAssessmentSchema);
+    
     if (canCache && cacheKey) {
-        await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'assessment', conceptId: conceptCacheId !== 'gen' ? conceptCacheId : undefined, gradeLevel: context.grade.level, createdAt: serverTimestamp() }).catch(console.error);
+        await setCached(cacheKey, result, { type: 'assessment', conceptId: conceptCacheId !== 'gen' ? conceptCacheId : undefined, gradeLevel: context.grade.level });
     }
     return result;
   },
@@ -826,12 +856,11 @@ ${customInstruction || ''}`;
 
     if (!customInstruction) {
         const cacheKey = `rubric_g${gradeLevel}_${activityTitle.replace(/\W/g, '_').toLowerCase().substring(0, 40)}`;
-        try {
-            const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
-            if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedRubric;
-        } catch (e) { console.warn(e); }
+        const cached = await getCached<AIGeneratedRubric>(cacheKey);
+        if (cached) return cached;
+        
         const result = await generateAndParseJSON<AIGeneratedRubric>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedRubricSchema);
-        await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'rubric', gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
+        await setCached(cacheKey, result, { type: 'rubric', gradeLevel });
         return result;
     }
     return generateAndParseJSON<AIGeneratedRubric>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedRubricSchema);
@@ -839,10 +868,8 @@ ${customInstruction || ''}`;
 
   async generatePresentationOutline(concept: Concept, gradeLevel: number): Promise<string> {
     const cacheKey = `outline_${concept.id}_g${gradeLevel}`;
-    try {
-        const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
-        if (cachedDoc.exists()) return cachedDoc.data().content;
-    } catch (e) { console.warn(e); }
+    const cached = await getCached<string>(cacheKey);
+    if (cached) return cached;
 
     const prompt = `Креирај структура за презентација за "${concept.title}" (${gradeLevel} одд.).`;
     const response = await callGeminiProxy({ 
@@ -852,7 +879,7 @@ ${customInstruction || ''}`;
         safetySettings: SAFETY_SETTINGS 
     });
     const text = response.text || "";
-    await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: text, type: 'outline', conceptId: concept.id, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
+    await setCached(cacheKey, text, { type: 'outline', conceptId: concept.id, gradeLevel });
     return text;
   },
 
@@ -902,15 +929,13 @@ ${customInstruction || ''}`;
       const cacheKey = `thematic_${topic.id}_g${grade.level}`;
       try {
           const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
-          if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedThematicPlan;
-      } catch (e) { console.warn(e); }
+      const cached = await getCached<AIGeneratedThematicPlan>(cacheKey);
+      if (cached) return cached;
 
       const prompt = `Генерирај тематски план за "${topic.title}" (${grade.level} одд.).`;
       const schema = { type: Type.OBJECT, properties: { thematicUnit: { type: Type.STRING }, lessons: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { lessonNumber: { type: Type.INTEGER }, lessonUnit: { type: Type.STRING }, learningOutcomes: { type: Type.STRING }, keyActivities: { type: Type.STRING }, assessment: { type: Type.STRING } }, required: ["lessonNumber", "lessonUnit"] } } }, required: ["thematicUnit", "lessons"] };
       const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema);
-      await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id, createdAt: serverTimestamp() }).catch(console.error);
-      return result;
-  },
+      await setCached(cacheKey, result, { type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id }
 
   async analyzeReflection(wentWell: string, challenges: string, profile?: TeachingProfile): Promise<string> {
       const prompt = `Анализирај рефлексија: "${wentWell}". Предизвици: "${challenges}".`;
@@ -1077,6 +1102,10 @@ ${lessonsText}
    * Враќа plain text (3 реченици) — без JSON parsing overhead.
    */
   async explainConcept(conceptTitle: string, gradeLevel?: number): Promise<string> {
+    const cacheKey = `explanation_${conceptTitle.replace(/\s+/g, '_').toLowerCase()}_${gradeLevel || 'gen'}`;
+    const cached = await getCached<string>(cacheKey);
+    if (cached) return cached;
+
     const prompt = `Објасни го математичкиот концепт „${conceptTitle}"${gradeLevel ? ` за ученик во ${gradeLevel}. одделение` : ''} на едноставен, детски македонски јазик. Максимум 3 кратки реченици. Без математички формули — само со зборови и секојдневни примери.`;
 
     try {
@@ -1085,7 +1114,11 @@ ${lessonsText}
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: 200, temperature: 0.7 },
       });
-      return result.text?.trim() ?? '';
+      const text = result.text?.trim() ?? '';
+      if (text) {
+        await setCached(cacheKey, text, { type: 'explanation', conceptTitle, gradeLevel });
+      }
+      return text;
     } catch {
       return '';
     }

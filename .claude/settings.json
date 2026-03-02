@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -5 {}')",
+      "Bash(ls *.css src/*.css)",
+      "Bash(gh run list --repo igorbogdanoski/math-curriculum-ai-navigator --limit 5)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:vercel.com)",
+      "Read(//c/Users/pc4all/.claude/projects/c--Users-pc4all-Downloads-math-curriculum-ai-navigator/memory/**)",
+      "Read(//c/Users/pc4all/.claude/plans/**)",
+      "Bash(ls -la \"c:\\\\Users\\\\pc4all\\\\Downloads\\\\math-curriculum-ai-navigator\\\\public\"\" 2>/dev/null || echo \"No public directory \")",
+      "Bash(ls -1 \"/c/Users/pc4all/Downloads/math-curriculum-ai-navigator/views/\"*.tsx)",
+      "Bash(xargs grep -l \"parent\\\\|Parent\\\\|QR\\\\|qr\")",
+      "Bash(ls -1 /c/Users/pc4all/Downloads/math-curriculum-ai-navigator/views/*.tsx)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(xargs grep -l \"prerequisite\\\\|gap\\\\|mastery\\\\|remedial\")",
+      "Bash(xargs grep -l \"pdf\\\\|PDF\\\\|print\\\\|Print\")",
+      "Bash(xargs grep -l \"generateReport\\\\|exportPDF\\\\|sendEmail\")",
+      "Bash(sed 's/.*: //')",
+      "Bash(sed 's/ async.*//')",
+      "Read(//c/Users/pc4all/.claude/projects/c--Users-pc4all-Downloads-math-curriculum-ai-navigator/89b25022-f016-41db-ab06-ebfb452d8bd1/tool-results/**)",
+      "Bash(grep -rn \"fetch.*POST\\\\|fetch.*GET\" /c/Users/pc4all/Downloads/math-curriculum-ai-navigator/views/*.tsx)",
+      "Bash(npx firebase deploy --only firestore:rules)",
+      "Bash(firebase deploy --only firestore:rules)",
+      "Bash(node_modules/.bin/firebase deploy --only firestore:rules)",
+      "Bash(npm run deploy:rules)",
+      "Bash(npx vitest run)",
+      "Bash(npx vitest run utils/date.test.ts hooks/usePersistentState.test.ts services/geminiService.mock.test.ts)",
+      "Bash(npx vitest run hooks/useCurriculum.test.ts)",
+      "Bash(npx vitest run utils/grading.test.ts utils/adaptiveDifficulty.test.ts utils/validation.test.ts utils/gamification.test.ts utils/schemas.test.ts utils/date.test.ts)",
+      "Bash(npx vitest run hooks/usePersistentState.test.ts services/geminiService.mock.test.ts)",
+      "Bash(npx vitest run hooks/usePersistentState.test.ts)",
+      "Bash(npx vitest run utils/ hooks/usePersistentState.test.ts services/geminiService.mock.test.ts)",
+      "Bash(npm test)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\pc4all\\.claude\\plans",
+      "c:\\Users\\pc4all\\.claude\\projects\\c--Users-pc4all-Downloads-math-curriculum-ai-navigator\\memory"
+    ]
+  }
+}
