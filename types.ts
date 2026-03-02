@@ -107,6 +107,8 @@ export interface LessonPlan {
   // Community Features
   isPublished?: boolean;
   authorName?: string;
+  schoolName?: string;
+  shareScope?: 'public' | 'school';
   ratings?: number[];
   comments?: { authorName: string; text: string; date: string }[];
   originalId?: string; // To track where it was imported from

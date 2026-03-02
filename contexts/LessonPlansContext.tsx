@@ -26,7 +26,7 @@ interface LessonPlansContextType {
   addLessonPlan: (plan: Omit<LessonPlan, 'id'>) => Promise<string>;
   updateLessonPlan: (plan: LessonPlan) => Promise<void>;
   deleteLessonPlan: (planId: string, confirmed?: boolean) => Promise<void>;
-  publishLessonPlan: (planId: string, authorName: string) => Promise<void>;
+  publishLessonPlan: (planId: string, authorName: string, schoolName?: string, scope?: 'public' | 'school') => Promise<void>;
   importCommunityPlan: (plan: LessonPlan) => Promise<string>;
   addRatingToCommunityPlan: (planId: string, rating: number) => Promise<void>;
   addCommentToCommunityPlan: (planId: string, comment: { authorName: string; text: string; date: string; }) => Promise<void>;
@@ -147,11 +147,11 @@ export const LessonPlansProvider: React.FC<{ children: React.ReactNode }> = ({ c
     await batch.commit();
   }, [firebaseUser]);
 
-  const publishLessonPlan = useCallback(async (planId: string, authorName: string) => {
+  const publishLessonPlan = useCallback(async (planId: string, authorName: string, schoolName?: string, scope: 'public' | 'school' = 'public') => {
     const uid = checkUser();
     const plan = userLessonPlans.find((p: LessonPlan) => p.id === planId);
     if (plan) {
-      const publishedData = { ...plan, isPublished: true, authorName, ratings: plan.ratings || [], comments: plan.comments || [] };
+      const publishedData = { ...plan, isPublished: true, authorName, schoolName, shareScope: scope, ratings: plan.ratings || [], comments: plan.comments || [] };
       const { id, ...data } = publishedData;
       const batch = writeBatch(db);
       batch.set(doc(db, "users", uid, "lessonPlans", id), data, { merge: true });

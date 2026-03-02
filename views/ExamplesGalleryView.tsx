@@ -8,6 +8,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 
 interface ExamplesGalleryViewProps {
@@ -224,6 +225,7 @@ const MaterialCard: React.FC<{ material: CachedMaterial; conceptName: string }> 
 }
 
 export const ExamplesGalleryView: React.FC<ExamplesGalleryViewProps> = () => {
+    const { user } = useAuth();
     const { navigate } = useNavigation();
     const { communityLessonPlans } = usePlanner();
     const { allConcepts } = useCurriculum();
@@ -243,12 +245,14 @@ export const ExamplesGalleryView: React.FC<ExamplesGalleryViewProps> = () => {
     }, [activeTab]);
 
     const filteredPlans = useMemo(() => {
-        return communityLessonPlans.filter((plan: LessonPlan) => {
+        const globalPlans = communityLessonPlans.filter(p => !p.shareScope || p.shareScope === 'public' || (p.shareScope === 'school' && p.schoolName === user?.schoolName));
+
+        return globalPlans.filter((plan: LessonPlan) => {
             const gradeMatch = gradeFilter === 'all' || !plan.grade || plan.grade === parseInt(gradeFilter);
             const queryMatch = searchQuery.trim() === '' || plan.title.toLowerCase().includes(searchQuery.toLowerCase());
             return gradeMatch && queryMatch;
         });
-    }, [communityLessonPlans, searchQuery, gradeFilter]);
+    }, [communityLessonPlans, searchQuery, gradeFilter, user?.schoolName]);
 
     const filteredMaterials = useMemo(() => {
         return cachedMaterials.filter(m => {
