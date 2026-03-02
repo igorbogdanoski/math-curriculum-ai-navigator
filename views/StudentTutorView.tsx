@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
-import { Button } from '../components/common/Button';
+
 import { geminiService } from '../services/geminiService';
-import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
+import { MathRenderer } from '../components/common/MathRenderer';
 
 interface Message {
   id: string;
@@ -94,7 +94,7 @@ export const StudentTutorView: React.FC = () => {
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                 ) : (
                   <div className="prose prose-sm md:prose-base max-w-none">
-                    <MarkdownRenderer content={msg.content} />
+                    <MathRenderer content={msg.content} />
                   </div>
                 )}
               </div>
@@ -122,13 +122,13 @@ export const StudentTutorView: React.FC = () => {
               className="w-full resize-none border-2 border-brand-100 rounded-xl px-4 py-3 pb-3 min-h-[56px] max-h-32 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all pr-12 text-gray-700 bg-gray-50/50"
               rows={1}
             />
-            <Button
+            <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
               className="absolute right-2 bottom-2 rounded-lg p-2 h-10 w-10 flex items-center justify-center bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:bg-gray-300"
             >
               <ICONS.add className="w-5 h-5 text-white" />
-            </Button>
+            </button>
           </div>
           <p className="text-xs text-center text-gray-400 mt-2">
             AI туторот може да греши. Секогаш проверувај ги информациите.
