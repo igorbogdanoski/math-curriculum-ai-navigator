@@ -26,42 +26,56 @@ interface MenuState {
 
 type EnrichedConcept = Concept & { gradeLevel: number; topicId: string };
 
+// П36 — XSS fix: use textContent/createElement instead of innerHTML
+// innerHTML with Firestore data (title, description, items) was an XSS vector
+const el = (tag: string, styles: Partial<CSSStyleDeclaration>, text?: string): HTMLElement => {
+    const e = document.createElement(tag);
+    Object.assign(e.style, styles);
+    if (text !== undefined) e.textContent = text;
+    return e;
+};
+
 const createTooltipElement = (title: string, description: string): HTMLElement => {
     const container = document.createElement('div');
-    container.style.maxWidth = '300px'; // To match CSS
-    container.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 4px; color: #0D47A1;">${title}</div>
-      <div style="font-size: 0.9em; margin-bottom: 8px;">${description}</div>
-      <hr style="border-top: 1px solid #ddd; margin: 4px 0;" />
-      <em style="font-size: 0.8em; color: #777;">Кликни за да отвориш</em>
-    `;
+    container.style.maxWidth = '300px';
+
+    const titleDiv = el('div', { fontWeight: 'bold', marginBottom: '4px', color: '#0D47A1' }, title);
+    const descDiv  = el('div', { fontSize: '0.9em', marginBottom: '8px' }, description);
+    const hr = document.createElement('hr');
+    hr.style.cssText = 'border-top: 1px solid #ddd; margin: 4px 0;';
+    const hint = el('em', { fontSize: '0.8em', color: '#777' }, 'Кликни за да отвориш');
+
+    container.appendChild(titleDiv);
+    container.appendChild(descDiv);
+    container.appendChild(hr);
+    container.appendChild(hint);
     return container;
 };
 
-// New helper for cluster tooltips (list based)
+// П36 — XSS fix: cluster tooltip also uses DOM API, not innerHTML
 const createClusterTooltip = (title: string, items: string[], total: number, color: string): HTMLElement => {
     const container = document.createElement('div');
     container.style.minWidth = '200px';
     container.style.maxWidth = '320px';
-    
-    const listHtml = items.map(item => 
-        `<div style="padding: 2px 0; border-bottom: 1px solid #f0f0f0;">• ${item}</div>`
-    ).join('');
-    
+
+    const titleDiv = el('div', {
+        fontWeight: 'bold', marginBottom: '8px', color,
+        fontSize: '1.1em', borderBottom: `2px solid ${color}`, paddingBottom: '4px',
+    }, title);
+
+    const listDiv = el('div', { fontSize: '0.85em', color: '#333', maxHeight: '200px', overflowY: 'auto' });
+    items.forEach(item => {
+        listDiv.appendChild(el('div', { padding: '2px 0', borderBottom: '1px solid #f0f0f0' }, '• ' + item));
+    });
+
+    container.appendChild(titleDiv);
+    container.appendChild(listDiv);
+
     const remaining = total - items.length;
-    
-    container.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 8px; color: ${color}; font-size: 1.1em; border-bottom: 2px solid ${color}; padding-bottom: 4px;">
-        ${title}
-      </div>
-      <div style="font-size: 0.85em; color: #333; max-height: 200px; overflow-y: auto;">
-        ${listHtml}
-      </div>
-      ${remaining > 0 ? `<div style="font-style: italic; color: #666; font-size: 0.8em; margin-top: 6px;">...и уште ${remaining} поими</div>` : ''}
-      <div style="margin-top: 8px; text-align: right; font-size: 0.75em; color: #999;">
-        (Двоен клик за отворање)
-      </div>
-    `;
+    if (remaining > 0) {
+        container.appendChild(el('div', { fontStyle: 'italic', color: '#666', fontSize: '0.8em', marginTop: '6px' }, `...и уште ${remaining} поими`));
+    }
+    container.appendChild(el('div', { marginTop: '8px', textAlign: 'right', fontSize: '0.75em', color: '#999' }, '(Двоен клик за отворање)'));
     return container;
 };
 

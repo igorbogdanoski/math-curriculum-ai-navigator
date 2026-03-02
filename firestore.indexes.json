@@ -72,6 +72,14 @@
         { "fieldPath": "teacherUid", "order": "ASCENDING" },
         { "fieldPath": "playedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "concept_mastery",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "teacherUid", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

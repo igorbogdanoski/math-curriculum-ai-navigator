@@ -180,14 +180,15 @@ export async function authenticateAndValidate(
       (i) => `${i.path.join('.')}: ${i.message}`
     ).join('; ');
     
-    // Log the failing body for debugging (only in development or for specific errors)
-    console.error('[validation] Invalid Gemini request body:', JSON.stringify(req.body, null, 2));
-    console.error('[validation] Issues:', issues);
-    
-    res.status(400).json({ 
+    // П37 — Never log full request body or return it in response (may contain tokens/content)
+    // Only log the field-level issues, not the actual values
+    console.error('[validation] Request validation failed. Issues:', issues);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[validation] Body (dev only):', JSON.stringify(req.body, null, 2));
+    }
+
+    res.status(400).json({
       error: `Invalid request: ${issues}`,
-      received: req.body, // Include for debugging
-      expectedSchema: "GeminiRequest"
     });
     return null;
   }

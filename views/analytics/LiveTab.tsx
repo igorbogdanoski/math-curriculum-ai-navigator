@@ -42,13 +42,18 @@ export const LiveTab: React.FC = () => {
     }, []);
 
     // Subscribe / unsubscribe when sessionId changes
+    // П38: isMounted guard prevents setSession on unmounted component
     useEffect(() => {
         if (unsubRef.current) { unsubRef.current(); unsubRef.current = null; }
         if (!sessionId) return;
+        let isMounted = true;
         unsubRef.current = firestoreService.subscribeLiveSession(sessionId, data => {
-            setSession(data);
+            if (isMounted) setSession(data);
         });
-        return () => { if (unsubRef.current) unsubRef.current(); };
+        return () => {
+            isMounted = false;
+            if (unsubRef.current) { unsubRef.current(); unsubRef.current = null; }
+        };
     }, [sessionId]);
 
     const handleCreate = async () => {

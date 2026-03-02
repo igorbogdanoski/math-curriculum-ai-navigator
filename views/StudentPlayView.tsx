@@ -99,7 +99,18 @@ export const StudentPlayView: React.FC = () => {
   const handleConfirmName = () => {
     const trimmed = nameInput.trim();
     if (!trimmed) return;
-    localStorage.setItem('studentName', trimmed);
+    // П39 — Validate: letters (Latin + Cyrillic), spaces, hyphens, apostrophes; max 80 chars
+    // Prevents XSS injection and arbitrary string storage in Firestore
+    if (trimmed.length > 80) {
+      setError('Името е предолго (максимум 80 знаци).');
+      return;
+    }
+    if (!/^[\p{L}\p{M}'\-\s]+$/u.test(trimmed)) {
+      setError('Името смее да содржи само букви, простор и цртичка.');
+      return;
+    }
+    setError('');
+    try { localStorage.setItem('studentName', trimmed); } catch { /* incognito */ }
     setStudentName(trimmed);
     setNameConfirmed(true);
   };
