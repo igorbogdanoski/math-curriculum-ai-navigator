@@ -584,6 +584,7 @@ export const realGeminiService = {
   },
 
   async *getChatResponseStream(history: ChatMessage[], profile?: TeachingProfile, attachment?: { base64: string, mimeType: string }): AsyncGenerator<string, void, unknown> {
+    checkDailyQuotaGuard(); // П30: block streaming if daily quota is exhausted
     const systemInstruction = `${TEXT_SYSTEM_INSTRUCTION}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
     const contents: Content[] = history.map(msg => ({ role: msg.role, parts: [{ text: msg.text }] }));
     if (attachment && contents.length > 0) {
