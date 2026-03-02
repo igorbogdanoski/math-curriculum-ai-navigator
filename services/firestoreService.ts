@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, type DocumentSnapshot } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
@@ -294,6 +294,33 @@ export const firestoreService = {
     } catch (error) {
       console.error("Error fetching quiz results:", error);
       return [];
+    }
+  },
+
+  /**
+   * Fetches a single page of quiz results with cursor-based pagination.
+   * Returns the results and the last document snapshot (cursor for next page).
+   * lastDoc === null means there are no more pages.
+   */
+  fetchQuizResultsPage: async (
+    teacherUid: string | undefined,
+    pageSize: number = 200,
+    startAfterDoc?: DocumentSnapshot
+  ): Promise<{ results: QuizResult[]; lastDoc: DocumentSnapshot | null }> => {
+    try {
+      const baseConstraints = teacherUid
+        ? [where("teacherUid", "==", teacherUid), orderBy("playedAt", "desc")]
+        : [orderBy("playedAt", "desc")];
+      const q = startAfterDoc
+        ? query(collection(db, "quiz_results"), ...baseConstraints, startAfter(startAfterDoc), limit(pageSize))
+        : query(collection(db, "quiz_results"), ...baseConstraints, limit(pageSize));
+      const snap = await getDocs(q);
+      const results = snap.docs.map(d => d.data() as QuizResult);
+      const lastDoc = snap.docs.length === pageSize ? snap.docs[snap.docs.length - 1] : null;
+      return { results, lastDoc };
+    } catch (error) {
+      console.error("Error fetching quiz results page:", error);
+      return { results: [], lastDoc: null };
     }
   },
 

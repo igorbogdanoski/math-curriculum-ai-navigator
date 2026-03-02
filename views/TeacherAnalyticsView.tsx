@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery, type Announcement } from '../services/firestoreService';
+import type { DocumentSnapshot } from 'firebase/firestore';
 import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
@@ -32,6 +33,10 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
+    // П32 — Pagination
+    const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     // П27 — Announcements
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [newMsg, setNewMsg] = useState('');
@@ -77,22 +82,42 @@ export const TeacherAnalyticsView: React.FC = () => {
         });
     };
 
-    const loadResults = async () => {
+    const loadResults = useCallback(async () => {
         setIsLoading(true);
         setError(null);
+        setLastDoc(null);
+        setHasMore(false);
         try {
             const uid = firebaseUser?.uid;
-            const [data, mastery] = await Promise.all([
-                firestoreService.fetchQuizResults(200, uid),
+            const [page, mastery] = await Promise.all([
+                firestoreService.fetchQuizResultsPage(uid, 200),
                 firestoreService.fetchAllMastery(uid),
             ]);
-            setResults(data);
+            setResults(page.results);
+            setLastDoc(page.lastDoc);
+            setHasMore(page.lastDoc !== null);
             setMasteryRecords(mastery);
             setLastRefresh(new Date());
         } catch (err) {
             setError('Не можеше да се вчитаат резултатите. Проверете ја врската.');
         } finally {
             setIsLoading(false);
+        }
+    }, [firebaseUser?.uid]);
+
+    const loadMore = async () => {
+        if (!lastDoc || isLoadingMore) return;
+        setIsLoadingMore(true);
+        try {
+            const uid = firebaseUser?.uid;
+            const page = await firestoreService.fetchQuizResultsPage(uid, 200, lastDoc);
+            setResults(prev => [...prev, ...page.results]);
+            setLastDoc(page.lastDoc);
+            setHasMore(page.lastDoc !== null);
+        } catch (err) {
+            console.error('Error loading more results:', err);
+        } finally {
+            setIsLoadingMore(false);
         }
     };
 
@@ -543,6 +568,24 @@ export const TeacherAnalyticsView: React.FC = () => {
                             allConcepts={allConcepts ?? []}
                             onGenerateRemedial={handleGenerateRemedial}
                         />
+                    )}
+
+                    {/* П32 — Pagination: Load More */}
+                    {hasMore && !['questionBank', 'live', 'classes', 'coverage'].includes(activeTab) && (
+                        <div className="mt-6 flex flex-col items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={loadMore}
+                                disabled={isLoadingMore}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl text-sm font-semibold hover:bg-indigo-100 disabled:opacity-50 transition"
+                            >
+                                {isLoadingMore
+                                    ? <><RefreshCw className="w-4 h-4 animate-spin" /> Вчитувам...</>
+                                    : <>↓ Вчитај уште резултати ({results.length} вчитани)</>
+                                }
+                            </button>
+                            <p className="text-xs text-gray-400">Прикажани се последните {results.length} резултати</p>
+                        </div>
                     )}
                 </>
             )}
