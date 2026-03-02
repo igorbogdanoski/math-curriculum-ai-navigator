@@ -1239,4 +1239,34 @@ ${lessonsText}
     await setCached(cacheKey, enrichedResult, { type: 'test_parallel', gradeLevel, topic });
     return enrichedResult;
   },
+
+  async askTutor(message: string, history: Array<{role: string, content: string}>): Promise<string> {
+    const systemPrompt = `Ти си безбеден AI тутор по математика за ученици во основно образование. Твојата главна цел е да им помогнеш да ги разберат концептите, НЕ да им ги решаваш задачите.
+    
+ПРАВИЛА КОИ МОРА ДА ГИ СЛЕДИШ:
+1. НИКОГАШ не го давај конечниот одговор на задача пред ученикот да се обиде сам.
+2. Постави му прашање на ученикот за да го насочиш да размислува.
+3. Доколку ученикот згреши, немој да го критикуваш - објасни му каде згрешил и обиди се повторно.
+4. Користи јасен, едноставен јазик прилагоден за основци (на македонски јазик).
+5. Разложувај ги проблемите на помали, полесни чекори.
+6. Ако изгледа дека ученикот сака само да препише решение, потсети го дека твојата улога е да објаснуваш, а не да решаваш.`;
+
+    const contents = history.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
+    try {
+      const response = await callGeminiProxy({
+          model: DEFAULT_MODEL,
+          contents: contents,
+          systemInstruction: systemPrompt,
+          safetySettings: SAFETY_SETTINGS
+      });
+      return response.text || "Извини, се појави проблем при генерирањето на одговорот.";
+    } catch (e) {
+      console.error("Tutor API error:", e);
+      return "Настана грешка при комуникацијата со туторот. Обиди се повторно.";
+    }
+  },
 };

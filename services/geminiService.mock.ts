@@ -470,4 +470,8 @@ ${titlePrefix}
         description: `Transcribed text: ${input}`
     };
   }
+  },
+  askTutor: async function(message: string, history: Array<{role: string, content: string}>): Promise<string> {
+    return 'This is a mock tutor response.';
+  }
 };

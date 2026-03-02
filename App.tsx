@@ -34,6 +34,7 @@ import { AIChatPanel } from './components/ai/AIChatPanel';
 import { StudentPlayView } from './views/StudentPlayView';
 import { StudentProgressView } from './views/StudentProgressView';
 import { StudentLiveView } from './views/StudentLiveView';
+import { StudentTutorView } from './views/StudentTutorView';
 import { ParentPortalView } from './views/ParentPortalView';
 
 // --- LOADING SKELETON ---
@@ -115,6 +116,7 @@ const routes = [
     { path: '/play/:id', component: StudentPlayView }, // Student Mode route
     { path: '/my-progress', component: StudentProgressView }, // Student Progress route
     { path: '/live', component: StudentLiveView }, // Live session join route
+    { path: '/tutor', component: StudentTutorView }, // AI Tutor for Students
     { path: '/parent', component: ParentPortalView }, // Parent Portal — public
     { path: '/', component: HomeView },
     { path: '/explore', component: ExploreView },
@@ -233,7 +235,8 @@ const AppCore: React.FC = () => {
     const isPublicRoute =
       window.location.hash.startsWith('#/play/') ||
       window.location.hash.startsWith('#/my-progress') ||
-      window.location.hash.startsWith('#/live');
+      window.location.hash.startsWith('#/live') ||
+      window.location.hash.startsWith('#/tutor');
 
     if (!isAuthenticated && !isPublicRoute) {
         return (
