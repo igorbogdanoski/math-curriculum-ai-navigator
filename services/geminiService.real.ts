@@ -190,6 +190,42 @@ export function clearDailyQuotaFlag(): void {
   quotaClear();
 }
 
+/** Returns diagnostic info about the current quota flag (reads cookie first, then localStorage). */
+export function getQuotaDiagnostics(): {
+  source: 'cookie' | 'localStorage' | 'none';
+  exhaustedAt?: string;
+  nextResetMs?: number;
+  nextResetISO?: string;
+  isCurrentlyExhausted: boolean;
+} {
+  let raw: string | null = null;
+  let source: 'cookie' | 'localStorage' | 'none' = 'none';
+  try {
+    const match = document.cookie.split('; ').find(r => r.startsWith('ai_quota='));
+    if (match) { raw = decodeURIComponent(match.slice('ai_quota='.length)); source = 'cookie'; }
+  } catch { /* ignore */ }
+  if (!raw) {
+    try {
+      const ls = localStorage.getItem(DAILY_QUOTA_KEY);
+      if (ls) { raw = ls; source = 'localStorage'; }
+    } catch { /* ignore */ }
+  }
+  if (!raw) return { source: 'none', isCurrentlyExhausted: false };
+  try {
+    const parsed = JSON.parse(raw);
+    const nextResetMs: number = parsed.nextResetMs ?? 0;
+    return {
+      source,
+      exhaustedAt: parsed.exhaustedAt,
+      nextResetMs,
+      nextResetISO: nextResetMs ? new Date(nextResetMs).toISOString() : undefined,
+      isCurrentlyExhausted: Date.now() < nextResetMs,
+    };
+  } catch {
+    return { source, isCurrentlyExhausted: false };
+  }
+}
+
 // --- QUEUE SYSTEM ---
 let lastRequest: Promise<any> = Promise.resolve();
 async function queueRequest<T>(fn: () => Promise<T>): Promise<T> {

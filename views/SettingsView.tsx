@@ -8,7 +8,7 @@ import { ICONS } from '../constants';
 import { InstallApp } from '../components/common/InstallApp';
 import { firestoreService } from '../services/firestoreService';
 import { fullCurriculumData } from '../data/curriculum';
-import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification } from '../services/geminiService';
+import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics } from '../services/geminiService';
 
 const initialProfile: TeachingProfile = {
     name: '',
@@ -18,14 +18,16 @@ const initialProfile: TeachingProfile = {
 };
 
 export const SettingsView: React.FC = () => {
-    const { user, updateProfile } = useAuth();
+    const { user, updateProfile, firebaseUser } = useAuth();
     const [profile, setProfile] = useState<TeachingProfile>(user || initialProfile);
     const [studentProfiles, setStudentProfiles] = useState<StudentProfile[]>(user?.studentProfiles || []);
     const [newProfileName, setNewProfileName] = useState('');
     const [newProfileDesc, setNewProfileDesc] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isMigrating, setIsMigrating] = useState(false);
-    const [quotaStatus, setQuotaStatus] = useState<{ exhausted: boolean; resetTime: string }>({ exhausted: false, resetTime: '' });
+    const [quotaStatus, setQuotaStatus] = useState<{ exhausted: boolean; resetTime: string; resetDate: string; source: string }>({ exhausted: false, resetTime: '', resetDate: '', source: '' });
+    const [isTesting, setIsTesting] = useState(false);
+    const [apiTestResult, setApiTestResult] = useState<string | null>(null);
     const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
         typeof Notification !== 'undefined' ? Notification.permission : 'default'
     );
@@ -49,18 +51,18 @@ export const SettingsView: React.FC = () => {
 
     useEffect(() => {
         const update = () => {
-            const exhausted = isDailyQuotaKnownExhausted();
-            if (!exhausted) { setQuotaStatus({ exhausted: false, resetTime: '' }); return; }
-            try {
-                const stored = localStorage.getItem('ai_daily_quota_exhausted');
-                const { nextResetMs } = stored ? JSON.parse(stored) : {};
-                const resetTime = nextResetMs
-                    ? new Date(nextResetMs).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })
-                    : '09:00';
-                setQuotaStatus({ exhausted: true, resetTime });
-            } catch {
-                setQuotaStatus({ exhausted: true, resetTime: '09:00' });
+            const diag = getQuotaDiagnostics();
+            if (!diag.isCurrentlyExhausted) {
+                setQuotaStatus({ exhausted: false, resetTime: '', resetDate: '', source: diag.source });
+                return;
             }
+            const resetDate = diag.nextResetMs
+                ? new Date(diag.nextResetMs).toLocaleDateString('mk-MK', { weekday: 'short', day: 'numeric', month: 'short' })
+                : '';
+            const resetTime = diag.nextResetMs
+                ? new Date(diag.nextResetMs).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })
+                : '09:00';
+            setQuotaStatus({ exhausted: true, resetTime, resetDate, source: diag.source });
         };
         update();
         const id = setInterval(update, 60_000);
@@ -69,8 +71,42 @@ export const SettingsView: React.FC = () => {
 
     const handleClearQuotaFlag = () => {
         clearDailyQuotaFlag();
-        setQuotaStatus({ exhausted: false, resetTime: '' });
+        setQuotaStatus({ exhausted: false, resetTime: '', resetDate: '', source: '' });
+        setApiTestResult(null);
         addNotification('AI квота флагот е очистен. Следниот повик ќе го провери статусот.', 'success');
+    };
+
+    const handleTestApi = async () => {
+        setIsTesting(true);
+        setApiTestResult(null);
+        try {
+            if (!firebaseUser) {
+                setApiTestResult('❌ Не сте логирани. Најавете се прво.');
+                return;
+            }
+            const token = await firebaseUser.getIdToken();
+            const resp = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    model: 'gemini-2.0-flash',
+                    contents: [{ role: 'user', parts: [{ text: 'Кажи „тест".' }] }],
+                    config: { maxOutputTokens: 10 },
+                }),
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+                setApiTestResult(`✅ API работи! Одговор: "${(data.text || '').slice(0, 60)}"`);
+            } else {
+                const qType = data.quotaType ? ` [quotaType: ${data.quotaType}]` : '';
+                const errMsg = (data.error || JSON.stringify(data)).slice(0, 200);
+                setApiTestResult(`❌ HTTP ${resp.status}${qType}: ${errMsg}`);
+            }
+        } catch (e) {
+            setApiTestResult(`❌ Мрежна грешка: ${e instanceof Error ? e.message : String(e)}`);
+        } finally {
+            setIsTesting(false);
+        }
     };
 
     const handleEnableNotifications = async () => {
@@ -378,23 +414,44 @@ export const SettingsView: React.FC = () => {
                     {quotaStatus.exhausted && (
                         <>
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-500">Следно обновување</span>
-                                <span className="font-bold text-red-600">{quotaStatus.resetTime} МК</span>
+                                <span className="text-gray-500">Обновување на</span>
+                                <span className="font-bold text-red-600">{quotaStatus.resetDate} во {quotaStatus.resetTime} МК</span>
                             </div>
-                            <div className="pt-2 border-t border-gray-100">
-                                <p className="text-xs text-gray-400 mb-2">
-                                    Рачно очистување на флагот ќе дозволи нов обид. Употреби го само ако сметаш дека квотата е обновена.
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={handleClearQuotaFlag}
-                                    className="text-xs font-bold px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
-                                >
-                                    Рачно очисти флаг
-                                </button>
-                            </div>
+                            {quotaStatus.source && (
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-400">Флагот зачуван во</span>
+                                    <span className="font-mono text-gray-500">{quotaStatus.source}</span>
+                                </div>
+                            )}
                         </>
                     )}
+                    <div className="pt-2 border-t border-gray-100 space-y-2">
+                        <p className="text-xs text-gray-400">
+                            „Очисти флаг" го брише записот за исцрпена квота. „Тестирај API" го проверува статусот директно.
+                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={handleClearQuotaFlag}
+                                className="text-xs font-bold px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition"
+                            >
+                                🔄 Очисти флаг
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleTestApi}
+                                disabled={isTesting}
+                                className="text-xs font-bold px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition disabled:opacity-50"
+                            >
+                                {isTesting ? '⏳ Тестирам...' : '🔌 Тестирај API конекција'}
+                            </button>
+                        </div>
+                        {apiTestResult && (
+                            <div className={`text-xs font-mono p-2 rounded-lg break-all ${apiTestResult.startsWith('✅') ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                                {apiTestResult}
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <p className="text-xs text-gray-400 mt-3">
                     Gemini free tier: ~50 барања/ден. При исцрпување, AI функциите се блокирани до 09:00 МК.
