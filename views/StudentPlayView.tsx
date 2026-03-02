@@ -50,15 +50,16 @@ export const StudentPlayView: React.FC = () => {
   const [confidence, setConfidence] = useState<number | null>(null);
 
   // Student name — persisted in localStorage so they don't re-enter every time
-  const [studentName, setStudentName] = useState<string>(
-    () => localStorage.getItem('studentName') || ''
-  );
-  const [nameConfirmed, setNameConfirmed] = useState<boolean>(
-    () => !!localStorage.getItem('studentName')
-  );
-  const [nameInput, setNameInput] = useState<string>(
-    () => localStorage.getItem('studentName') || ''
-  );
+  // Wrapped in try-catch for private/incognito browser windows where localStorage throws
+  const [studentName, setStudentName] = useState<string>(() => {
+    try { return localStorage.getItem('studentName') || ''; } catch { return ''; }
+  });
+  const [nameConfirmed, setNameConfirmed] = useState<boolean>(() => {
+    try { return !!localStorage.getItem('studentName'); } catch { return false; }
+  });
+  const [nameInput, setNameInput] = useState<string>(() => {
+    try { return localStorage.getItem('studentName') || ''; } catch { return ''; }
+  });
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -156,45 +157,55 @@ export const StudentPlayView: React.FC = () => {
     const meta = quizData._meta || {};
 
     // 1. Save quiz result
-    const savedDocId = await firestoreService.saveQuizResult({
-      quizId: id || 'unknown',
-      quizTitle: quizData.title || 'Квиз',
-      score,
-      correctCount,
-      totalQuestions,
-      percentage,
-      conceptId: meta.conceptId,
-      topicId: meta.topicId,
-      gradeLevel: meta.gradeLevel,
-      studentName: studentName || undefined,
-      teacherUid: meta.teacherUid,
-      differentiationLevel: meta.differentiationLevel,
-    });
-    setQuizResultDocId(savedDocId);
-
-    // 2. Update concept mastery (only if we have student name + concept)
-    if (studentName && meta.conceptId) {
-      const { concept } = getConceptDetails(meta.conceptId);
-      const mastery = await firestoreService.updateConceptMastery(
-        studentName,
-        meta.conceptId,
+    let savedDocId = '';
+    try {
+      savedDocId = await firestoreService.saveQuizResult({
+        quizId: id || 'unknown',
+        quizTitle: quizData.title || 'Квиз',
+        score,
+        correctCount,
+        totalQuestions,
         percentage,
-        {
-          conceptTitle: concept?.title ?? quizData.title,
-          topicId: meta.topicId,
-          gradeLevel: meta.gradeLevel,
-        },
-        meta.teacherUid
-      );
-      setMasteryUpdate(mastery);
+        conceptId: meta.conceptId,
+        topicId: meta.topicId,
+        gradeLevel: meta.gradeLevel,
+        studentName: studentName || undefined,
+        teacherUid: meta.teacherUid,
+        differentiationLevel: meta.differentiationLevel,
+      });
+      setQuizResultDocId(savedDocId);
+    } catch (err) {
+      console.error('[Quiz] saveQuizResult failed:', err);
+    }
+
+    // 2. Update concept mastery — use returned value directly (not state snapshot)
+    let freshMastery: ConceptMastery | null = null;
+    if (studentName && meta.conceptId) {
+      try {
+        const { concept } = getConceptDetails(meta.conceptId);
+        freshMastery = await firestoreService.updateConceptMastery(
+          studentName,
+          meta.conceptId,
+          percentage,
+          {
+            conceptTitle: concept?.title ?? quizData.title,
+            topicId: meta.topicId,
+            gradeLevel: meta.gradeLevel,
+          },
+          meta.teacherUid
+        );
+        setMasteryUpdate(freshMastery);
+      } catch (err) {
+        console.error('[Quiz] updateConceptMastery failed:', err);
+      }
     }
 
     setQuizResult({ percentage, correctCount, totalQuestions });
 
-    // 3. Gamification update (fire-and-forget — don't block UX)
+    // 3. Gamification — use freshMastery (not masteryUpdate state — old snapshot!)
     if (studentName) {
-      const justMastered = !!(masteryUpdate?.mastered && masteryUpdate.consecutiveHighScores === 3);
-      const totalMastered = masteryUpdate ? (masteryUpdate.mastered ? 1 : 0) : 0;
+      const justMastered = !!(freshMastery?.mastered && freshMastery.consecutiveHighScores === 3);
+      const totalMastered = freshMastery?.mastered ? 1 : 0;
       firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered)
         .then(({ xpGained, newAchievements, gamification }) => {
           setGamificationUpdate({ xpGained, newAchievements, gamification });
@@ -204,7 +215,8 @@ export const StudentPlayView: React.FC = () => {
 
     // 4. Submit live response if this quiz is part of a live session
     if (sessionId && studentName) {
-      firestoreService.submitLiveResponse(sessionId, studentName, percentage);
+      firestoreService.submitLiveResponse(sessionId, studentName, percentage)
+        .catch(err => console.warn('[Live] submitLiveResponse failed:', err));
     }
 
     // 5. Adaptive next quiz (all scores — level depends on percentage)
