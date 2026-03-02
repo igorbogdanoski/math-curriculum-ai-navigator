@@ -1034,4 +1034,23 @@ ${lessonsText}
       return [];
     }
   },
+
+  /**
+   * П28 — Објасни го концептот на едноставен МК јазик за ученик.
+   * Враќа plain text (3 реченици) — без JSON parsing overhead.
+   */
+  async explainConcept(conceptTitle: string, gradeLevel?: number): Promise<string> {
+    const prompt = `Објасни го математичкиот концепт „${conceptTitle}"${gradeLevel ? ` за ученик во ${gradeLevel}. одделение` : ''} на едноставен, детски македонски јазик. Максимум 3 кратки реченици. Без математички формули — само со зборови и секојдневни примери.`;
+
+    try {
+      const result = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 200, temperature: 0.7 },
+      });
+      return result.text?.trim() ?? '';
+    } catch {
+      return '';
+    }
+  },
 };

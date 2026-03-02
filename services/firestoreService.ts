@@ -99,6 +99,15 @@ export interface QuizResult {
   studentName?: string;
   teacherUid?: string;       // set when student arrives via teacher-tagged link
   differentiationLevel?: DifferentiationLevel; // level of the quiz that was played
+  confidence?: number;       // 1-5 self-assessment rating (П26)
+}
+
+export interface Announcement {
+  id: string;
+  teacherUid: string;
+  message: string;
+  gradeLevel?: number;
+  createdAt?: any;
 }
 
 export interface CachedMaterial {
@@ -221,14 +230,25 @@ export const firestoreService = {
    * Saves a quiz result to the quiz_results collection.
    * Works for anonymous students (no auth required).
    */
-  saveQuizResult: async (result: QuizResult): Promise<void> => {
+  saveQuizResult: async (result: QuizResult): Promise<string> => {
     try {
-      await addDoc(collection(db, "quiz_results"), {
+      const ref = await addDoc(collection(db, "quiz_results"), {
         ...result,
         playedAt: serverTimestamp(),
       });
+      return ref.id;
     } catch (error) {
       console.error("Error saving quiz result:", error);
+      return '';
+    }
+  },
+
+  updateQuizConfidence: async (docId: string, confidence: number): Promise<void> => {
+    if (!docId) return;
+    try {
+      await updateDoc(doc(db, 'quiz_results', docId), { confidence });
+    } catch (error) {
+      console.error('Error updating quiz confidence:', error);
     }
   },
 
@@ -753,5 +773,34 @@ export const firestoreService = {
 
   deleteQuestion: async (questionId: string): Promise<void> => {
     await deleteDoc(doc(db, 'saved_questions', questionId));
+  },
+
+  // ── Announcements (П27) ───────────────────────────────────────────────────
+  addAnnouncement: async (teacherUid: string, message: string, gradeLevel?: number): Promise<void> => {
+    await addDoc(collection(db, 'announcements'), {
+      teacherUid,
+      message: message.trim(),
+      gradeLevel: gradeLevel ?? null,
+      createdAt: serverTimestamp(),
+    });
+  },
+
+  fetchAnnouncements: async (teacherUid: string, maxCount = 5): Promise<Announcement[]> => {
+    try {
+      const q = query(
+        collection(db, 'announcements'),
+        where('teacherUid', '==', teacherUid),
+        orderBy('createdAt', 'desc'),
+        limit(maxCount)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Announcement));
+    } catch {
+      return [];
+    }
+  },
+
+  deleteAnnouncement: async (id: string): Promise<void> => {
+    await deleteDoc(doc(db, 'announcements', id));
   },
 };

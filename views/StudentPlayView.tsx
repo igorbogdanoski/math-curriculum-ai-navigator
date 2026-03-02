@@ -45,6 +45,10 @@ export const StudentPlayView: React.FC = () => {
   const [remediaQuizId, setRemediaQuizId] = useState<string | null>(null);
   const [isGeneratingRemedia, setIsGeneratingRemedia] = useState(false);
 
+  // П26 — Self-assessment confidence rating
+  const [quizResultDocId, setQuizResultDocId] = useState<string | null>(null);
+  const [confidence, setConfidence] = useState<number | null>(null);
+
   // Student name — persisted in localStorage so they don't re-enter every time
   const [studentName, setStudentName] = useState<string>(
     () => localStorage.getItem('studentName') || ''
@@ -152,7 +156,7 @@ export const StudentPlayView: React.FC = () => {
     const meta = quizData._meta || {};
 
     // 1. Save quiz result
-    firestoreService.saveQuizResult({
+    const savedDocId = await firestoreService.saveQuizResult({
       quizId: id || 'unknown',
       quizTitle: quizData.title || 'Квиз',
       score,
@@ -166,6 +170,7 @@ export const StudentPlayView: React.FC = () => {
       teacherUid: meta.teacherUid,
       differentiationLevel: meta.differentiationLevel,
     });
+    setQuizResultDocId(savedDocId);
 
     // 2. Update concept mastery (only if we have student name + concept)
     if (studentName && meta.conceptId) {
@@ -419,7 +424,7 @@ export const StudentPlayView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); }}
+                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); }}
                   className="mt-2 flex items-center gap-2 text-xs font-bold bg-amber-200 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-300 transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -427,6 +432,36 @@ export const StudentPlayView: React.FC = () => {
                 </button>
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── П26: Confidence Self-Assessment ───────────────────────────────── */}
+      {quizResult && (
+        <div className="w-full max-w-lg mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm text-center">
+          <p className="text-white font-bold text-sm mb-3">Колку сигурен/сигурна се осеќаш за овој концепт?</p>
+          <div className="flex justify-center gap-3">
+            {(['😟','😐','🙂','😊','🤩'] as const).map((emoji, i) => {
+              const rating = i + 1;
+              const isSelected = confidence === rating;
+              return (
+                <button
+                  key={rating}
+                  type="button"
+                  onClick={() => {
+                    setConfidence(rating);
+                    if (quizResultDocId) firestoreService.updateQuizConfidence(quizResultDocId, rating);
+                  }}
+                  className={`text-2xl w-12 h-12 rounded-xl transition-all ${isSelected ? 'bg-white/30 scale-125 ring-2 ring-white' : 'hover:bg-white/20 hover:scale-110'}`}
+                  title={`${rating}/5`}
+                >
+                  {emoji}
+                </button>
+              );
+            })}
+          </div>
+          {confidence && (
+            <p className="text-white/70 text-xs mt-2">Зачувано! Благодарам за твојот одговор. ✓</p>
           )}
         </div>
       )}

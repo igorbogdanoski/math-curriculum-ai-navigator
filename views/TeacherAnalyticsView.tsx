@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
+import { firestoreService, type QuizResult, type ConceptMastery, type Announcement } from '../services/firestoreService';
 import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download, Megaphone, Trash2, Send } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { StatCard, QuizAggregate, ConceptStat, PerStudentStat, GradeStat, groupBy, fmt } from './analytics/shared';
@@ -32,6 +32,10 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
+    // П27 — Announcements
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [newMsg, setNewMsg] = useState('');
+    const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage'>('overview');
 
     // ── Handlers ──────────────────────────────────────────────────────────────
@@ -122,6 +126,26 @@ export const TeacherAnalyticsView: React.FC = () => {
     };
 
     useEffect(() => { loadResults(); }, []);
+
+    useEffect(() => {
+        if (!firebaseUser?.uid) return;
+        firestoreService.fetchAnnouncements(firebaseUser.uid).then(setAnnouncements);
+    }, [firebaseUser?.uid]);
+
+    const handlePostAnnouncement = async () => {
+        if (!newMsg.trim() || !firebaseUser?.uid) return;
+        setIsPostingAnnouncement(true);
+        await firestoreService.addAnnouncement(firebaseUser.uid, newMsg);
+        setNewMsg('');
+        const updated = await firestoreService.fetchAnnouncements(firebaseUser.uid);
+        setAnnouncements(updated);
+        setIsPostingAnnouncement(false);
+    };
+
+    const handleDeleteAnnouncement = async (id: string) => {
+        await firestoreService.deleteAnnouncement(id);
+        setAnnouncements(prev => prev.filter(a => a.id !== id));
+    };
 
     // ── Aggregations ──────────────────────────────────────────────────────────
 
@@ -358,6 +382,56 @@ export const TeacherAnalyticsView: React.FC = () => {
                 </Card>
             ) : (
                 <>
+                    {/* П27 — Огласна Табла */}
+                    <Card className="mb-4">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Megaphone className="w-5 h-5 text-amber-500" />
+                            <h3 className="font-bold text-gray-800">Огласна Табла</h3>
+                            <span className="text-xs text-gray-400 ml-1">(Учениците ги гледаат во „Мој Прогрес")</span>
+                        </div>
+                        <div className="flex gap-2 mb-3">
+                            <input
+                                type="text"
+                                value={newMsg}
+                                onChange={e => setNewMsg(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') handlePostAnnouncement(); }}
+                                placeholder="Напишете порака за учениците..."
+                                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                maxLength={200}
+                            />
+                            <button
+                                type="button"
+                                onClick={handlePostAnnouncement}
+                                disabled={!newMsg.trim() || isPostingAnnouncement}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600 disabled:opacity-40 transition"
+                            >
+                                <Send className="w-4 h-4" />
+                                Постави
+                            </button>
+                        </div>
+                        {announcements.length > 0 && (
+                            <ul className="space-y-1.5">
+                                {announcements.map(a => (
+                                    <li key={a.id} className="flex items-start justify-between gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                                        <p className="text-sm text-gray-700 flex-1">{a.message}</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteAnnouncement(a.id)}
+                                            title="Избриши оглас"
+                                            aria-label="Избриши оглас"
+                                            className="text-gray-300 hover:text-red-500 transition flex-shrink-0"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        {announcements.length === 0 && (
+                            <p className="text-xs text-gray-400 text-center py-1">Нема активни огласи.</p>
+                        )}
+                    </Card>
+
                     {/* Tab navigation */}
                     <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
                         {([

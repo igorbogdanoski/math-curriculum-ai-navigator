@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { firestoreService, type QuizResult, type ConceptMastery, type StudentGamification, ACHIEVEMENTS } from '../services/firestoreService';
+import { firestoreService, type QuizResult, type ConceptMastery, type StudentGamification, type Announcement, ACHIEVEMENTS } from '../services/firestoreService';
 import { ICONS } from '../constants';
 import {
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { GradeBadge } from '../components/common/GradeBadge';
+import { geminiService } from '../services/geminiService';
 
 const formatDate = (ts: any): string => {
   if (!ts) return '—';
@@ -37,6 +38,19 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [reportPeriod, setReportPeriod] = useState<'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH'>('THIS_WEEK');
+  // П27 — Teacher announcements
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  // П28 — AI Concept Explainer
+  const [explanations, setExplanations] = useState<Record<string, string>>({});
+  const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null);
+
+  const handleExplain = async (conceptId: string, title: string, grade?: number) => {
+    if (explanations[conceptId] || loadingExplanation === conceptId) return;
+    setLoadingExplanation(conceptId);
+    const text = await geminiService.explainConcept(title, grade);
+    setExplanations(prev => ({ ...prev, [conceptId]: text || 'Не можев да генерирам објаснување.' }));
+    setLoadingExplanation(null);
+  };
 
   const fetchResults = async (name: string) => {
     if (!name.trim()) return;
@@ -51,6 +65,14 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       setResults(quizData);
       setMasteryRecords(masteryData);
       setGamification(gamificationData);
+
+      // П27 — Load announcements for the most frequent teacherUid in results
+      const teacherUidCounts: Record<string, number> = {};
+      quizData.forEach(r => { if (r.teacherUid) teacherUidCounts[r.teacherUid] = (teacherUidCounts[r.teacherUid] ?? 0) + 1; });
+      const topTeacherUid = Object.entries(teacherUidCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (topTeacherUid) {
+        firestoreService.fetchAnnouncements(topTeacherUid, 3).then(setAnnouncements);
+      }
 
       // Pre-fetch quiz links for failed concepts (self-navigation)
       const failedConceptIds = Array.from(
@@ -475,31 +497,49 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     : m.lastScore < 60  ? { label: '🔵 Поддршка',    cls: 'text-blue-700 bg-blue-50 border-blue-100' }
                     : m.lastScore < 85  ? { label: '⚪ Основно',      cls: 'text-slate-600 bg-slate-100 border-slate-200' }
                     :                    { label: '🔴 Збогатување',   cls: 'text-red-700 bg-red-50 border-red-100' };
+                  const { grade } = getConceptDetails(m.conceptId);
+                  const conceptGrade = (grade as any)?.level ?? m.gradeLevel;
+                  const conceptTitle = m.conceptTitle || m.conceptId;
                   return (
-                  <div key={m.conceptId} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${m.mastered ? 'bg-yellow-100' : 'bg-blue-50'}`}>
-                      {m.mastered
-                        ? <Trophy className="w-4 h-4 text-yellow-500" fill="currentColor" />
-                        : <Flame className="w-4 h-4 text-blue-400" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-700 truncate">{m.conceptTitle || m.conceptId}</p>
-                      <p className="text-xs text-slate-400">
+                  <div key={m.conceptId} className="bg-slate-50 rounded-xl px-3 py-2.5">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${m.mastered ? 'bg-yellow-100' : 'bg-blue-50'}`}>
                         {m.mastered
-                          ? `Совладан! Најдобар резултат: ${m.bestScore}%`
-                          : `${m.consecutiveHighScores}/3 по ред ≥85% — Последен: ${m.lastScore}%`}
-                      </p>
+                          ? <Trophy className="w-4 h-4 text-yellow-500" fill="currentColor" />
+                          : <Flame className="w-4 h-4 text-blue-400" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-700 truncate">{conceptTitle}</p>
+                        <p className="text-xs text-slate-400">
+                          {m.mastered
+                            ? `Совладан! Најдобар резултат: ${m.bestScore}%`
+                            : `${m.consecutiveHighScores}/3 по ред ≥85% — Последен: ${m.lastScore}%`}
+                        </p>
+                      </div>
+                      {db && (
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${db.cls}`} title="Следно ниво">{db.label}</span>
+                      )}
+                      {m.mastered && (
+                        <span className="text-xs font-black text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full flex-shrink-0">✓ Совладан</span>
+                      )}
+                      {!m.mastered && m.consecutiveHighScores > 0 && (
+                        <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full flex-shrink-0">
+                          {3 - m.consecutiveHighScores} уште
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleExplain(m.conceptId, conceptTitle, conceptGrade)}
+                        title="AI објаснување"
+                        className="flex-shrink-0 text-xs px-2 py-1 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition"
+                      >
+                        {loadingExplanation === m.conceptId ? '...' : '💡'}
+                      </button>
                     </div>
-                    {db && (
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${db.cls}`} title="Следно ниво">{db.label}</span>
-                    )}
-                    {m.mastered && (
-                      <span className="text-xs font-black text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full flex-shrink-0">✓ Совладан</span>
-                    )}
-                    {!m.mastered && m.consecutiveHighScores > 0 && (
-                      <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full flex-shrink-0">
-                        {3 - m.consecutiveHighScores} уште
-                      </span>
+                    {explanations[m.conceptId] && (
+                      <div className="mt-2 ml-11 text-xs text-slate-600 bg-indigo-50 border border-indigo-100 rounded-lg p-2.5 leading-relaxed">
+                        {explanations[m.conceptId]}
+                      </div>
                     )}
                   </div>
                   );
@@ -519,6 +559,22 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         <div className="flex flex-col items-center gap-3 mt-8">
           <Loader2 className="w-8 h-8 text-white animate-spin" />
           <p className="text-white/70 text-sm font-bold">Вчитување...</p>
+        </div>
+      )}
+
+      {/* П27 — Teacher Announcements Banner */}
+      {announcements.length > 0 && searched && (
+        <div className="w-full max-w-2xl mb-3">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <p className="font-bold text-amber-800 text-sm mb-2 flex items-center gap-1.5">
+              📢 Пораки од наставникот
+            </p>
+            <ul className="space-y-1">
+              {announcements.map(a => (
+                <li key={a.id} className="text-sm text-amber-700">• {a.message}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 
@@ -557,6 +613,11 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     </p>
                     <GradeBadge pct={r.percentage} showLabel={true} />
                     <p className="text-xs text-slate-400">{r.correctCount}/{r.totalQuestions}</p>
+                    {r.confidence && (
+                      <span title={`Самооценување: ${r.confidence}/5`} className="text-base leading-none">
+                        {['😟','😐','🙂','😊','🤩'][r.confidence - 1]}
+                      </span>
+                    )}
                     {!isPassed && nextQuizId && (
                       <button
                         type="button"
