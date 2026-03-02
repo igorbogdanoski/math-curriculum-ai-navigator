@@ -12,22 +12,26 @@ service cloud.firestore {
     }
 
     // ── Приватни Teacher податоци (lesson plans, planner, curriculum edits) ──
-    // Само наставникот-сопственик може да чита и пишува
     match /users/{uid}/{collection=**} {
       allow read, write: if isOwner(uid);
     }
 
     // ── Квиз резултати (quiz_results) ────────────────────────────────────
-    // Анонимни ученици можат да CREATE, никој не може да брише/менува
-    // Читање: сите (наставникот ги гледа преку апликацијата)
+    // Читање: јавно (ученик/родител ги гледа по ime без auth)
+    // Создавање: анонимни ученици, задолжителни полиња
+    // Ажурирање: само полето confidence (1-5) — за самооценување (П26)
     match /quiz_results/{doc} {
-      allow create: if true;
       allow read:   if true;
-      allow update, delete: if false;
+      allow create: if request.resource.data.keys().hasAll(['studentName', 'percentage', 'conceptId']);
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confidence'])
+                    && request.resource.data.confidence is int
+                    && request.resource.data.confidence >= 1
+                    && request.resource.data.confidence <= 5;
+      allow delete: if false;
     }
 
     // ── Кеширани AI материјали (cached_ai_materials) ─────────────────────
-    // Читање: сите (учениците треба да читаат квизови преку линк)
+    // Читање: сите (учениците читаат квизови преку линк без auth)
     // Пишување: само автентицирани наставници
     match /cached_ai_materials/{doc} {
       allow read:  if true;
@@ -35,50 +39,67 @@ service cloud.firestore {
     }
 
     // ── Совладување на концепти (concept_mastery) ────────────────────────
-    // Учениците (анонимни) пишуваат свој напредок, сите можат да читаат
+    // Анонимни ученици пишуваат свој напредок, задолжителни полиња
     match /concept_mastery/{doc} {
       allow read:   if true;
-      allow create: if true;
-      allow update: if true;
+      allow create: if request.resource.data.keys().hasAll(['studentName', 'conceptId']);
+      allow update: if request.resource.data.keys().hasAll(['studentName', 'conceptId']);
       allow delete: if false;
     }
 
     // ── Заедничка библиотека на планови (communityLessonPlans) ───────────
-    // Читање: сите, пишување: само автентицирани наставници
     match /communityLessonPlans/{doc} {
       allow read:  if true;
       allow write: if isAuthenticated();
     }
 
     // ── Гамификација (student_gamification) ──────────────────────────────
-    // Ученици (анонимни) пишуваат свој XP/стрик, сите можат да читаат
+    // Анонимни ученици пишуваат свој XP/стрик, studentName мора да постои
+    // Update: не смее да го смени studentName (заштита од прекривање)
     match /student_gamification/{doc} {
       allow read:   if true;
-      allow create: if true;
-      allow update: if true;
+      allow create: if request.resource.data.keys().hasAll(['studentName']);
+      allow update: if resource.data.studentName == request.resource.data.studentName;
       allow delete: if false;
     }
 
     // ── Групи на ученици (student_groups) ────────────────────────────────
-    // Само автентицирани наставници
     match /student_groups/{doc} {
       allow read, write: if isAuthenticated();
     }
 
     // ── Live сесии (live_sessions) ────────────────────────────────────────
-    // Читање: сите (учениците се приклучуваат по код)
-    // Пишување: сите (ученикот поднесува резултати анонимно)
+    // Create: само автентицирани (наставник создава сесија)
+    // Read: сите (ученик се приклучува по 4-знаковен код)
+    // Update: сите — само ако сесијата не е завршена (status != 'ended')
     match /live_sessions/{doc} {
       allow read:   if true;
       allow create: if isAuthenticated();
-      allow update: if true;
+      allow update: if resource.data.status != 'ended';
       allow delete: if isAuthenticated();
     }
 
     // ── Класи (classes) ───────────────────────────────────────────────────
-    // Само автентицирани наставници
     match /classes/{doc} {
       allow read, write: if isAuthenticated();
+    }
+
+    // ── Зачувани прашања (saved_questions) — П22 ─────────────────────────
+    // Само наставникот-сопственик може да чита, создава и брише
+    match /saved_questions/{doc} {
+      allow read:   if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ── Огласи (announcements) — П27 ─────────────────────────────────────
+    // Наставникот создава/брише, учениците читаат јавно (по teacherUid)
+    match /announcements/{doc} {
+      allow read:   if true;
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
+      allow update: if false;
     }
 
     // ── Сè друго: одбиено ────────────────────────────────────────────────
