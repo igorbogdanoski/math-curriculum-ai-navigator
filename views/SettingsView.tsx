@@ -89,7 +89,7 @@ export const SettingsView: React.FC = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
-                    model: 'gemini-1.5-flash',
+                    model: 'gemini-2.0-flash',
                     contents: [{ role: 'user', parts: [{ text: 'Кажи „тест".' }] }],
                     config: { maxOutputTokens: 10 },
                 }),

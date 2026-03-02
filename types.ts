@@ -140,6 +140,27 @@ export interface PlannerItem {
   tasks?: HomeworkTask[];
 }
 
+
+export interface TestQuestion {
+    id: string;
+    text: string;
+    type: 'multiple-choice' | 'short-answer' | 'word-problem';
+    options?: string[];
+    correctAnswer: string;
+    points: number;
+    cognitiveLevel?: string;
+}
+
+export interface GeneratedTest {
+    title: string;
+    topic: string;
+    gradeLevel: number;
+    groups: Array<{
+        groupName: string;
+        questions: TestQuestion[];
+    }>;
+}
+
 export interface SharedAnnualPlan {
     items: PlannerItem[];
     lessonPlans: LessonPlan[];
@@ -431,3 +452,27 @@ export interface GenerationContext {
         progression: Array<{ grade: number; conceptTitle: string }>;
     }>;
 }
+
+export interface TestQuestion {
+    id: string;
+    text: string;
+    type: 'multiple-choice' | 'open-ended';
+    options?: string[];
+    correctAnswer: string;
+    points: number;
+    difficulty: 'easy'|'medium'|'hard';
+}
+
+export interface TestGroup {
+    groupName: string;
+    questions: TestQuestion[];
+}
+
+export interface GeneratedTest {
+    title: string;
+    gradeLevel: number;
+    topic: string;
+    groups: TestGroup[];
+    createdAt: string;
+}
+

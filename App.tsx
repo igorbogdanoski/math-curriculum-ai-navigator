@@ -97,6 +97,7 @@ const CoverageAnalyzerView = safeLazy(() => import('./views/CoverageAnalyzerView
 const MindMapView = safeLazy(() => import('./views/MindMapView').then(module => ({ default: module.MindMapView })));
 const RoadmapView = safeLazy(() => import('./views/RoadmapView').then(module => ({ default: module.RoadmapView })));
 const TeacherAnalyticsView = safeLazy(() => import('./views/TeacherAnalyticsView').then(module => ({ default: module.TeacherAnalyticsView })));
+const TestGeneratorView = safeLazy(() => import('./views/TestGeneratorView').then(module => ({ default: module.TestGeneratorView })));
 
 const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     const { openGeneratorPanel } = useGeneratorPanel();
@@ -134,6 +135,7 @@ const routes = [
     { path: '/favorites', component: FavoritesView },
     { path: '/reports/coverage', component: CoverageAnalyzerView },
     { path: '/analytics', component: TeacherAnalyticsView },
+    { path: '/test-generator', component: TestGeneratorView },
     { path: '/share/:data', component: SharedPlanView },
     { path: '/share/annual/:data', component: SharedAnnualPlanView },
     { path: '/quiz/:data', component: SharedQuizView },

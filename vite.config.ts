@@ -94,6 +94,9 @@ function geminiDevProxy(apiKey: string): Plugin {
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    // Support both VITE_ and standard prefix for API key
+    const apiKey = env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY;
+    
     return {
       server: {
         port: 3000,
@@ -102,8 +105,8 @@ export default defineConfig(({ mode }) => {
       plugins: [
         tailwindcss(),
         react(),
-        // Only add dev proxy when GEMINI_API_KEY is available (dev mode)
-        env.GEMINI_API_KEY ? geminiDevProxy(env.GEMINI_API_KEY) : undefined,
+        // Only add dev proxy when API key is available (dev mode)
+        apiKey ? geminiDevProxy(apiKey) : undefined,
       ].filter(Boolean),
       // NOTE: API key is NO LONGER injected into the client bundle.
       // In production, requests go through /api/gemini (Vercel serverless function).

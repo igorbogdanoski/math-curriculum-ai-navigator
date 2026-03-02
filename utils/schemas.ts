@@ -134,6 +134,22 @@ export const AIRecommendationSchema = z.array(z.object({
     }).optional()
 }));
 
+export const GeneratedTestSchema = z.object({
+    title: z.string(),
+    groups: z.array(z.object({
+        groupName: z.string(),
+        questions: z.array(z.object({
+            id: z.string(),
+            text: z.string(),
+            type: z.enum(['multiple-choice', 'short-answer', 'word-problem']),
+            options: z.array(z.string()).optional(),
+            correctAnswer: z.string(),
+            points: z.union([z.number(), z.string().transform(Number)]),
+            cognitiveLevel: z.string().optional()
+        }))
+    }))
+});
+
 export const AIGeneratedPracticeMaterialSchema = z.object({
     title: z.string(),
     items: z.array(z.object({

@@ -38,7 +38,8 @@ import {
   Paperclip,
   ArrowRight,
   Target,
-  BarChart3
+  BarChart3,
+  ClipboardCheck
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -57,6 +58,7 @@ export const ICONS: Record<string, any> = {
   explore: Layout, // using Layout as fallback for explore
   assistant: HelpCircle,
   generator: CreditCard,
+  assessment: ClipboardCheck,
   myLessons: Menu,
   gallery: Layout,
   chart: BarChart3,

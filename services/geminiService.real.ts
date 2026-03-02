@@ -24,7 +24,8 @@ import {
     AIPedagogicalAnalysis,
     LessonPlan,
     PlannerItem,
-    NationalStandard
+    NationalStandard,
+    GeneratedTest
 } from '../types';
 import { 
     AIGeneratedIdeasSchema,
@@ -36,13 +37,14 @@ import {
     CoverageAnalysisSchema,
     AIRecommendationSchema,
     AIPedagogicalAnalysisSchema,
-    AnnualPlanSchema
+    AnnualPlanSchema,
+    GeneratedTestSchema
 } from '../utils/schemas';
 import { ApiError, RateLimitError, AuthError, ServerError } from './apiErrors';
 
 // --- CONSTANTS ---
 const CACHE_COLLECTION = 'cached_ai_materials';
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = 'gemini-2.0-flash';
 const MAX_RETRIES = 2;
 const GENERATION_TIMEOUT_MS = 45_000; // 45 seconds per attempt before aborting
 
@@ -1122,5 +1124,91 @@ ${lessonsText}
     } catch {
       return '';
     }
+  },
+
+  async generateParallelTest(
+    topic: string,
+    gradeLevel: number,
+    questionCount: number,
+    difficulty: 'easy' | 'medium' | 'hard'
+  ): Promise<GeneratedTest> {
+    const cacheKey = `test_parallel_${topic.replace(/\s+/g, '_').toLowerCase()}_g${gradeLevel}_n${questionCount}_${difficulty}`;
+    const cached = await getCached<GeneratedTest>(cacheKey);
+    if (cached) return cached;
+
+    const diffMap = { easy: "Лесни (за паметење и разбирање)", medium: "Средни (примена)", hard: "Тешки (анализа и евалуација)" };
+    const prompt = `Генерирај тест по математика за "${topic}" (одделение ${gradeLevel}).
+Тестот треба да има ДВЕ ГРУПИ (Група А и Група Б).
+Вкупно прашања по група: ${questionCount}.
+Тежина: ${diffMap[difficulty]}.
+
+ВАЖНО:
+- Прашањата во Група А и Група Б мора да бидат "паралелни" (исти по тип и тежина, но со различни бројки или примери).
+- Пр: Ако 1. задача во А е "2+3", во Б треба да биде "4+5".
+- Вклучи и текстуални задачи.
+
+Врати JSON:
+{
+  "title": "Тест по Математика: ${topic}",
+  "groups": [
+    { "groupName": "Group A", "questions": [ ... ] },
+    { "groupName": "Group B", "questions": [ ... ] }
+  ]
+}`;
+
+    const schema = {
+        type: Type.OBJECT,
+        properties: {
+            title: { type: Type.STRING },
+            groups: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        groupName: { type: Type.STRING },
+                        questions: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    id: { type: Type.STRING },
+                                    text: { type: Type.STRING },
+                                    type: { type: Type.STRING },
+                                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                    correctAnswer: { type: Type.STRING },
+                                    points: { type: Type.NUMBER },
+                                    cognitiveLevel: { type: Type.STRING }
+                                },
+                                required: ["id", "text", "correctAnswer", "points"]
+                            }
+                        }
+                    },
+                    required: ["groupName", "questions"]
+                }
+            }
+        },
+        required: ["title", "groups"]
+    };
+
+    const result = await generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, GeneratedTestSchema);
+    
+    // Enrich with metadata not returned by AI
+    const enrichedResult: GeneratedTest = {
+        ...result,
+        topic,
+        gradeLevel,
+        createdAt: new Date().toISOString(),
+        groups: result.groups.map((g: any) => ({
+            ...g,
+            questions: g.questions.map((q: any) => ({
+                ...q,
+                difficulty: difficulty, // Assign the requested difficulty to all questions
+                type: q.type === 'multiple-choice' ? 'multiple-choice' : 'open-ended' // Normalize types
+            }))
+        }))
+    };
+
+    await setCached(cacheKey, enrichedResult, { type: 'test_parallel', gradeLevel, topic });
+    return enrichedResult;
   },
 };
