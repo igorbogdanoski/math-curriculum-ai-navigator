@@ -157,7 +157,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     }
   }, [user, curriculum, addNotification, isOnline]);
 
-  const handleEnhanceField = useCallback(async (fieldName: string, currentText: string) => {
+  const handleEnhanceField = useCallback(async (fieldName: string, currentText: string, action: string = 'auto', selection?: { start: number, end: number }) => {
     if (!isOnline) {
         addNotification('Нема интернет конекција. Оваа функција е недостапна.', 'error');
         return;
@@ -166,7 +166,9 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
 
     setEnhancingField(fieldName);
     try {
-        const enhancedText = await geminiService.enhanceText(currentText, fieldName, plan.grade || 6, user ?? undefined);
+        const textToEnhance = selection ? currentText.substring(selection.start, selection.end) : currentText;
+        const aiResult = await geminiService.enhanceText(textToEnhance, action, fieldName, plan.grade || 6, user ?? undefined);
+        const enhancedText = selection ? currentText.substring(0, selection.start) + aiResult + currentText.substring(selection.end) : aiResult;
         
         if (isMounted.current) {
             setPlan((prev: Partial<LessonPlan>) => {

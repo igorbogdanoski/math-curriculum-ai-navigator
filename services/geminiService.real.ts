@@ -893,8 +893,30 @@ ${customInstruction || ''}`;
       return generateAndParseJSON<Partial<LessonPlan>>(contents, schema);
   },
 
-  async enhanceText(textToEnhance: string, fieldType: string, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
-    const prompt = `Подобри го текстот за '${fieldType}' (${gradeLevel} одд). Оригинален текст: "${textToEnhance}"`;
+  async enhanceText(textToEnhance: string, action: string, fieldType: string, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
+    let promptText = `Подобри го текстот за '${fieldType}' (${gradeLevel} одд). Оригинален текст: "${textToEnhance}"`;
+    
+    switch(action) {
+        case 'simplify':
+            promptText = `Поедностави го следниот текст за '${fieldType}' (${gradeLevel} одд) за да биде полесен за разбирање: "${textToEnhance}"`;
+            break;
+        case 'shorten':
+            promptText = `Скрати го и сумирај го следниот текст за '${fieldType}' (${gradeLevel} одд), задржувајќи ја клучната поента: "${textToEnhance}"`;
+            break;
+        case 'expand':
+            promptText = `Направи го поинтересен, поопширен и подетален следниот текст за '${fieldType}' (${gradeLevel} одд): "${textToEnhance}"`;
+            break;
+        case 'inclusion':
+            promptText = `Прилагоди го следниот текст за '${fieldType}' (${gradeLevel} одд) за ученици со попреченост (инклузија), додавајќи соодветни лесни чекори: "${textToEnhance}"`;
+            break;
+        case 'auto':
+        default:
+            promptText = `Професионализирај го и подобри го следниот текст за '${fieldType}' (${gradeLevel} одд) во контекст на наставна подготовка: "${textToEnhance}"`;
+            break;
+    }
+    
+    const prompt = `${promptText}. Врати САМО преработен текст, без дополнителни воведи или објаснувања.`;
+    
     const response = await callGeminiProxy({ 
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 

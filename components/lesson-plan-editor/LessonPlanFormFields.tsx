@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import type { LessonPlan, Grade, Topic, Concept } from '../../types';
 import { ICONS } from '../../constants';
@@ -6,25 +6,49 @@ import { ICONS } from '../../constants';
 interface LessonPlanFormFieldsProps {
     plan: Partial<LessonPlan>;
     setPlan: React.Dispatch<React.SetStateAction<Partial<LessonPlan>>>;
-    onEnhanceField: (fieldName: string, currentText: string) => void;
+    onEnhanceField: (fieldName: string, currentText: string, action?: string, selection?: {start: number, end: number}) => void;
     enhancingField: string | null;
 }
 
 const arrayToString = (arr: any[] = []) => arr.map(item => typeof item === 'string' ? item : (item.text || '')).join('\n');
 const stringToArray = (str: string = '') => str.split('\n').filter(line => line.trim() !== '');
 
-const stringToObjectives = (str: string = []) => stringToArray(str).map(text => ({ text }));
-const stringToMainActivities = (str: string = []) => stringToArray(str).map(text => ({ text, bloomsLevel: 'Understanding' as const }));
+const stringToObjectives = (str: string = '') => stringToArray(str).map(text => ({ text }));
+const stringToMainActivities = (str: string = '') => stringToArray(str).map(text => ({ text, bloomsLevel: 'Understanding' as const }));
 
 interface EnhancedTextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     fieldName: string;
     label: string;
     value: string;
-    onEnhance: (fieldName: string, currentText: string) => void;
+    onEnhance: (fieldName: string, currentText: string, action: string, selection?: {start: number, end: number}) => void;
     isEnhancing: boolean;
 }
 
 const EnhancedTextArea: React.FC<EnhancedTextAreaProps> = ({ fieldName, label, value, onEnhance, isEnhancing, ...props }) => {
+    const [showOptions, setShowOptions] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setShowOptions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleAction = (action: string) => {
+        setShowOptions(false);
+        const textarea = textareaRef.current;
+        if (textarea && textarea.selectionStart !== textarea.selectionEnd) {
+             onEnhance(fieldName, value, action, { start: textarea.selectionStart, end: textarea.selectionEnd });
+        } else {
+             onEnhance(fieldName, value, action);
+        }
+    };
+
     return (
         <div>
             <label htmlFor={props.id} className="block text-sm font-medium text-gray-700">{label}</label>
@@ -34,17 +58,29 @@ const EnhancedTextArea: React.FC<EnhancedTextAreaProps> = ({ fieldName, label, v
                     name={props.name}
                     value={value}
                     {...props}
+                    ref={textareaRef}
                     className="block w-full p-2 border-gray-300 rounded-md shadow-sm focus:ring-brand-secondary focus:border-brand-secondary pr-10 transition-colors"
                 />
-                <button
-                    type="button"
-                    onClick={() => onEnhance(fieldName, value)}
-                    disabled={!value || isEnhancing}
-                    title="Подобри го текстот со AI"
-                    className="absolute top-2 right-2 p-1 text-gray-400 rounded-full hover:bg-blue-100 hover:text-brand-secondary disabled:cursor-not-allowed disabled:text-gray-300 transition-transform hover:scale-110"
-                >
-                    {isEnhancing ? <ICONS.spinner className="w-5 h-5 animate-spin" /> : <ICONS.sparkles className="w-5 h-5" />}
-                </button>
+                <div ref={menuRef} className="absolute top-2 right-2 flex flex-col items-end">
+                    <button
+                        type="button"
+                        onClick={() => setShowOptions(!showOptions)}
+                        disabled={!value || isEnhancing}
+                        title="Подобри го текстот со AI"
+                        className="p-1 text-gray-400 rounded-full hover:bg-blue-100 hover:text-brand-secondary disabled:cursor-not-allowed disabled:text-gray-300 transition-transform hover:scale-110"
+                    >
+                        {isEnhancing ? <ICONS.spinner className="w-5 h-5 animate-spin" /> : <ICONS.sparkles className="w-5 h-5" />}
+                    </button>
+                    {showOptions && !isEnhancing && (
+                        <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-10 py-1">
+                            <button type="button" onClick={() => handleAction('auto')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">✨ Автоматско подобрување</button>
+                            <button type="button" onClick={() => handleAction('simplify')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">📝 Поедностави</button>
+                            <button type="button" onClick={() => handleAction('shorten')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">✂️ Скрати</button>
+                            <button type="button" onClick={() => handleAction('expand')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">🎨 Подетално / Поинтересно</button>
+                            <button type="button" onClick={() => handleAction('inclusion')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">♿ Прилагоди за инклузија</button>
+                        </div>
+                    )}
+                </div>
             </div>
              {props.placeholder && <p className="mt-1 text-xs text-gray-500">{props.placeholder}</p>}
         </div>

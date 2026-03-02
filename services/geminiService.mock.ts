@@ -282,11 +282,11 @@ export const mockGeminiService = {
         };
     }
   },
-  enhanceText: async function(textToEnhance: string, fieldType: string, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
-    console.log("Mocking text enhancement for:", { textToEnhance, fieldType, gradeLevel });
+  enhanceText: async function(textToEnhance: string, action: string = 'auto', fieldType: string, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
+    console.log("Mocking text enhancement for:", { textToEnhance, action, fieldType, gradeLevel });
     await new Promise(res => setTimeout(res, 1200));
     const lines = textToEnhance.split('\n');
-    const enhancedLines = lines.map(line => `[AI ПОДОБРЕНО]: ${line}`);
+    const enhancedLines = lines.map(line => `[AI ${action.toUpperCase()}]: ${line}`);
     return enhancedLines.join('\n');
   },
   
