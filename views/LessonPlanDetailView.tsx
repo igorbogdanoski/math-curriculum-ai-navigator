@@ -11,6 +11,7 @@ import { useLastVisited } from '../contexts/LastVisitedContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
+import { exportLessonPlanToWord } from '../utils/wordExport';
 
 interface LessonPlanDetailViewProps {
   id: string;
@@ -253,77 +254,12 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
             content = `\\documentclass[12pt, a4paper]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\title{${escapeLatexAware(title)}}\n\\author{${escapeLatexAware(String(grade))}. одделение}\n\\date{}\n\\begin{document}\n\\maketitle\n\\section*{Цели}\n\\begin{itemize}\n${(objectives || []).map((item: any) => `\\item ${escapeLatexAware(typeof item === 'string' ? item : item.text)}`).join('\n')}\n\\end{itemize}\n\\section*{Сценарио}\n\\subsection*{Вовед}\n${escapeLatexAware(introductoryText)}\n\\subsection*{Главни активности}\n\\begin{enumerate}\n${(scenario.main || []).map((item: any) => `\\item ${escapeLatexAware(typeof item === 'string' ? item : item.text)}`).join('\n')}\n\\end{enumerate}\n\\subsection*{Завршна активност}\n${escapeLatexAware(concludingText)}\n\\end{document}`;
             break;
         case 'doc': {
-            const listHtml = (items: any[] = []) => items.length ? `<ul>${items.map(i => `<li>${escapeHtml(typeof i === 'string' ? i : i.text)}${i.bloomsLevel ? ` <i>[${i.bloomsLevel}]</i>` : ''}</li>`).join('')}</ul>` : '<p><i>Нема</i></p>';
-            
-            const htmlContent = `
-            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-            <head>
-                <meta charset="utf-8">
-                <title>${escapeHtml(title)}</title>
-                <style>
-                    body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; }
-                    h1 { font-size: 18pt; color: #2E74B5; margin-bottom: 10px; border-bottom: 2px solid #2E74B5; padding-bottom: 5px; }
-                    h2 { font-size: 14pt; color: #2E74B5; border-bottom: 1px solid #ddd; padding-bottom: 2px; margin-top: 20px; margin-bottom: 10px; }
-                    h3 { font-size: 12pt; font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #444; }
-                    p { margin-bottom: 10px; }
-                    ul, ol { margin-bottom: 10px; padding-left: 30px; }
-                    li { margin-bottom: 5px; }
-                    .meta { color: #666; font-size: 10pt; margin-bottom: 20px; background: #f9f9f9; padding: 10px; border-radius: 5px; }
-                    .meta p { margin: 2px 0; }
-                </style>
-            </head>
-            <body>
-                <h1>${escapeHtml(title || 'Без наслов')}</h1>
-                <div class="meta">
-                    <p><b>Одделение:</b> ${grade || ''}</p>
-                    <p><b>Тема:</b> ${escapeHtml(theme || '')}</p>
-                    <p><b>Предмет:</b> ${escapeHtml(plan.subject || 'Математика')}</p>
-                </div>
-
-                <h2>Наставни цели</h2>
-                ${listHtml(objectives)}
-
-                <h2>Стандарди за оценување</h2>
-                ${listHtml(assessmentStandards)}
-
-                <h2>Сценарио</h2>
-                <h3>Воведна активност</h3>
-                <p>${escapeHtml(introductoryText)}</p>
-                
-                <h3>Главни активности</h3>
-                <ol>
-                    ${(scenario?.main || []).map((m: any) => `<li>${escapeHtml(typeof m === 'string' ? m : m.text)}${m.bloomsLevel ? ` <i>[${m.bloomsLevel}]</i>` : ''}</li>`).join('')}
-                </ol>
-
-                <h3>Завршна активност</h3>
-                <p>${escapeHtml(concludingText)}</p>
-
-                <h2>Средства и Материјали</h2>
-                ${listHtml(materials)}
-
-                <h2>Следење на напредокот</h2>
-                ${listHtml(progressMonitoring)}
-
-                ${differentiation ? `<h2>Диференцијација</h2><p>${escapeHtml(differentiation)}</p>` : ''}
-                ${reflectionPrompt ? `<h2>Рефлексија за наставникот</h2><p>${escapeHtml(reflectionPrompt)}</p>` : ''}
-                ${selfAssessmentPrompt ? `<h2>Самооценување за ученици</h2><p>${escapeHtml(selfAssessmentPrompt)}</p>` : ''}
-            </body>
-            </html>`;
-
-             try {
-                const blob = new Blob([htmlContent], { type: 'text/html' }); // Using text/html makes word open it correctly with styles
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${filename}.doc`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                addNotification('Документот е преземен.', 'success');
+            try {
+                await exportLessonPlanToWord(plan as LessonPlan, user as any);
+                addNotification('Документот е успешно зачуван како Word (.docx).', 'success');
             } catch (error) {
-                console.error('Doc export failed:', error);
-                addNotification('Грешка при извоз.', 'error');
+                console.error('Word export failed:', error);
+                addNotification('Грешка при експортирање во Word.', 'error');
             }
             return;
         }
@@ -406,7 +342,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
                             </button>
                             <div className="border-t my-1"></div>
                             <button onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <ICONS.edit className="w-5 h-5 mr-3" /> Сними како Word (.doc)
+                                <ICONS.edit className="w-5 h-5 mr-3" /> Сними како Word (Напреден Експорт)
                             </button>
                             <button onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)

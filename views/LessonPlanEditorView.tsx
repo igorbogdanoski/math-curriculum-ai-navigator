@@ -16,6 +16,7 @@ import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 import { LessonPlanDisplay } from '../components/planner/LessonPlanDisplay';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { PedagogicalDashboard } from '../components/lesson-plan-editor/PedagogicalDashboard';
+import { exportLessonPlanToWord } from '../utils/wordExport';
 
 
 interface LessonPlanEditorViewProps {
@@ -275,7 +276,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
   
     const arrayToLines = (arr: any[] = []) => arr.map(item => `- ${typeof item === 'string' ? item : item.text}${item.bloomsLevel ? ` [${item.bloomsLevel}]` : ''}`).join('\n');
 
-  const handleExport = (format: 'md' | 'pdf' | 'doc' | 'clipboard') => {
+  const handleExport = async (format: 'md' | 'pdf' | 'doc' | 'clipboard') => {
     if (!plan || !plan.title) {
         addNotification('Насловот е задолжителен за извоз.', 'error');
         return;
@@ -309,83 +310,26 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     const filename = `${(title || 'plan').replace(/[^a-z0-9а-шѓѕјљњќџч]/gi, '_').toLowerCase()}`;
     const escapeHtml = (unsafe: string = '') => unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     
+    if (format === 'doc') {
+        try {
+            await exportLessonPlanToWord([plan], user ? {
+                fullName: user.displayName || user.email || 'Наставник',
+                experience: 'Стручен соработник',
+                schoolName: (user as any).schoolName || '',
+                municipality: (user as any).municipality || ''
+            } : undefined);
+            addNotification('Word документот е успешно преземен', 'success');
+        } catch (error) {
+            console.error('Export to Word failed:', error);
+            addNotification('Грешка при генерирање на Word документ.', 'error');
+        }
+        return;
+    }
+    
     if (format === 'md') {
         content = `# ${title || 'Без наслов'}\n\n**Одделение:** ${grade || ''}\n**Тема:** ${theme || ''}\n\n---\n\n## Цели\n${arrayToLines(objectives)}\n\n## Стандарди за оценување\n${arrayToLines(assessmentStandards)}\n\n## Сценарио\n### Вовед\n${introductoryText || ''}\n### Главни активности\n${arrayToLines(scenario?.main)}\n### Завршна активност\n${concludingText || ''}\n\n---\n\n## Материјали\n${arrayToLines(materials)}\n\n## Следење на напредокот\n${arrayToLines(progressMonitoring)}`;
         mimeType = 'text/markdown;charset=utf-8';
         extension = 'md';
-    } else if (format === 'doc') {
-        const listHtml = (items: any[] = []) => items.length ? `<ul>${items.map(i => `<li>${escapeHtml(typeof i === 'string' ? i : i.text)}${i.bloomsLevel ? ` <i>[${i.bloomsLevel}]</i>` : ''}</li>`).join('')}</ul>` : '<p><i>Нема</i></p>';
-        
-        // Construct a full HTML document for Word with proper styling
-        const htmlContent = `
-        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-        <head>
-            <meta charset="utf-8">
-            <title>${escapeHtml(title)}</title>
-            <style>
-                body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; color: #000; }
-                h1 { font-size: 18pt; color: #2E74B5; margin-bottom: 12px; border-bottom: 2px solid #2E74B5; padding-bottom: 4px; }
-                h2 { font-size: 14pt; color: #1F4D78; margin-top: 18px; margin-bottom: 8px; border-bottom: 1px solid #ddd; }
-                h3 { font-size: 12pt; font-weight: bold; margin-top: 12px; margin-bottom: 4px; color: #444; }
-                p { margin-bottom: 10px; }
-                ul, ol { margin-bottom: 10px; padding-left: 25px; }
-                li { margin-bottom: 4px; }
-                .meta { margin-bottom: 20px; padding: 10px; background-color: #f0f0f0; border: 1px solid #ccc; }
-                .meta p { margin: 4px 0; font-weight: bold; color: #555; }
-            </style>
-        </head>
-        <body>
-            <h1>${escapeHtml(title || 'Без наслов')}</h1>
-            <div class="meta">
-                <p>Одделение: ${grade || ''}</p>
-                <p>Тема: ${escapeHtml(theme || '')}</p>
-                <p>Предмет: ${escapeHtml(plan.subject || 'Математика')}</p>
-            </div>
-
-            <h2>Наставни цели</h2>
-            ${listHtml(objectives)}
-
-            <h2>Стандарди за оценување</h2>
-            ${listHtml(assessmentStandards)}
-
-            <h2>Сценарио</h2>
-            <h3>Воведна активност</h3>
-            <p>${escapeHtml(introductoryText)}</p>
-            
-            <h3>Главни активности</h3>
-            ${listHtml(scenario?.main)}
-
-            <h3>Завршна активност</h3>
-            <p>${escapeHtml(concludingText)}</p>
-
-            <h2>Средства и Материјали</h2>
-            ${listHtml(materials)}
-
-            <h2>Следење на напредокот</h2>
-            ${listHtml(progressMonitoring)}
-
-            ${differentiation ? `<h2>Диференцијација</h2><p>${escapeHtml(differentiation)}</p>` : ''}
-            ${reflectionPrompt ? `<h2>Рефлексија за наставникот</h2><p>${escapeHtml(reflectionPrompt)}</p>` : ''}
-        </body>
-        </html>`;
-        
-        try {
-            const blob = new Blob([htmlContent], { type: 'application/msword' }); // Use proper MIME type for Word or just text/html which Word opens fine
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${filename}.doc`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            addNotification('Документот е преземен.', 'success');
-        } catch (error) {
-            console.error('Export failed:', error);
-            addNotification('Грешка при извоз на документот.', 'error');
-        }
-        return;
-
     } else {
         addNotification(`Извозот во .${format} формат не е имплементиран тука.`, 'info');
         return;

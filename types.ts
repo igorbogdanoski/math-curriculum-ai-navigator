@@ -175,6 +175,8 @@ export interface StudentProfile {
 export interface TeachingProfile {
   name: string;
   photoURL?: string;
+  schoolName?: string;
+  municipality?: string;
   style: 'Constructivist' | 'Direct Instruction' | 'Inquiry-Based' | 'Project-Based';
   experienceLevel: 'Beginner' | 'Intermediate' | 'Expert';
   levelDescription?: string;

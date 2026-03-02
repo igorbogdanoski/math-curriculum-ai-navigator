@@ -937,7 +937,13 @@ ${customInstruction || ''}`;
       const prompt = `Генерирај тематски план за "${topic.title}" (${grade.level} одд.).`;
       const schema = { type: Type.OBJECT, properties: { thematicUnit: { type: Type.STRING }, lessons: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { lessonNumber: { type: Type.INTEGER }, lessonUnit: { type: Type.STRING }, learningOutcomes: { type: Type.STRING }, keyActivities: { type: Type.STRING }, assessment: { type: Type.STRING } }, required: ["lessonNumber", "lessonUnit"] } } }, required: ["thematicUnit", "lessons"] };
       const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema);
-      await setCached(cacheKey, result, { type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id }
+      await setCached(cacheKey, result, { type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id });
+      return result;
+    } catch (error) {
+      console.error('Error generating thematic plan:', error);
+      throw error;
+    }
+  },
 
   async analyzeReflection(wentWell: string, challenges: string, profile?: TeachingProfile): Promise<string> {
       const prompt = `Анализирај рефлексија: "${wentWell}". Предизвици: "${challenges}".`;

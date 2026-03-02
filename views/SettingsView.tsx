@@ -213,6 +213,30 @@ export const SettingsView: React.FC = () => {
                         />
                     </div>
                     <div>
+                        <label htmlFor="schoolName" className="block text-sm font-medium text-gray-700">Училиште (за експорт на документи)</label>
+                        <input
+                            type="text"
+                            id="schoolName"
+                            name="schoolName"
+                            value={profile.schoolName || ''}
+                            onChange={handleChange}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                            placeholder="ОУ „..."
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="municipality" className="block text-sm font-medium text-gray-700">Општина/Град (за експорт на документи)</label>
+                        <input
+                            type="text"
+                            id="municipality"
+                            name="municipality"
+                            value={profile.municipality || ''}
+                            onChange={handleChange}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                            placeholder="пр. Карпош, Скопје"
+                        />
+                    </div>
+                    <div>
                         <label htmlFor="style" className="block text-sm font-medium text-gray-700">Стил на настава</label>
                         <select
                             id="style"
