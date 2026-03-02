@@ -818,4 +818,68 @@ export const firestoreService = {
   deleteAnnouncement: async (id: string): Promise<void> => {
     await deleteDoc(doc(db, 'announcements', id));
   },
+
+  // --- LIVE QUIZ SESSIONS ---
+
+  createLiveQuizSession: async (teacherId: string, title: string, questions: any[]): Promise<string> => {
+    // Generate a random 6-digit pin
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const sessionRef = doc(db, 'live_quizzes', pin);
+    
+    await setDoc(sessionRef, {
+        pin,
+        teacherId,
+        status: 'waiting',
+        title,
+        questions,
+        currentQuestionIndex: -1,
+        createdAt: serverTimestamp()
+    });
+    
+    return pin;
+  },
+
+  updateLiveQuizState: async (pin: string, data: Partial<{ status: 'waiting' | 'active' | 'finished', currentQuestionIndex: number }>): Promise<void> => {
+    const sessionRef = doc(db, 'live_quizzes', pin);
+    await updateDoc(sessionRef, data);
+  },
+
+  joinLiveQuiz: async (pin: string, studentName: string): Promise<string> => {
+    const participantRef = doc(collection(db, 'live_quizzes', pin, 'participants'));
+    await setDoc(participantRef, {
+        id: participantRef.id,
+        name: studentName,
+        score: 0,
+        answers: {},
+        joinedAt: serverTimestamp()
+    });
+    return participantRef.id;
+  },
+
+  submitLiveQuizAnswer: async (pin: string, participantId: string, questionIndex: number, answer: string, isCorrect: boolean): Promise<void> => {
+    const participantRef = doc(db, 'live_quizzes', pin, 'participants', participantId);
+    
+    // Instead of simple update, if it's correct we increment score. 
+    // We update answers map.
+    await updateDoc(participantRef, {
+        [`answers.${questionIndex}`]: answer,
+        ...(isCorrect ? { score: increment(1) } : {})
+    });
+  },
+
+  subscribeToLiveQuiz: (pin: string, callback: (data: any) => void) => {
+    return onSnapshot(doc(db, 'live_quizzes', pin), (doc) => {
+        if (doc.exists()) {
+            callback(doc.data());
+        } else {
+            callback(null);
+        }
+    });
+  },
+
+  subscribeToLiveQuizParticipants: (pin: string, callback: (participants: any[]) => void) => {
+    return onSnapshot(collection(db, 'live_quizzes', pin, 'participants'), (snap) => {
+        callback(snap.docs.map(d => d.data()));
+    });
+  }
 };

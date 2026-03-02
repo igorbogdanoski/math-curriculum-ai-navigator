@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Radio, Play, Square, Copy, Check, Loader2, Users, Trophy } from 'lucide-react';
+import QRCode from 'react-qr-code';
 import { firestoreService, type LiveSession } from '../../services/firestoreService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/common/Card';
@@ -78,7 +79,8 @@ export const LiveTab: React.FC = () => {
 
     const handleCopyCode = () => {
         if (!session) return;
-        navigator.clipboard.writeText(session.joinCode).then(() => {
+        const urlToCopy = `${window.location.origin}/#/live?code=${session.joinCode}`;
+        navigator.clipboard.writeText(urlToCopy).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         });
@@ -115,20 +117,25 @@ export const LiveTab: React.FC = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                {/* Join code */}
-                                <div className="flex items-center gap-2 bg-white rounded-xl px-4 py-2 border border-red-200 shadow-sm">
-                                    <div className="text-center">
-                                        <p className="text-xs text-slate-400 font-semibold leading-none mb-0.5">Код за влез</p>
-                                        <p className="text-3xl font-black text-indigo-700 tracking-widest leading-none">{session.joinCode}</p>
+                                {/* Join code & QR */}
+                                <div className="flex items-center gap-4 bg-white rounded-xl px-4 py-2 border border-red-200 shadow-sm">
+                                    <div className="bg-white p-1 rounded-lg border border-gray-100 hidden sm:block">
+                                        <QRCode value={`${window.location.origin}/#/live?code=${session.joinCode}`} size={64} />
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleCopyCode}
-                                        title="Копирај код"
-                                        className="p-1.5 text-gray-400 hover:text-indigo-600 transition"
-                                    >
-                                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-center">
+                                            <p className="text-xs text-slate-400 font-semibold leading-none mb-0.5">Код за влез</p>
+                                            <p className="text-3xl font-black text-indigo-700 tracking-widest leading-none">{session.joinCode}</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleCopyCode}
+                                            title="Копирај линк"
+                                            className="p-1.5 text-gray-400 hover:text-indigo-600 transition"
+                                        >
+                                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                        </button>
+                                    </div>
                                 </div>
                                 <button
                                     type="button"

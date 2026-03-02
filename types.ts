@@ -478,3 +478,22 @@ export interface GeneratedTest {
     createdAt: string;
 }
 
+
+export interface LiveQuizSession {
+    pin: string;
+    teacherId: string;
+    status: 'waiting' | 'active' | 'finished';
+    questions: AssessmentQuestion[];
+    currentQuestionIndex: number;
+    title: string;
+    createdAt: any;
+}
+
+export interface LiveQuizParticipant {
+    id: string;
+    name: string;
+    score: number;
+    answers: Record<string, string>; // questionId or index -> answer string
+    joinedAt: any;
+}
+

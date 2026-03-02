@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Loader2, Radio, User, Hash, ArrowRight, AlertCircle, Home } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { ICONS } from '../constants';
@@ -10,6 +10,18 @@ export const StudentLiveView: React.FC = () => {
     const [codeInput, setCodeInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        // Read code from URL if present (e.g., from QR code scan: /#/live?code=ABCD)
+        const hashParts = window.location.hash.split('?');
+        if (hashParts.length > 1) {
+            const params = new URLSearchParams(hashParts[1]);
+            const codeParam = params.get('code');
+            if (codeParam) {
+                setCodeInput(codeParam.toUpperCase());
+            }
+        }
+    }, []);
 
     const handleJoin = async () => {
         const name = nameInput.trim();
