@@ -8,10 +8,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const validated = await authenticateAndValidate(req, res);
   if (!validated) return;
 
-  // Collect all configured API keys (supports up to 5 keys for rotation)
+  // Collect all configured API keys (supports up to 6 keys for rotation)
   const apiKeys = [
     process.env.GEMINI_API_KEY,
     process.env.VITE_GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_1,
     process.env.GEMINI_API_KEY_2,
     process.env.GEMINI_API_KEY_3,
     process.env.GEMINI_API_KEY_4,
