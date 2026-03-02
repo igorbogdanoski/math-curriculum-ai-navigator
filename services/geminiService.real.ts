@@ -42,7 +42,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from './apiErrors';
 
 // --- CONSTANTS ---
 const CACHE_COLLECTION = 'cached_ai_materials';
-const DEFAULT_MODEL = 'gemini-2.0-flash-001';
+const DEFAULT_MODEL = 'gemini-1.5-flash';
 const MAX_RETRIES = 2;
 const GENERATION_TIMEOUT_MS = 45_000; // 45 seconds per attempt before aborting
 
