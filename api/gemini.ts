@@ -8,87 +8,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const validated = await authenticateAndValidate(req, res);
   if (!validated) return;
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
+  // Collect all configured API keys (supports up to 5 keys for rotation)
+  const apiKeys = [
+    process.env.GEMINI_API_KEY,
+    process.env.VITE_GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+    process.env.GEMINI_API_KEY_4,
+  ].filter((k): k is string => !!k && k.trim().length > 10);
+
+  if (apiKeys.length === 0) {
     const envKeys = Object.keys(process.env).filter(k => k.includes('GEMINI'));
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'GEMINI_API_KEY not configured on server.',
-      diagnostics: {
-        foundKeys: envKeys,
-        nodeEnv: process.env.NODE_ENV,
-        message: 'Please rename VITE_GEMINI_API_KEY to GEMINI_API_KEY in Vercel settings if missing.'
+      diagnostics: { foundKeys: envKeys, nodeEnv: process.env.NODE_ENV }
+    });
+  }
+
+  const { model, contents, config } = validated;
+  const { systemInstruction, safetySettings, ...generationConfig } = config || {};
+
+  // Normalize contents once — reused across key rotation attempts
+  const normalizedContents: Content[] = (typeof contents === 'string'
+    ? [{ role: 'user', parts: [{ text: contents }] }]
+    : contents as any[]).map(c => ({
+      role: (c.role === 'assistant' || c.role === 'model') ? 'model' : 'user',
+      parts: c.parts.map((p: any) => {
+        if (p.text) return { text: p.text };
+        if (p.inlineData || p.inline_data) {
+          const data = p.inlineData || p.inline_data;
+          return { inlineData: { mimeType: data.mimeType || data.mime_type, data: data.data } };
+        }
+        return p;
+      })
+    }));
+
+  if (systemInstruction && typeof systemInstruction === 'string' && normalizedContents.length > 0) {
+    const instructionText = `[SYSTEM INSTRUCTIONS]\n${systemInstruction}\n\n[USER REQUEST]\n`;
+    normalizedContents[0].parts[0].text = instructionText + (normalizedContents[0].parts[0].text || '');
+  }
+
+  // Try each API key in order; skip to next on daily quota exhaustion (429)
+  let lastError: Error | null = null;
+  for (let i = 0; i < apiKeys.length; i++) {
+    const apiKey = apiKeys[i];
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const modelInstance = genAI.getGenerativeModel({ model, safetySettings: safetySettings as any });
+      const result = await modelInstance.generateContent({
+        contents: normalizedContents,
+        generationConfig: generationConfig as any,
+      });
+      const response = await result.response;
+      if (!response.candidates || response.candidates.length === 0) {
+        throw new Error("No candidates returned. Likely safety block.");
       }
-    });
+      return res.status(200).json({ text: response.text(), candidates: response.candidates });
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const msg = lastError.message;
+      const isDailyQuota = msg.includes('429') && (
+        msg.includes('PerDay') || msg.includes('per_day') ||
+        msg.includes('free_tier') || msg.includes('quota')
+      );
+      if (isDailyQuota && i < apiKeys.length - 1) {
+        console.warn(`[/api/gemini] Key ${i + 1}/${apiKeys.length} daily quota exhausted, trying next key...`);
+        continue; // try next key
+      }
+      break; // non-quota error or last key — stop
+    }
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const { model, contents, config } = validated;
-
-    // 1. УНИВЕРЗАЛНО ВМЕТНУВАЊЕ (Content Injection)
-    // Ова гарантира дека нема 400 или 404 грешки за "systemInstruction"
-    const { systemInstruction, safetySettings, ...generationConfig } = config || {};
-    
-    // Normalize contents to content objects
-    const normalizedContents: Content[] = (typeof contents === 'string'
-      ? [{ role: 'user', parts: [{ text: contents }] }]
-      : contents as any[]).map(c => ({
-        role: (c.role === 'assistant' || c.role === 'model') ? 'model' : 'user',
-        parts: c.parts.map((p: any) => {
-          if (p.text) return { text: p.text };
-          if (p.inlineData || p.inline_data) {
-            const data = p.inlineData || p.inline_data;
-            return {
-              inlineData: {
-                mimeType: data.mimeType || data.mime_type,
-                data: data.data
-              }
-            };
-          }
-          return p;
-        })
-      }));
-
-    // Ако има инструкции, ги лепиме на почетокот на првата порака
-    if (systemInstruction && typeof systemInstruction === 'string' && normalizedContents.length > 0) {
-      const instructionText = `[SYSTEM INSTRUCTIONS]\n${systemInstruction}\n\n[USER REQUEST]\n`;
-      normalizedContents[0].parts[0].text = instructionText + (normalizedContents[0].parts[0].text || '');
-    }
-
-    // 2. Иницијализација на моделот БЕЗ systemInstruction (за да избегнеме 400/404)
-    const modelInstance = genAI.getGenerativeModel({ 
-      model: model,
-      safetySettings: safetySettings as any,
-    }); // Стандардна v1 (без apiVersion: 'v1beta' во RequestOptions)
-
-    const result = await modelInstance.generateContent({
-      contents: normalizedContents,
-      generationConfig: generationConfig as any,
-    });
-
-    const response = await result.response;
-    
-    // Safety check for candidates
-    if (!response.candidates || response.candidates.length === 0) {
-      throw new Error("No candidates returned. Likely safety block.");
-    }
-
-    const text = response.text();
-
-    res.status(200).json({
-      text: text,
-      candidates: response.candidates,
-    });
-  } catch (error) {
-    console.error('[/api/gemini] Error:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    const status = message.includes('429') ? 429 :
-                   message.includes('403') ? 403 :
-                   message.includes('400') ? 400 : 500;
-    // Signal whether this is a daily quota exhaustion (not retryable) or a per-minute rate limit (retryable)
-    const isDailyQuota = status === 429 && (
-      message.includes('PerDay') || message.includes('per_day') || message.includes('free_tier_requests')
-    );
-    res.status(status).json({ error: message, quotaType: isDailyQuota ? 'daily' : 'rate' });
-  }
+  // All keys exhausted or non-recoverable error
+  console.error('[/api/gemini] Error:', lastError);
+  const message = lastError?.message ?? 'Internal server error';
+  const status = message.includes('429') ? 429 :
+                 message.includes('403') ? 403 :
+                 message.includes('400') ? 400 : 500;
+  const isDailyQuota = status === 429 && (
+    message.includes('PerDay') || message.includes('per_day') ||
+    message.includes('free_tier') || message.includes('quota')
+  );
+  res.status(status).json({ error: message, quotaType: isDailyQuota ? 'daily' : 'rate' });
 }
