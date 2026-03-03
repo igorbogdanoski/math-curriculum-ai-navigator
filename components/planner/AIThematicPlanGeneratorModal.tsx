@@ -86,7 +86,7 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
             return (
                  <div className="p-6">
                     <h3 className="text-xl font-semibold mb-4 text-brand-primary">{generatedPlan.thematicUnit}</h3>
-                    <div className="max-h-[60vh] overflow-y-auto border rounded-lg">
+                    <div className="max-h-[60vh] overflow-y-auto overflow-x-auto border rounded-lg">
                         <table className="min-w-full divide-y divide-gray-200">
                              <thead className="bg-gray-50 sticky top-0">
                                 <tr>

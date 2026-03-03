@@ -265,8 +265,9 @@ export const PlannerView: React.FC = () => {
     }, [items, currentDate]);
 
     const renderCalendarGrid = () => (
-        <div data-tour="planner-calendar" className="grid grid-cols-7 gap-1">
-            {weekDays.map(day => <div key={day} className="text-center font-bold text-gray-600 p-2 text-sm uppercase tracking-wide">{day}</div>)}
+        <div className="overflow-x-auto">
+            <div data-tour="planner-calendar" className="grid grid-cols-7 gap-1 min-w-[800px]">
+                {weekDays.map(day => <div key={day} className="text-center font-bold text-gray-600 p-2 text-sm uppercase tracking-wide">{day}</div>)}
             
             {emptyDays.map((_, i) => <div key={`empty-${i}`} className="border rounded-md bg-gray-50 min-h-[120px]"></div>)}
 
@@ -308,11 +309,7 @@ export const PlannerView: React.FC = () => {
                 );
             })}
         </div>
-    );
-
-    return (
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-            <div className="p-8 animate-fade-in relative">
+        </div>
                 <header data-tour="planner-header" className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                     <div>
                          <h1 className="text-4xl font-bold text-brand-primary">Дигитален планер</h1>
