@@ -41,7 +41,7 @@ export const GlobalSearchBar: React.FC = () => {
     const searchRef = useRef<HTMLDivElement>(null);
     const resultListRef = useRef<HTMLUListElement>(null);
 
-    const allTopics = curriculum?.grades.flatMap((g: Grade) => g.topics.map((t: Topic) => ({ ...t, gradeLevel: g.level }))) ?? [];
+    const allTopics = (curriculum?.grades || []).flatMap((g: Grade) => g.topics.map((t: Topic) => ({ ...t, gradeLevel: g.level }))) ?? [];
 
     // Calculate grouped and flattened results for keyboard navigation
     const groupedResults = useMemo(() => {
@@ -58,7 +58,7 @@ export const GlobalSearchBar: React.FC = () => {
     // Flatten grouped results for indexing
     const flatResults = useMemo(() => {
         const flat: SearchResult[] = [];
-        Object.entries(groupedResults).forEach(([_, groupResults]) => {
+        Object.entries(groupedResults || {}).forEach(([_, groupResults]) => {
             flat.push(...(groupResults as SearchResult[]).slice(0, 10));
         });
         return flat;
