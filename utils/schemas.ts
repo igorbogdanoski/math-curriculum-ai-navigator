@@ -153,8 +153,9 @@ export const GeneratedTestSchema = z.object({
 export const AIGeneratedPracticeMaterialSchema = z.object({
     title: z.string(),
     items: z.array(z.object({
-        type: z.string(),
+        type: z.string().optional(),
         text: z.string(),
+        options: z.array(z.string()).optional(),
         answer: z.string().optional(),
         solution: z.string().optional() // Step-by-step solution
     })).default([])

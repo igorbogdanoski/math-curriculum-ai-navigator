@@ -18,6 +18,8 @@ interface MathRendererProps {
  * Runs on non-math segments only (text not already inside $...$ or $$...$$).
  */
 function wrapBareLatex(text: string): string {
+    if (typeof text !== 'string') return '';
+    
     // Split by existing math delimiters — captured groups land at odd indices
     const parts = text.split(/(\$\$[\s\S]*?\$\$|\$[^$]+?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g);
 
