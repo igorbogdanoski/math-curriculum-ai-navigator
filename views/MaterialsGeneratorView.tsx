@@ -141,8 +141,12 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
             });
             
             const cleanup = () => {
-                markTourAsSeen('generator');
+                const tr = tourInstance.current;
                 tourInstance.current = null;
+                // Defer state update slightly to avoid disrupting introJs native DOM removal
+                setTimeout(() => {
+                    markTourAsSeen('generator');
+                }, 300);
             };
 
             tour.oncomplete(cleanup);
