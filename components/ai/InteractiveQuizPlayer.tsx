@@ -9,7 +9,7 @@ import { type AssessmentQuestion, QuestionType, type AIGeneratedAssessment, type
 export interface Question {
   id?: number;
   question: string;
-  options: string[];
+  options?: string[];
   answer: string;
   explanation?: string;
   type?: QuestionType | string;
@@ -275,7 +275,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
           {/* Options */}
           <div className="grid gap-3">
             {currentQ.options && currentQ.options.length > 0 ? (
-              currentQ.options.map((option, idx) => {
+              currentQ.options.map((option: string, idx: number) => {
                 const isSelected = selectedOption === option;
                 const isAnswerCorrect = option.trim() === currentQ.answer.trim();
                 const showCorrectness = selectedOption !== null;

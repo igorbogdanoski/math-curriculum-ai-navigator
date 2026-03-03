@@ -13,7 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { SilentErrorBoundary } from '../common/SilentErrorBoundary'; // ОВА Е ЛИНИЈАТА ШТО ФАЛЕШЕ
 
 export const Layout = () => {
-  const { user, logout } = useAuth();
+  const { user, firebaseUser, logout } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
@@ -63,10 +63,10 @@ export const Layout = () => {
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">
-              {user?.email?.charAt(0).toUpperCase()}
+              {firebaseUser?.email?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate">{user?.email}</p>
+              <p className="text-sm font-medium truncate">{firebaseUser?.email}</p>
             </div>
             <button onClick={logout} className="text-slate-400 hover:text-white">
               <LogOut className="w-5 h-5" />

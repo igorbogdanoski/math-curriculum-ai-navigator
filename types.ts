@@ -14,9 +14,9 @@ export interface Concept {
   title: string;
   description: string;
   content?: string[];
-  priorKnowledgeIds: string[];
+  priorKnowledgeIds?: string[];
   assessmentStandards: string[];
-  nationalStandardIds: string[];
+  nationalStandardIds?: string[];
   activities?: string[];
   levelDescription?: string;
 }

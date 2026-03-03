@@ -20,10 +20,14 @@ export const WeakConceptsWidget: React.FC = () => {
             // Group by concept
             const grouped: Record<string, { attempts: number, correct: number, title: string }> = {};
             results.forEach(r => {
+                if (!r.conceptId) return;
+                
                 if (!grouped[r.conceptId]) {
-                    grouped[r.conceptId] = { attempts: 0, correct: 0, title: r.conceptTitle || r.conceptId };
+                    // Try to use quizTitle as proxy for concept title, or fallback to ID
+                    grouped[r.conceptId] = { attempts: 0, correct: 0, title: r.quizTitle || r.conceptId };
                 }
-                grouped[r.conceptId].attempts += r.questions.length;
+                // Use totalQuestions instead of questions.length
+                grouped[r.conceptId].attempts += (r.totalQuestions || 0);
                 grouped[r.conceptId].correct += r.score;
             });
 

@@ -103,7 +103,12 @@ describe('usePlanner hook and PlannerContext', () => {
             title: 'New Test Lesson Plan',
             grade: 9, topicId: 'g9-topic-numbers-ops', conceptIds: [], objectives: [],
             materials: [], subject: 'Математика', theme: '', assessmentStandards: [],
-            scenario: { introductory: '', main: [], concluding: '' }, progressMonitoring: [],
+            scenario: { 
+                introductory: { text: '' }, 
+                main: [], 
+                concluding: { text: '' } 
+            }, 
+            progressMonitoring: [],
         };
         
         let newPlanId = '';
@@ -123,7 +128,12 @@ describe('usePlanner hook and PlannerContext', () => {
         const planToUpdate: LessonPlan = { 
             id: 'plan1', title: 'To Be Updated', grade: 8, topicId: '', 
             conceptIds: [], objectives: [], materials: [], subject: '', theme: '', 
-            assessmentStandards: [], scenario: { introductory: '', main: [], concluding: '' }, 
+            assessmentStandards: [], 
+            scenario: { 
+                introductory: { text: '' }, 
+                main: [], 
+                concluding: { text: '' } 
+            }, 
             progressMonitoring: [] 
         };
 

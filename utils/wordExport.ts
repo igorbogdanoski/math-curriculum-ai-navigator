@@ -76,29 +76,29 @@ export const exportLessonPlanToWord = async (plan: LessonPlan, profile?: Teachin
                     rows: [
                         new TableRow({
                             children: [
-                                new TableCell({ children: [new Paragraph({ text: "Наставник:", bold: true })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Наставник:", bold: true })] })] }),
                                 new TableCell({ children: [new Paragraph(profile?.name || "_________________")] }),
-                                new TableCell({ children: [new Paragraph({ text: "Предмет:", bold: true })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Предмет:", bold: true })] })] }),
                                 new TableCell({ children: [new Paragraph(plan.subject || "Математика")] }),
                             ]
                         }),
                         new TableRow({
                             children: [
-                                new TableCell({ children: [new Paragraph({ text: "Одделение:", bold: true })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Одделение:", bold: true })] })] }),
                                 new TableCell({ children: [new Paragraph(`${plan.grade}. одделение`)] }),
-                                new TableCell({ children: [new Paragraph({ text: "Дата:", bold: true })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Дата:", bold: true })] })] }),
                                 new TableCell({ children: [new Paragraph("___ . ___ . 202_  год.")] }),
                             ]
                         }),
                         new TableRow({
                             children: [
-                                new TableCell({ children: [new Paragraph({ text: "Тема:", bold: true })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Тема:", bold: true })] })] }),
                                 new TableCell({ columnSpan: 3, children: [new Paragraph(plan.theme || "")] }),
                             ]
                         }),
                         new TableRow({
                             children: [
-                                new TableCell({ children: [new Paragraph({ text: "Наставна единица:", bold: true })] }),
+                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Наставна единица:", bold: true })] })] }),
                                 new TableCell({ columnSpan: 3, children: [new Paragraph(plan.title || "")] }),
                             ]
                         }),
@@ -122,13 +122,13 @@ export const exportLessonPlanToWord = async (plan: LessonPlan, profile?: Teachin
                 // 6. Scenario
                 createHeader("Сценарио за часот"),
                 
-                new Paragraph({ text: "Воведна активност:", bold: true, spacing: { before: 200, after: 100 } }),
+                new Paragraph({ children: [new TextRun({ text: "Воведна активност:", bold: true })], spacing: { before: 200, after: 100 } }),
                 new Paragraph({ text: typeof plan.scenario?.introductory === 'string' ? plan.scenario.introductory : plan.scenario?.introductory?.text || "", spacing }),
                 
-                new Paragraph({ text: "Главни активности:", bold: true, spacing: { before: 200, after: 100 } }),
+                new Paragraph({ children: [new TextRun({ text: "Главни активности:", bold: true })], spacing: { before: 200, after: 100 } }),
                 ...createBulletList(plan.scenario?.main || []),
 
-                new Paragraph({ text: "Завршна активност:", bold: true, spacing: { before: 200, after: 100 } }),
+                new Paragraph({ children: [new TextRun({ text: "Завршна активност:", bold: true })], spacing: { before: 200, after: 100 } }),
                 new Paragraph({ text: typeof plan.scenario?.concluding === 'string' ? plan.scenario.concluding : plan.scenario?.concluding?.text || "", spacing }),
 
                 // 7. Monitoring

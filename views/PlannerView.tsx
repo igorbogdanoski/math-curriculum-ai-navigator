@@ -310,6 +310,14 @@ export const PlannerView: React.FC = () => {
             })}
         </div>
         </div>
+    );
+
+    return (
+        <DndContext
+            sensors={sensors}
+            onDragEnd={handleDragEnd}
+        >
+            <div className="p-6 max-w-7xl mx-auto pb-24">
                 <header data-tour="planner-header" className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                     <div>
                          <h1 className="text-4xl font-bold text-brand-primary">Дигитален планер</h1>
