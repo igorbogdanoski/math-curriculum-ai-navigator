@@ -1,46 +1,28 @@
-import React, { useState, createContext, useContext, useCallback, useMemo } from 'react';
+﻿import React from 'react';
+import { create } from 'zustand';
 import type { GeneratorState } from '../hooks/useGeneratorState';
 
 /** Full GeneratorState fields can be passed to pre-populate the generator panel */
 export type GeneratorPanelProps = Partial<GeneratorState>;
 
-interface GeneratorPanelContextType {
+interface GeneratorPanelState {
   isOpen: boolean;
   props: GeneratorPanelProps | null;
   openGeneratorPanel: (props: GeneratorPanelProps) => void;
   closeGeneratorPanel: () => void;
 }
 
-const GeneratorPanelContext = createContext<GeneratorPanelContextType | undefined>(undefined);
-
-export const useGeneratorPanel = () => {
-  const context = useContext(GeneratorPanelContext);
-  if (!context) {
-    throw new Error('useGeneratorPanel must be used within a GeneratorPanelProvider');
-  }
-  return context;
-};
+export const useGeneratorPanel = create<GeneratorPanelState>((set) => ({
+  isOpen: false,
+  props: null,
+  openGeneratorPanel: (panelProps) => set({ props: panelProps, isOpen: true }),
+  closeGeneratorPanel: () => {
+    set({ isOpen: false });
+    // Allow for animation before clearing props
+    setTimeout(() => set({ props: null }), 300);
+  },
+}));
 
 export const GeneratorPanelProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [props, setProps] = useState<GeneratorPanelProps | null>(null);
-
-  const openGeneratorPanel = useCallback((panelProps: GeneratorPanelProps) => {
-    setProps(panelProps);
-    setIsOpen(true);
-  }, []);
-
-  const closeGeneratorPanel = useCallback(() => {
-    setIsOpen(false);
-    // Allow for animation before clearing props
-    setTimeout(() => setProps(null), 300);
-  }, []);
-
-  const value = useMemo(() => ({ isOpen, props, openGeneratorPanel, closeGeneratorPanel }), [isOpen, props, openGeneratorPanel, closeGeneratorPanel]);
-
-  return (
-    <GeneratorPanelContext.Provider value={value}>
-      {children}
-    </GeneratorPanelContext.Provider>
-  );
+  return <>{children}</>;
 };

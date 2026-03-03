@@ -112,15 +112,18 @@ export default defineConfig(({ mode }) => {
       // In production, requests go through /api/gemini (Vercel serverless function).
       // In development, requests go through the Vite dev middleware above.
       build: {
+        chunkSizeWarningLimit: 1000,
         rollupOptions: {
           output: {
             manualChunks: {
-              'vendor-react': ['react', 'react-dom'],
+              'vendor-react': ['react', 'react-dom', 'react-router-dom'],
               'vendor-firebase-app': ['firebase/app'],
               'vendor-firebase-auth': ['firebase/auth'],
               'vendor-firebase-firestore': ['firebase/firestore'],
               'vendor-firebase-storage': ['firebase/storage'],
               'vendor-zod': ['zod'],
+              'vendor-pdf': ['@react-pdf/renderer'],
+              'vendor-docx': ['docx']
             }
           }
         }

@@ -31,11 +31,6 @@ import { QuotaBanner } from './components/common/QuotaBanner';
 import { ContextualFAB } from './components/common/ContextualFAB';
 import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
 import { AIChatPanel } from './components/ai/AIChatPanel';
-import { StudentPlayView } from './views/StudentPlayView';
-import { StudentProgressView } from './views/StudentProgressView';
-import { StudentLiveView } from './views/StudentLiveView';
-import { StudentTutorView } from './views/StudentTutorView';
-import { ParentPortalView } from './views/ParentPortalView';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -74,6 +69,12 @@ const safeLazy = (importFunc: () => Promise<any>) => {
 };
 
 // Views (lazy loaded with safety)
+const StudentPlayView = safeLazy(() => import('./views/StudentPlayView').then(module => ({ default: module.StudentPlayView })));
+const StudentProgressView = safeLazy(() => import('./views/StudentProgressView').then(module => ({ default: module.StudentProgressView })));
+const StudentLiveView = safeLazy(() => import('./views/StudentLiveView').then(module => ({ default: module.StudentLiveView })));
+const StudentTutorView = safeLazy(() => import('./views/StudentTutorView').then(module => ({ default: module.StudentTutorView })));
+const ParentPortalView = safeLazy(() => import('./views/ParentPortalView').then(module => ({ default: module.ParentPortalView })));
+
 const LoginView = safeLazy(() => import('./views/LoginView').then(module => ({ default: module.LoginView })));
 const HomeView = safeLazy(() => import('./views/HomeView').then(module => ({ default: module.HomeView })));
 const ExploreView = safeLazy(() => import('./views/ExploreView').then(module => ({ default: module.ExploreView })));
