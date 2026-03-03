@@ -81,6 +81,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isGeneratingWord, setIsGeneratingWord] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const printableRef = useRef<HTMLDivElement>(null);
   
@@ -254,12 +255,15 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
             content = `\\documentclass[12pt, a4paper]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\title{${escapeLatexAware(title)}}\n\\author{${escapeLatexAware(String(grade))}. одделение}\n\\date{}\n\\begin{document}\n\\maketitle\n\\section*{Цели}\n\\begin{itemize}\n${(objectives || []).map((item: any) => `\\item ${escapeLatexAware(typeof item === 'string' ? item : item.text)}`).join('\n')}\n\\end{itemize}\n\\section*{Сценарио}\n\\subsection*{Вовед}\n${escapeLatexAware(introductoryText)}\n\\subsection*{Главни активности}\n\\begin{enumerate}\n${(scenario.main || []).map((item: any) => `\\item ${escapeLatexAware(typeof item === 'string' ? item : item.text)}`).join('\n')}\n\\end{enumerate}\n\\subsection*{Завршна активност}\n${escapeLatexAware(concludingText)}\n\\end{document}`;
             break;
         case 'doc': {
+            setIsGeneratingWord(true);
             try {
                 await exportLessonPlanToWord(plan as LessonPlan, user as any);
                 addNotification('Документот е успешно зачуван како Word (.docx).', 'success');
             } catch (error) {
                 console.error('Word export failed:', error);
                 addNotification('Грешка при експортирање во Word.', 'error');
+            } finally {
+                setIsGeneratingWord(false);
             }
             return;
         }
@@ -336,13 +340,14 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
                 {isExportMenuOpen && (
                     <div className="absolute right-0 mt-2 w-64 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-20 animate-fade-in-up">
                         <div className="py-1">
-                            <button onClick={() => handleExport('pdf')} disabled={isGeneratingPDF} className="w-full text-left flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                            <button onClick={() => handleExport('pdf')} disabled={isGeneratingPDF || isGeneratingWord} className="w-full text-left flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
                                 {isGeneratingPDF ? <ICONS.spinner className="w-5 h-5 mr-3 animate-spin" /> : <ICONS.printer className="w-5 h-5 mr-3" />}
                                 {isGeneratingPDF ? 'Генерирам PDF...' : 'Сними како PDF (High Res)'}
                             </button>
                             <div className="border-t my-1"></div>
-                            <button onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <ICONS.edit className="w-5 h-5 mr-3" /> Сними како Word (Напреден Експорт)
+                            <button onClick={() => handleExport('doc')} disabled={isGeneratingPDF || isGeneratingWord} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                {isGeneratingWord ? <ICONS.spinner className="w-5 h-5 mr-3 animate-spin" /> : <ICONS.edit className="w-5 h-5 mr-3" />} 
+                                {isGeneratingWord ? 'Генерирам Word...' : 'Сними како Word (Напреден Експорт)'}
                             </button>
                             <button onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)

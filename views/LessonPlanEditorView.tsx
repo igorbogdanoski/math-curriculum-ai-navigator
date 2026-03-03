@@ -62,6 +62,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
   const [aiAnalysis, setAiAnalysis] = useState<AIPedagogicalAnalysis | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isGeneratingWord, setIsGeneratingWord] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
   
@@ -313,18 +314,21 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     const escapeHtml = (unsafe: string = '') => unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     
     if (format === 'doc') {
-        try {
-            await exportLessonPlanToWord([plan], user ? {
-                fullName: user.displayName || user.email || 'Наставник',
-                experience: 'Стручен соработник',
-                schoolName: (user as any).schoolName || '',
-                municipality: (user as any).municipality || ''
-            } : undefined);
-            addNotification('Word документот е успешно преземен', 'success');
-        } catch (error) {
-            console.error('Export to Word failed:', error);
-            addNotification('Грешка при генерирање на Word документ.', 'error');
-        }
+          setIsGeneratingWord(true);
+          try {
+              await exportLessonPlanToWord([plan], user ? {
+                  fullName: user.displayName || user.email || 'Наставник',
+                  experience: 'Стручен соработник',
+                  schoolName: (user as any).schoolName || '',
+                  municipality: (user as any).municipality || ''
+              } : undefined);
+              addNotification('Word документот е успешно преземен', 'success');
+          } catch (error) {
+              console.error('Export to Word failed:', error);
+              addNotification('Грешка при генерирање на Word документ.', 'error');
+          } finally {
+              setIsGeneratingWord(false);
+          }
         return;
     }
     
@@ -460,8 +464,9 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                                         <button type="button" onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)
                                         </button>
-                                        <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.edit className="w-5 h-5 mr-3" /> Сними како Word (.doc)
+                                        <button type="button" onClick={() => handleExport('doc')} disabled={isGeneratingWord} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50">
+                                            {isGeneratingWord ? <ICONS.spinner className="w-5 h-5 mr-3 animate-spin" /> : <ICONS.edit className="w-5 h-5 mr-3" />}
+                                            {isGeneratingWord ? 'Генерирам Word...' : 'Сними како Word (.doc)'}
                                         </button>
                                         <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
