@@ -3,13 +3,13 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 import {
-    Concept, 
-    Topic, 
+    Concept,
+    Topic,
     Grade,
-    ChatMessage, 
-    TeachingProfile, 
-    StudentProfile, 
-    QuestionType, 
+    ChatMessage,
+    TeachingProfile,
+    StudentProfile,
+    QuestionType,
     DifferentiationLevel,
     GenerationContext,
     AIGeneratedIdeas,
@@ -27,6 +27,7 @@ import {
     NationalStandard,
     GeneratedTest
 } from '../types';
+import { ragService } from './ragService';
 import { 
     AIGeneratedIdeasSchema,
     AIGeneratedAssessmentSchema,
@@ -472,6 +473,16 @@ const TEXT_SYSTEM_INSTRUCTION = `
 const JSON_SYSTEM_INSTRUCTION = `Ти си API кое генерира строго валиден JSON за наставни материјали по математика. 
 ОДГОВОРИ ИСКЛУЧИВО СО RAW JSON ОБЈЕКТ. БЕЗ MARKDOWN (\`\`\`json) И БЕЗ ДОПОЛНИТЕЛЕН ТЕКСТ.`;
 
+export function buildDynamicSystemInstruction(baseInstruction: string, gradeLevel?: number, conceptId?: string, topicId?: string): string {
+    let instruction = baseInstruction;
+    if (gradeLevel && conceptId) {
+        instruction += ragService.getConceptContext(gradeLevel, conceptId);
+    } else if (gradeLevel && topicId) {
+        instruction += ragService.getTopicContext(gradeLevel, topicId);
+    }
+    return instruction;
+}
+
 const SAFETY_SETTINGS: SafetySetting[] = [
     { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
     { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
@@ -481,38 +492,38 @@ const SAFETY_SETTINGS: SafetySetting[] = [
 ];
 
 // --- CORE JSON HELPER ---
-async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false): Promise<T> {
-  const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
-  const _controller = new AbortController();
-  const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
-  try {
-    const generationConfig: any = {
-      temperature: 0.7,
-      topP: 0.95,
-      maxOutputTokens: 8192
-    };
+async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false, customSystemInstruction?: string): Promise<T> {
+    const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
+    const _controller = new AbortController();
+    const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
+    try {
+      const generationConfig: any = {
+        temperature: 0.7,
+        topP: 0.95,
+        maxOutputTokens: 8192
+      };
 
-    if (useThinking) {
-      generationConfig.thinkingConfig = { thinkingBudget: 16000 };
-    } else {
-      // Force the model to output raw JSON — no markdown wrappers possible
-      generationConfig.responseMimeType = 'application/json';
-    }
+      if (useThinking) {
+        generationConfig.thinkingConfig = { thinkingBudget: 16000 };
+      } else {
+        // Force the model to output raw JSON — no markdown wrappers possible
+        generationConfig.responseMimeType = 'application/json';
+      }
 
-    // Keep schema as a structural hint in the prompt
-    const schemaHint = "\n\nFollow this JSON schema exactly: " + JSON.stringify(schema);
-    const enrichedContents = [...contents];
-    if (enrichedContents.length > 0 && enrichedContents[0].text) {
-        enrichedContents[0].text += schemaHint;
-    } else {
-        enrichedContents.push({ text: schemaHint });
-    }
+      // Keep schema as a structural hint in the prompt
+      const schemaHint = "\n\nFollow this JSON schema exactly: " + JSON.stringify(schema);
+      const enrichedContents = [...contents];
+      if (enrichedContents.length > 0 && enrichedContents[0].text) {
+          enrichedContents[0].text += schemaHint;
+      } else {
+          enrichedContents.push({ text: schemaHint });
+      }
 
-    const response = await callGeminiProxy({
-      model: activeModel,
-      contents: enrichedContents,
-      generationConfig,
-      systemInstruction: JSON_SYSTEM_INSTRUCTION,
+      const response = await callGeminiProxy({
+        model: activeModel,
+        contents: enrichedContents,
+        generationConfig,
+        systemInstruction: customSystemInstruction || JSON_SYSTEM_INSTRUCTION,
       safetySettings: SAFETY_SETTINGS
     }, _controller.signal);
 
@@ -647,7 +658,8 @@ export const realGeminiService = {
         required: ["title", "openingActivity", "mainActivity", "differentiation", "assessmentIdea"]
     };
 
-    const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema);
+    const systemInstr = buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id);
+    const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, false, systemInstr);
     await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'ideas', conceptId, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return result;
   },
@@ -840,7 +852,24 @@ ${customInstruction || ''}`;
 
     const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
-    const result = await generateAndParseJSON<AIGeneratedAssessment>(contents, schema, DEFAULT_MODEL, AIGeneratedAssessmentSchema);
+    
+    // RAG INJECTION
+    const systemInstr = buildDynamicSystemInstruction(
+        JSON_SYSTEM_INSTRUCTION, 
+        context.grade.level, 
+        conceptCacheId !== 'gen' ? conceptCacheId : undefined, 
+        context.topic?.id
+    );
+
+    const result = await generateAndParseJSON<AIGeneratedAssessment>(
+        contents, 
+        schema, 
+        DEFAULT_MODEL, 
+        AIGeneratedAssessmentSchema, 
+        MAX_RETRIES, 
+        false, 
+        systemInstr
+    );
     
     if (canCache && cacheKey) {
         await setCached(cacheKey, result, { type: 'assessment', conceptId: conceptCacheId !== 'gen' ? conceptCacheId : undefined, gradeLevel: context.grade.level });
@@ -890,7 +919,8 @@ ${customInstruction || ''}`;
       const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, objectives: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, bloomsLevel: { type: Type.STRING } }, required: ["text"] } }, scenario: { type: Type.OBJECT, properties: { introductory: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } }, main: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } } }, concluding: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } } } } }, required: ["title", "objectives", "scenario"] };
       const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
       if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
-      return generateAndParseJSON<Partial<LessonPlan>>(contents, schema);
+      const systemInstr = buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, context.gradeLevel, context.concept?.id, context.topic?.id);
+      return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, systemInstr);
   },
 
   async enhanceText(textToEnhance: string, action: string, fieldType: string, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
