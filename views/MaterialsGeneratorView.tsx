@@ -20,6 +20,7 @@ import { GeneratedAssessment } from '../components/ai/GeneratedAssessment';
 import { GeneratedRubric } from '../components/ai/GeneratedRubric';
 import { usePlanner } from '../contexts/PlannerContext';
 import { GeneratedLearningPaths } from '../components/ai/GeneratedLearningPaths';
+import { RefineGenerationChat } from '../components/generator/RefineGenerationChat';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { generatorTourSteps } from '../tours/tour-steps';
@@ -832,12 +833,18 @@ ${generatedMaterial.assessmentIdea}
             )}
 
             {!isGenerating && generatedMaterial && (
-                <div className="mt-6">
+                <div className="mt-6 flex flex-col gap-4">
                     {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
                     {'openingActivity' in generatedMaterial && <GeneratedIdeas material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />}
                     {'questions' in generatedMaterial && <GeneratedAssessment material={generatedMaterial} onSaveQuestion={handleSaveQuestion} />}
                     {'criteria' in generatedMaterial && <GeneratedRubric material={generatedMaterial} />}
                     {'paths' in generatedMaterial && <GeneratedLearningPaths material={generatedMaterial} />}
+                    
+                    <RefineGenerationChat 
+                        material={generatedMaterial}
+                        onUpdateMaterial={setGeneratedMaterial}
+                        materialType={state.materialType} 
+                    />
                 </div>
             )}
 

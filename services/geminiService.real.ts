@@ -1312,4 +1312,33 @@ ${lessonsText}
       return "Настана грешка при комуникацијата со туторот. Обиди се повторно.";
     }
   },
+
+  async refineMaterialJSON(originalMaterial: any, tweakInstruction: string, materialType?: string): Promise<any> {
+    const prompt = `You are an expert educational AI assistant.
+
+The teacher has already generated the following educational material (in JSON format):
+\`\`\`json
+${JSON.stringify(originalMaterial, null, 2)}
+\`\`\`
+
+The teacher wants to modify/refine this material with the following instructional request:
+"${tweakInstruction}"
+
+Please modify the JSON to incorporate exactly what the teacher requested.
+IMPORTANT: You must return the updated material EXACTLY in the same generic JSON schema/structure as the input. Do not add any conversational text or markdown wrappers outside of the JSON block if it can be avoided. Return ONLY the raw JSON object.`;
+
+    try {
+      const response = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+        systemInstruction: 'You are a helpful AI that strictly outputs valid JSON that matches the format of the provided input document, just with modified values based on the prompt.',
+        safetySettings: SAFETY_SETTINGS
+      });
+      return JSON.parse(response.text.replace(/```json/g, '').replace(/```/g, '').trim());
+    } catch (e) {
+      console.error('Refine material error:', e);
+      throw e;
+    }
+  }
 };

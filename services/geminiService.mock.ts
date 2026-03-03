@@ -472,5 +472,12 @@ ${titlePrefix}
   },
   askTutor: async function(message: string, history: Array<{role: string, content: string}>): Promise<string> {
     return 'This is a mock tutor response.';
+  },
+  refineMaterialJSON: async function(originalMaterial: any, tweakInstruction: string, materialType?: string): Promise<any> {
+    return {
+      ...originalMaterial,
+      _mockRefinementNote: "This material was mock-refined. " + tweakInstruction
+    };
   }
 };
+
