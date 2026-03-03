@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { GeneratorState, GeneratorAction } from '../../hooks/useGeneratorState';
 import { QuestionType, type DifferentiationLevel, type TeachingProfile, type StudentProfile, type BloomDistribution } from '../../types';
+import { ICONS } from '../../constants';
 
 interface MaterialOptionsProps {
     state: GeneratorState;
@@ -104,36 +105,114 @@ const ScenarioOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispatch'>
     </div>
 );
 
-const AssessmentOptions: React.FC<MaterialOptionsProps> = ({ state, dispatch, user }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Типови на прашања</label>
-            <div className="flex flex-wrap gap-3">{Object.entries({ [QuestionType.MULTIPLE_CHOICE]: 'Понудени одговори', [QuestionType.SHORT_ANSWER]: 'Краток одговор', [QuestionType.TRUE_FALSE]: 'Точно/Неточно', [QuestionType.ESSAY]: 'Есејско прашање', [QuestionType.FILL_IN_THE_BLANK]: 'Дополни реченица' }).map(([type, label]) => (<div key={type}><label htmlFor={`q-type-${type}`} className={`cursor-pointer px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${state.questionTypes.includes(type as QuestionType) ? 'bg-brand-primary text-white shadow' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}><input id={`q-type-${type}`} type="checkbox" checked={state.questionTypes.includes(type as QuestionType)} onChange={() => dispatch({ type: 'TOGGLE_QUESTION_TYPE', payload: type as QuestionType })} className="sr-only" />{label}</label></div>))}</div>
-        </div>
-        <div><label htmlFor="numQuestions" className="block text-sm font-medium text-gray-700">Број на прашања</label><input id="numQuestions" type="number" value={state.numQuestions} onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'numQuestions', value: Math.max(1, parseInt(e.target.value) || 1)}})} min="1" max="20" className="mt-1 block w-full p-2 border-gray-300 rounded-md" /></div>
-        <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700">Ниво на диференцијација</label><div className="flex items-center space-x-4 mt-2"><div className="flex items-center"><input id="diff-type-standard" name="diff-type" type="radio" checked={!state.useStudentProfiles} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'useStudentProfiles', value: false }})} className="h-4 w-4 text-brand-primary focus:ring-brand-secondary border-gray-300" /><label htmlFor="diff-type-standard" className="ml-2 block text-sm text-gray-900">Според ниво (поддршка/стандард/напредни)</label></div><div className="flex items-center"><input id="diff-type-profile" name="diff-type" type="radio" checked={state.useStudentProfiles} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'useStudentProfiles', value: true }})} className="h-4 w-4 text-brand-primary focus:ring-brand-secondary border-gray-300" disabled={!user?.studentProfiles || user.studentProfiles.length === 0}/><label htmlFor="diff-type-profile" className="ml-2 block text-sm text-gray-900">Според профили на ученици</label></div></div></div>
-        <div className="md:col-span-2">{state.useStudentProfiles ? (<div className="animate-fade-in"><label htmlFor="student-profiles" className="block text-sm font-medium text-gray-700">Избери профили</label><select id="student-profiles" multiple value={state.selectedStudentProfileIds} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedStudentProfileIds', value: Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value) }})} className="mt-1 block w-full p-2 border-gray-300 rounded-md h-24">{user?.studentProfiles?.map((p: StudentProfile) => <option key={p.id} value={p.id}>{p.name}</option>)}</select><p className="text-xs text-gray-500 mt-1">Држете Ctrl (или Cmd) за да изберете повеќе профили.</p></div>) : (<div className="animate-fade-in"><div className="flex flex-col space-y-2 mt-2">{(['standard', 'support', 'advanced'] as DifferentiationLevel[]).map(level => { const labels: Record<DifferentiationLevel, string> = { standard: 'Стандардно', support: 'Верзија за поддршка', advanced: 'Верзија за напредни ученици', }; return (<div key={level} className="flex items-center"><input id={`diff-level-${level}`} name="differentiationLevel" type="radio" value={level} checked={state.differentiationLevel === level} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: level }})} className="h-4 w-4 text-brand-primary focus:ring-brand-secondary border-gray-300" /><label htmlFor={`diff-level-${level}`} className="ml-2 block text-sm text-gray-900">{labels[level]}</label></div>)})}</div></div>)}</div>
-        <BloomDistributionSelector state={state} dispatch={dispatch} />
-        <div className="md:col-span-2 pt-2 border-t mt-2">
-             <div className="relative flex items-start">
-                <div className="flex items-center h-5">
-                    <input
-                        id="includeSelfAssessment"
-                        name="includeSelfAssessment"
-                        type="checkbox"
-                        checked={state.includeSelfAssessment}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'includeSelfAssessment', value: e.target.checked }})}
-                        className="focus:ring-brand-secondary h-4 w-4 text-brand-primary border-gray-300 rounded"
-                    />
-                </div>
-                <div className="ml-3 text-sm">
-                    <label htmlFor="includeSelfAssessment" className="font-medium text-gray-700">Вклучи прашања за самооценување</label>
-                    <p className="text-gray-500">Додава 2-3 метакогнитивни прашања на крајот од тестот.</p>
+const AssessmentOptions: React.FC<MaterialOptionsProps> = ({ state, dispatch, user }) => {
+    const [showAdvanced, setShowAdvanced] = useState(false);
+
+    const applyPreset = (preset: 'quick' | 'deep' | 'standard') => {
+        if (preset === 'quick') {
+            dispatch({ type: 'SET_FIELD', payload: { field: 'numQuestions', value: 3 } });
+            dispatch({ type: 'SET_FIELD', payload: { field: 'questionTypes', value: [QuestionType.MULTIPLE_CHOICE, QuestionType.TRUE_FALSE] } });
+            dispatch({ type: 'SET_FIELD', payload: { field: 'bloomDistribution', value: { Remembering: 1, Understanding: 1 } } });
+        } else if (preset === 'deep') {
+            dispatch({ type: 'SET_FIELD', payload: { field: 'numQuestions', value: 2 } });
+            dispatch({ type: 'SET_FIELD', payload: { field: 'questionTypes', value: [QuestionType.ESSAY, QuestionType.SHORT_ANSWER] } });
+            dispatch({ type: 'SET_FIELD', payload: { field: 'bloomDistribution', value: { Analyzing: 1, Evaluating: 1, Creating: 1 } } });
+        } else if (preset === 'standard') {
+            dispatch({ type: 'SET_FIELD', payload: { field: 'numQuestions', value: 5 } });
+            dispatch({ type: 'SET_FIELD', payload: { field: 'questionTypes', value: [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER, QuestionType.TRUE_FALSE] } });
+            dispatch({ type: 'SET_FIELD', payload: { field: 'bloomDistribution', value: {} } });
+        }
+    };
+
+    return (
+        <div className="animate-fade-in space-y-6">
+            {/* Magic Presets */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button type="button" onClick={() => applyPreset('quick')} className="flex flex-col items-center p-3 border border-blue-200 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors">
+                    <span className="text-xl mb-1">⚡</span>
+                    <span className="font-bold text-blue-800 text-sm">Брза проверка (5 мин)</span>
+                    <span className="text-xs text-blue-600 mt-1 text-center">3 кратки прашања, точно/неточно</span>
+                </button>
+                <button type="button" onClick={() => applyPreset('deep')} className="flex flex-col items-center p-3 border border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors">
+                    <span className="text-xl mb-1">🧠</span>
+                    <span className="font-bold text-purple-800 text-sm">Длабоко размислување</span>
+                    <span className="text-xs text-purple-600 mt-1 text-center">2 есејски прашања за анализа</span>
+                </button>
+                <button type="button" onClick={() => applyPreset('standard')} className="flex flex-col items-center p-3 border border-green-200 bg-green-50 hover:bg-green-100 rounded-xl transition-colors">
+                    <span className="text-xl mb-1">📝</span>
+                    <span className="font-bold text-green-800 text-sm">Стандарден тест</span>
+                    <span className="text-xs text-green-600 mt-1 text-center">5 прашања, микс од типови</span>
+                </button>
+            </div>
+
+            {/* Basic Options (Always visible) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label htmlFor="numQuestions" className="block text-sm font-bold text-gray-700">Вкупен број на прашања</label>
+                    <div className="mt-2 flex items-center gap-3">
+                        <input id="numQuestions-slider" type="range" value={state.numQuestions} onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'numQuestions', value: Math.max(1, parseInt(e.target.value) || 1)}})} min="1" max="20" className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-primary" />
+                        <input id="numQuestions" type="number" value={state.numQuestions} onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'numQuestions', value: Math.max(1, parseInt(e.target.value) || 1)}})} min="1" max="20" className="w-16 p-2 text-center border font-bold border-gray-300 rounded-md" />
+                    </div>
                 </div>
             </div>
+
+            {/* Advanced Options Accordion */}
+            <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <button 
+                    type="button" 
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                    <span className="font-bold text-gray-700 flex items-center gap-2">
+                        <ICONS.settings className="w-4 h-4 text-gray-500" />
+                        Напредни подесувања
+                        <span className="text-xs font-normal text-gray-500 hidden sm:inline">(Типови прашања, Блумова таксономија, Диференцијација)</span>
+                    </span>
+                    <ICONS.chevronDown className={`w-5 h-5 text-gray-500 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showAdvanced && (
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-200">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Типови на прашања</label>
+                            <div className="flex flex-wrap gap-2">{Object.entries({ [QuestionType.MULTIPLE_CHOICE]: 'Понудени одговори', [QuestionType.SHORT_ANSWER]: 'Краток одговор', [QuestionType.TRUE_FALSE]: 'Точно/Неточно', [QuestionType.ESSAY]: 'Есејско прашање', [QuestionType.FILL_IN_THE_BLANK]: 'Дополни реченица' }).map(([type, label]) => (<div key={type}><label htmlFor={`q-type-${type}`} className={`cursor-pointer px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${state.questionTypes.includes(type as QuestionType) ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}><input id={`q-type-${type}`} type="checkbox" checked={state.questionTypes.includes(type as QuestionType)} onChange={() => dispatch({ type: 'TOGGLE_QUESTION_TYPE', payload: type as QuestionType })} className="sr-only" />{label}</label></div>))}</div>
+                        </div>
+                        
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">Ниво на диференцијација</label>
+                            <div className="flex items-center space-x-4 mt-2 mb-3">
+                                <div className="flex items-center"><input id="diff-type-standard" name="diff-type" type="radio" checked={!state.useStudentProfiles} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'useStudentProfiles', value: false }})} className="h-4 w-4 text-brand-primary border-gray-300" /><label htmlFor="diff-type-standard" className="ml-2 block text-sm text-gray-900">Според ниво</label></div>
+                                <div className="flex items-center"><input id="diff-type-profile" name="diff-type" type="radio" checked={state.useStudentProfiles} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'useStudentProfiles', value: true }})} className="h-4 w-4 text-brand-primary border-gray-300" disabled={!user?.studentProfiles || user.studentProfiles.length === 0}/><label htmlFor="diff-type-profile" className="ml-2 block text-sm text-gray-900">Според профили на ученици</label></div>
+                            </div>
+                            
+                            {state.useStudentProfiles ? (
+                                <div className="animate-fade-in"><select id="student-profiles" multiple value={state.selectedStudentProfileIds} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedStudentProfileIds', value: Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value) }})} className="mt-1 block w-full p-2 border-gray-300 rounded-md h-24">{user?.studentProfiles?.map((p: StudentProfile) => <option key={p.id} value={p.id}>{p.name}</option>)}</select><p className="text-xs text-gray-500 mt-1">Држете Ctrl (или Cmd) за да изберете повеќе профили.</p></div>
+                            ) : (
+                                <div className="animate-fade-in flex flex-wrap gap-3">
+                                    {(['standard', 'support', 'advanced'] as DifferentiationLevel[]).map(level => { const labels: Record<DifferentiationLevel, string> = { standard: '⚪ Стандардно', support: '🔵 Поддршка (поедноставено)', advanced: '🔴 За напредни ученици', }; return (<label key={level} htmlFor={`diff-level-${level}`} className={`cursor-pointer px-4 py-2 rounded-lg border text-sm font-medium transition-all ${state.differentiationLevel === level ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}><input id={`diff-level-${level}`} name="differentiationLevel" type="radio" value={level} checked={state.differentiationLevel === level} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: level }})} className="sr-only" />{labels[level]}</label>)})}
+                                </div>
+                            )}
+                        </div>
+                        
+                        <BloomDistributionSelector state={state} dispatch={dispatch} />
+                        
+                        <div className="md:col-span-2 pt-2 mt-2">
+                            <label className="flex items-start cursor-pointer p-3 bg-gray-50 rounded-lg rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                                <div className="flex items-center h-5 mt-0.5">
+                                    <input id="includeSelfAssessment" name="includeSelfAssessment" type="checkbox" checked={state.includeSelfAssessment} onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'includeSelfAssessment', value: e.target.checked }})} className="focus:ring-brand-secondary h-5 w-5 text-brand-primary border-gray-300 rounded" />
+                                </div>
+                                <div className="ml-3 text-sm">
+                                    <span className="font-bold text-gray-800 block">Вклучи прашања за самооценување</span>
+                                    <span className="text-gray-500">Додава 2-3 метакогнитивни прашања (пр. "Колку беше сигурен во одговорот?") на крајот.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const ExitTicketOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispatch'>> = ({ state, dispatch }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
