@@ -39,7 +39,8 @@ import {
   ArrowRight,
   Target,
   BarChart3,
-  ClipboardCheck
+  ClipboardCheck,
+  Database,
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -48,6 +49,7 @@ export const ICONS: Record<string, any> = {
   starSolid: Star,
   dashboard: Layout,
   planner: Calendar,
+  database: Database,
   curriculum: BookOpen,
   settings: Settings,
   math: Calculator,

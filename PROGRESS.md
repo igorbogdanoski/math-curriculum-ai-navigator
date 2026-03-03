@@ -6,6 +6,15 @@
 
 ## ✅ Завршено
 
+### Фаза 3 — Архитектура и Безбедност (RBAC, RAG, Rate Limiting) (03 март 2026)
+- **RBAC Security**: Целосна ревизија на `firestore.rules`. Пристап само до припадници на исто училиште.
+- **Lazy Loading**: `services/ragService.ts` користи `await import()` за вчитување на големи податоци само по потреба.
+- **Rate Limiting**: In-memory лимит од 20 барања/мин по корисник (`api/_lib/sharedUtils.ts`).
+- **Key Rotation**: Автоматска ротација на 5 резервни клучеви (`GEMINI_API_KEY_1`..`4`) при грешка 429.
+- **Types**: Дефинирани `role` (teacher, admin) во `TeachingProfile`.
+
+---
+
 ### Фаза 1 — Поправка на React Error #130 (commit `648938c`)
 - **Проблем**: Апликацијата паѓаше на Vercel со React error #130 (undefined component)
 - **Причина**: `ICONS.arrowRight` не постоеше во `constants.tsx`, а се користеше во повеќе компоненти

@@ -1,4 +1,3 @@
-import { fullCurriculumData } from '../data/curriculum';
 import { Topic, Concept } from '../types';
 
 /**
@@ -7,9 +6,18 @@ import { Topic, Concept } from '../types';
  */
 class RagService {
   /**
+   * Helper to lazily load the curriculum data.
+   */
+  private async getCurriculumData() {
+    const { fullCurriculumData } = await import('../data/curriculum');
+    return fullCurriculumData;
+  }
+
+  /**
    * Retrieves the official requirements for a specific concept to be used as context.
    */
-  public getConceptContext(gradeLevel: number, conceptId: string): string {
+  public async getConceptContext(gradeLevel: number, conceptId: string): Promise<string> {
+    const fullCurriculumData = await this.getCurriculumData();
     const gradeData = fullCurriculumData.curriculumData.grades.find((g) => g.level === gradeLevel);
     if (!gradeData) return '';
 
@@ -25,7 +33,8 @@ class RagService {
   /**
    * Retrieves the official requirements for an entire topic.
    */
-  public getTopicContext(gradeLevel: number, topicId: string): string {
+  public async getTopicContext(gradeLevel: number, topicId: string): Promise<string> {
+    const fullCurriculumData = await this.getCurriculumData();
     const gradeData = fullCurriculumData.curriculumData.grades.find((g) => g.level === gradeLevel);
     if (!gradeData) return '';
 

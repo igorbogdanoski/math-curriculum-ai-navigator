@@ -129,6 +129,28 @@ export function setCorsHeaders(res: VercelResponse): void {
 }
 
 // ---------------------------------------------------------------------------
+// Rate Limiting (In-memory Edge fallback)
+// ---------------------------------------------------------------------------
+const rlMap = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 20; // 20 requests per minute per user/ip
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  let timestamps = rlMap.get(identifier) || [];
+  timestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  
+  if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    rlMap.set(identifier, timestamps);
+    return false; // rate limited
+  }
+  
+  timestamps.push(now);
+  rlMap.set(identifier, timestamps);
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 // Auth + Validation middleware
 // Returns the validated body or sends an error response and returns null.
 // ---------------------------------------------------------------------------
@@ -146,6 +168,9 @@ export async function authenticateAndValidate(
     return null;
   }
 
+  // Rate limit identifier (either Firebase UID or IP Address)
+  let rlIdentifier = req.headers['x-forwarded-for'] as string || 'anonymous';
+
   // 2. Verify Firebase ID token
   const auth = getFirebaseAdmin();
   if (auth) {
@@ -156,7 +181,8 @@ export async function authenticateAndValidate(
     }
     const idToken = authHeader.slice(7);
     try {
-      await auth.verifyIdToken(idToken);
+      const decodedToken = await auth.verifyIdToken(idToken);
+      rlIdentifier = decodedToken.uid; // Limit by unique User ID
     } catch (err) {
       console.error('[auth] Token verification failed:', err);
       res.status(401).json({ error: 'Invalid or expired authentication token' });
@@ -164,13 +190,19 @@ export async function authenticateAndValidate(
     }
   } else {
     // If we're in production but Firebase Admin is NOT available, we MUST block the request
-    // as it means GEMINI_API_KEY could be exploited without authentication.
     if (process.env.NODE_ENV === 'production') {
         console.error('[auth] CRITICAL: FIREBASE_SERVICE_ACCOUNT missing in production!');
         res.status(500).json({ error: 'Server authentication configuration error' });
         return null;
     }
     console.warn('[auth] Skipping token verification — Firebase Admin not available (Development Mode)');
+  }
+
+  // 2.5 Apply Rate Limit
+  if (!checkRateLimit(rlIdentifier)) {
+    console.warn(`[rate-limit] Blocked request from ${rlIdentifier}. Too many requests.`);
+    res.status(429).json({ error: 'Rate limit exceeded. Please wait a minute before requesting again.', quotaType: 'rate' });
+    return null;
   }
 
   // 3. Validate request body with Zod

@@ -2,7 +2,12 @@ import fs from 'fs';
 import https from 'https';
 import path from 'path';
 
-const API_KEY = process.env.GEMINI_API_KEY || "AIzaSyDkRaYvDwcPJ8ch-PUE4WiKjedrcJarBDE"; // Replace with process.env if needed
+const API_KEY = process.env.GEMINI_API_KEY;
+
+if (!API_KEY) {
+  console.error("Error: GEMINI_API_KEY environment variable is not set. Please set it before running this script.");
+  process.exit(1);
+}
 
 // Helper to interact with Gemini API
 async function mapActivityToConcept(themeTitle, concepts, activityText) {

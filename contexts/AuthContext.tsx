@@ -90,10 +90,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.info("Fetching profile for verified user. UID:", user.uid);
                 const profile = await fetchUserProfile(user.uid);
                 
-                const finalProfile: TeachingProfile = profile || { 
-                    name: user.displayName || 'Корисник', 
-                    photoURL: user.photoURL || undefined, 
-                    style: 'Constructivist', 
+                const finalProfile: TeachingProfile = profile || {
+                    name: user.displayName || 'Корисник',
+                    photoURL: user.photoURL || undefined,
+                    role: 'teacher', // default role
+                    style: 'Constructivist',
                     experienceLevel: 'Beginner',
                     studentProfiles: [],
                     favoriteConceptIds: [],
@@ -150,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const newProfile: TeachingProfile = {
             name: name,
             photoURL: photoURL,
+            role: 'teacher', // default role
             style: 'Constructivist',
             experienceLevel: 'Beginner',
             studentProfiles: [],

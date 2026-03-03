@@ -473,13 +473,19 @@ const TEXT_SYSTEM_INSTRUCTION = `
 const JSON_SYSTEM_INSTRUCTION = `Ти си API кое генерира строго валиден JSON за наставни материјали по математика. 
 ОДГОВОРИ ИСКЛУЧИВО СО RAW JSON ОБЈЕКТ. БЕЗ MARKDOWN (\`\`\`json) И БЕЗ ДОПОЛНИТЕЛЕН ТЕКСТ.`;
 
-export function buildDynamicSystemInstruction(baseInstruction: string, gradeLevel?: number, conceptId?: string, topicId?: string): string {
+export async function buildDynamicSystemInstruction(baseInstruction: string, gradeLevel?: number, conceptId?: string, topicId?: string): Promise<string> {
     let instruction = baseInstruction;
     if (gradeLevel && conceptId) {
-        instruction += ragService.getConceptContext(gradeLevel, conceptId);
+        instruction += await ragService.getConceptContext(gradeLevel, conceptId);
     } else if (gradeLevel && topicId) {
-        instruction += ragService.getTopicContext(gradeLevel, topicId);
+        instruction += await ragService.getTopicContext(gradeLevel, topicId);
     }
+    
+    // Simplification bounds for young students
+    if (gradeLevel && gradeLevel <= 3) {
+        instruction += `\nЗАБЕЛЕШКА: Ова е за рана училишна возраст (1-3 одд). Користи многу едноставни зборови, кратки реченици и конкретни физички предмети за примери (како јаболка, играчки, моливи итн.). Избегнувај апстрактни поими.`;
+    }
+
     return instruction;
 }
 
@@ -658,7 +664,7 @@ export const realGeminiService = {
         required: ["title", "openingActivity", "mainActivity", "differentiation", "assessmentIdea"]
     };
 
-    const systemInstr = buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id);
+    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id);
     const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, false, systemInstr);
     await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'ideas', conceptId, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return result;
@@ -838,7 +844,10 @@ ${customInstruction || ''}`;
       advanced: 'ЗБОГАТУВАЊЕ: Предизвикувачки прашања со отворен крај, критичко размислување, меѓупредметни врски и примена во реален контекст',
     };
     const diffDesc = diffDescriptions[differentiationLevel] || diffDescriptions.standard;
-    const prompt = `Генерирај ${type} со ${numQuestions} прашања на македонски. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (лесно/средно/тешко). ${customInstruction || ''}`;
+    const gradeLevelPrompt = context.grade.level && context.grade.level <= 3 
+      ? ' ЗАБЕЛЕШКА ЗА ВОЗРАСТА: Ова е за рана училишна возраст (1-3 одд). Користи МНОГУ ЕДНОСТАВЕН јазик, кратки реченици и примери со конкретни предмети (на пр. јаболка, играчки). Бројките да соодветствуваат на нивото.' 
+      : '';
+    const prompt = `Генерирај ${type} со ${numQuestions} прашања на македонски. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart}${gradeLevelPrompt} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (лесно/средно/тешко). ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, alignment_goal: { type: Type.STRING }, selfAssessmentQuestions: { type: Type.ARRAY, items: { type: Type.STRING } }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, cognitiveLevel: { type: Type.STRING }, difficulty_level: { type: Type.STRING }, concept_evaluated: { type: Type.STRING } }, required: ["type", "question", "answer", "cognitiveLevel"] } } }, required: ["title", "questions"] };
 
     const canCache = !customInstruction && !studentProfiles?.length && differentiationLevel === 'standard' && !image;
@@ -854,7 +863,7 @@ ${customInstruction || ''}`;
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
     
     // RAG INJECTION
-    const systemInstr = buildDynamicSystemInstruction(
+    const systemInstr = await buildDynamicSystemInstruction(
         JSON_SYSTEM_INSTRUCTION, 
         context.grade.level, 
         conceptCacheId !== 'gen' ? conceptCacheId : undefined, 
@@ -919,7 +928,7 @@ ${customInstruction || ''}`;
       const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, objectives: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, bloomsLevel: { type: Type.STRING } }, required: ["text"] } }, scenario: { type: Type.OBJECT, properties: { introductory: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } }, main: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } } }, concluding: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } } } } }, required: ["title", "objectives", "scenario"] };
       const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
       if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
-      const systemInstr = buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, context.gradeLevel, context.concept?.id, context.topic?.id);
+      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, context.gradeLevel, context.concept?.id, context.topic?.id);
       return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, systemInstr);
   },
 
@@ -1195,6 +1204,10 @@ ${lessonsText}
     if (cached) return cached;
 
     const diffMap = { easy: "Лесни (за паметење и разбирање)", medium: "Средни (примена)", hard: "Тешки (анализа и евалуација)" };
+    const gradeLevelPrompt = gradeLevel <= 3 
+      ? 'ЗАБЕЛЕШКА: Ова е за рана училишна возраст (1-3 одд). Користи многу едноставни зборови и секојдневни предмети во текстуалните задачи.' 
+      : 'Вклучи и текстуални задачи.';
+
     const prompt = `Генерирај тест по математика за "${topic}" (одделение ${gradeLevel}).
 Тестот треба да има ДВЕ ГРУПИ (Група А и Група Б).
 Вкупно прашања по група: ${questionCount}.
@@ -1203,7 +1216,7 @@ ${lessonsText}
 ВАЖНО:
 - Прашањата во Група А и Група Б мора да бидат "паралелни" (исти по тип и тежина, но со различни бројки или примери).
 - Пр: Ако 1. задача во А е "2+3", во Б треба да биде "4+5".
-- Вклучи и текстуални задачи.
+- ${gradeLevelPrompt}
 
 Врати JSON:
 {

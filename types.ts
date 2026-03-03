@@ -177,6 +177,9 @@ export interface StudentProfile {
 export interface TeachingProfile {
   name: string;
   photoURL?: string;
+  // RBAC and Multi-tenant fields
+  role?: 'teacher' | 'school_admin' | 'admin';
+  schoolId?: string;
   schoolName?: string;
   municipality?: string;
   style: 'Constructivist' | 'Direct Instruction' | 'Inquiry-Based' | 'Project-Based';

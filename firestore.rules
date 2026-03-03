@@ -1,8 +1,8 @@
-rules_version = '2';
+﻿rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Помошни функции ──────────────────────────────────────────────────
+    // ── Помошни функции (Helper functions & RBAC) ──
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -10,16 +10,44 @@ service cloud.firestore {
     function isOwner(uid) {
       return isAuthenticated() && request.auth.uid == uid;
     }
-
-    // ── Приватни Teacher податоци (lesson plans, planner, curriculum edits) ──
-    match /users/{uid}/{collection=**} {
-      allow read, write: if isOwner(uid);
+    
+    // Fetch the user's document to check their role/school
+    function getUserData() {
+      // Use firestore built-in string template syntax
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    // Check if user has specific role
+    function isRole(expectedRole) {
+      return isAuthenticated() && getUserData().role == expectedRole;
+    }
+    
+    // Global admin can do anything, school_admin can manage their school
+    function isAdmin() {
+      return isRole('admin');
+    }
+    
+    function isSchoolAdmin(schoolId) {
+      return (isRole('school_admin') || isRole('admin')) && getUserData().schoolId == schoolId;
+    }
+    
+    function isSameSchool(schoolId) {
+      return isAuthenticated() && getUserData().schoolId == schoolId;
     }
 
-    // ── Квиз резултати (quiz_results) ────────────────────────────────────
-    // Читање: јавно (ученик/родител ги гледа по ime без auth)
-    // Создавање: анонимни ученици, задолжителни полиња
-    // Ажурирање: само полето confidence (1-5) — за самооценување (П26)
+    // ── Кориснички профили (users) ──
+    match /users/{uid} {
+      // Users can read/write their own profiles. Admins can read all.
+      allow read: if isOwner(uid) || isAdmin() || (isAuthenticated() && resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId));
+      allow write: if isOwner(uid) || isAdmin();
+      
+      // Сите суб-колекции кај корисникот (планови, зачувани прашања итн.)
+      match /{document=**} {
+        allow read, write: if isOwner(uid) || isAdmin();
+      }
+    }
+
+    // ── Квиз резултати (quiz_results) ──
     match /quiz_results/{doc} {
       allow read:   if true;
       allow create: if request.resource.data.keys().hasAll(['studentName', 'percentage', 'conceptId']);
@@ -27,65 +55,60 @@ service cloud.firestore {
                     && request.resource.data.confidence is int
                     && request.resource.data.confidence >= 1
                     && request.resource.data.confidence <= 5;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
-    // ── Кеширани AI материјали (cached_ai_materials) ─────────────────────
-    // Читање: сите (учениците читаат квизови преку линк без auth)
-    // Пишување: само автентицирани наставници
+    // ── Кеширани AI материјали (cached_ai_materials) ──
     match /cached_ai_materials/{doc} {
       allow read:  if true;
       allow write: if isAuthenticated();
     }
 
-    // ── Совладување на концепти (concept_mastery) ────────────────────────
-    // Анонимни ученици пишуваат свој напредок, задолжителни полиња
+    // ── Совладување на концепти (concept_mastery) ──
     match /concept_mastery/{doc} {
       allow read:   if true;
       allow create: if request.resource.data.keys().hasAll(['studentName', 'conceptId']);
       allow update: if request.resource.data.keys().hasAll(['studentName', 'conceptId']);
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
-    // ── Заедничка библиотека на планови (communityLessonPlans) ───────────
+    // ── Заедничка библиотека на планови (communityLessonPlans) ──
     match /communityLessonPlans/{doc} {
       allow read:  if true;
       allow write: if isAuthenticated();
     }
 
-    // ── Гамификација (student_gamification) ──────────────────────────────
-    // Анонимни ученици пишуваат свој XP/стрик, studentName мора да постои
-    // Update: не смее да го смени studentName (заштита од прекривање)
+    // ── Гамификација (student_gamification) ──
     match /student_gamification/{doc} {
       allow read:   if true;
       allow create: if request.resource.data.keys().hasAll(['studentName']);
       allow update: if resource.data.studentName == request.resource.data.studentName;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
-    // ── Групи на ученици (student_groups) ────────────────────────────────
+    // ── Групи на ученици (student_groups) ──
     match /student_groups/{doc} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated() && (isOwner(resource.data.teacherUid) || (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId)) || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+      allow update, delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
-    // ── Live сесии (live_sessions) ────────────────────────────────────────
-    // Create: само автентицирани (наставник создава сесија)
-    // Read: сите (ученик се приклучува по 4-знаковен код)
-    // Update: сите — само ако сесијата не е завршена (status != 'ended')
+    // ── Live сесии (live_sessions) ──
     match /live_sessions/{doc} {
       allow read:   if true;
       allow create: if isAuthenticated();
-      allow update: if resource.data.status != 'ended';
-      allow delete: if isAuthenticated();
+      allow update: if resource.data.status != 'ended' || isOwner(resource.data.teacherUid);
+      allow delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
-    // ── Класи (classes) ───────────────────────────────────────────────────
+    // ── Класови (classes) ──
     match /classes/{doc} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated(); 
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
-    // ── Зачувани прашања (saved_questions) — П22 ─────────────────────────
-    // Само наставникот-сопственик може да чита, создава и брише
+    // ── Зачувани прашања (saved_questions) ──
     match /saved_questions/{doc} {
       allow read:   if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
@@ -93,16 +116,26 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // ── Огласи (announcements) — П27 ─────────────────────────────────────
-    // Наставникот создава/брише, учениците читаат јавно (по teacherUid)
+    // ── Огласи (announcements) ──
     match /announcements/{doc} {
       allow read:   if true;
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
-      allow update: if false;
+      allow delete: if isAuthenticated() && resource.data.teacherUid == request.auth.uid || isAdmin();
+      allow update: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
-    // ── Сè друго: одбиено ────────────────────────────────────────────────
+    // ── Училишта (schools) - ЗА MULTI-TENANT ──
+    match /schools/{schoolId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      match /{document=**} {
+        allow read: if isAuthenticated();
+        allow write: if isSchoolAdmin(schoolId) || isAdmin();
+      }
+    }
+
+    // Сè друго: одбиено
     match /{document=**} {
       allow read, write: if false;
     }

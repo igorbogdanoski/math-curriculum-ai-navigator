@@ -109,7 +109,9 @@ export const TestGeneratorView: React.FC = () => {
                             value={selectedGrade}
                             onChange={(e) => setSelectedGrade(Number(e.target.value))}
                         >
-                            {[6, 7, 8, 9].map(g => <option key={g} value={g}>{g}. одделение</option>)}
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(g => (
+                                <option key={g} value={g}>{g}. одделение</option>
+                            ))}
                         </select>
                     </div>
 

@@ -7,7 +7,6 @@ import type { TeachingProfile, StudentProfile } from '../types';
 import { ICONS } from '../constants';
 import { InstallApp } from '../components/common/InstallApp';
 import { firestoreService } from '../services/firestoreService';
-import { fullCurriculumData } from '../data/curriculum';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics } from '../services/geminiService';
 
 const initialProfile: TeachingProfile = {
@@ -174,6 +173,7 @@ export const SettingsView: React.FC = () => {
 
         setIsMigrating(true);
         try {
+            const { fullCurriculumData } = await import('../data/curriculum');
             await firestoreService.saveFullCurriculum(fullCurriculumData);
             addNotification('Наставната програма е успешно префрлена во Firestore!', 'success');
         } catch (error) {
@@ -375,7 +375,7 @@ export const SettingsView: React.FC = () => {
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <h3 className="font-bold text-gray-900">Миграција на наставна програма</h3>
-                            <p className="text-xs text-gray-500 mt-1">Верзија: v1 (Математика 6-9 одд.)</p>
+                            <p className="text-xs text-gray-500 mt-1">Верзија: v2 (Сите одделенија 1-9)</p>
                         </div>
                         <button
                             onClick={handleMigrateCurriculum}
