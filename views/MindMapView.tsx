@@ -213,13 +213,19 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
         // Find the node object to check properties
         const nodeObj = nodes.find((n: any) => n.id === nodeId);
         
-        // Navigate if it's a concept node (either main branch or prior knowledge)
-        // Main concepts have IDs starting with 'g' (e.g. g7-num-1)
-        // Prior knowledge nodes now have IDs like 'parent-pk-child', but we stored _realId
+        // Navigate if it's a concept node.
+        // Resolve target ID (handling Prior Knowledge nodes which have _realId)
         const targetId = nodeObj?._realId || nodeId;
         
-        if (targetId && String(targetId).startsWith('g')) {
-          navigate(`/concept/${targetId}`);
+        if (targetId) {
+            const safeId = String(targetId).trim();
+            // Basic validation: ensure ID looks like a concept ID (starts with 'g' or is known format)
+            if (safeId.startsWith('g')) {
+                console.log(`[MindMap] Navigating to concept: ${safeId}`);
+                navigate(`/concept/${encodeURIComponent(safeId)}`);
+            } else {
+                console.warn(`[MindMap] Ignored navigation to non-concept node: ${safeId}`);
+            }
         }
       });
 

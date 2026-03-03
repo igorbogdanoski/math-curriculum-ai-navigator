@@ -175,7 +175,29 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     if (concept) setLastVisited({ path: `/concept/${id}`, label: concept.title, type: 'concept' });
   }, [concept, id, setLastVisited]);
 
-  if (!concept || !topic || !grade) return <SkeletonLoader type="page" />;
+  if (!concept || !topic || !grade) {
+      return (
+        <div className="relative">
+            <SkeletonLoader type="page" />
+            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-yellow-50 p-4 border border-yellow-200 rounded-lg shadow-lg text-center max-w-md">
+                <h3 className="font-bold text-yellow-700 mb-2">Статус на вчитување</h3>
+                <div className="text-sm text-left font-mono bg-white p-2 rounded border space-y-1">
+                    <p><strong>ID:</strong> {id}</p>
+                    <p><strong>Grade:</strong> {grade?.id || 'MISSING'}</p>
+                    <p><strong>Topic:</strong> {topic?.id || 'MISSING'}</p>
+                    <p><strong>Concept:</strong> {concept?.id || 'MISSING'}</p>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Ако оваа порака стои повеќе од 2 секунди, можно е податоците да недостасуваат или ID-то да е погрешно.</p>
+                <button 
+                  onClick={() => navigate('/explore')}
+                  className="mt-3 text-sm text-blue-600 hover:underline"
+                >
+                  Врати се назад
+                </button>
+            </div>
+        </div>
+      );
+  }
 
   return (
     <div className="p-4 md:p-8 animate-fade-in pb-24 text-left">

@@ -32,7 +32,7 @@ export function useRouter(routes: { path: string; component: React.FC<any> }[]) 
       const isMatch = routeParts.every((part, i) => {
         if (part.startsWith(':')) {
           const paramName = part.slice(1);
-          newParams[paramName] = pathParts[i];
+          newParams[paramName] = decodeURIComponent(pathParts[i]); // Decode params
           return true;
         }
         return part === pathParts[i];

@@ -81,7 +81,7 @@ export function useBreadcrumbs(path: string): Breadcrumb[] {
     // Safer handling for Concept Paths
     if (pathParts[0] === 'concept' && pathParts[1]) {
         try {
-            const result = getConceptDetails(pathParts[1]);
+            const result = getConceptDetails(decodeURIComponent(pathParts[1]));
             const topic = result?.topic;
             const concept = result?.concept;
 
