@@ -32,6 +32,34 @@ const wrapText = (text: string, maxWidth: number = 25) => {
 };
 
 
+const createMindMapTooltip = (header: string, content: string, headerColor: string = '#0D47A1'): HTMLElement => {
+   const container = document.createElement('div');
+   container.style.padding = '8px';
+   container.style.maxWidth = '250px';
+   container.style.fontFamily = 'sans-serif';
+   container.style.backgroundColor = 'white';
+   container.style.borderRadius = '4px';
+   container.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+   
+   const titleDiv = document.createElement('div');
+   titleDiv.style.fontWeight = 'bold';
+   titleDiv.style.marginBottom = '4px';
+   titleDiv.style.color = headerColor;
+   titleDiv.style.fontSize = '1.05em';
+   titleDiv.style.borderBottom = `1px solid ${headerColor}40`;
+   titleDiv.style.paddingBottom = '4px';
+   titleDiv.textContent = header;
+   
+   const bodyDiv = document.createElement('div');
+   bodyDiv.style.fontSize = '0.9em';
+   bodyDiv.style.color = '#333';
+   bodyDiv.textContent = content;
+   
+   container.appendChild(titleDiv);
+   container.appendChild(bodyDiv);
+   return container;
+};
+
 export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
   const graphRef = useRef<HTMLDivElement>(null);
   const { navigate } = useNavigation();
@@ -81,7 +109,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
         shape: 'box',
         color: '#1976D2', // brand-secondary
         font: { color: 'white' },
-        title: `<b>${concept.title}</b><br>${concept.description}`
+        title: createMindMapTooltip(concept.title, concept.description, '#0D47A1')
       });
       edges.push({ from: topic.id, to: concept.id, length: 200 });
 
@@ -99,7 +127,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
                 shape: 'ellipse',
                 color: '#FF9800', // Orange
                 font: { size: 10 },
-                title: `<b>Предзнаење:</b><br>${pkConcept.title}`
+                title: createMindMapTooltip('Предзнаење:', pkConcept.title, '#EF6C00')
               });
               edges.push({ from: concept.id, to: id, length: 150 });
             }
@@ -111,7 +139,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
           if (concept.assessmentStandards) {
             concept.assessmentStandards.forEach((std: string, j: number) => {
               const id = `${concept.id}-as-${j}`;
-              nodes.push({ id, label: wrapText(std), shape: 'dot', color: '#4CAF50', size: 10, title: `<b>Стандард за оценување:</b><br>${std}` });
+              nodes.push({ id, label: wrapText(std), shape: 'dot', color: '#4CAF50', size: 10, title: createMindMapTooltip('Стандард за оценување:', std, '#2E7D32') });
               edges.push({ from: concept.id, to: id });
             });
           }
@@ -119,7 +147,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
           if (concept.nationalStandardIds) {
             getStandardsByIds(concept.nationalStandardIds).forEach((std: NationalStandard, j: number) => {
                 const id = `${concept.id}-ns-${j}`;
-                nodes.push({ id, label: std.code, shape: 'dot', color: '#F44336', size: 10, title: `<b>Национален стандард:</b><br>${std.code}: ${std.description}` });
+                nodes.push({ id, label: std.code, shape: 'dot', color: '#F44336', size: 10, title: createMindMapTooltip(`Национален стандард (${std.code}):`, std.description, '#C62828') });
                 edges.push({ from: concept.id, to: id });
             });
           }
@@ -129,7 +157,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
       if (showActivities) {
           concept.activities?.forEach((act: string, j: number) => {
             const id = `${concept.id}-act-${j}`;
-            nodes.push({ id, label: wrapText(act, 15), shape: 'dot', color: '#9C27B0', size: 10, title: `<b>Активност:</b><br>${act}` });
+            nodes.push({ id, label: wrapText(act, 15), shape: 'dot', color: '#9C27B0', size: 10, title: createMindMapTooltip('Активност:', act, '#7B1FA2') });
             edges.push({ from: concept.id, to: id });
           });
       }
