@@ -138,7 +138,7 @@ export const GenerationContextForm: React.FC<GenerationContextFormProps> = ({ st
                 <p className="text-sm text-gray-500 mt-1">Врз основа на што сакате да го креирате овој материјал?</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
                 {CONTEXT_OPTIONS.map(({ id, label, icon: Icon, desc }) => {
                     const isActive = contextType === id;
                     return (
