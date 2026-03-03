@@ -89,7 +89,7 @@ export const AIChatPanel: React.FC = () => {
                 type="button"
                 onClick={() => setIsOpen(o => !o)}
                 aria-label="AI чет асистент"
-                className={`fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 no-print ${
+                className={`fixed bottom-8 right-24 z-30 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 no-print ${
                     isOpen
                         ? 'bg-gray-700 hover:bg-gray-800 text-white'
                         : 'bg-brand-primary hover:bg-brand-primary/90 text-white'
@@ -100,7 +100,7 @@ export const AIChatPanel: React.FC = () => {
 
             {/* Chat panel */}
             {isOpen && (
-                <div className="fixed bottom-24 right-6 z-30 w-80 sm:w-96 flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden no-print"
+                <div className="fixed bottom-28 right-24 z-30 w-80 sm:w-96 flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden no-print"
                     style={{ maxHeight: 'calc(100vh - 7rem)' }}
                 >
                     {/* Header */}
