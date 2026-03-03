@@ -40,6 +40,11 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
 
   const { topic } = useMemo(() => getTopic(topicId), [getTopic, topicId]);
 
+  // View Controls
+  const [showActivities, setShowActivities] = useState(true);
+  const [showStandards, setShowStandards] = useState(true); // National & Assessment
+  const [showPriorKnowledge, setShowPriorKnowledge] = useState(true);
+
   const { nodes, edges } = useMemo(() => {
     if (!topic) return { nodes: [], edges: [] };
 
@@ -47,6 +52,17 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
     let edges: any[] = [];
     
     // 1. Central Topic Node
+    const topicTooltip = `
+      <div style="font-family:sans-serif; max-width:300px; padding:4px;">
+        <div style="font-weight:bold; font-size:1.1em; margin-bottom:6px; color:#0D47A1;">${topic.title}</div>
+        ${topic.description ? `<div style="margin-bottom:8px; font-size:0.9em;">${topic.description}</div>` : ''}
+        ${topic.topicLearningOutcomes && topic.topicLearningOutcomes.length > 0 ? 
+          `<div style="font-weight:bold; border-top:1px solid #ddd; padding-top:6px; margin-top:6px; font-size:0.85em; color:#333;">Резултати од учење:</div>
+           <ul style="padding-left:16px; margin:4px 0; font-size:0.85em; color:#444;">${topic.topicLearningOutcomes.map((o: string) => `<li>${o}</li>`).join('')}</ul>`
+          : ''}
+      </div>
+    `;
+
     nodes.push({
       id: topic.id,
       label: topic.title,
@@ -54,10 +70,11 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
       color: '#0D47A1', // brand-primary
       font: { color: 'white', size: 18 },
       fixed: true,
+      title: topicTooltip
     });
 
     // 2. Concept Nodes (Main branches)
-    topic.concepts.forEach((concept: Concept, i: number) => {
+    topic.concepts?.forEach((concept: Concept, i: number) => {
       nodes.push({
         id: concept.id,
         label: concept.title,
@@ -70,41 +87,52 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
 
       // 3. Sub-branch nodes for each concept
       // Prior Knowledge
-      concept.priorKnowledgeIds.forEach((pkId: string) => {
-        const { concept: pkConcept } = getConceptDetails(pkId);
-        if (pkConcept) {
-          nodes.push({
-            id: pkConcept.id, // Use original ID to allow navigation
-            label: wrapText(pkConcept.title),
-            shape: 'ellipse',
-            color: '#FF9800', // Orange
-            font: { size: 10 },
-            title: `<b>Предзнаење:</b><br>${pkConcept.title}`
+      if (showPriorKnowledge) {
+          concept.priorKnowledgeIds?.forEach((pkId: string) => {
+            const { concept: pkConcept } = getConceptDetails(pkId);
+            if (pkConcept) {
+              const id = `${concept.id}-pk-${pkConcept.id}`; 
+              nodes.push({
+                id: id, 
+                _realId: pkConcept.id, // For navigation
+                label: wrapText(pkConcept.title),
+                shape: 'ellipse',
+                color: '#FF9800', // Orange
+                font: { size: 10 },
+                title: `<b>Предзнаење:</b><br>${pkConcept.title}`
+              });
+              edges.push({ from: concept.id, to: id, length: 150 });
+            }
           });
-          edges.push({ from: concept.id, to: pkConcept.id, length: 150 });
-        }
-      });
+      }
       
-      // Assessment Standards
-      concept.assessmentStandards.forEach((std: string, j: number) => {
-        const id = `${concept.id}-as-${j}`;
-        nodes.push({ id, label: wrapText(std), shape: 'dot', color: '#4CAF50', size: 10, title: `<b>Стандард за оценување:</b><br>${std}` });
-        edges.push({ from: concept.id, to: id });
-      });
+      // Standards (Assessment & National)
+      if (showStandards) {
+          if (concept.assessmentStandards) {
+            concept.assessmentStandards.forEach((std: string, j: number) => {
+              const id = `${concept.id}-as-${j}`;
+              nodes.push({ id, label: wrapText(std), shape: 'dot', color: '#4CAF50', size: 10, title: `<b>Стандард за оценување:</b><br>${std}` });
+              edges.push({ from: concept.id, to: id });
+            });
+          }
 
-      // National Standards
-      getStandardsByIds(concept.nationalStandardIds).forEach((std: NationalStandard, j: number) => {
-          const id = `${concept.id}-ns-${j}`;
-          nodes.push({ id, label: std.code, shape: 'dot', color: '#F44336', size: 10, title: `<b>Национален стандард:</b><br>${std.code}: ${std.description}` });
-          edges.push({ from: concept.id, to: id });
-      });
+          if (concept.nationalStandardIds) {
+            getStandardsByIds(concept.nationalStandardIds).forEach((std: NationalStandard, j: number) => {
+                const id = `${concept.id}-ns-${j}`;
+                nodes.push({ id, label: std.code, shape: 'dot', color: '#F44336', size: 10, title: `<b>Национален стандард:</b><br>${std.code}: ${std.description}` });
+                edges.push({ from: concept.id, to: id });
+            });
+          }
+      }
 
       // Activities
-      concept.activities?.forEach((act: string, j: number) => {
-        const id = `${concept.id}-act-${j}`;
-        nodes.push({ id, label: wrapText(act, 15), shape: 'dot', color: '#9C27B0', size: 10, title: `<b>Активност:</b><br>${act}` });
-        edges.push({ from: concept.id, to: id });
-      });
+      if (showActivities) {
+          concept.activities?.forEach((act: string, j: number) => {
+            const id = `${concept.id}-act-${j}`;
+            nodes.push({ id, label: wrapText(act, 15), shape: 'dot', color: '#9C27B0', size: 10, title: `<b>Активност:</b><br>${act}` });
+            edges.push({ from: concept.id, to: id });
+          });
+      }
 
     });
 
@@ -112,7 +140,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
     const uniqueNodes = Array.from(new Map(nodes.map(node => [node.id, node])).values());
 
     return { nodes: uniqueNodes, edges };
-  }, [topic, getConceptDetails, getStandardsByIds]);
+  }, [topic, getConceptDetails, getStandardsByIds, showActivities, showStandards, showPriorKnowledge]);
 
   useEffect(() => {
     if (graphRef.current && window.vis && !isLoading && nodes.length > 0) {
@@ -152,9 +180,18 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
 
       network.on('doubleClick', (params: any) => {
         const nodeId = params.nodes[0];
-        // Navigate only if a concept node is clicked (IDs start with 'g')
-        if (nodeId && String(nodeId).startsWith('g')) {
-          navigate(`/concept/${nodeId}`);
+        if (!nodeId) return;
+        
+        // Find the node object to check properties
+        const nodeObj = nodes.find((n: any) => n.id === nodeId);
+        
+        // Navigate if it's a concept node (either main branch or prior knowledge)
+        // Main concepts have IDs starting with 'g' (e.g. g7-num-1)
+        // Prior knowledge nodes now have IDs like 'parent-pk-child', but we stored _realId
+        const targetId = nodeObj?._realId || nodeId;
+        
+        if (targetId && String(targetId).startsWith('g')) {
+          navigate(`/concept/${targetId}`);
         }
       });
 
@@ -191,18 +228,65 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
 
   return (
     <div className="p-8 animate-fade-in">
-      <header className="mb-6 flex justify-between items-center">
-        <div>
-            <h1 className="text-4xl font-bold text-brand-primary">Мисловна Мапа: {topic.title}</h1>
-            <p className="text-lg text-gray-600 mt-2">Двоен-клик на поим за да видите детали.</p>
+      <header className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+            <div>
+                <h1 className="text-4xl font-bold text-brand-primary">Мисловна Мапа: {topic.title}</h1>
+                <p className="text-lg text-gray-600 mt-2">Двоен-клик на поим за да видите детали.</p>
+            </div>
+            <div className="flex gap-2">
+                <button onClick={() => navigate(`/topic/${topicId}`)} className="flex items-center gap-2 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
+                    <ICONS.chevronRight className="w-5 h-5 rotate-180" /> Назад кон темата
+                </button>
+                <button onClick={handleExport} className="flex items-center gap-2 bg-brand-secondary text-white px-4 py-2 rounded-lg shadow hover:bg-brand-primary">
+                    <ICONS.download className="w-5 h-5" /> Сними како слика
+                </button>
+            </div>
         </div>
-        <div className="flex gap-2">
-            <button onClick={() => navigate(`/topic/${topicId}`)} className="flex items-center gap-2 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
-                <ICONS.chevronRight className="w-5 h-5 rotate-180" /> Назад кон темата
-            </button>
-            <button onClick={handleExport} className="flex items-center gap-2 bg-brand-secondary text-white px-4 py-2 rounded-lg shadow hover:bg-brand-primary">
-                <ICONS.download className="w-5 h-5" /> Сними како слика
-            </button>
+        
+        {/* View Controls */}
+        <div className="flex flex-wrap gap-4 p-2 bg-gray-50 rounded-lg border border-gray-200 items-center">
+            <span className="text-sm font-semibold text-gray-700 px-2 border-r border-gray-300">Филтрирај приказ:</span>
+            
+            <label className="flex items-center space-x-2 cursor-pointer select-none hover:bg-gray-100 px-2 py-1 rounded transition-colors">
+                <input 
+                    type="checkbox" 
+                    checked={showPriorKnowledge} 
+                    onChange={e => setShowPriorKnowledge(e.target.checked)} 
+                    className="rounded text-brand-primary focus:ring-brand-primary w-4 h-4" 
+                />
+                <span className="text-sm text-gray-700 flex items-center gap-1.5 font-medium">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#FF9800]"></div> Предзнаења
+                </span>
+            </label>
+
+            <label className="flex items-center space-x-2 cursor-pointer select-none hover:bg-gray-100 px-2 py-1 rounded transition-colors">
+                <input 
+                    type="checkbox" 
+                    checked={showStandards} 
+                    onChange={e => setShowStandards(e.target.checked)} 
+                    className="rounded text-brand-primary focus:ring-brand-primary w-4 h-4" 
+                />
+                <span className="text-sm text-gray-700 flex items-center gap-1.5 font-medium">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-[#4CAF50] to-[#F44336]"></div> Стандарди
+                </span>
+            </label>
+
+            <label className="flex items-center space-x-2 cursor-pointer select-none hover:bg-gray-100 px-2 py-1 rounded transition-colors">
+                <input 
+                    type="checkbox" 
+                    checked={showActivities} 
+                    onChange={e => setShowActivities(e.target.checked)} 
+                    className="rounded text-brand-primary focus:ring-brand-primary w-4 h-4" 
+                />
+                <span className="text-sm text-gray-700 flex items-center gap-1.5 font-medium">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#9C27B0]"></div> Активности
+                </span>
+            </label>
+            
+            <span className="text-xs text-gray-500 ml-auto hidden md:block italic">
+                (Користи го тркалцето на глувчето за зумирање)
+            </span>
         </div>
       </header>
       <Card className="p-2 relative">

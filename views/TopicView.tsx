@@ -29,20 +29,22 @@ const groupStandards = (standards: string[]): Record<string, {text: string, orig
     'Конструкции и Визуелизација': ['црта', 'конструира', 'скицира', 'претставува', 'означува', 'класифицира'],
   };
 
-  standards.forEach((standard, index) => {
-    const lowerStandard = standard.toLowerCase();
-    let assigned = false;
-    for (const [group, KWs] of Object.entries(keywords)) {
-      if (KWs.some(kw => lowerStandard.trim().startsWith(kw))) {
-        groups[group].push({ text: standard, originalIndex: index });
-        assigned = true;
-        break;
-      }
-    }
-    if (!assigned) {
-      groups['Останати'].push({ text: standard, originalIndex: index });
-    }
-  });
+  if (standards) {
+    standards.forEach((standard, index) => {
+        const lowerStandard = standard.toLowerCase();
+        let assigned = false;
+        for (const [group, KWs] of Object.entries(keywords)) {
+        if (KWs.some(kw => lowerStandard.trim().startsWith(kw))) {
+            groups[group].push({ text: standard, originalIndex: index });
+            assigned = true;
+            break;
+        }
+        }
+        if (!assigned) {
+        groups['Останати'].push({ text: standard, originalIndex: index });
+        }
+    });
+  }
 
   const filteredGroups: Record<string, {text: string, originalIndex: number}[]> = {};
   for (const [key, value] of Object.entries(groups)) {
@@ -91,7 +93,6 @@ const StandardGroup: React.FC<{
 
 
 const ConceptCard: React.FC<{
-  concept: Concept;
   allConceptsInTopic: Concept[];
   gradeLevel: number;
   topicId: string;

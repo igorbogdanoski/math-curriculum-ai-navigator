@@ -59,7 +59,7 @@ const createClusterTooltip = (title: string, items: string[], total: number, col
     container.style.maxWidth = '320px';
 
     const titleDiv = el('div', {
-        fontWeight: 'bold', marginBottom: '8px', color,
+        fontWeight: 'bold', marginBottom: '8px', color: color,
         fontSize: '1.1em', borderBottom: `2px solid ${color}`, paddingBottom: '4px',
     }, title);
 
@@ -81,12 +81,37 @@ const createClusterTooltip = (title: string, items: string[], total: number, col
 
 const getRomanGrade = (level: number) => {
     switch(level) {
+        case 1: return 'I';
+        case 2: return 'II';
+        case 3: return 'III';
+        case 4: return 'IV';
+        case 5: return 'V';
         case 6: return 'VI';
         case 7: return 'VII';
         case 8: return 'VIII';
         case 9: return 'IX';
         default: return level;
     }
+};
+
+const STRANDS = [
+    { id: 'num', label: 'Броеви', keywords: ['броеви', 'операции', 'дропки', 'собирање', 'одземање', 'множење', 'делење', 'природни', 'цели', 'рационални'] },
+    { id: 'geo', label: 'Геометрија', keywords: ['геометрија', 'форми', 'агол', 'триаголник', 'плоштина', 'волумен', 'права', 'точка', 'рамнина', 'тела'] },
+    { id: 'alg', label: 'Алгебра', keywords: ['алгебра', 'функции', 'равенки', 'променлив', 'низи', 'изрази'] },
+    { id: 'meas', label: 'Мерење', keywords: ['мерење', 'време', 'пари', 'должина', 'маса', 'температура', 'периметар'] },
+    { id: 'data', label: 'Податоци', keywords: ['податоци', 'веројатност', 'табел', 'дијаграм', 'средна вредност', 'статистика'] },
+];
+
+const matchStrand = (concept: any, strandId: string | null): boolean => {
+    if (!strandId) return true;
+    const strand = STRANDS.find(s => s.id === strandId);
+    if (!strand) return true;
+    
+    // We expect 'title' and 'description' on the concept
+    const text = ((concept.title || '') + ' ' + (concept.description || '')).toLowerCase();
+    
+    // Check if any keyword matches
+    return strand.keywords.some(k => text.includes(k));
 };
 
 
@@ -110,7 +135,14 @@ export const CurriculumGraphView: React.FC = () => {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+
+  // Layout Mode state
+  const [layoutMode, setLayoutMode] = useState<'organic' | 'hierarchical'>('hierarchical');
   
+  // Strand (Domain) Filter
+  // null = All Strands
+  const [selectedStrand, setSelectedStrand] = useState<string | null>(null);
+
   // Track the focused node to show its specific connections ignoring filters
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
   
@@ -120,10 +152,15 @@ export const CurriculumGraphView: React.FC = () => {
   });
 
   const gradeColors: { [key: number]: string } = useMemo(() => ({
+    1: '#F44336', // Red
+    2: '#E91E63', // Pink
+    3: '#9C27B0', // Purple
+    4: '#673AB7', // Deep Purple
+    5: '#3F51B5', // Indigo
     6: '#FFC107', // Amber
     7: '#4CAF50', // Green
     8: '#2196F3', // Blue
-    9: '#9C27B0', // Purple
+    9: '#009688', // Teal
   }), []);
 
   // Colors for Focus Mode
@@ -148,13 +185,13 @@ export const CurriculumGraphView: React.FC = () => {
       .map((grade: Grade) => ({
         gradeLevel: grade.level,
         gradeTitle: grade.title,
-        topics: grade.topics,
+        topics: grade.topics || [],
       }));
   }, [curriculum, selectedGrades]);
 
   useEffect(() => {
       if (!focusNodeId) {
-          setSelectedTopics(groupedTopics.flatMap((group: { topics: Topic[] }) => group.topics.map((t: Topic) => t.id)));
+          setSelectedTopics(groupedTopics.flatMap((group: { topics: Topic[] }) => (group.topics || []).map((t: Topic) => t.id)));
       }
   }, [groupedTopics, focusNodeId]);
 
@@ -193,10 +230,10 @@ export const CurriculumGraphView: React.FC = () => {
 
         allConcepts.forEach((c: EnrichedConcept) => {
             // Map Parents
-            parentMap.set(c.id, c.priorKnowledgeIds);
+            parentMap.set(c.id, c.priorKnowledgeIds || []);
 
             // Map Children
-            c.priorKnowledgeIds.forEach((pkId: string) => {
+            c.priorKnowledgeIds?.forEach((pkId: string) => {
                 if (!childrenMap.has(pkId)) childrenMap.set(pkId, []);
                 childrenMap.get(pkId)?.push(c.id);
             });
@@ -234,7 +271,10 @@ export const CurriculumGraphView: React.FC = () => {
     } else {
         // Normal mode: Use filters
         allConcepts.forEach((concept: EnrichedConcept) => {
-            if (selectedGrades.includes(concept.gradeLevel)) {
+            const gradeMatch = selectedGrades.includes(concept.gradeLevel);
+            const strandMatch = matchStrand(concept, selectedStrand);
+            
+            if (gradeMatch && strandMatch) {
                 activeConceptIds.add(concept.id);
             }
         });
@@ -375,7 +415,52 @@ export const CurriculumGraphView: React.FC = () => {
               });
           }
       }
-  }, [isClustered, nodes, edges, gradeColors]);
+  }, [isClustered, nodes, edges, gradeColors, layoutMode]);
+
+  // Effect to apply Layout Mode changes
+  useEffect(() => {
+    if (networkRef.current) {
+        const options = {
+            layout: {
+                hierarchical: layoutMode === 'hierarchical' ? {
+                    enabled: true,
+                    direction: 'LR',
+                    sortMethod: 'directed',
+                    levelSeparation: 250,
+                    nodeSpacing: 100,
+                    treeSpacing: 200,
+                    blockShifting: true,
+                    edgeMinimization: true,
+                    parentCentralization: true, 
+                } : {
+                    enabled: false
+                }
+            },
+            physics: layoutMode === 'hierarchical' ? {
+                enabled: false  // Disable physics in hierarchy for stability
+            } : {
+                // Organic settings
+                barnesHut: {
+                    gravitationalConstant: -20000,
+                    centralGravity: 0.3,
+                    springLength: 150,
+                    springConstant: 0.05,
+                    damping: 0.09,
+                    avoidOverlap: 0.5
+                },
+                minVelocity: 0.75,
+                stabilization: {
+                    enabled: true,
+                    iterations: 1000
+                }
+            }
+        };
+        networkRef.current.setOptions(options);
+
+        // Re-fit view slightly after layout change
+        setTimeout(() => networkRef.current.fit({ animation: true }), 500);
+    }
+  }, [layoutMode]);
 
 
   useEffect(() => {
@@ -598,6 +683,50 @@ export const CurriculumGraphView: React.FC = () => {
                 
                 {/* Clustering Toggle */}
                 <div className="h-6 w-px bg-gray-300 mx-2 hidden md:block"></div>
+                
+                {/* Layout Mode Toggle */}
+                <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
+                    <button
+                        onClick={() => setLayoutMode('organic')}
+                        className={`flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                            layoutMode === 'organic'
+                            ? 'bg-white text-brand-primary shadow-sm border border-gray-200' 
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        <ICONS.share className="w-3 h-3" /> Органски
+                    </button>
+                    <button
+                        onClick={() => setLayoutMode('hierarchical')}
+                        className={`flex items-center gap-2 px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                            layoutMode === 'hierarchical'
+                            ? 'bg-white text-brand-primary shadow-sm border border-gray-200' 
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        <ICONS.gitBranch className="w-3 h-3 rotate-90" /> Прогресија
+                    </button>
+                </div>
+
+                <div className="h-6 w-px bg-gray-300 mx-2 hidden md:block"></div>
+                
+                {/* Strand Filter */}
+                <div className="flex items-center">
+                    <select
+                        value={selectedStrand || ''}
+                        onChange={(e) => setSelectedStrand(e.target.value || null)}
+                        disabled={!!focusNodeId}
+                        className={`bg-white border border-gray-300 text-gray-700 text-sm rounded-md focus:ring-brand-primary focus:border-brand-primary block w-32 md:w-40 p-1.5 ${focusNodeId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <option value="">Сите Подрачја</option>
+                        {STRANDS.map(strand => (
+                            <option key={strand.id} value={strand.id}>{strand.label}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="h-6 w-px bg-gray-300 mx-2 hidden md:block"></div>
+
                 <button
                     onClick={() => setIsClustered(!isClustered)}
                     className={`flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 border ${

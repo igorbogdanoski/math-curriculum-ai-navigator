@@ -16,7 +16,7 @@ interface CurriculumContextType {
     getGrade: (gradeId: string) => Grade | undefined;
     getTopic: (topicId: string) => { grade?: Grade; topic?: Topic };
     getConceptDetails: (conceptId: string) => { grade?: Grade; topic?: Topic; concept?: Concept };
-    getStandardsByIds: (ids: string[]) => NationalStandard[];
+    getStandardsByIds: (ids: string[] | undefined) => NationalStandard[];
     findConceptAcrossGrades: (conceptId: string) => ConceptProgression | undefined;
     getConceptChain: (conceptId: string) => { priors: ConceptChainEntry[]; futures: ConceptChainEntry[] };
     allConcepts: (Concept & { gradeLevel: number; topicId: string; })[];
@@ -138,8 +138,8 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return conceptMap.get(conceptId) || {};
     }, [conceptMap]);
     
-    const getStandardsByIds = useCallback((ids: string[]): NationalStandard[] => {
-        if (!nationalStandardMap.size) return [];
+    const getStandardsByIds = useCallback((ids: string[] | undefined): NationalStandard[] => {
+        if (!ids || !Array.isArray(ids) || ids.length === 0 || !nationalStandardMap.size) return [];
         return ids.map(id => nationalStandardMap.get(id)).filter((std): std is NationalStandard => !!std);
       }, [nationalStandardMap]);
       
