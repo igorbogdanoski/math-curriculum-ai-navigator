@@ -19,7 +19,7 @@ export const WeakConceptsWidget: React.FC = () => {
             
             // Group by concept
             const grouped: Record<string, { attempts: number, correct: number, title: string }> = {};
-            results.forEach(r => {
+            (results || []).forEach(r => {
                 if (!r.conceptId) return;
                 
                 if (!grouped[r.conceptId]) {
