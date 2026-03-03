@@ -620,7 +620,10 @@ ${generatedMaterial.assessmentIdea}
     }
     
     return (
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6 h-full flex flex-col xl:flex-row gap-6 relative xl:overflow-hidden bg-gray-50 overflow-y-auto">
+            {/* LEFT SIDE: Generator Form */}
+            <div className="w-full xl:w-[450px] 2xl:w-[500px] flex-shrink-0 flex flex-col xl:overflow-y-auto pb-12 xl:pr-4 custom-scrollbar">
+            
             {/* Inline quota exhaustion banner — persistent, shows countdown */}
             {quotaError && (
                 <div className="mb-4 flex items-start gap-3 p-4 rounded-xl border border-orange-200 bg-orange-50">
@@ -651,9 +654,9 @@ ${generatedMaterial.assessmentIdea}
                 </div>
             )}
             {/* Stepper UI */}
-            <div className="mb-6 mx-auto max-w-2xl px-4 relative flex items-center justify-between">
+            <div className="mb-6 w-full px-2 relative flex items-center justify-between">
                 {/* Connecting Line */}
-                <div className="absolute left-[10%] right-[10%] top-5 h-[2px] bg-gray-200 -z-10">
+                <div className="absolute left-[15%] right-[15%] top-5 h-[2px] bg-gray-200 -z-10">
                     <div className="h-full bg-brand-primary transition-all duration-300 ease-in-out" style={{ width: `${((currentStep - 1) / 2) * 100}%` }}></div>
                 </div>
                 
@@ -662,7 +665,7 @@ ${generatedMaterial.assessmentIdea}
                     { step: 2, label: 'Наставна тема', icon: '🎯' },
                     { step: 3, label: 'Опции & Генерирање', icon: '⚙️' }
                 ].map((s) => (
-                    <div key={s.step} className="flex flex-col items-center gap-2">
+                    <div key={s.step} className="flex flex-col items-center gap-1.5 w-1/3 text-center">
                         <button 
                             type="button"
                             onClick={() => setCurrentStep(s.step)}
@@ -676,7 +679,7 @@ ${generatedMaterial.assessmentIdea}
                         >
                             {currentStep > s.step ? <ICONS.check className="w-5 h-5 text-white" /> : s.step}
                         </button>
-                        <span className={`text-xs font-bold transition-colors ${currentStep === s.step ? 'text-brand-primary' : 'text-gray-500'}`}>
+                        <span className={`text-[10px] sm:text-xs font-bold transition-colors leading-tight ${currentStep === s.step ? 'text-brand-primary' : 'text-gray-500'}`}>
                             {s.label}
                         </span>
                     </div>
@@ -792,6 +795,20 @@ ${generatedMaterial.assessmentIdea}
                     </div>
                 </form>
             </Card>
+            </div>
+
+            {/* RIGHT SIDE: Preview Area */}
+            <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 xl:overflow-y-auto min-h-[500px] xl:min-h-0 flex flex-col p-4 xl:p-8 custom-scrollbar">
+                {/* Empty State */}
+                {!isGenerating && !isGeneratingVariants && !isGeneratingBulk && !generatedMaterial && !variants && (!bulkResults || Object.keys(bulkResults).length === 0) && (
+                    <div className="m-auto flex flex-col items-center justify-center text-gray-400 opacity-60 max-w-md text-center">
+                        <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-gray-100">
+                            <ICONS.generator className="w-12 h-12 text-gray-300" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-600 mb-2">Тука ќе се појави материјалот</h3>
+                        <p className="text-sm leading-relaxed">Пополнете ги опциите лево и кликнете <strong>Генерирај AI</strong>. Резултатот и сите алатки за уредување ќе бидат прикажани на овој широк простор.</p>
+                    </div>
+                )}
 
             {/* Smart Loading Indicator + Cancel button */}
             {isGenerating && !generatedMaterial && (
@@ -914,10 +931,7 @@ ${generatedMaterial.assessmentIdea}
                     </div>
                 </div>
             )}
-
-            {!isGenerating && !isGeneratingVariants && !isGeneratingBulk && !generatedMaterial && !variants && !bulkResults && (
-                <div className="mt-6"><EmptyState icon={<ICONS.generator className="w-12 h-12" />} title="Подготвени за создавање?" message="Следете ги чекорите за да го изберете саканиот контекст и параметри, потоа кликнете 'Генерирај' за да добиете материјали креирани од вештачка интелигенција." /></div>
-            )}
+            </div>
         </div>
     );
 };

@@ -26,33 +26,33 @@ export const AIGeneratorPanel: React.FC = () => {
         return null;
     }
 
-    const animationClass = isOpen ? 'animate-slide-in-from-right' : 'animate-slide-out-right';
-    const backdropAnimationClass = isOpen ? 'animate-fade-in' : 'animate-fade-out';
+    const animationClass = isOpen ? 'animate-fade-in' : 'animate-fade-out opacity-0 translate-y-4';
+    const backdropAnimationClass = isOpen ? 'animate-fade-in' : 'animate-fade-out opacity-0';
 
     return (
         <>
-            <div 
-                className={`fixed inset-0 bg-black bg-opacity-60 z-40 transition-opacity duration-300 ${backdropAnimationClass} no-print`}
+            <div
+                className={`fixed inset-0 bg-gray-900/40 z-40 transition-opacity duration-300 ${backdropAnimationClass} no-print backdrop-blur-sm`}
                 onClick={closeGeneratorPanel}
                 aria-hidden="true"
             ></div>
-            <div 
+            <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="ai-generator-panel-title"
-                className={`fixed top-0 right-0 h-full w-full max-w-2xl bg-gray-100 shadow-2xl z-50 transform transition-transform duration-300 ${animationClass}`}
+                className={`fixed inset-0 w-full h-full bg-gray-50 z-50 transform transition-all duration-300 ${animationClass}`}
                 onAnimationEnd={handleAnimationEnd}
             >
-                <div className="flex flex-col h-full">
-                    <header className="flex items-center justify-between p-4 border-b bg-white flex-shrink-0 no-print">
-                        <h2 id="ai-generator-panel-title" className="text-xl font-bold text-brand-primary flex items-center gap-2">
-                           <ICONS.generator className="w-6 h-6" /> AI Генератор
+                <div className="flex flex-col h-full w-full">
+                    <header className="flex items-center justify-between px-6 py-4 border-b bg-white flex-shrink-0 shadow-sm no-print">
+                        <h2 id="ai-generator-panel-title" className="text-2xl font-bold text-brand-primary flex items-center gap-2">
+                           <ICONS.generator className="w-7 h-7" /> AI Генератор
                         </h2>
-                        <button onClick={closeGeneratorPanel} className="p-2 rounded-full hover:bg-gray-200" aria-label="Затвори го генераторот">
+                        <button onClick={closeGeneratorPanel} className="p-2.5 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors" aria-label="Затвори го генераторот">
                             <ICONS.close className="w-6 h-6" />
                         </button>
                     </header>
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-hidden">
                         {/* Removed key to prevent unnecessary unmounting/loops if props change slightly */}
                         <React.Suspense fallback={
                             <div className="flex items-center justify-center h-32">
