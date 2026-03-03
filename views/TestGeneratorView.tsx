@@ -66,18 +66,21 @@ const TestPDF = ({ test }: { test: GeneratedTest }) => (
 
 export const TestGeneratorView: React.FC = () => {
     const { curriculum } = useCurriculum();
-    const [selectedGrade, setSelectedGrade] = useState<number>(6);
+    const [selectedGradeId, setSelectedGradeId] = useState<string>('grade-6');
     const [topic, setTopic] = useState('');
     const [qCount, setQCount] = useState(5);
     const [difficulty, setDifficulty] = useState<'easy'|'medium'|'hard'>('medium');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedTest, setGeneratedTest] = useState<GeneratedTest | null>(null);
 
+    const selectedGradeObj = curriculum?.grades.find(g => g.id === selectedGradeId);
+    const topicsForGrade = selectedGradeObj?.topics || [];
+    const selectedGradeNum = selectedGradeObj?.level || 6;
+
     const handleGenerate = async () => {
         setIsGenerating(true);
         try {
-            // Note: In real app, topic would probably be a dropdown from curriculum
-            const result = await geminiService.generateParallelTest(topic, selectedGrade, qCount, difficulty);
+            const result = await geminiService.generateParallelTest(topic, selectedGradeNum, qCount, difficulty);
             setGeneratedTest(result);
         } catch (e) {
             console.error(e);
@@ -88,7 +91,7 @@ export const TestGeneratorView: React.FC = () => {
     };
 
     return (
-        <div className="p-6 max-w-6xl mx-auto space-y-6">
+        <div className="p-6 max-w-6xl mx-auto space-y-6 pb-32">
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
                 <ICONS.assessment className="w-8 h-8 text-brand-primary" />
                 Генератор на Тестови
@@ -106,24 +109,40 @@ export const TestGeneratorView: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Одделение</label>
                         <select 
                             className="w-full p-2 border rounded-md"
-                            value={selectedGrade}
-                            onChange={(e) => setSelectedGrade(Number(e.target.value))}
+                            value={selectedGradeId}
+                            onChange={(e) => {
+                                setSelectedGradeId(e.target.value);
+                                setTopic(''); // Reset topic when grade changes
+                            }}
                         >
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(g => (
-                                <option key={g} value={g}>{g}. одделение</option>
+                            {curriculum?.grades.map(g => (
+                                <option key={g.id} value={g.id}>{g.title}</option>
                             ))}
                         </select>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Тема / Наставна Единица</label>
-                        <input 
-                            type="text" 
-                            className="w-full p-2 border rounded-md"
-                            placeholder="Пр. Дропки, Равенки, Плоштина..."
-                            value={topic}
-                            onChange={(e) => setTopic(e.target.value)}
-                        />
+                        {topicsForGrade.length > 0 ? (
+                            <select
+                                className="w-full p-2 border rounded-md"
+                                value={topic}
+                                onChange={(e) => setTopic(e.target.value)}
+                            >
+                                <option value="">-- Изберете тема --</option>
+                                {topicsForGrade.map(t => (
+                                    <option key={t.id} value={t.title}>{t.title}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input 
+                                type="text" 
+                                className="w-full p-2 border rounded-md"
+                                placeholder="Пр. Дропки, Равенки, Плоштина..."
+                                value={topic}
+                                onChange={(e) => setTopic(e.target.value)}
+                            />
+                        )}
                     </div>
 
                     <div>
