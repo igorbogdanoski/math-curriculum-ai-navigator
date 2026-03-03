@@ -41,6 +41,7 @@ import {
   BarChart3,
   ClipboardCheck,
   Database,
+  GitBranch,
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -94,6 +95,7 @@ export const ICONS: Record<string, any> = {
   target: Target,
   chartBar: BarChart3,
   analytics: BarChart3,
+  gitBranch: GitBranch
 };
 
 export const SUBJECTS = [
