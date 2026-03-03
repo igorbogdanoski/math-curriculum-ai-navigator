@@ -374,6 +374,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                                     answer: item.answer,
                                     explanation: item.solution
                                 }))}
+                                onClose={() => setIsPlayingQuiz(false)}
                             />
                         </div>
                     )}

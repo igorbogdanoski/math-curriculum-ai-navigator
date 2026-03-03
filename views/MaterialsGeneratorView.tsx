@@ -622,8 +622,8 @@ ${generatedMaterial.assessmentIdea}
     return (
         <div className="p-4 md:p-6 h-full flex flex-col xl:flex-row gap-6 relative xl:overflow-hidden bg-gray-50 overflow-y-auto">
             {/* LEFT SIDE: Generator Form */}
-            <div className="w-full xl:w-[450px] 2xl:w-[500px] flex-shrink-0 flex flex-col xl:overflow-y-auto pb-12 xl:pr-4 custom-scrollbar">
-            
+            <div className="w-full xl:w-[500px] 2xl:w-[560px] flex-shrink-0 flex flex-col xl:overflow-y-auto pb-12 xl:pr-4 custom-scrollbar">
+
             {/* Inline quota exhaustion banner — persistent, shows countdown */}
             {quotaError && (
                 <div className="mb-4 flex items-start gap-3 p-4 rounded-xl border border-orange-200 bg-orange-50">

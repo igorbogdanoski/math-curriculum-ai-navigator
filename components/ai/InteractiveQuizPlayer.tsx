@@ -135,6 +135,16 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     }
   };
 
+  const prevQuestion = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
+      setSelectedOption(null);
+      setIsCorrect(null);
+      setTimeLeft(SECONDS_PER_QUESTION);
+      setIsTimerRunning(true);
+    }
+  };
+
   const finishQuiz = () => {
     setShowResult(true);
     if (onComplete) onComplete({
@@ -229,7 +239,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden max-w-2xl w-full relative">
+      <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden max-w-xl w-full relative">
         
         {/* HEADER */}
         <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -297,7 +307,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                     key={idx}
                     disabled={selectedOption !== null}
                     onClick={() => handleAnswer(option)}
-                    className={`w-full text-left p-5 rounded-2xl border-2 font-bold transition-all duration-200 flex items-center justify-between group ${btnClass}`}
+                    className={`w-full text-left p-4 rounded-xl border-2 font-bold transition-all duration-200 flex items-center justify-between group text-sm md:text-base ${btnClass}`}
                   >
                     <span><MathRenderer text={option} /></span>
                     {showCorrectness && isAnswerCorrect && <CheckCircle className="w-6 h-6 text-green-600" />}
@@ -352,14 +362,24 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                   </div>
                 )}
               </div>
-              
-              <button 
-                onClick={nextQuestion}
-                className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-xl transition-all shadow-xl hover:shadow-slate-200 flex items-center justify-center gap-3 active:scale-[0.98]"
-              >
-                {currentIndex + 1 === normalizedQuestions.length ? 'ЗАВРШИ' : 'СЛЕДНО ПРАШАЊЕ'}
-                <ArrowRight className="w-6 h-6" />
-              </button>
+
+              <div className="flex gap-4">
+                {currentIndex > 0 && (
+                  <button
+                    onClick={prevQuestion}
+                    className="w-1/3 py-5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-2xl font-black text-xl transition-all shadow-xl hover:shadow-gray-300 flex items-center justify-center gap-3 active:scale-[0.98]"
+                  >
+                    НАЗАД
+                  </button>
+                )}
+                <button
+                  onClick={nextQuestion}
+                  className={`${currentIndex > 0 ? 'w-2/3' : 'w-full'} py-5 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-xl transition-all shadow-xl hover:shadow-slate-200 flex items-center justify-center gap-3 active:scale-[0.98]`}
+                >
+                  {currentIndex + 1 === normalizedQuestions.length ? 'ЗАВРШИ' : 'СЛЕДНО'}
+                  <ArrowRight className="w-6 h-6" />
+                </button>
+              </div>
             </div>
           )}
         </div>
