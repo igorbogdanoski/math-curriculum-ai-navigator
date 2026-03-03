@@ -82,6 +82,9 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         rubric?: AIGeneratedRubric;
     } | null>(null);
 
+    // Wizard step state
+    const [currentStep, setCurrentStep] = useState(1);
+
     // Adaptive difficulty recommendation
     const [diffRec, setDiffRec] = useState<DifferentiationLevel | null>(null);
     useEffect(() => {
@@ -151,6 +154,13 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
 
             tour.oncomplete(cleanup);
             tour.onexit(cleanup);
+            
+            tour.onchange((targetElement: HTMLElement) => {
+                const tourStep = targetElement.getAttribute('data-tour');
+                if (tourStep === 'generator-step-1') setCurrentStep(1);
+                else if (tourStep === 'generator-step-2') setCurrentStep(2);
+                else if (tourStep === 'generator-step-3' || tourStep === 'generator-generate-button') setCurrentStep(3);
+            });
             
             try {
                 tour.start();
@@ -639,119 +649,145 @@ ${generatedMaterial.assessmentIdea}
                     </button>
                 </div>
             )}
-            <Card>
-                <form onSubmit={(e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); handleGenerate(); }}>
-                    <fieldset disabled={isGenerating} className="space-y-6">
-                        <fieldset data-tour="generator-step-1" className="p-4 border border-gray-200 rounded-lg">
-                            <legend className="text-xl font-bold text-gray-800 px-2 -ml-2">1. Изберете тип на материјал</legend>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
+            {/* Stepper UI */}
+            <div className="mb-6 mx-auto max-w-2xl px-4 relative flex items-center justify-between">
+                {/* Connecting Line */}
+                <div className="absolute left-[10%] right-[10%] top-5 h-[2px] bg-gray-200 -z-10">
+                    <div className="h-full bg-brand-primary transition-all duration-300 ease-in-out" style={{ width: `${((currentStep - 1) / 2) * 100}%` }}></div>
+                </div>
+                
+                {[
+                    { step: 1, label: 'Тип материјал', icon: '📝' },
+                    { step: 2, label: 'Наставна тема', icon: '🎯' },
+                    { step: 3, label: 'Опции & Генерирање', icon: '⚙️' }
+                ].map((s) => (
+                    <div key={s.step} className="flex flex-col items-center gap-2">
+                        <button 
+                            type="button"
+                            onClick={() => setCurrentStep(s.step)}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border-4 z-10
+                                ${currentStep === s.step 
+                                    ? 'bg-brand-primary border-brand-primary bg-white text-white shadow-[0_0_15px_rgba(43,108,176,0.3)] scale-110' 
+                                    : currentStep > s.step 
+                                        ? 'bg-brand-primary border-brand-primary text-white' 
+                                        : 'bg-white border-gray-200 text-gray-400'
+                                }`}
+                        >
+                            {currentStep > s.step ? <ICONS.check className="w-5 h-5 text-white" /> : s.step}
+                        </button>
+                        <span className={`text-xs font-bold transition-colors ${currentStep === s.step ? 'text-brand-primary' : 'text-gray-500'}`}>
+                            {s.label}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            <Card className="min-h-[400px] flex flex-col">
+                <form onSubmit={(e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); handleGenerate(); }} className="flex-1 flex flex-col">
+                    <fieldset disabled={isGenerating} className="flex-1">
+                        
+                        {/* STEP 1: Material Type */}
+                        <div data-tour="generator-step-1" className={`transition-opacity duration-300 ${currentStep === 1 ? 'block animate-fade-in' : 'hidden'}`}>
+                            <div className="py-2 border-b border-gray-100 mb-6 flex items-center gap-3">
+                                <span className="bg-brand-primary text-white text-xl w-8 h-8 rounded-full flex items-center justify-center font-bold">1</span>
+                                <h2 className="text-xl font-bold text-gray-800">Изберете тип на материјал</h2>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                 {materialOptions.map(({ id, label }) => (
                                     <button
                                         type="button"
                                         key={id}
-                                        onClick={() => dispatch({ type: 'SET_FIELD', payload: { field: 'materialType', value: id } })}
-                                        className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${
-                                            materialType === id
-                                                ? 'bg-brand-primary text-white shadow'
-                                                : 'bg-transparent text-gray-700 hover:bg-gray-100'
+                                        onClick={() => {
+                                            dispatch({ type: 'SET_FIELD', payload: { field: 'materialType', value: id } });
+                                            setTimeout(() => setCurrentStep(2), 200); // Auto-advance
+                                        }}
+                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 font-medium text-sm transition-all focus:outline-none
+                                            ${materialType === id
+                                                ? 'bg-blue-50 border-brand-primary text-brand-primary shadow-sm scale-[1.02]'
+                                                : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-gray-50'
                                         }`}
                                     >
+                                        <span className="text-2xl mb-2">
+                                            {id === 'ASSESSMENT' ? '📄' : id === 'QUIZ' ? '❓' : id === 'RUBRIC' ? '📊' : id === 'SCENARIO' ? '🎭' : id === 'LEARNING_PATH' ? '🗺️' : id === 'EXIT_TICKET' ? '🎟️' : '🖼️'}
+                                        </span>
                                         {label}
                                     </button>
                                 ))}
                             </div>
-                        </fieldset>
+                        </div>
 
-                        <GenerationContextForm state={state} dispatch={dispatch} />
+                        {/* STEP 2: Context */}
+                        <div className={`transition-opacity duration-300 ${currentStep === 2 ? 'block animate-fade-in' : 'hidden'}`}>
+                            <div className="py-2 border-b border-gray-100 mb-6 flex items-center gap-3">
+                                <span className="bg-brand-primary text-white text-xl w-8 h-8 rounded-full flex items-center justify-center font-bold">2</span>
+                                <h2 className="text-xl font-bold text-gray-800">За што генерираме?</h2>
+                            </div>
+                            <GenerationContextForm state={state} dispatch={dispatch} />
+                        </div>
                         
-                        <fieldset data-tour="generator-step-3" className="p-4 border border-gray-200 rounded-lg">
-                            <legend className="text-xl font-bold text-gray-800 px-2 -ml-2">3. Поставете опции</legend>
-                            <div className="space-y-4 pt-2">
-                                <MaterialOptions state={state} dispatch={dispatch} user={user} />
+                        {/* STEP 3: Options & Generate */}
+                        <div data-tour="generator-step-3" className={`transition-opacity duration-300 ${currentStep === 3 ? 'block animate-fade-in' : 'hidden'}`}>
+                            <div className="py-2 border-b border-gray-100 mb-6 flex items-center gap-3">
+                                <span className="bg-brand-primary text-white text-xl w-8 h-8 rounded-full flex items-center justify-center font-bold">3</span>
+                                <h2 className="text-xl font-bold text-gray-800">Опции и Детали</h2>
+                            </div>
+                            <MaterialOptions state={state} dispatch={dispatch} user={user} />
 
-                                {/* Differentiation level — only for assessment types */}
-                                {(['ASSESSMENT', 'QUIZ', 'FLASHCARDS', 'LEARNING_PATH'] as const).includes(state.materialType as any) && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Ниво на диференцијација</label>
-                                        {diffRec && (
-                                            <p className="text-xs font-semibold text-indigo-600 mb-1.5">
-                                                💡 Препорачано (врз основа на претходни резултати):&nbsp;
-                                                {diffRec === 'support' ? '🔵 Поддршка' : diffRec === 'advanced' ? '🔴 Збогатување' : '⚪ Основно'}
-                                            </p>
-                                        )}
-                                        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
-                                            {([
-                                                { value: 'support' as const, label: '🔵 Поддршка', title: 'Поедноставено со детални упатства' },
-                                                { value: 'standard' as const, label: '⚪ Основно', title: 'Стандардно ниво' },
-                                                { value: 'advanced' as const, label: '🔴 Збогатување', title: 'Предизвикувачко со критичко размислување' },
-                                            ]).map(opt => (
-                                                <button key={opt.value} type="button" title={opt.title}
-                                                    onClick={() => dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: opt.value } })}
-                                                    className={`flex-1 py-2 px-3 font-medium transition-colors border-r last:border-r-0 border-gray-200 ${state.differentiationLevel === opt.value ? 'bg-brand-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                                                >{opt.label}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                            {/* Legacy Differentiation section removed as it's now inside MaterialOptions Advanced */}
 
+                            <div className="mt-6 border-t pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="customInstruction" className="block text-sm font-medium text-gray-700">Дополнителни инструкции за AI (опционално)</label>
-                                    <textarea id="customInstruction" value={state.customInstruction} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'customInstruction', value: e.target.value } })} rows={2} className="mt-1 block w-full p-2 border-gray-300 rounded-md" placeholder="На пр. 'Фокусирај се на примери од реалниот живот', 'Направи го текстот забавен', 'Прашањата да бидат потешки'..."></textarea>
+                                    <label htmlFor="customInstruction" className="block text-sm font-bold text-gray-700 mb-2">
+                                        <div className="flex items-center gap-2"><ICONS.sparkles className="w-4 h-4 text-brand-primary" />Дополнителни инструкции до AI (опционално)</div>
+                                    </label>
+                                    <textarea id="customInstruction" value={state.customInstruction} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'customInstruction', value: e.target.value } })} rows={2} className="block w-full p-3 border-gray-300 rounded-xl bg-gray-50 focus:bg-white resize-none" placeholder="Пр. 'Користи забавен тон', 'Направи го потешко'..."></textarea>
                                 </div>
 
-                                {/* Macedonian context toggle */}
-                                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
-                                    <input
-                                        type="checkbox"
-                                        checked={state.useMacedonianContext}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'useMacedonianContext', value: e.target.checked } })}
-                                        className="rounded border-gray-300 text-brand-primary"
-                                    />
-                                    Користи македонски примери (денари, локални места, македонски контекст)
-                                </label>
+                                <div className="flex items-center">
+                                    <label className="flex items-start cursor-pointer p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors w-full">
+                                        <div className="flex items-center h-5 mt-0.5">
+                                            <input type="checkbox" checked={state.useMacedonianContext} onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'useMacedonianContext', value: e.target.checked } })} className="focus:ring-brand-secondary h-5 w-5 text-brand-primary border-gray-300 rounded" />
+                                        </div>
+                                        <div className="ml-3 text-sm">
+                                            <span className="font-bold text-gray-800 block">Локален контекст</span>
+                                            <span className="text-gray-500 block leading-tight mt-1">Користи примери од локалната средина (денари, македонски градови, имиња).</span>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
-                        </fieldset>
+                        </div>
                     </fieldset>
 
-                    <div data-tour="generator-generate-button" className="flex flex-wrap justify-end items-center pt-6 border-t mt-6 gap-3">
-                         <button type="button" onClick={handleReset} disabled={isGenerating || isGeneratingVariants || isGeneratingBulk} className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors">
-                            Ресетирај форма
-                        </button>
-                        {/* 3× Variants button — only for assessment material types */}
-                        {(['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as const).includes(state.materialType as any) && (
-                            <button
-                                type="button"
-                                onClick={handleGenerateVariants}
-                                disabled={isGenerateDisabled || isGeneratingVariants || isGenerating}
-                                title="Генерирај материјал на 3 нивоа: Поддршка, Основно и Збогатување"
-                                className="flex items-center gap-2 border-2 border-brand-primary text-brand-primary px-4 py-3 rounded-lg hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-semibold"
-                            >
-                                {isGeneratingVariants
-                                    ? <><ICONS.spinner className="w-5 h-5 animate-spin" /><span>Генерирам 3 варијанти...</span></>
-                                    : <><ICONS.sparkles className="w-5 h-5" /><span>3× Варијанти</span></>
-                                }
+                    {/* Navigation Buttons */}
+                    <div data-tour="generator-generate-button" className="flex items-center justify-between pt-6 border-t mt-auto gap-3">
+                        {currentStep > 1 ? (
+                            <button type="button" onClick={() => setCurrentStep(prev => prev - 1)} className="px-5 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:text-gray-900 font-bold transition-all flex items-center gap-2">
+                                <ICONS.chevronDown className="w-5 h-5 rotate-90" /> Назад
                             </button>
+                        ) : (
+                            <div></div> // Empty div for flexbox spacing
                         )}
-                        <button
-                            type="button"
-                            onClick={handleBulkGenerate}
-                            disabled={isGenerateDisabled || isGenerating || isGeneratingVariants || isGeneratingBulk}
-                            title="Генерирај Квиз + Тест/Лист + Рубрика одеднаш (3 AI кредити)"
-                            className="flex items-center gap-2 border-2 border-purple-500 text-purple-700 px-4 py-3 rounded-lg hover:bg-purple-50 disabled:opacity-40 transition-colors font-semibold"
-                        >
-                            {isGeneratingBulk
-                                ? <><ICONS.spinner className="w-5 h-5 animate-spin" /><span>Пакет...</span></>
-                                : <><ICONS.sparkles className="w-5 h-5" /><span>📦 Пакет</span></>
-                            }
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isGenerateDisabled || isGeneratingVariants || isGeneratingBulk}
-                            title={!isOnline ? 'Нема интернет конекција' : 'Генерирај'}
-                            className="w-full max-w-xs flex justify-center items-center gap-2 bg-brand-secondary text-white px-4 py-3 rounded-lg disabled:bg-gray-400 hover:bg-brand-primary transition-colors font-semibold text-lg"
-                        >
-                            {isGenerating ? (<><ICONS.spinner className="w-6 h-6 animate-spin" /><span>Генерирам...</span></>) : (<><ICONS.sparkles className="w-6 h-6"/><span>{isOnline ? 'Генерирај' : 'Офлајн'}</span></>)}
-                        </button>
+                        
+                        {currentStep < 3 ? (
+                            <button type="button" onClick={() => setCurrentStep(prev => prev + 1)} className="px-6 py-2.5 bg-brand-primary text-white rounded-xl hover:bg-brand-secondary font-bold shadow-md transition-all flex items-center gap-2">
+                                Следно <ICONS.chevronDown className="w-5 h-5 -rotate-90" />
+                            </button>
+                        ) : (
+                            <div className="flex flex-wrap items-center gap-3">
+                                {/* Delete old reset button from footer, keep only powerful generate buttons */}
+                                {(['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as const).includes(state.materialType as any) && (
+                                    <button type="button" onClick={handleGenerateVariants} disabled={isGenerateDisabled || isGeneratingVariants || isGenerating} title="3 варијанти: Поддршка, Основно и Збогатување" className="flex items-center gap-2 border-2 border-brand-primary text-brand-primary px-4 py-2.5 rounded-xl hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold">
+                                        {isGeneratingVariants ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пресметувам...</> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">3× Варијанти</span><span className="sm:hidden">3×</span></>}
+                                    </button>
+                                )}
+                                <button type="button" onClick={handleBulkGenerate} disabled={isGenerateDisabled || isGenerating || isGeneratingVariants || isGeneratingBulk} title="Квиз + Тест + Рубрика одеднаш" className="flex items-center gap-2 border-2 border-purple-500 text-purple-700 px-4 py-2.5 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-all font-bold">
+                                    {isGeneratingBulk ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пакет...</> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">Пакет материјали</span><span className="sm:hidden">Пакет</span></>}
+                                </button>
+                                <button type="submit" disabled={isGenerateDisabled || isGeneratingVariants || isGeneratingBulk} title={!isOnline ? 'Нема интернет' : 'Генерирај'} className="flex items-center gap-2 bg-gradient-to-r from-brand-primary to-blue-700 text-white px-8 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold transform hover:-translate-y-0.5">
+                                    {isGenerating ? <><ICONS.spinner className="w-5 h-5 animate-spin" /> Генерирам...</> : <><ICONS.sparkles className="w-5 h-5" /> Генерирај AI</>}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </form>
             </Card>
