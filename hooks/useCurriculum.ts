@@ -49,7 +49,8 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }
         });
 
-        // 2. Background Sync with Firestore
+        // 2. Background Sync with Firestore - TEMPORARILY DISABLED to use local files with full activities
+        /* 
         const syncWithFirestore = async () => {
             try {
                 const remoteModule = await firestoreService.fetchFullCurriculum();
@@ -77,6 +78,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         };
 
         syncWithFirestore();
+        */
         return () => { cancelled = true; };
     }, []); // Dependency array empty to run only on mount
 

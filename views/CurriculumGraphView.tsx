@@ -317,8 +317,11 @@ export const CurriculumGraphView: React.FC = () => {
         });
 
     // 4. Create Edge Data
-    const edgesData = allConcepts.flatMap((concept: EnrichedConcept) =>
-      concept.priorKnowledgeIds.map((priorId: string) => {
+    const edgesData = allConcepts.flatMap((concept: EnrichedConcept) => {
+      // Ensure priorKnowledgeIds exists and is an array
+      const priors = Array.isArray(concept.priorKnowledgeIds) ? concept.priorKnowledgeIds : [];
+      
+      return priors.map((priorId: string) => {
         // Only create edge if both nodes are visible
         const isConnected = activeConceptIds.has(concept.id) && activeConceptIds.has(priorId);
         if (!isConnected) return null;
@@ -348,11 +351,11 @@ export const CurriculumGraphView: React.FC = () => {
             color: edgeColor,
             opacity: 1,
         };
-      })
-    ).filter(Boolean);
+      });
+    }).filter(Boolean); // Filter out nulls
 
     return { nodes: nodesData, edges: edgesData };
-  }, [allConcepts, selectedGrades, gradeColors, focusNodeId, curriculum]);
+  }, [allConcepts, selectedGrades, gradeColors, focusNodeId, curriculum, selectedStrand]);
 
   // Update ref whenever nodes change so click handler sees latest data
   useEffect(() => {
