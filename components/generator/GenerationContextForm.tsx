@@ -6,11 +6,11 @@ import type { GeneratorState, GeneratorAction } from '../../hooks/useGeneratorSt
 import type { GenerationContextType, Grade, Topic, Concept, NationalStandard } from '../../types';
 import { useNotification } from '../../contexts/NotificationContext';
 
-const contextOptions: { id: GenerationContextType | 'ACTIVITY'; label: string }[] = [
-    { id: 'CONCEPT', label: 'Од Поим/Тема' },
-    { id: 'ACTIVITY', label: 'Од Активност' },
-    { id: 'STANDARD', label: 'Според Стандард' },
-    { id: 'SCENARIO', label: 'По твоја идеја' },
+const CONTEXT_OPTIONS: { id: GenerationContextType | 'ACTIVITY'; label: string; icon: any; desc: string }[] = [
+    { id: 'CONCEPT', label: 'Од Поим/Тема', icon: ICONS.bookOpen, desc: 'Избери од наставната програма' },
+    { id: 'ACTIVITY', label: 'Од Активност', icon: ICONS.activity, desc: 'Започни со конкретна активност' },
+    { id: 'STANDARD', label: 'Според Стандард', icon: ICONS.target, desc: 'Национални стандарди и цели' },
+    { id: 'SCENARIO', label: 'По твоја идеја', icon: ICONS.lightbulb, desc: 'Внеси слободен текст/сценарио' },
 ];
 
 interface ImageUploaderProps {
@@ -124,68 +124,139 @@ export const GenerationContextForm: React.FC<GenerationContextFormProps> = ({ st
 
     const shouldShowImageUpload = useMemo(() => materialType !== 'RUBRIC', [materialType]);
 
+    const toggleConcept = (conceptId: string) => {
+        const newConcepts = selectedConcepts.includes(conceptId)
+            ? selectedConcepts.filter((id: string) => id !== conceptId)
+            : [...selectedConcepts, conceptId];
+        dispatch({ type: 'SET_FIELD', payload: { field: 'selectedConcepts', value: newConcepts } });
+    };
+
     return (
-        <fieldset data-tour="generator-step-2" className="p-5 border border-gray-200 rounded-xl bg-white shadow-sm">
-            <legend className="text-xl font-bold text-gray-800 px-2 -ml-2 mb-2">2. Изберете извор на контекст</legend>
-            <div className="flex w-full bg-gray-100 p-1.5 rounded-xl mb-6 overflow-x-auto">
-                {contextOptions.map(({ id, label }) => (
-                <button
-                    type="button"
-                    key={id}
-                    onClick={() => dispatch({ type: 'SET_CONTEXT_TYPE', payload: id })}
-                    className={`flex-1 min-w-[120px] py-2 px-3 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${contextType === id ? 'bg-white shadow-sm text-brand-primary border border-gray-200/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
-                >
-                    {label}
-                </button>
-                ))}
+        <fieldset data-tour="generator-step-2" className="p-6 border border-gray-100 rounded-2xl bg-white shadow-sm mt-4">
+            <div className="mb-6">
+                <legend className="text-xl font-bold text-gray-800">2. Изберете почетна точка (Контекст)</legend>
+                <p className="text-sm text-gray-500 mt-1">Врз основа на што сакате да го креирате овој материјал?</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+                {CONTEXT_OPTIONS.map(({ id, label, icon: Icon, desc }) => {
+                    const isActive = contextType === id;
+                    return (
+                        <button
+                            type="button"
+                            key={id}
+                            onClick={() => dispatch({ type: 'SET_CONTEXT_TYPE', payload: id as GenerationContextType | 'ACTIVITY' })}
+                            className={`flex flex-col items-start p-4 rounded-xl border-2 transition-all text-left group ${
+                                isActive 
+                                ? 'border-brand-primary bg-brand-primary/5 shadow-sm' 
+                                : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
+                            }`}
+                        >
+                            <Icon className={`w-6 h-6 mb-3 ${isActive ? 'text-brand-primary' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                            <span className={`font-bold text-sm mb-1 ${isActive ? 'text-brand-primary' : 'text-gray-700'}`}>{label}</span>
+                            <span className="text-xs text-gray-500">{desc}</span>
+                        </button>
+                    );
+                })}
             </div>
             
-            <div className="pt-2">
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-5">
                 {(contextType === 'CONCEPT' || contextType === 'ACTIVITY') && (
-                    <div className="flex flex-col gap-5 animate-fade-in">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="flex flex-col gap-6 animate-fade-in">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Одделение</label>
-                                <select value={selectedGrade} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_GRADE', payload: e.target.value })} className="block w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all shadow-sm">
+                                <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                    <span className="bg-brand-primary/10 text-brand-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                                    Одделение
+                                </label>
+                                <select value={selectedGrade} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_GRADE', payload: e.target.value })} className="block w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-0 focus:border-brand-primary outline-none transition-all shadow-sm font-medium text-gray-800">
                                     {curriculum?.grades.map((g: Grade) => <option key={g.id} value={g.id}>{g.title}</option>)}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Тема</label>
-                                <select value={selectedTopic} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_TOPIC', payload: e.target.value })} className="block w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all shadow-sm" disabled={!selectedGrade}>
+                                <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                    <span className="bg-brand-primary/10 text-brand-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                                    Тема
+                                </label>
+                                <select value={selectedTopic} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_TOPIC', payload: e.target.value })} className="block w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-0 focus:border-brand-primary outline-none transition-all shadow-sm font-medium text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed" disabled={!selectedGrade}>
                                     <option value="">-- Избери тема --</option>
                                     {filteredTopics.map((t: Topic) => <option key={t.id} value={t.id}>{t.title}</option>)}
                                 </select>
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Поими (опционално)</label>
-                            <select multiple value={selectedConcepts} onChange={handleConceptChange} className="block w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all shadow-sm h-36" disabled={!selectedTopic}>
-                                {filteredConcepts.map((c: Concept) => <option key={c.id} value={c.id} className="py-1 px-2 my-0.5 rounded cursor-pointer hover:bg-brand-primary hover:text-white checked:bg-brand-primary checked:text-white">{c.title}</option>)}
-                            </select>
-                            <p className="text-xs text-brand-secondary mt-2 flex items-center bg-blue-50 p-2 rounded-md border border-blue-100">
-                                ℹ️ Држете Ctrl (или Cmd на Mac) за да изберете повеќе поими.
-                            </p>
-                        </div>
+
+                        {contextType === 'CONCEPT' && (
+                            <div className="border-t border-gray-200 pt-5">
+                                <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                    <span className="bg-brand-primary/10 text-brand-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                                    Специфични поими (Опционално)
+                                </label>
+                                
+                                {!selectedTopic ? (
+                                    <p className="text-sm text-gray-400 italic bg-white p-4 rounded-xl border border-gray-200 border-dashed text-center">Прво изберете тема за да видите листа на поими.</p>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2 bg-white p-4 rounded-xl border border-gray-200 shadow-sm max-h-48 overflow-y-auto">
+                                        {filteredConcepts.map((c: Concept) => {
+                                            const isSelected = selectedConcepts.includes(c.id);
+                                            return (
+                                                <button
+                                                    key={c.id}
+                                                    type="button"
+                                                    onClick={() => toggleConcept(c.id)}
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                                                        isSelected 
+                                                        ? 'bg-brand-primary border-brand-primary text-white shadow-sm' 
+                                                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
+                                                    }`}
+                                                >
+                                                    {isSelected && <span className="mr-1 inline-block">✓</span>}
+                                                    {c.title}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {contextType === 'ACTIVITY' && (
+                            <div className="border-t border-gray-200 pt-5 animate-fade-in">
+                                <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                    <span className="bg-brand-primary/10 text-brand-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                                    Активност од програмата
+                                </label>
+                                <select value={selectedActivity} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedActivity', value: e.target.value } })} className="block w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-0 focus:border-brand-primary outline-none transition-all shadow-sm font-medium text-gray-800 disabled:opacity-50" disabled={activitiesForContext.length === 0}>
+                                    {activitiesForContext.length > 0 ? (
+                                        activitiesForContext.map((act: string, i: number) => <option key={i} value={act}>{act.substring(0,150)}{act.length > 150 ? '...' : ''}</option>)
+                                    ) : (
+                                        <option>Прво изберете тема за да се прикажат активности.</option>
+                                    )}
+                                </select>
+                            </div>
+                        )}
                     </div>
                 )}
-                    {contextType === 'ACTIVITY' && (
-                    <div className="animate-fade-in mt-5 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Активност од програмата</label>
-                        <select value={selectedActivity} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedActivity', value: e.target.value } })} className="block w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none bg-white shadow-sm" disabled={activitiesForContext.length === 0}>
-                            {activitiesForContext.length > 0 ? (
-                                activitiesForContext.map((act: string, i: number) => <option key={i} value={act}>{act.substring(0,120)}...</option>)
-                            ) : (
-                                <option>Прво изберете тема за да се прикажат активности.</option>
-                            )}
+                
+                {contextType === 'STANDARD' && (
+                    <div className="animate-fade-in">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Национален стандард</label>
+                        <select value={selectedStandard} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedStandard', value: e.target.value }})} className="block w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-0 focus:border-brand-primary outline-none transition-all shadow-sm font-medium text-gray-800">
+                            {allNationalStandards?.map((s: NationalStandard) => <option key={s.id} value={s.id}>{s.code} - {s.description}</option>)}
                         </select>
                     </div>
-                    )}
-                {contextType === 'STANDARD' && (<div className="animate-fade-in mt-5"><label className="block text-sm font-semibold text-gray-700 mb-1.5">Национален стандард</label><select value={selectedStandard} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedStandard', value: e.target.value }})} className="block w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none bg-gray-50 focus:bg-white shadow-sm">{allNationalStandards?.map((s: NationalStandard) => <option key={s.id} value={s.id}>{s.code} - {s.description}</option>)}</select></div>)}
-                {contextType === 'SCENARIO' && (<div className="animate-fade-in mt-5"><label className="block text-sm font-semibold text-gray-700 mb-1.5">Сценарио или наратив од часот</label><textarea value={scenarioText} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'scenarioText', value: e.target.value }})} rows={5} className="block w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none bg-gray-50 focus:bg-white shadow-sm" placeholder="Внесете опис на активностите од часот, клучна дискусија или проблем на кој сте работеле..."></textarea></div>)}
+                )}
+                
+                {contextType === 'SCENARIO' && (
+                    <div className="animate-fade-in">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Сценарио или наратив од часот</label>
+                        <p className="text-xs text-gray-500 mb-3">Детално опишете ја идејата, проблемот или текот на часот за кој ви е потребен материјал.</p>
+                        <textarea value={scenarioText} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'scenarioText', value: e.target.value }})} rows={5} className="block w-full p-4 border-2 border-gray-200 rounded-xl bg-white focus:ring-0 focus:border-brand-primary outline-none transition-all shadow-sm text-gray-800 resize-y" placeholder="Пр. Сакам да направам час каде што плоштината ја објаснуваме преку поплочување на дворот со плочки со различни димензии..."></textarea>
+                    </div>
+                )}
             </div>
+            
             {shouldShowImageUpload && contextType === 'SCENARIO' && (
-                <div className="pt-6 mt-6 border-t">
+                <div className="pt-6 mt-6 border-t border-gray-100">
                     <ImageUploader imageFile={imageFile} dispatch={dispatch} />
                 </div>
             )}

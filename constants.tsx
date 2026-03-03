@@ -47,12 +47,14 @@ import {
   MessageCircle,
   School,
   FileText,
+    Activity,
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
   logo: Brain,
   star: Star,
   starSolid: Star,
+  activity: Activity,
   dashboard: Layout,
   planner: Calendar,
   database: Database,
