@@ -42,6 +42,11 @@ import {
   ClipboardCheck,
   Database,
   GitBranch,
+  Copy,
+  Globe,
+  MessageCircle,
+  School,
+  FileText,
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -95,7 +100,13 @@ export const ICONS: Record<string, any> = {
   target: Target,
   chartBar: BarChart3,
   analytics: BarChart3,
-  gitBranch: GitBranch
+  gitBranch: GitBranch,
+  add: Plus,
+  copy: Copy,
+  globe: Globe,
+  messages: MessageCircle,
+  school: School,
+  document: FileText,
 };
 
 export const SUBJECTS = [
