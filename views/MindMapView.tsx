@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
