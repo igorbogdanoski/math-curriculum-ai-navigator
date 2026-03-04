@@ -98,7 +98,7 @@ export const GlobalSearchBar: React.FC = () => {
                 const lessonResults: SearchResult[] = lessonPlans
                     .filter((p: LessonPlan) => 
                         p.title.toLowerCase().includes(lowerCaseQuery) ||
-                        p.objectives.join(' ').toLowerCase().includes(lowerCaseQuery)
+                        p.objectives?.map((o: any) => typeof o === 'string' ? o : o.text).join(' ').toLowerCase().includes(lowerCaseQuery)
                     )
                     .map((p: LessonPlan) => ({
                         id: p.id,

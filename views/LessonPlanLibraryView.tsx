@@ -57,10 +57,14 @@ const LessonPlanCard: React.FC<{
         </div>
         <div onClick={onView} className="cursor-pointer mt-2 flex-1">
             <p className="text-gray-600 text-sm line-clamp-2">
-               <span className="font-semibold">Цели:</span> {plan.objectives.join(' ')}
-            </p>
+                <span className="font-semibold">Цели:</span> {plan.objectives?.map((o: any) => typeof o === 'string' ? o : o.text).join(' ')}
+             </p>
              <p className="text-gray-600 mt-1 text-sm line-clamp-3">
-               <span className="font-semibold">Активности:</span> {[plan.scenario.introductory, ...plan.scenario.main, plan.scenario.concluding].join(' ')}
+                <span className="font-semibold">Активности:</span> {[
+                    plan.scenario?.introductory?.text,
+                    ...(plan.scenario?.main?.map((m: any) => m.text) || []),
+                    plan.scenario?.concluding?.text
+                ].filter(Boolean).join(' ')}
             </p>
         </div>
         {plan.tags && plan.tags.length > 0 && (
@@ -133,10 +137,8 @@ export const LessonPlanLibraryView: React.FC = () => {
             const query = searchQuery.toLowerCase().trim();
             const queryMatch = query === '' || 
                 plan.title.toLowerCase().includes(query) ||
-                plan.objectives.join(' ').toLowerCase().includes(query) ||
-                Object.values(plan.scenario).flat().join(' ').toLowerCase().includes(query);
-
-            // Concept/Standard Filter
+                plan.objectives?.map((o: any) => typeof o === 'string' ? o : o.text).join(' ').toLowerCase().includes(query) ||
+                [plan.scenario?.introductory?.text, ...(plan.scenario?.main?.map((m: any) => m.text) || []), plan.scenario?.concluding?.text].filter(Boolean).join(' ').toLowerCase().includes(query);
             let conceptStandardMatch = conceptStandardFilter === 'all';
             if (!conceptStandardMatch) {
                 const [type, id] = conceptStandardFilter.split(':');
@@ -231,7 +233,7 @@ export const LessonPlanLibraryView: React.FC = () => {
                             className="mt-1 block w-full p-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent"
                         >
                             <option value="all">Сите</option>
-                            {[6,7,8,9].map(g => <option key={g} value={g}>{g}. Одделение</option>)}
+                            {[1,2,3,4,5,6,7,8,9].map(g => <option key={g} value={g}>{g}. Одделение</option>)}
                         </select>
                     </div>
                     <div data-tour="library-filter-concept" className="md:col-span-2">
