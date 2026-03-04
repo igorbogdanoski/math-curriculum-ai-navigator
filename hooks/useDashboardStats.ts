@@ -11,7 +11,7 @@ export function useDashboardStats() {
     const monthlyActivity = useMemo(() => {
         const monthData: { [key: string]: { label: string; sortKey: number; lessons: number; events: number } } = {};
 
-        items.forEach((item: PlannerItem) => {
+        items?.forEach((item: PlannerItem) => {
             const itemDate = new Date(item.date);
             const year = itemDate.getFullYear();
             const monthIndex = itemDate.getMonth();
@@ -49,7 +49,7 @@ export function useDashboardStats() {
         
         const topicCounts: { [key: string]: { count: number; title: string } } = {};
 
-        lessonPlans.forEach((plan: LessonPlan) => {
+        lessonPlans?.forEach((plan: LessonPlan) => {
             if (plan.topicId) {
                 if (!topicCounts[plan.topicId]) {
                     topicCounts[plan.topicId] = { count: 0, title: 'Непозната Тема' };
@@ -58,8 +58,8 @@ export function useDashboardStats() {
             }
         });
 
-        curriculum.grades.forEach((grade: Grade) => {
-            grade.topics.forEach((topic: Topic) => {
+        curriculum?.grades?.forEach((grade: Grade) => {
+            grade.topics?.forEach((topic: Topic) => {
                 if (topicCounts[topic.id]) {
                     topicCounts[topic.id].title = topic.title;
                 }
@@ -110,11 +110,11 @@ export function useDashboardStats() {
             }
         });
 
-        curriculum?.grades.forEach((grade: Grade) => {
-            grade.topics.forEach((topic: Topic) => {
-                topic.concepts.forEach((concept: Concept) => {
+        curriculum?.grades?.forEach((grade: Grade) => {
+            grade.topics?.forEach((topic: Topic) => {
+                topic.concepts?.forEach((concept: Concept) => {
                     if (conceptIdsInPlans.has(concept.id)) {
-                        concept.nationalStandardIds.forEach((stdId: string) => {
+                        concept.nationalStandardIds?.forEach((stdId: string) => {
                             if (!coveredStandardIds.has(stdId)) {
                                 coveredStandardIds.add(stdId);
                                 const gLevel = stdToGrade[stdId];
