@@ -326,8 +326,8 @@ export const CurriculumGraphView: React.FC = () => {
         const isConnected = activeConceptIds.has(concept.id) && activeConceptIds.has(priorId);
         if (!isConnected) return null;
 
-        let edgeColor = '#B0BEC5';
-        let edgeWidth = 1;
+        let edgeColor = '#9E9E9E';
+        let edgeWidth = 2;
 
         if (focusNodeId) {
             // Highlighting paths connected to focus node
@@ -336,10 +336,10 @@ export const CurriculumGraphView: React.FC = () => {
             
             if (isUpstreamPath) {
                 edgeColor = PRIOR_COLOR;
-                edgeWidth = 2;
+                edgeWidth = 4;
             } else if (isDownstreamPath) {
                 edgeColor = FUTURE_COLOR;
-                edgeWidth = 2;
+                edgeWidth = 4;
             }
         }
 
@@ -480,15 +480,15 @@ export const CurriculumGraphView: React.FC = () => {
         },
         edges: {
           color: '#BDBDBD',
-          smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.4 }
+          smooth: { type: 'cubicBezier', forceDirection: 'horizontal', roundness: 0.4 }
         },
         layout: {
           hierarchical: {
             enabled: true,
-            direction: 'UD', // Up-Down for vertical progression
-            sortMethod: 'directed', 
-            levelSeparation: 250,   
-            nodeSpacing: 200,       
+            direction: 'LR', // Left-Right for horizontal progression
+            sortMethod: 'directed',
+            levelSeparation: 250,
+            nodeSpacing: 200,
             treeSpacing: 250,       
             blockShifting: true,   
             edgeMinimization: true, 
