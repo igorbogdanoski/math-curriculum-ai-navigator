@@ -11,6 +11,7 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import {
   Loader2, AlertCircle, Home, Star, RefreshCw, BookOpen,
   User, ArrowRight, BarChart2, Sparkles, ExternalLink, Trophy,
+  Zap, Target, TrendingUp,
 } from 'lucide-react';
 import { QuestionType, type DifferentiationLevel } from '../types';
 import { getAdaptiveLevel } from '../utils/adaptiveDifficulty';
@@ -64,6 +65,10 @@ export const StudentPlayView: React.FC = () => {
     try { return localStorage.getItem('studentName') || ''; } catch { return ''; }
   });
   const [isReturningStudent, setIsReturningStudent] = useState(false);
+  // А3: Onboarding wizard — shown only on very first visit (no saved name)
+  const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | null>(() => {
+    try { return localStorage.getItem('studentName') ? null : 0; } catch { return null; }
+  });
 
   // А1: Auth re-init — if returning student (nameConfirmed from localStorage) but
   // Firebase session expired (cleared storage/browser restart), re-auth silently.
@@ -301,35 +306,133 @@ export const StudentPlayView: React.FC = () => {
       </div>
 
       <main className="w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-white/20 relative min-h-[500px]">
-        {/* Name entry splash */}
+        {/* ── Name entry / Onboarding ── */}
         {!nameConfirmed && (
           <div className="flex flex-col items-center justify-center min-h-[500px] p-8 text-center">
-            <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mb-6">
-              <User className="w-10 h-10 text-indigo-600" />
-            </div>
-            <h2 className="text-2xl font-black text-slate-800 mb-2">Добредојде!</h2>
-            <p className="text-slate-500 mb-8 max-w-sm">
-              Внеси го твоето ime за да го зачуваме твојот резултат и прогрес.
-            </p>
-            <div className="w-full max-w-sm">
-              <input
-                type="text"
-                placeholder="Твоето ime и презиме..."
-                value={nameInput}
-                onChange={e => setNameInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleConfirmName(); }}
-                className="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-semibold text-center text-lg focus:outline-none focus:border-indigo-500 transition mb-4"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={handleConfirmName}
-                disabled={!nameInput.trim()}
-                className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Почни Квизот <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
+
+            {/* А3: First-time onboarding wizard (wizardStep 0 and 1) */}
+            {wizardStep === 0 && (
+              <div className="animate-fade-in max-w-sm">
+                <div className="flex justify-center gap-4 mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center">
+                    <Zap className="w-7 h-7 text-indigo-600" />
+                  </div>
+                  <div className="w-14 h-14 rounded-2xl bg-violet-100 flex items-center justify-center">
+                    <Target className="w-7 h-7 text-violet-600" />
+                  </div>
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center">
+                    <TrendingUp className="w-7 h-7 text-emerald-600" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-black text-slate-800 mb-3">Добредојде во<br/>Математички Портал!</h2>
+                <div className="space-y-3 text-left mb-8">
+                  <div className="flex items-start gap-3 bg-indigo-50 rounded-2xl p-3">
+                    <Zap className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">Одговарај на прашања</p>
+                      <p className="text-slate-500 text-xs">Квизови прилагодени на твоето ниво</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 bg-violet-50 rounded-2xl p-3">
+                    <Target className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">Освојувај XP и значки</p>
+                      <p className="text-slate-500 text-xs">Редови, достигнувања и напредок</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 bg-emerald-50 rounded-2xl p-3">
+                    <TrendingUp className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">Следи го твојот напредок</p>
+                      <p className="text-slate-500 text-xs">Гледај ги сите твои резултати на едно место</p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(1)}
+                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition"
+                >
+                  Да почнеме! <ArrowRight className="w-5 h-5" />
+                </button>
+                <div className="flex justify-center gap-1.5 mt-4">
+                  <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                  <span className="w-2 h-2 rounded-full bg-slate-200" />
+                  <span className="w-2 h-2 rounded-full bg-slate-200" />
+                </div>
+              </div>
+            )}
+
+            {wizardStep === 1 && (
+              <div className="animate-fade-in max-w-sm w-full">
+                <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mb-6 mx-auto">
+                  <User className="w-10 h-10 text-indigo-600" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-800 mb-2">Как се викаш?</h2>
+                <p className="text-slate-500 mb-6 text-sm">
+                  Твоето ime се чува само за да го следиме твојот напредок. Никој друг не може да го гледа.
+                </p>
+                <input
+                  type="text"
+                  placeholder="Твоето ime и презиме..."
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && nameInput.trim()) { setWizardStep(null); handleConfirmName(); } }}
+                  className="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-semibold text-center text-lg focus:outline-none focus:border-indigo-500 transition mb-4"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => { setWizardStep(null); handleConfirmName(); }}
+                  disabled={!nameInput.trim()}
+                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Потврди <ArrowRight className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(0)}
+                  className="mt-3 text-sm text-slate-400 hover:text-slate-600 transition"
+                >
+                  ← Назад
+                </button>
+                <div className="flex justify-center gap-1.5 mt-4">
+                  <span className="w-2 h-2 rounded-full bg-slate-200" />
+                  <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                  <span className="w-2 h-2 rounded-full bg-slate-200" />
+                </div>
+              </div>
+            )}
+
+            {/* Returning user or "Промени" — simple form (no wizard) */}
+            {wizardStep === null && (
+              <div className="animate-fade-in max-w-sm w-full">
+                <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mb-6 mx-auto">
+                  <User className="w-10 h-10 text-indigo-600" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-800 mb-2">Промени ime</h2>
+                <p className="text-slate-500 mb-8 max-w-sm text-sm">
+                  Внеси го твоето ime за да го зачуваме твојот резултат.
+                </p>
+                <input
+                  type="text"
+                  placeholder="Твоето ime и презиме..."
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleConfirmName(); }}
+                  className="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-semibold text-center text-lg focus:outline-none focus:border-indigo-500 transition mb-4"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleConfirmName}
+                  disabled={!nameInput.trim()}
+                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Почни Квизот <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
