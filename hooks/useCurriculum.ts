@@ -90,12 +90,12 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         
         // Dynamically extract assessmentStandards for grades 1-5
         if (data.curriculumData?.grades) {
-             data.curriculumData.grades.forEach((grade) => {
+             data.curriculumData.grades?.forEach((grade) => {
                  if (grade.level >= 1 && grade.level <= 5) {
                      grade.topics?.forEach((topic) => {
                          topic.concepts?.forEach((concept) => {
                              if (concept.assessmentStandards) {
-                                 concept.assessmentStandards.forEach((stdText, idx) => {
+                                 concept.assessmentStandards?.forEach((stdText, idx) => {
                                      const existing = standards.find(s => s.description === stdText && s.gradeLevel === grade.level);
                                      if (!existing) {
                                          standards.push({
@@ -156,7 +156,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const nationalStandardMap = useMemo(() => {
         if (!allNationalStandards) return new Map();
         const map = new Map<string, NationalStandard>();
-        allNationalStandards.forEach((std: NationalStandard) => {
+        (allNationalStandards || []).forEach((std: NationalStandard) => {
           map.set(std.id, std);
         });
         return map;
