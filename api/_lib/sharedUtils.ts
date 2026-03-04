@@ -42,6 +42,8 @@ function getFirebaseAdmin() {
 // Model whitelist — only these models can be called
 // ---------------------------------------------------------------------------
 const ALLOWED_MODELS = new Set([
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-preview-04-17',
   'gemini-2.0-flash',
   'gemini-2.0-flash-exp',
   'gemini-2.0-flash-thinking',
@@ -105,7 +107,7 @@ const SafeConfigSchema = z.object({
 // Full request body
 export const GeminiRequestSchema = z.object({
   model: z.string().refine(
-    (m) => ALLOWED_MODELS.has(m) || m.includes('gemini'),
+    (m) => ALLOWED_MODELS.has(m),
     { message: "Invalid or unauthorized Gemini model" }
   ),
   contents: z.union([

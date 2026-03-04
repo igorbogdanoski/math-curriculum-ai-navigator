@@ -27,3 +27,18 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Development artifacts — build logs, temp files
+build_errors*.txt
+build_logs*.txt
+return_context.txt
+temp.tsx
+
+# Intermediate data processing files
+*.cleaned.json
+
+# Python scripts (data processing tools)
+check_*.py
+
+# TypeScript build info
+tsconfig.tsbuildinfo
