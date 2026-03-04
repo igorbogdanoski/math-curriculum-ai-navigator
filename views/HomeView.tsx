@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import type { AIRecommendation } from '../types';
@@ -24,6 +25,15 @@ import { ProactiveSuggestionCard } from '../components/ai/ProactiveSuggestionCar
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ICONS } from '../constants';
+
+// ── Quick Actions strip — 5 most-used teacher actions ────────────────────────
+const QUICK_ACTIONS = [
+  { label: 'AI Генератор', desc: 'Генерирај материјал', icon: Sparkles, color: 'bg-indigo-600 hover:bg-indigo-700', action: 'generator' },
+  { label: 'Планер', desc: 'Распоред на часови', icon: CalendarDays, color: 'bg-blue-600 hover:bg-blue-700', action: 'planner' },
+  { label: 'Аналитика', desc: 'Резултати на ученици', icon: BarChart2, color: 'bg-violet-600 hover:bg-violet-700', action: 'analytics' },
+  { label: 'Мои подготовки', desc: 'Наставни планови', icon: Library, color: 'bg-emerald-600 hover:bg-emerald-700', action: 'my-lessons' },
+  { label: 'Квиз во живо', desc: 'Пушти на час', icon: Radio, color: 'bg-rose-600 hover:bg-rose-700', action: 'live' },
+] as const;
 
 declare var introJs: any;
 
@@ -188,6 +198,26 @@ export const HomeView: React.FC = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ── QUICK ACTIONS STRIP ──────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {QUICK_ACTIONS.map(({ label, desc, icon: Icon, color, action }) => (
+          <button
+            key={action}
+            type="button"
+            onClick={() => {
+              if (action === 'generator') openGeneratorPanel({});
+              else if (action === 'live') navigate('/live/host');
+              else navigate(`/${action}`);
+            }}
+            className={`${color} text-white rounded-xl p-4 text-left transition-all duration-150 shadow-sm hover:shadow-md active:scale-[0.98] group`}
+          >
+            <Icon className="w-5 h-5 mb-2 opacity-90 group-hover:scale-110 transition-transform" />
+            <p className="font-bold text-sm leading-tight">{label}</p>
+            <p className="text-white/70 text-xs mt-0.5">{desc}</p>
+          </button>
+        ))}
       </div>
 
       {/* Proactive AI Suggestion */}

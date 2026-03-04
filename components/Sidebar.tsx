@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { APP_NAME, ICONS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,7 +18,8 @@ const NavItem: React.FC<{
   label: string;
   onClick: () => void;
   isGenerator?: boolean;
-}> = ({ path, currentPath, icon: Icon, label, onClick, isGenerator = false }) => {
+  badge?: string;
+}> = ({ path, currentPath, icon: Icon, label, onClick, isGenerator = false, badge }) => {
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
   const isActive = currentPath === path || (path !== '/' && currentPath.startsWith(path));
@@ -41,7 +43,12 @@ const NavItem: React.FC<{
       }`}
     >
       <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
-      <span className="font-medium truncate">{label}</span>
+      <span className="font-medium truncate flex-1">{label}</span>
+      {badge && (
+        <span className="ml-1 text-[10px] font-bold bg-brand-accent/20 text-brand-accent px-1.5 py-0.5 rounded-full">
+          {badge}
+        </span>
+      )}
     </a>
   );
 };
@@ -49,13 +56,21 @@ const NavItem: React.FC<{
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }) => {
     const { user, logout } = useAuth();
     const { navigate } = useNavigation();
+
+    // Progressive disclosure — secondary nav collapsed by default
+    const [showMore, setShowMore] = useState(() => {
+      const secondaryPaths = ['/explore', '/graph', '/roadmap', '/assistant',
+        '/test-generator', '/reports/coverage', '/favorites', '/gallery'];
+      return secondaryPaths.some(p => currentPath === p || currentPath.startsWith(p));
+    });
+
   return (
     <aside className={`w-64 bg-white text-gray-800 flex flex-col h-screen fixed shadow-2xl z-30 no-print transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 border-r border-gray-100`}>
       <div className="px-6 py-4 border-b flex justify-between items-center">
         <h1 className="text-xl font-bold text-brand-primary truncate" title={APP_NAME}>{APP_NAME}</h1>
-        {/* Mobile Close Button - Essential for stability on small screens */}
-        <button 
-          onClick={onClose} 
+        {/* Mobile Close Button */}
+        <button
+          onClick={onClose}
           className="md:hidden p-1 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
           aria-label="Затвори странична лента"
         >
@@ -63,25 +78,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         </button>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
-        <NavItem path="/" currentPath={currentPath} icon={ICONS.home} label="Почетна" onClick={onClose} />
-        <NavItem path="/explore" currentPath={currentPath} icon={ICONS.bookOpen} label="Истражи програма" onClick={onClose} />
-        <NavItem path="/graph" currentPath={currentPath} icon={ICONS.share} label="Интерактивен Граф" onClick={onClose} />
-        <NavItem path="/roadmap" currentPath={currentPath} icon={ICONS.mindmap} label="Патна Мапа" onClick={onClose} />
-        <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label="Планер" onClick={onClose} />
-        <hr className="my-2 border-gray-200"/>
-        <h2 className="px-4 pt-4 pb-1 text-xs font-bold text-gray-400 uppercase tracking-widest">AI Алатки</h2>
-        <NavItem path="/assistant" currentPath={currentPath} icon={ICONS.assistant} label="AI Асистент" onClick={onClose} />
-        <NavItem path="/generator" currentPath={currentPath} icon={ICONS.generator} label="Генератор" onClick={onClose} isGenerator={true} />
-        <NavItem path="/test-generator" currentPath={currentPath} icon={ICONS.assessment} label="Генератор на Тестови" onClick={onClose} />
-        <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label="Анализа на покриеност" onClick={onClose} />
-        <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label="Аналитика на квизови" onClick={onClose} />
-        <hr className="my-2 border-gray-200"/>
-        <h2 className="px-4 pt-4 pb-1 text-xs font-bold text-gray-400 uppercase tracking-widest">Ресурси</h2>
-        <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label="Мои подготовки" onClick={onClose} />
-        <NavItem path="/favorites" currentPath={currentPath} icon={ICONS.star} label="Омилени" onClick={onClose} />
-        <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label="Галерија на Заедницата" onClick={onClose} />
-        <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label="Поставки" onClick={onClose} />
+      <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar" aria-label="Главна навигација">
+        {/* ── PRIMARY NAV (always visible) ── */}
+        <div className="space-y-0.5">
+          <NavItem path="/" currentPath={currentPath} icon={ICONS.home} label="Почетна" onClick={onClose} />
+          <NavItem path="/generator" currentPath={currentPath} icon={ICONS.generator} label="AI Генератор" onClick={onClose} isGenerator={true} badge="AI" />
+          <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label="Планер" onClick={onClose} />
+          <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label="Аналитика" onClick={onClose} />
+          <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label="Мои подготовки" onClick={onClose} />
+          <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label="Поставки" onClick={onClose} />
+        </div>
+
+        {/* ── SECONDARY NAV (collapsible) ── */}
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setShowMore(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50"
+          >
+            <span>{showMore ? 'Помалку' : 'Повеќе алатки'}</span>
+            {showMore ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+
+          {showMore && (
+            <div className="mt-1 space-y-0.5 animate-fade-in">
+              <hr className="mb-2 border-gray-100" />
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Истражи</p>
+              <NavItem path="/explore" currentPath={currentPath} icon={ICONS.bookOpen} label="Истражи програма" onClick={onClose} />
+              <NavItem path="/graph" currentPath={currentPath} icon={ICONS.share} label="Интерактивен Граф" onClick={onClose} />
+              <NavItem path="/roadmap" currentPath={currentPath} icon={ICONS.mindmap} label="Патна Мапа" onClick={onClose} />
+              <hr className="my-2 border-gray-100" />
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">AI Алатки</p>
+              <NavItem path="/assistant" currentPath={currentPath} icon={ICONS.assistant} label="AI Асистент" onClick={onClose} />
+              <NavItem path="/test-generator" currentPath={currentPath} icon={ICONS.assessment} label="Генератор на Тестови" onClick={onClose} />
+              <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label="Анализа на покриеност" onClick={onClose} />
+              <hr className="my-2 border-gray-100" />
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Ресурси</p>
+              <NavItem path="/favorites" currentPath={currentPath} icon={ICONS.star} label="Омилени" onClick={onClose} />
+              <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label="Галерија" onClick={onClose} />
+            </div>
+          )}
+        </div>
       </nav>
       <div className="p-2 border-t bg-gray-50/50">
         <div 
