@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
@@ -61,6 +61,20 @@ export interface SchoolClass {
   teacherUid: string;
   studentNames: string[];
   createdAt?: Timestamp;
+}
+
+// ── Assignments ───────────────────────────────────────────────────────────────
+export interface Assignment {
+  id: string;
+  title: string;
+  materialType: 'QUIZ' | 'ASSESSMENT';
+  cacheId: string;           // ID in cached_ai_materials
+  teacherUid: string;
+  classId: string;
+  classStudentNames: string[]; // snapshot at assignment time
+  dueDate: string;             // YYYY-MM-DD
+  createdAt?: Timestamp;
+  completedBy: string[];       // student names who finished
 }
 
 // ── Gamification ─────────────────────────────────────────────────────────────
@@ -892,5 +906,59 @@ export const firestoreService = {
     return onSnapshot(collection(db, 'live_quizzes', pin, 'participants'), (snap) => {
         callback(snap.docs.map(d => d.data()));
     });
-  }
+  },
+
+  // ── Assignments ─────────────────────────────────────────────────────────────
+  saveAssignment: async (a: Omit<Assignment, 'id' | 'createdAt'>): Promise<string> => {
+    const ref = await addDoc(collection(db, 'assignments'), { ...a, createdAt: serverTimestamp() });
+    return ref.id;
+  },
+
+  fetchAssignmentsByTeacher: async (teacherUid: string): Promise<Assignment[]> => {
+    try {
+      const q = query(collection(db, 'assignments'), where('teacherUid', '==', teacherUid), orderBy('createdAt', 'desc'), limit(100));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Assignment));
+    } catch (error) {
+      console.error('Error fetching assignments by teacher:', error);
+      return [];
+    }
+  },
+
+  fetchAssignmentsByStudent: async (studentName: string): Promise<Assignment[]> => {
+    try {
+      const q = query(collection(db, 'assignments'), where('classStudentNames', 'array-contains', studentName), orderBy('dueDate', 'asc'), limit(50));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Assignment));
+    } catch (error) {
+      console.error('Error fetching assignments by student:', error);
+      return [];
+    }
+  },
+
+  markAssignmentCompleted: async (assignmentId: string, studentName: string): Promise<void> => {
+    try {
+      await updateDoc(doc(db, 'assignments', assignmentId), { completedBy: arrayUnion(studentName) });
+    } catch (error) {
+      console.error('Error marking assignment completed:', error);
+    }
+  },
+
+  deleteAssignment: async (assignmentId: string): Promise<void> => {
+    await deleteDoc(doc(db, 'assignments', assignmentId));
+  },
+
+  /** Save a quiz/assessment as a cached material for assignment purposes. Returns the cacheId. */
+  saveAssignmentMaterial: async (content: any, meta: { title: string; type: 'QUIZ' | 'ASSESSMENT'; conceptId?: string; gradeLevel?: number; teacherUid: string }): Promise<string> => {
+    const ref = await addDoc(collection(db, 'cached_ai_materials'), {
+      content,
+      type: meta.type.toLowerCase(),
+      title: meta.title,
+      conceptId: meta.conceptId,
+      gradeLevel: meta.gradeLevel,
+      teacherUid: meta.teacherUid,
+      createdAt: serverTimestamp(),
+    });
+    return ref.id;
+  },
 };

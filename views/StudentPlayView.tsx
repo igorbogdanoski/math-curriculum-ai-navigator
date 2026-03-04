@@ -24,10 +24,10 @@ export const StudentPlayView: React.FC = () => {
   const { getConceptDetails } = useCurriculum();
 
   // Live session + teacher-tagging support — read params from URL hash query string
-  const { sessionId, tid } = (() => {
+  const { sessionId, tid, assignId } = (() => {
     const search = window.location.hash.split('?')[1] ?? '';
     const p = new URLSearchParams(search);
-    return { sessionId: p.get('sessionId'), tid: p.get('tid') ?? undefined };
+    return { sessionId: p.get('sessionId'), tid: p.get('tid') ?? undefined, assignId: p.get('assignId') ?? undefined };
   })();
 
   const [quizData, setQuizData] = useState<any>(null);
@@ -232,6 +232,11 @@ export const StudentPlayView: React.FC = () => {
     }
 
     setQuizResult({ percentage, correctCount, totalQuestions });
+
+    // 2b. Mark assignment as completed (if arrived from an assignment link)
+    if (assignId && studentName) {
+      firestoreService.markAssignmentCompleted(assignId, studentName).catch(() => {});
+    }
 
     // 3. Gamification — use freshMastery (not masteryUpdate state — old snapshot!)
     if (studentName) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { firestoreService, type QuizResult, type ConceptMastery, type StudentGamification, type Announcement, ACHIEVEMENTS } from '../services/firestoreService';
+import { firestoreService, type QuizResult, type ConceptMastery, type StudentGamification, type Announcement, type Assignment, ACHIEVEMENTS } from '../services/firestoreService';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { ICONS } from '../constants';
@@ -45,6 +45,8 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   // П28 — AI Concept Explainer
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null);
+  // Б2 — Assignments
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
 
   const handleExplain = async (conceptId: string, title: string, grade?: number) => {
     if (explanations[conceptId] || loadingExplanation === conceptId) return;
@@ -83,6 +85,9 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       if (topTeacherUid) {
         firestoreService.fetchAnnouncements(topTeacherUid, 3).then(setAnnouncements);
       }
+
+      // Б2 — Load assignments for this student
+      firestoreService.fetchAssignmentsByStudent(name.trim()).then(setAssignments);
 
       // Pre-fetch quiz links for failed concepts (self-navigation)
       const failedConceptIds = Array.from(
@@ -587,6 +592,43 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                 <li key={a.id} className="text-sm text-amber-700">• {a.message}</li>
               ))}
             </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Б2 — Assignments section */}
+      {assignments.length > 0 && searched && !isReadOnly && (
+        <div className="w-full max-w-2xl mb-3">
+          <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
+            <p className="font-bold text-indigo-800 text-sm mb-3 flex items-center gap-1.5">
+              📋 Мои задачи ({assignments.filter(a => !a.completedBy.includes(studentName)).length} нерешени)
+            </p>
+            <div className="space-y-2">
+              {assignments.map(a => {
+                const done = a.completedBy.includes(studentName);
+                const today = new Date().toISOString().split('T')[0];
+                const overdue = !done && a.dueDate < today;
+                return (
+                  <div key={a.id} className={`flex items-center justify-between gap-3 p-3 rounded-xl bg-white border ${overdue ? 'border-red-200' : done ? 'border-green-200' : 'border-indigo-100'}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold truncate ${done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{a.title}</p>
+                      <p className={`text-xs mt-0.5 ${overdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                        {done ? '✅ Завршено' : overdue ? `⚠️ Задоцнета — рок: ${a.dueDate}` : `Рок: ${a.dueDate}`}
+                      </p>
+                    </div>
+                    {!done && (
+                      <button
+                        type="button"
+                        onClick={() => { window.location.hash = `/play/${a.cacheId}?assignId=${a.id}&tid=${a.teacherUid}`; }}
+                        className="flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                      >
+                        Игraj →
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

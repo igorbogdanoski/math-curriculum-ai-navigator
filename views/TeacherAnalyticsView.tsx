@@ -21,6 +21,7 @@ import { LiveTab } from './analytics/LiveTab';
 import { ClassesTab } from './analytics/ClassesTab';
 import { QuestionBankTab } from './analytics/QuestionBankTab';
 import { QuizCoverageTab } from './analytics/QuizCoverageTab';
+import { AssignmentsTab } from './analytics/AssignmentsTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
     const { firebaseUser } = useAuth();
@@ -43,7 +44,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [newMsg, setNewMsg] = useState('');
     const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage' | 'assignments'>('overview');
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -489,6 +490,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                                     { id: 'classes', label: '🏫 Класи' },
                                     { id: 'questionBank', label: '📚 Банка' },
                                     { id: 'coverage', label: '📊 Покриеност' },
+                                    { id: 'assignments', label: '📋 Задачи' },
                                 ] as const).map(tab => (
                                     <button
                                         key={tab.id}
@@ -589,8 +591,12 @@ export const TeacherAnalyticsView: React.FC = () => {
                         />
                     )}
 
+                    {activeTab === 'assignments' && firebaseUser?.uid && (
+                        <AssignmentsTab teacherUid={firebaseUser.uid} />
+                    )}
+
                     {/* П32 — Pagination: Load More */}
-                    {hasMore && !['questionBank', 'live', 'classes', 'coverage'].includes(activeTab) && (
+                    {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments'].includes(activeTab) && (
                         <div className="mt-6 flex flex-col items-center gap-1">
                             <button
                                 type="button"

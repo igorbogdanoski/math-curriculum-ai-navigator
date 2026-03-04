@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, ClipboardList } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -21,6 +21,7 @@ import { GeneratedRubric } from '../components/ai/GeneratedRubric';
 import { usePlanner } from '../contexts/PlannerContext';
 import { GeneratedLearningPaths } from '../components/ai/GeneratedLearningPaths';
 import { RefineGenerationChat } from '../components/generator/RefineGenerationChat';
+import { AssignDialog } from '../components/AssignDialog';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { generatorTourSteps } from '../tours/tour-steps';
@@ -73,6 +74,9 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const [variants, setVariants] = useState<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment> | null>(null);
     const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
     const [activeVariantTab, setActiveVariantTab] = useState<'support' | 'standard' | 'advanced'>('standard');
+
+    // Assignment state
+    const [assignTarget, setAssignTarget] = useState<AIGeneratedAssessment | null>(null);
 
     // Bulk generation state
     const [isGeneratingBulk, setIsGeneratingBulk] = useState(false);
@@ -620,6 +624,7 @@ ${generatedMaterial.assessmentIdea}
     }
     
     return (
+        <>
         <div className="p-4 md:p-6 h-full flex flex-col xl:flex-row gap-6 relative xl:overflow-hidden bg-gray-50 overflow-y-auto">
             {/* LEFT SIDE: Generator Form */}
             <div className="w-full xl:w-[500px] 2xl:w-[560px] flex-shrink-0 flex flex-col xl:overflow-y-auto pb-12 xl:pr-4 custom-scrollbar">
@@ -853,7 +858,17 @@ ${generatedMaterial.assessmentIdea}
                 <div className="mt-6 flex flex-col gap-4">
                     {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
                     {'openingActivity' in generatedMaterial && <GeneratedIdeas material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />}
-                    {'questions' in generatedMaterial && <GeneratedAssessment material={generatedMaterial} onSaveQuestion={handleSaveQuestion} />}
+                    {'questions' in generatedMaterial && (
+                        <div className="flex flex-col gap-2">
+                            <GeneratedAssessment material={generatedMaterial} onSaveQuestion={handleSaveQuestion} />
+                            <div className="flex justify-end">
+                                <button type="button" onClick={() => setAssignTarget(generatedMaterial as AIGeneratedAssessment)}
+                                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
+                                    <ClipboardList className="w-4 h-4" />Задај на класа
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     {'criteria' in generatedMaterial && <GeneratedRubric material={generatedMaterial} />}
                     {'paths' in generatedMaterial && <GeneratedLearningPaths material={generatedMaterial} />}
                     
@@ -892,7 +907,17 @@ ${generatedMaterial.assessmentIdea}
                             >{opt.label}</button>
                         ))}
                     </div>
-                    {variants[activeVariantTab] && <GeneratedAssessment material={variants[activeVariantTab]} onSaveQuestion={handleSaveQuestion} />}
+                    {variants[activeVariantTab] && (
+                        <div className="flex flex-col gap-2">
+                            <GeneratedAssessment material={variants[activeVariantTab]} onSaveQuestion={handleSaveQuestion} />
+                            <div className="flex justify-end">
+                                <button type="button" onClick={() => setAssignTarget(variants[activeVariantTab])}
+                                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
+                                    <ClipboardList className="w-4 h-4" />Задај на класа
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -933,5 +958,16 @@ ${generatedMaterial.assessmentIdea}
             )}
             </div>
         </div>
+
+        {assignTarget && (
+            <AssignDialog
+                material={assignTarget}
+                materialType={(state.materialType === 'QUIZ' || state.materialType === 'ASSESSMENT') ? state.materialType : 'QUIZ'}
+                conceptId={state.selectedConcepts[0]}
+                gradeLevel={curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level}
+                onClose={() => setAssignTarget(null)}
+            />
+        )}
+        </>
     );
 };
