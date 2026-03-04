@@ -30,9 +30,14 @@ export const ContentLibraryView: React.FC = () => {
     const load = async () => {
         if (!firebaseUser?.uid) return;
         setLoading(true);
-        const data = await firestoreService.fetchLibraryMaterials(firebaseUser.uid);
-        setMaterials(data);
-        setLoading(false);
+        try {
+            const data = await firestoreService.fetchLibraryMaterials(firebaseUser.uid);
+            setMaterials(data);
+        } catch {
+            addNotification('Грешка при вчитување на библиотеката.', 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => { load(); }, [firebaseUser?.uid]);

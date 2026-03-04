@@ -25,9 +25,13 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Да се избрише задачата?')) return;
-        await firestoreService.deleteAssignment(id);
-        setAssignments(prev => prev.filter(a => a.id !== id));
-        addNotification('Задачата е избришана.', 'info');
+        try {
+            await firestoreService.deleteAssignment(id);
+            setAssignments(prev => prev.filter(a => a.id !== id));
+            addNotification('Задачата е избришана.', 'info');
+        } catch {
+            addNotification('Грешка: задачата не можеше да се избрише.', 'error');
+        }
     };
 
     const today = new Date().toISOString().split('T')[0];
