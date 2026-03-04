@@ -668,7 +668,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     </p>
                     <GradeBadge pct={r.percentage} showLabel={true} />
                     <p className="text-xs text-slate-400">{r.correctCount}/{r.totalQuestions}</p>
-                    {r.confidence && (
+                    {r.confidence != null && (
                       <span title={`Самооценување: ${r.confidence}/5`} className="text-base leading-none">
                         {['😟','😐','🙂','😊','🤩'][r.confidence - 1]}
                       </span>

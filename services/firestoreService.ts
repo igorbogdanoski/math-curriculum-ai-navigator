@@ -682,7 +682,7 @@ export const firestoreService = {
           conceptId: d.data().conceptId as string | undefined,
           type: d.data().type as string,
         }))
-        .filter(q => q.type === 'QUIZ' || q.type === 'ASSESSMENT')
+        .filter(q => q.type === 'quiz' || q.type === 'assessment')
         .slice(0, 20);
     } catch (error) {
       console.error('Error fetching cached quiz list:', error);

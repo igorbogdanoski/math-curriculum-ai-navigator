@@ -139,8 +139,8 @@ export const TeacherAnalyticsView: React.FC = () => {
             ]),
         ];
         const csv = rows.map(row =>
-            row.map(cell => cell.includes(',') || cell.includes('"')
-                ? `"${cell.replace(/"/g, '""')}"` : cell
+            row.map(cell => cell.includes(',') || cell.includes('"') || /[\r\n]/.test(cell)
+                ? `"${cell.replace(/"/g, '""').replace(/[\r\n]+/g, ' ')}"` : cell
             ).join(',')
         ).join('\n');
         const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
@@ -154,7 +154,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
-    useEffect(() => { loadResults(); }, []);
+    useEffect(() => { loadResults(); }, [loadResults]);
 
     useEffect(() => {
         if (!firebaseUser?.uid) return;

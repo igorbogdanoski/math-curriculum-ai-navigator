@@ -241,7 +241,9 @@ export const StudentPlayView: React.FC = () => {
     // 3. Gamification — use freshMastery (not masteryUpdate state — old snapshot!)
     if (studentName) {
       const justMastered = !!(freshMastery?.mastered && freshMastery.consecutiveHighScores === 3);
-      const totalMastered = freshMastery?.mastered ? 1 : 0;
+      // Count ALL mastered concepts (not just the current one) for milestone achievements
+      const allMastery = await firestoreService.fetchMasteryByStudent(studentName).catch(() => []);
+      const totalMastered = allMastery.filter(m => m.mastered).length;
       firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered, meta.teacherUid)
         .then(({ xpGained, newAchievements, gamification }) => {
           setGamificationUpdate({ xpGained, newAchievements, gamification });

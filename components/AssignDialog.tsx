@@ -21,7 +21,8 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
   const [dueDate, setDueDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    return d.toISOString().split('T')[0];
+    // Use sv-SE locale to get YYYY-MM-DD in local time (toISOString returns UTC which can be yesterday in UTC+N timezones)
+    return d.toLocaleDateString('sv-SE');
   });
   const [saving, setSaving] = useState(false);
 
@@ -113,7 +114,7 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
             <input
               type="date"
               value={dueDate}
-              min={new Date().toISOString().split('T')[0]}
+              min={new Date().toLocaleDateString('sv-SE')}
               onChange={e => setDueDate(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />

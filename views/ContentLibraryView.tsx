@@ -22,7 +22,7 @@ export const ContentLibraryView: React.FC = () => {
     const { firebaseUser } = useAuth();
     const { addNotification } = useNotification();
     const [materials, setMaterials] = useState<CachedMaterial[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
