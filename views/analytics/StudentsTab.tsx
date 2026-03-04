@@ -4,7 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { GradeBadge } from '../../components/common/GradeBadge';
-import type { PerStudentStat } from './shared';
+import { type PerStudentStat, confidenceEmoji, confidenceColor } from './shared';
 
 interface StudentsTabProps {
     perStudentStats: PerStudentStat[];
@@ -34,6 +34,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => 
                                     <th className="py-2 px-3 text-center font-semibold">Просек</th>
                                     <th className="py-2 px-3 text-center font-semibold">Положиле</th>
                                     <th className="py-2 px-3 text-center font-semibold">Совладани</th>
+                                    <th className="py-2 px-3 text-center font-semibold">Доверба</th>
                                     <th className="py-2 px-3 text-center font-semibold">Статус</th>
                                     <th className="py-2 px-3 font-semibold">Акција</th>
                                 </tr>
@@ -57,6 +58,11 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => 
                                                 <span className="flex items-center justify-center gap-1">
                                                     {s.masteredCount > 0 && <Trophy className="w-3.5 h-3.5 text-yellow-500" fill="currentColor" />}
                                                     {s.masteredCount}
+                                                </span>
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <span className={`text-sm ${confidenceColor(s.avgConfidence)}`}>
+                                                    {confidenceEmoji(s.avgConfidence)}
                                                 </span>
                                             </td>
                                             <td className="py-2.5 px-3">

@@ -129,9 +129,13 @@ export interface CachedMaterial {
   id: string;
   content: unknown;
   type: 'analogy' | 'outline' | 'quiz' | 'discussion' | 'problems' | 'assessment' | 'rubric' | 'thematicplan' | 'ideas' | 'solver';
+  title?: string;
   conceptId?: string;
   topicId?: string;
   gradeLevel: number;
+  teacherUid?: string;
+  /** В1: draft = pending review, published = approved for students. Undefined = legacy (treated as published). */
+  status?: 'draft' | 'published';
   createdAt: Timestamp;
   helpfulCount?: number;
   notHelpfulCount?: number;
@@ -906,6 +910,57 @@ export const firestoreService = {
     return onSnapshot(collection(db, 'live_quizzes', pin, 'participants'), (snap) => {
         callback(snap.docs.map(d => d.data()));
     });
+  },
+
+  // ── Content Library (В1) ─────────────────────────────────────────────────────
+  /** Saves a generated material to the teacher's library with status='draft'. Returns the new doc ID. */
+  saveToLibrary: async (content: any, meta: {
+    title: string;
+    type: CachedMaterial['type'];
+    teacherUid: string;
+    conceptId?: string;
+    topicId?: string;
+    gradeLevel?: number;
+  }): Promise<string> => {
+    const ref = await addDoc(collection(db, 'cached_ai_materials'), {
+      content,
+      type: meta.type,
+      title: meta.title,
+      teacherUid: meta.teacherUid,
+      conceptId: meta.conceptId,
+      topicId: meta.topicId,
+      gradeLevel: meta.gradeLevel ?? 0,
+      status: 'draft',
+      createdAt: serverTimestamp(),
+    });
+    return ref.id;
+  },
+
+  fetchLibraryMaterials: async (teacherUid: string): Promise<CachedMaterial[]> => {
+    try {
+      const q = query(collection(db, 'cached_ai_materials'), where('teacherUid', '==', teacherUid), orderBy('createdAt', 'desc'), limit(100));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as CachedMaterial));
+    } catch (error) {
+      console.error('Error fetching library materials:', error);
+      return [];
+    }
+  },
+
+  publishMaterial: async (id: string): Promise<void> => {
+    await updateDoc(doc(db, 'cached_ai_materials', id), { status: 'published' });
+  },
+
+  unpublishMaterial: async (id: string): Promise<void> => {
+    await updateDoc(doc(db, 'cached_ai_materials', id), { status: 'draft' });
+  },
+
+  deleteCachedMaterial: async (id: string): Promise<void> => {
+    await deleteDoc(doc(db, 'cached_ai_materials', id));
+  },
+
+  updateMaterialTitle: async (id: string, title: string): Promise<void> => {
+    await updateDoc(doc(db, 'cached_ai_materials', id), { title });
   },
 
   // ── Assignments ─────────────────────────────────────────────────────────────

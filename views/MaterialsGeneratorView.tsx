@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { X, ClipboardList } from 'lucide-react';
+import { X, ClipboardList, BookmarkPlus, CheckCircle } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -77,6 +77,8 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
 
     // Assignment state
     const [assignTarget, setAssignTarget] = useState<AIGeneratedAssessment | null>(null);
+    // В1 — Library save state (tracks which materials have been saved)
+    const [savedToLibrary, setSavedToLibrary] = useState<Set<string>>(new Set());
 
     // Bulk generation state
     const [isGeneratingBulk, setIsGeneratingBulk] = useState(false);
@@ -491,6 +493,29 @@ ${generatedMaterial.assessmentIdea}
         }
     };
 
+    const handleSaveToLibrary = async (material: any, keyHint: string) => {
+        if (!user?.uid) { addNotification('Мора да бидете логирани.', 'error'); return; }
+        if (savedToLibrary.has(keyHint)) return; // already saved
+        try {
+            const conceptId = state.selectedConcepts[0];
+            const gradeLevel = curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level;
+            const materialTypeToLibType: Record<string, 'quiz' | 'assessment' | 'rubric' | 'ideas' | 'analogy'> = {
+                QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric', SCENARIO: 'ideas',
+            };
+            const libType = materialTypeToLibType[state.materialType ?? ''] ?? 'quiz';
+            await firestoreService.saveToLibrary(material, {
+                title: material.title || 'Генериран материјал',
+                type: libType,
+                teacherUid: user.uid,
+                conceptId,
+                topicId: state.selectedTopic,
+                gradeLevel,
+            });
+            setSavedToLibrary(prev => new Set(prev).add(keyHint));
+            addNotification('Зачувано во библиотека! Прегледај и публикувај во „Библиотека". 📚', 'success');
+        } catch { addNotification('Грешка при зачувување.', 'error'); }
+    };
+
     const handleGenerate = async () => {
         if (!isOnline) {
             addNotification("Нема интернет конекција. Генераторот е недостапен.", 'error');
@@ -861,7 +886,14 @@ ${generatedMaterial.assessmentIdea}
                     {'questions' in generatedMaterial && (
                         <div className="flex flex-col gap-2">
                             <GeneratedAssessment material={generatedMaterial} onSaveQuestion={handleSaveQuestion} />
-                            <div className="flex justify-end">
+                            <div className="flex justify-end gap-2">
+                                <button type="button"
+                                    onClick={() => handleSaveToLibrary(generatedMaterial, 'main')}
+                                    disabled={savedToLibrary.has('main')}
+                                    className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm ${savedToLibrary.has('main') ? 'bg-green-100 text-green-700' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                                    {savedToLibrary.has('main') ? <CheckCircle className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
+                                    {savedToLibrary.has('main') ? 'Зачувано' : 'Зачувај'}
+                                </button>
                                 <button type="button" onClick={() => setAssignTarget(generatedMaterial as AIGeneratedAssessment)}
                                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
                                     <ClipboardList className="w-4 h-4" />Задај на класа
@@ -910,7 +942,14 @@ ${generatedMaterial.assessmentIdea}
                     {variants[activeVariantTab] && (
                         <div className="flex flex-col gap-2">
                             <GeneratedAssessment material={variants[activeVariantTab]} onSaveQuestion={handleSaveQuestion} />
-                            <div className="flex justify-end">
+                            <div className="flex justify-end gap-2">
+                                <button type="button"
+                                    onClick={() => handleSaveToLibrary(variants[activeVariantTab], `variant-${activeVariantTab}`)}
+                                    disabled={savedToLibrary.has(`variant-${activeVariantTab}`)}
+                                    className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm ${savedToLibrary.has(`variant-${activeVariantTab}`) ? 'bg-green-100 text-green-700' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                                    {savedToLibrary.has(`variant-${activeVariantTab}`) ? <CheckCircle className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
+                                    {savedToLibrary.has(`variant-${activeVariantTab}`) ? 'Зачувано' : 'Зачувај'}
+                                </button>
                                 <button type="button" onClick={() => setAssignTarget(variants[activeVariantTab])}
                                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
                                     <ClipboardList className="w-4 h-4" />Задај на класа

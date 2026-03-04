@@ -46,6 +46,7 @@ export interface ConceptStat {
     passRate: number;
     uniqueStudents: number;
     masteredCount: number;
+    avgConfidence?: number; // В2: 1-5 scale, undefined if no ratings
 }
 
 export interface PerStudentStat {
@@ -55,6 +56,7 @@ export interface PerStudentStat {
     passRate: number;
     masteredCount: number;
     lastAttempt: any;
+    avgConfidence?: number; // В2: 1-5 emoji scale, undefined if no ratings
 }
 
 export interface GradeStat {
@@ -65,6 +67,20 @@ export interface GradeStat {
     uniqueStudents: number;
     masteredCount: number;
 }
+
+// ── Confidence helpers (В2) ──────────────────────────────────────────────────
+const CONFIDENCE_EMOJIS = ['', '😟', '😐', '🙂', '😊', '🤩'];
+export const confidenceEmoji = (avg: number | undefined): string => {
+    if (avg === undefined) return '—';
+    const idx = Math.round(avg);
+    return `${CONFIDENCE_EMOJIS[idx] ?? '?'} ${avg.toFixed(1)}`;
+};
+export const confidenceColor = (avg: number | undefined): string => {
+    if (avg === undefined) return 'text-gray-400';
+    if (avg < 2) return 'text-red-600 font-bold';
+    if (avg < 3) return 'text-amber-600';
+    return 'text-green-600';
+};
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 

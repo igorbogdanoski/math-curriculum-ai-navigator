@@ -89,6 +89,7 @@ const ProgressionView = safeLazy(() => import('./views/ProgressionView').then(mo
 const ExamplesGalleryView = safeLazy(() => import('./views/ExamplesGalleryView').then(module => ({ default: module.ExamplesGalleryView })));
 const LessonPlanEditorView = safeLazy(() => import('./views/LessonPlanEditorView').then(module => ({ default: module.LessonPlanEditorView })));
 const LessonPlanLibraryView = safeLazy(() => import('./views/LessonPlanLibraryView').then(module => ({ default: module.LessonPlanLibraryView })));
+const ContentLibraryView = safeLazy(() => import('./views/ContentLibraryView').then(module => ({ default: module.ContentLibraryView })));
 const LessonPlanDetailView = safeLazy(() => import('./views/LessonPlanDetailView').then(module => ({ default: module.LessonPlanDetailView })));
 const SharedPlanView = safeLazy(() => import('./views/SharedPlanView').then(module => ({ default: module.SharedPlanView })));
 const SharedAnnualPlanView = safeLazy(() => import('./views/SharedAnnualPlanView').then(module => ({ default: module.SharedAnnualPlanView })));
@@ -130,6 +131,7 @@ const routes = [
     { path: '/assistant', component: AssistantView },
     { path: '/generator', component: GeneratorRouteHandler },
     { path: '/my-lessons', component: LessonPlanLibraryView },
+    { path: '/library', component: ContentLibraryView },
     { path: '/gallery', component: ExamplesGalleryView },
     { path: '/settings', component: SettingsView },
     { path: '/progression', component: ProgressionView },

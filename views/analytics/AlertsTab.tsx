@@ -4,7 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { GradeBadge } from '../../components/common/GradeBadge';
-import type { PerStudentStat, ConceptStat } from './shared';
+import { confidenceEmoji, confidenceColor, type PerStudentStat, type ConceptStat } from './shared';
 
 interface AlertsTabProps {
     perStudentStats: PerStudentStat[];
@@ -20,6 +20,7 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
 
     const strugglingStudents = perStudentStats.filter(s => s.avg < 50 || s.passRate < 30);
     const criticalConcepts = weakConcepts.filter(c => c.avgPct < 60);
+    const lowConfidenceStudents = perStudentStats.filter(s => s.avgConfidence !== undefined && s.avgConfidence < 2);
 
     return (
         <SilentErrorBoundary name="AlertsTab">
@@ -146,6 +147,62 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
                                                     className="text-xs font-bold text-orange-600 hover:underline whitespace-nowrap"
                                                 >
                                                     Генерирај ремедијал →
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </Card>
+
+                {/* ── Low Confidence Students ────────────────────────────── */}
+                <Card>
+                    <div className="flex items-center gap-2 mb-4">
+                        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                            Ученици со ниска самодоверба
+                        </h2>
+                        {lowConfidenceStudents.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
+                                {lowConfidenceStudents.length}
+                            </span>
+                        )}
+                    </div>
+
+                    {lowConfidenceStudents.length === 0 ? (
+                        <div className="flex items-center gap-2 py-6 justify-center text-green-600">
+                            <CheckCircle className="w-5 h-5" />
+                            <p className="text-sm font-semibold">Нема ученици со многу ниска самодоверба.</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="text-xs text-gray-400 uppercase tracking-widest text-left border-b border-gray-100">
+                                        <th className="py-2 px-3 font-semibold">Ученик</th>
+                                        <th className="py-2 px-3 text-center font-semibold">Просек</th>
+                                        <th className="py-2 px-3 text-center font-semibold">Доверба</th>
+                                        <th className="py-2 px-3 font-semibold">Акција</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {lowConfidenceStudents.map(s => (
+                                        <tr key={s.name} className="border-b border-gray-50 hover:bg-amber-50 transition-colors">
+                                            <td className="py-2.5 px-3 font-semibold text-slate-700">{s.name}</td>
+                                            <td className="py-2.5 px-3 text-center text-gray-600">{s.avg}%</td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <span className={`text-sm ${confidenceColor(s.avgConfidence)}`}>
+                                                    {confidenceEmoji(s.avgConfidence)}
+                                                </span>
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { window.location.hash = `/my-progress?name=${encodeURIComponent(s.name)}`; }}
+                                                    className="text-xs font-bold text-indigo-600 hover:underline"
+                                                >
+                                                    Прогрес →
                                                 </button>
                                             </td>
                                         </tr>

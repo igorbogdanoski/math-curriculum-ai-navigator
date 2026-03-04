@@ -226,13 +226,15 @@ export const TeacherAnalyticsView: React.FC = () => {
 
         const conceptStats = results.filter(r => r.conceptId).reduce((acc, r) => {
             const key = r.conceptId!;
-            if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), quizTitle: r.quizTitle };
+            if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), quizTitle: r.quizTitle, confSum: 0, confCount: 0 };
             acc[key].total++;
             acc[key].sum += r.percentage;
             if (r.percentage >= 70) acc[key].passCount++;
             if (r.studentName) acc[key].students.add(r.studentName);
+            // В2 — confidence accumulation
+            if (r.confidence != null) { acc[key].confSum += r.confidence; acc[key].confCount++; }
             return acc;
-        }, {} as Record<string, { total: number; sum: number; passCount: number; students: Set<string>; quizTitle: string }>);
+        }, {} as Record<string, { total: number; sum: number; passCount: number; students: Set<string>; quizTitle: string; confSum: number; confCount: number }>);
 
         const allConceptStats: ConceptStat[] = Object.entries(conceptStats).map(([conceptId, s]) => {
             const conceptTitle = getConceptDetails(conceptId).concept?.title || s.quizTitle;
@@ -245,6 +247,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                 passRate: Math.round((s.passCount / s.total) * 100),
                 uniqueStudents: s.students.size,
                 masteredCount,
+                avgConfidence: s.confCount > 0 ? s.confSum / s.confCount : undefined,
             };
         }).sort((a, b) => a.avgPct - b.avgPct);
 
@@ -305,6 +308,11 @@ export const TeacherAnalyticsView: React.FC = () => {
             const avg = Math.round(items.reduce((s, r) => s + r.percentage, 0) / items.length);
             const passedCount = items.filter(r => r.percentage >= 70).length;
             const mastery = masteryRecords.filter(m => m.studentName === name);
+            // В2 — confidence average
+            const confItems = items.filter(r => r.confidence != null);
+            const avgConfidence = confItems.length > 0
+                ? confItems.reduce((s, r) => s + r.confidence!, 0) / confItems.length
+                : undefined;
             return {
                 name,
                 attempts: items.length,
@@ -312,6 +320,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                 passRate: Math.round((passedCount / items.length) * 100),
                 masteredCount: mastery.filter(m => m.mastered).length,
                 lastAttempt: items[0]?.playedAt,
+                avgConfidence,
             };
         }).sort((a, b) => a.avg - b.avg);
     }, [results, masteryRecords]);

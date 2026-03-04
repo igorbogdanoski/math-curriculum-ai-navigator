@@ -2,7 +2,7 @@ import React from 'react';
 import { Trophy, AlertTriangle } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
-import { ScoreBar, type ConceptStat } from './shared';
+import { ScoreBar, type ConceptStat, confidenceEmoji, confidenceColor } from './shared';
 
 interface ConceptsTabProps {
     allConceptStats: ConceptStat[];
@@ -31,6 +31,7 @@ export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGen
                                 <th className="py-2 px-3 text-center font-semibold">Положиле</th>
                                 <th className="py-2 px-3 text-center font-semibold">Ученици</th>
                                 <th className="py-2 px-3 text-center font-semibold">Совладани</th>
+                                <th className="py-2 px-3 text-center font-semibold">Доверба</th>
                                 <th className="py-2 px-3 font-semibold">Акција</th>
                             </tr>
                         </thead>
@@ -64,6 +65,11 @@ export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGen
                                                     {c.masteredCount}
                                                   </span>
                                                 : <span className="text-gray-300">—</span>}
+                                        </td>
+                                        <td className="py-2.5 px-3 text-center">
+                                            <span className={`text-sm ${confidenceColor(c.avgConfidence)}`}>
+                                                {confidenceEmoji(c.avgConfidence)}
+                                            </span>
                                         </td>
                                         <td className="py-2.5 px-3">
                                             <button
