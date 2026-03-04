@@ -63,6 +63,20 @@ export const StudentPlayView: React.FC = () => {
   const [nameInput, setNameInput] = useState<string>(() => {
     try { return localStorage.getItem('studentName') || ''; } catch { return ''; }
   });
+  const [isReturningStudent, setIsReturningStudent] = useState(false);
+
+  // А1: Auth re-init — if returning student (nameConfirmed from localStorage) but
+  // Firebase session expired (cleared storage/browser restart), re-auth silently.
+  useEffect(() => {
+    if (!nameConfirmed) return;
+    const ensureAuth = async () => {
+      if (!auth.currentUser) {
+        try { await signInAnonymously(auth); } catch { /* non-fatal */ }
+      }
+    };
+    ensureAuth();
+    setIsReturningStudent(true);
+  }, [nameConfirmed]);
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -218,7 +232,7 @@ export const StudentPlayView: React.FC = () => {
     if (studentName) {
       const justMastered = !!(freshMastery?.mastered && freshMastery.consecutiveHighScores === 3);
       const totalMastered = freshMastery?.mastered ? 1 : 0;
-      firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered)
+      firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered, meta.teacherUid)
         .then(({ xpGained, newAchievements, gamification }) => {
           setGamificationUpdate({ xpGained, newAchievements, gamification });
         })
@@ -322,11 +336,16 @@ export const StudentPlayView: React.FC = () => {
         {/* Quiz */}
         {nameConfirmed && quizData && (
           <>
-            <div className="flex items-center gap-2 px-6 pt-5 pb-0">
+            <div className="flex items-center gap-2 px-6 pt-5 pb-0 flex-wrap">
               <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
                 <User className="w-3.5 h-3.5 text-indigo-500" />
                 <span className="text-xs font-bold text-indigo-700">{studentName}</span>
               </div>
+              {isReturningStudent && (
+                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                  👋 Добредојде назад!
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => { setNameConfirmed(false); setNameInput(studentName); }}

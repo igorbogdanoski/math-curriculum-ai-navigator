@@ -551,8 +551,16 @@ export const firestoreService = {
   },
 
   // ── Gamification: fetch ───────────────────────────────────────────────────
-  fetchStudentGamification: async (studentName: string): Promise<StudentGamification | null> => {
+  // docId: "{teacherUid}_{studentName}" when teacherUid is known (avoids name collisions across classes)
+  // Fallback to plain studentName for backward compatibility with old records.
+  fetchStudentGamification: async (studentName: string, teacherUid?: string): Promise<StudentGamification | null> => {
     try {
+      if (teacherUid) {
+        const scopedRef = doc(db, 'student_gamification', `${teacherUid}_${studentName}`);
+        const scopedSnap = await getDoc(scopedRef);
+        if (scopedSnap.exists()) return scopedSnap.data() as StudentGamification;
+      }
+      // Fallback: try unscoped docId (legacy records or no teacherUid)
       const ref = doc(db, 'student_gamification', studentName);
       const snap = await getDoc(ref);
       return snap.exists() ? (snap.data() as StudentGamification) : null;
@@ -568,8 +576,11 @@ export const firestoreService = {
     percentage: number,
     justMastered: boolean,
     totalMastered: number,
+    teacherUid?: string,
   ): Promise<{ xpGained: number; newAchievements: string[]; gamification: StudentGamification }> => {
-    const ref = doc(db, 'student_gamification', studentName);
+    // Use scoped docId when teacherUid is available to prevent name collisions between classes
+    const docId = teacherUid ? `${teacherUid}_${studentName}` : studentName;
+    const ref = doc(db, 'student_gamification', docId);
     const snap = await getDoc(ref);
     const today = new Date().toLocaleDateString('sv-SE'); // 'YYYY-MM-DD'
 

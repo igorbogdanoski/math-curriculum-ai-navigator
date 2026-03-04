@@ -58,24 +58,28 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     if (!name.trim()) return;
     setLoading(true);
     setSearched(true);
-    // Ensure student has an anonymous Firebase Auth session so security rules pass.
+    // А1: Ensure anonymous Firebase Auth session so security rules pass.
     if (!auth.currentUser) {
       try { await signInAnonymously(auth); } catch { /* non-fatal */ }
     }
     try {
-      const [quizData, masteryData, gamificationData] = await Promise.all([
+      const [quizData, masteryData] = await Promise.all([
         firestoreService.fetchQuizResultsByStudentName(name.trim()),
         firestoreService.fetchMasteryByStudent(name.trim()),
-        firestoreService.fetchStudentGamification(name.trim()),
       ]);
       setResults(quizData);
       setMasteryRecords(masteryData);
-      setGamification(gamificationData);
 
-      // П27 — Load announcements for the most frequent teacherUid in results
+      // Derive primary teacherUid from most frequent teacher in quiz results
       const teacherUidCounts: Record<string, number> = {};
       quizData.forEach(r => { if (r.teacherUid) teacherUidCounts[r.teacherUid] = (teacherUidCounts[r.teacherUid] ?? 0) + 1; });
       const topTeacherUid = Object.entries(teacherUidCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+      // А1: Fetch gamification with teacherUid scope (prevents name collisions across classes)
+      const gamificationData = await firestoreService.fetchStudentGamification(name.trim(), topTeacherUid);
+      setGamification(gamificationData);
+
+      // П27 — Load announcements for the most frequent teacherUid in results
       if (topTeacherUid) {
         firestoreService.fetchAnnouncements(topTeacherUid, 3).then(setAnnouncements);
       }
