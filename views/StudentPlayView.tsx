@@ -66,7 +66,7 @@ export const StudentPlayView: React.FC = () => {
   });
   const [isReturningStudent, setIsReturningStudent] = useState(false);
   // А3: Onboarding wizard — shown only on very first visit (no saved name)
-  const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | null>(() => {
+  const [wizardStep, setWizardStep] = useState<0 | 1 | null>(() => {
     try { return localStorage.getItem('studentName') ? null : 0; } catch { return null; }
   });
 
