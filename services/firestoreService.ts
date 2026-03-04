@@ -115,6 +115,7 @@ export interface QuizResult {
   teacherUid?: string;       // set when student arrives via teacher-tagged link
   differentiationLevel?: DifferentiationLevel; // level of the quiz that was played
   confidence?: number;       // 1-5 self-assessment rating (П26)
+  misconceptions?: { question: string; studentAnswer: string; misconception: string }[];
 }
 
 export interface Announcement {

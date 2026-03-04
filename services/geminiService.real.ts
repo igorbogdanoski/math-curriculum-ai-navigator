@@ -801,6 +801,89 @@ ${customInstruction || ''}`;
     return result;
   },
 
+  async solveSpecificProblemStepByStep(problemText: string): Promise<{ problem: string, strategy?: string, steps: any[] }> {
+    const prompt = `
+      Ти си експерт за математичка педагогија. Ученикот не успеа да ја реши следнава задача:
+      ЗАДАЧА: "${problemText}"
+
+      За да му помогнеш:
+      1. Реши ја задачата детално преку Chain of Thought (CoT) — секој чекор мора да биде логично поврзан и едноставен за следење.
+      2. Во полето "strategy" напиши кратка, охрабрувачка реченица (на пр. "Ајде да ја разложиме оваа задача на неколку едноставни чекори!").
+      
+      Внимавај на математичката точност!
+      
+      Врати JSON точно по овој формат:
+      {
+        "problem": "${problemText.replace(/"/g, '\\"')}",
+        "strategy": "почетна стратегија или охрабрување",
+        "steps": [{"explanation": "зошто го правиме овој чекор", "expression": "LaTeX или чист текст"}]
+      }
+    `;
+
+    const schema = {
+        type: Type.OBJECT,
+        properties: {
+            problem: { type: Type.STRING },
+            strategy: { type: Type.STRING },
+            steps: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        explanation: { type: Type.STRING },
+                        expression: { type: Type.STRING }
+                    },
+                    required: ["explanation", "expression"]
+                }
+            }
+        },
+        required: ["problem", "steps"]
+    };
+
+    const result = await generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false);
+    return result;
+  },
+
+  async diagnoseMisconception(question: string, correctAnswer: string, studentAnswer: string): Promise<string> {
+    const prompt = `
+      Ти си искусен наставник по математика кој се обидува да ја разбере логиката зад грешката на ученикот.
+      
+      Прашање: "${question}"
+      Точен одговор: "${correctAnswer}"
+      Одговор на ученикот: "${studentAnswer}"
+
+      Твоја задача:
+      Дијагностицирај каква концептуална или пресметковна грешка направил ученикот. 
+      Ако е очигледна концептуална грешка (пр. ги собира именителите кај дропки, не ги разбира негативните броеви, ги меша периметар и плоштина), опиши ја кратко.
+      Ако изгледа како обична пресметковна или случајна грешка, кажи "Пресметковна грешка или случајно погодување".
+      
+      Врати САМО една кратка реченица на македонски јазик која ја опишува грешката (без објаснувања и совети).
+      Пример: "Ученикот ги собира именителите наместо да бара НЗС."
+    `;
+
+    try {
+        const response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                config: {
+                    systemInstruction: "Врати само една кратка реченица со дијагноза на грешката.",
+                    temperature: 0.1
+                }
+            })
+        });
+
+        if (!response.ok) return "Непозната грешка";
+        
+        const data = await response.json();
+        return data.text ? data.text.trim().replace(/^"|"$/g, '') : "Непозната грешка";
+    } catch (e) {
+        console.error("Грешка при дијагностицирање:", e);
+        return "Непозната грешка";
+    }
+  },
+
   async explainSpecificStep(problem: string, stepExplanation: string, stepExpression: string): Promise<string> {
     const prompt = `
       Како наставник по математика, објасни му на ученик ЗОШТО го направивме овој чекор во контекст на задачата.

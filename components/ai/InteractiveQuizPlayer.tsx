@@ -1,10 +1,12 @@
 import './InteractiveQuizPlayer.css';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X } from 'lucide-react';
+import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X, Lightbulb, Loader2 } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 import { GradeBadge } from '../common/GradeBadge';
 import { type AssessmentQuestion, QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial } from '../../types';
+import { StepByStepSolver } from '../StepByStepSolver';
+import { geminiService } from '../../services/geminiService';
 
 export interface Question {
   id?: number;
@@ -19,6 +21,7 @@ export interface QuizCompletionResult {
   score: number;
   correctCount: number;
   totalQuestions: number;
+  misconceptions?: { question: string; studentAnswer: string; misconception: string }[];
 }
 
 interface Props {
@@ -67,6 +70,13 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   const [pointsEarned, setPointsEarned] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Scaffolding / Hint State
+  const [scaffoldData, setScaffoldData] = useState<any>(null);
+  const [isGeneratingScaffold, setIsGeneratingScaffold] = useState(false);
+
+  // Misconception tracking state
+  const [misconceptions, setMisconceptions] = useState<{ question: string; studentAnswer: string; misconception: string }[]>([]);
+
   const currentQ = normalizedQuestions[currentIndex];
 
   // Timer Logic
@@ -110,6 +120,19 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     } else {
       setStreak(0);
       setPointsEarned(0);
+      
+      // Diagnose misconception asynchronously
+      if (option !== 'TIME_UP') {
+        geminiService.diagnoseMisconception(currentQ.question, currentQ.answer, option)
+          .then(misconception => {
+             setMisconceptions(prev => [...prev, {
+                question: currentQ.question,
+                studentAnswer: option,
+                misconception
+             }]);
+          })
+          .catch(err => console.error("Error diagnosing misconception", err));
+      }
     }
   };
 
@@ -130,6 +153,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       setIsCorrect(null);
       setTimeLeft(SECONDS_PER_QUESTION);
       setIsTimerRunning(true);
+      setScaffoldData(null);
     } else {
       finishQuiz();
     }
@@ -142,6 +166,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       setIsCorrect(null);
       setTimeLeft(SECONDS_PER_QUESTION);
       setIsTimerRunning(true);
+      setScaffoldData(null);
     }
   };
 
@@ -151,6 +176,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       score,
       correctCount,
       totalQuestions: normalizedQuestions.length,
+      misconceptions: misconceptions.length > 0 ? misconceptions : undefined
     });
     confetti({ particleCount: 200, spread: 100 });
   };
@@ -165,6 +191,20 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     setIsCorrect(null);
     setTimeLeft(SECONDS_PER_QUESTION);
     setIsTimerRunning(true);
+    setScaffoldData(null);
+  };
+
+  const handleRequestHint = async () => {
+    if (isGeneratingScaffold) return;
+    setIsGeneratingScaffold(true);
+    try {
+      const data = await geminiService.solveSpecificProblemStepByStep(currentQ.question);
+      setScaffoldData(data);
+    } catch (err) {
+      console.error("Грешка при генерирање помош:", err);
+    } finally {
+      setIsGeneratingScaffold(false);
+    }
   };
 
   if (normalizedQuestions.length === 0) {
@@ -357,6 +397,29 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                       <div className="flex gap-2 bg-white/50 p-3 rounded-xl mt-2">
                         <Sparkles className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
                         <p className="italic text-gray-600">{currentQ.explanation}</p>
+                      </div>
+                    )}
+                    
+                    {!isCorrect && (
+                      <div className="mt-4 pt-3 border-t border-red-200/50">
+                        {!scaffoldData ? (
+                          <button
+                            onClick={handleRequestHint}
+                            disabled={isGeneratingScaffold}
+                            className="bg-white text-indigo-600 hover:bg-indigo-50 border whitespace-nowrap border-indigo-200 px-4 py-2 font-bold rounded-lg text-sm flex items-center gap-2 transition disabled:opacity-50"
+                          >
+                            {isGeneratingScaffold ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
+                            {isGeneratingScaffold ? 'AI анализира...' : 'Објасни чекор по чекор'}
+                          </button>
+                        ) : (
+                          <div className="mt-2 text-left">
+                            <StepByStepSolver 
+                              problem={scaffoldData.problem}
+                              strategy={scaffoldData.strategy}
+                              steps={scaffoldData.steps}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

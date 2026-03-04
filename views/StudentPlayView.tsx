@@ -17,7 +17,7 @@ import { QuestionType, type DifferentiationLevel } from '../types';
 import { getAdaptiveLevel } from '../utils/adaptiveDifficulty';
 import { validateStudentName } from '../utils/validation';
 
-type QuizResult = { percentage: number; correctCount: number; totalQuestions: number };
+type QuizResult = { percentage: number; correctCount: number; totalQuestions: number; misconceptions?: { question: string; studentAnswer: string; misconception: string }[] };
 
 export const StudentPlayView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -183,7 +183,7 @@ export const StudentPlayView: React.FC = () => {
     }
   };
 
-  const handleQuizComplete = async (score: number, correctCount: number, totalQuestions: number) => {
+  const handleQuizComplete = async (score: number, correctCount: number, totalQuestions: number, misconceptions?: { question: string; studentAnswer: string; misconception: string }[]) => {
     const percentage = Math.round((correctCount / totalQuestions) * 100);
     const meta = quizData._meta || {};
 
@@ -203,6 +203,7 @@ export const StudentPlayView: React.FC = () => {
         studentName: studentName || undefined,
         teacherUid: meta.teacherUid,
         differentiationLevel: meta.differentiationLevel,
+        misconceptions
       });
       setQuizResultDocId(savedDocId);
     } catch (err) {
@@ -472,8 +473,8 @@ export const StudentPlayView: React.FC = () => {
                 answer: item.answer,
                 explanation: item.solution || item.explanation,
               }))}
-              onComplete={({ score, correctCount, totalQuestions }) => {
-                handleQuizComplete(score, correctCount, totalQuestions);
+              onComplete={({ score, correctCount, totalQuestions, misconceptions }) => {
+                handleQuizComplete(score, correctCount, totalQuestions, misconceptions);
               }}
               onClose={() => { window.location.hash = '/'; }}
             />
