@@ -141,7 +141,16 @@ export const GeneratedTestSchema = z.object({
         questions: z.array(z.object({
             id: z.string(),
             text: z.string(),
-            type: z.enum(['multiple-choice', 'short-answer', 'word-problem']),
+            type: z.preprocess(
+                (v) => {
+                    if (typeof v !== 'string') return 'short-answer';
+                    const low = v.toLowerCase();
+                    if (low.includes('choice')) return 'multiple-choice';
+                    if (low.includes('word') || low.includes('problem')) return 'word-problem';
+                    return 'short-answer';
+                },
+                z.enum(['multiple-choice', 'short-answer', 'word-problem'])
+            ),
             options: z.array(z.string()).optional(),
             correctAnswer: z.string(),
             points: z.union([z.number(), z.string().transform(Number)]),

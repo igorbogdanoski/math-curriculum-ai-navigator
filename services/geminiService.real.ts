@@ -1216,7 +1216,8 @@ ${lessonsText}
 ВАЖНО:
 - Прашањата во Група А и Група Б мора да бидат "паралелни" (исти по тип и тежина, но со различни бројки или примери).
 - Пр: Ако 1. задача во А е "2+3", во Б треба да биде "4+5".
-- ${gradeLevelPrompt}
+  - Типот на прашањето ("type") МОРА ДА БИДЕ ЕДНО ОД СЛЕДНИВЕ: "multiple-choice", "short-answer", ИЛИ "word-problem". Строго забрането е користење други типови.
+  - ${gradeLevelPrompt}
 
 Врати JSON:
 {
@@ -1244,7 +1245,7 @@ ${lessonsText}
                                 properties: {
                                     id: { type: Type.STRING },
                                     text: { type: Type.STRING },
-                                    type: { type: Type.STRING },
+                                    type: { type: Type.STRING, description: "Must be 'multiple-choice', 'short-answer', or 'word-problem'" },
                                     options: { type: Type.ARRAY, items: { type: Type.STRING } },
                                     correctAnswer: { type: Type.STRING },
                                     points: { type: Type.NUMBER },
