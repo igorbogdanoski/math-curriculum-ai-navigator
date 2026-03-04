@@ -41,8 +41,8 @@ describe('useCurriculum hook', () => {
             expect(result.current.isLoading).toBe(false);
         });
 
-        expect(result.current.curriculum?.grades).toHaveLength(4);
-        expect(result.current.curriculum?.grades[0].level).toBe(6);
+        expect(result.current.curriculum?.grades).toHaveLength(9);
+        expect(result.current.curriculum?.grades[0].level).toBe(1);
         expect(result.current.allNationalStandards?.length).toBeGreaterThan(0);
     });
 
@@ -52,7 +52,7 @@ describe('useCurriculum hook', () => {
         const grade = result.current.getGrade('grade-7');
         expect(grade).toBeDefined();
         expect(grade?.level).toBe(7);
-        expect(grade?.title).toBe('VII Одделение');
+        expect(grade?.title).toBe('VII (седмо) Одделение');
     });
 
     it('should return undefined for a non-existent grade ID', async () => {
@@ -65,7 +65,7 @@ describe('useCurriculum hook', () => {
     it('should correctly retrieve a topic and its grade by topic ID', async () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
         await waitFor(() => expect(result.current.isLoading).toBe(false));
-        const { grade, topic } = result.current.getTopic('g8-topic-geometry');
+        const { grade, topic } = result.current.getTopic('g8-topic-2');
         expect(topic).toBeDefined();
         expect(grade).toBeDefined();
         expect(topic?.title).toBe('ГЕОМЕТРИЈА');
@@ -75,12 +75,12 @@ describe('useCurriculum hook', () => {
     it('should correctly retrieve concept details by concept ID', async () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
         await waitFor(() => expect(result.current.isLoading).toBe(false));
-        const { grade, topic, concept } = result.current.getConceptDetails('g6-concept-sets');
+        const { grade, topic, concept } = result.current.getConceptDetails('g6-concept-1-1');
         expect(concept).toBeDefined();
         expect(topic).toBeDefined();
         expect(grade).toBeDefined();
         expect(concept?.title).toBe('Множества');
-        expect(topic?.id).toBe('g6-topic-numbers');
+        expect(topic?.id).toBe('g6-topic-1');
         expect(grade?.level).toBe(6);
     });
 
@@ -98,7 +98,7 @@ describe('useCurriculum hook', () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
         await waitFor(() => expect(result.current.isLoading).toBe(false));
         // Using "Цели броеви" which appears in grade 6 and 7
-        const progression = result.current.findConceptAcrossGrades('g6-concept-integers-intro');
+        const progression = result.current.findConceptAcrossGrades('g6-concept-1-4');
         expect(progression).toBeDefined();
         expect(progression?.title).toBe('Цели броеви');
         expect(progression?.progression).toHaveLength(2);
@@ -112,9 +112,9 @@ describe('useCurriculum hook', () => {
         const allConcepts = result.current.allConcepts;
         expect(allConcepts.length).toBeGreaterThan(0);
         
-        const firstConcept = allConcepts.find((c: any) => c.id === 'g6-concept-sets');
+        const firstConcept = allConcepts.find((c: any) => c.id === 'g6-concept-1-1');
         expect(firstConcept).toBeDefined();
         expect(firstConcept?.gradeLevel).toBe(6);
-        expect(firstConcept?.topicId).toBe('g6-topic-numbers');
+        expect(firstConcept?.topicId).toBe('g6-topic-1');
     });
 });

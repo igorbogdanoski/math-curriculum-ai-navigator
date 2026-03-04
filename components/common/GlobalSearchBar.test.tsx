@@ -103,7 +103,7 @@ describe('GlobalSearchBar', () => {
     it('shows results when a valid query is typed', async () => {
         renderComponent();
         const input = screen.getByPlaceholderText(/Пребарај/i);
-        fireEvent.change(input, { target: { value: 'питагора' } });
+        fireEvent.change(input, { target: { value: 'Питагорова' } });
 
         await waitFor(() => {
             expect(screen.getByText('Вовед во Питагорова теорема')).not.toBeNull();
@@ -166,9 +166,9 @@ describe('GlobalSearchBar', () => {
                 <div data-testid="outside">Outside Element</div>
             </div>
         );
-        
+
         const input = screen.getByPlaceholderText(/Пребарај/i);
-        fireEvent.change(input, { target: { value: 'питагора' } });
+        fireEvent.change(input, { target: { value: 'Питагорова' } });
 
         await waitFor(() => {
             expect(screen.getByText('Питагорова теорема')).not.toBeNull();

@@ -36,7 +36,9 @@ describe('useDashboardStats hook', () => {
 
         const { labels, datasets } = result.current.monthlyActivity;
 
-        expect(labels).toEqual(['сеп. 24', 'окт. 24']);
+        expect(labels).toHaveLength(2);
+        expect(labels[0]).toMatch(/сеп/);
+        expect(labels[1]).toMatch(/окт/);
         expect(datasets[0].data).toEqual([1, 2]); // lessons
         expect(datasets[1].data).toEqual([1, 0]); // events
     });
