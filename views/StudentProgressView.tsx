@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery, type StudentGamification, type Announcement, ACHIEVEMENTS } from '../services/firestoreService';
+import { signInAnonymously } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 import { ICONS } from '../constants';
 import {
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
@@ -56,6 +58,10 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     if (!name.trim()) return;
     setLoading(true);
     setSearched(true);
+    // Ensure student has an anonymous Firebase Auth session so security rules pass.
+    if (!auth.currentUser) {
+      try { await signInAnonymously(auth); } catch { /* non-fatal */ }
+    }
     try {
       const [quizData, masteryData, gamificationData] = await Promise.all([
         firestoreService.fetchQuizResultsByStudentName(name.trim()),

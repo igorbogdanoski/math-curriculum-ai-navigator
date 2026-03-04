@@ -4,7 +4,8 @@ import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { firestoreService, type ConceptMastery, ACHIEVEMENTS, type StudentGamification } from '../services/firestoreService';
 import { geminiService } from '../services/geminiService';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { signInAnonymously } from 'firebase/auth';
+import { db, auth } from '../firebaseConfig';
 import { ICONS } from '../constants';
 import { useCurriculum } from '../hooks/useCurriculum';
 import {
@@ -98,7 +99,7 @@ export const StudentPlayView: React.FC = () => {
     fetchQuiz();
   }, [id]);
 
-  const handleConfirmName = () => {
+  const handleConfirmName = async () => {
     const result = validateStudentName(nameInput);
     if (!result.valid) {
       if (result.error) setError(result.error);
@@ -107,6 +108,11 @@ export const StudentPlayView: React.FC = () => {
     setError('');
     const trimmed = nameInput.trim();
     try { localStorage.setItem('studentName', trimmed); } catch { /* incognito */ }
+    // Sign in anonymously so Firestore security rules recognise the student as authenticated.
+    // If already signed in (teacher or returning student), skip.
+    if (!auth.currentUser) {
+      try { await signInAnonymously(auth); } catch { /* non-fatal — app works without auth for now */ }
+    }
     setStudentName(trimmed);
     setNameConfirmed(true);
   };

@@ -48,9 +48,10 @@ service cloud.firestore {
     }
 
     // ── Квиз резултати (quiz_results) ──
+    // read: requires auth (anonymous students count — they sign in anonymously before playing)
     match /quiz_results/{doc} {
-      allow read:   if true;
-      allow create: if request.resource.data.keys().hasAll(['studentName', 'percentage', 'conceptId']);
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'percentage', 'conceptId']);
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confidence'])
                     && request.resource.data.confidence is int
                     && request.resource.data.confidence >= 1
@@ -66,9 +67,9 @@ service cloud.firestore {
 
     // ── Совладување на концепти (concept_mastery) ──
     match /concept_mastery/{doc} {
-      allow read:   if true;
-      allow create: if request.resource.data.keys().hasAll(['studentName', 'conceptId']);
-      allow update: if request.resource.data.keys().hasAll(['studentName', 'conceptId']);
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']);
+      allow update: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']);
       allow delete: if isAdmin();
     }
 
@@ -80,9 +81,9 @@ service cloud.firestore {
 
     // ── Гамификација (student_gamification) ──
     match /student_gamification/{doc} {
-      allow read:   if true;
-      allow create: if request.resource.data.keys().hasAll(['studentName']);
-      allow update: if resource.data.studentName == request.resource.data.studentName;
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName']);
+      allow update: if isAuthenticated() && resource.data.studentName == request.resource.data.studentName;
       allow delete: if isAdmin();
     }
 
@@ -94,10 +95,12 @@ service cloud.firestore {
     }
 
     // ── Live сесии (live_sessions) ──
+    // read: public — students need to find session by join code before they authenticate
+    // update: active sessions can be updated by authenticated users (students joining)
     match /live_sessions/{doc} {
       allow read:   if true;
       allow create: if isAuthenticated();
-      allow update: if resource.data.status != 'ended' || isOwner(resource.data.teacherUid);
+      allow update: if isAuthenticated() && (resource.data.status != 'ended' || isOwner(resource.data.teacherUid));
       allow delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
@@ -118,7 +121,7 @@ service cloud.firestore {
 
     // ── Огласи (announcements) ──
     match /announcements/{doc} {
-      allow read:   if true;
+      allow read:   if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.teacherUid == request.auth.uid || isAdmin();
       allow update: if isOwner(resource.data.teacherUid) || isAdmin();

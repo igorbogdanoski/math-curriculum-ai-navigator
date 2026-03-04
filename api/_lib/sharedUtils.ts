@@ -131,7 +131,10 @@ export function setCorsHeaders(res: VercelResponse): void {
 }
 
 // ---------------------------------------------------------------------------
-// Rate Limiting (In-memory Edge fallback)
+// Rate Limiting (In-memory — best-effort in serverless)
+// KNOWN LIMITATION: Vercel serverless functions are stateless. rlMap resets on
+// every cold start, so this only protects within a single warm function instance.
+// For production-grade rate limiting, replace with Vercel KV or Upstash Redis.
 // ---------------------------------------------------------------------------
 const rlMap = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute

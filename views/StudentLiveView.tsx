@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Radio, User, Hash, ArrowRight, AlertCircle, Home } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
+import { signInAnonymously } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 import { ICONS } from '../constants';
 
 export const StudentLiveView: React.FC = () => {
@@ -32,6 +34,9 @@ export const StudentLiveView: React.FC = () => {
         setLoading(true);
         setError('');
         try {
+            if (!auth.currentUser) {
+                try { await signInAnonymously(auth); } catch { /* non-fatal */ }
+            }
             const session = await firestoreService.getLiveSessionByCode(code);
             if (!session) {
                 setError('Не е пронајдена активна сесија со тој код. Провери го кодот.');
