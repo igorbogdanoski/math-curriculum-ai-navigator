@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery, type StudentGamification, type Announcement, type Assignment, ACHIEVEMENTS } from '../services/firestoreService';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
@@ -8,6 +8,7 @@ import {
   Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw, Target,
 } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { calcFibonacciLevel } from '../utils/gamification';
 import { GradeBadge } from '../components/common/GradeBadge';
 import { LogicMap } from '../components/LogicMap';
 import { geminiService } from '../services/geminiService';
@@ -375,27 +376,71 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       {gamification && (
         <div className="w-full max-w-2xl mb-4">
           <div className="bg-white rounded-2xl shadow p-4">
-            {/* XP bar + streak */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">⚡</span>
-                <div>
-                  <p className="font-black text-slate-800 text-sm">{gamification.totalXP} XP</p>
-                  <p className="text-xs text-slate-400">вкупно поени</p>
+            {/* Math Gamification Dashboard */}
+              <div className="flex flex-col md:flex-row gap-4 mb-3">
+                
+                {/* Level Frame */}
+                {(() => {
+                  const lvlInfo = calcFibonacciLevel(gamification.totalXP);
+                  
+                  return (
+                    <div className="flex-1 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-3 flex flex-col justify-center relative overflow-hidden">
+                       <div className="absolute -right-4 -bottom-4 opacity-10 pointer-events-none">
+                         <svg width="100" height="100" viewBox="0 0 100 100"><path fill="currentColor" d="M50 0 C77.6 0 100 22.4 100 50 C100 77.6 77.6 100 50 100 C22.4 100 0 77.6 0 50 C0 22.4 22.4 0 50 0 Z"/></svg>
+                       </div>
+                       
+                       <div className="flex justify-between items-end mb-2 relative z-10">
+                         <div>
+                            <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">Ниво на знаење</p>
+                            <div className="flex items-center gap-2">
+                               <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-indigo-200">
+                                 {lvlInfo.level}
+                               </div>
+                               <div>
+                                  <p className="font-black text-slate-800 text-sm leading-tight">{gamification.totalXP} Ф-XP</p>
+                                  <p className="text-[10px] text-slate-500 font-medium">Следно: +{lvlInfo.nextLevelXp - lvlInfo.currentXp} XP</p>
+                               </div>
+                            </div>
+                         </div>
+                       </div>
+                       
+                       {/* Contextual Progress Bar */}
+                       <div className="w-full bg-indigo-100 rounded-full h-2.5 mt-1 overflow-hidden relative z-10">
+                         <div 
+                           className="bg-indigo-600 h-2.5 rounded-full transition-all duration-1000 ease-out relative"
+                           style={{ width: `${lvlInfo.progress}%` }}
+                         >
+                           <div className="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-r from-transparent to-white/30 truncate" />
+                         </div>
+                       </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="flex flex-1 gap-2">
+                  <div className="flex-1 bg-orange-50 border border-orange-100 rounded-xl p-3 flex flex-col justify-center">
+                    <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-1">Ојлеров Пат</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl drop-shadow-sm">🗺️</span>
+                      <div>
+                        <p className="font-black text-slate-800 text-sm leading-tight">{gamification.currentStreak} {gamification.currentStreak === 1 ? "ден" : "дена"}</p>
+                        <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">тековен стрик</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 bg-green-50 border border-green-100 rounded-xl p-3 flex flex-col justify-center">
+                    <p className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1">Решени Задачи</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl drop-shadow-sm">🧮</span>
+                      <div>
+                        <p className="font-black text-slate-800 text-sm leading-tight">{gamification.totalQuizzes}</p>
+                        <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">вкупно квизови</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🔥</span>
-                <div className="text-right">
-                  <p className="font-black text-slate-800 text-sm">{gamification.currentStreak} {gamification.currentStreak === 1 ? 'ден' : 'дена'}</p>
-                  <p className="text-xs text-slate-400">тековен стрик</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-slate-600 text-sm">{gamification.totalQuizzes} квизови</p>
-                <p className="text-xs text-slate-400">решени вкупно</p>
-              </div>
-            </div>
             {/* Achievements */}
             {gamification.achievements.length > 0 && (
               <div className="border-t border-slate-100 pt-3">
@@ -884,3 +929,5 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     </div>
   );
 };
+
+

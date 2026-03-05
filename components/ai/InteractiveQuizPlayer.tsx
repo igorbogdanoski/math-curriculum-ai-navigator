@@ -1,10 +1,12 @@
-import './InteractiveQuizPlayer.css';
+﻿import './InteractiveQuizPlayer.css';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X, Lightbulb, Loader2, PenTool } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
+import { MathInput } from '../common/MathInput';
+import { checkMathEquivalence } from '../../utils/mathEvaluator';
 import { GradeBadge } from '../common/GradeBadge';
-import { DigitalScratchpad } from '../common/DigitalScratchpad';
+import { MathToolsPanel } from '../common/MathToolsPanel';
 import { type AssessmentQuestion, QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial } from '../../types';
 import { StepByStepSolver } from '../StepByStepSolver';
 import { geminiService } from '../../services/geminiService';
@@ -83,12 +85,10 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   // Misconception tracking state
   const [misconceptions, setMisconceptions] = useState<{ question: string; studentAnswer: string; misconception: string }[]>([]);
 
-  // Scratchpad state
-  const [showScratchpad, setShowScratchpad] = useState(false);
-
-  const currentQ = normalizedQuestions[currentIndex];
-
-  // Timer Logic
+    // Math tools state
+    const [showMathTools, setShowMathTools] = useState(false);
+    // Short answer state
+    const [shortAnswer, setShortAnswer] = useState('');  // Timer Logic
   useEffect(() => {
     if (isTimerRunning && timeLeft > 0 && !showResult) {
       timerRef.current = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
@@ -111,10 +111,8 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     if (selectedOption || showResult) return;
     
     setIsTimerRunning(false);
-    const correct = option.trim() === currentQ.answer.trim();
-    
-    setSelectedOption(option);
-    setIsCorrect(correct);
+      // Use math equivalence checker for smart validation
+      const correct = checkMathEquivalence(option, currentQ.answer);
 
     if (correct) {
       const timeBonus = timeLeft * 10;
@@ -159,6 +157,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     if (currentIndex + 1 < normalizedQuestions.length) {
       setCurrentIndex(prev => prev + 1);
       setSelectedOption(null);
+      setShortAnswer('');
       setIsCorrect(null);
       setTimeLeft(SECONDS_PER_QUESTION);
       setIsTimerRunning(true);
@@ -314,7 +313,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className={`bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden w-full relative flex flex-col md:flex-row transition-[max-width,min-width] duration-300 ease-in-out ${showScratchpad ? 'max-w-5xl' : 'max-w-xl'}`}>
+      <div className={`bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden w-full relative flex flex-col md:flex-row transition-[max-width,min-width] duration-300 ease-in-out ${showMathTools ? 'max-w-[70rem]' : 'max-w-xl'}`}>
         
         {/* Main Quiz Area */}
         <div className="flex-1 flex flex-col min-w-0">
@@ -327,9 +326,9 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setShowScratchpad(!showScratchpad)}
+                onClick={() => setshowMathTools(!showMathTools)}
                 title="Табла за пресметки"
-                className={`p-1.5 rounded-lg transition-colors border-2 ${showScratchpad ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
+                className={`p-1.5 rounded-lg transition-colors border-2 ${showMathTools ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
               >
                 <PenTool className="w-5 h-5" />
               </button>
@@ -403,20 +402,26 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
               })
             ) : (
               // Short Answer Fallback
-              <div className="space-y-4">
-                <input 
-                  type="text"
-                  placeholder="Внесете одговор..."
-                  className="w-full p-5 bg-gray-50 border-2 border-gray-200 rounded-2xl outline-none focus:border-blue-500 font-bold text-lg"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAnswer(e.currentTarget.value);
-                  }}
-                  disabled={selectedOption !== null}
-                />
-                {!selectedOption && (
-                  <p className="text-xs text-gray-400 italic">Притиснете Enter за да го испратите одговорот.</p>
-                )}
-              </div>
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+                    <MathInput
+                      value={shortAnswer}
+                      onChange={setShortAnswer}
+                      placeholder="Внеси го твојот одговор овде..."
+                      className="flex-1"
+                    />
+                    <button
+                      onClick={() => handleAnswer(shortAnswer)}
+                      disabled={selectedOption !== null || !shortAnswer.trim()}
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors whitespace-nowrap"
+                    >
+                      Потврди
+                    </button>
+                  </div>
+                  {!selectedOption && (
+                    <p className="text-xs text-gray-400 italic">Користи ја виртуелната тастатура за дропки, корени и формули.</p>
+                  )}
+                </div>
             )}
           </div>
 
@@ -493,22 +498,10 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
         </div>
         </div>
 
-        {/* SRATCHPAD PANEL */}
-        {showScratchpad && (
-          <div className="w-full md:w-96 border-t md:border-t-0 md:border-l border-gray-200 bg-slate-50 flex flex-col shrink-0 animate-in fade-in slide-in-from-right-4 duration-300 relative z-20 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.05)] md:shadow-none">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white relative z-10">
-              <span className="font-bold text-slate-700 text-sm flex items-center gap-2">
-                <PenTool className="w-4 h-4 text-indigo-500" />
-                Табла за пресметки
-              </span>
-              <button 
-                onClick={() => setShowScratchpad(false)} 
-                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <DigitalScratchpad className="flex-1 border-0 rounded-none w-full min-h-[300px] md:h-auto" />
+        {/* MATH TOOLS PANEL */}
+        {showMathTools && (
+          <div className="w-full md:w-[450px] border-t md:border-t-0 md:border-l border-gray-200 bg-slate-50 flex flex-col shrink-0 animate-in fade-in slide-in-from-right-4 duration-300 relative z-20 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.05)] md:shadow-none">
+            <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
           </div>
         )}
 
@@ -516,3 +509,5 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     </div>
   );
 };
+
+
