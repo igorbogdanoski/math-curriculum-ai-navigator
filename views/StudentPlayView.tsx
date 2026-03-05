@@ -18,6 +18,7 @@ import { getAdaptiveLevel } from '../utils/adaptiveDifficulty';
 import { validateStudentName } from '../utils/validation';
 import { markQuestComplete } from '../utils/dailyQuests';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
+import { getOrCreateDeviceId } from '../utils/studentIdentity';
 
 type QuizResult = { percentage: number; correctCount: number; totalQuestions: number; misconceptions?: { question: string; studentAnswer: string; misconception: string }[] };
 
@@ -71,6 +72,9 @@ export const StudentPlayView: React.FC = () => {
   const [wizardStep, setWizardStep] = useState<0 | 1 | null>(() => {
     try { return localStorage.getItem('studentName') ? null : 0; } catch { return null; }
   });
+
+  // Ж1: device-bound identity — created once per device, persists in localStorage
+  const deviceId = getOrCreateDeviceId();
 
   // А1: Auth re-init — if returning student (nameConfirmed from localStorage) but
   // Firebase session expired (cleared storage/browser restart), re-auth silently.
@@ -204,6 +208,7 @@ export const StudentPlayView: React.FC = () => {
         gradeLevel: meta.gradeLevel,
         studentName: studentName || undefined,
         teacherUid: meta.teacherUid,
+        deviceId,
         differentiationLevel: meta.differentiationLevel,
         misconceptions
       });
@@ -226,7 +231,8 @@ export const StudentPlayView: React.FC = () => {
             topicId: meta.topicId,
             gradeLevel: meta.gradeLevel,
           },
-          meta.teacherUid
+          meta.teacherUid,
+          deviceId,
         );
         setMasteryUpdate(freshMastery);
       } catch (err) {
@@ -250,9 +256,9 @@ export const StudentPlayView: React.FC = () => {
     if (studentName) {
       const justMastered = !!(freshMastery?.mastered && freshMastery.consecutiveHighScores === 3);
       // Count ALL mastered concepts (not just the current one) for milestone achievements
-      const allMastery = await firestoreService.fetchMasteryByStudent(studentName).catch(() => []);
+      const allMastery = await firestoreService.fetchMasteryByStudent(studentName, deviceId).catch(() => []);
       const totalMastered = allMastery.filter(m => m.mastered).length;
-      firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered, meta.teacherUid)
+      firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered, meta.teacherUid, deviceId)
         .then(({ xpGained, newAchievements, gamification }) => {
           setGamificationUpdate({ xpGained, newAchievements, gamification });
         })

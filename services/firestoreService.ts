@@ -17,6 +17,7 @@ export interface ConceptMastery {
   topicId?: string;
   gradeLevel?: number;
   teacherUid?: string;       // set for new records; undefined for legacy shared records
+  deviceId?: string;         // Ж1: device-bound UUID; undefined for legacy records
   attempts: number;          // total attempts
   consecutiveHighScores: number; // consecutive attempts ≥85%
   bestScore: number;
@@ -86,6 +87,7 @@ export interface StudentGamification {
   lastActivityDate: string; // 'YYYY-MM-DD' local date
   achievements: string[];   // unlocked achievement IDs
   totalQuizzes: number;     // running total across all time
+  deviceId?: string;        // Ж1: device-bound UUID; undefined for legacy records
 }
 
 export const ACHIEVEMENTS: Record<string, { label: string; icon: string; condition: (g: StudentGamification) => boolean }> = {
@@ -117,6 +119,7 @@ export interface QuizResult {
   gradeLevel?: number;
   studentName?: string;
   teacherUid?: string;       // set when student arrives via teacher-tagged link
+  deviceId?: string;         // Ж1: device-bound UUID; undefined for legacy records
   differentiationLevel?: DifferentiationLevel; // level of the quiz that was played
   confidence?: number;       // 1-5 self-assessment rating (П26)
   misconceptions?: { question: string; studentAnswer: string; misconception: string }[];
@@ -380,14 +383,12 @@ export const firestoreService = {
   /**
    * Fetches quiz results for a specific student by name (case-insensitive client-side filter).
    */
-  fetchQuizResultsByStudentName: async (studentName: string): Promise<QuizResult[]> => {
+  fetchQuizResultsByStudentName: async (studentName: string, deviceId?: string): Promise<QuizResult[]> => {
     try {
-      const q = query(
-        collection(db, "quiz_results"),
-        where("studentName", "==", studentName),
-        orderBy("playedAt", "desc"),
-        limit(100)
-      );
+      // Ж1: prefer deviceId query; old records without deviceId fall back to studentName
+      const q = deviceId
+        ? query(collection(db, 'quiz_results'), where('deviceId', '==', deviceId), orderBy('playedAt', 'desc'), limit(100))
+        : query(collection(db, 'quiz_results'), where('studentName', '==', studentName), orderBy('playedAt', 'desc'), limit(100));
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(d => d.data() as QuizResult);
     } catch (error) {
@@ -475,12 +476,14 @@ export const firestoreService = {
     conceptId: string,
     score: number,
     meta?: { conceptTitle?: string; topicId?: string; gradeLevel?: number },
-    teacherUid?: string
+    teacherUid?: string,
+    deviceId?: string,
   ): Promise<ConceptMastery> => {
     const safeName = studentName.replace(/\s+/g, '_');
-    const docId = teacherUid
-      ? `${teacherUid}_${safeName}_${conceptId}`
-      : `${safeName}_${conceptId}`;
+    // Ж1: prefer deviceId in docId to prevent name-collision between same-named students
+    const docId = deviceId
+      ? (teacherUid ? `${teacherUid}_${deviceId}_${conceptId}` : `${deviceId}_${conceptId}`)
+      : (teacherUid ? `${teacherUid}_${safeName}_${conceptId}` : `${safeName}_${conceptId}`);
     const ref = doc(db, 'concept_mastery', docId);
 
     try {
@@ -499,6 +502,7 @@ export const firestoreService = {
         topicId: meta?.topicId ?? existing?.topicId,
         gradeLevel: meta?.gradeLevel ?? existing?.gradeLevel,
         ...(teacherUid ? { teacherUid } : {}),
+        ...(deviceId ? { deviceId } : {}),
         attempts: (existing?.attempts ?? 0) + 1,
         consecutiveHighScores: newConsecutive,
         bestScore: Math.max(score, existing?.bestScore ?? 0),
@@ -524,12 +528,12 @@ export const firestoreService = {
   /**
    * Fetches all mastery records for a given student.
    */
-  fetchMasteryByStudent: async (studentName: string): Promise<ConceptMastery[]> => {
+  fetchMasteryByStudent: async (studentName: string, deviceId?: string): Promise<ConceptMastery[]> => {
     try {
-      const q = query(
-        collection(db, 'concept_mastery'),
-        where('studentName', '==', studentName)
-      );
+      // Ж1: prefer deviceId query to avoid same-name collisions
+      const q = deviceId
+        ? query(collection(db, 'concept_mastery'), where('deviceId', '==', deviceId))
+        : query(collection(db, 'concept_mastery'), where('studentName', '==', studentName));
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data() as ConceptMastery);
     } catch (error) {
@@ -574,16 +578,28 @@ export const firestoreService = {
   },
 
   // ── Gamification: fetch ───────────────────────────────────────────────────
-  // docId: "{teacherUid}_{studentName}" when teacherUid is known (avoids name collisions across classes)
-  // Fallback to plain studentName for backward compatibility with old records.
-  fetchStudentGamification: async (studentName: string, teacherUid?: string): Promise<StudentGamification | null> => {
+  // Ж1: docId priority chain:
+  //   1. "{teacherUid}_{deviceId}" (new records with deviceId)
+  //   2. "{teacherUid}_{studentName}" (scoped by teacher, legacy)
+  //   3. "{studentName}" (oldest legacy records)
+  fetchStudentGamification: async (studentName: string, teacherUid?: string, deviceId?: string): Promise<StudentGamification | null> => {
     try {
+      if (deviceId && teacherUid) {
+        const deviceRef = doc(db, 'student_gamification', `${teacherUid}_${deviceId}`);
+        const deviceSnap = await getDoc(deviceRef);
+        if (deviceSnap.exists()) return deviceSnap.data() as StudentGamification;
+      }
+      if (deviceId && !teacherUid) {
+        const deviceRef = doc(db, 'student_gamification', deviceId);
+        const deviceSnap = await getDoc(deviceRef);
+        if (deviceSnap.exists()) return deviceSnap.data() as StudentGamification;
+      }
       if (teacherUid) {
         const scopedRef = doc(db, 'student_gamification', `${teacherUid}_${studentName}`);
         const scopedSnap = await getDoc(scopedRef);
         if (scopedSnap.exists()) return scopedSnap.data() as StudentGamification;
       }
-      // Fallback: try unscoped docId (legacy records or no teacherUid)
+      // Fallback: unscoped docId (legacy records)
       const ref = doc(db, 'student_gamification', studentName);
       const snap = await getDoc(ref);
       return snap.exists() ? (snap.data() as StudentGamification) : null;
@@ -618,16 +634,19 @@ export const firestoreService = {
     justMastered: boolean,
     totalMastered: number,
     teacherUid?: string,
+    deviceId?: string,
   ): Promise<{ xpGained: number; newAchievements: string[]; gamification: StudentGamification }> => {
-    // Use scoped docId when teacherUid is available to prevent name collisions between classes
-    const docId = teacherUid ? `${teacherUid}_${studentName}` : studentName;
+    // Ж1: prefer deviceId in docId to prevent same-name collisions
+    const docId = deviceId
+      ? (teacherUid ? `${teacherUid}_${deviceId}` : deviceId)
+      : (teacherUid ? `${teacherUid}_${studentName}` : studentName);
     const ref = doc(db, 'student_gamification', docId);
     const snap = await getDoc(ref);
     const today = new Date().toLocaleDateString('sv-SE'); // 'YYYY-MM-DD'
 
     const existing: StudentGamification = snap.exists()
       ? (snap.data() as StudentGamification)
-      : { studentName, totalXP: 0, currentStreak: 0, longestStreak: 0, lastActivityDate: '', achievements: [], totalQuizzes: 0 };
+      : { studentName, totalXP: 0, currentStreak: 0, longestStreak: 0, lastActivityDate: '', achievements: [], totalQuizzes: 0, ...(deviceId ? { deviceId } : {}) };
 
     // XP + streak via pure utils (utils/gamification.ts)
     const xpGained = calcXP(percentage, justMastered);

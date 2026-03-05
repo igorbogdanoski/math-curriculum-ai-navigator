@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
+import { getDeviceId } from '../utils/studentIdentity';
 import { GradeBadge } from '../components/common/GradeBadge';
 import { DailyQuestCard } from '../components/common/DailyQuestCard';
 import { loadOrGenerateQuests, type DailyQuest } from '../utils/dailyQuests';
@@ -74,9 +75,11 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       try { await signInAnonymously(auth); } catch { /* non-fatal */ }
     }
     try {
+      // Ж1: use deviceId only when student views their own data (not read-only parent view)
+      const deviceId = isReadOnly ? undefined : getDeviceId() ?? undefined;
       const [quizData, masteryData] = await Promise.all([
-        firestoreService.fetchQuizResultsByStudentName(name.trim()),
-        firestoreService.fetchMasteryByStudent(name.trim()),
+        firestoreService.fetchQuizResultsByStudentName(name.trim(), deviceId),
+        firestoreService.fetchMasteryByStudent(name.trim(), deviceId),
       ]);
       setResults(quizData);
       setMasteryRecords(masteryData);
@@ -88,8 +91,8 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       quizData.forEach(r => { if (r.teacherUid) teacherUidCounts[r.teacherUid] = (teacherUidCounts[r.teacherUid] ?? 0) + 1; });
       const topTeacherUid = Object.entries(teacherUidCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-      // ?1: Fetch gamification with teacherUid scope (prevents name collisions across classes)
-      const gamificationData = await firestoreService.fetchStudentGamification(name.trim(), topTeacherUid);
+      // Ж1: Fetch gamification with deviceId + teacherUid scope for precise lookup
+      const gamificationData = await firestoreService.fetchStudentGamification(name.trim(), topTeacherUid, deviceId);
       setGamification(gamificationData);
 
       // ?27 � Load announcements for the most frequent teacherUid in results
