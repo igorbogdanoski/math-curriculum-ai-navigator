@@ -596,6 +596,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                         <AlertsTab
                             perStudentStats={perStudentStats}
                             weakConcepts={weakConcepts}
+                            results={results}
                             onGenerateRemedial={handleGenerateRemedial}
                         />
                     )}

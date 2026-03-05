@@ -14,13 +14,13 @@ import { LogicMap } from '../components/LogicMap';
 import { geminiService } from '../services/geminiService';
 
 const formatDate = (ts: any): string => {
-  if (!ts) return '—';
+  if (!ts) return 'ï¿½';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
   return d.toLocaleDateString('mk-MK', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 interface Props {
-  /** Passed from URL query param ?name=... — enables read-only parent view */
+  /** Passed from URL query param ?name=... ï¿½ enables read-only parent view */
   name?: string;
 }
 
@@ -43,12 +43,12 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [searched, setSearched] = useState(false);
   const [activeTab, setActiveTab] = useState<'activity' | 'map'>('map');
   const [reportPeriod, setReportPeriod] = useState<'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH'>('THIS_WEEK');
-  // ?27 — Teacher announcements
+  // ?27 ï¿½ Teacher announcements
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  // ?28 — AI Concept Explainer
+  // ?28 ï¿½ AI Concept Explainer
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null);
-  // ?2 — Assignments
+  // ?2 ï¿½ Assignments
   const [assignments, setAssignments] = useState<Assignment[]>([]);
 
   const handleExplain = async (conceptId: string, title: string, grade?: number) => {
@@ -84,12 +84,12 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       const gamificationData = await firestoreService.fetchStudentGamification(name.trim(), topTeacherUid);
       setGamification(gamificationData);
 
-      // ?27 — Load announcements for the most frequent teacherUid in results
+      // ?27 ï¿½ Load announcements for the most frequent teacherUid in results
       if (topTeacherUid) {
         firestoreService.fetchAnnouncements(topTeacherUid, 3).then(setAnnouncements);
       }
 
-      // ?2 — Load assignments for this student
+      // ?2 ï¿½ Load assignments for this student
       firestoreService.fetchAssignmentsByStudent(name.trim()).then(setAssignments);
 
       // Pre-fetch quiz links for failed concepts (self-navigation)
@@ -110,7 +110,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       console.error('[StudentProgress] fetchResults failed:', err);
       setResults([]);
       setMasteryRecords([]);
-      // Show inline error — visible without toast since this is a public/student page
+      // Show inline error ï¿½ visible without toast since this is a public/student page
       setSearched(true);
     } finally {
       setLoading(false);
@@ -168,7 +168,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     });
   }, [masteryRecords]);
 
-  // -- ?????? 21: ??????????????? ?????? „?????? ??????" --------------------
+  // -- ?????? 21: ??????????????? ?????? ï¿½?????? ??????" --------------------
   const nextUpConcepts = useMemo(() => {
     if (!allConcepts || allConcepts.length === 0 || masteryRecords.length === 0) return [];
     const masteredIds = new Set(masteryRecords.filter(m => m.mastered).map(m => m.conceptId));
@@ -239,7 +239,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               {isReadOnly ? '??????? ?? ??????' : '??? ???????'}
             </h1>
             {isReadOnly && (
-              <p className="text-white/60 text-xs font-semibold">?????? ?? ???????? — ???? ?? ??????</p>
+              <p className="text-white/60 text-xs font-semibold">?????? ?? ???????? ï¿½ ???? ?? ??????</p>
             )}
           </div>
         </div>
@@ -277,7 +277,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         </div>
       </div>
 
-      {/* Search card — hidden in read-only (parent) mode */}
+      {/* Search card ï¿½ hidden in read-only (parent) mode */}
       {!isReadOnly && (
         <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
@@ -372,7 +372,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       {searched && !loading && activeTab === 'activity' && (
         <>
 
-      {/* -- ?????? 15: Gamification — XP + Streak + Achievements ------------ */}
+      {/* -- ?????? 15: Gamification ï¿½ XP + Streak + Achievements ------------ */}
       {gamification && (
         <div className="w-full max-w-2xl mb-4">
           <div className="bg-white rounded-2xl shadow p-4">
@@ -470,7 +470,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               <p className="font-bold text-blue-800 text-sm">??????? ?????</p>
               <span className="px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 text-xs font-bold">{reviewToday.length}</span>
             </div>
-            <p className="text-xs text-blue-600 mb-3">???? ???????? ?? ??? ?? ??????? ????? — ???????? ?? ????????!</p>
+            <p className="text-xs text-blue-600 mb-3">???? ???????? ?? ??? ?? ??????? ????? ï¿½ ???????? ?? ????????!</p>
             <div className="space-y-2">
               {reviewToday.map(m => {
                 const nextId = nextQuizIds[m.conceptId];
@@ -479,7 +479,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-700 truncate">{m.conceptTitle || m.conceptId}</p>
                       <p className="text-xs text-slate-400">
-                        {m.mastered ? '???????? — ?????? ?? 30+ ????' : `${m.consecutiveHighScores}/3 ?? ??? — ?????? ????????`}
+                        {m.mastered ? '???????? ï¿½ ?????? ?? 30+ ????' : `${m.consecutiveHighScores}/3 ?? ??? ï¿½ ?????? ????????`}
                       </p>
                     </div>
                     {nextId && (
@@ -508,7 +508,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               <p className="font-bold text-orange-800 text-sm">?????????? ??????????</p>
               <span className="px-2 py-0.5 rounded-full bg-orange-200 text-orange-800 text-xs font-bold">{prereqGaps.length}</span>
             </div>
-            <p className="text-xs text-orange-600 mb-3">???? ???????? ??????? ?? ????????? ???? ??? ?è ???? ?? ?? ?????????:</p>
+            <p className="text-xs text-orange-600 mb-3">???? ???????? ??????? ?? ????????? ???? ??? ?ï¿½ ???? ?? ?? ?????????:</p>
             <div className="space-y-3">
               {prereqGaps.map((gap, i) => (
                 <div key={i} className="bg-white rounded-xl px-3 py-2.5">
@@ -537,7 +537,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               <p className="font-bold text-teal-800 text-sm">?? ?????? ??????</p>
               <span className="px-2 py-0.5 rounded-full bg-teal-200 text-teal-800 text-xs font-bold">{nextUpConcepts.length}</span>
             </div>
-            <p className="text-xs text-teal-600 mb-3">???????? ?? ??? ??? ?????????? — ???? ?????????? ?? ?????????!</p>
+            <p className="text-xs text-teal-600 mb-3">???????? ?? ??? ??? ?????????? ï¿½ ???? ?????????? ?? ?????????!</p>
             <div className="space-y-2">
               {nextUpConcepts.map(({ concept, mastery, grade }) => (
                 <div key={concept.id} className="flex items-center gap-3 bg-white rounded-xl px-3 py-2.5 border border-teal-100">
@@ -545,7 +545,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     <p className="text-sm font-semibold text-slate-700 truncate">{concept.title}</p>
                     <p className="text-xs text-slate-400">
                       {grade ? `${grade.level}. ?????????` : ''}
-                      {mastery ? ` · ${mastery.consecutiveHighScores}/3 ?? ???` : ' · ????'}
+                      {mastery ? ` ï¿½ ${mastery.consecutiveHighScores}/3 ?? ???` : ' ï¿½ ????'}
                     </p>
                   </div>
                   {mastery && mastery.consecutiveHighScores > 0 && (
@@ -605,7 +605,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                         <p className="text-xs text-slate-400">
                           {m.mastered
                             ? `????????! ???????? ????????: ${m.bestScore}%`
-                            : `${m.consecutiveHighScores}/3 ?? ??? =85% — ????????: ${m.lastScore}%`}
+                            : `${m.consecutiveHighScores}/3 ?? ??? =85% ï¿½ ????????: ${m.lastScore}%`}
                         </p>
                       </div>
                       {db && (
@@ -639,7 +639,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             </div>
             {inProgressCount > 0 && (
               <p className="text-xs text-slate-400 mt-3 text-center">
-                ?? {inProgressCount} ???????{inProgressCount === 1 ? '' : '?'} ?? ???????? — ???????? ?? ???????!
+                ?? {inProgressCount} ???????{inProgressCount === 1 ? '' : '?'} ?? ???????? ï¿½ ???????? ?? ???????!
               </p>
             )}
           </div>
@@ -654,7 +654,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         </div>
       )}
 
-      {/* ?27 — Teacher Announcements Banner */}
+      {/* ?27 ï¿½ Teacher Announcements Banner */}
       {announcements.length > 0 && searched && (
         <div className="w-full max-w-2xl mb-3">
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
@@ -663,14 +663,14 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             </p>
             <ul className="space-y-1">
               {announcements.map(a => (
-                <li key={a.id} className="text-sm text-amber-700">• {a.message}</li>
+                <li key={a.id} className="text-sm text-amber-700">ï¿½ {a.message}</li>
               ))}
             </ul>
           </div>
         </div>
       )}
 
-      {/* ?2 — Assignments section */}
+      {/* ?2 ï¿½ Assignments section */}
       {assignments.length > 0 && searched && !isReadOnly && (
         <div className="w-full max-w-2xl mb-3">
           <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
@@ -687,7 +687,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold truncate ${done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{a.title}</p>
                       <p className={`text-xs mt-0.5 ${overdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
-                        {done ? '? ????????' : overdue ? `?? ????????? — ???: ${a.dueDate}` : `???: ${a.dueDate}`}
+                        {done ? '? ????????' : overdue ? `?? ????????? ï¿½ ???: ${a.dueDate}` : `???: ${a.dueDate}`}
                       </p>
                     </div>
                     {!done && (
@@ -713,7 +713,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           {totalQuizzes === 0 ? (
             <div className="bg-white rounded-3xl p-8 text-center shadow">
               <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="font-bold text-slate-500">???? ?????????? ????????? ?? „{studentName}"</p>
+              <p className="font-bold text-slate-500">???? ?????????? ????????? ?? ï¿½{studentName}"</p>
               <p className="text-xs text-slate-400 mt-1">
                 ??????? ???? ????? ? ????? ????????, ??? ??????? ??? ????.
               </p>
@@ -781,7 +781,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                 <h1 className="rpt-title">
                   {reportPeriod === 'THIS_MONTH' ? '???????' : '???????'} ???????? ?? ????????
                 </h1>
-                <p className="rpt-subtitle">?????????? — Math Curriculum AI Navigator</p>
+                <p className="rpt-subtitle">?????????? ï¿½ Math Curriculum AI Navigator</p>
                 <p className="rpt-subtitle">??????: <strong>{periodLabel}</strong></p>
               </div>
               <div className="rpt-meta">
@@ -802,7 +802,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             {[
               { label: `??????? (${periodLabel})`, value: String(periodStats.total) },
               { label: '???????? (=70%)', value: String(periodStats.passed) },
-              { label: '???????? ????????', value: periodStats.total > 0 ? `${periodStats.avg}%` : '—' },
+              { label: '???????? ????????', value: periodStats.total > 0 ? `${periodStats.avg}%` : 'ï¿½' },
               { label: '????????????? ????????', value: String(periodStats.newlyMastered) },
             ].map(s => (
               <div key={s.label} className="rpt-stat-card">
@@ -887,7 +887,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                   </p>
                   {prereqGaps.map((gap, i) => (
                     <p key={i} className="rpt-rec-item">
-                      • <strong>{gap.conceptTitle}</strong> — ???? ????????: {gap.missing.join(', ')}
+                      ï¿½ <strong>{gap.conceptTitle}</strong> ï¿½ ???? ????????: {gap.missing.join(', ')}
                     </p>
                   ))}
                 </>
@@ -899,7 +899,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                   </p>
                   {reviewToday.map((m, i) => (
                     <p key={i} className="rpt-rec-item">
-                      • {m.conceptTitle || m.conceptId} {m.mastered ? '(???????? — ??????)' : '(?? ???????? — ??????)'}
+                      ï¿½ {m.conceptTitle || m.conceptId} {m.mastered ? '(???????? ï¿½ ??????)' : '(?? ???????? ï¿½ ??????)'}
                     </p>
                   ))}
                 </>
@@ -909,7 +909,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
 
           {/* Print footer */}
           <div className="rpt-footer-bar">
-            <span>Math Curriculum AI Navigator — ????????? ?????? ?? ??????? ?? ????????</span>
+            <span>Math Curriculum AI Navigator ï¿½ ????????? ?????? ?? ??????? ?? ????????</span>
             <span>???????? ????????? ?? {printDate}</span>
           </div>
 

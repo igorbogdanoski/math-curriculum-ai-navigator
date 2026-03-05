@@ -4,15 +4,17 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { GradeBadge } from '../../components/common/GradeBadge';
+import { CopilotInsightBanner } from '../../components/ai/CopilotInsightBanner';
 import { confidenceEmoji, confidenceColor, type PerStudentStat, type ConceptStat } from './shared';
 
 interface AlertsTabProps {
     perStudentStats: PerStudentStat[];
     weakConcepts: ConceptStat[]; // avgPct < 70, further filtered to < 60 here
+    results: any[];
     onGenerateRemedial: (conceptId: string, title: string, avgPct: number) => void;
 }
 
-export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConcepts, onGenerateRemedial }) => {
+export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConcepts, results, onGenerateRemedial }) => {
     const [qrStudent, setQrStudent] = useState<string | null>(null);
     const qrUrl = qrStudent
         ? `${window.location.origin}/#/my-progress?name=${encodeURIComponent(qrStudent)}`
@@ -25,7 +27,11 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
     return (
         <SilentErrorBoundary name="AlertsTab">
             <div className="space-y-6">
-
+                <CopilotInsightBanner
+                    results={results}
+                    weakConcepts={weakConcepts}
+                    onGenerateRemedial={onGenerateRemedial}
+                />
                 {/* ── Struggling Students ──────────────────────────────── */}
                 <Card>
                     <div className="flex items-center gap-2 mb-4">

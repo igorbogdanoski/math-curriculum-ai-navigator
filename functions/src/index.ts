@@ -1,4 +1,4 @@
-﻿import * as functions from 'firebase-functions';
+﻿import * as functions from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
 
 admin.initializeApp();
@@ -42,8 +42,8 @@ export const aggregateStudentProgress = functions.firestore
 
     // Save the aggregated data to a single document that the teacher/dashboard can read
     // This turns 100s of client reads into just 1 document read!
-    const aggRef = db.collection('student_aggregations').doc(\_grade\);
-    
+    const aggRef = db.collection('student_aggregations').doc(`${userId}_${gradeLevel}`);
+
     await aggRef.set({
       studentId: userId,
       gradeLevel: gradeLevel,

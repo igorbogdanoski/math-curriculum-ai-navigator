@@ -25,5 +25,23 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "functions",
+    "dist"
+  ],
+  "include": [
+    "src",
+    "components",
+    "contexts",
+    "data",
+    "hooks",
+    "services",
+    "tours",
+    "utils",
+    "views",
+    "*.ts",
+    "*.tsx"
+  ]
 }
