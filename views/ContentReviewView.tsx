@@ -19,10 +19,10 @@ export const ContentReviewView: React.FC = () => {
         const rows = questions.map(q => [
             q.id,
             q.conceptId,
-            `"${(q.text || '').replace(/"/g, '""')}"`,
+            `"${(q.question || '').replace(/"/g, '""')}"`,
             q.type,
-            q.difficulty,
-            `"${(q.correctAnswer || '').replace(/"/g, '""')}"`
+            q.difficulty_level,
+            `"${(q.answer || '').replace(/"/g, '""')}"`
         ]);
         const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

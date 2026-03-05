@@ -1,3 +1,4 @@
+import { GlobalTour } from './components/GlobalTour';
 import React, { Suspense, useEffect } from 'react';
 
 // Providers
@@ -281,7 +282,8 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             </CurriculumProvider>
           </UserPreferencesProvider>
         </LanguageProvider>
-        </AuthProvider>
+          <GlobalTour />
+            </AuthProvider>
       </NotificationProvider>
     </NetworkStatusProvider>
   </ErrorBoundary>
