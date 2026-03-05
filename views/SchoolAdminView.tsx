@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
-import { Users, School, TrendingUp, BookOpen, AlertCircle } from 'lucide-react';
+import { Users, School, TrendingUp, BookOpen, AlertCircle, Printer } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 
 export const SchoolAdminView: React.FC = () => {
@@ -39,8 +39,8 @@ export const SchoolAdminView: React.FC = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="max-w-7xl mx-auto space-y-6 printable-root" id="printable-area">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4 print:hidden">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                         <School className="w-6 h-6 text-brand-primary" />
@@ -48,6 +48,20 @@ export const SchoolAdminView: React.FC = () => {
                     </h1>
                     <p className="text-gray-500 mt-1">???? ??????? ?? ?????? ????????: {user.schoolName || '????????? ????????'}</p>
                 </div>
+                <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                >
+                    <Printer className="w-5 h-5" />
+                    ?????? / PDF ????????
+                </button>
+            </div>
+            
+            {/* Print Header - Only visible when printing */}
+            <div className="hidden print:block text-center mb-8 border-b pb-4">
+                <h1 className="text-3xl font-bold text-gray-900">???????? ?? ????????</h1>
+                <p className="text-xl text-gray-600 mt-2">{user.schoolName || '????????? ????????'}</p>
+                <p className="text-gray-500 mt-1">?????: {new Date().toLocaleDateString('mk-MK')}</p>
             </div>
 
             {isLoading ? (
@@ -152,3 +166,7 @@ export const SchoolAdminView: React.FC = () => {
         </div>
     );
 };
+
+
+
+
