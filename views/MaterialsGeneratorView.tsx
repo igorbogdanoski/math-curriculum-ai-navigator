@@ -4,6 +4,7 @@ import { X, ClipboardList, BookmarkPlus, CheckCircle, ShieldCheck } from 'lucide
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
+import { useLanguage } from '../i18n/LanguageContext';
 import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
 import { RateLimitError } from '../services/apiErrors';
 import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType, DifferentiationLevel, AssessmentQuestion } from '../types';
@@ -36,18 +37,12 @@ import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 declare var introJs: any;
 
 
-const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICONS }[] = [
-    { id: 'SCENARIO', label: 'Сценарио/Идеи', icon: 'lightbulb' },
-    { id: 'LEARNING_PATH', label: 'Патека за учење', icon: 'mindmap' },
-    { id: 'ASSESSMENT', label: 'Тест/Лист', icon: 'generator' },
-    { id: 'RUBRIC', label: 'Рубрика', icon: 'edit' },
-    { id: 'FLASHCARDS', label: 'Флеш-картички', icon: 'flashcards' },
-    { id: 'QUIZ', label: 'Квиз', icon: 'quiz' },
-    { id: 'EXIT_TICKET', label: 'Излезна картичка', icon: 'quiz' },
-    { id: 'ILLUSTRATION', label: 'Илустрација', icon: 'gallery' },
-];
+
 
 export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props: Partial<GeneratorState>) => {
+  const { t } = useLanguage();
+  const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICONS }[] = [ { id: 'SCENARIO', label: t('generator.types.scenario'), icon: 'lightbulb' }, { id: 'LEARNING_PATH', label: t('generator.types.path'), icon: 'mindmap' }, { id: 'ASSESSMENT', label: t('generator.types.assessment'), icon: 'generator' }, { id: 'RUBRIC', label: t('generator.types.rubric'), icon: 'edit' }, { id: 'FLASHCARDS', label: t('generator.types.flashcards'), icon: 'flashcards' }, { id: 'QUIZ', label: t('generator.types.quiz'), icon: 'quiz' }, { id: 'EXIT_TICKET', label: t('generator.types.exitTicket'), icon: 'quiz' }, { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' } ];
+
     const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails, findConceptAcrossGrades } = useCurriculum();
     const { user, firebaseUser } = useAuth();
     const { addNotification } = useNotification();
@@ -222,7 +217,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
             if (diff <= 0) { setQuotaCountdown(''); return; }
             const h = Math.floor(diff / 3_600_000);
             const m = Math.floor((diff % 3_600_000) / 60_000);
-            setQuotaCountdown(h > 0 ? `${h}ч ${m}мин` : `${m}мин`);
+            setQuotaCountdown(h > 0 ? `${h}ч ${m}{t('common.mins')}` : `${m}мин`);
         };
         update();
         const id = setInterval(update, 60_000);
@@ -266,17 +261,17 @@ ${generatedMaterial.assessmentIdea}
     
     const handleReset = () => {
         showModal(ModalType.Confirm, {
-            title: 'Ресетирање',
-            message: 'Дали сте сигурни дека сакате да ги ресетирате сите полиња?',
+            title: t('generator.resetTitle'),
+            message: t('generator.resetConfirm'),
             variant: 'warning',
-            confirmLabel: 'Да, ресетирај',
+            confirmLabel: t('generator.resetBtn'),
             onConfirm: () => {
                 hideModal();
                 if(curriculum && allNationalStandards) {
                     dispatch({ type: 'INITIALIZE', payload: getInitialState(curriculum, allNationalStandards) });
                 }
                 setGeneratedMaterial(null);
-                addNotification('Формата е ресетирана.', 'info');
+                addNotification(t('generator.notifications.reset'), 'info');
             },
             onCancel: hideModal,
         });

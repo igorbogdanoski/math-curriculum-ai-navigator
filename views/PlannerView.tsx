@@ -1,3 +1,4 @@
+import { useLanguage } from '../i18n/LanguageContext';
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Target, X } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
@@ -37,6 +38,7 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; children: Reac
 
 
 export const PlannerView: React.FC = () => {
+  const { t } = useLanguage();
     const { navigate } = useNavigation();
     const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
     const [currentDate, setCurrentDate] = useState(new Date()); // Default to today
@@ -81,9 +83,9 @@ export const PlannerView: React.FC = () => {
                 showProgress: true,
                 showBullets: true,
                 showStepNumbers: true,
-                nextLabel: 'Следно',
-                prevLabel: 'Претходно',
-                doneLabel: 'Готово',
+                nextLabel: t('planner.tour.next'),
+                prevLabel: t('planner.tour.prev'),
+                doneLabel: t('planner.tour.done'),
                 tooltipClass: 'custom-tooltip-class',
                 exitOnOverlayClick: false,
             });
@@ -140,7 +142,7 @@ export const PlannerView: React.FC = () => {
     // Adjust for Monday start (0=Sunday, 1=Monday...) -> Monday=0, Sunday=6
     const startDayIndex = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
     
-    const weekDays = ['Пон', 'Вто', 'Сре', 'Чет', 'Пет', 'Саб', 'Нед'];
+    const weekDays = [t('planner.days.mon'), t('planner.days.tue'), t('planner.days.wed'), t('planner.days.thu'), t('planner.days.fri'), t('planner.days.sat'), t('planner.days.sun')];
 
     const handleSuggestLessons = async () => {
         setIsAiMenuOpen(false);
@@ -150,7 +152,7 @@ export const PlannerView: React.FC = () => {
             .slice(-10)
             .map((i: PlannerItem) => ({ title: i.title, date: i.date, description: i.description }));
         if (recentLessons.length === 0) {
-            addNotification('Немате лекции во планот за анализа.', 'error');
+            addNotification(t('planner.notifications.noLessons'), 'error');
             return;
         }
         setIsSuggesting(true);
@@ -159,7 +161,7 @@ export const PlannerView: React.FC = () => {
             const result = await geminiService.suggestNextLessons(recentLessons);
             setSuggestions(result.length > 0 ? result : []);
         } catch {
-            addNotification('Грешка при генерирање предлози.', 'error');
+            addNotification(t('planner.notifications.errorGener'), 'error');
         } finally {
             setIsSuggesting(false);
         }
@@ -173,7 +175,7 @@ export const PlannerView: React.FC = () => {
         nextMonday.setDate(now.getDate() + daysToMonday);
         const dateStr = nextMonday.toISOString().split('T')[0];
         await addItem({ type: PlannerItemType.LESSON, title: s.title, description: s.description, date: dateStr });
-        addNotification(`„${s.title}" додадена во планот за ${dateStr}!`, 'success');
+        addNotification(t('planner.notifications.added').replace('{title}', s.title).replace('{date}', dateStr), 'success');
     };
 
     const changePeriod = (offset: number) => {
@@ -219,17 +221,17 @@ export const PlannerView: React.FC = () => {
 
         const encodedData = shareService.generateAnnualShareData(dataToShare);
         if (!encodedData) {
-            addNotification('Грешка при генерирање на линк.', 'error');
+            addNotification(t('planner.notifications.errorLink'), 'error');
             return;
         }
 
         const url = `${window.location.origin}${window.location.pathname}#/share/annual/${encodedData}`;
         navigator.clipboard.writeText(url)
             .then(() => {
-                addNotification('Линкот за споделување на годишниот план е копиран!', 'success');
+                addNotification(t('planner.notifications.linkCopied'), 'success');
             })
             .catch(() => {
-                addNotification('Грешка при копирање на линкот.', 'error');
+                addNotification(t('planner.notifications.errorCopy'), 'error');
             });
 
     }, [items, getLessonPlan, addNotification]);
@@ -251,7 +253,7 @@ export const PlannerView: React.FC = () => {
             return currentDate.toLocaleString('mk-MK', { month: 'long', year: 'numeric' });
         }
         const { start, end } = getWeekRange(currentDate);
-        return `Недела: ${start.toLocaleDateString('mk-MK')} - ${end.toLocaleDateString('mk-MK')}`;
+        return `${t('planner.week')}: ${start.toLocaleDateString('mk-MK')} - ${end.toLocaleDateString('mk-MK')}`;
     };
 
     const firstItemForTourId = useMemo(() => {
@@ -320,17 +322,17 @@ export const PlannerView: React.FC = () => {
             <div className="p-6 max-w-7xl mx-auto pb-24">
                 <header data-tour="planner-header" className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                     <div>
-                         <h1 className="text-4xl font-bold text-brand-primary">Дигитален планер</h1>
+                         <h1 className="text-4xl font-bold text-brand-primary">{t('planner.title')}</h1>
                          <div className="flex flex-wrap items-center gap-4 mt-4">
                             <div className="flex space-x-2">
-                                <TabButton active={viewMode === 'month'} onClick={() => setViewMode('month')}>Месечен преглед</TabButton>
-                                <TabButton active={viewMode === 'agenda'} onClick={() => setViewMode('agenda')}>Неделен преглед (Агенда)</TabButton>
+                                <TabButton active={viewMode === 'month'} onClick={() => setViewMode('month')}>{t('planner.view.month')}</TabButton>
+                                <TabButton active={viewMode === 'agenda'} onClick={() => setViewMode('agenda')}>{t('planner.view.agenda')}</TabButton>
                             </div>
                             {unscheduledPlansCount > 0 && (
                                 <div className="flex items-center gap-2 text-sm bg-amber-50 px-4 py-2 rounded-full border border-amber-200 animate-pulse-slow shadow-sm">
                                     <ICONS.lightbulb className="w-4 h-4 text-amber-600" />
                                     <span className="text-amber-900 font-medium">
-                                        Имате <span className="font-bold">{unscheduledPlansCount}</span> нераспоредени подготовки.
+                                        {t('planner.unscheduled.part1')} <span className="font-bold">{unscheduledPlansCount}</span> {t('planner.unscheduled.part2')}
                                     </span>
                                     <button 
                                         onClick={() => navigate('/my-lessons')} 
@@ -348,7 +350,7 @@ export const PlannerView: React.FC = () => {
                             className="flex items-center bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm"
                         >
                             <ICONS.share className="w-5 h-5 mr-1" />
-                            Сподели годишен план
+                            {t('planner.shareAnnual')}
                         </button>
                         <button 
                             onClick={() => navigate('/planner/lesson/new')}
@@ -370,7 +372,7 @@ export const PlannerView: React.FC = () => {
                                 className="flex items-center bg-purple-600 text-white px-3 py-2 rounded-lg shadow hover:bg-purple-700 transition-colors text-sm"
                             >
                                 <ICONS.sparkles className="w-5 h-5 mr-1" />
-                                <span>Генерирај со AI</span>
+                                <span>{t('planner.aiGenerate')}</span>
                                 <ICONS.chevronDown className={`w-4 h-4 ml-1 transition-transform ${isAiMenuOpen ? 'rotate-180' : ''}`} />
                             </button>
                             {isAiMenuOpen && (
@@ -419,7 +421,7 @@ export const PlannerView: React.FC = () => {
                                 type="button"
                                 onClick={() => setSuggestions(null)}
                                 className="text-teal-400 hover:text-teal-700 transition"
-                                aria-label="Затвори"
+                                aria-label={t('common.close')}
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -430,7 +432,7 @@ export const PlannerView: React.FC = () => {
                                 Генерирам предлози...
                             </div>
                         ) : suggestions && suggestions.length === 0 ? (
-                            <p className="text-sm text-teal-700">Немаше доволно лекции за анализа.</p>
+                            <p className="text-sm text-teal-700">{t('planner.notEnoughLessons')}</p>
                         ) : suggestions?.map((s, i) => (
                             <div key={i} className="flex items-start justify-between gap-3 py-2 border-t border-teal-100 first:border-t-0">
                                 <div className="flex-1 min-w-0">
@@ -453,13 +455,13 @@ export const PlannerView: React.FC = () => {
                 {hasItems ? (
                     <Card>
                         <div className="flex justify-between items-center mb-4">
-                            <button onClick={() => changePeriod(-1)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Претходен период">
+                            <button onClick={() => changePeriod(-1)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label={t('planner.prevPeriod')}>
                                 <ICONS.chevronRight className="w-6 h-6 rotate-180"/>
                             </button>
                             <h2 className="text-2xl font-semibold text-brand-primary capitalize">
                                 {renderPeriodHeader()}
                             </h2>
-                            <button onClick={() => changePeriod(1)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Следен период">
+                            <button onClick={() => changePeriod(1)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label={t('planner.nextPeriod')}>
                                 <ICONS.chevronRight className="w-6 h-6"/>
                             </button>
                         </div>
@@ -476,8 +478,8 @@ export const PlannerView: React.FC = () => {
                 ) : (
                     <EmptyState
                         icon={<ICONS.planner className="w-12 h-12" />}
-                        title="Планерот е празен"
-                        message="Започнете со организација со додавање на ваш прв час, настан или празник."
+                        title={t('planner.empty.title')}
+                        message={t('planner.empty.message')}
                     >
                         <div className="flex gap-3">
                             <button 
