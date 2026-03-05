@@ -88,11 +88,11 @@
 
 **Приоритет: СРЕДЕН — конкурентска предност**
 
-### И1: Мобилна / Таблет Оптимизација 🟡
-- [ ] Audit на сите views на 375px (iPhone SE) — fix overflow/truncation
-- [ ] `InteractiveQuizPlayer` → touch-friendly (поголеми копчиња ≥44px)
-- [ ] `StudentProgressView` на мобилен → collapsed cards, scroll-friendly
-- [ ] Тест на iOS Safari + Android Chrome
+### И1: Мобилна / Таблет Оптимизација ✅
+- [x] Audit на сите views на 375px (iPhone SE) — fix overflow/truncation
+- [x] `InteractiveQuizPlayer` → touch-friendly (поголеми копчиња ≥44px)
+- [x] `StudentProgressView` на мобилен → collapsed cards, scroll-friendly
+- [x] Тест на iOS Safari + Android Chrome
 
 ### И2: МОН Интеграција — Оценки (1-5) Извоз
 - [ ] Export на резултати во формат компатибилен со е-Дневник

@@ -52,7 +52,7 @@ const NavItem: React.FC<{
     </a>
   );
 };
-
+  import { InstallPWAButton } from './common/InstallPWAButton';
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }) => {
     const { user, logout } = useAuth();
     const { navigate } = useNavigation();
@@ -121,7 +121,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           )}
         </div>
       </nav>
-      <div className="p-2 border-t bg-gray-50/50">
+      <div className="p-2 border-t bg-gray-50/50 space-y-2">
+            <InstallPWAButton />
         <div 
           onClick={() => {
             navigate('/settings');
@@ -155,3 +156,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     </aside>
   );
 };
+

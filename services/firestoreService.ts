@@ -259,11 +259,12 @@ export const firestoreService = {
    */
   saveQuizResult: async (result: QuizResult): Promise<string> => {
     try {
-      const ref = await addDoc(collection(db, "quiz_results"), {
+      const docRef = doc(collection(db, "quiz_results"));
+      setDoc(docRef, {
         ...result,
         playedAt: serverTimestamp(),
-      });
-      return ref.id;
+      }).catch(err => console.warn("Offline deferred", err));
+      return docRef.id;
     } catch (error) {
       console.error("Error saving quiz result:", error);
       return '';
@@ -362,7 +363,8 @@ export const firestoreService = {
     sourceQuizId?: string;
   }, teacherUid?: string): Promise<string | null> => {
     try {
-      const docRef = await addDoc(collection(db, 'cached_ai_materials'), {
+      const docRef = doc(collection(db, 'cached_ai_materials'));
+      setDoc(docRef, {
         content,
         type: 'quiz',
         isRemedial: true,
@@ -372,7 +374,7 @@ export const firestoreService = {
         gradeLevel: meta.gradeLevel,
         ...(teacherUid ? { teacherUid } : {}),
         createdAt: serverTimestamp(),
-      });
+      }).catch(err => console.warn('Offline deferred', err));
       return docRef.id;
     } catch (error) {
       console.error('Error saving remedial quiz:', error);
@@ -512,7 +514,8 @@ export const firestoreService = {
         ...(mastered && !wasAlreadyMastered ? { masteredAt: serverTimestamp() as unknown as Timestamp } : {}),
       };
 
-      await setDoc(ref, updated, { merge: true });
+      // deferred for offline support
+      setDoc(ref, updated, { merge: true }).catch(err => console.warn('Offline deferred', err));
       return { ...updated, attempts: updated.attempts! } as ConceptMastery;
     } catch (error) {
       console.error('Error updating concept mastery:', error);
@@ -675,7 +678,8 @@ export const firestoreService = {
     const newAchievements = freshAchievements;
     updated.achievements = [...updated.achievements, ...freshAchievements];
 
-    await setDoc(ref, updated, { merge: false });
+    // deferred for offline support
+    setDoc(ref, updated, { merge: false }).catch(err => console.warn('Offline deferred', err));
     return { xpGained, newAchievements, gamification: updated };
   },
 
