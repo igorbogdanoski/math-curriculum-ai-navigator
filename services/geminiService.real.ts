@@ -628,7 +628,7 @@ async function setCached(key: string, content: any, metadata: any = {}) {
 
 export const realGeminiService = {
   async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: number, profile?: TeachingProfile, options?: { focus: string; tone: string; learningDesign?: string; }, customInstruction?: string): Promise<AIGeneratedIdeas> {
-    const conceptId = concepts[0].id;
+    const conceptId = concepts?.[0]?.id || 'no_concept';
     const cacheKey = `ideas_${conceptId}_g${gradeLevel}`;
     // Skip cache when custom instruction is provided — user wants specific generation, not community cache
     if (!customInstruction) {

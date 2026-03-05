@@ -3,6 +3,7 @@ import { Language } from './index';
 export const translations: Record<Language, Record<string, string>> = {
   mk: {
   dashboard_default_user: 'Корисник',
+  sidebar_logout: 'Одјави се',
   dashboard_hello: 'Здраво',
   dashboard_today: 'Денес:',
   dashboard_no_lessons_today: 'Нема закажани лекции денес',
@@ -159,6 +160,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   sq: {
   dashboard_default_user: 'Përdorues',
+  sidebar_logout: 'Dil',
   dashboard_hello: 'Përshëndetje',
   dashboard_today: 'Sot:',
   dashboard_no_lessons_today: 'Nuk ka mësime të planifikuara sot',
@@ -301,6 +303,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   tr: {
   dashboard_default_user: 'Kullanıcı',
+  sidebar_logout: 'Çıkış Yap',
   dashboard_hello: 'Merhaba',
   dashboard_today: 'Bugün:',
   dashboard_no_lessons_today: 'Bugün planlanmış ders yok',

@@ -159,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
                     </div>
                 )}
                 <div className="overflow-hidden">
-                    <p className="font-semibold text-sm text-brand-text truncate">{user?.name || 'ÐšÐ¾Ñ€Ð¸ÑÐ½Ð¸Ðº'}</p>
+                    <p className="font-semibold text-sm text-brand-text truncate">{user?.name || t('dashboard_default_user')}</p>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -167,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
                       }} 
                       className="text-xs text-gray-500 hover:text-brand-primary transition-colors"
                     >
-                      ÐžÐ´Ñ˜Ð°Ð²Ð¸ ÑÐµ
+                      {t('sidebar_logout')}
                     </button>
                 </div>
             </div>

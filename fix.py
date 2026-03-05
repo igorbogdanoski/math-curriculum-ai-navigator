@@ -1,14 +1,7 @@
-﻿import re
+﻿with open('components/Sidebar.tsx', 'r', encoding='utf-8') as f:
+    text = f.read()
 
-file_path = 'components/dashboard/WeeklySchedule.tsx'
-with open(file_path, 'r', encoding='utf-8') as f:
-    content = f.read()
+text = text.replace(r"{t(\'sidebar_logout\')}", "{t('sidebar_logout')}")
 
-content = content.replace(
-    'export const WeeklySchedule: React.FC = () => {', 
-    'export const WeeklySchedule: React.FC = () => {\n    const { t } = useLanguage();'
-)
-
-with open(file_path, 'w', encoding='utf-8') as f:
-    f.write(content)
-print("Done again")
+with open('components/Sidebar.tsx', 'w', encoding='utf-8') as f:
+    f.write(text)
