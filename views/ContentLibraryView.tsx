@@ -24,6 +24,8 @@ export const ContentLibraryView: React.FC = () => {
     const [materials, setMaterials] = useState<CachedMaterial[]>([]);
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
+    const [viewMode, setViewMode] = useState<'my' | 'national'>('my');
+
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
 
@@ -31,7 +33,9 @@ export const ContentLibraryView: React.FC = () => {
         if (!firebaseUser?.uid) return;
         setLoading(true);
         try {
-            const data = await firestoreService.fetchLibraryMaterials(firebaseUser.uid);
+            const data = viewMode === 'my' 
+                ? await firestoreService.fetchLibraryMaterials(firebaseUser.uid)
+                : await firestoreService.fetchGlobalLibraryMaterials();
             setMaterials(data);
         } catch {
             addNotification('Грешка при вчитување на библиотеката.', 'error');
@@ -40,9 +44,10 @@ export const ContentLibraryView: React.FC = () => {
         }
     };
 
-    useEffect(() => { load(); }, [firebaseUser?.uid]);
+    useEffect(() => { load(); }, [firebaseUser?.uid, viewMode]);
 
     const filtered = materials.filter(m => {
+        if (viewMode === 'national') return true;
         if (filter === 'draft') return m.status === 'draft' || !m.status;
         if (filter === 'published') return m.status === 'published';
         return true;
@@ -114,25 +119,55 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 </p>
             </div>
 
-            {/* Stats + Filter */}
-            <div className="flex flex-wrap items-center gap-3 mb-5">
-                <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-                    {([
-                        { id: 'all', label: `Сите (${materials.length})` },
-                        { id: 'draft', label: `🔒 Нацрт (${draftCount})` },
-                        { id: 'published', label: `🌐 Публикувани (${publishedCount})` },
-                    ] as const).map(f => (
-                        <button key={f.id} type="button" onClick={() => setFilter(f.id)}
-                            className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition ${filter === f.id ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
-                            {f.label}
-                        </button>
-                    ))}
-                </div>
-                <button type="button" onClick={load}
-                    className="ml-auto flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100">
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />Освежи
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 p-1 rounded-xl mb-4 w-fit">
+                <button
+                    onClick={() => setViewMode('my')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${viewMode === 'my' ? 'bg-white shadow text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    <Lock className="w-4 h-4" /> Мои материјали
+                </button>
+                <button
+                    onClick={() => setViewMode('national')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${viewMode === 'national' ? 'bg-white shadow text-emerald-700' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    <Globe className="w-4 h-4" /> Национална библиотека
                 </button>
             </div>
+
+            {/* Stats + Filter */}
+            {viewMode === 'my' && (
+                <div className="flex flex-wrap items-center gap-3 mb-5">
+                    <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+                        {([
+                            { id: 'all', label: `Сите (${materials.length})` },
+                            { id: 'draft', label: `🔒 Нацрт (${draftCount})` },
+                            { id: 'published', label: `🌐 Публикувани (${publishedCount})` },
+                        ] as const).map(f => (
+                            <button key={f.id} type="button" onClick={() => setFilter(f.id)}
+                                className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition ${filter === f.id ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
+                                {f.label}
+                            </button>
+                        ))}
+                    </div>
+                    <button type="button" onClick={load}
+                        className="ml-auto flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100">
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />Освежи
+                    </button>
+                </div>
+            )}
+
+            {viewMode === 'national' && (
+                <div className="flex flex-wrap items-center gap-3 mb-5">
+                    <p className="text-sm text-gray-500">
+                        Овие материјали се одобрени од Министерството за образование и наука и се достапни за сите наставници.
+                    </p>
+                    <button type="button" onClick={load}
+                        className="ml-auto flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100">
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />Освежи
+                    </button>
+                </div>
+            )}
 
             {/* Content */}
             {loading ? (
@@ -175,10 +210,12 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                         ) : (
                                             <div className="flex items-center gap-2 mb-1">
                                                 <p className="font-semibold text-gray-800 truncate">{m.title || 'Без наслов'}</p>
-                                                <button type="button" onClick={() => { setEditingId(m.id); setEditTitle(m.title || ''); }}
-                                                    className="flex-shrink-0 p-0.5 text-gray-400 hover:text-gray-600 rounded">
-                                                    <Edit3 className="w-3.5 h-3.5" />
-                                                </button>
+                                                {viewMode !== 'national' && (
+                                                    <button type="button" onClick={() => { setEditingId(m.id); setEditTitle(m.title || ''); }}
+                                                        className="flex-shrink-0 p-0.5 text-gray-400 hover:text-gray-600 rounded">
+                                                        <Edit3 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
 
@@ -195,25 +232,31 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                         </div>
                                     </div>
 
-                                    {/* Actions */}
+                                        {/* Actions */}
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                                        {isPublished ? (
-                                            <button type="button" onClick={() => handleUnpublish(m)}
-                                                title="Врати на нацрт"
-                                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50">
-                                                <Lock className="w-3.5 h-3.5" />Нацрт
-                                            </button>
+                                        {viewMode === 'national' ? (
+                                            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">Одобрено</span>
                                         ) : (
-                                            <button type="button" onClick={() => handlePublish(m)}
-                                                title="Публикувај за ученици"
-                                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700">
-                                                <Globe className="w-3.5 h-3.5" />Публикувај
-                                            </button>
+                                            <>
+                                                {isPublished ? (
+                                                    <button type="button" onClick={() => handleUnpublish(m)}
+                                                        title="Врати на нацрт"
+                                                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50">
+                                                        <Lock className="w-3.5 h-3.5" />Нацрт
+                                                    </button>
+                                                ) : (
+                                                    <button type="button" onClick={() => handlePublish(m)}
+                                                        title="Публикувај за ученици"
+                                                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700">
+                                                        <Globe className="w-3.5 h-3.5" />Публикувај
+                                                    </button>
+                                                )}
+                                                <button type="button" onClick={() => handleDelete(m.id)}
+                                                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </>
                                         )}
-                                        <button type="button" onClick={() => handleDelete(m.id)}
-                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
                                     </div>
                                 </div>
                             </Card>

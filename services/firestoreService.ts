@@ -1158,6 +1158,22 @@ export const firestoreService = {
     }
   },
 
+    fetchGlobalLibraryMaterials: async (): Promise<CachedMaterial[]> => {
+    try {
+      const q = query(
+        collection(db, 'cached_ai_materials'), 
+        where('isApproved', '==', true), 
+        where('status', '==', 'published'),
+        limit(100)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as CachedMaterial));
+    } catch (error) {
+      console.error('Error fetching global library materials:', error);
+      return [];
+    }
+  },
+
   publishMaterial: async (id: string): Promise<void> => {
     await updateDoc(doc(db, 'cached_ai_materials', id), { status: 'published' });
   },
