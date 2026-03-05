@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 
 // Providers
+import { LanguageProvider } from './i18n/LanguageContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PlannerProvider } from './contexts/PlannerContext';
@@ -259,6 +260,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     <NetworkStatusProvider>
       <NotificationProvider>
         <AuthProvider>
+          <LanguageProvider>
           <UserPreferencesProvider>
             <CurriculumProvider>
               <PlannerProvider>
@@ -274,6 +276,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
               </PlannerProvider>
             </CurriculumProvider>
           </UserPreferencesProvider>
+        </LanguageProvider>
         </AuthProvider>
       </NotificationProvider>
     </NetworkStatusProvider>
@@ -307,3 +310,4 @@ const App: React.FC = () => (
 );
 
 export default App;
+

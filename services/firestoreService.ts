@@ -848,7 +848,7 @@ export const firestoreService = {
           const snap = await getDocs(q);
           return snap.docs.map(d => d.data() as QuizResult);
         } catch {
-          // Composite index not yet built — fall back to conceptId-only query
+          // Composite index not yet built ï¿½ fall back to conceptId-only query
         }
       }
       const q = query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), orderBy('playedAt', 'desc'), limit(maxCount));

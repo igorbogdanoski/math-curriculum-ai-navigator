@@ -525,3 +525,11 @@ html.high-contrast {
   font-size: 10pt;
   margin: 0 0 2pt 0;
 }
+
+/* Print Styles */
+@media print {
+  #printable-area {
+    display: block;
+    width: 100%;
+  }
+}
