@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
@@ -153,23 +153,78 @@ export interface CachedMaterial {
 // ??? ?????????? ?? ??????????? 'curriculum' ? ?????????? 'v1' ??? ?? ?????????.
 
 export const firestoreService = {
+
+  fetchSchools: async (): Promise<any[]> => {
+    try {
+      const q = query(collection(db, 'schools'), orderBy('name'));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return [];
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error('Error fetching schools:', error);
+      return [];
+    }
+  },
   /**
    * Dashboard stats for School Admins (Phase D4 target)
    */
   fetchSchoolStats: async (schoolId: string): Promise<any> => {
     try {
-      // In a real implementation this would fetch from a 'school_stats' collection or aggregate
-      // For now we will return a mocked aggregate structure until full functions are deployed
-            return {
-        totalTeachers: 4,
-        totalQuizzes: 345,
-        averageScore: 78.5,
-        teachers: [
-          { id: 't1', name: '?????? ???????', quizzesGiven: 120, avgScore: 82.1, lastActive: '2026-03-05' },
-          { id: 't2', name: '????? ??????????', quizzesGiven: 85, avgScore: 76.4, lastActive: '2026-03-04' },
-          { id: 't3', name: '????? ?????????', quizzesGiven: 110, avgScore: 79.8, lastActive: '2026-03-02' },
-          { id: 't4', name: '????? ???????????', quizzesGiven: 30, avgScore: 71.0, lastActive: '2026-02-28' },
-        ]
+      // 1. Fetch all teachers for this school
+      const usersRef = collection(db, 'users');
+      const qTeachers = query(usersRef, where('schoolId', '==', schoolId));
+      const teachersSnap = await getDocs(qTeachers);
+      
+      const teachersData = [];
+      let totalSchoolQuizzes = 0;
+      let globalScoreSum = 0;
+      let teachersWithQuizzes = 0;
+
+      for (const tDoc of teachersSnap.docs) {
+        const tData = tDoc.data();
+        if (tData.role !== 'teacher') continue;
+        
+        // 2. For each teacher, aggregate their quizzes
+        const quizRef = collection(db, 'quiz_results');
+        const qQuizzes = query(quizRef, where('teacherUid', '==', tDoc.id));
+        
+        // Aggregate: count, average score
+        const aggSnapshot = await getAggregateFromServer(qQuizzes, {
+          total: average('percentage')
+        }); // wait, getCountFromServer is safer, let's just do getDocs and manual average if average() is risky.
+        
+        // Because getAggregateFromServer might be tricky to type in TS without checking, let's just get the count:
+        const countSnap = await getCountFromServer(qQuizzes);
+        const quizzesGiven = countSnap.data().count;
+        
+        let avgScore = 0;
+        if (quizzesGiven > 0) {
+          // fetch to calculate avg
+          const quizzes = await getDocs(qQuizzes);
+          let sum = 0;
+          quizzes.forEach(q => sum += (q.data().percentage || 0));
+          avgScore = sum / quizzesGiven;
+          
+          globalScoreSum += avgScore;
+          teachersWithQuizzes++;
+        }
+        
+        totalSchoolQuizzes += quizzesGiven;
+        
+        teachersData.push({
+          id: tDoc.id,
+          name: tData.name || 'Непознат наставник',
+          quizzesGiven,
+          avgScore,
+          lastActive: tData.lastActive ? new Date(tData.lastActive).toISOString() : 'Непознато'
+        });
+      }
+
+      return {
+        totalTeachers: teachersData.length,
+        totalQuizzes: totalSchoolQuizzes,
+        averageScore: teachersWithQuizzes > 0 ? (globalScoreSum / teachersWithQuizzes) : 0,
+        teachers: teachersData
       };
     } catch (error) {
       console.error("Error fetching school stats:", error);

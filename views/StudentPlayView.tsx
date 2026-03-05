@@ -7,6 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
 import { db, auth } from '../firebaseConfig';
 import { ICONS } from '../constants';
+import { useLanguage } from '../i18n/LanguageContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import {
   Loader2, AlertCircle, Home, Star, RefreshCw, BookOpen,
@@ -23,6 +24,7 @@ import { getOrCreateDeviceId } from '../utils/studentIdentity';
 type QuizResult = { percentage: number; correctCount: number; totalQuestions: number; misconceptions?: { question: string; studentAnswer: string; misconception: string }[] };
 
 export const StudentPlayView: React.FC = () => {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const { getConceptDetails } = useCurriculum();
 
@@ -92,7 +94,7 @@ export const StudentPlayView: React.FC = () => {
   useEffect(() => {
     const fetchQuiz = async () => {
       if (!id) {
-        setError('Невалиден линк за квиз.');
+        setError(t('play.error.invalidLink'));
         setLoading(false);
         return;
       }
@@ -112,11 +114,11 @@ export const StudentPlayView: React.FC = () => {
             },
           });
         } else {
-          setError('Квизот не е пронајден. Проверете го линкот со вашиот наставник.');
+          setError(t('play.error.notFound'));
         }
       } catch (err) {
         console.error('Грешка при вчитување на квизот:', err);
-        setError('Проблем со поврзувањето. Проверете ја интернет конекцијата.');
+        setError(t('play.error.connect'));
       } finally {
         setLoading(false);
       }
@@ -279,7 +281,7 @@ export const StudentPlayView: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
         <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-4" />
-        <p className="text-slate-600 font-bold animate-pulse">Се подготвува квизот...</p>
+        <p className="text-slate-600 font-bold animate-pulse">{t('play.loadingText')}</p>
       </div>
     );
   }
@@ -289,7 +291,7 @@ export const StudentPlayView: React.FC = () => {
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
         <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md border border-red-100">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-black text-slate-800 mb-2">Грешка!</h2>
+          <h2 className="text-2xl font-black text-slate-800 mb-2">{t('play.errorTitle')}</h2>
           <p className="text-slate-500 mb-6">{error}</p>
           <button
             type="button"
@@ -319,7 +321,7 @@ export const StudentPlayView: React.FC = () => {
           <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
             <ICONS.logo className="w-8 h-8 text-white" />
           </div>
-          <h1 className="font-black text-xl tracking-tighter uppercase">Ученички Портал</h1>
+          <h1 className="font-black text-xl tracking-tighter uppercase">{t('play.header.portal')}</h1>
         </div>
         <div className="text-xs font-bold bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">
           МАТЕМАТИЧКИ ПРЕДИЗВИК
@@ -345,27 +347,27 @@ export const StudentPlayView: React.FC = () => {
                     <TrendingUp className="w-7 h-7 text-emerald-600" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-black text-slate-800 mb-3">Добредојде во<br/>Математички Портал!</h2>
+                <h2 className="text-2xl font-black text-slate-800 mb-3">{t('play.onboarding.step1.title')}<br/>{t('play.onboarding.step1.subtitle')}</h2>
                 <div className="space-y-3 text-left mb-8">
                   <div className="flex items-start gap-3 bg-indigo-50 rounded-2xl p-3">
                     <Zap className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-slate-800 text-sm">Одговарај на прашања</p>
-                      <p className="text-slate-500 text-xs">Квизови прилагодени на твоето ниво</p>
+                      <p className="font-bold text-slate-800 text-sm">{t('play.onboarding.step1.opt1.title')}</p>
+                      <p className="text-slate-500 text-xs">{t('play.onboarding.step1.opt1.desc')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 bg-violet-50 rounded-2xl p-3">
                     <Target className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-slate-800 text-sm">Освојувај XP и значки</p>
-                      <p className="text-slate-500 text-xs">Редови, достигнувања и напредок</p>
+                      <p className="font-bold text-slate-800 text-sm">{t('play.onboarding.step1.opt2.title')}</p>
+                      <p className="text-slate-500 text-xs">{t('play.onboarding.step1.opt2.desc')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 bg-emerald-50 rounded-2xl p-3">
                     <TrendingUp className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-slate-800 text-sm">Следи го твојот напредок</p>
-                      <p className="text-slate-500 text-xs">Гледај ги сите твои резултати на едно место</p>
+                      <p className="font-bold text-slate-800 text-sm">{t('play.onboarding.step1.opt3.title')}</p>
+                      <p className="text-slate-500 text-xs">{t('play.onboarding.step1.opt3.desc')}</p>
                     </div>
                   </div>
                 </div>
@@ -500,9 +502,9 @@ export const StudentPlayView: React.FC = () => {
         <div className="w-full max-w-4xl mt-4 bg-yellow-400 rounded-2xl p-4 flex items-center gap-3 animate-fade-in shadow-lg">
           <Trophy className="w-8 h-8 text-yellow-900 flex-shrink-0" fill="currentColor" />
           <div>
-            <p className="font-black text-yellow-900 text-lg">Концептот е СОВЛАДАН! 🏆</p>
+            <p className="font-black text-yellow-900 text-lg">{t('play.result.mastered')}</p>
             <p className="text-yellow-800 text-sm">
-              Го постигна 85%+ три пати по ред. Кажи му на твојот наставник — ова е голем успех!
+              {t('play.result.masteredDesc')}
             </p>
           </div>
         </div>
@@ -513,8 +515,8 @@ export const StudentPlayView: React.FC = () => {
         <div className="w-full max-w-4xl mt-4 bg-white/10 border border-white/20 rounded-2xl px-4 py-2.5 flex items-center gap-2">
           <Star className="w-4 h-4 text-yellow-300" fill="currentColor" />
 <p className="text-white text-sm font-bold">
-            Одличен резултат {consecutive} пат{consecutive === 1 ? '' : 'и'} по ред
-            {consecutive < 3 ? ` — уште ${3 - consecutive} за да го совладаш концептот!` : ''}
+            {t('play.result.consecutive1')} {consecutive} {t('play.result.consecutive2')}
+            {consecutive < 3 ? `${t('play.result.consecutive3')} ${3 - consecutive} ${t('play.result.consecutive4')}` : ''}
           </p>
         </div>
       )}
@@ -526,10 +528,10 @@ export const StudentPlayView: React.FC = () => {
               <Star className="w-8 h-8 text-yellow-400 flex-shrink-0 mt-0.5" fill="currentColor" />
               <div>
                 <p className="font-black text-green-800 text-lg">
-                  Одличен резултат! {quizResult.correctCount} / {quizResult.totalQuestions} точни
+                  {t('play.result.great')} {quizResult.correctCount} / {quizResult.totalQuestions} {t('play.result.correct')}
                 </p>
                 <p className="text-green-700 text-sm mt-1">
-                  Браво{studentName ? `, ${studentName}` : ''}! Ги совладавте прашањата одлично. Кажи му на твојот наставник за резултатот.
+                  {t('play.result.bravo')}{studentName ? `, ${studentName}` : ''}{t('play.result.bravoDesc')}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-3">
                   <button
@@ -568,8 +570,8 @@ export const StudentPlayView: React.FC = () => {
                 </p>
                 <p className="text-amber-700 text-sm mt-1">
                   {quizResult.percentage < 60
-                    ? 'Подготвуваме полесни прашања специјално за тебе...'
-                    : 'Уште малку вежба за да го совладаш концептот...'}
+                    ? t('play.tryAgin.descLow')
+                    : t('play.tryAgin.descMid')}
                 </p>
 
                 {isGeneratingRemedia && (
@@ -585,7 +587,7 @@ export const StudentPlayView: React.FC = () => {
                     className="mt-3 flex items-center gap-2 text-xs font-bold bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    {quizResult.percentage < 60 ? '📘 Поддршка (полесни прашања)' : '📖 Вежбај повторно'}
+                    {quizResult.percentage < 60 ? t('play.tryAgin.buttonLow') : t('play.tryAgin.buttonMid')}
                   </button>
                 )}
 
@@ -606,7 +608,7 @@ export const StudentPlayView: React.FC = () => {
       {/* ── П26: Confidence Self-Assessment ───────────────────────────────── */}
       {quizResult && (
         <div className="w-full max-w-lg mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm text-center">
-          <p className="text-white font-bold text-sm mb-3">Колку сигурен/сигурна се осеќаш за овој концепт?</p>
+          <p className="text-white font-bold text-sm mb-3">{t('play.confidence.title')}</p>
           <div className="flex justify-center gap-3">
             {(['😟','😐','🙂','😊','🤩'] as const).map((emoji, i) => {
               const rating = i + 1;
@@ -628,7 +630,7 @@ export const StudentPlayView: React.FC = () => {
             })}
           </div>
           {confidence && (
-            <p className="text-white/70 text-xs mt-2">Зачувано! Благодарам за твојот одговор. ✓</p>
+            <p className="text-white/70 text-xs mt-2">{t('play.confidence.saved')}</p>
           )}
         </div>
       )}
@@ -648,7 +650,7 @@ export const StudentPlayView: React.FC = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="font-black text-white text-sm">{avatar.title}</span>
-                  <span className="text-white/60 text-xs font-semibold">Лв.{newLvl.level}</span>
+                  <span className="text-white/60 text-xs font-semibold">{t('play.level')}{newLvl.level}</span>
                   {leveledUp && (
                     <span className="text-xs font-bold bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full animate-bounce">
                       ⬆️ Level Up!
@@ -657,7 +659,7 @@ export const StudentPlayView: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-white/80 text-xs font-semibold">+{gamificationUpdate.xpGained} XP</span>
-                  <span className="text-white/50 text-xs">{totalXP} XP вкупно</span>
+                  <span className="text-white/50 text-xs">{totalXP} {t('play.totalXP')}</span>
                 </div>
                 {/* XP progress bar */}
                 <div className="w-full bg-white/20 rounded-full h-1.5 mt-1.5 overflow-hidden">
@@ -674,7 +676,7 @@ export const StudentPlayView: React.FC = () => {
             </div>
             {gamificationUpdate.newAchievements.length > 0 && (
               <div className="border-t border-white/20 pt-3">
-                <p className="text-white/80 text-xs font-bold mb-2">Ново достигнување!</p>
+                <p className="text-white/80 text-xs font-bold mb-2">{t('play.newAchievement')}</p>
                 <div className="flex flex-wrap gap-2">
                   {gamificationUpdate.newAchievements.map(id => {
                     const a = ACHIEVEMENTS[id];

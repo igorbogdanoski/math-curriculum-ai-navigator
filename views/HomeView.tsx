@@ -25,15 +25,16 @@ import { ProactiveSuggestionCard } from '../components/ai/ProactiveSuggestionCar
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ICONS } from '../constants';
+import { useLanguage } from '../i18n/LanguageContext';
 
 // ── Quick Actions strip — 5 most-used teacher actions ────────────────────────
-const QUICK_ACTIONS = [
-  { label: 'AI Генератор', desc: 'Генерирај материјал', icon: Sparkles, color: 'bg-indigo-600 hover:bg-indigo-700', action: 'generator' },
-  { label: 'Планер', desc: 'Распоред на часови', icon: CalendarDays, color: 'bg-blue-600 hover:bg-blue-700', action: 'planner' },
-  { label: 'Аналитика', desc: 'Резултати на ученици', icon: BarChart2, color: 'bg-violet-600 hover:bg-violet-700', action: 'analytics' },
-  { label: 'Мои подготовки', desc: 'Наставни планови', icon: Library, color: 'bg-emerald-600 hover:bg-emerald-700', action: 'my-lessons' },
-  { label: 'Квиз во живо', desc: 'Пушти на час', icon: Radio, color: 'bg-rose-600 hover:bg-rose-700', action: 'live' },
-] as const;
+const getQuickActions = (t: any) => [
+  { label: t('home.quick.generator'), desc: t('home.quick.generatorDesc'), icon: Sparkles, color: 'bg-indigo-600 hover:bg-indigo-700', action: 'generator' },
+  { label: t('home.quick.planner'), desc: t('home.quick.plannerDesc'), icon: CalendarDays, color: 'bg-blue-600 hover:bg-blue-700', action: 'planner' },
+  { label: t('home.quick.analytics'), desc: t('home.quick.analyticsDesc'), icon: BarChart2, color: 'bg-violet-600 hover:bg-violet-700', action: 'analytics' },
+  { label: t('home.quick.mylessons'), desc: t('home.quick.mylessonsDesc'), icon: Library, color: 'bg-emerald-600 hover:bg-emerald-700', action: 'my-lessons' },
+  { label: t('home.quick.livequiz'), desc: t('home.quick.livequizDesc'), icon: Radio, color: 'bg-rose-600 hover:bg-rose-700', action: 'live' },
+];
 
 declare var introJs: any;
 
@@ -42,6 +43,7 @@ const ChartTabs: React.FC<{
     topicCoverage: any;
     isLoading: boolean;
 }> = ({ monthlyActivity, topicCoverage, isLoading }) => {
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'activity' | 'topics'>('activity');
 
     return (
@@ -54,7 +56,7 @@ const ChartTabs: React.FC<{
                         className={`text-sm font-semibold pb-3 -mb-1.5 transition-all duration-200 flex items-center gap-2 ${activeTab === 'activity' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         <ICONS.chart className="w-4 h-4" />
-                        Месечна Активност
+                        {t('home.tabs.activity')}
                     </button>
                     <button
                         type="button"
@@ -62,7 +64,7 @@ const ChartTabs: React.FC<{
                         className={`text-sm font-semibold pb-3 -mb-1.5 transition-all duration-200 flex items-center gap-2 ${activeTab === 'topics' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         <ICONS.mindmap className="w-4 h-4" />
-                        Покриеност на Теми
+                        {t('home.tabs.topics')}
                     </button>
                 </div>
             </div>
@@ -89,6 +91,7 @@ const ChartTabs: React.FC<{
 export const HomeView: React.FC = () => {
   const { user } = useAuth();
   const { navigate } = useNavigation();
+  const { t } = useLanguage();
   const { getLessonPlan, todaysLesson, tomorrowsLesson } = usePlanner();
   const { lastVisited } = useLastVisited();
   const { monthlyActivity, topicCoverage, overallStats, isLoading: isStatsLoading } = useDashboardStats();
@@ -202,7 +205,7 @@ export const HomeView: React.FC = () => {
 
       {/* ── QUICK ACTIONS STRIP ──────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {QUICK_ACTIONS.map(({ label, desc, icon: Icon, color, action }) => (
+        {getQuickActions(t).map(({ label, desc, icon: Icon, color, action }) => (
           <button
             key={action}
             type="button"

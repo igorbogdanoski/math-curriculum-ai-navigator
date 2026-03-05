@@ -4,6 +4,7 @@ import type { DocumentSnapshot } from 'firebase/firestore';
 import { useNotification } from '../contexts/NotificationContext';
 import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
 import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download, Megaphone, Trash2, Send } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -25,6 +26,7 @@ import { AssignmentsTab } from './analytics/AssignmentsTab';
 import { LeagueTab } from './analytics/LeagueTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
+  const { t } = useLanguage();
     const { firebaseUser } = useAuth();
     const { addNotification } = useNotification();
     const [results, setResults] = useState<QuizResult[]>([]);
@@ -427,10 +429,10 @@ export const TeacherAnalyticsView: React.FC = () => {
                 <div>
                     <h1 className="text-4xl font-bold text-brand-primary flex items-center gap-3">
                         <BarChart3 className="w-9 h-9" />
-                        Аналитика на Квизови
+                        {t('analytics.title')}
                     </h1>
                     <p className="text-lg text-gray-600 mt-2">
-                        Преглед на резултатите на учениците — во реално време.
+                        {t('analytics.subtitle')}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -441,7 +443,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition active:scale-95 disabled:opacity-40"
                 >
                     <Download className="w-4 h-4" />
-                    Извези CSV
+                    {t('analytics.exportCsv')}
                 </button>
                 <button
                     type="button"
@@ -463,9 +465,9 @@ export const TeacherAnalyticsView: React.FC = () => {
             {results.length === 0 && !error ? (
                 <Card className="text-center py-16">
                     <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold text-gray-500">Сè уште нема резултати</h2>
+                    <h2 className="text-xl font-bold text-gray-500">{t('analytics.noResultsTitle')}</h2>
                     <p className="text-gray-400 mt-2 max-w-sm mx-auto">
-                        Откако учениците ќе решат квизови преку делениот линк, нивните резултати ќе се прикажат тука.
+                        {t('analytics.noResultsDesc')}
                     </p>
                 </Card>
             ) : (
@@ -474,7 +476,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                     <Card className="mb-4">
                         <div className="flex items-center gap-2 mb-3">
                             <Megaphone className="w-5 h-5 text-amber-500" />
-                            <h3 className="font-bold text-gray-800">Огласна Табла</h3>
+                            <h3 className="font-bold text-gray-800">{t('analytics.bulletin')}</h3>
                             <span className="text-xs text-gray-400 ml-1">(Учениците ги гледаат во „Мој Прогрес")</span>
                         </div>
                         <div className="flex gap-2 mb-3">
@@ -483,7 +485,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                                 value={newMsg}
                                 onChange={e => setNewMsg(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter') handlePostAnnouncement(); }}
-                                placeholder="Напишете порака за учениците..."
+                                placeholder={t("analytics.bulletinPlaceholder")}
                                 className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
                                 maxLength={200}
                             />
@@ -505,8 +507,8 @@ export const TeacherAnalyticsView: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleDeleteAnnouncement(a.id)}
-                                            title="Избриши оглас"
-                                            aria-label="Избриши оглас"
+                                            title={t("analytics.deleteAd")}
+                                            aria-label={t("analytics.deleteAd")}
                                             className="text-gray-300 hover:text-red-500 transition flex-shrink-0"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -516,7 +518,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             </ul>
                         )}
                         {announcements.length === 0 && (
-                            <p className="text-xs text-gray-400 text-center py-1">Нема активни огласи.</p>
+                            <p className="text-xs text-gray-400 text-center py-1">{t('analytics.noActiveAds')}</p>
                         )}
                     </Card>
 
@@ -525,20 +527,20 @@ export const TeacherAnalyticsView: React.FC = () => {
                         <div className="overflow-x-auto scrollbar-hide pb-1">
                             <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-max min-w-full">
                                 {([
-                                    { id: 'overview', label: 'Преглед' },
-                                    { id: 'trend', label: 'Тренд' },
-                                    { id: 'students', label: 'По ученик' },
-                                    { id: 'grades', label: 'По одд.' },
-                                    { id: 'standards', label: 'Стандарди' },
-                                    { id: 'concepts', label: 'Концепти' },
-                                    { id: 'alerts', label: '⚠️ Внимание' },
-                                    { id: 'groups', label: '👥 Групи' },
+                                    { id: 'overview', label: t('analytics.tabs.overview') },
+                                    { id: 'trend', label: t('analytics.tabs.trend') },
+                                    { id: 'students', label: t('analytics.tabs.students') },
+                                    { id: 'grades', label: t('analytics.tabs.grades') },
+                                    { id: 'standards', label: t('analytics.tabs.standards') },
+                                    { id: 'concepts', label: t('analytics.tabs.concepts') },
+                                    { id: 'alerts', label: '⚠️ ' + t('analytics.tabs.alerts') },
+                                    { id: 'groups', label: '👥 ' + t('analytics.tabs.groups') },
                                     { id: 'live', label: '🔴 Live' },
                                     { id: 'classes', label: '🏫 Класи' },
-                                    { id: 'questionBank', label: '📚 Банка' },
-                                    { id: 'coverage', label: '📊 Покриеност' },
-                                    { id: 'assignments', label: '📋 Задачи' },
-                                    { id: 'league', label: '🏆 Лига' },
+                                    { id: 'questionBank', label: '📚 ' + t('analytics.tabs.questionBank') },
+                                    { id: 'coverage', label: '📊 ' + t('analytics.tabs.coverage') },
+                                    { id: 'assignments', label: '📋 ' + t('analytics.tabs.assignments') },
+                                    { id: 'league', label: '🏆 ' + t('analytics.tabs.league') },
                                 ] as const).map(tab => (
                                     <button
                                         key={tab.id}
@@ -561,30 +563,30 @@ export const TeacherAnalyticsView: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                         <StatCard
                             icon={<Users className="w-6 h-6 text-blue-600" />}
-                            label="Вкупно обиди"
+                            label={t("analytics.stat.totalAttempts")}
                             value={String(totalAttempts)}
-                            sub={`освежено ${lastRefresh.toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })}`}
+                            sub={`${t("analytics.stat.refreshed")} ${lastRefresh.toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })}`}
                             color="bg-blue-50"
                         />
                         <StatCard
                             icon={<TrendingUp className="w-6 h-6 text-indigo-600" />}
-                            label="Просечен резултат"
+                            label={t("analytics.stat.avgResult")}
                             value={`${fmt(avgScore, 1)}%`}
-                            sub={`врз основа на ${totalAttempts} обид${totalAttempts === 1 ? '' : 'и'}`}
+                            sub={`\${t('analytics.stat.basedOn')} \${totalAttempts} \${totalAttempts === 1 ? t('analytics.stat.attemptSingular') : t('analytics.stat.attemptPlural')}`}
                             color="bg-indigo-50"
                         />
                         <StatCard
                             icon={<Award className="w-6 h-6 text-green-600" />}
-                            label="Стапка на положување (≥70%)"
+                            label={t("analytics.stat.passRate")}
                             value={`${fmt(passRate, 1)}%`}
-                            sub={`${results.filter(r => r.percentage >= 70).length} од ${totalAttempts} ученици`}
+                            sub={`${results.filter(r => r.percentage >= 70).length} ${t("analytics.stat.from")} ${totalAttempts} ${t("analytics.stat.students")}`}
                             color="bg-green-50"
                         />
                         <StatCard
                             icon={<BarChart3 className="w-6 h-6 text-orange-500" />}
-                            label="Различни квизови"
+                            label={t("analytics.stat.distinctQuizzes")}
                             value={String(quizAggregates.length)}
-                            sub="квизови со резултати"
+                            sub={t("analytics.stat.quizzesWithResults")}
                             color="bg-orange-50"
                         />
                     </div>
@@ -657,11 +659,11 @@ export const TeacherAnalyticsView: React.FC = () => {
                                 className="flex items-center gap-2 px-6 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl text-sm font-semibold hover:bg-indigo-100 disabled:opacity-50 transition"
                             >
                                 {isLoadingMore
-                                    ? <><RefreshCw className="w-4 h-4 animate-spin" /> Вчитувам...</>
-                                    : <>↓ Вчитај уште резултати ({results.length} вчитани)</>
+                                    ? <><RefreshCw className="w-4 h-4 animate-spin" /> {t('analytics.load.loading')}</>
+                                    : <>↓ {t('analytics.load.loadMore')} ({results.length}</>
                                 }
                             </button>
-                            <p className="text-xs text-gray-400">Прикажани се последните {results.length} резултати</p>
+                            <p className="text-xs text-gray-400">{t('analytics.load.shown')} {results.length} {t('analytics.load.results')}</p>
                         </div>
                     )}
                 </>

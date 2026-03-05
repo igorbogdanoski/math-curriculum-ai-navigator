@@ -1,0 +1,12 @@
+77: // Ж1: use deviceId only when student views their own data (not read-only parent view)
+93: // Ж1: Fetch gamification with deviceId + teacherUid scope for precise lookup
+269: <option value="THIS_WEEK" className="text-slate-800 bg-white">Оваа недела</option>
+270: <option value="LAST_WEEK" className="text-slate-800 bg-white">Минатата недела</option>
+271: <option value="THIS_MONTH" className="text-slate-800 bg-white">Овој месец</option>
+278: <Printer className="w-4 h-4" /> Печати
+288: <Home className="w-4 h-4" /> Почетна
+322: Провери
+409: <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">Ниво на учење</p>
+417: {avatar.title} <span className="text-indigo-500 font-bold">Лв.{lvlInfo.level}</span>
+419: <p className="text-[10px] text-slate-500 font-medium">{gamification.totalXP} XP · до след. ниво: +{lvlInfo.nextLevelXp - lvlInfo.currentXp} XP</p>
+438: <span className="text-[10px] text-indigo-400">од {classRank.total} во класата</span>

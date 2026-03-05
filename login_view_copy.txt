@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { APP_NAME, ICONS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
-import { firestoreService } from '../services/firestoreService';
 import type { User } from "firebase/auth";
 
 // --- SUB-COMPONENTS FOR EACH AUTH STATE ---
@@ -58,9 +57,6 @@ interface RegisterFormProps {
     setPassword: (pass: string) => void;
     repeatPassword: string;
     setRepeatPassword: (pass: string) => void;
-    schoolId: string;
-    setSchoolId: (id: string) => void;
-    schools: any[];
     photoPreview: string | null;
     handlePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleSubmit: (e: React.FormEvent) => Promise<void>;
@@ -70,7 +66,7 @@ interface RegisterFormProps {
     onSwitchToLogin: () => void;
 }
 
-const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEmail, password, setPassword, repeatPassword, setRepeatPassword, schoolId, setSchoolId, schools, photoPreview, handlePhotoChange, handleSubmit, isLoading, error, successMessage, onSwitchToLogin }) => (
+const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEmail, password, setPassword, repeatPassword, setRepeatPassword, photoPreview, handlePhotoChange, handleSubmit, isLoading, error, successMessage, onSwitchToLogin }) => (
     <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
         <div className="flex flex-col items-center space-y-2 mb-6">
             <label htmlFor="photo-upload" className="cursor-pointer group relative">
@@ -91,21 +87,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEm
         <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Е-пошта</label>
             <input type="email" id="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
-        </div>
-        
-        <div>
-            <label htmlFor="school" className="block text-sm font-medium text-gray-700">Училиште (опционално)</label>
-            <select
-                id="school"
-                value={schoolId}
-                onChange={(e) => setSchoolId(e.target.value)}
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary"
-            >
-                <option value="">-- Изберете училиште --</option>
-                {schools.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.city})</option>
-                ))}
-            </select>
         </div>
         <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">Лозинка</label>
@@ -202,9 +183,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, setEmail, 
 // --- MAIN LOGIN VIEW CONTROLLER ---
 
 export const LoginView: React.FC = () => {
-    const [schools, setSchools] = useState<any[]>([]);
-    const [schoolId, setSchoolId] = useState('');
-
     const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -273,7 +251,7 @@ export const LoginView: React.FC = () => {
         }
         setIsLoading(true);
         try {
-            await register(email, password, name, photoFile, schoolId);
+            await register(email, password, name, photoFile);
             setSuccessMessage("Регистрацијата е успешна! Ве молиме проверете го вашето сандаче за е-пошта за линк за верификација.");
             setMode('login');
             clearFormState();
@@ -334,7 +312,7 @@ export const LoginView: React.FC = () => {
     switch (mode) {
         case 'register':
             headerText = 'Креирајте нова сметка';
-            content = <RegisterForm name={name} setName={setName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} repeatPassword={repeatPassword} setRepeatPassword={setRepeatPassword} schoolId={schoolId} setSchoolId={setSchoolId} schools={schools} photoPreview={photoPreview} handlePhotoChange={handlePhotoChange} handleSubmit={handleRegisterSubmit} isLoading={isLoading} error={error} successMessage={successMessage} onSwitchToLogin={() => { setMode('login'); clearFormState(); }} />;
+            content = <RegisterForm name={name} setName={setName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} repeatPassword={repeatPassword} setRepeatPassword={setRepeatPassword} photoPreview={photoPreview} handlePhotoChange={handlePhotoChange} handleSubmit={handleRegisterSubmit} isLoading={isLoading} error={error} successMessage={successMessage} onSwitchToLogin={() => { setMode('login'); clearFormState(); }} />;
             break;
         case 'reset':
             headerText = 'Ресетирај лозинка';

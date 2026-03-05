@@ -1,0 +1,53 @@
+39: // П32 — Pagination
+43: // П27 — Announcements
+70: addNotification('Грешка при генерирање препораки. Проверете ја AI квотата.', 'error');
+85: customInstruction: `РЕМЕДИЈАЛНА ВЕЖБА: Класата постигна само ${avgPct}% за концептот "${conceptTitle}". Генерирај работен лист со ПОДДРШКА ниво — поедноставени прашања, чекор-по-чекор упатства, детални примери, и визуелни помагала каде е можно.`,
+106: setError('Не можеше да се вчитаат резултатите. Проверете ја врската.');
+130: ['Квиз', 'Ученик', 'Точни', 'Вкупно', 'Проценти', 'Датум', 'Концепт ID'],
+133: r.studentName || 'Анонимен',
+172: addNotification('Огласот е објавен! 📢', 'success');
+175: addNotification('Грешка при објавување на огласот.', 'error');
+187: addNotification('Грешка при бришење на огласот.', 'error');
+234: // В2 — confidence accumulation
+236: // Фаза Г — misconceptions accumulation
+239: if (m.misconception && m.misconception !== "Непозната грешка" && m.misconception !== "Пресметковна грешка или случајно погодување") {
+328: // В2 — confidence average
+429: Аналитика на Квизови
+432: Преглед на резултатите на учениците — во реално време.
+443: Извези CSV
+451: Освежи
+465: <h2 className="text-xl font-bold text-gray-500">Сè уште нема резултати</h2>
+467: Откако учениците ќе решат квизови преку делениот линк, нивните резултати ќе се прикажат тука.
+472: {/* П27 — Огласна Табла */}
+476: <h3 className="font-bold text-gray-800">Огласна Табла</h3>
+477: <span className="text-xs text-gray-400 ml-1">(Учениците ги гледаат во „Мој Прогрес")</span>
+485: placeholder="Напишете порака за учениците..."
+496: Постави
+507: title="Избриши оглас"
+508: aria-label="Избриши оглас"
+518: <p className="text-xs text-gray-400 text-center py-1">Нема активни огласи.</p>
+527: { id: 'overview', label: 'Преглед' },
+528: { id: 'trend', label: 'Тренд' },
+529: { id: 'students', label: 'По ученик' },
+530: { id: 'grades', label: 'По одд.' },
+531: { id: 'standards', label: 'Стандарди' },
+532: { id: 'concepts', label: 'Концепти' },
+533: { id: 'alerts', label: '⚠️ Внимание' },
+534: { id: 'groups', label: '👥 Групи' },
+536: { id: 'classes', label: '🏫 Класи' },
+537: { id: 'questionBank', label: '📚 Банка' },
+538: { id: 'coverage', label: '📊 Покриеност' },
+539: { id: 'assignments', label: '📋 Задачи' },
+540: { id: 'league', label: '🏆 Лига' },
+563: label="Вкупно обиди"
+565: sub={`освежено ${lastRefresh.toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })}`}
+570: label="Просечен резултат"
+572: sub={`врз основа на ${totalAttempts} обид${totalAttempts === 1 ? '' : 'и'}`}
+577: label="Стапка на положување (≥70%)"
+579: sub={`${results.filter(r => r.percentage >= 70).length} од ${totalAttempts} ученици`}
+584: label="Различни квизови"
+586: sub="квизови со резултати"
+649: {/* П32 — Pagination: Load More */}
+659: ? <><RefreshCw className="w-4 h-4 animate-spin" /> Вчитувам...</>
+660: : <>↓ Вчитај уште резултати ({results.length} вчитани)</>
+663: <p className="text-xs text-gray-400">Прикажани се последните {results.length} резултати</p>

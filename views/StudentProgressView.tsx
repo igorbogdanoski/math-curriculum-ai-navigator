@@ -3,10 +3,11 @@ import { firestoreService, type QuizResult, type ConceptMastery, type StudentGam
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { ICONS } from '../constants';
-import {
+import { 
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
   Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw, Target,
-} from 'lucide-react';
+ } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { getDeviceId } from '../utils/studentIdentity';
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
+  const { t } = useLanguage();
   const isReadOnly = !!nameProp;
   const { getConceptChain, getConceptDetails, allConcepts } = useCurriculum();
 
@@ -267,16 +269,16 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                 onChange={e => setReportPeriod(e.target.value as 'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH')}
                 className="flex-1 sm:flex-none text-xs font-bold bg-white/10 border border-white/20 text-white px-3 py-2 rounded-full cursor-pointer h-11"
               >
-                <option value="THIS_WEEK" className="text-slate-800 bg-white">Оваа недела</option>
-                <option value="LAST_WEEK" className="text-slate-800 bg-white">Минатата недела</option>
-                <option value="THIS_MONTH" className="text-slate-800 bg-white">Овој месец</option>
+                <option value="THIS_WEEK" className="text-slate-800 bg-white">{t('progress.thisWeek')}</option>
+                <option value="LAST_WEEK" className="text-slate-800 bg-white">{t('progress.lastWeek')}</option>
+                <option value="THIS_MONTH" className="text-slate-800 bg-white">{t('progress.thisMonth')}</option>
               </select>
               <button
                 type="button"
                 onClick={handlePrint}
                 className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition h-11"
               >
-                <Printer className="w-4 h-4" /> Печати
+                <Printer className="w-4 h-4" /> {t('progress.print')}
               </button>
             </div>
           )}
@@ -286,7 +288,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               onClick={() => { window.location.hash = '/'; }}
               className="flex items-center justify-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition no-print h-11"
             >
-              <Home className="w-4 h-4" /> Почетна
+              <Home className="w-4 h-4" /> {t('progress.home')}
             </button>
           )}
         </div>
@@ -300,7 +302,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               <User className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <p className="font-black text-slate-800">????? ?? ?????? ime</p>
+              <p className="font-black text-slate-800">{t('progress.searchName')}</p>
               <p className="text-xs text-slate-400">?? ?????? ???? ?????? ?????????</p>
             </div>
           </div>
@@ -407,7 +409,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
 
                        <div className="flex justify-between items-end mb-2 relative z-10">
                          <div>
-                            <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">Ниво на учење</p>
+                            <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">{t('progress.learningLevel')}</p>
                             <div className="flex items-center gap-2">
                                {/* Avatar emoji */}
                                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-2xl shadow-md shadow-indigo-200 select-none">
@@ -415,9 +417,9 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                                </div>
                                <div>
                                   <p className="font-black text-slate-800 text-sm leading-tight">
-                                    {avatar.title} <span className="text-indigo-500 font-bold">Лв.{lvlInfo.level}</span>
+                                    {avatar.title} <span className="text-indigo-500 font-bold">{t('progress.level')} {lvlInfo.level}</span>
                                   </p>
-                                  <p className="text-[10px] text-slate-500 font-medium">{gamification.totalXP} XP · до след. ниво: +{lvlInfo.nextLevelXp - lvlInfo.currentXp} XP</p>
+                                  <p className="text-[10px] text-slate-500 font-medium">{gamification.totalXP} XP · {t('progress.untilNextLevel')}: +{lvlInfo.nextLevelXp - lvlInfo.currentXp} XP</p>
                                </div>
                             </div>
                          </div>
@@ -436,7 +438,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                        {classRank && (
                          <div className="mt-2 flex items-center gap-1.5 relative z-10">
                            <span className="text-xs font-bold text-indigo-600">🏆 #{classRank.rank}</span>
-                           <span className="text-[10px] text-indigo-400">од {classRank.total} во класата</span>
+                           <span className="text-[10px] text-indigo-400">{t('progress.ofInClass').replace('{total}', classRank.total.toString())}</span>
                          </div>
                        )}
                     </div>

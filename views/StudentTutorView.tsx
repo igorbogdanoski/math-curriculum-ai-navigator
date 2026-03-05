@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 
@@ -12,11 +13,12 @@ interface Message {
 }
 
 export const StudentTutorView: React.FC = () => {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content: 'Здраво! Јас сум твојот AI тутор по математика. Тука сум да ти помогнам да ги разбереш лекциите, но нема да ти ги решам задачите наместо тебе. Што учиме денес?'
+      content: t('tutor.greeting')
     }
   ]);
   const [input, setInput] = useState('');
@@ -130,9 +132,7 @@ export const StudentTutorView: React.FC = () => {
               <ICONS.add className="w-5 h-5 text-white" />
             </button>
           </div>
-          <p className="text-xs text-center text-gray-400 mt-2">
-            AI туторот може да греши. Секогаш проверувај ги информациите.
-          </p>
+          <p className="text-xs text-center text-gray-400 mt-2">{t('tutor.disclaimer')}</p>
         </div>
       </Card>
     </div>
