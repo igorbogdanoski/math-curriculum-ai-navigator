@@ -391,14 +391,14 @@ export const StudentPlayView: React.FC = () => {
                 <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mb-6 mx-auto">
                   <User className="w-10 h-10 text-indigo-600" />
                 </div>
-                <h2 className="text-2xl font-black text-slate-800 mb-2">Как се викаш?</h2>
+                <h2 className="text-2xl font-black text-slate-800 mb-2">{t('play.onboarding.whats_your_name')}</h2>
                 <p className="text-slate-500 mb-6 text-sm px-2">
-                  Твоето ime се чува само за да го следиме твојот напредок. Никој друг не може да го гледа.
+                  {t('play.onboarding.name_privacy')}
                 </p>
                 <div className="px-2">
                   <input
                     type="text"
-                    placeholder="Твоето ime и презиме..."
+                    placeholder={t('play.onboarding.name_placeholder')}
                     value={nameInput}
                     onChange={e => setNameInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && nameInput.trim()) { setWizardStep(null); handleConfirmName(); } }}
@@ -410,14 +410,14 @@ export const StudentPlayView: React.FC = () => {
                     disabled={!nameInput.trim()}
                     className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-4 md:py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed min-h-[56px] md:min-h-[auto]"
                   >
-                    Потврди <ArrowRight className="w-5 h-5" />
+                    {t('play.onboarding.confirm')} <ArrowRight className="w-5 h-5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setWizardStep(0)}
                     className="mt-4 pb-2 text-sm text-slate-400 hover:text-slate-600 transition min-h-[44px]"
                   >
-                    ← Назад
+                    {t('play.onboarding.back')}
                   </button>
                 </div>
                 <div className="flex justify-center gap-1.5 mt-2">
@@ -434,13 +434,13 @@ export const StudentPlayView: React.FC = () => {
                 <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mb-6 mx-auto">
                   <User className="w-10 h-10 text-indigo-600" />
                 </div>
-                <h2 className="text-2xl font-black text-slate-800 mb-2">Промени ime</h2>
+                <h2 className="text-2xl font-black text-slate-800 mb-2">{t('play.onboarding.change_name_title')}</h2>
                 <p className="text-slate-500 mb-8 max-w-sm text-sm">
-                  Внеси го твоето ime за да го зачуваме твојот резултат.
+                  {t('play.onboarding.change_name_desc')}
                 </p>
                 <input
                   type="text"
-                  placeholder="Твоето ime и презиме..."
+                  placeholder={t('play.onboarding.name_placeholder')}
                   value={nameInput}
                   onChange={e => setNameInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && nameInput.trim()) handleConfirmName(); }}
@@ -452,7 +452,7 @@ export const StudentPlayView: React.FC = () => {
                   disabled={!nameInput.trim()}
                   className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-4 md:py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed min-h-[56px] md:min-h-[auto]"
                 >
-                  Почни Квизот <ArrowRight className="w-5 h-5" />
+                  {t('play.onboarding.start_quiz')} <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
             )}
@@ -469,7 +469,7 @@ export const StudentPlayView: React.FC = () => {
               </div>
               {isReturningStudent && (
                 <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
-                  👋 Добредојде назад!
+                {t('play.onboarding.welcome_back')}
                 </span>
               )}
               <button
@@ -477,7 +477,7 @@ export const StudentPlayView: React.FC = () => {
                 onClick={() => { setNameConfirmed(false); setNameInput(studentName); }}
                 className="text-xs text-slate-400 hover:text-slate-600 underline transition"
               >
-                Промени
+                {t('play.onboarding.change')}
               </button>
             </div>
             <InteractiveQuizPlayer
