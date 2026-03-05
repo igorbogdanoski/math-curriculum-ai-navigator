@@ -338,6 +338,13 @@ export const firestoreService = {
    */
   saveQuizResult: async (result: QuizResult): Promise<string> => {
     try {
+      const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      if (!isOnline) {
+        const { saveQuizOffline } = await import('./indexedDBService');
+        const id = await saveQuizOffline(result);
+        return id;
+      }
+      
       const docRef = doc(collection(db, "quiz_results"));
       setDoc(docRef, {
         ...result,
@@ -347,6 +354,36 @@ export const firestoreService = {
     } catch (error) {
       console.error("Error saving quiz result:", error);
       return '';
+    }
+  },
+
+  syncOfflineQuizzes: async (): Promise<number> => {
+    try {
+       const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+       if (!isOnline) return 0;
+       
+       const { getPendingQuizzes, clearPendingQuiz } = await import('./indexedDBService');
+       const pending = await getPendingQuizzes();
+       if (pending.length === 0) return 0;
+       
+       let synced = 0;
+       for (const item of pending) {
+         try {
+           const docRef = doc(collection(db, "quiz_results"));
+           await setDoc(docRef, {
+             ...item.quizResult,
+             playedAt: new Date(item.timestamp),
+           });
+           await clearPendingQuiz(item.id);
+           synced++;
+         } catch (err) {
+           console.error('Failed to sync offline quiz:', err);
+         }
+       }
+       return synced;
+    } catch (err) {
+       console.error('Sync error', err);
+       return 0;
     }
   },
 
