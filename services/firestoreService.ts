@@ -962,6 +962,30 @@ export const firestoreService = {
     return ref.id;
   },
 
+  fetchUnapprovedQuestions: async (): Promise<SavedQuestion[]> => {
+    try {
+      const q = query(
+        collection(db, 'saved_questions'),
+        where('isApproved', '==', false),
+        limit(200)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedQuestion));
+    } catch (error) {
+      console.error('Error fetching unapproved questions:', error);
+      return [];
+    }
+  },
+
+  updateSavedQuestion: async (questionId: string, updates: Partial<SavedQuestion>): Promise<void> => {
+    try {
+      await updateDoc(doc(db, 'saved_questions', questionId), updates);
+    } catch (error) {
+      console.error('Error updating saved question:', error);
+      throw error;
+    }
+  },
+
   fetchSavedQuestions: async (teacherUid: string): Promise<SavedQuestion[]> => {
     try {
       const q = query(

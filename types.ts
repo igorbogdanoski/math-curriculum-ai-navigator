@@ -256,6 +256,10 @@ export interface SavedQuestion {
   savedAt?: any;
   isVerified?: boolean;
   verifiedAt?: any;
+  isPublic?: boolean;
+  isApproved?: boolean;
+  upvotes?: number;
+  downvotes?: number;
 }
 
 export interface AIGeneratedAssessment {

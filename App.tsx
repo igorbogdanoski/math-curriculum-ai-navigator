@@ -86,6 +86,7 @@ const AssistantView = safeLazy(() => import('./views/AssistantView').then(module
 const MaterialsGeneratorView = safeLazy(() => import('./views/MaterialsGeneratorView').then(module => ({ default: module.MaterialsGeneratorView })));
 const SettingsView = safeLazy(() => import('./views/SettingsView').then(module => ({ default: module.SettingsView })));
 const AIVisionGraderView = safeLazy(() => import('./views/AIVisionGraderView').then(module => ({ default: module.AIVisionGraderView })));
+const ContentReviewView = safeLazy(() => import('./views/ContentReviewView').then(module => ({ default: module.ContentReviewView })));
 const NotFoundView = safeLazy(() => import('./views/NotFoundView').then(module => ({ default: module.NotFoundView })));
 const ProgressionView = safeLazy(() => import('./views/ProgressionView').then(module => ({ default: module.ProgressionView })));
 const ExamplesGalleryView = safeLazy(() => import('./views/ExamplesGalleryView').then(module => ({ default: module.ExamplesGalleryView })));
@@ -138,6 +139,7 @@ const routes = [
     { path: '/library', component: ContentLibraryView },
     { path: '/gallery', component: ExamplesGalleryView },
     { path: '/settings', component: SettingsView },      { path: '/school-admin', component: SchoolAdminView },    { path: '/progression', component: ProgressionView },
+    { path: '/reviews', component: ContentReviewView },
     { path: '/graph', component: CurriculumGraphView },
     { path: '/roadmap', component: RoadmapView },
     { path: '/favorites', component: FavoritesView },

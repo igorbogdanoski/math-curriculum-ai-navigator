@@ -47,18 +47,18 @@
 ### Ж2: Ентитет Училиште + Директорски Портал 🟠
 **Проблем**: Нема организациска хиерархија — директорот нема преглед.
 - [ ] `School` интерфејс: id, name, city, teacherUids[], adminUid
-- [ ] `SchoolAdminView` — агрегирана аналитика по наставник (просечни резултати, активни ученици)
+- [x] `SchoolAdminView` — агрегирана аналитика по наставник (просечни резултати, активни ученици)
 - [ ] `firestoreService.fetchSchoolStats(schoolId)` — агрегација
 - [ ] `firestore.rules` — schoolAdmin може да чита, не пишува
 - [ ] Регистрација на наставник → поврзување со училиште
 
 ### Ж3: Офлајн-прва Архитектура (Service Worker) 🟠
 **Проблем**: На 3G / без интернет — апликацијата е бескорисна.
-- [ ] `vite-plugin-pwa` или рачен Service Worker
+- [x] `vite-plugin-pwa` или рачен Service Worker
 - [ ] Cache: наставни програми (curriculum docs), генерирани квизови (cached_ai_materials)
-- [ ] `IndexedDB` за offline quiz play → синк при reconnect
+- [x] `IndexedDB` за offline quiz play → синк при reconnect
 - [ ] Offline banner („Работите офлајн — резултатите ќе се синкронизираат")
-- [ ] `manifest.json` → Install as PWA prompt
+- [x] `manifest.json` → Install as PWA prompt
 
 ---
 
@@ -68,8 +68,8 @@
 
 ### З1: Преглед на Содржина со Предметни Наставници 🟡
 - [ ] Export на сите AI-генерирани прашања по концепт → Excel/CSV за рецензија
-- [ ] `ContentReviewView` (само за admin) — листа на материјали, status: draft/reviewed/approved
-- [ ] `isApproved?: boolean` на `CachedMaterial` во Firestore
+- [x] `ContentReviewView` (само за admin) — листа на материјали, status: draft/reviewed/approved
+- [x] `isApproved?: boolean` на `CachedMaterial` во Firestore
 - [ ] Approved материјали → приоритет во генерирање
 
 ### З2: Македонски Примери по Концепт
@@ -106,7 +106,7 @@
 
 ### И4: Национална Библиотека на Содржина
 - [ ] Верификуваните прашања → видливи за сите наставници (не само сопственикот)
-- [ ] `isPublic?: boolean` на `SavedQuestion`
+- [x] `isPublic?: boolean` на `SavedQuestion`
 - [ ] `fetchPublicQuestions(conceptId)` — глобална банка
 - [ ] Систем за оценување на јавни прашања (thumbs up/down)
 
@@ -128,3 +128,5 @@
 - `calcFibonacciLevel` е повикана на повеќе места — доколку се промени формулата, треба refactor
 - Нема unit тестови за `gamification.ts`, `dailyQuests.ts`, `grading.ts`
 - `TeacherAnalyticsView` сè уште е 400+ линии — разгледај дополнително splitting
+
+
