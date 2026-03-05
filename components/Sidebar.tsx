@@ -86,8 +86,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label="Планер" onClick={onClose} />
           <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label="Аналитика" onClick={onClose} />
           <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label="Мои подготовки" onClick={onClose} />
-          <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label="Библиотека" onClick={onClose} />
-          <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label="Поставки" onClick={onClose} />
+          <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label="Библиотека" onClick={onClose} />            {(user?.role === 'school_admin' || user?.role === 'admin') && (
+              <NavItem path="/school-admin" currentPath={currentPath} icon={ICONS.school} label="Училиште" onClick={onClose} />
+            )}          <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label="Поставки" onClick={onClose} />
         </div>
 
         {/* ── SECONDARY NAV (collapsible) ── */}

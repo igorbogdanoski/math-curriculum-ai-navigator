@@ -22,6 +22,16 @@ export const SettingsView: React.FC = () => {
     const [studentProfiles, setStudentProfiles] = useState<StudentProfile[]>(user?.studentProfiles || []);
     const [newProfileName, setNewProfileName] = useState('');
     const [newProfileDesc, setNewProfileDesc] = useState('');
+
+    // Mock list of schools for Phase D4 (School & Admin Management)
+    const MOCK_SCHOOLS = [
+      { id: '', name: 'Не избрано / Друго', city: '' },
+      { id: 'sch_1', name: 'ОУ „Пестар Поп Арсов“', city: 'Карпош, Скопје' },
+      { id: 'sch_2', name: 'ОУ „Гоце Делчев“', city: 'Центар, Скопје' },
+      { id: 'sch_3', name: 'ОУ „Братство Единство“', city: 'Охрид' },
+      { id: 'sch_4', name: 'ОУ „Климент Охридски“', city: 'Битола' },
+      { id: 'sch_5', name: 'ОУ „Крсте Мисирков“', city: 'Куманово' },
+    ];
     const [isSaving, setIsSaving] = useState(false);
     const [isMigrating, setIsMigrating] = useState(false);
     const [quotaStatus, setQuotaStatus] = useState<{ exhausted: boolean; resetTime: string; resetDate: string; source: string }>({ exhausted: false, resetTime: '', resetDate: '', source: '' });
@@ -560,3 +570,4 @@ export const SettingsView: React.FC = () => {
         </div>
     );
 };
+

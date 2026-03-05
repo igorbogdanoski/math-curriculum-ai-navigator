@@ -1,4 +1,13 @@
 
+export interface School {
+  id: string;
+  name: string;
+  city: string;
+  teacherUids: string[];
+  adminUid: string;
+  createdAt?: any;
+}
+
 export interface NationalStandard {
   id: string;
   code: string;

@@ -101,6 +101,7 @@ const MindMapView = safeLazy(() => import('./views/MindMapView').then(module => 
 const RoadmapView = safeLazy(() => import('./views/RoadmapView').then(module => ({ default: module.RoadmapView })));
 const TeacherAnalyticsView = safeLazy(() => import('./views/TeacherAnalyticsView').then(module => ({ default: module.TeacherAnalyticsView })));
 const TestGeneratorView = safeLazy(() => import('./views/TestGeneratorView').then(module => ({ default: module.TestGeneratorView })));
+const SchoolAdminView = safeLazy(() => import('./views/SchoolAdminView').then(module => ({ default: module.SchoolAdminView })));
 
 const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     const { openGeneratorPanel } = useGeneratorPanel();
@@ -133,8 +134,7 @@ const routes = [
     { path: '/my-lessons', component: LessonPlanLibraryView },
     { path: '/library', component: ContentLibraryView },
     { path: '/gallery', component: ExamplesGalleryView },
-    { path: '/settings', component: SettingsView },
-    { path: '/progression', component: ProgressionView },
+    { path: '/settings', component: SettingsView },      { path: '/school-admin', component: SchoolAdminView },    { path: '/progression', component: ProgressionView },
     { path: '/graph', component: CurriculumGraphView },
     { path: '/roadmap', component: RoadmapView },
     { path: '/favorites', component: FavoritesView },

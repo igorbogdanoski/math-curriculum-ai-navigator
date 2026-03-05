@@ -1,4 +1,4 @@
-﻿import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
@@ -8,7 +8,7 @@ import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamificatio
  * Tracks a student's mastery of a specific concept over time.
  * Stored in Firestore under: concept_mastery/{studentName}_{conceptId}
  *
- * Mastery is achieved when the student scores ≥85% on 3+ consecutive attempts.
+ * Mastery is achieved when the student scores =85% on 3+ consecutive attempts.
  */
 export interface ConceptMastery {
   studentName: string;
@@ -17,17 +17,17 @@ export interface ConceptMastery {
   topicId?: string;
   gradeLevel?: number;
   teacherUid?: string;       // set for new records; undefined for legacy shared records
-  deviceId?: string;         // Ж1: device-bound UUID; undefined for legacy records
+  deviceId?: string;         // ?1: device-bound UUID; undefined for legacy records
   attempts: number;          // total attempts
-  consecutiveHighScores: number; // consecutive attempts ≥85%
+  consecutiveHighScores: number; // consecutive attempts =85%
   bestScore: number;
   lastScore: number;
-  mastered: boolean;         // true when consecutiveHighScores ≥ 3
+  mastered: boolean;         // true when consecutiveHighScores = 3
   masteredAt?: Timestamp;
   updatedAt?: Timestamp;
 }
 
-// ── Live Session ──────────────────────────────────────────────────────────────
+// -- Live Session --------------------------------------------------------------
 export interface LiveSession {
   id: string;
   hostUid: string;
@@ -44,7 +44,7 @@ export interface LiveSession {
   createdAt?: Timestamp;
 }
 
-// ── Student Groups ────────────────────────────────────────────────────────────
+// -- Student Groups ------------------------------------------------------------
 export interface StudentGroup {
   id: string;
   name: string;
@@ -54,7 +54,7 @@ export interface StudentGroup {
   createdAt?: Timestamp;
 }
 
-// ── School Classes ────────────────────────────────────────────────────────────
+// -- School Classes ------------------------------------------------------------
 export interface SchoolClass {
   id: string;
   name: string;
@@ -64,7 +64,7 @@ export interface SchoolClass {
   createdAt?: Timestamp;
 }
 
-// ── Assignments ───────────────────────────────────────────────────────────────
+// -- Assignments ---------------------------------------------------------------
 export interface Assignment {
   id: string;
   title: string;
@@ -78,32 +78,32 @@ export interface Assignment {
   completedBy: string[];       // student names who finished
 }
 
-// ── Gamification ─────────────────────────────────────────────────────────────
+// -- Gamification -------------------------------------------------------------
 export interface StudentGamification {
   studentName: string;
   totalXP: number;
-  currentStreak: number;    // consecutive days with ≥1 quiz
+  currentStreak: number;    // consecutive days with =1 quiz
   longestStreak: number;
   lastActivityDate: string; // 'YYYY-MM-DD' local date
   achievements: string[];   // unlocked achievement IDs
   totalQuizzes: number;     // running total across all time
-  deviceId?: string;        // Ж1: device-bound UUID; undefined for legacy records
+  deviceId?: string;        // ?1: device-bound UUID; undefined for legacy records
 }
 
 export const ACHIEVEMENTS: Record<string, { label: string; icon: string; condition: (g: StudentGamification) => boolean }> = {
-  first_quiz:          { label: 'Прво знаење',         icon: '🎯', condition: g => g.totalQuizzes >= 1 },
-  quiz_10:             { label: 'Упорен ученик',        icon: '📚', condition: g => g.totalQuizzes >= 10 },
-  quiz_50:             { label: 'Математичар',          icon: '🧮', condition: g => g.totalQuizzes >= 50 },
-  streak_3:            { label: 'Редовен ученик',       icon: '🔥', condition: g => g.longestStreak >= 3 },
-  streak_7:            { label: 'Недела упорност',      icon: '⚡', condition: g => g.longestStreak >= 7 },
-  score_90:            { label: 'Одличен',              icon: '⭐', condition: () => false }, // set ad-hoc on score
-  mastered_1:          { label: 'Мајстор',              icon: '🏆', condition: () => false }, // set ad-hoc on mastery
-  mastered_5:          { label: 'Напреден',             icon: '🥇', condition: () => false },
-  mastered_10:         { label: 'Виртуоз',              icon: '💎', condition: () => false },
+  first_quiz:          { label: '???? ??????',         icon: '??', condition: g => g.totalQuizzes >= 1 },
+  quiz_10:             { label: '?????? ??????',        icon: '??', condition: g => g.totalQuizzes >= 10 },
+  quiz_50:             { label: '???????????',          icon: '??', condition: g => g.totalQuizzes >= 50 },
+  streak_3:            { label: '??????? ??????',       icon: '??', condition: g => g.longestStreak >= 3 },
+  streak_7:            { label: '?????? ????????',      icon: '?', condition: g => g.longestStreak >= 7 },
+  score_90:            { label: '???????',              icon: '?', condition: () => false }, // set ad-hoc on score
+  mastered_1:          { label: '???????',              icon: '??', condition: () => false }, // set ad-hoc on mastery
+  mastered_5:          { label: '????????',             icon: '??', condition: () => false },
+  mastered_10:         { label: '???????',              icon: '??', condition: () => false },
   // Math-themed mathematician badges
-  pythagorean_master:  { label: 'Питагоров мајстор',   icon: '📐', condition: g => g.achievements.includes('mastered_1') },
-  euler_path:          { label: 'Ојлеров пат',          icon: '🌀', condition: g => g.longestStreak >= 5 },
-  golden_ratio:        { label: 'Златен пресек',        icon: '✨', condition: () => false }, // set ad-hoc: perfect score
+  pythagorean_master:  { label: '????????? ???????',   icon: '??', condition: g => g.achievements.includes('mastered_1') },
+  euler_path:          { label: '??????? ???',          icon: '??', condition: g => g.longestStreak >= 5 },
+  golden_ratio:        { label: '?????? ??????',        icon: '?', condition: () => false }, // set ad-hoc: perfect score
 };
 
 export interface QuizResult {
@@ -119,9 +119,9 @@ export interface QuizResult {
   gradeLevel?: number;
   studentName?: string;
   teacherUid?: string;       // set when student arrives via teacher-tagged link
-  deviceId?: string;         // Ж1: device-bound UUID; undefined for legacy records
+  deviceId?: string;         // ?1: device-bound UUID; undefined for legacy records
   differentiationLevel?: DifferentiationLevel; // level of the quiz that was played
-  confidence?: number;       // 1-5 self-assessment rating (П26)
+  confidence?: number;       // 1-5 self-assessment rating (?26)
   misconceptions?: { question: string; studentAnswer: string; misconception: string }[];
 }
 
@@ -142,25 +142,49 @@ export interface CachedMaterial {
   topicId?: string;
   gradeLevel: number;
   teacherUid?: string;
-  /** В1: draft = pending review, published = approved for students. Undefined = legacy (treated as published). */
+  /** ?1: draft = pending review, published = approved for students. Undefined = legacy (treated as published). */
   status?: 'draft' | 'published';
   createdAt: Timestamp;
   helpfulCount?: number;
   notHelpfulCount?: number;
 }
 
-// Овој сервис сега користи вистински Firebase SDK за да ги вчита податоците.
-// Тој пристапува до колекцијата 'curriculum' и документот 'v1' што го креиравме.
+// ???? ?????? ???? ??????? ????????? Firebase SDK ?? ?? ?? ????? ??????????.
+// ??? ?????????? ?? ??????????? 'curriculum' ? ?????????? 'v1' ??? ?? ?????????.
 
 export const firestoreService = {
+  /**
+   * Dashboard stats for School Admins (Phase D4 target)
+   */
+  fetchSchoolStats: async (schoolId: string): Promise<any> => {
+    try {
+      // In a real implementation this would fetch from a 'school_stats' collection or aggregate
+      // For now we will return a mocked aggregate structure until full functions are deployed
+            return {
+        totalTeachers: 4,
+        totalQuizzes: 345,
+        averageScore: 78.5,
+        teachers: [
+          { id: 't1', name: '?????? ???????', quizzesGiven: 120, avgScore: 82.1, lastActive: '2026-03-05' },
+          { id: 't2', name: '????? ??????????', quizzesGiven: 85, avgScore: 76.4, lastActive: '2026-03-04' },
+          { id: 't3', name: '????? ?????????', quizzesGiven: 110, avgScore: 79.8, lastActive: '2026-03-02' },
+          { id: 't4', name: '????? ???????????', quizzesGiven: 30, avgScore: 71.0, lastActive: '2026-02-28' },
+        ]
+      };
+    } catch (error) {
+      console.error("Error fetching school stats:", error);
+      return null;
+    }
+  },
+
   /**
    * Fetches the entire curriculum data module from Firestore.
    */
   fetchFullCurriculum: async (): Promise<CurriculumModule> => {
     console.log("Attempting to fetch data from Firestore...");
     
-    // Референца до документот што ги содржи сите податоци.
-    // Променете го 'v1' ако сте го именувале документот поинаку.
+    // ????????? ?? ?????????? ??? ?? ?????? ???? ????????.
+    // ????????? ?? 'v1' ??? ??? ?? ????????? ?????????? ???????.
     const docRef = doc(db, "curriculum", "v1");
 
     try {
@@ -168,24 +192,24 @@ export const firestoreService = {
 
       if (docSnap.exists()) {
         console.log("...Data received successfully from Firestore.");
-        // Го враќаме целиот документ, кастиран во нашиот CurriculumModule тип.
+        // ?? ??????? ?????? ????????, ???????? ?? ?????? CurriculumModule ???.
         return docSnap.data() as CurriculumModule;
       } else {
         console.error("...Firestore fetch failed: Document 'v1' does not exist in 'curriculum' collection.");
-        throw new Error("Документот со наставната програма не е пронајден во базата на податоци.");
+        throw new Error("?????????? ?? ?????????? ???????? ?? ? ????????? ?? ?????? ?? ????????.");
       }
     } catch (error: any) {
       // Gracefully handle offline errors, as the app has a local data fallback.
       if (error.code === 'unavailable' || (error.message && error.message.includes('offline'))) {
           console.info("...Could not fetch from Firestore: client is offline and data is not cached. Using local data.");
           // We throw an error so the calling hook knows the fetch failed, but it's not a critical error.
-          throw new Error("Офлајн сте и податоците не можеа да се синхронизираат.");
+          throw new Error("?????? ??? ? ?????????? ?? ????? ?? ?? ??????????????.");
       }
 
       // For any other type of error, log it as a critical error.
       console.error("...Error fetching document from Firestore:", error);
       const errorMessage = error.message || "An unknown network error occurred.";
-      throw new Error(`Грешка при комуникација со базата на податоци: ${errorMessage}`);
+      throw new Error(`?????? ??? ???????????? ?? ?????? ?? ????????: ${errorMessage}`);
     }
   },
 
@@ -295,7 +319,7 @@ export const firestoreService = {
 
   /**
    * Loads all curriculum edits saved by a teacher
-   * Returns a map of conceptId → { assessmentStandards?, activities? }
+   * Returns a map of conceptId ? { assessmentStandards?, activities? }
    */
   loadUserCurriculumEdits: async (userId: string): Promise<Record<string, { assessmentStandards?: string[]; activities?: string[] }>> => {
     try {
@@ -387,7 +411,7 @@ export const firestoreService = {
    */
   fetchQuizResultsByStudentName: async (studentName: string, deviceId?: string): Promise<QuizResult[]> => {
     try {
-      // Ж1: prefer deviceId query; old records without deviceId fall back to studentName
+      // ?1: prefer deviceId query; old records without deviceId fall back to studentName
       const q = deviceId
         ? query(collection(db, 'quiz_results'), where('deviceId', '==', deviceId), orderBy('playedAt', 'desc'), limit(100))
         : query(collection(db, 'quiz_results'), where('studentName', '==', studentName), orderBy('playedAt', 'desc'), limit(100));
@@ -463,14 +487,14 @@ export const firestoreService = {
     }
   },
 
-  // ── Mastery Tracking ────────────────────────────────────────────────────────
+  // -- Mastery Tracking --------------------------------------------------------
 
   /**
    * Updates concept mastery for a student after a quiz attempt.
    * Called automatically by StudentPlayView after each quiz completion.
    *
    * Mastery logic:
-   * - 3+ consecutive scores ≥85% → mastered = true
+   * - 3+ consecutive scores =85% ? mastered = true
    * - Any score <85% resets the consecutive counter
    */
   updateConceptMastery: async (
@@ -482,7 +506,7 @@ export const firestoreService = {
     deviceId?: string,
   ): Promise<ConceptMastery> => {
     const safeName = studentName.replace(/\s+/g, '_');
-    // Ж1: prefer deviceId in docId to prevent name-collision between same-named students
+    // ?1: prefer deviceId in docId to prevent name-collision between same-named students
     const docId = deviceId
       ? (teacherUid ? `${teacherUid}_${deviceId}_${conceptId}` : `${deviceId}_${conceptId}`)
       : (teacherUid ? `${teacherUid}_${safeName}_${conceptId}` : `${safeName}_${conceptId}`);
@@ -533,7 +557,7 @@ export const firestoreService = {
    */
   fetchMasteryByStudent: async (studentName: string, deviceId?: string): Promise<ConceptMastery[]> => {
     try {
-      // Ж1: prefer deviceId query to avoid same-name collisions
+      // ?1: prefer deviceId query to avoid same-name collisions
       const q = deviceId
         ? query(collection(db, 'concept_mastery'), where('deviceId', '==', deviceId))
         : query(collection(db, 'concept_mastery'), where('studentName', '==', studentName));
@@ -580,8 +604,8 @@ export const firestoreService = {
     }
   },
 
-  // ── Gamification: fetch ───────────────────────────────────────────────────
-  // Ж1: docId priority chain:
+  // -- Gamification: fetch ---------------------------------------------------
+  // ?1: docId priority chain:
   //   1. "{teacherUid}_{deviceId}" (new records with deviceId)
   //   2. "{teacherUid}_{studentName}" (scoped by teacher, legacy)
   //   3. "{studentName}" (oldest legacy records)
@@ -612,7 +636,7 @@ export const firestoreService = {
     }
   },
 
-  // ── Gamification: class leaderboard ──────────────────────────────────────
+  // -- Gamification: class leaderboard --------------------------------------
   fetchClassLeaderboard: async (teacherUid: string): Promise<StudentGamification[]> => {
     try {
       // Range query on doc IDs: all docs prefixed with "{teacherUid}_"
@@ -630,7 +654,7 @@ export const firestoreService = {
     }
   },
 
-  // ── Gamification: update after quiz ──────────────────────────────────────
+  // -- Gamification: update after quiz --------------------------------------
   updateStudentGamification: async (
     studentName: string,
     percentage: number,
@@ -639,7 +663,7 @@ export const firestoreService = {
     teacherUid?: string,
     deviceId?: string,
   ): Promise<{ xpGained: number; newAchievements: string[]; gamification: StudentGamification }> => {
-    // Ж1: prefer deviceId in docId to prevent same-name collisions
+    // ?1: prefer deviceId in docId to prevent same-name collisions
     const docId = deviceId
       ? (teacherUid ? `${teacherUid}_${deviceId}` : deviceId)
       : (teacherUid ? `${teacherUid}_${studentName}` : studentName);
@@ -683,7 +707,7 @@ export const firestoreService = {
     return { xpGained, newAchievements, gamification: updated };
   },
 
-  // ── Student Groups ────────────────────────────────────────────────────────
+  // -- Student Groups --------------------------------------------------------
   fetchStudentGroups: async (teacherUid?: string): Promise<StudentGroup[]> => {
     try {
       const q = teacherUid
@@ -716,7 +740,7 @@ export const firestoreService = {
     await deleteDoc(doc(db, 'student_groups', groupId));
   },
 
-  // ── Live Sessions ─────────────────────────────────────────────────────────
+  // -- Live Sessions ---------------------------------------------------------
   fetchCachedQuizList: async (): Promise<{ id: string; title: string; conceptId?: string }[]> => {
     try {
       const q = query(collection(db, 'cached_ai_materials'), orderBy('createdAt', 'desc'), limit(40));
@@ -783,7 +807,7 @@ export const firestoreService = {
     });
   },
 
-  // ── School Classes ─────────────────────────────────────────────────────────
+  // -- School Classes ---------------------------------------------------------
   fetchClasses: async (teacherUid: string): Promise<SchoolClass[]> => {
     try {
       const q = query(collection(db, 'classes'), where('teacherUid', '==', teacherUid), orderBy('createdAt', 'desc'));
@@ -811,7 +835,7 @@ export const firestoreService = {
     await deleteDoc(doc(db, 'classes', classId));
   },
 
-  // ── Adaptive Difficulty ───────────────────────────────────────────────────
+  // -- Adaptive Difficulty ---------------------------------------------------
   /**
    * Fetches recent quiz results for a specific concept.
    * Used by MaterialsGeneratorView to recommend difficulty level.
@@ -824,7 +848,7 @@ export const firestoreService = {
           const snap = await getDocs(q);
           return snap.docs.map(d => d.data() as QuizResult);
         } catch {
-          // Composite index not yet built — fall back to conceptId-only query
+          // Composite index not yet built � fall back to conceptId-only query
         }
       }
       const q = query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), orderBy('playedAt', 'desc'), limit(maxCount));
@@ -836,7 +860,7 @@ export const firestoreService = {
     }
   },
 
-  // ── Question Bank ─────────────────────────────────────────────────────────
+  // -- Question Bank ---------------------------------------------------------
   saveQuestion: async (q: Omit<SavedQuestion, 'id'>): Promise<string> => {
     const ref = await addDoc(collection(db, 'saved_questions'), {
       ...q,
@@ -865,7 +889,7 @@ export const firestoreService = {
     await deleteDoc(doc(db, 'saved_questions', questionId));
   },
 
-  /** Toggle verified status on a saved question (Е3.2) */
+  /** Toggle verified status on a saved question (?3.2) */
   verifyQuestion: async (questionId: string, verified: boolean): Promise<void> => {
     await updateDoc(doc(db, 'saved_questions', questionId), {
       isVerified: verified,
@@ -873,7 +897,7 @@ export const firestoreService = {
     });
   },
 
-  /** Fetch verified questions for a teacher, optionally filtered by conceptId (Е3.2) */
+  /** Fetch verified questions for a teacher, optionally filtered by conceptId (?3.2) */
   fetchVerifiedQuestions: async (teacherUid: string, conceptId?: string): Promise<SavedQuestion[]> => {
     try {
       const q = query(
@@ -891,7 +915,7 @@ export const firestoreService = {
     }
   },
 
-  // ── AI Material Feedback (Е3.1) ───────────────────────────────────────────
+  // -- AI Material Feedback (?3.1) -------------------------------------------
   saveMaterialFeedback: async (
     rating: 'up' | 'down',
     materialTitle: string,
@@ -913,7 +937,7 @@ export const firestoreService = {
     });
   },
 
-  // ── Announcements (П27) ───────────────────────────────────────────────────
+  // -- Announcements (?27) ---------------------------------------------------
   addAnnouncement: async (teacherUid: string, message: string, gradeLevel?: number): Promise<void> => {
     await addDoc(collection(db, 'announcements'), {
       teacherUid,
@@ -1006,7 +1030,7 @@ export const firestoreService = {
     });
   },
 
-  // ── Content Library (В1) ─────────────────────────────────────────────────────
+  // -- Content Library (?1) -----------------------------------------------------
   /** Saves a generated material to the teacher's library with status='draft'. Returns the new doc ID. */
   saveToLibrary: async (content: any, meta: {
     title: string;
@@ -1057,7 +1081,7 @@ export const firestoreService = {
     await updateDoc(doc(db, 'cached_ai_materials', id), { title });
   },
 
-  // ── Assignments ─────────────────────────────────────────────────────────────
+  // -- Assignments -------------------------------------------------------------
   saveAssignment: async (a: Omit<Assignment, 'id' | 'createdAt'>): Promise<string> => {
     const ref = await addDoc(collection(db, 'assignments'), { ...a, createdAt: serverTimestamp() });
     return ref.id;
@@ -1111,3 +1135,4 @@ export const firestoreService = {
     return ref.id;
   },
 };
+
