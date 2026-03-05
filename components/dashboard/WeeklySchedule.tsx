@@ -1,3 +1,4 @@
+import { useLanguage } from '../../i18n/LanguageContext';
 import React, { useMemo } from 'react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
@@ -7,6 +8,8 @@ import { usePlanner } from '../../contexts/PlannerContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 
 const AgendaItem: React.FC<{ item: PlannerItem; onClick: () => void; }> = ({ item, onClick }) => {
+    const { t } = useLanguage();
+
     const Icon = item.type === PlannerItemType.LESSON ? ICONS.bookOpen : item.type === PlannerItemType.EVENT ? ICONS.lightbulb : ICONS.star;
     return (
         <div onClick={onClick} className="p-2.5 rounded-lg bg-gray-50 hover:bg-white hover:shadow-sm cursor-pointer flex items-start gap-3 transition-all border border-transparent hover:border-gray-100 group">
@@ -22,6 +25,7 @@ const AgendaItem: React.FC<{ item: PlannerItem; onClick: () => void; }> = ({ ite
 }
 
 export const WeeklySchedule: React.FC = () => {
+    const { t } = useLanguage();
     const { items } = usePlanner();
     const { showModal } = useModal();
     const { navigate } = useNavigation();
@@ -44,6 +48,8 @@ export const WeeklySchedule: React.FC = () => {
     }, [items]);
 
     const handleItemClick = (item: PlannerItem) => {
+  const { t } = useLanguage();
+
         if (item.type === PlannerItemType.LESSON && item.lessonPlanId) {
             showModal(ModalType.LessonQuickView, { lessonPlanId: item.lessonPlanId });
         } else {
@@ -58,7 +64,7 @@ export const WeeklySchedule: React.FC = () => {
                      <div className="p-1.5 bg-green-100 rounded-lg">
                         <ICONS.planner className="w-5 h-5 text-green-700" />
                      </div>
-                     <h2 className="text-lg font-bold text-gray-800">Агенда</h2>
+                     <h2 className="text-lg font-bold text-gray-800">{t('dash_agenda')}</h2>
                 </div>
                 <button onClick={() => navigate('/planner')} className="text-xs font-bold text-brand-secondary hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors">
                     Види сè
@@ -85,13 +91,13 @@ export const WeeklySchedule: React.FC = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <p className="text-xs text-gray-400 italic pl-1">Нема закажани активности за денес.</p>
+                                <p className="text-xs text-gray-400 italic pl-1">{t('dash_no_scheduled_activities')}</p>
                             )}
                         </div>
                     );
                 })}
                 <div className="text-center pt-4 pb-2">
-                    <p className="text-xs text-gray-400">Крај на приказот за неделава</p>
+                    <p className="text-xs text-gray-400">{t('dash_end_of_week')}</p>
                 </div>
             </div>
         </Card>

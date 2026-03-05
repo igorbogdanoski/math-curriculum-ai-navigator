@@ -1,3 +1,4 @@
+import { useLanguage } from '../../i18n/LanguageContext';
 import React, { useEffect, useRef } from 'react';
 import { Card } from '../common/Card';
 
@@ -17,6 +18,8 @@ interface MonthlyActivityChartProps {
 }
 
 export const MonthlyActivityChart: React.FC<MonthlyActivityChartProps> = ({ data }) => {
+  const { t } = useLanguage();
+
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<any>(null);
 
@@ -66,7 +69,7 @@ export const MonthlyActivityChart: React.FC<MonthlyActivityChartProps> = ({ data
 
   return (
     <Card className="flex flex-col h-full">
-        <h2 className="text-xl font-semibold text-brand-primary mb-4">Месечна Активност</h2>
+        <h2 className="text-xl font-semibold text-brand-primary mb-4">{t('dash_monthly_activity')}</h2>
         <div className="flex-1 relative min-h-[300px]">
             <canvas ref={chartRef}></canvas>
         </div>
