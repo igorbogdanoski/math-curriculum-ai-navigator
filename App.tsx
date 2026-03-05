@@ -280,6 +280,26 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </ErrorBoundary>
 );
 
+// E2.2 — Apply global accessibility settings from localStorage on startup
+function applyAccessibilityOnStartup() {
+  try {
+    if (localStorage.getItem('accessibility_dyslexic') === 'true') {
+      if (!document.getElementById('opendyslexic-global')) {
+        const link = document.createElement('link');
+        link.id = 'opendyslexic-global';
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-all.min.css';
+        document.head.appendChild(link);
+      }
+      document.documentElement.classList.add('dyslexic-font');
+    }
+    if (localStorage.getItem('accessibility_contrast') === 'true') {
+      document.documentElement.classList.add('high-contrast');
+    }
+  } catch { /* incognito / blocked localStorage */ }
+}
+applyAccessibilityOnStartup();
+
 const App: React.FC = () => (
   <AppProviders>
     <AppCore />

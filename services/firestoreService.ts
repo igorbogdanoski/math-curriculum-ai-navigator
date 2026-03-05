@@ -1,4 +1,4 @@
-﻿import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
+﻿import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
@@ -89,15 +89,19 @@ export interface StudentGamification {
 }
 
 export const ACHIEVEMENTS: Record<string, { label: string; icon: string; condition: (g: StudentGamification) => boolean }> = {
-  first_quiz:  { label: 'Прво знаење',      icon: '🎯', condition: g => g.totalQuizzes >= 1 },
-  quiz_10:     { label: 'Упорен ученик',     icon: '📚', condition: g => g.totalQuizzes >= 10 },
-  quiz_50:     { label: 'Математичар',       icon: '🧮', condition: g => g.totalQuizzes >= 50 },
-  streak_3:    { label: 'Редовен ученик',    icon: '🔥', condition: g => g.longestStreak >= 3 },
-  streak_7:    { label: 'Недела упорност',   icon: '⚡', condition: g => g.longestStreak >= 7 },
-  score_90:    { label: 'Одличен',           icon: '⭐', condition: () => false }, // set ad-hoc on score
-  mastered_1:  { label: 'Мајстор',           icon: '🏆', condition: () => false }, // set ad-hoc on mastery
-  mastered_5:  { label: 'Напреден',          icon: '🥇', condition: () => false },
-  mastered_10: { label: 'Виртуоз',           icon: '💎', condition: () => false },
+  first_quiz:          { label: 'Прво знаење',         icon: '🎯', condition: g => g.totalQuizzes >= 1 },
+  quiz_10:             { label: 'Упорен ученик',        icon: '📚', condition: g => g.totalQuizzes >= 10 },
+  quiz_50:             { label: 'Математичар',          icon: '🧮', condition: g => g.totalQuizzes >= 50 },
+  streak_3:            { label: 'Редовен ученик',       icon: '🔥', condition: g => g.longestStreak >= 3 },
+  streak_7:            { label: 'Недела упорност',      icon: '⚡', condition: g => g.longestStreak >= 7 },
+  score_90:            { label: 'Одличен',              icon: '⭐', condition: () => false }, // set ad-hoc on score
+  mastered_1:          { label: 'Мајстор',              icon: '🏆', condition: () => false }, // set ad-hoc on mastery
+  mastered_5:          { label: 'Напреден',             icon: '🥇', condition: () => false },
+  mastered_10:         { label: 'Виртуоз',              icon: '💎', condition: () => false },
+  // Math-themed mathematician badges
+  pythagorean_master:  { label: 'Питагоров мајстор',   icon: '📐', condition: g => g.achievements.includes('mastered_1') },
+  euler_path:          { label: 'Ојлеров пат',          icon: '🌀', condition: g => g.longestStreak >= 5 },
+  golden_ratio:        { label: 'Златен пресек',        icon: '✨', condition: () => false }, // set ad-hoc: perfect score
 };
 
 export interface QuizResult {
@@ -589,6 +593,24 @@ export const firestoreService = {
     }
   },
 
+  // ── Gamification: class leaderboard ──────────────────────────────────────
+  fetchClassLeaderboard: async (teacherUid: string): Promise<StudentGamification[]> => {
+    try {
+      // Range query on doc IDs: all docs prefixed with "{teacherUid}_"
+      const q = query(
+        collection(db, 'student_gamification'),
+        where(documentId(), '>=', `${teacherUid}_`),
+        where(documentId(), '<=', `${teacherUid}_\uf8ff`),
+      );
+      const snap = await getDocs(q);
+      const rows = snap.docs.map(d => d.data() as StudentGamification);
+      return rows.sort((a, b) => b.totalXP - a.totalXP);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      return [];
+    }
+  },
+
   // ── Gamification: update after quiz ──────────────────────────────────────
   updateStudentGamification: async (
     studentName: string,
@@ -818,6 +840,54 @@ export const firestoreService = {
 
   deleteQuestion: async (questionId: string): Promise<void> => {
     await deleteDoc(doc(db, 'saved_questions', questionId));
+  },
+
+  /** Toggle verified status on a saved question (Е3.2) */
+  verifyQuestion: async (questionId: string, verified: boolean): Promise<void> => {
+    await updateDoc(doc(db, 'saved_questions', questionId), {
+      isVerified: verified,
+      verifiedAt: verified ? serverTimestamp() : null,
+    });
+  },
+
+  /** Fetch verified questions for a teacher, optionally filtered by conceptId (Е3.2) */
+  fetchVerifiedQuestions: async (teacherUid: string, conceptId?: string): Promise<SavedQuestion[]> => {
+    try {
+      const q = query(
+        collection(db, 'saved_questions'),
+        where('teacherUid', '==', teacherUid),
+        where('isVerified', '==', true),
+        limit(100)
+      );
+      const snap = await getDocs(q);
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedQuestion));
+      return conceptId ? all.filter(q => q.conceptId === conceptId) : all;
+    } catch (error) {
+      console.error('Error fetching verified questions:', error);
+      return [];
+    }
+  },
+
+  // ── AI Material Feedback (Е3.1) ───────────────────────────────────────────
+  saveMaterialFeedback: async (
+    rating: 'up' | 'down',
+    materialTitle: string,
+    materialType: string,
+    teacherUid: string,
+    reportText?: string,
+    conceptId?: string,
+    gradeLevel?: number,
+  ): Promise<void> => {
+    await addDoc(collection(db, 'material_feedback'), {
+      rating,
+      materialTitle,
+      materialType,
+      teacherUid,
+      ...(reportText ? { reportText } : {}),
+      ...(conceptId  ? { conceptId }  : {}),
+      ...(gradeLevel ? { gradeLevel } : {}),
+      ratedAt: serverTimestamp(),
+    });
   },
 
   // ── Announcements (П27) ───────────────────────────────────────────────────

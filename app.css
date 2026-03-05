@@ -196,6 +196,21 @@ button:active:not(:disabled) {
   border-radius: 6px;
 }
 
+/* Global OpenDyslexic font — activated by .dyslexic-font on <html> */
+html.dyslexic-font,
+html.dyslexic-font body,
+html.dyslexic-font * {
+  font-family: 'OpenDyslexic', sans-serif !important;
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+  line-height: 1.6;
+}
+
+/* High contrast mode — activated by .high-contrast on <html> */
+html.high-contrast {
+  filter: contrast(1.2) saturate(1.1);
+}
+
 /* ═══════════════════════════════════════════════════
    Custom animations / keyframes
    ═══════════════════════════════════════════════════ */

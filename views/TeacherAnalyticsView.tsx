@@ -22,6 +22,7 @@ import { ClassesTab } from './analytics/ClassesTab';
 import { QuestionBankTab } from './analytics/QuestionBankTab';
 import { QuizCoverageTab } from './analytics/QuizCoverageTab';
 import { AssignmentsTab } from './analytics/AssignmentsTab';
+import { LeagueTab } from './analytics/LeagueTab';
 
 export const TeacherAnalyticsView: React.FC = () => {
     const { firebaseUser } = useAuth();
@@ -44,7 +45,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [newMsg, setNewMsg] = useState('');
     const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage' | 'assignments'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage' | 'assignments' | 'league'>('overview');
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -390,11 +391,31 @@ export const TeacherAnalyticsView: React.FC = () => {
         return (
             <div className="p-8 animate-fade-in">
                 <div className="animate-pulse space-y-6">
-                    <div className="h-10 bg-gray-200 rounded w-1/3"></div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {[...Array(4)].map((_, i) => <div key={i} className="h-24 bg-gray-100 rounded-2xl"></div>)}
+                    {/* Header skeleton */}
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 bg-gray-200 rounded-xl" />
+                        <div className="h-10 bg-gray-200 rounded w-1/3" />
                     </div>
-                    <div className="h-64 bg-gray-100 rounded-2xl"></div>
+                    {/* Tabs skeleton */}
+                    <div className="flex gap-2 bg-gray-100 p-1 rounded-xl w-full overflow-hidden">
+                        {[...Array(6)].map((_, i) => <div key={i} className="h-8 bg-gray-200 rounded-lg flex-1" />)}
+                    </div>
+                    {/* Stat cards skeleton */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="h-24 bg-gray-100 rounded-2xl p-4 space-y-2">
+                                <div className="h-4 bg-gray-200 rounded w-2/3" />
+                                <div className="h-7 bg-gray-200 rounded w-1/2" />
+                                <div className="h-3 bg-gray-100 rounded w-3/4" />
+                            </div>
+                        ))}
+                    </div>
+                    {/* Chart area skeleton */}
+                    <div className="h-64 bg-gray-100 rounded-2xl" />
+                    {/* Table rows skeleton */}
+                    <div className="space-y-2">
+                        {[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-gray-100 rounded-xl" />)}
+                    </div>
                 </div>
             </div>
         );
@@ -517,6 +538,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                                     { id: 'questionBank', label: '📚 Банка' },
                                     { id: 'coverage', label: '📊 Покриеност' },
                                     { id: 'assignments', label: '📋 Задачи' },
+                                    { id: 'league', label: '🏆 Лига' },
                                 ] as const).map(tab => (
                                     <button
                                         key={tab.id}
@@ -621,9 +643,12 @@ export const TeacherAnalyticsView: React.FC = () => {
                     {activeTab === 'assignments' && firebaseUser?.uid && (
                         <AssignmentsTab teacherUid={firebaseUser.uid} />
                     )}
+                    {activeTab === 'league' && firebaseUser?.uid && (
+                        <LeagueTab teacherUid={firebaseUser.uid} />
+                    )}
 
                     {/* П32 — Pagination: Load More */}
-                    {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments'].includes(activeTab) && (
+                    {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments', 'league'].includes(activeTab) && (
                         <div className="mt-6 flex flex-col items-center gap-1">
                             <button
                                 type="button"

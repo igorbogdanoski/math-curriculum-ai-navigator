@@ -244,6 +244,8 @@ export interface SavedQuestion {
   topicId?: string;
   gradeLevel?: number;
   savedAt?: any;
+  isVerified?: boolean;
+  verifiedAt?: any;
 }
 
 export interface AIGeneratedAssessment {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trash2, Search, BookOpen, CheckSquare, Square, PlusSquare } from 'lucide-react';
+import { Trash2, Search, BookOpen, CheckSquare, Square, PlusSquare, ShieldCheck, Shield } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import type { SavedQuestion } from '../../types';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -28,6 +28,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
   const [creatingQuiz, setCreatingQuiz] = useState(false);
+  const [onlyVerified, setOnlyVerified] = useState(false);
 
   useEffect(() => {
     if (!teacherUid) return;
@@ -47,14 +48,17 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
     return Array.from(grades as Set<number>).sort((a, b) => a - b);
   }, [questions]);
 
+  const verifiedCount = useMemo(() => questions.filter(q => q.isVerified).length, [questions]);
+
   const filtered = useMemo(() => {
     return questions.filter(q => {
       if (searchText && !q.question.toLowerCase().includes(searchText.toLowerCase())) return false;
       if (filterType && q.type !== filterType) return false;
       if (filterGrade && String(q.gradeLevel) !== filterGrade) return false;
+      if (onlyVerified && !q.isVerified) return false;
       return true;
     });
-  }, [questions, searchText, filterType, filterGrade]);
+  }, [questions, searchText, filterType, filterGrade, onlyVerified]);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -78,6 +82,15 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const handleVerify = async (questionId: string, current: boolean) => {
+    try {
+      await firestoreService.verifyQuestion(questionId, !current);
+      setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, isVerified: !current } : q));
+    } catch {
+      addNotification('Грешка при верификација.', 'error');
+    }
   };
 
   const handleDelete = async (questionId: string) => {
@@ -141,6 +154,11 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
           <BookOpen className="w-5 h-5 text-indigo-600" />
           Банка на прашања
           <span className="text-sm font-normal text-gray-500 ml-1">({questions.length} прашања)</span>
+          {verifiedCount > 0 && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3" />{verifiedCount} верификувани
+            </span>
+          )}
         </h2>
         <button
           type="button"
@@ -185,6 +203,14 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
             <option key={g} value={String(g)}>{g}. одделение</option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={() => setOnlyVerified(v => !v)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${onlyVerified ? 'bg-green-100 border-green-400 text-green-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-green-50'}`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          Само верификувани
+        </button>
       </div>
 
       {/* Select all + count */}
@@ -216,7 +242,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
           {filtered.map(q => (
             <div
               key={q.id}
-              className={`border rounded-xl p-4 transition ${selected.has(q.id) ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white'}`}
+              className={`border rounded-xl p-4 transition ${q.isVerified ? 'border-green-300 bg-green-50/30' : selected.has(q.id) ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white'}`}
             >
               <div className="flex items-start gap-3">
                 {/* Checkbox */}
@@ -248,6 +274,11 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
                         {q.cognitiveLevel}
                       </span>
                     )}
+                    {q.isVerified && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-600 text-white font-semibold flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" /> Верификувана
+                      </span>
+                    )}
                   </div>
 
                   {/* Revealed answer */}
@@ -273,6 +304,14 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
                   >
                     {revealedAnswers.has(q.id) ? 'Скриј' : 'Одговор'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleVerify(q.id, !!q.isVerified)}
+                    title={q.isVerified ? 'Откажи верификација' : 'Верификувај прашање'}
+                    className={`p-1.5 transition ${q.isVerified ? 'text-green-600 hover:text-green-800' : 'text-gray-400 hover:text-green-600'}`}
+                  >
+                    {q.isVerified ? <ShieldCheck className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
                   </button>
                   <button
                     type="button"

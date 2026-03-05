@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { X, ClipboardList, BookmarkPlus, CheckCircle } from 'lucide-react';
+import { X, ClipboardList, BookmarkPlus, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -21,6 +21,7 @@ import { GeneratedRubric } from '../components/ai/GeneratedRubric';
 import { usePlanner } from '../contexts/PlannerContext';
 import { GeneratedLearningPaths } from '../components/ai/GeneratedLearningPaths';
 import { RefineGenerationChat } from '../components/generator/RefineGenerationChat';
+import { AIFeedbackBar } from '../components/ai/AIFeedbackBar';
 import { AssignDialog } from '../components/AssignDialog';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
@@ -91,6 +92,14 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
 
     // Wizard step state
     const [currentStep, setCurrentStep] = useState(1);
+
+    // Verified question bank state (Е3.2)
+    const [verifiedQs, setVerifiedQs] = useState<import('../types').SavedQuestion[]>([]);
+    useEffect(() => {
+        if (!firebaseUser?.uid || !state.selectedConcepts[0]) { setVerifiedQs([]); return; }
+        firestoreService.fetchVerifiedQuestions(firebaseUser.uid, state.selectedConcepts[0])
+            .then(setVerifiedQs).catch(() => setVerifiedQs([]));
+    }, [firebaseUser?.uid, state.selectedConcepts[0]]);
 
     // Adaptive difficulty recommendation
     const [diffRec, setDiffRec] = useState<DifferentiationLevel | null>(null);
@@ -493,6 +502,39 @@ ${generatedMaterial.assessmentIdea}
         }
     };
 
+    const handleGenerateFromBank = () => {
+        if (verifiedQs.length === 0) return;
+        const conceptTitle = verifiedQs[0]?.conceptTitle ?? 'Верификуван квиз';
+        const result: AIGeneratedAssessment = {
+            title: `📚 ${conceptTitle} — од верификувана банка`,
+            type: 'QUIZ',
+            questions: verifiedQs.map(q => ({
+                type: q.type as any,
+                question: q.question,
+                options: q.options ?? [],
+                answer: q.answer,
+                solution: q.solution ?? '',
+                cognitiveLevel: (q.cognitiveLevel ?? 'Remembering') as any,
+                difficulty_level: (q.difficulty_level ?? 'Medium') as any,
+            })),
+        };
+        setGeneratedMaterial(result);
+        setVariants(null);
+        setBulkResults(null);
+        addNotification(`Квиз создаден од ${verifiedQs.length} верификувани прашања.`, 'success');
+    };
+
+    const handleMaterialRate = (rating: 'up' | 'down', reportText?: string) => {
+        if (!firebaseUser?.uid || !generatedMaterial) return;
+        const title = ('title' in generatedMaterial ? (generatedMaterial as any).title : '') ?? '';
+        const type  = state.materialType ?? 'UNKNOWN';
+        firestoreService.saveMaterialFeedback(
+            rating, title, type, firebaseUser.uid, reportText,
+            state.selectedConcepts[0] ?? undefined,
+            state.selectedGrade ? Number(state.selectedGrade) || undefined : undefined,
+        ).catch(err => console.warn('[Feedback] save failed:', err));
+    };
+
     const handleSaveToLibrary = async (material: any, keyHint: string) => {
         if (!firebaseUser?.uid) { addNotification('Мора да бидете логирани.', 'error'); return; }
         if (savedToLibrary.has(keyHint)) return; // already saved
@@ -817,6 +859,19 @@ ${generatedMaterial.assessmentIdea}
                                 <button type="button" onClick={handleBulkGenerate} disabled={isGenerateDisabled || isGenerating || isGeneratingVariants || isGeneratingBulk} title="Квиз + Тест + Рубрика одеднаш" className="flex items-center gap-2 border-2 border-purple-500 text-purple-700 px-4 py-2.5 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-all font-bold">
                                     {isGeneratingBulk ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пакет...</> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">Пакет материјали</span><span className="sm:hidden">Пакет</span></>}
                                 </button>
+                                {verifiedQs.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={handleGenerateFromBank}
+                                        disabled={isGenerating || isGeneratingVariants || isGeneratingBulk}
+                                        title={`Создај квиз од ${verifiedQs.length} верификувани прашања (без AI)`}
+                                        className="flex items-center gap-2 border-2 border-green-500 text-green-700 px-4 py-2.5 rounded-xl hover:bg-green-50 disabled:opacity-40 transition-all font-bold"
+                                    >
+                                        <ShieldCheck className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Од банката ({verifiedQs.length})</span>
+                                        <span className="sm:hidden">Банка ({verifiedQs.length})</span>
+                                    </button>
+                                )}
                                 <button type="submit" disabled={isGenerateDisabled || isGeneratingVariants || isGeneratingBulk} title={!isOnline ? 'Нема интернет' : 'Генерирај'} className="flex items-center gap-2 bg-gradient-to-r from-brand-primary to-blue-700 text-white px-8 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold transform hover:-translate-y-0.5">
                                     {isGenerating ? <><ICONS.spinner className="w-5 h-5 animate-spin" /> Генерирам...</> : <><ICONS.sparkles className="w-5 h-5" /> Генерирај AI</>}
                                 </button>
@@ -904,10 +959,14 @@ ${generatedMaterial.assessmentIdea}
                     {'criteria' in generatedMaterial && <GeneratedRubric material={generatedMaterial} />}
                     {'paths' in generatedMaterial && <GeneratedLearningPaths material={generatedMaterial} />}
                     
-                    <RefineGenerationChat 
+                    <AIFeedbackBar
+                        materialKey={('title' in generatedMaterial ? (generatedMaterial as any).title : '') + String(state.materialType)}
+                        onRate={handleMaterialRate}
+                    />
+                    <RefineGenerationChat
                         material={generatedMaterial}
                         onUpdateMaterial={setGeneratedMaterial}
-                        materialType={state.materialType || 'IDEAS'} 
+                        materialType={state.materialType || 'IDEAS'}
                     />
                 </div>
             )}

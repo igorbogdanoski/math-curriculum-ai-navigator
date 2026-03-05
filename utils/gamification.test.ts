@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { calcXP, calcStreak, isNewAchievement, computeNewAchievements } from './gamification';
+
+// Disable Pi Bonus randomness for deterministic XP tests
+beforeEach(() => { vi.spyOn(Math, 'random').mockReturnValue(0.5); });
+afterEach(() => { vi.restoreAllMocks(); });
 
 // ─── calcXP ──────────────────────────────────────────────────────────────────
 
@@ -145,7 +149,7 @@ describe('computeNewAchievements — full achievement detection', () => {
     });
 
     it('returns empty array when all conditions already earned', () => {
-        const allEarned = ['first_quiz', 'quiz_10', 'quiz_50', 'streak_3', 'streak_7', 'score_90', 'mastered_1', 'mastered_5', 'mastered_10'];
+        const allEarned = ['first_quiz', 'quiz_10', 'quiz_50', 'streak_3', 'streak_7', 'score_90', 'mastered_1', 'mastered_5', 'mastered_10', 'pythagorean_master', 'euler_path', 'golden_ratio'];
         const result = computeNewAchievements(100, 10, 95, 15, allEarned);
         expect(result).toHaveLength(0);
     });

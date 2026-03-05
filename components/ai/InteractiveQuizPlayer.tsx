@@ -1,13 +1,15 @@
 ﻿import './InteractiveQuizPlayer.css';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X, Lightbulb, Loader2, PenTool } from 'lucide-react';
+import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X, Lightbulb, Loader2, PenTool, Calculator, Eye } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 import { MathInput } from '../common/MathInput';
 import { checkMathEquivalence } from '../../utils/mathEvaluator';
 import { GradeBadge } from '../common/GradeBadge';
 import { MathToolsPanel } from '../common/MathToolsPanel';
 import { MathScratchpad } from '../common/MathScratchpad';
+import { ReadingModeBar, defaultReadingMode, type ReadingModeState } from '../common/ReadingModeBar';
+import { ReadingModeQuestion, getChunkCount } from '../common/ReadingModeQuestion';
 import { type AssessmentQuestion, QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial } from '../../types';
 import { StepByStepSolver } from '../StepByStepSolver';
 import { geminiService } from '../../services/geminiService';
@@ -92,6 +94,10 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   const [shortAnswer, setShortAnswer] = useState('');
   // Scratchpad state
   const [showScratchpad, setShowScratchpad] = useState(false);
+  // Reading mode state
+  const [readingMode, setReadingMode] = useState<ReadingModeState>(defaultReadingMode);
+  const patchReadingMode = (patch: Partial<ReadingModeState>) =>
+    setReadingMode(prev => ({ ...prev, ...patch }));
   
   // Timer Logic
   useEffect(() => {
@@ -104,6 +110,22 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [timeLeft, isTimerRunning, showResult]);
+
+  // Reset sequential step when question changes
+  useEffect(() => {
+    setReadingMode(prev => ({ ...prev, sequentialStep: 0 }));
+  }, [currentIndex]);
+
+  // Load OpenDyslexic font on demand
+  useEffect(() => {
+    if (!readingMode.dyslexicFont) return;
+    const id = 'opendyslexic-font';
+    if (document.getElementById(id)) return;
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent = `@font-face { font-family: 'OpenDyslexic'; src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.woff2') format('woff2'); }`;
+    document.head.appendChild(style);
+  }, [readingMode.dyslexicFont]);
 
   const currentQ = normalizedQuestions[currentIndex];
 
@@ -337,6 +359,20 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                   title="Работна табла за цртање (Scratchpad)"
                   className={`p-1.5 rounded-lg transition-colors border-2 ${showScratchpad ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}                >
                     <PenTool className="w-5 h-5" />              </button>
+              <button
+                onClick={() => setShowMathTools(!showMathTools)}
+                title="Математички алатки (GeoGebra / Desmos)"
+                className={`p-1.5 rounded-lg transition-colors border-2 ${showMathTools ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
+              >
+                <Calculator className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => patchReadingMode({ active: !readingMode.active })}
+                title="Режим за читање (за помали деца и дислексија)"
+                className={`p-1.5 rounded-lg transition-colors border-2 ${readingMode.active ? 'bg-amber-50 border-amber-300 text-amber-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
+              >
+                <Eye className="w-5 h-5" />
+              </button>
 
               {streak > 1 && (
                 <div className="flex items-center gap-1 text-orange-500 font-black animate-pulse">
@@ -359,16 +395,25 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
         {/* TIMER BAR */}
         <div className="w-full bg-gray-200 h-2">
-          <div 
+          <div
             className={`h-full transition-all duration-1000 linear ${timeLeft < 5 ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}
             style={{ width: `${timePercentage}%` }}
           ></div>
         </div>
 
+        {/* READING MODE BAR */}
+        {readingMode.active && (
+          <ReadingModeBar
+            mode={readingMode}
+            onChange={patchReadingMode}
+            totalChunks={getChunkCount(currentQ.question)}
+          />
+        )}
+
         <div className="p-6 md:p-10">
           {/* Question */}
-          <div className="text-xl md:text-2xl font-black text-gray-800 mb-10 leading-snug">
-            <MathRenderer text={currentQ.question} />
+          <div className="mb-10">
+            <ReadingModeQuestion text={currentQ.question} mode={readingMode} />
           </div>
 
           {/* Options */}

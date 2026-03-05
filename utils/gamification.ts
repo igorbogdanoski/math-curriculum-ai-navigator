@@ -52,19 +52,47 @@ export function computeNewAchievements(
     alreadyEarned: string[],
 ): string[] {
     const checks: Array<[string, boolean]> = [
-        ['first_quiz',  totalQuizzes >= 1],
-        ['quiz_10',     totalQuizzes >= 10],
-        ['quiz_50',     totalQuizzes >= 50],
-        ['streak_3',    longestStreak >= 3],
-        ['streak_7',    longestStreak >= 7],
-        // Math-themed achievements
-        ['pythagorean_master', totalMastered >= 3],      // Питагоров мајстор (3 mastered concepts)
-        ['euler_path', longestStreak >= 5],              // Ојлеров пат (5 day streak)
-        ['golden_ratio', percentage === 100 && totalQuizzes >= 5], // Златен пресек (perfect score)
+        ['first_quiz',         totalQuizzes >= 1],
+        ['quiz_10',            totalQuizzes >= 10],
+        ['quiz_50',            totalQuizzes >= 50],
+        ['streak_3',           longestStreak >= 3],
+        ['streak_7',           longestStreak >= 7],
+        ['score_90',           percentage >= 90],
+        ['mastered_1',         totalMastered >= 1],
+        ['mastered_5',         totalMastered >= 5],
+        ['mastered_10',        totalMastered >= 10],
+        // Mathematician-themed badges
+        ['pythagorean_master', totalMastered >= 3],                    // Питагоров мајстор
+        ['euler_path',         longestStreak >= 5],                    // Ојлеров пат
+        ['golden_ratio',       percentage === 100 && totalQuizzes >= 5], // Златен пресек
     ];
     return checks
         .filter(([id, cond]) => isNewAchievement(id, cond, alreadyEarned))
         .map(([id]) => id);
+}
+
+/**
+ * Avatar evolution — emoji + title per level tier.
+ * Levels ≥ the key get this avatar.
+ */
+export const AVATAR_LEVELS: Array<{ minLevel: number; emoji: string; title: string }> = [
+  { minLevel: 1,  emoji: '🌱', title: 'Почетник'    },
+  { minLevel: 2,  emoji: '📐', title: 'Геометричар'  },
+  { minLevel: 3,  emoji: '⭐', title: 'Ѕвезда'       },
+  { minLevel: 4,  emoji: '🔢', title: 'Нумеричар'    },
+  { minLevel: 5,  emoji: '🧮', title: 'Алгебрист'    },
+  { minLevel: 6,  emoji: '🔭', title: 'Истражувач'   },
+  { minLevel: 7,  emoji: '🏆', title: 'Математичар'  },
+  { minLevel: 9,  emoji: '🧠', title: 'Гениј'        },
+];
+
+/** Returns the avatar info for a given level. */
+export function getAvatar(level: number): { emoji: string; title: string } {
+  let result = AVATAR_LEVELS[0];
+  for (const a of AVATAR_LEVELS) {
+    if (level >= a.minLevel) result = a;
+  }
+  return result;
 }
 
 /**

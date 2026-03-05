@@ -16,6 +16,8 @@ import {
 import { QuestionType, type DifferentiationLevel } from '../types';
 import { getAdaptiveLevel } from '../utils/adaptiveDifficulty';
 import { validateStudentName } from '../utils/validation';
+import { markQuestComplete } from '../utils/dailyQuests';
+import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 
 type QuizResult = { percentage: number; correctCount: number; totalQuestions: number; misconceptions?: { question: string; studentAnswer: string; misconception: string }[] };
 
@@ -237,6 +239,11 @@ export const StudentPlayView: React.FC = () => {
     // 2b. Mark assignment as completed (if arrived from an assignment link)
     if (assignId && studentName) {
       firestoreService.markAssignmentCompleted(assignId, studentName).catch(() => {});
+    }
+
+    // 2c. Mark daily quest complete if this concept was a quest for today
+    if (studentName && meta.conceptId) {
+      markQuestComplete(studentName, meta.conceptId);
     }
 
     // 3. Gamification — use freshMastery (not masteryUpdate state — old snapshot!)
@@ -620,39 +627,63 @@ export const StudentPlayView: React.FC = () => {
         </div>
       )}
 
-      {/* ── Gamification: XP + Streak + New Achievements ─────────────────── */}
-      {gamificationUpdate && quizResult && (
-        <div className="w-full max-w-lg mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">⚡</span>
-              <span className="font-black text-white text-sm">+{gamificationUpdate.xpGained} XP</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-base">🔥</span>
-              <span className="text-white font-bold text-sm">{gamificationUpdate.gamification.currentStreak} {gamificationUpdate.gamification.currentStreak === 1 ? 'ден' : 'дена'} по ред</span>
-            </div>
-            <div className="text-white/60 text-xs font-semibold">
-              {gamificationUpdate.gamification.totalXP} XP вкупно
-            </div>
-          </div>
-          {gamificationUpdate.newAchievements.length > 0 && (
-            <div className="border-t border-white/20 pt-3">
-              <p className="text-white/80 text-xs font-bold mb-2">Ново достигнување!</p>
-              <div className="flex flex-wrap gap-2">
-                {gamificationUpdate.newAchievements.map(id => {
-                  const a = ACHIEVEMENTS[id];
-                  return a ? (
-                    <span key={id} className="flex items-center gap-1.5 bg-yellow-400/20 border border-yellow-400/40 text-yellow-200 text-xs font-bold px-2.5 py-1 rounded-full">
-                      {a.icon} {a.label}
+      {/* ── Gamification: XP + Avatar + Streak + New Achievements ──────────── */}
+      {gamificationUpdate && quizResult && (() => {
+        const totalXP = gamificationUpdate.gamification.totalXP;
+        const newLvl = calcFibonacciLevel(totalXP);
+        const oldLvl = calcFibonacciLevel(totalXP - gamificationUpdate.xpGained);
+        const leveledUp = newLvl.level > oldLvl.level;
+        const avatar = getAvatar(newLvl.level);
+        return (
+          <div className="w-full max-w-lg mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm">
+            {/* Avatar + XP row */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="text-4xl select-none">{avatar.emoji}</div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-black text-white text-sm">{avatar.title}</span>
+                  <span className="text-white/60 text-xs font-semibold">Лв.{newLvl.level}</span>
+                  {leveledUp && (
+                    <span className="text-xs font-bold bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full animate-bounce">
+                      ⬆️ Level Up!
                     </span>
-                  ) : null;
-                })}
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-white/80 text-xs font-semibold">+{gamificationUpdate.xpGained} XP</span>
+                  <span className="text-white/50 text-xs">{totalXP} XP вкупно</span>
+                </div>
+                {/* XP progress bar */}
+                <div className="w-full bg-white/20 rounded-full h-1.5 mt-1.5 overflow-hidden">
+                  <div
+                    className="bg-yellow-400 h-1.5 rounded-full transition-all duration-1000"
+                    style={{ width: `${newLvl.progress}%` }}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-base">🔥</span>
+                <span className="text-white font-bold text-sm">{gamificationUpdate.gamification.currentStreak}</span>
               </div>
             </div>
-          )}
-        </div>
-      )}
+            {gamificationUpdate.newAchievements.length > 0 && (
+              <div className="border-t border-white/20 pt-3">
+                <p className="text-white/80 text-xs font-bold mb-2">Ново достигнување!</p>
+                <div className="flex flex-wrap gap-2">
+                  {gamificationUpdate.newAchievements.map(id => {
+                    const a = ACHIEVEMENTS[id];
+                    return a ? (
+                      <span key={id} className="flex items-center gap-1.5 bg-yellow-400/20 border border-yellow-400/40 text-yellow-200 text-xs font-bold px-2.5 py-1 rounded-full">
+                        {a.icon} {a.label}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <footer className="mt-8 text-white/50 text-xs font-bold uppercase tracking-widest">
         Powered by Math Curriculum AI Navigator
