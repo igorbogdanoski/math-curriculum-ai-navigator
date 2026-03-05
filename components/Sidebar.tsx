@@ -3,6 +3,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { APP_NAME, ICONS } from '../constants';
+import { LanguageSelector } from './common/LanguageSelector';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
