@@ -1,35 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import './app.css';
 import App from './App';
 
-// Enhanced Service Worker Registration
-const registerServiceWorker = async () => {
-  if ('serviceWorker' in navigator) {
-    try {
-      // We use a relative path. In production, this file should be at the root.
-      // In some dev environments, accessing /service-worker.js might fail or return HTML.
-      const registration = await navigator.serviceWorker.register('/service-worker.js', {
-        scope: '/',
-      });
+// Enhanced Service Worker Registration via vite-plugin-pwa
+const updateSW = registerSW({
+  onNeedRefresh() {
+    // We could show a prompt here. Taking the silent auto-update approach for now
+    // If you want user to manually confirm, don't call updateSW() directly.
+    updateSW(true);
+  },
+  onOfflineReady() {
+    console.log('App is ready to work offline');
+  },
+});
 
-      if (registration.installing) {
-        console.log('Service worker installing');
-      } else if (registration.waiting) {
-        console.log('Service worker installed');
-      } else if (registration.active) {
-        console.log('Service worker active');
-      }
-    } catch (error) {
-      // We log this as a warning instead of an error to avoid alarming the user
-      // in environments where SWs are not supported or restricted (like some iframes).
-      console.warn('ServiceWorker registration failed (this is expected in some dev environments):', error);
-    }
-  }
-};
-
-// Register SW after load to not block initial rendering
-window.addEventListener('load', registerServiceWorker);
+// Service Worker is now automatically registered by vite-plugin-pwa. 
+// No need for window.addEventListener('load', registerServiceWorker);
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

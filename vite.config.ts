@@ -2,6 +2,7 @@ import path from 'path';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 /**
  * Vite plugin: Dev middleware for Gemini API proxy.
@@ -105,9 +106,82 @@ export default defineConfig(({ mode }) => {
       plugins: [
         tailwindcss(),
         react(),
+        VitePWA({
+          registerType: 'autoUpdate',
+          includeAssets: ['vite.svg'],
+          manifest: {
+            short_name: "Math Nav",
+            name: "Math Curriculum AI Navigator",
+            description: "Педагошки AI систем за наставници по математика (VI-IX одд.)",
+            lang: "mk",
+            dir: "ltr",
+            icons: [
+              {
+                src: "/vite.svg",
+                type: "image/svg+xml",
+                sizes: "192x192 512x512",
+                purpose: "any maskable"
+              }
+            ],
+            start_url: "/?source=pwa",
+            scope: "/",
+            display: "standalone",
+            orientation: "portrait-primary",
+            theme_color: "#0D47A1",
+            background_color: "#F9FAFB"
+          },
+          workbox: {
+            maximumFileSizeToCacheInBytes: 4000000, 
+            globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+            runtimeCaching: [
+              {
+                urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+                handler: 'CacheFirst',
+                options: {
+                  cacheName: 'google-fonts-cache',
+                  expiration: {
+                    maxEntries: 10,
+                    maxAgeSeconds: 60 * 60 * 24 * 365
+                  },
+                  cacheableResponse: {
+                    statuses: [0, 200]
+                  }
+                }
+              },
+              {
+                urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+                handler: 'CacheFirst',
+                options: {
+                  cacheName: 'gstatic-fonts-cache',
+                  expiration: {
+                    maxEntries: 10,
+                    maxAgeSeconds: 60 * 60 * 24 * 365
+                  },
+                  cacheableResponse: {
+                    statuses: [0, 200]
+                  }
+                }
+              },
+              {
+                urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
+                handler: 'StaleWhileRevalidate',
+                options: {
+                  cacheName: 'jsdelivr-cdn-cache',
+                  expiration: {
+                    maxEntries: 20,
+                    maxAgeSeconds: 60 * 60 * 24 * 365
+                  },
+                  cacheableResponse: {
+                    statuses: [0, 200]
+                  }
+                }
+              }
+            ]
+          }
+        }),
         // Only add dev proxy when API key is available (dev mode)
         apiKey ? geminiDevProxy(apiKey) : undefined,
-      ].filter(Boolean),
+      ].filter(Boolean) as Plugin[],
       // NOTE: API key is NO LONGER injected into the client bundle.
       // In production, requests go through /api/gemini (Vercel serverless function).
       // In development, requests go through the Vite dev middleware above.
