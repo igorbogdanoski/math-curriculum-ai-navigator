@@ -113,13 +113,13 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
             case 'md':
                 mimeType = 'text/markdown;charset=utf-8';
                 extension = 'md';
-                content = `# ${title}\n\n### Воведна активност\n${openingActivity}\n\n### Главна активност\n${mainActivity.replace(/\n/g, '\n- ')}\n\n### Диференцијација\n${differentiation}\n\n### Идеја за оценување\n${assessmentIdea}`;
+                content = `# ${title}\n\n### Воведна активност\n${openingActivity}\n\n### Главна активност\n${mainActivitiesStr}\n\n### Диференцијација\n${differentiation}\n\n### Идеја за оценување\n${assessmentIdea}`;
                 content = convertToStandardLatex(content);
                 break;
             case 'tex':
                 mimeType = 'application/x-tex;charset=utf-8';
                 extension = 'tex';
-                content = `\\documentclass[12pt]{article}\n\\usepackage[utf8]{inputenc}\n\\title{${escapeLatex(title)}}\n\\author{AI Генератор}\n\\date{}\n\\begin{document}\n\\maketitle\n\\section*{Воведна активност}\n${escapeLatex(openingActivity)}\n\\section*{Главна активност}\n${escapeLatex(mainActivity)}\n\\section*{Диференцијација}\n${escapeLatex(differentiation)}\n\\section*{Идеја за оценување}\n${escapeLatex(assessmentIdea)}\n\\end{document}`;
+                content = `\\documentclass[12pt]{article}\n\\usepackage[utf8]{inputenc}\n\\title{${escapeLatex(title)}}\n\\author{AI Генератор}\n\\date{}\n\\begin{document}\n\\maketitle\n\\section*{Воведна активност}\n${escapeLatex(openingActivity)}\n\\section*{Главна активност}\n${escapeLatex(mainActivitiesStr)}\n\\section*{Диференцијација}\n${escapeLatex(differentiation)}\n\\section*{Идеја за оценување}\n${escapeLatex(assessmentIdea)}\n\\end{document}`;
                 break;
             case 'doc': {
                 const printableElement = document.getElementById('printable-area');
@@ -207,7 +207,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
             ) : (
                 <div className="prose prose-sm max-w-none">
                     <IdeaSection icon={ICONS.sparkles} title="Воведна активност" content={material.openingActivity} />
-                    <IdeaSection icon={ICONS.bookOpen} title="Главна активност" content={material.mainActivity} />
+                    <IdeaSection icon={ICONS.bookOpen} title="Главна активност" content={Array.isArray(material.mainActivity) ? material.mainActivity.map(a => '- ' + a.text).join('\n') : String(material.mainActivity)} />
                     <IdeaSection icon={ICONS.share} title="Диференцијација" content={material.differentiation} />
                     <IdeaSection icon={ICONS.check} title="Идеја за оценување" content={material.assessmentIdea} />
                 </div>

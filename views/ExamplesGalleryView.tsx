@@ -120,8 +120,8 @@ const renderMaterialContent = (material: CachedMaterial) => {
     }
     if (c && typeof c === 'object') {
         // Structured content — show title + item count summary
-        const title = c.title || c.thematicUnit || '';
-        const count = c.questions?.length ?? c.items?.length ?? c.lessons?.length ?? null;
+        const title = (c as any).title || (c as any).thematicUnit || '';
+        const count = (c as any).questions?.length ?? (c as any).items?.length ?? (c as any).lessons?.length ?? null;
         return (
             <div>
                 {title && <p className="font-semibold text-gray-800">{title}</p>}

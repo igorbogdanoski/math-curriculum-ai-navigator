@@ -120,9 +120,9 @@ export const HomeView: React.FC = () => {
   const handleSuggestionGenerate = () => {
     if (suggestion) {
         openGeneratorPanel({
-            grade: String(suggestion.target.grade),
-            topicId: suggestion.target.topicId,
-            conceptId: suggestion.target.concept.id,
+            selectedGrade: String(suggestion.target.grade),
+            selectedTopic: suggestion.target.topicId,
+            selectedConcepts: [suggestion.target.concept.id],
             contextType: 'CONCEPT',
             materialType: 'ASSESSMENT',
             customInstruction: `Generate materials based on this proactive suggestion: "${suggestion.text}"`

@@ -160,34 +160,25 @@ export const LessonPlanLibraryView: React.FC = () => {
     }, [lessonPlans, searchQuery, gradeFilter, conceptStandardFilter, tagFilters, allNationalStandards]);
 
 
-    const handlePublish = async (plan: LessonPlan) => {
+const handlePublish = (plan: LessonPlan) => {
         if (!user) {
             addNotification('Мора да сте најавени за да објавувате.', 'error');
             return;
         }
+        setPublishingPlan(plan);
+    };
 
-        const confirmMessage = plan.isPublished 
-            ? 'Дали сте сигурни дека сакате да ги ажурирате промените во галеријата? Ова ќе ја замени постоечката верзија.'
-            : 'Дали сте сигурни дека сакате да ја објавите оваа подготовка во галеријата на заедницата? Вашето име ќе биде видливо за сите.';
-        
-        showModal(ModalType.Confirm, {
-            title: plan.isPublished ? 'Ажурирање на подготовка' : 'Објавување на подготовка',
-            message: confirmMessage,
-            variant: 'info',
-            confirmLabel: plan.isPublished ? 'Да, ажурирај' : 'Да, објави',
-            onConfirm: async () => {
-                hideModal();
-                try {
-                    await publishLessonPlan(plan.id, user.name);
-                    const message = plan.isPublished ? 'Подготовката е успешно ажурирана во галеријата!' : 'Подготовката е успешно објавена!';
-                    addNotification(message, 'success');
-                } catch (error) {
-                    addNotification('Грешка при објавување на подготовката.', 'error');
-                    console.error("Publishing failed:", error);
-                }
-            },
-            onCancel: hideModal,
-        });
+    const confirmPublish = async (visibility: 'school' | 'public') => {
+        if (!publishingPlan || !user) return;
+        setPublishingPlan(null);
+        try {
+            await publishLessonPlan(publishingPlan.id, user.name);
+            const message = publishingPlan.isPublished ? 'Подготовката е успешно ажурирана во галеријата!' : 'Подготовката е успешно објавена!';
+            addNotification(message, 'success');
+        } catch (error) {
+            addNotification('Грешка при објавување на подготовката.', 'error');
+            console.error("Publishing failed:", error);
+        }
     };
 
     return (

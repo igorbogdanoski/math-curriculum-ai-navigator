@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { firestoreService, type QuizResult, type ConceptMastery, type StudentGamification, type Announcement, type Assignment, ACHIEVEMENTS } from '../services/firestoreService';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
@@ -14,13 +14,13 @@ import { LogicMap } from '../components/LogicMap';
 import { geminiService } from '../services/geminiService';
 
 const formatDate = (ts: any): string => {
-  if (!ts) return '—';
+  if (!ts) return '�';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
   return d.toLocaleDateString('mk-MK', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 interface Props {
-  /** Passed from URL query param ?name=... — enables read-only parent view */
+  /** Passed from URL query param ?name=... � enables read-only parent view */
   name?: string;
 }
 
@@ -36,26 +36,26 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   });
   const [results, setResults] = useState<QuizResult[]>([]);
   const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
-  // conceptId → quizId for "play again" self-navigation
+  // conceptId ? quizId for "play again" self-navigation
   const [nextQuizIds, setNextQuizIds] = useState<Record<string, string>>({});
   const [gamification, setGamification] = useState<StudentGamification | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [activeTab, setActiveTab] = useState<'activity' | 'map'>('map');
   const [reportPeriod, setReportPeriod] = useState<'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH'>('THIS_WEEK');
-  // П27 — Teacher announcements
+  // ?27 � Teacher announcements
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  // П28 — AI Concept Explainer
+  // ?28 � AI Concept Explainer
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null);
-  // Б2 — Assignments
+  // ?2 � Assignments
   const [assignments, setAssignments] = useState<Assignment[]>([]);
 
   const handleExplain = async (conceptId: string, title: string, grade?: number) => {
     if (explanations[conceptId] || loadingExplanation === conceptId) return;
     setLoadingExplanation(conceptId);
     const text = await geminiService.explainConcept(title, grade);
-    setExplanations(prev => ({ ...prev, [conceptId]: text || 'Не можев да генерирам објаснување.' }));
+    setExplanations(prev => ({ ...prev, [conceptId]: text || '?? ????? ?? ????????? ???????????.' }));
     setLoadingExplanation(null);
   };
 
@@ -63,7 +63,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     if (!name.trim()) return;
     setLoading(true);
     setSearched(true);
-    // А1: Ensure anonymous Firebase Auth session so security rules pass.
+    // ?1: Ensure anonymous Firebase Auth session so security rules pass.
     if (!auth.currentUser) {
       try { await signInAnonymously(auth); } catch { /* non-fatal */ }
     }
@@ -80,16 +80,16 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       quizData.forEach(r => { if (r.teacherUid) teacherUidCounts[r.teacherUid] = (teacherUidCounts[r.teacherUid] ?? 0) + 1; });
       const topTeacherUid = Object.entries(teacherUidCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-      // А1: Fetch gamification with teacherUid scope (prevents name collisions across classes)
+      // ?1: Fetch gamification with teacherUid scope (prevents name collisions across classes)
       const gamificationData = await firestoreService.fetchStudentGamification(name.trim(), topTeacherUid);
       setGamification(gamificationData);
 
-      // П27 — Load announcements for the most frequent teacherUid in results
+      // ?27 � Load announcements for the most frequent teacherUid in results
       if (topTeacherUid) {
         firestoreService.fetchAnnouncements(topTeacherUid, 3).then(setAnnouncements);
       }
 
-      // Б2 — Load assignments for this student
+      // ?2 � Load assignments for this student
       firestoreService.fetchAssignmentsByStudent(name.trim()).then(setAssignments);
 
       // Pre-fetch quiz links for failed concepts (self-navigation)
@@ -110,7 +110,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       console.error('[StudentProgress] fetchResults failed:', err);
       setResults([]);
       setMasteryRecords([]);
-      // Show inline error — visible without toast since this is a public/student page
+      // Show inline error � visible without toast since this is a public/student page
       setSearched(true);
     } finally {
       setLoading(false);
@@ -142,7 +142,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const masteredCount = masteryRecords.filter(m => m.mastered).length;
   const inProgressCount = masteryRecords.filter(m => !m.mastered && m.consecutiveHighScores > 0).length;
 
-  // ── Правец 13: Prerequisite Gap Analysis ─────────────────────────────────
+  // -- ?????? 13: Prerequisite Gap Analysis ---------------------------------
   const prereqGaps = useMemo(() => {
     if (masteryRecords.length === 0) return [];
     const masteredIds = new Set(masteryRecords.filter(m => m.mastered).map(m => m.conceptId));
@@ -157,18 +157,18 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       });
   }, [masteryRecords, getConceptChain]);
 
-  // ── Правец 14: Spaced Repetition ─────────────────────────────────────────
+  // -- ?????? 14: Spaced Repetition -----------------------------------------
   const reviewToday = useMemo(() => {
     const now = Date.now();
     return masteryRecords.filter(m => {
       if (!m.updatedAt) return false;
-      const lastMs = (m.updatedAt.toDate ? m.updatedAt.toDate() : new Date(m.updatedAt)).getTime();
+      const lastMs = ('toDate' in m.updatedAt ? (m.updatedAt as any).toDate() : new Date(m.updatedAt as any)).getTime();
       const daysSince = (now - lastMs) / 86_400_000;
       return m.mastered ? daysSince > 30 : (daysSince > 7 && m.attempts > 0);
     });
   }, [masteryRecords]);
 
-  // ── Правец 21: Персонализирана патека „Следни чекори" ────────────────────
+  // -- ?????? 21: ??????????????? ?????? �?????? ??????" --------------------
   const nextUpConcepts = useMemo(() => {
     if (!allConcepts || allConcepts.length === 0 || masteryRecords.length === 0) return [];
     const masteredIds = new Set(masteryRecords.filter(m => m.mastered).map(m => m.conceptId));
@@ -189,7 +189,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       .slice(0, 6);
   }, [allConcepts, masteryRecords, getConceptDetails]);
 
-  // ── Правец 16: Period report data ─────────────────────────────────────────
+  // -- ?????? 16: Period report data -----------------------------------------
   const { periodLabel, periodQuizzes, periodStats } = useMemo(() => {
     const now = new Date();
     let start: Date;
@@ -197,18 +197,18 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     let label: string;
     if (reportPeriod === 'THIS_WEEK') {
       start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0, 0, 0, 0);
-      label = 'Оваа недела';
+      label = '???? ??????';
     } else if (reportPeriod === 'LAST_WEEK') {
       start = new Date(now); start.setDate(now.getDate() - now.getDay() - 7); start.setHours(0, 0, 0, 0);
       end = new Date(start); end.setDate(start.getDate() + 7);
-      label = 'Минатата недела';
+      label = '???????? ??????';
     } else {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       label = now.toLocaleDateString('mk-MK', { month: 'long', year: 'numeric' });
     }
     const pq = results.filter(r => {
       if (!r.playedAt) return false;
-      const d = r.playedAt.toDate ? r.playedAt.toDate() : new Date(r.playedAt);
+      const d = ('toDate' in (r.playedAt as any)) ? (r.playedAt as any).toDate() : new Date(r.playedAt as any);
       return d >= start && d <= end;
     });
     const total = pq.length;
@@ -216,7 +216,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     const passedCount = pq.filter(r => r.percentage >= 70).length;
     const newlyMastered = masteryRecords.filter(m => {
       if (!m.mastered || !m.masteredAt) return false;
-      const d = m.masteredAt.toDate ? m.masteredAt.toDate() : new Date(m.masteredAt);
+      const d = ('toDate' in (m.masteredAt as any)) ? (m.masteredAt as any).toDate() : new Date(m.masteredAt as any);
       return d >= start && d <= end;
     }).length;
     return { periodLabel: label, periodQuizzes: pq, periodStats: { total, avg, passed: passedCount, newlyMastered } };
@@ -236,10 +236,10 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           </div>
           <div>
             <h1 className="font-black text-xl tracking-tighter uppercase">
-              {isReadOnly ? 'Прогрес на Ученик' : 'Мој Прогрес'}
+              {isReadOnly ? '??????? ?? ??????' : '??? ???????'}
             </h1>
             {isReadOnly && (
-              <p className="text-white/60 text-xs font-semibold">Приказ за родители — само за читање</p>
+              <p className="text-white/60 text-xs font-semibold">?????? ?? ???????? � ???? ?? ??????</p>
             )}
           </div>
         </div>
@@ -249,19 +249,19 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               <select
                 value={reportPeriod}
                 onChange={e => setReportPeriod(e.target.value as 'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH')}
-                aria-label="Избери период за извештај"
+                aria-label="?????? ?????? ?? ????????"
                 className="text-xs font-bold bg-white/10 border border-white/20 text-white px-3 py-2 rounded-full cursor-pointer"
               >
-                <option value="THIS_WEEK" className="text-slate-800 bg-white">Оваа недела</option>
-                <option value="LAST_WEEK" className="text-slate-800 bg-white">Минатата недела</option>
-                <option value="THIS_MONTH" className="text-slate-800 bg-white">Овој месец</option>
+                <option value="THIS_WEEK" className="text-slate-800 bg-white">???? ??????</option>
+                <option value="LAST_WEEK" className="text-slate-800 bg-white">???????? ??????</option>
+                <option value="THIS_MONTH" className="text-slate-800 bg-white">???? ?????</option>
               </select>
               <button
                 type="button"
                 onClick={handlePrint}
                 className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition"
               >
-                <Printer className="w-4 h-4" /> Печати извештај
+                <Printer className="w-4 h-4" /> ?????? ????????
               </button>
             </div>
           )}
@@ -271,13 +271,13 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               onClick={() => { window.location.hash = '/'; }}
               className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition no-print"
             >
-              <Home className="w-4 h-4" /> Почетна
+              <Home className="w-4 h-4" /> ???????
             </button>
           )}
         </div>
       </div>
 
-      {/* Search card — hidden in read-only (parent) mode */}
+      {/* Search card � hidden in read-only (parent) mode */}
       {!isReadOnly && (
         <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
@@ -285,14 +285,14 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               <User className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <p className="font-black text-slate-800">Внеси го твоето ime</p>
-              <p className="text-xs text-slate-400">Ги гледаш само твоите резултати</p>
+              <p className="font-black text-slate-800">????? ?? ?????? ime</p>
+              <p className="text-xs text-slate-400">?? ?????? ???? ?????? ?????????</p>
             </div>
           </div>
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Ime и презиме..."
+              placeholder="Ime ? ???????..."
               value={nameInput}
               onChange={e => setNameInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
@@ -305,7 +305,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               className="flex items-center gap-1.5 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-40"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              Прикажи
+              ???????
             </button>
           </div>
         </div>
@@ -325,22 +325,22 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           <div className="bg-white rounded-2xl p-4 text-center shadow">
             <BarChart2 className="w-6 h-6 text-indigo-500 mx-auto mb-1" />
             <p className="text-2xl font-black text-slate-800">{totalQuizzes}</p>
-            <p className="text-xs text-slate-500 font-semibold">Квизови</p>
+            <p className="text-xs text-slate-500 font-semibold">???????</p>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center shadow">
             <CheckCircle2 className="w-6 h-6 text-green-500 mx-auto mb-1" />
             <p className="text-2xl font-black text-slate-800">{passed}</p>
-            <p className="text-xs text-slate-500 font-semibold">Положени</p>
+            <p className="text-xs text-slate-500 font-semibold">????????</p>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center shadow">
             <Star className="w-6 h-6 text-yellow-400 mx-auto mb-1" fill="currentColor" />
             <p className="text-2xl font-black text-slate-800">{avgPct}%</p>
-            <p className="text-xs text-slate-500 font-semibold">Просек</p>
+            <p className="text-xs text-slate-500 font-semibold">??????</p>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center shadow">
             <Trophy className="w-6 h-6 text-yellow-500 mx-auto mb-1" fill="currentColor" />
             <p className="text-2xl font-black text-slate-800">{masteredCount}</p>
-            <p className="text-xs text-slate-500 font-semibold">Совладани</p>
+            <p className="text-xs text-slate-500 font-semibold">?????????</p>
           </div>
         </div>
       )}
@@ -352,13 +352,13 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             onClick={() => setActiveTab('map')}
             className={`flex-1 flex items-center justify-center gap-2 py-2 font-bold text-sm rounded-xl transition ${activeTab === 'map' ? 'bg-white text-indigo-700 shadow' : 'text-white hover:bg-white/10'}`}
           >
-            <Target className="w-4 h-4" /> Мапа на Знаење
+            <Target className="w-4 h-4" /> ???? ?? ??????
           </button>
           <button 
             onClick={() => setActiveTab('activity')}
             className={`flex-1 flex items-center justify-center gap-2 py-2 font-bold text-sm rounded-xl transition ${activeTab === 'activity' ? 'bg-white text-indigo-700 shadow' : 'text-white hover:bg-white/10'}`}
           >
-            <BarChart2 className="w-4 h-4" /> Активност и Резултати
+            <BarChart2 className="w-4 h-4" /> ????????? ? ?????????
           </button>
         </div>
       )}
@@ -372,7 +372,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       {searched && !loading && activeTab === 'activity' && (
         <>
 
-      {/* ── Правец 15: Gamification — XP + Streak + Achievements ──────────── */}
+      {/* -- ?????? 15: Gamification � XP + Streak + Achievements ------------ */}
       {gamification && (
         <div className="w-full max-w-2xl mb-4">
           <div className="bg-white rounded-2xl shadow p-4">
@@ -391,14 +391,14 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                        
                        <div className="flex justify-between items-end mb-2 relative z-10">
                          <div>
-                            <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">Ниво на знаење</p>
+                            <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">???? ?? ??????</p>
                             <div className="flex items-center gap-2">
                                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-indigo-200">
                                  {lvlInfo.level}
                                </div>
                                <div>
-                                  <p className="font-black text-slate-800 text-sm leading-tight">{gamification.totalXP} Ф-XP</p>
-                                  <p className="text-[10px] text-slate-500 font-medium">Следно: +{lvlInfo.nextLevelXp - lvlInfo.currentXp} XP</p>
+                                  <p className="font-black text-slate-800 text-sm leading-tight">{gamification.totalXP} ?-XP</p>
+                                  <p className="text-[10px] text-slate-500 font-medium">??????: +{lvlInfo.nextLevelXp - lvlInfo.currentXp} XP</p>
                                </div>
                             </div>
                          </div>
@@ -419,23 +419,23 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
 
                 <div className="flex flex-1 gap-2">
                   <div className="flex-1 bg-orange-50 border border-orange-100 rounded-xl p-3 flex flex-col justify-center">
-                    <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-1">Ојлеров Пат</p>
+                    <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-1">??????? ???</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl drop-shadow-sm">🗺️</span>
+                      <span className="text-2xl drop-shadow-sm">???</span>
                       <div>
-                        <p className="font-black text-slate-800 text-sm leading-tight">{gamification.currentStreak} {gamification.currentStreak === 1 ? "ден" : "дена"}</p>
-                        <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">тековен стрик</p>
+                        <p className="font-black text-slate-800 text-sm leading-tight">{gamification.currentStreak} {gamification.currentStreak === 1 ? "???" : "????"}</p>
+                        <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">??????? ?????</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex-1 bg-green-50 border border-green-100 rounded-xl p-3 flex flex-col justify-center">
-                    <p className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1">Решени Задачи</p>
+                    <p className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1">?????? ??????</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl drop-shadow-sm">🧮</span>
+                      <span className="text-2xl drop-shadow-sm">??</span>
                       <div>
                         <p className="font-black text-slate-800 text-sm leading-tight">{gamification.totalQuizzes}</p>
-                        <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">вкупно квизови</p>
+                        <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">?????? ???????</p>
                       </div>
                     </div>
                   </div>
@@ -444,7 +444,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             {/* Achievements */}
             {gamification.achievements.length > 0 && (
               <div className="border-t border-slate-100 pt-3">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Достигнувања</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">????????????</p>
                 <div className="flex flex-wrap gap-1.5">
                   {gamification.achievements.map(id => {
                     const a = ACHIEVEMENTS[id];
@@ -461,16 +461,16 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         </div>
       )}
 
-      {/* ── Правец 14: Повтори денес (Spaced Repetition) ───────────────────── */}
+      {/* -- ?????? 14: ??????? ????? (Spaced Repetition) --------------------- */}
       {searched && !loading && reviewToday.length > 0 && (
         <div className="w-full max-w-2xl mb-4">
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <RotateCcw className="w-5 h-5 text-blue-600" />
-              <p className="font-bold text-blue-800 text-sm">Повтори денес</p>
+              <p className="font-bold text-blue-800 text-sm">??????? ?????</p>
               <span className="px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 text-xs font-bold">{reviewToday.length}</span>
             </div>
-            <p className="text-xs text-blue-600 mb-3">Овие концепти не сте ги вежбале долго — освежете го знаењето!</p>
+            <p className="text-xs text-blue-600 mb-3">???? ???????? ?? ??? ?? ??????? ????? � ???????? ?? ????????!</p>
             <div className="space-y-2">
               {reviewToday.map(m => {
                 const nextId = nextQuizIds[m.conceptId];
@@ -479,7 +479,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-700 truncate">{m.conceptTitle || m.conceptId}</p>
                       <p className="text-xs text-slate-400">
-                        {m.mastered ? 'Совладан — освежи по 30+ дена' : `${m.consecutiveHighScores}/3 по ред — вежбај повторно`}
+                        {m.mastered ? '???????? � ?????? ?? 30+ ????' : `${m.consecutiveHighScores}/3 ?? ??? � ?????? ????????`}
                       </p>
                     </div>
                     {nextId && (
@@ -488,7 +488,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                         onClick={() => { window.location.hash = `/play/${nextId}`; }}
                         className="flex items-center gap-1 text-xs font-bold bg-blue-600 text-white px-2.5 py-1 rounded-lg hover:bg-blue-700 transition flex-shrink-0"
                       >
-                        <PlayCircle className="w-3 h-3" /> Вежбај
+                        <PlayCircle className="w-3 h-3" /> ??????
                       </button>
                     )}
                   </div>
@@ -499,21 +499,21 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         </div>
       )}
 
-      {/* ── Правец 13: Prerequisite Gap Analysis ───────────────────────────── */}
+      {/* -- ?????? 13: Prerequisite Gap Analysis ----------------------------- */}
       {searched && !loading && prereqGaps.length > 0 && (
         <div className="w-full max-w-2xl mb-4">
           <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-5 h-5 text-orange-600" />
-              <p className="font-bold text-orange-800 text-sm">Пропуштени предуслови</p>
+              <p className="font-bold text-orange-800 text-sm">?????????? ??????????</p>
               <span className="px-2 py-0.5 rounded-full bg-orange-200 text-orange-800 text-xs font-bold">{prereqGaps.length}</span>
             </div>
-            <p className="text-xs text-orange-600 mb-3">Овие концепти зависат од претходни теми кои сè уште не се совладани:</p>
+            <p className="text-xs text-orange-600 mb-3">???? ???????? ??????? ?? ????????? ???? ??? ?� ???? ?? ?? ?????????:</p>
             <div className="space-y-3">
               {prereqGaps.map((gap, i) => (
                 <div key={i} className="bg-white rounded-xl px-3 py-2.5">
                   <p className="text-sm font-bold text-orange-900 mb-1">{gap.conceptTitle}</p>
-                  <p className="text-xs text-slate-500 mb-1">Прво совладај:</p>
+                  <p className="text-xs text-slate-500 mb-1">???? ????????:</p>
                   <div className="flex flex-wrap gap-1.5">
                     {gap.missing.map((pre, j) => (
                       <span key={j} className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
@@ -528,24 +528,24 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         </div>
       )}
 
-      {/* ── Правец 21: Следни чекори (Learning Path) ────────────────────────── */}
+      {/* -- ?????? 21: ?????? ?????? (Learning Path) -------------------------- */}
       {searched && !loading && nextUpConcepts.length > 0 && (
         <div className="w-full max-w-2xl mb-4">
           <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <Target className="w-5 h-5 text-teal-600" />
-              <p className="font-bold text-teal-800 text-sm">🎯 Следни чекори</p>
+              <p className="font-bold text-teal-800 text-sm">?? ?????? ??????</p>
               <span className="px-2 py-0.5 rounded-full bg-teal-200 text-teal-800 text-xs font-bold">{nextUpConcepts.length}</span>
             </div>
-            <p className="text-xs text-teal-600 mb-3">Концепти за кои сте подготвени — сите предуслови се совладани!</p>
+            <p className="text-xs text-teal-600 mb-3">???????? ?? ??? ??? ?????????? � ???? ?????????? ?? ?????????!</p>
             <div className="space-y-2">
               {nextUpConcepts.map(({ concept, mastery, grade }) => (
                 <div key={concept.id} className="flex items-center gap-3 bg-white rounded-xl px-3 py-2.5 border border-teal-100">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-700 truncate">{concept.title}</p>
                     <p className="text-xs text-slate-400">
-                      {grade ? `${grade.level}. одделение` : ''}
-                      {mastery ? ` · ${mastery.consecutiveHighScores}/3 по ред` : ' · Ново'}
+                      {grade ? `${grade.level}. ?????????` : ''}
+                      {mastery ? ` � ${mastery.consecutiveHighScores}/3 ?? ???` : ' � ????'}
                     </p>
                   </div>
                   {mastery && mastery.consecutiveHighScores > 0 && (
@@ -561,10 +561,10 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                       onClick={() => { window.location.hash = `/play/${nextQuizIds[concept.id]}`; }}
                       className="flex-shrink-0 text-xs font-bold text-teal-700 bg-teal-100 hover:bg-teal-200 px-2.5 py-1 rounded-lg transition"
                     >
-                      Вежбај →
+                      ?????? ?
                     </button>
                   ) : (
-                    <span className="flex-shrink-0 text-xs text-teal-400 font-semibold px-2">Побарај квиз</span>
+                    <span className="flex-shrink-0 text-xs text-teal-400 font-semibold px-2">??????? ????</span>
                   )}
                 </div>
               ))}
@@ -579,16 +579,16 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           <div className="bg-white rounded-2xl shadow p-4">
             <div className="flex items-center gap-2 mb-3">
               <Trophy className="w-5 h-5 text-yellow-500" fill="currentColor" />
-              <p className="font-bold text-slate-800 text-sm">Совладување на концепти</p>
+              <p className="font-bold text-slate-800 text-sm">??????????? ?? ????????</p>
             </div>
             <div className="space-y-2">
               {masteryRecords
                 .sort((a, b) => (b.mastered ? 1 : 0) - (a.mastered ? 1 : 0) || b.consecutiveHighScores - a.consecutiveHighScores)
                 .map((m) => {
                   const db = m.lastScore === undefined ? null
-                    : m.lastScore < 60  ? { label: '🔵 Поддршка',    cls: 'text-blue-700 bg-blue-50 border-blue-100' }
-                    : m.lastScore < 85  ? { label: '⚪ Основно',      cls: 'text-slate-600 bg-slate-100 border-slate-200' }
-                    :                    { label: '🔴 Збогатување',   cls: 'text-red-700 bg-red-50 border-red-100' };
+                    : m.lastScore < 60  ? { label: '?? ????????',    cls: 'text-blue-700 bg-blue-50 border-blue-100' }
+                    : m.lastScore < 85  ? { label: '? ???????',      cls: 'text-slate-600 bg-slate-100 border-slate-200' }
+                    :                    { label: '?? ???????????',   cls: 'text-red-700 bg-red-50 border-red-100' };
                   const { grade } = getConceptDetails(m.conceptId);
                   const conceptGrade = (grade as any)?.level ?? m.gradeLevel;
                   const conceptTitle = m.conceptTitle || m.conceptId;
@@ -604,28 +604,28 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                         <p className="text-sm font-semibold text-slate-700 truncate">{conceptTitle}</p>
                         <p className="text-xs text-slate-400">
                           {m.mastered
-                            ? `Совладан! Најдобар резултат: ${m.bestScore}%`
-                            : `${m.consecutiveHighScores}/3 по ред ≥85% — Последен: ${m.lastScore}%`}
+                            ? `????????! ???????? ????????: ${m.bestScore}%`
+                            : `${m.consecutiveHighScores}/3 ?? ??? =85% � ????????: ${m.lastScore}%`}
                         </p>
                       </div>
                       {db && (
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${db.cls}`} title="Следно ниво">{db.label}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${db.cls}`} title="?????? ????">{db.label}</span>
                       )}
                       {m.mastered && (
-                        <span className="text-xs font-black text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full flex-shrink-0">✓ Совладан</span>
+                        <span className="text-xs font-black text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full flex-shrink-0">? ????????</span>
                       )}
                       {!m.mastered && m.consecutiveHighScores > 0 && (
                         <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full flex-shrink-0">
-                          {3 - m.consecutiveHighScores} уште
+                          {3 - m.consecutiveHighScores} ????
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={() => handleExplain(m.conceptId, conceptTitle, conceptGrade)}
-                        title="AI објаснување"
+                        title="AI ???????????"
                         className="flex-shrink-0 text-xs px-2 py-1 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition"
                       >
-                        {loadingExplanation === m.conceptId ? '...' : '💡'}
+                        {loadingExplanation === m.conceptId ? '...' : '??'}
                       </button>
                     </div>
                     {explanations[m.conceptId] && (
@@ -639,7 +639,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             </div>
             {inProgressCount > 0 && (
               <p className="text-xs text-slate-400 mt-3 text-center">
-                🔥 {inProgressCount} концепт{inProgressCount === 1 ? '' : 'и'} во напредок — продолжи со вежбање!
+                ?? {inProgressCount} ???????{inProgressCount === 1 ? '' : '?'} ?? ???????? � ???????? ?? ???????!
               </p>
             )}
           </div>
@@ -650,32 +650,32 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       {loading && (
         <div className="flex flex-col items-center gap-3 mt-8">
           <Loader2 className="w-8 h-8 text-white animate-spin" />
-          <p className="text-white/70 text-sm font-bold">Вчитување...</p>
+          <p className="text-white/70 text-sm font-bold">?????????...</p>
         </div>
       )}
 
-      {/* П27 — Teacher Announcements Banner */}
+      {/* ?27 � Teacher Announcements Banner */}
       {announcements.length > 0 && searched && (
         <div className="w-full max-w-2xl mb-3">
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <p className="font-bold text-amber-800 text-sm mb-2 flex items-center gap-1.5">
-              📢 Пораки од наставникот
+              ?? ?????? ?? ???????????
             </p>
             <ul className="space-y-1">
               {announcements.map(a => (
-                <li key={a.id} className="text-sm text-amber-700">• {a.message}</li>
+                <li key={a.id} className="text-sm text-amber-700">� {a.message}</li>
               ))}
             </ul>
           </div>
         </div>
       )}
 
-      {/* Б2 — Assignments section */}
+      {/* ?2 � Assignments section */}
       {assignments.length > 0 && searched && !isReadOnly && (
         <div className="w-full max-w-2xl mb-3">
           <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
             <p className="font-bold text-indigo-800 text-sm mb-3 flex items-center gap-1.5">
-              📋 Мои задачи ({assignments.filter(a => !a.completedBy.includes(studentName)).length} нерешени)
+              ?? ??? ?????? ({assignments.filter(a => !a.completedBy.includes(studentName)).length} ????????)
             </p>
             <div className="space-y-2">
               {assignments.map(a => {
@@ -687,7 +687,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold truncate ${done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{a.title}</p>
                       <p className={`text-xs mt-0.5 ${overdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
-                        {done ? '✅ Завршено' : overdue ? `⚠️ Задоцнета — рок: ${a.dueDate}` : `Рок: ${a.dueDate}`}
+                        {done ? '? ????????' : overdue ? `?? ????????? � ???: ${a.dueDate}` : `???: ${a.dueDate}`}
                       </p>
                     </div>
                     {!done && (
@@ -696,7 +696,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                         onClick={() => { window.location.hash = `/play/${a.cacheId}?assignId=${a.id}&tid=${a.teacherUid}`; }}
                         className="flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
                       >
-                        Игraj →
+                        ??raj ?
                       </button>
                     )}
                   </div>
@@ -713,9 +713,9 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           {totalQuizzes === 0 ? (
             <div className="bg-white rounded-3xl p-8 text-center shadow">
               <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="font-bold text-slate-500">Нема пронајдено резултати за „{studentName}"</p>
+              <p className="font-bold text-slate-500">???? ?????????? ????????? ?? �{studentName}"</p>
               <p className="text-xs text-slate-400 mt-1">
-                Провери дали името е точно напишано, или одиграј прв квиз.
+                ??????? ???? ????? ? ????? ????????, ??? ??????? ??? ????.
               </p>
             </div>
           ) : (
@@ -743,8 +743,8 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     <GradeBadge pct={r.percentage} showLabel={true} />
                     <p className="text-xs text-slate-400">{r.correctCount}/{r.totalQuestions}</p>
                     {r.confidence != null && (
-                      <span title={`Самооценување: ${r.confidence}/5`} className="text-base leading-none">
-                        {['😟','😐','🙂','😊','🤩'][r.confidence - 1]}
+                      <span title={`?????????????: ${r.confidence}/5`} className="text-base leading-none">
+                        {['??','??','??','??','??'][r.confidence - 1]}
                       </span>
                     )}
                     {!isPassed && nextQuizId && (
@@ -753,7 +753,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                         onClick={() => { window.location.hash = `/play/${nextQuizId}`; }}
                         className="flex items-center gap-1 text-xs font-bold bg-indigo-600 text-white px-2.5 py-1 rounded-lg hover:bg-indigo-700 transition mt-0.5"
                       >
-                        <PlayCircle className="w-3 h-3" /> Вежбај
+                        <PlayCircle className="w-3 h-3" /> ??????
                       </button>
                     )}
                   </div>
@@ -771,7 +771,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         Powered by Math Curriculum AI Navigator
       </footer>
 
-      {/* ── Printable Parent Report (hidden on screen, visible on print) ── */}
+      {/* -- Printable Parent Report (hidden on screen, visible on print) -- */}
       {searched && totalQuizzes > 0 && (
         <div className="printable-root hidden" aria-hidden="true">
           {/* Page header */}
@@ -779,31 +779,31 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             <div className="rpt-header-row">
               <div>
                 <h1 className="rpt-title">
-                  {reportPeriod === 'THIS_MONTH' ? 'Месечен' : 'Неделен'} извештај за Напредок
+                  {reportPeriod === 'THIS_MONTH' ? '???????' : '???????'} ???????? ?? ????????
                 </h1>
-                <p className="rpt-subtitle">Математика — Math Curriculum AI Navigator</p>
-                <p className="rpt-subtitle">Период: <strong>{periodLabel}</strong></p>
+                <p className="rpt-subtitle">?????????? � Math Curriculum AI Navigator</p>
+                <p className="rpt-subtitle">??????: <strong>{periodLabel}</strong></p>
               </div>
               <div className="rpt-meta">
-                <div>Датум: <strong>{printDate}</strong></div>
-                <div className="rpt-meta-date">Документ генериран автоматски</div>
+                <div>?????: <strong>{printDate}</strong></div>
+                <div className="rpt-meta-date">???????? ????????? ??????????</div>
               </div>
             </div>
           </div>
 
           {/* Student info */}
           <div className="rpt-student-box">
-            <span className="rpt-student-label">Ученик</span>
+            <span className="rpt-student-label">??????</span>
             <p className="rpt-student-name">{studentName}</p>
           </div>
 
           {/* Period stats */}
           <div className="rpt-stats-grid">
             {[
-              { label: `Квизови (${periodLabel})`, value: String(periodStats.total) },
-              { label: 'Положени (≥70%)', value: String(periodStats.passed) },
-              { label: 'Просечен резултат', value: periodStats.total > 0 ? `${periodStats.avg}%` : '—' },
-              { label: 'Новосовладани концепти', value: String(periodStats.newlyMastered) },
+              { label: `??????? (${periodLabel})`, value: String(periodStats.total) },
+              { label: '???????? (=70%)', value: String(periodStats.passed) },
+              { label: '???????? ????????', value: periodStats.total > 0 ? `${periodStats.avg}%` : '�' },
+              { label: '????????????? ????????', value: String(periodStats.newlyMastered) },
             ].map(s => (
               <div key={s.label} className="rpt-stat-card">
                 <p className="rpt-stat-value">{s.value}</p>
@@ -814,17 +814,17 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
 
           {/* Period quiz history */}
           <div className="rpt-section">
-            <h2 className="rpt-section-title">Квизови за периодот</h2>
+            <h2 className="rpt-section-title">??????? ?? ????????</h2>
             {periodQuizzes.length === 0 ? (
-              <p className="rpt-empty-msg">Нема решени квизови во овој период.</p>
+              <p className="rpt-empty-msg">???? ?????? ??????? ?? ???? ??????.</p>
             ) : (
               <table className="rpt-table">
                 <thead>
                   <tr>
-                    <th className="rpt-th rpt-th-left">Квиз</th>
-                    <th className="rpt-th rpt-th-center">Датум</th>
-                    <th className="rpt-th rpt-th-center">Резултат</th>
-                    <th className="rpt-th rpt-th-center">Статус</th>
+                    <th className="rpt-th rpt-th-left">????</th>
+                    <th className="rpt-th rpt-th-center">?????</th>
+                    <th className="rpt-th rpt-th-center">????????</th>
+                    <th className="rpt-th rpt-th-center">??????</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -836,7 +836,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                         {r.percentage}% ({r.correctCount}/{r.totalQuestions})
                       </td>
                       <td className={`rpt-td rpt-td-center rpt-td-bold ${r.percentage >= 70 ? 'rpt-td-green' : 'rpt-td-amber'}`}>
-                        {r.percentage >= 70 ? 'Положен' : 'Не положен'}
+                        {r.percentage >= 70 ? '???????' : '?? ???????'}
                       </td>
                     </tr>
                   ))}
@@ -848,14 +848,14 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           {/* Mastery section */}
           {masteryRecords.length > 0 && (
             <div className="rpt-section">
-              <h2 className="rpt-section-title">Вкупно совладување на концепти</h2>
+              <h2 className="rpt-section-title">?????? ??????????? ?? ????????</h2>
               <table className="rpt-table">
                 <thead>
                   <tr>
-                    <th className="rpt-th rpt-th-left">Концепт</th>
-                    <th className="rpt-th rpt-th-center">Обиди</th>
-                    <th className="rpt-th rpt-th-center">Најдобар резултат</th>
-                    <th className="rpt-th rpt-th-center">Статус</th>
+                    <th className="rpt-th rpt-th-left">???????</th>
+                    <th className="rpt-th rpt-th-center">?????</th>
+                    <th className="rpt-th rpt-th-center">???????? ????????</th>
+                    <th className="rpt-th rpt-th-center">??????</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -867,7 +867,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                         <td className="rpt-td rpt-td-center">{m.attempts}</td>
                         <td className={`rpt-td rpt-td-center rpt-td-bold ${m.bestScore >= 85 ? 'rpt-td-green' : 'rpt-td-amber'}`}>{m.bestScore}%</td>
                         <td className={`rpt-td rpt-td-center rpt-td-bold ${m.mastered ? 'rpt-td-green' : 'rpt-td-blue'}`}>
-                          {m.mastered ? '✓ Совладан' : `${m.consecutiveHighScores}/3 во тек`}
+                          {m.mastered ? '? ????????' : `${m.consecutiveHighScores}/3 ?? ???`}
                         </td>
                       </tr>
                     ))}
@@ -879,15 +879,15 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           {/* Recommendations */}
           {(prereqGaps.length > 0 || reviewToday.length > 0) && (
             <div className="rpt-section">
-              <h2 className="rpt-section-title">Препораки за следниот период</h2>
+              <h2 className="rpt-section-title">????????? ?? ???????? ??????</h2>
               {prereqGaps.length > 0 && (
                 <>
                   <p className="rpt-rec-prereq-heading">
-                    Пропуштени предуслови ({prereqGaps.length}):
+                    ?????????? ?????????? ({prereqGaps.length}):
                   </p>
                   {prereqGaps.map((gap, i) => (
                     <p key={i} className="rpt-rec-item">
-                      • <strong>{gap.conceptTitle}</strong> — прво совладај: {gap.missing.join(', ')}
+                      � <strong>{gap.conceptTitle}</strong> � ???? ????????: {gap.missing.join(', ')}
                     </p>
                   ))}
                 </>
@@ -895,11 +895,11 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               {reviewToday.length > 0 && (
                 <>
                   <p className="rpt-rec-review-heading">
-                    Концепти за повторување ({reviewToday.length}):
+                    ???????? ?? ??????????? ({reviewToday.length}):
                   </p>
                   {reviewToday.map((m, i) => (
                     <p key={i} className="rpt-rec-item">
-                      • {m.conceptTitle || m.conceptId} {m.mastered ? '(совладан — освежи)' : '(во напредок — вежбај)'}
+                      � {m.conceptTitle || m.conceptId} {m.mastered ? '(???????? � ??????)' : '(?? ???????? � ??????)'}
                     </p>
                   ))}
                 </>
@@ -909,19 +909,19 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
 
           {/* Print footer */}
           <div className="rpt-footer-bar">
-            <span>Math Curriculum AI Navigator — Педагошки систем за следење на напредок</span>
-            <span>Извештај генериран на {printDate}</span>
+            <span>Math Curriculum AI Navigator � ????????? ?????? ?? ??????? ?? ????????</span>
+            <span>???????? ????????? ?? {printDate}</span>
           </div>
 
           {/* Signature lines */}
           <div className="rpt-signatures">
             <div>
               <div className="rpt-signature-line" />
-              <p className="rpt-signature-label">Потпис на наставник</p>
+              <p className="rpt-signature-label">?????? ?? ?????????</p>
             </div>
             <div>
               <div className="rpt-signature-line" />
-              <p className="rpt-signature-label">Потпис на родител / старател</p>
+              <p className="rpt-signature-label">?????? ?? ??????? / ????????</p>
             </div>
           </div>
         </div>

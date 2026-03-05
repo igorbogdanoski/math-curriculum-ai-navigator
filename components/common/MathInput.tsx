@@ -16,6 +16,8 @@ export const MathInput: React.FC<MathInputProps> = ({
 }) => {
   const mfRef = useRef<any>(null);
 
+  const MathFieldEl = 'math-field' as any;
+
   useEffect(() => {
     const mf = mfRef.current;
     if (mf) {
@@ -34,19 +36,18 @@ export const MathInput: React.FC<MathInputProps> = ({
 
   return (
     <div className={`p-3 border-2 border-indigo-100 rounded-xl focus-within:border-indigo-500 bg-white shadow-sm transition-all duration-200 min-h-[60px] flex items-center ${className}`}>
-      {/* @ts-ignore */}
-      <math-field 
-        ref={mfRef} 
+      <MathFieldEl
+        ref={mfRef}
         virtual-keyboard-mode="onfocus"
         placeholder={placeholder}
-        style={{ 
-          width: '100%', 
-          fontSize: '1.25rem', 
-          outline: 'none', 
-          border: 'none', 
-          backgroundColor: 'transparent' 
+        style={{
+          width: '100%',
+          fontSize: '1.25rem',
+          outline: 'none',
+          border: 'none',
+          backgroundColor: 'transparent'
         }}
-      ></math-field>
+      ></MathFieldEl>
     </div>
   );
 };

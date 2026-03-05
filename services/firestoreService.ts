@@ -500,8 +500,8 @@ export const firestoreService = {
         bestScore: Math.max(score, existing?.bestScore ?? 0),
         lastScore: score,
         mastered,
-        updatedAt: serverTimestamp(),
-        ...(mastered && !wasAlreadyMastered ? { masteredAt: serverTimestamp() } : {}),
+        updatedAt: serverTimestamp() as unknown as Timestamp,
+        ...(mastered && !wasAlreadyMastered ? { masteredAt: serverTimestamp() as unknown as Timestamp } : {}),
       };
 
       await setDoc(ref, updated, { merge: true });

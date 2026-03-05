@@ -18,7 +18,8 @@ export const LogicMap: React.FC<LogicMapProps> = ({ masteryRecords }) => {
     if (!masteryRecords.length) return 6; // default
     // find grade with most activity
     const gradeCounts = masteryRecords.reduce((acc, m) => {
-      acc[m.gradeLevel] = (acc[m.gradeLevel] || 0) + 1;
+      const gl = m.gradeLevel || 6;
+      acc[gl] = (acc[gl] || 0) + 1;
       return acc;
     }, {} as Record<number, number>);
     
@@ -126,7 +127,7 @@ export const LogicMap: React.FC<LogicMapProps> = ({ masteryRecords }) => {
                           </span>
                         ) : inProgress ? (
                           <span className="text-[10px] text-blue-600 font-bold mt-1 block">
-                            Последнo ниво: {mastery?.highestScore || 0}%
+                            Последнo ниво: {mastery?.bestScore || 0}%
                           </span>
                         ) : (
                           <span className="text-[10px] text-slate-400 mt-1 block">Не е започнато</span>

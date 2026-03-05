@@ -303,7 +303,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         const weeks: Record<string, { sum: number; count: number; label: string }> = {};
         results.forEach(r => {
             if (!r.playedAt) return;
-            const d = r.playedAt.toDate ? r.playedAt.toDate() : new Date(r.playedAt);
+            const d = r.playedAt.toDate ? r.playedAt.toDate() : new Date(r.playedAt as any);
             const weekStart = new Date(d);
             weekStart.setDate(d.getDate() - d.getDay());
             const key = weekStart.toISOString().slice(0, 10);

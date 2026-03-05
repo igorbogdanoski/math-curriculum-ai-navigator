@@ -57,7 +57,7 @@ export const CachedResourcesBrowser: React.FC<CachedResourcesBrowserProps> = ({ 
   });
 
   if (isLoading) {
-    return <SkeletonLoader count={2} />;
+    return <SkeletonLoader type="assessment" />;
   }
 
   return (
@@ -121,7 +121,7 @@ export const CachedResourcesBrowser: React.FC<CachedResourcesBrowserProps> = ({ 
                   )}
                 </div>
                 <span className="text-[8px] text-gray-500 font-mono">
-                  {new Date(material.timestamp).toLocaleDateString('mk-MK')}
+                  {material.createdAt ? new Date(material.createdAt.toMillis()).toLocaleDateString('mk-MK') : 'Непознат датум'}
                 </span>
               </div>
               
@@ -129,7 +129,7 @@ export const CachedResourcesBrowser: React.FC<CachedResourcesBrowserProps> = ({ 
                 {typeof material.content === 'string' ? (
                   <MathRenderer text={material.content} />
                 ) : (
-                  <span>[Интерактивен Материјал: {material.content.title || 'Квиз/Задача'}]</span>
+                  <span>[Интерактивен Материјал: {(material.content as any)?.title || 'Квиз/Задача'}]</span>
                 )}
               </div>
 

@@ -117,7 +117,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
              });
         }
         
-        return standards.sort((a,b) => a.gradeLevel - b.gradeLevel);
+        return standards.sort((a,b) => (a.gradeLevel || 0) - (b.gradeLevel || 0));
     }, [data]);
 
     const gradeMap = useMemo(() => {

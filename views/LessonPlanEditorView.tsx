@@ -137,7 +137,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                         basePlan.grade = context.standard.gradeLevel;
                         const gradeData = curriculum?.grades.find((g: Grade) => g.level === context.standard!.gradeLevel);
                         if (gradeData) {
-                            const relevantTopic = gradeData.topics.find((t: Topic) => t.concepts.some((c: Concept) => c.nationalStandardIds.includes(context.standard!.id)));
+                            const relevantTopic = gradeData.topics.find((t: Topic) => t.concepts.some((c: Concept) => c.nationalStandardIds?.includes(context.standard!.id)));
                             basePlan.topicId = relevantTopic?.id || gradeData.topics[0]?.id || '';
                             basePlan.theme = relevantTopic?.title || gradeData.topics[0]?.title || '';
                         }
@@ -316,12 +316,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     if (format === 'doc') {
           setIsGeneratingWord(true);
           try {
-              await exportLessonPlanToWord([plan], user ? {
-                  fullName: user.displayName || user.email || 'Наставник',
-                  experience: 'Стручен соработник',
-                  schoolName: (user as any).schoolName || '',
-                  municipality: (user as any).municipality || ''
-              } : undefined);
+              await exportLessonPlanToWord(plan as LessonPlan, user || undefined);
               addNotification('Word документот е успешно преземен', 'success');
           } catch (error) {
               console.error('Export to Word failed:', error);

@@ -100,6 +100,8 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     };
   }, [timeLeft, isTimerRunning, showResult]);
 
+  const currentQ = normalizedQuestions[currentIndex];
+
   const handleTimeUp = () => {
     setIsTimerRunning(false);
     setSelectedOption('TIME_UP');
@@ -326,7 +328,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setshowMathTools(!showMathTools)}
+                  onClick={() => setShowMathTools(!showMathTools)}
                 title="Табла за пресметки"
                 className={`p-1.5 rounded-lg transition-colors border-2 ${showMathTools ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
               >

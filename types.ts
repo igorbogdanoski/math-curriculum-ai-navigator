@@ -24,7 +24,7 @@ export interface Concept {
 export interface Topic {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   suggestedHours?: number;
   concepts: Concept[];
   topicLearningOutcomes?: string[];
@@ -143,25 +143,7 @@ export interface PlannerItem {
 }
 
 
-export interface TestQuestion {
-    id: string;
-    text: string;
-    type: 'multiple-choice' | 'short-answer' | 'word-problem';
-    options?: string[];
-    correctAnswer: string;
-    points: number;
-    cognitiveLevel?: string;
-}
 
-export interface GeneratedTest {
-    title: string;
-    topic: string;
-    gradeLevel: number;
-    groups: Array<{
-        groupName: string;
-        questions: TestQuestion[];
-    }>;
-}
 
 export interface SharedAnnualPlan {
     items: PlannerItem[];
@@ -463,11 +445,12 @@ export interface GenerationContext {
 export interface TestQuestion {
     id: string;
     text: string;
-    type: 'multiple-choice' | 'open-ended';
+    type: 'multiple-choice' | 'open-ended' | 'short-answer' | 'word-problem';
     options?: string[];
     correctAnswer: string;
     points: number;
-    difficulty: 'easy'|'medium'|'hard';
+    difficulty?: 'easy'|'medium'|'hard';
+    cognitiveLevel?: string;
 }
 
 export interface TestGroup {
@@ -502,3 +485,11 @@ export interface LiveQuizParticipant {
     joinedAt: any;
 }
 
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'math-field': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { onInput?: (e: Event) => void; };
+    }
+  }
+}

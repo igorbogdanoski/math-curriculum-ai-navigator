@@ -43,7 +43,7 @@ declare global {
 export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
   const { hideModal } = useModal();
   const { navigate } = useNavigation();
-  const { lessonPlans, addItem, updateItem, deleteItem } = usePlanner();
+  const { lessonPlans, addItem, updateItem, deleteItem, getLessonPlan } = usePlanner();
   const { addNotification } = useNotification();
   const [formData, setFormData] = useState<Partial<PlannerItem>>(() => getInitialFormData(item));
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);

@@ -7,7 +7,7 @@ import { ICONS } from '../constants';
 import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
 import { RateLimitError } from '../services/apiErrors';
 import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType, DifferentiationLevel, AssessmentQuestion } from '../types';
-import { ModalType, PlannerItemType } from '../types';
+import { ModalType, PlannerItemType, QuestionType } from '../types';
 import { firestoreService } from '../services/firestoreService';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { AILoadingIndicator } from '../components/common/AILoadingIndicator';
@@ -48,7 +48,7 @@ const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICO
 
 export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props: Partial<GeneratorState>) => {
     const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails, findConceptAcrossGrades } = useCurriculum();
-    const { user } = useAuth();
+    const { user, firebaseUser } = useAuth();
     const { addNotification } = useNotification();
     const { addItem } = usePlanner();
     const { toursSeen, markTourAsSeen } = useUserPreferences();
@@ -98,7 +98,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         const conceptId = state.selectedConcepts[0];
         if (!conceptId) { setDiffRec(null); return; }
         let cancelled = false;
-        firestoreService.fetchQuizResultsByConcept(conceptId, user?.uid ?? undefined, 30).then(results => {
+        firestoreService.fetchQuizResultsByConcept(conceptId, firebaseUser?.uid ?? undefined, 30).then(results => {
             if (cancelled || results.length === 0) return;
             const avg = results.reduce((s, r) => s + r.percentage, 0) / results.length;
             const rec: DifferentiationLevel = avg < 60 ? 'support' : avg < 85 ? 'standard' : 'advanced';
@@ -109,7 +109,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
             }
         });
         return () => { cancelled = true; };
-    }, [state.selectedConcepts[0], user?.uid]);
+    }, [state.selectedConcepts[0], firebaseUser?.uid]);
 
     const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
     const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
@@ -404,14 +404,14 @@ ${generatedMaterial.assessmentIdea}
         const steps: Array<{ key: 'QUIZ' | 'ASSESSMENT' | 'RUBRIC'; fn: () => Promise<void> }> = [
             { key: 'QUIZ', fn: async () => {
                 acc.quiz = await geminiService.generateAssessment(
-                    'QUIZ', ['MULTIPLE_CHOICE'], 5, context, user ?? undefined,
+                    'QUIZ', [QuestionType.MULTIPLE_CHOICE], 5, context, user ?? undefined,
                     undefined, undefined, undefined, effectiveInstruction, false
                 );
             }},
             { key: 'ASSESSMENT', fn: async () => {
                 acc.assessment = await geminiService.generateAssessment(
                     'ASSESSMENT',
-                    state.questionTypes.length ? state.questionTypes : ['MULTIPLE_CHOICE', 'SHORT_ANSWER'],
+                    state.questionTypes.length ? state.questionTypes : [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER],
                     10, context, user ?? undefined,
                     undefined, undefined, undefined, effectiveInstruction, false
                 );
@@ -420,7 +420,7 @@ ${generatedMaterial.assessmentIdea}
                 acc.rubric = await geminiService.generateRubric(
                     context.grade.level,
                     tempActivityTitle || `Активност за ${context.topic?.title ?? ''}`,
-                    state.activityType, [], user ?? undefined, effectiveInstruction
+                    state.activityType, '', user ?? undefined, effectiveInstruction
                 );
             }},
         ];
@@ -466,14 +466,14 @@ ${generatedMaterial.assessmentIdea}
     };
 
     const handleSaveQuestion = async (q: AssessmentQuestion) => {
-        if (!user?.uid) {
+        if (!firebaseUser?.uid) {
             addNotification('Мора да бидете логирани за да зачувате прашања.', 'error');
             return;
         }
         try {
             const conceptId = state.selectedConcepts[0];
             await firestoreService.saveQuestion({
-                teacherUid: user.uid,
+                teacherUid: firebaseUser?.uid,
                 question: q.question,
                 type: q.type,
                 options: q.options,
@@ -494,7 +494,7 @@ ${generatedMaterial.assessmentIdea}
     };
 
     const handleSaveToLibrary = async (material: any, keyHint: string) => {
-        if (!user?.uid) { addNotification('Мора да бидете логирани.', 'error'); return; }
+        if (!firebaseUser?.uid) { addNotification('Мора да бидете логирани.', 'error'); return; }
         if (savedToLibrary.has(keyHint)) return; // already saved
         try {
             const conceptId = state.selectedConcepts[0];
@@ -506,7 +506,7 @@ ${generatedMaterial.assessmentIdea}
             await firestoreService.saveToLibrary(material, {
                 title: material.title || 'Генериран материјал',
                 type: libType,
-                teacherUid: user.uid,
+                teacherUid: firebaseUser?.uid,
                 conceptId,
                 topicId: state.selectedTopic,
                 gradeLevel,
@@ -907,7 +907,7 @@ ${generatedMaterial.assessmentIdea}
                     <RefineGenerationChat 
                         material={generatedMaterial}
                         onUpdateMaterial={setGeneratedMaterial}
-                        materialType={state.materialType} 
+                        materialType={state.materialType || 'IDEAS'} 
                     />
                 </div>
             )}

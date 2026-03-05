@@ -85,7 +85,7 @@ export const GlobalSearchBar: React.FC = () => {
                 const topicResults: SearchResult[] = allTopics
                     .filter((t: Topic & { gradeLevel: number }) => 
                         t.title.toLowerCase().includes(lowerCaseQuery) ||
-                        t.description.toLowerCase().includes(lowerCaseQuery)
+                        t.description?.toLowerCase().includes(lowerCaseQuery)
                     )
                     .map((t: Topic & { gradeLevel: number }) => ({
                         id: t.id,

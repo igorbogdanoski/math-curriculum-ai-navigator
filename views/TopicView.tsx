@@ -93,6 +93,7 @@ const StandardGroup: React.FC<{
 
 
 const ConceptCard: React.FC<{
+  concept: Concept;
   allConceptsInTopic: Concept[];
   gradeLevel: number;
   topicId: string;
@@ -125,9 +126,9 @@ const ConceptCard: React.FC<{
         ? `\n\nПредложени активности од програмата:\n${concept.activities.slice(0, 5).map((a: string) => `• ${a}`).join('\n')}`
         : '';
     openGeneratorPanel({
-        grade: String(gradeLevel),
-        topicId: topicId,
-        conceptId: concept.id,
+        selectedGrade: String(gradeLevel),
+        selectedTopic: topicId,
+        selectedConcepts: [concept.id],
         contextType: 'CONCEPT',
         customInstruction: `${standardsText}${activitiesText}`.trim(),
     });

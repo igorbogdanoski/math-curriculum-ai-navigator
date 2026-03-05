@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { geminiService } from '../services/geminiService';
-import { GeneratedTest, Topik } from '../types';
+import { GeneratedTest, Topic } from '../types';
 import { ICONS } from '../constants';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 

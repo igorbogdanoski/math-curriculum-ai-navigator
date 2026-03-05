@@ -94,7 +94,7 @@ export const StudentTutorView: React.FC = () => {
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                 ) : (
                   <div className="prose prose-sm md:prose-base max-w-none">
-                    <MathRenderer content={msg.content} />
+                    <MathRenderer text={msg.content} />
                   </div>
                 )}
               </div>
