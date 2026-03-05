@@ -28,6 +28,7 @@ export interface Concept {
   nationalStandardIds?: string[];
   activities?: string[];
   levelDescription?: string;
+  localContextExamples?: string[]; // Macedonian local context (MKD denars, cities, etc.)
 }
 
 export interface Topic {

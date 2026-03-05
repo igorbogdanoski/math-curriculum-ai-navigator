@@ -1,3 +1,4 @@
+import { useTour } from '../hooks/useTour';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { X, ClipboardList, BookmarkPlus, CheckCircle, ShieldCheck } from 'lucide-react';
@@ -34,7 +35,7 @@ import { MaterialOptions } from '../components/generator/MaterialOptions';
 import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 
 
-declare var introJs: any;
+
 
 
 
@@ -47,6 +48,13 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const { user, firebaseUser } = useAuth();
     const { addNotification } = useNotification();
     const { addItem } = usePlanner();
+    const handleTourStep = React.useCallback((el: HTMLElement) => {
+    const step = el.getAttribute('data-tour');
+    if (step === 'generator-step-1') setCurrentStep(1);
+    else if (step === 'generator-step-2') setCurrentStep(2);
+    else if (step === 'generator-step-3' || step === 'generator-generate-button') setCurrentStep(3);
+}, []);
+    useTour('generator', generatorTourSteps, !!generatorTourSteps && !isCurriculumLoading, handleTourStep);
     const { toursSeen, markTourAsSeen } = useUserPreferences();
     const { isOnline } = useNetworkStatus();
     const { showModal, hideModal } = useModal();
@@ -130,65 +138,6 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         return allNationalStandards.filter((s: NationalStandard) => standardIds.has(s.id));
     }, [allNationalStandards, contextType, selectedStandard, selectedConcepts, filteredConcepts]);
 
-    const tourInstance = React.useRef<any>(null);
-    useEffect(() => {
-        if (toursSeen.generator === true || typeof introJs === 'undefined' || isCurriculumLoading || tourInstance.current) return;
-        
-        // Disable tours on small screens as they are often buggy
-        if (window.innerWidth < 768) return;
-
-        const timer = setTimeout(() => {
-            if (toursSeen.generator === true || tourInstance.current) return;
-
-            const tour = introJs();
-            tourInstance.current = tour;
-            
-            tour.setOptions({
-                steps: generatorTourSteps,
-                showProgress: true,
-                showBullets: true,
-                showStepNumbers: true,
-                nextLabel: 'Следно',
-                prevLabel: 'Претходно',
-                doneLabel: 'Готово',
-                exitOnOverlayClick: false, // Prevent accidental exits
-            });
-            
-            const cleanup = () => {
-                const tr = tourInstance.current;
-                tourInstance.current = null;
-                // Defer state update slightly to avoid disrupting introJs native DOM removal
-                setTimeout(() => {
-                    markTourAsSeen('generator');
-                }, 300);
-            };
-
-            tour.oncomplete(cleanup);
-            tour.onexit(cleanup);
-            
-            tour.onchange((targetElement: HTMLElement) => {
-                const tourStep = targetElement.getAttribute('data-tour');
-                if (tourStep === 'generator-step-1') setCurrentStep(1);
-                else if (tourStep === 'generator-step-2') setCurrentStep(2);
-                else if (tourStep === 'generator-step-3' || tourStep === 'generator-generate-button') setCurrentStep(3);
-            });
-            
-            try {
-                tour.start();
-            } catch (e) {
-                console.warn("Failed to start generator tour:", e);
-                tourInstance.current = null;
-            }
-        }, 1000);
-
-        return () => {
-            clearTimeout(timer);
-            if (tourInstance.current) {
-                tourInstance.current.exit(true);
-                tourInstance.current = null;
-            }
-        };
-    }, [toursSeen.generator, markTourAsSeen, isCurriculumLoading]);
     
     // Auto-populate illustration prompt
     useEffect(() => {

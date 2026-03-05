@@ -1,3 +1,4 @@
+import { useTour } from '../hooks/useTour';
 import React, { memo, useMemo, useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -13,7 +14,7 @@ import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { libraryTourSteps } from '../tours/tour-steps';
 import { useModal } from '../contexts/ModalContext';
 
-declare var introJs: any;
+
 
 const LessonPlanCard: React.FC<{ 
     plan: LessonPlan; 
@@ -83,6 +84,7 @@ export const LessonPlanLibraryView: React.FC = () => {
     const { user } = useAuth();
     const { addNotification } = useNotification();
     const { allConcepts, allNationalStandards } = useCurriculum();
+    useTour('library', libraryTourSteps, lessonPlans.length > 0 && !isLoading);
     const { toursSeen, markTourAsSeen } = useUserPreferences();
     const { showModal, hideModal } = useModal();
     
@@ -92,26 +94,6 @@ export const LessonPlanLibraryView: React.FC = () => {
     const [conceptStandardFilter, setConceptStandardFilter] = useState<string>('all');
     const [tagFilters, setTagFilters] = useState<string[]>([]);
 
-    useEffect(() => {
-        if (toursSeen.library === true || typeof introJs === 'undefined' || lessonPlans.length === 0 || isLoading) return;
-
-        const timer = setTimeout(() => {
-            const tour = introJs();
-            tour.setOptions({
-                steps: libraryTourSteps,
-                showProgress: true,
-                showBullets: true,
-                nextLabel: 'Следно',
-                prevLabel: 'Претходно',
-                doneLabel: 'Готово',
-            });
-            tour.oncomplete(() => markTourAsSeen('library'));
-            tour.onexit(() => markTourAsSeen('library'));
-            tour.start();
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [toursSeen, markTourAsSeen, lessonPlans.length, isLoading]);
 
 
     const allTags = useMemo(() => {

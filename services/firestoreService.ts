@@ -147,6 +147,7 @@ export interface CachedMaterial {
   createdAt: Timestamp;
   helpfulCount?: number;
   notHelpfulCount?: number;
+  isApproved?: boolean; // Z2 feature
 }
 
 // ???? ?????? ???? ??????? ????????? Firebase SDK ?? ?? ?? ????? ??????????.
@@ -1163,6 +1164,10 @@ export const firestoreService = {
 
   unpublishMaterial: async (id: string): Promise<void> => {
     await updateDoc(doc(db, 'cached_ai_materials', id), { status: 'draft' });
+  },
+
+  approveMaterial: async (id: string, approved: boolean): Promise<void> => {
+    await updateDoc(doc(db, 'cached_ai_materials', id), { isApproved: approved });
   },
 
   deleteCachedMaterial: async (id: string): Promise<void> => {

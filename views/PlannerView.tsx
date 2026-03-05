@@ -1,3 +1,4 @@
+import { useTour } from '../hooks/useTour';
 import { useLanguage } from '../i18n/LanguageContext';
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Target, X } from 'lucide-react';
@@ -21,7 +22,7 @@ import { getWeekRange } from '../utils/date';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { plannerTourSteps } from '../tours/tour-steps';
 
-declare var introJs: any;
+
 
 const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
     <button
@@ -45,6 +46,7 @@ export const PlannerView: React.FC = () => {
     const { items, updateItem, addItem, getLessonPlan, isLoading, lessonPlans } = usePlanner();
     const { showModal } = useModal();
     const { addNotification } = useNotification();
+    useTour('planner', plannerTourSteps, !isLoading);
     const { toursSeen, markTourAsSeen } = useUserPreferences();
     const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
     const aiMenuRef = useRef<HTMLDivElement>(null);
@@ -64,56 +66,6 @@ export const PlannerView: React.FC = () => {
         };
     }, []);
 
-    const tourInstance = useRef<any>(null);
-    useEffect(() => {
-        // Only run tour if not seen AND data is fully loaded
-        if (toursSeen.planner === true || typeof introJs === 'undefined' || isLoading || tourInstance.current) return;
-
-        // Disable tours on small screens as they are often buggy
-        if (window.innerWidth < 768) return;
-
-        const timer = setTimeout(() => {
-            if (toursSeen.planner === true || tourInstance.current) return;
-            
-            const tour = introJs();
-            tourInstance.current = tour;
-
-            tour.setOptions({
-                steps: plannerTourSteps,
-                showProgress: true,
-                showBullets: true,
-                showStepNumbers: true,
-                nextLabel: t('planner.tour.next'),
-                prevLabel: t('planner.tour.prev'),
-                doneLabel: t('planner.tour.done'),
-                tooltipClass: 'custom-tooltip-class',
-                exitOnOverlayClick: false,
-            });
-
-            const cleanup = () => {
-                markTourAsSeen('planner');
-                tourInstance.current = null;
-            };
-
-            tour.oncomplete(cleanup);
-            tour.onexit(cleanup);
-            
-            try {
-                tour.start();
-            } catch (e) {
-                console.warn("Failed to start planner tour:", e);
-                tourInstance.current = null;
-            }
-        }, 1000); // Short delay for render
-
-        return () => {
-            clearTimeout(timer);
-            if (tourInstance.current) {
-                tourInstance.current.exit(true);
-                tourInstance.current = null;
-            }
-        };
-    }, [toursSeen.planner, markTourAsSeen, isLoading]);
 
 
     const sensors = useSensors(

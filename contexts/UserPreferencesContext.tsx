@@ -7,6 +7,7 @@ interface UserPreferences {
   favoriteConceptIds: string[];
   favoriteLessonPlanIds: string[];
   toursSeen: Record<string, boolean>;
+  isPreferencesLoaded: boolean;
 }
 
 interface UserPreferencesContextType extends UserPreferences {
@@ -15,6 +16,7 @@ interface UserPreferencesContextType extends UserPreferences {
   isFavoriteLessonPlan: (planId: string) => boolean;
   toggleFavoriteLessonPlan: (planId: string) => void;
   markTourAsSeen: (tour: string) => void;
+  resetAllTours: () => void;
 }
 
 const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined);
@@ -31,6 +33,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
   const [favoriteConceptIds, setFavoriteConceptIds] = useState<string[]>([]);
   const [favoriteLessonPlanIds, setFavoriteLessonPlanIds] = useState<string[]>([]);
   const [toursSeen, setToursSeen] = useState<Record<string, boolean>>({});
+  const [isPreferencesLoaded, setIsPreferencesLoaded] = useState<boolean>(false);
   const { firebaseUser } = useAuth();
 
   useEffect(() => {
@@ -38,6 +41,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
       setFavoriteConceptIds([]);
       setFavoriteLessonPlanIds([]);
       setToursSeen({});
+      setIsPreferencesLoaded(true);
       return;
     }
 
@@ -51,6 +55,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
       } else {
         console.log("User preferences document does not exist!");
       }
+      setIsPreferencesLoaded(true);
     }, (error) => {
         console.error("Error listening to user preferences:", error);
     });
@@ -84,6 +89,15 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     return favoriteLessonPlanIds.includes(planId);
   }, [favoriteLessonPlanIds]);
 
+  const resetAllTours = useCallback(() => {
+    setToursSeen({});
+    if (!firebaseUser) return;
+    const userDocRef = doc(db, "users", firebaseUser.uid);
+    updateDoc(userDocRef, { toursSeen: {} }).catch(err => {
+      console.error("Failed to reset tours:", err);
+    });
+  }, [firebaseUser]);
+
   const markTourAsSeen = useCallback((tour: string) => {
     // Optimistically update the state for immediate UI feedback
     setToursSeen((prev: Record<string, boolean>) => ({ ...prev, [tour]: true }));
@@ -115,7 +129,9 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     isFavoriteLessonPlan,
     toggleFavoriteLessonPlan,
     markTourAsSeen,
-  }), [favoriteConceptIds, favoriteLessonPlanIds, toursSeen, isFavoriteConcept, toggleFavoriteConcept, isFavoriteLessonPlan, toggleFavoriteLessonPlan, markTourAsSeen]);
+    resetAllTours,
+    isPreferencesLoaded,
+  }), [favoriteConceptIds, favoriteLessonPlanIds, toursSeen, isFavoriteConcept, toggleFavoriteConcept, isFavoriteLessonPlan, toggleFavoriteLessonPlan, markTourAsSeen, resetAllTours, isPreferencesLoaded]);
 
   return (
     <UserPreferencesContext.Provider value={value}>

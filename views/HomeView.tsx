@@ -1,3 +1,4 @@
+import { useTour } from '../hooks/useTour';
 import React, { useEffect, useState } from 'react';
 import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,7 +37,7 @@ const getQuickActions = (t: any) => [
   { label: t('home.quick.livequiz'), desc: t('home.quick.livequizDesc'), icon: Radio, color: 'bg-rose-600 hover:bg-rose-700', action: 'live' },
 ];
 
-declare var introJs: any;
+
 
 const ChartTabs: React.FC<{
     monthlyActivity: any;
@@ -96,29 +97,10 @@ export const HomeView: React.FC = () => {
   const { lastVisited } = useLastVisited();
   const { monthlyActivity, topicCoverage, overallStats, isLoading: isStatsLoading } = useDashboardStats();
   const { recommendations, isLoading: isRecsLoading, error: recsError } = usePersonalizedRecommendations();
+  useTour('dashboard', dashboardTourSteps, !isStatsLoading && !isRecsLoading);
   const { toursSeen, markTourAsSeen } = useUserPreferences();
   const { suggestion, isLoading: isSuggestionLoading, dismissSuggestion } = useProactiveSuggestions();
   const { openGeneratorPanel } = useGeneratorPanel();
-
-  useEffect(() => {
-    if (toursSeen.dashboard === true || typeof introJs === 'undefined' || isStatsLoading || isRecsLoading) return;
-    const timer = setTimeout(() => {
-        const tour = introJs();
-        tour.setOptions({
-            steps: dashboardTourSteps,
-            showProgress: true,
-            showBullets: true,
-            showStepNumbers: true,
-            nextLabel: 'Следно',
-            prevLabel: 'Претходно',
-            doneLabel: 'Готово',
-        });
-        tour.oncomplete(() => markTourAsSeen('dashboard'));
-        tour.onexit(() => markTourAsSeen('dashboard'));
-        tour.start();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [toursSeen, markTourAsSeen, isStatsLoading, isRecsLoading]);
 
   const handleSuggestionGenerate = () => {
     if (suggestion) {

@@ -56,7 +56,16 @@ export const ContentLibraryView: React.FC = () => {
         } catch { addNotification('Грешка при публикување.', 'error'); }
     };
 
-    const handleUnpublish = async (m: CachedMaterial) => {
+          const handleApproveToggle = async (m: CachedMaterial) => {
+          try {
+              const newStatus = !m.isApproved;
+              await firestoreService.approveMaterial(m.id, newStatus);
+              setMaterials(prev => prev.map(x => x.id === m.id ? { ...x, isApproved: newStatus } : x));
+              addNotification(newStatus ? 'Материјалот е одобрен и видлив за сите! ✅' : 'Одобрувањето е повлечено.', 'success');
+          } catch { addNotification('Грешка при одобрување.', 'error'); }
+      };
+
+const handleUnpublish = async (m: CachedMaterial) => {
         try {
             await firestoreService.unpublishMaterial(m.id);
             setMaterials(prev => prev.map(x => x.id === m.id ? { ...x, status: 'draft' } : x));
