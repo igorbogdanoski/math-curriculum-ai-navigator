@@ -28,6 +28,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'home.quick.mylessonsDesc': 'Мои планови',
     'home.quick.livequiz': 'Интерактивен',
     'home.quick.livequizDesc': 'Квиз во живо',
+    'home.quick.vision': 'AI Домашни',
+    'home.quick.visionDesc': 'Проверка',
     'home.tabs.activity': 'Месечна Активност',
     'home.tabs.topics': 'Покриени Теми',
     'common.close': 'Затвори',

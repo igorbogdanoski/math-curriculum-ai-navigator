@@ -85,6 +85,7 @@ const PlannerView = safeLazy(() => import('./views/PlannerView').then(module => 
 const AssistantView = safeLazy(() => import('./views/AssistantView').then(module => ({ default: module.AssistantView })));
 const MaterialsGeneratorView = safeLazy(() => import('./views/MaterialsGeneratorView').then(module => ({ default: module.MaterialsGeneratorView })));
 const SettingsView = safeLazy(() => import('./views/SettingsView').then(module => ({ default: module.SettingsView })));
+const AIVisionGraderView = safeLazy(() => import('./views/AIVisionGraderView').then(module => ({ default: module.AIVisionGraderView })));
 const NotFoundView = safeLazy(() => import('./views/NotFoundView').then(module => ({ default: module.NotFoundView })));
 const ProgressionView = safeLazy(() => import('./views/ProgressionView').then(module => ({ default: module.ProgressionView })));
 const ExamplesGalleryView = safeLazy(() => import('./views/ExamplesGalleryView').then(module => ({ default: module.ExamplesGalleryView })));
@@ -131,6 +132,7 @@ const routes = [
     { path: '/planner/lesson/:id', component: LessonPlanEditorView },
     { path: '/planner/lesson/new', component: LessonPlanEditorView },
     { path: '/assistant', component: AssistantView },
+    { path: '/vision-assessment', component: AIVisionGraderView },
     { path: '/generator', component: GeneratorRouteHandler },
     { path: '/my-lessons', component: LessonPlanLibraryView },
     { path: '/library', component: ContentLibraryView },

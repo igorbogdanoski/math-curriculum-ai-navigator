@@ -1,6 +1,6 @@
 import { useTour } from '../hooks/useTour';
 import React, { useEffect, useState } from 'react';
-import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library } from 'lucide-react';
+import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library, Camera } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import type { AIRecommendation } from '../types';
@@ -35,6 +35,7 @@ const getQuickActions = (t: any) => [
   { label: t('home.quick.analytics'), desc: t('home.quick.analyticsDesc'), icon: BarChart2, color: 'bg-violet-600 hover:bg-violet-700', action: 'analytics' },
   { label: t('home.quick.mylessons'), desc: t('home.quick.mylessonsDesc'), icon: Library, color: 'bg-emerald-600 hover:bg-emerald-700', action: 'my-lessons' },
   { label: t('home.quick.livequiz'), desc: t('home.quick.livequizDesc'), icon: Radio, color: 'bg-rose-600 hover:bg-rose-700', action: 'live' },
+  { label: t('home.quick.vision'), desc: t('home.quick.visionDesc'), icon: Camera, color: 'bg-teal-600 hover:bg-teal-700', action: 'vision-assessment' },
 ];
 
 
@@ -186,7 +187,7 @@ export const HomeView: React.FC = () => {
       </div>
 
       {/* ── QUICK ACTIONS STRIP ──────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {getQuickActions(t).map(({ label, desc, icon: Icon, color, action }) => (
           <button
             key={action}
