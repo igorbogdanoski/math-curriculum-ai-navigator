@@ -1,9 +1,10 @@
 import './InteractiveQuizPlayer.css';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X, Lightbulb, Loader2 } from 'lucide-react';
+import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X, Lightbulb, Loader2, PenTool } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 import { GradeBadge } from '../common/GradeBadge';
+import { DigitalScratchpad } from '../common/DigitalScratchpad';
 import { type AssessmentQuestion, QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial } from '../../types';
 import { StepByStepSolver } from '../StepByStepSolver';
 import { geminiService } from '../../services/geminiService';
@@ -35,8 +36,13 @@ interface Props {
 const SECONDS_PER_QUESTION = 20;
 
 export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQuestions, quiz, onComplete, onClose }) => {
+  // State for Step 1.3: Dynamic parallel generation
+  const [dynamicQuestions, setDynamicQuestions] = useState<any[] | null>(null);
+  const [isGeneratingParallel, setIsGeneratingParallel] = useState(false);
+
   // Normalize data from props
   const normalizedQuestions = useMemo(() => {
+    if (dynamicQuestions) return dynamicQuestions;
     if (propQuestions) return propQuestions;
     if (quiz) {
       if ('questions' in quiz) return quiz.questions;
@@ -76,6 +82,9 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
   // Misconception tracking state
   const [misconceptions, setMisconceptions] = useState<{ question: string; studentAnswer: string; misconception: string }[]>([]);
+
+  // Scratchpad state
+  const [showScratchpad, setShowScratchpad] = useState(false);
 
   const currentQ = normalizedQuestions[currentIndex];
 
@@ -194,6 +203,24 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     setScaffoldData(null);
   };
 
+  const handleGenerateParallel = async () => {
+    if (isGeneratingParallel) return;
+    setIsGeneratingParallel(true);
+    try {
+      const parentQuestions = propQuestions || (quiz && ('questions' in quiz ? quiz.questions : quiz.items)) || [];
+      if (!parentQuestions || parentQuestions.length === 0) return;
+      const newQuestions = await geminiService.generateParallelQuestions(parentQuestions);
+      if (newQuestions && newQuestions.length > 0) {
+        setDynamicQuestions(newQuestions);
+        resetQuiz();
+      }
+    } catch (err) {
+      console.error("Грешка при генерирање паралелен квиз:", err);
+    } finally {
+      setIsGeneratingParallel(false);
+    }
+  };
+
   const handleRequestHint = async () => {
     if (isGeneratingScaffold) return;
     setIsGeneratingScaffold(true);
@@ -252,15 +279,23 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
           </div>
 
           <div className="flex flex-col gap-3">
-            <button 
+            <button
               onClick={resetQuiz}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-blue-200 flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               <RefreshCw className="w-5 h-5" />
               Играј повторно
             </button>
+            <button
+              onClick={handleGenerateParallel}
+              disabled={isGeneratingParallel}
+              className="w-full py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-2 border-indigo-200 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+            >
+              <Sparkles className={`w-5 h-5 ${isGeneratingParallel ? 'animate-spin' : ''}`} />
+              {isGeneratingParallel ? 'Генерирање...' : 'Вежбај со нови бројки (Mastery)'}
+            </button>
             {onClose && (
-              <button 
+              <button
                 onClick={onClose}
                 className="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2"
               >
@@ -279,20 +314,30 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden max-w-xl w-full relative">
+      <div className={`bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden w-full relative flex flex-col md:flex-row transition-[max-width,min-width] duration-300 ease-in-out ${showScratchpad ? 'max-w-5xl' : 'max-w-xl'}`}>
         
-        {/* HEADER */}
-        <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Прашање {currentIndex + 1}/{normalizedQuestions.length}</span>
-            <h2 className="text-sm font-bold text-gray-700 line-clamp-1">{quizTitle}</h2>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {streak > 1 && (
-              <div className="flex items-center gap-1 text-orange-500 font-black animate-pulse">
-                <Flame className="w-5 h-5 fill-orange-500" />
-                <span>{streak}x</span>
+        {/* Main Quiz Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* HEADER */}
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Прашање {currentIndex + 1}/{normalizedQuestions.length}</span>
+              <h2 className="text-sm font-bold text-gray-700 line-clamp-1">{quizTitle}</h2>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowScratchpad(!showScratchpad)}
+                title="Табла за пресметки"
+                className={`p-1.5 rounded-lg transition-colors border-2 ${showScratchpad ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
+              >
+                <PenTool className="w-5 h-5" />
+              </button>
+
+              {streak > 1 && (
+                <div className="flex items-center gap-1 text-orange-500 font-black animate-pulse">
+                  <Flame className="w-5 h-5 fill-orange-500" />
+                  <span>{streak}x</span>
               </div>
             )}
             
@@ -446,6 +491,27 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
             </div>
           )}
         </div>
+        </div>
+
+        {/* SRATCHPAD PANEL */}
+        {showScratchpad && (
+          <div className="w-full md:w-96 border-t md:border-t-0 md:border-l border-gray-200 bg-slate-50 flex flex-col shrink-0 animate-in fade-in slide-in-from-right-4 duration-300 relative z-20 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.05)] md:shadow-none">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white relative z-10">
+              <span className="font-bold text-slate-700 text-sm flex items-center gap-2">
+                <PenTool className="w-4 h-4 text-indigo-500" />
+                Табла за пресметки
+              </span>
+              <button 
+                onClick={() => setShowScratchpad(false)} 
+                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <DigitalScratchpad className="flex-1 border-0 rounded-none w-full min-h-[300px] md:h-auto" />
+          </div>
+        )}
+
       </div>
     </div>
   );

@@ -39,52 +39,75 @@ export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGen
                             {allConceptStats.map(c => {
                                 const avgColor = c.avgPct >= 70 ? 'text-green-600' : c.avgPct >= 50 ? 'text-yellow-600' : 'text-red-500';
                                 const rowBg = c.avgPct >= 70 ? '' : c.avgPct >= 50 ? 'bg-yellow-50/40' : 'bg-red-50/40';
+                                const hasMisconceptions = c.misconceptions && c.misconceptions.length > 0;
                                 return (
-                                    <tr key={c.conceptId} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${rowBg}`}>
-                                        <td className="py-2.5 px-3">
-                                            <div className="flex items-center gap-2">
-                                                {c.avgPct < 50 && <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
-                                                <span className="font-semibold text-slate-700 text-xs leading-tight">{c.title}</span>
-                                            </div>
-                                        </td>
-                                        <td className="py-2.5 px-3 text-center text-gray-600">{c.attempts}</td>
-                                        <td className="py-2.5 px-3 text-center">
-                                            <div className="flex flex-col items-center gap-1">
-                                                <span className={`font-bold text-base ${avgColor}`}>{c.avgPct}%</span>
-                                                <div className="w-16">
-                                                    <ScoreBar pct={Math.max(c.avgPct, 2)} color={c.avgPct >= 70 ? 'bg-green-400' : c.avgPct >= 50 ? 'bg-yellow-400' : 'bg-red-400'} />
+                                    <React.Fragment key={c.conceptId}>
+                                        <tr className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${rowBg}`}>
+                                            <td className="py-2.5 px-3">
+                                                <div className="flex items-center gap-2">
+                                                    {c.avgPct < 50 && <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
+                                                    <span className="font-semibold text-slate-700 text-xs leading-tight">{c.title}</span>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-2.5 px-3 text-center text-gray-600">{c.passRate}%</td>
-                                        <td className="py-2.5 px-3 text-center text-gray-600">{c.uniqueStudents || '—'}</td>
-                                        <td className="py-2.5 px-3 text-center">
-                                            {c.masteredCount > 0
-                                                ? <span className="flex items-center justify-center gap-1 text-yellow-700 font-bold text-xs">
-                                                    <Trophy className="w-3.5 h-3.5 text-yellow-500" fill="currentColor" />
-                                                    {c.masteredCount}
-                                                  </span>
-                                                : <span className="text-gray-300">—</span>}
-                                        </td>
-                                        <td className="py-2.5 px-3 text-center">
-                                            <span className={`text-sm ${confidenceColor(c.avgConfidence)}`}>
-                                                {confidenceEmoji(c.avgConfidence)}
-                                            </span>
-                                        </td>
-                                        <td className="py-2.5 px-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => onGenerateRemedial(c.conceptId, c.title, c.avgPct)}
-                                                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
-                                                    c.avgPct < 70
-                                                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                                                }`}
-                                            >
-                                                {c.avgPct < 70 ? 'Ремедијален' : 'Збогатување'}
-                                            </button>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center text-gray-600">{c.attempts}</td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <span className={`font-bold text-base ${avgColor}`}>{c.avgPct}%</span>
+                                                    <div className="w-16">
+                                                        <ScoreBar pct={Math.max(c.avgPct, 2)} color={c.avgPct >= 70 ? 'bg-green-400' : c.avgPct >= 50 ? 'bg-yellow-400' : 'bg-red-400'} />
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center text-gray-600">{c.passRate}%</td>
+                                            <td className="py-2.5 px-3 text-center text-gray-600">{c.uniqueStudents || '—'}</td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                {c.masteredCount > 0
+                                                    ? <span className="flex items-center justify-center gap-1 text-yellow-700 font-bold text-xs">
+                                                        <Trophy className="w-3.5 h-3.5 text-yellow-500" fill="currentColor" />
+                                                        {c.masteredCount}
+                                                      </span>
+                                                    : <span className="text-gray-300">—</span>}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <span className={`text-sm ${confidenceColor(c.avgConfidence)}`}>
+                                                    {confidenceEmoji(c.avgConfidence)}
+                                                </span>
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onGenerateRemedial(c.conceptId, c.title, c.avgPct)}
+                                                    className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
+                                                        c.avgPct < 70
+                                                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                                    }`}
+                                                >
+                                                    {c.avgPct < 70 ? 'Ремедијален' : 'Збогатување'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {hasMisconceptions && (
+                                            <tr className="bg-red-50/20 border-b border-gray-100">
+                                                <td colSpan={8} className="py-2 px-4">
+                                                    <div className="flex flex-col gap-1.5 pl-6">
+                                                        <span className="text-xs font-bold tracking-tight text-red-700 uppercase flex items-center gap-1">
+                                                            <AlertTriangle className="w-3 h-3" />
+                                                            Најчести концептуални грешки:
+                                                        </span>
+                                                        <ul className="list-disc list-inside text-xs text-slate-600 marker:text-red-400">
+                                                            {c.misconceptions?.slice(0, 3).map((m, idx) => (
+                                                                <li key={idx}>
+                                                                    <span className="font-semibold text-slate-800">{m.text}</span>
+                                                                    <span className="text-gray-400 ml-1">({m.count} {m.count === 1 ? 'грешка' : 'грешки'})</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 );
                             })}
                         </tbody>

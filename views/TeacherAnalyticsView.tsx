@@ -226,19 +226,35 @@ export const TeacherAnalyticsView: React.FC = () => {
 
         const conceptStats = results.filter(r => r.conceptId).reduce((acc, r) => {
             const key = r.conceptId!;
-            if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), quizTitle: r.quizTitle, confSum: 0, confCount: 0 };
+            if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), quizTitle: r.quizTitle, confSum: 0, confCount: 0, misconceptions: [] as string[] };
             acc[key].total++;
             acc[key].sum += r.percentage;
             if (r.percentage >= 70) acc[key].passCount++;
             if (r.studentName) acc[key].students.add(r.studentName);
             // В2 — confidence accumulation
             if (r.confidence != null) { acc[key].confSum += r.confidence; acc[key].confCount++; }
+            // Фаза Г — misconceptions accumulation
+            if (r.misconceptions && Array.isArray(r.misconceptions)) {
+                r.misconceptions.forEach(m => {
+                    if (m.misconception && m.misconception !== "Непозната грешка" && m.misconception !== "Пресметковна грешка или случајно погодување") {
+                        acc[key].misconceptions.push(m.misconception);
+                    }
+                });
+            }
             return acc;
-        }, {} as Record<string, { total: number; sum: number; passCount: number; students: Set<string>; quizTitle: string; confSum: number; confCount: number }>);
+        }, {} as Record<string, { total: number; sum: number; passCount: number; students: Set<string>; quizTitle: string; confSum: number; confCount: number; misconceptions: string[] }>);
 
         const allConceptStats: ConceptStat[] = Object.entries(conceptStats).map(([conceptId, s]) => {
             const conceptTitle = getConceptDetails(conceptId).concept?.title || s.quizTitle;
             const masteredCount = masteryRecords.filter(m => m.conceptId === conceptId && m.mastered).length;
+            
+            // Group and count misconceptions
+            const miscMap: Record<string, number> = {};
+            s.misconceptions.forEach(m => miscMap[m] = (miscMap[m] || 0) + 1);
+            const sortedMisconceptions = Object.entries(miscMap)
+                .sort((a, b) => b[1] - a[1]) // Sort by frequency desc
+                .map(([text, count]) => ({ text, count }));
+
             return {
                 conceptId,
                 title: conceptTitle,
@@ -248,6 +264,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                 uniqueStudents: s.students.size,
                 masteredCount,
                 avgConfidence: s.confCount > 0 ? s.confSum / s.confCount : undefined,
+                misconceptions: sortedMisconceptions.length > 0 ? sortedMisconceptions : undefined,
             };
         }).sort((a, b) => a.avgPct - b.avgPct);
 

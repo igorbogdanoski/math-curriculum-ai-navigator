@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { GradeBadge } from '../components/common/GradeBadge';
+import { LogicMap } from '../components/LogicMap';
 import { geminiService } from '../services/geminiService';
 
 const formatDate = (ts: any): string => {
@@ -39,6 +40,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [gamification, setGamification] = useState<StudentGamification | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [activeTab, setActiveTab] = useState<'activity' | 'map'>('map');
   const [reportPeriod, setReportPeriod] = useState<'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH'>('THIS_WEEK');
   // П27 — Teacher announcements
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -342,8 +344,35 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         </div>
       )}
 
+      {/* TABS */}
+      {searched && !loading && (
+        <div className="w-full max-w-2xl flex gap-2 mb-6 bg-white/20 p-1.5 rounded-2xl no-print">
+          <button 
+            onClick={() => setActiveTab('map')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 font-bold text-sm rounded-xl transition ${activeTab === 'map' ? 'bg-white text-indigo-700 shadow' : 'text-white hover:bg-white/10'}`}
+          >
+            <Target className="w-4 h-4" /> Мапа на Знаење
+          </button>
+          <button 
+            onClick={() => setActiveTab('activity')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 font-bold text-sm rounded-xl transition ${activeTab === 'activity' ? 'bg-white text-indigo-700 shadow' : 'text-white hover:bg-white/10'}`}
+          >
+            <BarChart2 className="w-4 h-4" /> Активност и Резултати
+          </button>
+        </div>
+      )}
+
+      {searched && !loading && activeTab === 'map' && (
+        <div className="w-full max-w-2xl no-print mb-8">
+          <LogicMap masteryRecords={masteryRecords} />
+        </div>
+      )}
+
+      {searched && !loading && activeTab === 'activity' && (
+        <>
+
       {/* ── Правец 15: Gamification — XP + Streak + Achievements ──────────── */}
-      {searched && !loading && gamification && (
+      {gamification && (
         <div className="w-full max-w-2xl mb-4">
           <div className="bg-white rounded-2xl shadow p-4">
             {/* XP bar + streak */}
@@ -688,6 +717,9 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             })
           )}
         </div>
+      )}
+
+        </>
       )}
 
       <footer className="mt-10 text-white/50 text-xs font-bold uppercase tracking-widest no-print">

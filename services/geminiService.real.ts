@@ -1367,6 +1367,35 @@ ${lessonsText}
     return enrichedResult;
   },
 
+  async generateParallelQuestions(originalQuestions: AssessmentQuestion[]): Promise<AssessmentQuestion[]> {
+    const prompt = `Дадени ти се следниве прашања од математички квиз:
+${JSON.stringify(originalQuestions, null, 2)}
+
+Твојата задача е да генерираш ПАРАЛЕЛНИ прашања (Mastery Learning). 
+Секое ново прашање треба да има ИСТА ТЕЖИНА, ИСТ ОЧЕКУВАН НАЧИН НА РЕШАВАЊЕ и ИСТ ФОРМАТ како оригиналот, но со РАЗЛИЧНИ БРОЈКИ или РАЗЛИЧЕН КОНТЕКСТ (пр. сменети имиња, предмети).
+Врати JSON формат строго копирајќи го property-структурирањето на оригиналот, 
+и генерирај точно ${originalQuestions.length} прашања.`;
+
+    const schema = {
+        type: Type.ARRAY,
+        items: {
+            type: Type.OBJECT,
+            properties: {
+                id: { type: Type.NUMBER },
+                type: { type: Type.STRING },
+                question: { type: Type.STRING },
+                options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                answer: { type: Type.STRING },
+                solution: { type: Type.STRING }
+            },
+            required: ["type", "question", "answer"]
+        }
+    };
+
+    const newQuestions = await generateAndParseJSON<AssessmentQuestion[]>([{ text: prompt }], schema);
+    return newQuestions;
+  },
+
   async askTutor(message: string, history: Array<{role: string, content: string}>): Promise<string> {
     const systemPrompt = `Ти си безбеден AI тутор по математика за ученици во основно образование. Твојата главна цел е да им помогнеш да ги разберат концептите, НЕ да им ги решаваш задачите.
     
