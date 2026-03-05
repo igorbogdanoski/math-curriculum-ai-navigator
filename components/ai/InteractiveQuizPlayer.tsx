@@ -7,6 +7,7 @@ import { MathInput } from '../common/MathInput';
 import { checkMathEquivalence } from '../../utils/mathEvaluator';
 import { GradeBadge } from '../common/GradeBadge';
 import { MathToolsPanel } from '../common/MathToolsPanel';
+import { MathScratchpad } from '../common/MathScratchpad';
 import { type AssessmentQuestion, QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial } from '../../types';
 import { StepByStepSolver } from '../StepByStepSolver';
 import { geminiService } from '../../services/geminiService';
@@ -88,7 +89,11 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     // Math tools state
     const [showMathTools, setShowMathTools] = useState(false);
     // Short answer state
-    const [shortAnswer, setShortAnswer] = useState('');  // Timer Logic
+  const [shortAnswer, setShortAnswer] = useState('');
+  // Scratchpad state
+  const [showScratchpad, setShowScratchpad] = useState(false);
+  
+  // Timer Logic
   useEffect(() => {
     if (isTimerRunning && timeLeft > 0 && !showResult) {
       timerRef.current = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
@@ -328,12 +333,10 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
             <div className="flex items-center gap-4">
               <button
-                  onClick={() => setShowMathTools(!showMathTools)}
-                title="Табла за пресметки"
-                className={`p-1.5 rounded-lg transition-colors border-2 ${showMathTools ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
-              >
-                <PenTool className="w-5 h-5" />
-              </button>
+                    onClick={() => setShowScratchpad(!showScratchpad)}
+                  title="Работна табла за цртање (Scratchpad)"
+                  className={`p-1.5 rounded-lg transition-colors border-2 ${showScratchpad ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}                >
+                    <PenTool className="w-5 h-5" />              </button>
 
               {streak > 1 && (
                 <div className="flex items-center gap-1 text-orange-500 font-black animate-pulse">
@@ -499,6 +502,13 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
           )}
         </div>
         </div>
+
+          {/* SCRATCHPAD PANEL */}
+          {showScratchpad && (
+            <div className="w-full mt-4">
+              <MathScratchpad isOpen={showScratchpad} onClose={() => setShowScratchpad(false)} />
+            </div>
+          )}
 
         {/* MATH TOOLS PANEL */}
         {showMathTools && (
