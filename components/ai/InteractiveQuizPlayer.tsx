@@ -276,8 +276,8 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   // --- RESULT SCREEN ---
   if (showResult) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 text-center max-w-lg w-full border border-blue-100 relative overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+        <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 text-center max-w-lg w-full border border-blue-100 relative overflow-hidden my-auto">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
           
           <div className="mb-6 flex justify-center">
@@ -341,53 +341,53 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   const timePercentage = (timeLeft / SECONDS_PER_QUESTION) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className={`bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden w-full relative flex flex-col md:flex-row transition-[max-width,min-width] duration-300 ease-in-out ${showMathTools ? 'max-w-[70rem]' : 'max-w-xl'}`}>
+    <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center md:p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+      <div className={`bg-white md:rounded-3xl shadow-2xl md:border border-gray-200 overflow-y-auto overflow-x-hidden w-full relative flex flex-col md:flex-row transition-[max-width,min-width] duration-300 ease-in-out min-h-screen md:min-h-[auto] md:max-h-[90vh] my-auto ${showMathTools ? 'max-w-[70rem]' : 'max-w-xl'}`}>
         
         {/* Main Quiz Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 pb-10 md:pb-0">
           {/* HEADER */}
-          <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-            <div className="flex flex-col">
+          <div className="bg-gray-50 px-4 md:px-6 py-3 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2 sticky top-0 z-10">
+            <div className="flex flex-col flex-1 min-w-[120px]">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Прашање {currentIndex + 1}/{normalizedQuestions.length}</span>
               <h2 className="text-sm font-bold text-gray-700 line-clamp-1">{quizTitle}</h2>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 md:gap-4 flex-wrap justify-end">
               <button
                     onClick={() => setShowScratchpad(!showScratchpad)}
                   title="Работна табла за цртање (Scratchpad)"
-                  className={`p-1.5 rounded-lg transition-colors border-2 ${showScratchpad ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}                >
+                  className={`p-2.5 md:p-1.5 rounded-lg transition-colors border-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center ${showScratchpad ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}                >
                     <PenTool className="w-5 h-5" />              </button>
               <button
                 onClick={() => setShowMathTools(!showMathTools)}
                 title="Математички алатки (GeoGebra / Desmos)"
-                className={`p-1.5 rounded-lg transition-colors border-2 ${showMathTools ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
+                className={`p-2.5 md:p-1.5 rounded-lg transition-colors border-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center ${showMathTools ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
               >
                 <Calculator className="w-5 h-5" />
               </button>
               <button
                 onClick={() => patchReadingMode({ active: !readingMode.active })}
                 title="Режим за читање (за помали деца и дислексија)"
-                className={`p-1.5 rounded-lg transition-colors border-2 ${readingMode.active ? 'bg-amber-50 border-amber-300 text-amber-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
+                className={`p-2.5 md:p-1.5 rounded-lg transition-colors border-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center ${readingMode.active ? 'bg-amber-50 border-amber-300 text-amber-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
               >
                 <Eye className="w-5 h-5" />
               </button>
 
               {streak > 1 && (
-                <div className="flex items-center gap-1 text-orange-500 font-black animate-pulse">
+                <div className="flex items-center gap-1 text-orange-500 font-black animate-pulse px-2">
                   <Flame className="w-5 h-5 fill-orange-500" />
-                  <span>{streak}x</span>
+                  <span className="hidden sm:inline">{streak}x</span>
               </div>
             )}
             
-            <div className="bg-blue-600 text-white px-3 py-1 rounded-full font-mono font-black text-xs shadow-md">
+            <div className="bg-blue-600 text-white px-2.5 py-1.5 md:px-3 md:py-1 rounded-full font-mono font-black text-xs shadow-md">
               {score} pts
             </div>
 
             {onClose && (
-              <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition-colors text-gray-400">
-                <X className="w-5 h-5" />
+              <button onClick={onClose} className="p-2.5 md:p-1 hover:bg-gray-200 rounded-full transition-colors text-gray-400 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center">
+                <X className="w-6 h-6 md:w-5 md:h-5" />
               </button>
             )}
           </div>
@@ -506,7 +506,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                           <button
                             onClick={handleRequestHint}
                             disabled={isGeneratingScaffold}
-                            className="bg-white text-indigo-600 hover:bg-indigo-50 border whitespace-nowrap border-indigo-200 px-4 py-2 font-bold rounded-lg text-sm flex items-center gap-2 transition disabled:opacity-50"
+                            className="bg-white text-indigo-600 hover:bg-indigo-50 border whitespace-nowrap border-indigo-200 px-4 py-3 md:py-2 min-h-[44px] md:min-h-0 font-bold rounded-lg text-sm flex items-center justify-center w-full sm:w-auto gap-2 transition disabled:opacity-50"
                           >
                             {isGeneratingScaffold ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
                             {isGeneratingScaffold ? 'AI анализира...' : 'Објасни чекор по чекор'}

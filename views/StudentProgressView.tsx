@@ -245,7 +245,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   return (
     <div className="min-h-screen bg-indigo-600 p-4 md:p-8 flex flex-col items-center">
       {/* Header */}
-      <div className="w-full max-w-2xl flex justify-between items-center mb-8 text-white">
+      <div className="w-full max-w-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 text-white">
         <div className="flex items-center gap-3">
           <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
             <ICONS.logo className="w-8 h-8 text-white" />
@@ -259,25 +259,24 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap min-w-0 w-full sm:w-auto">
           {searched && totalQuizzes > 0 && (
-            <div className="flex items-center gap-2 no-print">
+            <div className="flex flex-row items-center gap-2 no-print flex-wrap w-full sm:w-auto">
               <select
                 value={reportPeriod}
                 onChange={e => setReportPeriod(e.target.value as 'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH')}
-                aria-label="?????? ?????? ?? ????????"
-                className="text-xs font-bold bg-white/10 border border-white/20 text-white px-3 py-2 rounded-full cursor-pointer"
+                className="flex-1 sm:flex-none text-xs font-bold bg-white/10 border border-white/20 text-white px-3 py-2 rounded-full cursor-pointer h-11"
               >
-                <option value="THIS_WEEK" className="text-slate-800 bg-white">???? ??????</option>
-                <option value="LAST_WEEK" className="text-slate-800 bg-white">???????? ??????</option>
-                <option value="THIS_MONTH" className="text-slate-800 bg-white">???? ?????</option>
+                <option value="THIS_WEEK" className="text-slate-800 bg-white">Оваа недела</option>
+                <option value="LAST_WEEK" className="text-slate-800 bg-white">Минатата недела</option>
+                <option value="THIS_MONTH" className="text-slate-800 bg-white">Овој месец</option>
               </select>
               <button
                 type="button"
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition h-11"
               >
-                <Printer className="w-4 h-4" /> ?????? ????????
+                <Printer className="w-4 h-4" /> Печати
               </button>
             </div>
           )}
@@ -285,9 +284,9 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             <button
               type="button"
               onClick={() => { window.location.hash = '/'; }}
-              className="flex items-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition no-print"
+              className="flex items-center justify-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition no-print h-11"
             >
-              <Home className="w-4 h-4" /> ???????
+              <Home className="w-4 h-4" /> Почетна
             </button>
           )}
         </div>
@@ -305,23 +304,23 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
               <p className="text-xs text-slate-400">?? ?????? ???? ?????? ?????????</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
-              placeholder="Ime ? ???????..."
+              placeholder="Ime..."
               value={nameInput}
               onChange={e => setNameInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
-              className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 font-semibold focus:outline-none focus:border-indigo-400 transition"
+              className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-3 md:py-2.5 text-slate-800 font-semibold focus:outline-none focus:border-indigo-400 transition min-h-[48px]"
             />
             <button
               type="button"
               onClick={handleSearch}
               disabled={!nameInput.trim() || loading}
-              className="flex items-center gap-1.5 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-40"
+              className="flex items-center justify-center gap-1.5 bg-indigo-600 text-white px-5 py-3 md:py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-40 min-h-[48px]"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              ???????
+              Провери
             </button>
           </div>
         </div>

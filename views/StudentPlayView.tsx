@@ -326,14 +326,14 @@ export const StudentPlayView: React.FC = () => {
         </div>
       </div>
 
-      <main className="w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-white/20 relative min-h-[500px]">
+      <main className="w-full max-w-4xl bg-white md:rounded-[2.5rem] shadow-2xl overflow-hidden md:border-8 border-white/20 relative flex flex-col min-h-[60vh] md:min-h-[500px]">
         {/* ── Name entry / Onboarding ── */}
         {!nameConfirmed && (
-          <div className="flex flex-col items-center justify-center min-h-[500px] p-8 text-center">
+          <div className="flex flex-col items-center justify-center flex-1 p-6 md:p-8 text-center min-h-[60vh] md:min-h-[500px]">
 
             {/* А3: First-time onboarding wizard (wizardStep 0 and 1) */}
             {wizardStep === 0 && (
-              <div className="animate-fade-in max-w-sm">
+              <div className="animate-fade-in w-full max-w-sm">
                 <div className="flex justify-center gap-4 mb-6">
                   <div className="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center">
                     <Zap className="w-7 h-7 text-indigo-600" />
@@ -390,34 +390,35 @@ export const StudentPlayView: React.FC = () => {
                   <User className="w-10 h-10 text-indigo-600" />
                 </div>
                 <h2 className="text-2xl font-black text-slate-800 mb-2">Как се викаш?</h2>
-                <p className="text-slate-500 mb-6 text-sm">
+                <p className="text-slate-500 mb-6 text-sm px-2">
                   Твоето ime се чува само за да го следиме твојот напредок. Никој друг не може да го гледа.
                 </p>
-                <input
-                  type="text"
-                  placeholder="Твоето ime и презиме..."
-                  value={nameInput}
-                  onChange={e => setNameInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && nameInput.trim()) { setWizardStep(null); handleConfirmName(); } }}
-                  className="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-semibold text-center text-lg focus:outline-none focus:border-indigo-500 transition mb-4"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={() => { setWizardStep(null); handleConfirmName(); }}
-                  disabled={!nameInput.trim()}
-                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Потврди <ArrowRight className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWizardStep(0)}
-                  className="mt-3 text-sm text-slate-400 hover:text-slate-600 transition"
-                >
-                  ← Назад
-                </button>
-                <div className="flex justify-center gap-1.5 mt-4">
+                <div className="px-2">
+                  <input
+                    type="text"
+                    placeholder="Твоето ime и презиме..."
+                    value={nameInput}
+                    onChange={e => setNameInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && nameInput.trim()) { setWizardStep(null); handleConfirmName(); } }}
+                    className="w-full border-2 border-slate-200 rounded-2xl px-4 py-4 md:py-3 text-slate-800 font-semibold text-center text-lg focus:outline-none focus:border-indigo-500 transition mb-4 min-h-[56px] md:min-h-[auto]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setWizardStep(null); handleConfirmName(); }}
+                    disabled={!nameInput.trim()}
+                    className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-4 md:py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed min-h-[56px] md:min-h-[auto]"
+                  >
+                    Потврди <ArrowRight className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWizardStep(0)}
+                    className="mt-4 pb-2 text-sm text-slate-400 hover:text-slate-600 transition min-h-[44px]"
+                  >
+                    ← Назад
+                  </button>
+                </div>
+                <div className="flex justify-center gap-1.5 mt-2">
                   <span className="w-2 h-2 rounded-full bg-slate-200" />
                   <span className="w-2 h-2 rounded-full bg-indigo-600" />
                   <span className="w-2 h-2 rounded-full bg-slate-200" />
@@ -427,7 +428,7 @@ export const StudentPlayView: React.FC = () => {
 
             {/* Returning user or "Промени" — simple form (no wizard) */}
             {wizardStep === null && (
-              <div className="animate-fade-in max-w-sm w-full">
+              <div className="animate-fade-in max-w-sm w-full px-2">
                 <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mb-6 mx-auto">
                   <User className="w-10 h-10 text-indigo-600" />
                 </div>
@@ -440,15 +441,14 @@ export const StudentPlayView: React.FC = () => {
                   placeholder="Твоето ime и презиме..."
                   value={nameInput}
                   onChange={e => setNameInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleConfirmName(); }}
-                  className="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-semibold text-center text-lg focus:outline-none focus:border-indigo-500 transition mb-4"
-                  autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter' && nameInput.trim()) handleConfirmName(); }}
+                  className="w-full border-2 border-slate-200 rounded-2xl px-4 py-4 md:py-3 text-slate-800 font-semibold text-center text-lg focus:outline-none focus:border-indigo-500 transition mb-4 min-h-[56px] md:min-h-[auto]"
                 />
                 <button
                   type="button"
                   onClick={handleConfirmName}
                   disabled={!nameInput.trim()}
-                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-4 md:py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed min-h-[56px] md:min-h-[auto]"
                 >
                   Почни Квизот <ArrowRight className="w-5 h-5" />
                 </button>
