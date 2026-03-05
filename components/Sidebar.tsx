@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         </button>
       </div>
 
-      <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar" aria-label="Ð“Ð»Ð°Ð²Ð½Ð° Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸Ñ˜Ð°">
+      <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar" aria-label="Главна навигација">
         {/* â”€â”€ PRIMARY NAV (always visible) â”€â”€ */}
         <div className="space-y-0.5">
           <NavItem path="/" currentPath={currentPath} icon={ICONS.home} label={t("nav.home")} onClick={onClose} />
@@ -102,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
             onClick={() => setShowMore(v => !v)}
             className="w-full flex items-center justify-between px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50"
           >
-            <span>{showMore ? 'ÐŸÐ¾Ð¼Ð°Ð»ÐºÑƒ' : 'ÐŸÐ¾Ð²ÐµÑœÐµ Ð°Ð»Ð°Ñ‚ÐºÐ¸'}</span>
+            <span>{showMore ? 'Помалку' : 'Повеќе алатки'}</span>
             {showMore ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
 
