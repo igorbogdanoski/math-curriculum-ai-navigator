@@ -18,6 +18,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { shareService } from '../services/shareService';
 import { useNotification } from '../contexts/NotificationContext';
 import { PlannerAgendaView } from '../components/planner/PlannerAgendaView';
+import { PlannerMetaAnalysis } from '../components/planner/PlannerMetaAnalysis';
 import { getWeekRange } from '../utils/date';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { plannerTourSteps } from '../tours/tour-steps';
@@ -194,7 +195,22 @@ export const PlannerView: React.FC = () => {
     const hasItems = items.length > 0;
     const today = new Date();
     today.setHours(0,0,0,0);
-    
+
+    const visibleItems = useMemo(() => {
+        if (viewMode === 'month') {
+            return items.filter((item: PlannerItem) => {
+                const d = new Date(item.date);
+                return d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentDate.getFullYear();
+            });
+        }
+        const { start, end } = getWeekRange(currentDate);
+        return items.filter((item: PlannerItem) => {
+            const d = new Date(item.date);
+            d.setHours(0,0,0,0);
+            return d >= start && d <= end;
+        });
+    }, [items, viewMode, currentDate]);
+
     // Calculate unscheduled plans
     // Find all plans that are NOT linked to any planner item
     const scheduledPlanIds = new Set(items.map((i: PlannerItem) => i.lessonPlanId).filter(Boolean));
@@ -417,9 +433,13 @@ export const PlannerView: React.FC = () => {
                                 <ICONS.chevronRight className="w-6 h-6"/>
                             </button>
                         </div>
-                        
+
+                        <div className="mb-6">
+                            <PlannerMetaAnalysis items={visibleItems} lessonPlans={lessonPlans} />
+                        </div>
+
                         {viewMode === 'month' ? renderCalendarGrid() : (
-                            <PlannerAgendaView 
+                            <PlannerAgendaView
                                 currentDate={currentDate}
                                 items={items}
                                 onOpenModal={handleOpenModal}
