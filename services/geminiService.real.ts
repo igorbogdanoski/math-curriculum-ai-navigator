@@ -474,6 +474,28 @@ const TEXT_SYSTEM_INSTRUCTION = `
 const JSON_SYSTEM_INSTRUCTION = `Ти си API кое генерира строго валиден JSON за наставни материјали по математика. 
 ОДГОВОРИ ИСКЛУЧИВО СО RAW JSON ОБЈЕКТ. БЕЗ MARKDOWN (\`\`\`json) И БЕЗ ДОПОЛНИТЕЛЕН ТЕКСТ.`;
 
+// --- MACEDONIAN LOCAL CONTEXT ---
+const MK_LOCAL_CONTEXT_KEY = 'mk_local_context_enabled';
+
+export function isMacedonianContextEnabled(): boolean {
+    try { return localStorage.getItem(MK_LOCAL_CONTEXT_KEY) !== 'false'; } catch { return true; }
+}
+export function setMacedonianContextEnabled(val: boolean): void {
+    try { localStorage.setItem(MK_LOCAL_CONTEXT_KEY, String(val)); } catch { /* ignore */ }
+}
+
+const MACEDONIAN_CONTEXT_SNIPPET = `
+МАКЕДОНСКИ ЛОКАЛЕН КОНТЕКСТ (задолжителен):
+Сите примери, задачи и наративи мора да ја одразуваат македонската реалност:
+- Валута: денари (ден.) — не долари или евра. Примери: "Марко купил леб за 35 ден.", "Производот чини 850 ден."
+- Имиња: Македонски имиња — Марко, Ана, Стефан, Ивана, Борис, Сара, Давид, Елена, Никола, Тина, Ристе, Благица.
+- Градови/места: Скопје, Битола, Охрид, Куманово, Прилеп, Тетово, Велес, Струга, Кичево, Гевгелија.
+- Локален контекст: пазарување на Зелен пазар, екскурзија до Охридското езеро, натпревар во скокање во торба, делење кифли во одделение, набројување цреши во градина.
+- Храна: јаболка, сливи, тиква, баница, бурек, кравајче, ајвар.
+- Природа: Вардар, Шар Планина, Пелистер, Матка, Тиквешко.
+НЕ КОРИСТИ: долари, Јани/Мери/Боб, Лондон, Њујорк, MLB, NBA, пица (американска).
+`;
+
 export async function buildDynamicSystemInstruction(baseInstruction: string, gradeLevel?: number, conceptId?: string, topicId?: string): Promise<string> {
     let instruction = baseInstruction;
     if (gradeLevel && conceptId) {
@@ -481,7 +503,12 @@ export async function buildDynamicSystemInstruction(baseInstruction: string, gra
     } else if (gradeLevel && topicId) {
         instruction += await ragService.getTopicContext(gradeLevel, topicId);
     }
-    
+
+    // Inject Macedonian local context when enabled (default: on)
+    if (isMacedonianContextEnabled()) {
+        instruction += MACEDONIAN_CONTEXT_SNIPPET;
+    }
+
     // Simplification bounds for young students
     if (gradeLevel && gradeLevel <= 3) {
         instruction += `\nЗАБЕЛЕШКА: Ова е за рана училишна возраст (1-3 одд). Користи многу едноставни зборови, кратки реченици и конкретни физички предмети за примери (како јаболка, играчки, моливи итн.). Избегнувај апстрактни поими.`;
