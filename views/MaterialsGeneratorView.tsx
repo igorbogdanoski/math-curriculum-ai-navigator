@@ -103,6 +103,10 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     // В1 — Library save state (tracks which materials have been saved)
     const [savedToLibrary, setSavedToLibrary] = useState<Set<string>>(new Set());
 
+    // Г3-alt: Teacher note for the selected concept
+    const [teacherNote, setTeacherNote] = useState('');
+    const [teacherNoteSaved, setTeacherNoteSaved] = useState(false);
+
     // Bulk generation state
     const [isGeneratingBulk, setIsGeneratingBulk] = useState(false);
     const [bulkStep, setBulkStep] = useState<'QUIZ' | 'ASSESSMENT' | 'RUBRIC' | null>(null);
@@ -122,6 +126,26 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         firestoreService.fetchVerifiedQuestions(firebaseUser.uid, state.selectedConcepts[0])
             .then(setVerifiedQs).catch(() => setVerifiedQs([]));
     }, [firebaseUser?.uid, state.selectedConcepts[0]]);
+
+    // Г3-alt: Load teacher note when concept changes
+    useEffect(() => {
+        const conceptId = state.selectedConcepts[0];
+        if (!firebaseUser?.uid || !conceptId || state.contextType !== 'CONCEPT') {
+            setTeacherNote('');
+            return;
+        }
+        firestoreService.fetchTeacherNote(firebaseUser.uid, conceptId)
+            .then(note => { setTeacherNote(note); setTeacherNoteSaved(false); })
+            .catch(() => setTeacherNote(''));
+    }, [state.selectedConcepts[0], firebaseUser?.uid, state.contextType]);
+
+    const handleSaveTeacherNote = async () => {
+        const conceptId = state.selectedConcepts[0];
+        if (!firebaseUser?.uid || !conceptId) return;
+        await firestoreService.saveTeacherNote(firebaseUser.uid, conceptId, teacherNote).catch(() => {});
+        setTeacherNoteSaved(true);
+        setTimeout(() => setTeacherNoteSaved(false), 2000);
+    };
 
     // Adaptive difficulty recommendation
     const [diffRec, setDiffRec] = useState<DifferentiationLevel | null>(null);
@@ -323,7 +347,8 @@ ${generatedMaterial.assessmentIdea}
         const built = buildContext();
         if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
         const { context: finalContext } = built;
-        const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', state.customInstruction].filter(Boolean).join(' ');
+        const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
+        const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
 
         setIsGeneratingVariants(true);
         setVariants(null);
@@ -363,8 +388,10 @@ ${generatedMaterial.assessmentIdea}
         const built = buildContext();
         if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
         const { context, tempActivityTitle } = built;
+        const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
         const effectiveInstruction = [
             state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '',
+            teacherNoteInstruction,
             state.customInstruction,
         ].filter(Boolean).join(' ');
 
@@ -555,7 +582,8 @@ ${generatedMaterial.assessmentIdea}
             return;
         }
         const { context: finalContext, imageParam, studentProfilesToPass, tempActivityTitle } = built;
-        const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', state.customInstruction].filter(Boolean).join(' ');
+        const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
+        const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
 
         setIsLoading(true);
         setGeneratedMaterial(null);
@@ -776,6 +804,36 @@ ${generatedMaterial.assessmentIdea}
                             <MaterialOptions state={state} dispatch={dispatch} user={user} />
 
                             {/* Legacy Differentiation section removed as it's now inside MaterialOptions Advanced */}
+
+                            {/* Г3-alt: Teacher note for selected concept */}
+                            {state.contextType === 'CONCEPT' && state.selectedConcepts[0] && (
+                                <div className="mt-6 border-t pt-6">
+                                    <label htmlFor="teacherNote" className="block text-sm font-bold text-gray-700 mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <ICONS.edit className="w-4 h-4 text-indigo-500" />
+                                            Мои белешки за концептот
+                                            <span className="text-xs font-normal text-gray-400">(се injection-ираат во AI при генерирање)</span>
+                                        </div>
+                                    </label>
+                                    <textarea
+                                        id="teacherNote"
+                                        value={teacherNote}
+                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTeacherNote(e.target.value)}
+                                        rows={3}
+                                        className="block w-full p-3 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white resize-none text-sm"
+                                        placeholder="Пр. 'Учениците имаат тешкотии со именките во множина. Фокусирај се на практични примери со пари и мерки.'"
+                                    />
+                                    <div className="flex justify-end mt-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={handleSaveTeacherNote}
+                                            className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${teacherNoteSaved ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}
+                                        >
+                                            {teacherNoteSaved ? '✓ Зачувано' : 'Зачувај белешка'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="mt-6 border-t pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>

@@ -1404,6 +1404,22 @@ export const firestoreService = {
     return ref.id;
   },
 
+  // ── Г3-alt: Teacher notes per concept ──
+  saveTeacherNote: async (teacherUid: string, conceptId: string, note: string): Promise<void> => {
+    const docId = `${teacherUid}_${conceptId}`;
+    await setDoc(doc(db, 'teacher_notes', docId), {
+      teacherUid,
+      conceptId,
+      note,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  },
+
+  fetchTeacherNote: async (teacherUid: string, conceptId: string): Promise<string> => {
+    const snap = await getDoc(doc(db, 'teacher_notes', `${teacherUid}_${conceptId}`));
+    return snap.exists() ? (snap.data().note ?? '') : '';
+  },
+
   // ── А1: Student identity persistence ──
   saveStudentIdentity: async (deviceId: string, name: string, anonymousUid: string): Promise<void> => {
     await setDoc(doc(db, 'student_identity', deviceId), {
