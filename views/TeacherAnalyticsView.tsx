@@ -6,7 +6,7 @@ import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download, Megaphone, Trash2, Send } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download, Megaphone, Trash2, Send, ChevronDown } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { StatCard, QuizAggregate, ConceptStat, PerStudentStat, GradeStat, groupBy, fmt } from './analytics/shared';
@@ -53,6 +53,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [newMsg, setNewMsg] = useState('');
     const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage' | 'assignments' | 'league'>('overview');
+    const [showMoreTabs, setShowMoreTabs] = useState(false);
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -572,42 +573,81 @@ export const TeacherAnalyticsView: React.FC = () => {
                         )}
                     </Card>
 
-                    {/* Tab navigation — horizontal scroll on mobile */}
-                    <div className="mb-6 -mx-1">
-                        <div className="overflow-x-auto scrollbar-hide pb-1">
-                            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-max min-w-full">
-                                {([
-                                    { id: 'overview', label: t('analytics.tabs.overview') },
-                                    { id: 'trend', label: t('analytics.tabs.trend') },
-                                    { id: 'students', label: t('analytics.tabs.students') },
-                                    { id: 'grades', label: t('analytics.tabs.grades') },
-                                    { id: 'standards', label: t('analytics.tabs.standards') },
-                                    { id: 'concepts', label: t('analytics.tabs.concepts') },
-                                    { id: 'alerts', label: '⚠️ ' + t('analytics.tabs.alerts') },
-                                    { id: 'groups', label: '👥 ' + t('analytics.tabs.groups') },
-                                    { id: 'live', label: '🔴 Live' },
-                                    { id: 'classes', label: '🏫 Класи' },
-                                    { id: 'questionBank', label: '📚 ' + t('analytics.tabs.questionBank') },
-                                    { id: 'coverage', label: '📊 ' + t('analytics.tabs.coverage') },
-                                    { id: 'assignments', label: '📋 ' + t('analytics.tabs.assignments') },
-                                    { id: 'league', label: '🏆 ' + t('analytics.tabs.league') },
-                                ] as const).map(tab => (
-                                    <button
-                                        key={tab.id}
-                                        type="button"
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition whitespace-nowrap ${
-                                            activeTab === tab.id
-                                                ? 'bg-white text-slate-800 shadow'
-                                                : 'text-slate-500 hover:text-slate-700'
-                                        }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
+                    {/* Tab navigation — А2: 4 primary tabs + "More" dropdown */}
+                    {(() => {
+                        const PRIMARY_TABS = [
+                            { id: 'overview' as const, label: t('analytics.tabs.overview') },
+                            { id: 'students' as const, label: t('analytics.tabs.students') },
+                            { id: 'concepts' as const, label: t('analytics.tabs.concepts') },
+                            { id: 'alerts' as const, label: '⚠️ ' + t('analytics.tabs.alerts') },
+                        ];
+                        const SECONDARY_TABS = [
+                            { id: 'trend' as const, label: t('analytics.tabs.trend') },
+                            { id: 'grades' as const, label: t('analytics.tabs.grades') },
+                            { id: 'standards' as const, label: t('analytics.tabs.standards') },
+                            { id: 'groups' as const, label: '👥 ' + t('analytics.tabs.groups') },
+                            { id: 'live' as const, label: '🔴 Live' },
+                            { id: 'classes' as const, label: '🏫 Класи' },
+                            { id: 'questionBank' as const, label: '📚 ' + t('analytics.tabs.questionBank') },
+                            { id: 'coverage' as const, label: '📊 ' + t('analytics.tabs.coverage') },
+                            { id: 'assignments' as const, label: '📋 ' + t('analytics.tabs.assignments') },
+                            { id: 'league' as const, label: '🏆 ' + t('analytics.tabs.league') },
+                        ];
+                        const activeSecondary = SECONDARY_TABS.find(t => t.id === activeTab);
+                        return (
+                            <div className="mb-6 -mx-1">
+                                <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+                                    {PRIMARY_TABS.map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            type="button"
+                                            onClick={() => { setActiveTab(tab.id); setShowMoreTabs(false); }}
+                                            className={`flex-1 px-3 py-2 rounded-lg text-sm font-bold transition whitespace-nowrap ${
+                                                activeTab === tab.id
+                                                    ? 'bg-white text-slate-800 shadow'
+                                                    : 'text-slate-500 hover:text-slate-700'
+                                            }`}
+                                        >
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                    {/* More button */}
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMoreTabs(v => !v)}
+                                            className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-bold transition whitespace-nowrap ${
+                                                activeSecondary
+                                                    ? 'bg-white text-slate-800 shadow'
+                                                    : 'text-slate-500 hover:text-slate-700'
+                                            }`}
+                                        >
+                                            {activeSecondary ? activeSecondary.label : '+ Повеќе'}
+                                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showMoreTabs ? 'rotate-180' : ''}`} />
+                                        </button>
+                                        {showMoreTabs && (
+                                            <div className="absolute right-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[180px]">
+                                                {SECONDARY_TABS.map(tab => (
+                                                    <button
+                                                        key={tab.id}
+                                                        type="button"
+                                                        onClick={() => { setActiveTab(tab.id); setShowMoreTabs(false); }}
+                                                        className={`w-full text-left px-4 py-2 text-sm font-semibold transition whitespace-nowrap ${
+                                                            activeTab === tab.id
+                                                                ? 'bg-indigo-50 text-indigo-700'
+                                                                : 'text-slate-600 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        {tab.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        );
+                    })()}
 
                     {/* Summary stats — always visible */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

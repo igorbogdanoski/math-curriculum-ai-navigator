@@ -71,29 +71,15 @@
 
 ---
 
-### 🟡 В2 — Confidence aggregation во Teacher Analytics
-**Проблем:** Учениците даваат self-assessment (😟→🤩) по квиз, но наставникот нема aggregated преглед.
-**Решение:**
-- `StudentsTab`: нова колона „Доверба" (средна confidence emoji по ученик)
-- `ConceptsTab`: средна confidence по концепт (покрај avg score)
-- `AlertsTab`: нов alert ако средна confidence < 2 за концепт (ученикот не се чувствува сигурен дури и со добар резултат)
+### ✅ В2 — Confidence aggregation во Teacher Analytics
 
-**Фајлови:** `views/analytics/StudentsTab.tsx`, `ConceptsTab.tsx`, `AlertsTab.tsx`, `views/analytics/shared.tsx`
-**Проценка:** 3-4 часа
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ЗАВРШЕНО (веќе постоеше) — avgConfidence пресметан во TeacherAnalyticsView, прикажан во StudentsTab + ConceptsTab + AlertsTab (lowConfidenceStudents card)
 
 ---
 
-### 🟡 З3 — Онбординг тур за наставници
-**Проблем:** Нов наставник отвора апликација и не знае со што да почне.
-**Решение:** Интерактивен тур (tour steps веројатно постојат — провери `tours/`) за:
-1. HomeView → „Ова е вашата контролна табла"
-2. MaterialsGeneratorView → „Генерирајте материјали за 30 секунди"
-3. TeacherAnalyticsView → „Следете напредок на учениците"
-**Провери:** `tours/tour-steps.ts`, `tours/planner-tour-steps.ts` — дали постои логика или само stub
+### ✅ З3 — Онбординг тур за наставници
 
-**Фајлови:** `contexts/UserPreferencesContext.tsx`, `tours/*.ts`
-**Статус:** [ ] НЕ ЗАПОЧНАТО (провери постоечки tours)
+**Статус:** ЗАВРШЕНО (веќе постоеше) — GlobalTour.tsx + Joyride + 5 tour files (dashboard/generator/library/planner/explore) + useTour + useTourStore hooks
 
 ---
 
@@ -109,26 +95,15 @@
 
 ---
 
-### 🟢 А3 — Воведување за нови ученици
-**Решение:** 3-чекор wizard при прво посетување на StudentPlayView:
-1. Внеси ime (валидација: мин 2 зборови)
-2. Избери одделение (опционално)
-3. Краток preview: „вака изгледа квиз → вака гледаш напредок"
+### ✅ А3 — Воведување за нови ученици
 
-**Фајлови:** Нов `components/student/StudentOnboarding.tsx`, `views/StudentPlayView.tsx`
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ЗАВРШЕНО (веќе постоеше) — wizardStep 0/1/null во StudentPlayView, 2-чекор onboarding (features preview → name entry) со t() локализација
 
 ---
 
-### 🔵 В1 — Draft → Review → Publish workflow
-**Проблем:** AI генерира → веднаш достапно за ученик без teacher review.
-**Решение:**
-- Генерираните материјали добиваат `status: 'draft'` по default
-- `ContentReviewView` (веројатно постои) — наставникот прегледува, едитира, публикува
-- Само `published` материјали се достапни за ученици
+### ✅ В1 — Draft → Review → Publish workflow
 
-**Провери:** `views/ContentReviewView.tsx` — дали е имплементирано
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ЗАВРШЕНО (веќе постоеше) — ContentReviewView.tsx со fetchUnapprovedQuestions, approve/reject, CSV export (за admin/school_admin улоги)
 
 ---
 
@@ -168,11 +143,11 @@
 ✅ Итно 0  → Поправи garbled текст
 ✅ А1      → Студентски идентитет
 ✅ Б1-Б3   → Assignment workflow (веќе постоеше)
-→  В2      → Confidence aggregation (3-4 часа)  ← СЛЕДНО
-   З3      → Наставнички тур (2-3 часа)
-   А2      → Навигациско поедноставување (4-5 часа)
-   А3      → Student onboarding wizard (3-4 часа)
-   В1      → Draft/Review workflow (1-2 дена)
+✅ В2      → Confidence aggregation (веќе постоеше)
+✅ З3      → Наставнички тур (веќе постоеше)
+✅ А3      → Student onboarding wizard (веќе постоеше)
+✅ В1      → Draft/Review workflow (веќе постоеше)
+→  А2      → Навигациско поедноставување (4-5 часа)  ← СЛЕДНО
    Г4      → Директорски dashboard (1 ден)
    Г3      → RAG со учебници (>1 недела, бара план)
 ```
