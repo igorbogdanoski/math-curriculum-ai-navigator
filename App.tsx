@@ -200,7 +200,7 @@ const AppContent: React.FC = () => {
                     <ContextualFAB path={path} params={params} />
                 </SilentErrorBoundary>
             </div>
-            <SilentErrorBoundary name="AIGeneratorPanel">
+            <SilentErrorBoundary name="AIGeneratorPanel" fallback={<AIGeneratorPanelFallback />}>
                 <AIGeneratorPanel />
             </SilentErrorBoundary>
             <SilentErrorBoundary name="AIChatPanel">
@@ -233,6 +233,25 @@ const AuthenticatedApp: React.FC = () => {
 
     return <AppContent />;
 }
+
+const AIGeneratorPanelFallback: React.FC = () => {
+    const { closeGeneratorPanel } = useGeneratorPanel();
+    return (
+        <div className="fixed inset-0 bg-gray-900/40 z-50 flex items-center justify-center no-print">
+            <div className="bg-white rounded-2xl p-8 max-w-sm shadow-xl text-center mx-4">
+                <p className="text-red-600 text-xl font-bold mb-2">⚠️ Грешка во генераторот</p>
+                <p className="text-gray-500 text-sm mb-6">Настана неочекувана грешка. Ве молиме затворете и обидете се повторно.</p>
+                <button
+                    type="button"
+                    onClick={closeGeneratorPanel}
+                    className="px-5 py-2.5 bg-brand-primary text-white rounded-xl hover:bg-brand-secondary font-bold"
+                >
+                    Затвори
+                </button>
+            </div>
+        </div>
+    );
+};
 
 const AppCore: React.FC = () => {
     const { isAuthenticated, isLoading, path } = useAuth() as any; // Adding path from useAuth or useRouter
