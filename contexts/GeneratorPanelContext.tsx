@@ -12,14 +12,27 @@ interface GeneratorPanelState {
   closeGeneratorPanel: () => void;
 }
 
+// Track pending close timeout so it can be cancelled if the panel is reopened quickly
+let _closeTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
 export const useGeneratorPanel = create<GeneratorPanelState>((set) => ({
   isOpen: false,
   props: null,
-  openGeneratorPanel: (panelProps) => set({ props: panelProps, isOpen: true }),
+  openGeneratorPanel: (panelProps) => {
+    // Cancel any pending props-clear from a previous close animation
+    if (_closeTimeoutId !== null) {
+      clearTimeout(_closeTimeoutId);
+      _closeTimeoutId = null;
+    }
+    set({ props: panelProps, isOpen: true });
+  },
   closeGeneratorPanel: () => {
     set({ isOpen: false });
     // Allow for animation before clearing props
-    setTimeout(() => set({ props: null }), 300);
+    _closeTimeoutId = setTimeout(() => {
+      set({ props: null });
+      _closeTimeoutId = null;
+    }, 350);
   },
 }));
 

@@ -181,19 +181,19 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                         {isExportMenuOpen && (
                             <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 animate-fade-in-up">
                                 <div className="py-1">
-                                    <button onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)
                                     </button>
-                                    <button onClick={() => handleExport('tex')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => handleExport('tex')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.download className="w-5 h-5 mr-3" /> Сними како LaTeX (.tex)
                                     </button>
-                                    <button onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.edit className="w-5 h-5 mr-3" /> Копирај за Word (форматирано)
                                     </button>
-                                    <button onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
                                     </button>
-                                     <button onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                     <button type="button" onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст
                                     </button>
                                 </div>
@@ -213,8 +213,8 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                 </div>
             )}
              <div className="mt-4 flex flex-wrap gap-2 no-print">
-                <button onClick={handleSaveAsPlan} className="flex items-center text-sm bg-green-600 text-white px-3 py-1.5 rounded-lg shadow hover:bg-green-700"><ICONS.plus className="w-4 h-4 mr-1"/> Зачувај како подготовка</button>
-                <button onClick={onSaveAsNote} className="flex items-center text-sm bg-yellow-500 text-white px-3 py-1.5 rounded-lg shadow hover:bg-yellow-600"><ICONS.edit className="w-4 h-4 mr-1"/> Зачувај како белешка</button>
+                <button type="button" onClick={handleSaveAsPlan} className="flex items-center text-sm bg-green-600 text-white px-3 py-1.5 rounded-lg shadow hover:bg-green-700"><ICONS.plus className="w-4 h-4 mr-1"/> Зачувај како подготовка</button>
+                <button type="button" onClick={onSaveAsNote} className="flex items-center text-sm bg-yellow-500 text-white px-3 py-1.5 rounded-lg shadow hover:bg-yellow-600"><ICONS.edit className="w-4 h-4 mr-1"/> Зачувај како белешка</button>
             </div>
         </Card>
     );

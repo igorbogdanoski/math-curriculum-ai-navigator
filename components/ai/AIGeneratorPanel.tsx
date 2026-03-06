@@ -16,7 +16,9 @@ export const AIGeneratorPanel: React.FC = () => {
         }
     }, [isOpen]);
 
-    const handleAnimationEnd = () => {
+    const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
+        // Only handle the dialog's OWN animation end, not child animations that bubble up
+        if (e.target !== e.currentTarget) return;
         if (!isOpen) {
             setIsRendered(false);
         }
@@ -48,7 +50,7 @@ export const AIGeneratorPanel: React.FC = () => {
                         <h2 id="ai-generator-panel-title" className="text-2xl font-bold text-brand-primary flex items-center gap-2">
                            <ICONS.generator className="w-7 h-7" /> AI Генератор
                         </h2>
-                        <button onClick={closeGeneratorPanel} className="p-2.5 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors" aria-label="Затвори го генераторот">
+                        <button type="button" onClick={closeGeneratorPanel} className="p-2.5 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors" aria-label="Затвори го генераторот">
                             <ICONS.close className="w-6 h-6" />
                         </button>
                     </header>

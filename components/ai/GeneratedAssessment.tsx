@@ -389,10 +389,10 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 <div className="flex space-x-2 no-print">
                     {isEditing ? (
                         <>
-                            <button onClick={handleCancelEdit} className="flex items-center bg-gray-200 text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                            <button type="button" onClick={handleCancelEdit} className="flex items-center bg-gray-200 text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm">
                                 <ICONS.close className="w-5 h-5 mr-1" /> Откажи
                             </button>
-                             <button onClick={handleSaveEdit} className="flex items-center bg-green-600 text-white px-3 py-2 rounded-lg shadow hover:bg-green-700 transition-colors text-sm">
+                             <button type="button" onClick={handleSaveEdit} className="flex items-center bg-green-600 text-white px-3 py-2 rounded-lg shadow hover:bg-green-700 transition-colors text-sm">
                                 <ICONS.check className="w-5 h-5 mr-1" /> Зачувај
                             </button>
                         </>
@@ -406,20 +406,21 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                             {isActionsMenuOpen && (
                                 <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 animate-fade-in-up">
                                     <div className="py-1">
-                                         <button onClick={() => { setIsEditing(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                         <button type="button" onClick={() => { setIsEditing(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.edit className="w-5 h-5 mr-3" /> Уреди го тестот
                                         </button>
-                                        <button onClick={() => { setShowFlashcards(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <button type="button" onClick={() => { setShowFlashcards(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.flashcards className="w-5 h-5 mr-3" /> Отвори флеш-картички
                                         </button>
-                                        <button onClick={() => { setShowQuiz(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <button type="button" onClick={() => { setShowQuiz(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.quiz className="w-5 h-5 mr-3" /> Отвори квиз (Преглед)
                                         </button>
-                                        <button onClick={() => { setIsPlayingQuiz(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <button type="button" onClick={() => { setIsPlayingQuiz(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.play className="w-5 h-5 mr-3" /> Интерактивен квиз (Игра)
                                         </button>
-                                        <button 
-                                            onClick={() => { 
+                                        <button
+                                            type="button"
+                                            onClick={() => {
                                                 const shareData = shareService.generateQuizShareData({ 
                                                     title: editableMaterial.title, 
                                                     questions: activeTab === 'standard' ? editableMaterial.questions : (editableMaterial.differentiatedVersions?.find(v => v.profileName === activeTab)?.questions || editableMaterial.questions) 
@@ -433,19 +434,19 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                                             <ICONS.share className="w-5 h-5 mr-3" /> Сподели линк за ученици
                                         </button>
                                         <div className="border-t my-1"></div>
-                                        <button onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <button type="button" onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)
                                         </button>
-                                        <button onClick={() => handleExport('tex')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <button type="button" onClick={() => handleExport('tex')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.download className="w-5 h-5 mr-3" /> Сними како LaTeX (.tex)
                                         </button>
-                                        <button onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.edit className="w-5 h-5 mr-3" /> Копирај за Word (форматирано)
                                         </button>
-                                        <button onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
                                         </button>
-                                         <button onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                         <button type="button" onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст
                                         </button>
                                     </div>
@@ -469,9 +470,9 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
             {hasDifferentiatedVersions && (
                 <div className="border-b border-gray-200 mb-4 no-print">
                     <nav className="-mb-px flex space-x-4" aria-label="Tabs">
-                        <button onClick={() => setActiveTab('standard')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'standard' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Стандардна верзија</button>
+                        <button type="button" onClick={() => setActiveTab('standard')} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'standard' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Стандардна верзија</button>
                         {editableMaterial.differentiatedVersions?.map((v: DifferentiatedVersion) => (
-                            <button key={v.profileName} onClick={() => setActiveTab(v.profileName)} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === v.profileName ? 'border-brand-primary text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>За {v.profileName}</button>
+                            <button type="button" key={v.profileName} onClick={() => setActiveTab(v.profileName)} className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === v.profileName ? 'border-brand-primary text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>За {v.profileName}</button>
                         ))}
                     </nav>
                 </div>

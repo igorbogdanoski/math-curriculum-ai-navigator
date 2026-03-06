@@ -1,6 +1,25 @@
 import { useTour } from '../hooks/useTour';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Component, type ReactNode, type ErrorInfo } from 'react';
+
+// Local error boundary — catches render errors in result components without crashing the whole panel
+class ResultErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+    state = { error: null };
+    static getDerivedStateFromError(error: Error) { return { error }; }
+    componentDidCatch(error: Error, info: ErrorInfo) { console.error('[ResultErrorBoundary]', error, info); }
+    render() {
+        if (this.state.error) {
+            return (
+                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                    <p className="font-bold mb-1">⚠️ Грешка при прикажување на резултатот</p>
+                    <p className="text-xs text-red-500">{(this.state.error as Error).message}</p>
+                    <button type="button" onClick={() => this.setState({ error: null })} className="mt-2 text-xs underline text-red-600 hover:text-red-800">Обиди се повторно</button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 import { X, ClipboardList, BookmarkPlus, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
@@ -503,6 +522,9 @@ ${generatedMaterial.assessmentIdea}
     };
 
     const handleGenerate = async () => {
+        // Prevent re-entry if already generating (e.g. form submitted via Enter key)
+        if (isGenerating || isGeneratingBulk || isGeneratingVariants) return;
+
         if (!isOnline) {
             addNotification("Нема интернет конекција. Генераторот е недостапен.", 'error');
             return;
@@ -828,6 +850,7 @@ ${generatedMaterial.assessmentIdea}
 
             {/* RIGHT SIDE: Preview Area */}
             <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 xl:overflow-y-auto min-h-[500px] xl:min-h-0 flex flex-col p-4 xl:p-8 custom-scrollbar">
+            <ResultErrorBoundary>
                 {/* Empty State */}
                 {!isGenerating && !isGeneratingVariants && !isGeneratingBulk && !generatedMaterial && !variants && (!bulkResults || Object.keys(bulkResults).length === 0) && (
                     <div className="m-auto flex flex-col items-center justify-center text-gray-400 opacity-60 max-w-md text-center">
@@ -998,6 +1021,7 @@ ${generatedMaterial.assessmentIdea}
                     </div>
                 </div>
             )}
+            </ResultErrorBoundary>
             </div>
         </div>
 

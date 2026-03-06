@@ -141,19 +141,19 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
                         {isExportMenuOpen && (
                             <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 animate-fade-in-up">
                                 <div className="py-1">
-                                    <button onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)
                                     </button>
-                                    <button onClick={() => handleExport('tex')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => handleExport('tex')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.download className="w-5 h-5 mr-3" /> Сними како LaTeX (.tex)
                                     </button>
-                                    <button onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.edit className="w-5 h-5 mr-3" /> Копирај за Word (форматирано)
                                     </button>
-                                    <button onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
                                     </button>
-                                     <button onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                     <button type="button" onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст
                                     </button>
                                 </div>
