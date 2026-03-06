@@ -162,6 +162,17 @@ service cloud.firestore {
       }
     }
 
+    // ── Идентитет на ученик (student_identity) — А1 ──
+    // Document ID = deviceId. Only the owning anonymous user or device can read/write.
+    match /student_identity/{deviceId} {
+      allow read:   if isAuthenticated() && (
+        request.auth.uid == resource.data.anonymousUid
+      );
+      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['deviceId', 'name', 'anonymousUid']);
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.anonymousUid;
+      allow delete: if isAdmin();
+    }
+
     // ── Национална Библиотека (national_library) — И4 ──
     // read: any authenticated user (teachers across all schools)
     // create: any authenticated teacher (publish verified question)

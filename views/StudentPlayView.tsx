@@ -91,6 +91,27 @@ export const StudentPlayView: React.FC = () => {
     setIsReturningStudent(true);
   }, [nameConfirmed]);
 
+  // А1: If no name in localStorage, try to restore from Firestore student_identity by deviceId.
+  // This covers: localStorage cleared, incognito→normal, new browser profile on same device.
+  useEffect(() => {
+    if (nameConfirmed) return; // already have a name — skip
+    const restoreIdentity = async () => {
+      try {
+        await signInAnonymously(auth); // need auth to read the doc
+        const identity = await firestoreService.fetchStudentIdentityByDevice(deviceId);
+        if (identity?.name) {
+          try { localStorage.setItem('studentName', identity.name); } catch { /* incognito */ }
+          setNameInput(identity.name);
+          setStudentName(identity.name);
+          setNameConfirmed(true);
+          setIsReturningStudent(true);
+          setWizardStep(null);
+        }
+      } catch { /* non-fatal — student just enters their name manually */ }
+    };
+    restoreIdentity();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const fetchQuiz = async () => {
       if (!id) {
@@ -142,6 +163,11 @@ export const StudentPlayView: React.FC = () => {
     }
     setStudentName(trimmed);
     setNameConfirmed(true);
+    // А1: Persist identity to Firestore so the same name is restored on any session reset
+    const uid = auth.currentUser?.uid;
+    if (uid) {
+      firestoreService.saveStudentIdentity(deviceId, trimmed, uid).catch(() => { /* non-fatal */ });
+    }
   };
 
   const generateRemediaQuiz = async (meta: { conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid?: string }, percentage: number) => {

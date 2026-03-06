@@ -1403,5 +1403,22 @@ export const firestoreService = {
     } catch { /* non-fatal */ }
     return ref.id;
   },
+
+  // ── А1: Student identity persistence ──
+  saveStudentIdentity: async (deviceId: string, name: string, anonymousUid: string): Promise<void> => {
+    await setDoc(doc(db, 'student_identity', deviceId), {
+      deviceId,
+      name,
+      anonymousUid,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  },
+
+  fetchStudentIdentityByDevice: async (deviceId: string): Promise<{ name: string; anonymousUid: string } | null> => {
+    const snap = await getDoc(doc(db, 'student_identity', deviceId));
+    if (!snap.exists()) return null;
+    const data = snap.data();
+    return { name: data.name, anonymousUid: data.anonymousUid };
+  },
 };
 
