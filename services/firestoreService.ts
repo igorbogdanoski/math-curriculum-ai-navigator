@@ -1316,5 +1316,92 @@ export const firestoreService = {
     });
     return ref.id;
   },
+
+  // ── И4: Национална Библиотека ────────────────────────────────────────────
+
+  /** Publish a verified question to the national shared library */
+  publishToNationalLibrary: async (
+    q: SavedQuestion,
+    teacherName: string,
+    schoolName?: string,
+  ): Promise<string> => {
+    const ref = await addDoc(collection(db, 'national_library'), {
+      question: q.question,
+      type: q.type,
+      options: q.options ?? [],
+      answer: q.answer,
+      solution: q.solution ?? '',
+      gradeLevel: q.gradeLevel ?? null,
+      conceptId: q.conceptId ?? null,
+      conceptTitle: q.conceptTitle ?? null,
+      topicId: q.topicId ?? null,
+      publishedByUid: q.teacherUid,
+      publishedByName: teacherName,
+      schoolName: schoolName ?? null,
+      importCount: 0,
+      publishedAt: serverTimestamp(),
+    });
+    // Mark the original question as public
+    await updateDoc(doc(db, 'saved_questions', q.id), { isPublic: true });
+    return ref.id;
+  },
+
+  /** Fetch questions from the national library with optional filters */
+  fetchNationalLibrary: async (filters?: {
+    gradeLevel?: number;
+    conceptId?: string;
+    type?: string;
+  }) => {
+    try {
+      let q = query(
+        collection(db, 'national_library'),
+        orderBy('publishedAt', 'desc'),
+        limit(200),
+      );
+      if (filters?.gradeLevel) {
+        q = query(
+          collection(db, 'national_library'),
+          where('gradeLevel', '==', filters.gradeLevel),
+          orderBy('publishedAt', 'desc'),
+          limit(200),
+        );
+      }
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+    } catch (error) {
+      console.error('Error fetching national library:', error);
+      return [];
+    }
+  },
+
+  /** Import a question from the national library into teacher's own saved_questions */
+  importFromNationalLibrary: async (
+    entry: any,
+    teacherUid: string,
+  ): Promise<string> => {
+    const ref = await addDoc(collection(db, 'saved_questions'), {
+      teacherUid,
+      question: entry.question,
+      type: entry.type,
+      options: entry.options ?? [],
+      answer: entry.answer,
+      solution: entry.solution ?? '',
+      gradeLevel: entry.gradeLevel,
+      conceptId: entry.conceptId,
+      conceptTitle: entry.conceptTitle,
+      topicId: entry.topicId,
+      savedAt: serverTimestamp(),
+      isVerified: false,
+      importedFrom: entry.id,
+      importedFromAuthor: entry.publishedByName,
+    });
+    // Increment importCount on the library entry
+    try {
+      await updateDoc(doc(db, 'national_library', entry.id), {
+        importCount: (entry.importCount ?? 0) + 1,
+      });
+    } catch { /* non-fatal */ }
+    return ref.id;
+  },
 };
 

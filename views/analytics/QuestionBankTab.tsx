@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trash2, Search, BookOpen, CheckSquare, Square, PlusSquare, ShieldCheck, Shield } from 'lucide-react';
+import { Trash2, Search, BookOpen, CheckSquare, Square, PlusSquare, ShieldCheck, Shield, Globe } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
 import type { SavedQuestion } from '../../types';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../firebaseConfig';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
@@ -20,8 +21,11 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
 
 export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) => {
   const { addNotification } = useNotification();
+  const { user } = useAuth();
   const [questions, setQuestions] = useState<SavedQuestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [publishing, setPublishing] = useState<Set<string>>(new Set());
+  const [published, setPublished] = useState<Set<string>>(new Set());
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('');
   const [filterGrade, setFilterGrade] = useState<string>('');
@@ -90,6 +94,24 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
       setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, isVerified: !current } : q));
     } catch {
       addNotification('Грешка при верификација.', 'error');
+    }
+  };
+
+  const handlePublish = async (q: SavedQuestion) => {
+    if (!q.isVerified) {
+      addNotification('Само верификувани прашања можат да се публикуваат.', 'error');
+      return;
+    }
+    setPublishing(prev => new Set(prev).add(q.id));
+    try {
+      await firestoreService.publishToNationalLibrary(q, user?.name ?? 'Наставник', user?.schoolName);
+      setPublished(prev => new Set(prev).add(q.id));
+      setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, isPublic: true } : item));
+      addNotification('Прашањето е публикувано во Националната Библиотека!', 'success');
+    } catch {
+      addNotification('Грешка при публикување.', 'error');
+    } finally {
+      setPublishing(prev => { const n = new Set(prev); n.delete(q.id); return n; });
     }
   };
 
@@ -184,6 +206,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
           />
         </div>
         <select
+          title="Филтрирај по тип"
           value={filterType}
           onChange={e => setFilterType(e.target.value)}
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
@@ -194,6 +217,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
           ))}
         </select>
         <select
+          title="Филтрирај по одделение"
           value={filterGrade}
           onChange={e => setFilterGrade(e.target.value)}
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
@@ -313,6 +337,17 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
                   >
                     {q.isVerified ? <ShieldCheck className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
                   </button>
+                  {q.isVerified && (
+                    <button
+                      type="button"
+                      onClick={() => handlePublish(q)}
+                      disabled={publishing.has(q.id) || published.has(q.id) || !!q.isPublic}
+                      title={q.isPublic ? 'Веќе публикувано' : 'Публикувај во Националната Библиотека'}
+                      className={`p-1.5 transition ${q.isPublic || published.has(q.id) ? 'text-green-500 cursor-default' : 'text-gray-400 hover:text-indigo-600'}`}
+                    >
+                      <Globe className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleDelete(q.id)}
