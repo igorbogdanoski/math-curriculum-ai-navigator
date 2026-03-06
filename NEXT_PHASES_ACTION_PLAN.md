@@ -19,6 +19,11 @@
 | Приоритет 5.1 — И2 | CSV/PDF export во TeacherAnalyticsView | завршено |
 | Приоритет 5.2 — И4 | Национална Библиотека (публикување + увоз на прашања) | b21c110 |
 | Generator panel bugs | animationend bubbling, stale timeout, ResultErrorBoundary | 550e9af |
+| Итно 0 — Garbled текст | StudentProgressView.tsx ~80 garbled strings → t() + 44 translation keys | 8546a4d |
+| А1 — Студентски идентитет | student_identity collection, saveStudentIdentity, auto-restore on mount | f723a86 |
+| Б1 — Наставник задава задача | AssignDialog во MaterialsGeneratorView + firestoreService.createAssignment | веќе постоеше |
+| Б2 — Ученик гледа задачи | StudentProgressView fetchAssignmentsByStudent + задачи картичка | веќе постоеше |
+| Б3 — Наставник следи completion | AssignmentsTab.tsx целосно имплементиран | веќе постоеше |
 
 ---
 
@@ -26,19 +31,9 @@
 
 ---
 
-### 🔴 ИТНО 0 — Поправка на garbled текст во StudentProgressView
-**Зошто сега:** Директно ги блокира Albanian и Turkish корисниците. Видливи `?` символи наместо текст.
-**Обем:** ~40 garbled стрингови во `views/StudentProgressView.tsx`
-**Решение:** Замени секој `>?????<` pattern со `{t('progress.KEY')}` + додај клучевите во `i18n/translations.ts`
-**Засегнати области:**
-- Report section: наслови на табели, label-и
-- Mastery labels: `?? ????????`, `?? ???????????`
-- Assignment section: статус label-и
-- Print header/footer text
+### ✅ ИТНО 0 — Поправка на garbled текст во StudentProgressView
 
-**Фајлови:** `views/StudentProgressView.tsx`, `i18n/translations.ts`
-**Проценка:** 2-3 часа
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ЗАВРШЕНО (commit 8546a4d) — 80+ garbled strings → t() + 44 translation keys per lang (MK/SQ/TR)
 
 ---
 
@@ -54,42 +49,25 @@
 **Засегнати:** `views/StudentPlayView.tsx`, `views/StudentProgressView.tsx`, `services/firestoreService.ts`
 **Firestore:** нова колекција `student_identity` + нов индекс
 **Ефект:** Mastery tracking, gamification и progress стануваат реално употребливи преку уреди.
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ЗАВРШЕНО (commit f723a86) — `student_identity` Firestore collection, auto-restore on mount
 
 ---
 
-### 🟠 Б1 — Наставникот задава задача (Assignment Creation)
-**Проблем:** Ученикот самостојно одлучува кои квизови ги игра — нема teacher-directed learning. Ова е разликата помеѓу tool vs platform.
-**Решение:**
-- Копче „Задај на класата" на секој генериран квиз/тест (во `GeneratedAssessment`, `MaterialsGeneratorView`)
-- Modal: избор класа/група/индивидуален ученик + deadline датапикер
-- Зачувај во Firestore `assignments` колекција (веројатно веќе постои!)
-- `AssignmentsTab` веројатно веќе постои — провери статусот
+### ✅ Б1 — Наставникот задава задача
 
-**Провери прво:** `views/analytics/AssignmentsTab.tsx` — дали е имплементирано или само scaffold
-**Ефект:** Наставникот контролира учење → системот станува LMS, не само генератор.
-**Статус:** [ ] НЕ ЗАПОЧНАТО (провери дали AssignmentsTab е целосен)
+**Статус:** ЗАВРШЕНО (веќе постоеше) — `AssignDialog` во MaterialsGeneratorView + `firestoreService.createAssignment`
 
 ---
 
-### 🟠 Б2 — Ученикот гледа свои задачи
-**Решение:**
-- Картичка „Мои задачи" во `StudentProgressView` (веројатно веќе постои — провери)
-- Прикажува: наслов, рок, статус (нерешено/решено/задоцнето)
-- Директен линк кон играњето
+### ✅ Б2 — Ученикот гледа свои задачи
 
-**Фајлови:** `views/StudentProgressView.tsx`
-**Статус:** [ ] НЕ ЗАПОЧНАТО (провери дали делумно постои)
+**Статус:** ЗАВРШЕНО (веќе постоеше) — `StudentProgressView` fetchAssignmentsByStudent + задачи картичка
 
 ---
 
-### 🟠 Б3 — Наставникот следи completion
-**Решение:**
-- Во `AssignmentsTab`: листа + % completion по задача
-- Кликни → кој ученик завршил/не завршил + просечен резултат
+### ✅ Б3 — Наставникот следи completion
 
-**Фајлови:** `views/analytics/AssignmentsTab.tsx`
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ЗАВРШЕНО (веќе постоеше) — `AssignmentsTab.tsx` целосно имплементиран (листа + % + expand)
 
 ---
 
@@ -187,16 +165,16 @@
 ## ПРЕПОРАЧАН РЕДОСЛЕД НА ИЗВРШУВАЊЕ
 
 ```
-Итно 0  → Поправи garbled текст (2-3 часа)
-А1      → Студентски идентитет (1-2 дена) ← КРИТИЧНО
-Б1-Б3   → Assignment workflow (2-3 дена) ← ПЛАТФОРМА
-В2      → Confidence aggregation (3-4 часа)
-З3      → Наставнички тур (2-3 часа)
-А2      → Навигациско поедноставување (4-5 часа)
-А3      → Student onboarding wizard (3-4 часа)
-В1      → Draft/Review workflow (1-2 дена)
-Г4      → Директорски dashboard (1 ден)
-Г3      → RAG со учебници (>1 недела, бара план)
+✅ Итно 0  → Поправи garbled текст
+✅ А1      → Студентски идентитет
+✅ Б1-Б3   → Assignment workflow (веќе постоеше)
+→  В2      → Confidence aggregation (3-4 часа)  ← СЛЕДНО
+   З3      → Наставнички тур (2-3 часа)
+   А2      → Навигациско поедноставување (4-5 часа)
+   А3      → Student onboarding wizard (3-4 часа)
+   В1      → Draft/Review workflow (1-2 дена)
+   Г4      → Директорски dashboard (1 ден)
+   Г3      → RAG со учебници (>1 недела, бара план)
 ```
 
 ---
