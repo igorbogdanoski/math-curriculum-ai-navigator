@@ -342,22 +342,22 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
           <div className="bg-white rounded-2xl p-4 text-center shadow">
             <BarChart2 className="w-6 h-6 text-indigo-500 mx-auto mb-1" />
             <p className="text-2xl font-black text-slate-800">{totalQuizzes}</p>
-            <p className="text-xs text-slate-500 font-semibold">???????</p>
+            <p className="text-xs text-slate-500 font-semibold">{t('progress.stat.quizzes')}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center shadow">
             <CheckCircle2 className="w-6 h-6 text-green-500 mx-auto mb-1" />
             <p className="text-2xl font-black text-slate-800">{passed}</p>
-            <p className="text-xs text-slate-500 font-semibold">????????</p>
+            <p className="text-xs text-slate-500 font-semibold">{t('progress.stat.passed')}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center shadow">
             <Star className="w-6 h-6 text-yellow-400 mx-auto mb-1" fill="currentColor" />
             <p className="text-2xl font-black text-slate-800">{avgPct}%</p>
-            <p className="text-xs text-slate-500 font-semibold">??????</p>
+            <p className="text-xs text-slate-500 font-semibold">{t('progress.stat.average')}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 text-center shadow">
             <Trophy className="w-6 h-6 text-yellow-500 mx-auto mb-1" fill="currentColor" />
             <p className="text-2xl font-black text-slate-800">{masteredCount}</p>
-            <p className="text-xs text-slate-500 font-semibold">?????????</p>
+            <p className="text-xs text-slate-500 font-semibold">{t('progress.stat.mastered')}</p>
           </div>
         </div>
       )}
@@ -369,13 +369,13 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             onClick={() => setActiveTab('map')}
             className={`flex-1 flex items-center justify-center gap-2 py-2 font-bold text-sm rounded-xl transition ${activeTab === 'map' ? 'bg-white text-indigo-700 shadow' : 'text-white hover:bg-white/10'}`}
           >
-            <Target className="w-4 h-4" /> ???? ?? ??????
+            <Target className="w-4 h-4" /> {t('progress.tab.map')}
           </button>
           <button 
             onClick={() => setActiveTab('activity')}
             className={`flex-1 flex items-center justify-center gap-2 py-2 font-bold text-sm rounded-xl transition ${activeTab === 'activity' ? 'bg-white text-indigo-700 shadow' : 'text-white hover:bg-white/10'}`}
           >
-            <BarChart2 className="w-4 h-4" /> ????????? ? ?????????
+            <BarChart2 className="w-4 h-4" /> {t('progress.tab.activity')}
           </button>
         </div>
       )}
