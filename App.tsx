@@ -104,6 +104,7 @@ const CoverageAnalyzerView = safeLazy(() => import('./views/CoverageAnalyzerView
 const MindMapView = safeLazy(() => import('./views/MindMapView').then(module => ({ default: module.MindMapView })));
 const RoadmapView = safeLazy(() => import('./views/RoadmapView').then(module => ({ default: module.RoadmapView })));
 const TeacherAnalyticsView = safeLazy(() => import('./views/TeacherAnalyticsView').then(module => ({ default: module.TeacherAnalyticsView })));
+const SystemAdminView = safeLazy(() => import('./views/SystemAdminView').then(module => ({ default: module.SystemAdminView })));
 const TestGeneratorView = safeLazy(() => import('./views/TestGeneratorView').then(module => ({ default: module.TestGeneratorView })));
 const SchoolAdminView = safeLazy(() => import('./views/SchoolAdminView').then(module => ({ default: module.SchoolAdminView })));
 
@@ -139,7 +140,7 @@ const routes = [
     { path: '/my-lessons', component: LessonPlanLibraryView },
     { path: '/library', component: ContentLibraryView },
     { path: '/gallery', component: ExamplesGalleryView },
-    { path: '/settings', component: SettingsView },      { path: '/school-admin', component: SchoolAdminView },    { path: '/progression', component: ProgressionView },
+    { path: '/settings', component: SettingsView },      { path: '/school-admin', component: SchoolAdminView },    { path: '/system-admin', component: SystemAdminView }, { path: '/progression', component: ProgressionView },
     { path: '/reviews', component: ContentReviewView },
     { path: '/graph', component: CurriculumGraphView },
     { path: '/roadmap', component: RoadmapView },

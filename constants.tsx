@@ -47,7 +47,10 @@ import {
   MessageCircle,
   School,
   FileText,
-    Activity,
+  Activity,
+  ShieldCheck,
+  ShieldAlert,
+  Building,
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -109,6 +112,9 @@ export const ICONS: Record<string, any> = {
   messages: MessageCircle,
   school: School,
   document: FileText,
+  shieldCheck: ShieldCheck,
+  shieldAlert: ShieldAlert,
+  building: Building,
 };
 
 export const SUBJECTS = [

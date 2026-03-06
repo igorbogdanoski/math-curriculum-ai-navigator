@@ -91,12 +91,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label={t("nav.planner")} onClick={onClose} />
           <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label={t("nav.analytics")} onClick={onClose} />
           <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label={t("nav.mylessons")} onClick={onClose} />
-          <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.library")} onClick={onClose} />            {(user?.role === 'school_admin' || user?.role === 'admin') && (
+          <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.library")} onClick={onClose} />            
+          {(user?.role === 'school_admin' || user?.role === 'admin') && (
               <>
                 <NavItem path="/school-admin" currentPath={currentPath} icon={ICONS.school} label={t("nav.schooladmin")} onClick={onClose} />
                 <NavItem path="/reviews" currentPath={currentPath} icon={ICONS.shieldCheck} label="Рецензии" onClick={onClose} />
               </>
-            )}          <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label={t("nav.settings")} onClick={onClose} />
+            )}          
+          {user?.role === 'admin' && (
+              <NavItem path="/system-admin" currentPath={currentPath} icon={ICONS.shieldAlert} label="Училишта" onClick={onClose} />
+          )}
+          <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label={t("nav.settings")} onClick={onClose} />
         </div>
 
         {/* â”€â”€ SECONDARY NAV (collapsible) â”€â”€ */}
