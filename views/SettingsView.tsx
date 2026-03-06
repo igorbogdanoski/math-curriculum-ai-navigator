@@ -259,6 +259,25 @@ export const SettingsView: React.FC = () => {
                     </button>
                 </div>
               </Card>
+{/* А: Firebase UID — за bootstrap на admin улога */}
+            {firebaseUser?.uid && (
+              <Card className="max-w-2xl">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-700 flex items-center gap-2">
+                      🛡️ Твојот Firebase UID
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Потребен за поставување на admin улога преку Firebase Console (еднаш).
+                    </p>
+                    <p className="mt-2 font-mono text-xs text-gray-800 bg-gray-100 px-3 py-2 rounded-lg break-all select-all">
+                      {firebaseUser.uid}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
 {/* Install App Section */}
             <InstallApp />
 

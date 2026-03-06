@@ -182,6 +182,35 @@ export const firestoreService = {
       return [];
     }
   },
+
+  /**
+   * В — Листа на сите регистрирани корисници (само за admin).
+   * Враќа UID + name + email + role + schoolId.
+   */
+  fetchAllUsers: async (): Promise<{ uid: string; name: string; email?: string; role?: string; schoolId?: string }[]> => {
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      return snap.docs.map(d => ({ uid: d.id, ...(d.data() as any) }));
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      return [];
+    }
+  },
+
+  /**
+   * В — Ажурирање на улога и/или училиште на корисник (само за admin).
+   */
+  updateUserRole: async (uid: string, role: 'teacher' | 'school_admin' | 'admin', schoolId?: string): Promise<void> => {
+    try {
+      const patch: Record<string, string> = { role };
+      if (schoolId !== undefined) patch.schoolId = schoolId;
+      await updateDoc(doc(db, 'users', uid), patch);
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      throw error;
+    }
+  },
+
   /**
    * Dashboard stats for School Admins (Phase D4 target)
    */
