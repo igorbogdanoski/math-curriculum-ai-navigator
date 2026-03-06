@@ -274,6 +274,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                     <UIProvider>
                       <GeneratorPanelProvider>
                         {children}
+                        <GlobalTour />
                       </GeneratorPanelProvider>
                     </UIProvider>
                   </LastVisitedProvider>
@@ -282,8 +283,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             </CurriculumProvider>
           </UserPreferencesProvider>
         </LanguageProvider>
-          <GlobalTour />
-            </AuthProvider>
+        </AuthProvider>
       </NotificationProvider>
     </NetworkStatusProvider>
   </ErrorBoundary>
