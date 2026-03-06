@@ -183,7 +183,7 @@ export const SystemAdminView: React.FC = () => {
                             {schoolSuccess && <div className="mb-3 p-3 bg-green-50 text-green-700 text-sm rounded-lg">{schoolSuccess}</div>}
                             <form onSubmit={handleCreateSchool} className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ime на училиште</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Име на училиште</label>
                                     <input
                                         type="text"
                                         value={newSchoolName}
