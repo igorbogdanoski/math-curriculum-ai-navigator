@@ -155,6 +155,22 @@ export interface CachedMaterial {
 
 export const firestoreService = {
 
+  createSchool: async (name: string, city: string, adminUid: string = ''): Promise<{id: string, name: string, city: string}> => {
+    try {
+      const docRef = await addDoc(collection(db, 'schools'), {
+        name,
+        city,
+        adminUid,
+        teacherUids: [],
+        createdAt: serverTimestamp()
+      });
+      return { id: docRef.id, name, city };
+    } catch (error) {
+      console.error('Error creating school:', error);
+      throw error;
+    }
+  },
+
   fetchSchools: async (): Promise<any[]> => {
     try {
       const q = query(collection(db, 'schools'), orderBy('name'));

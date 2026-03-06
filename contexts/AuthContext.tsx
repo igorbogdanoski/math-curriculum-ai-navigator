@@ -18,7 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string, photoFile: File | null, schoolId?: string) => Promise<void>;
+  register: (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin') => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (profile: TeachingProfile) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
@@ -132,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [auth]);
   
-  const register = useCallback(async (email: string, password: string, name: string, photoFile: File | null, schoolId?: string): Promise<void> => {
+  const register = useCallback(async (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin'): Promise<void> => {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
@@ -151,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const newProfile: TeachingProfile = {
             name: name,
             photoURL: photoURL,
-            role: 'teacher',
+            role: role || 'teacher',
             schoolId: schoolId || '', // default role
             style: 'Constructivist',
             experienceLevel: 'Beginner',

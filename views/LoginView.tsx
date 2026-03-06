@@ -94,12 +94,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEm
         </div>
         
         <div>
-            <label htmlFor="school" className="block text-sm font-medium text-gray-700">Училиште (опционално)</label>
+            <label htmlFor="school" className="block text-sm font-medium text-gray-700">Училиште (Означете го вашето училиште)</label>
             <select
                 id="school"
                 value={schoolId}
                 onChange={(e) => setSchoolId(e.target.value)}
                 className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary"
+                required
             >
                 <option value="">-- Изберете училиште --</option>
                 {schools.map(s => (
@@ -205,6 +206,18 @@ export const LoginView: React.FC = () => {
     const [schools, setSchools] = useState<any[]>([]);
     const [schoolId, setSchoolId] = useState('');
 
+    useEffect(() => {
+        const loadSchools = async () => {
+            try {
+                const fetchedSchools = await firestoreService.fetchSchools();
+                setSchools(fetchedSchools);
+            } catch (err) {
+                console.error("Failed to load schools:", err);
+            }
+        };
+        loadSchools();
+    }, []);
+
     const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -269,6 +282,11 @@ export const LoginView: React.FC = () => {
         }
         if (!name.trim()) {
             setError('Ве молиме внесете го вашето име и презиме.');
+            return;
+        }
+
+        if (!schoolId) {
+            setError('Ве молиме изберете училиште. Доколку не е во листата, контактирајте со администраторот.');
             return;
         }
         setIsLoading(true);
