@@ -512,7 +512,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                 </button>
                                 <button type="button" onClick={() => setAssignTarget(generatedMaterial as AIGeneratedAssessment)}
                                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
-                                    <ClipboardList className="w-4 h-4" />Задај на класа
+                                    <ClipboardList className="w-4 h-4" />Задај на одделение
                                 </button>
                             </div>
                         </div>
@@ -572,7 +572,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                 </button>
                                 <button type="button" onClick={() => setAssignTarget(variants[activeVariantTab])}
                                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
-                                    <ClipboardList className="w-4 h-4" />Задај на класа
+                                    <ClipboardList className="w-4 h-4" />Задај на одделение
                                 </button>
                             </div>
                         </div>

@@ -138,10 +138,14 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
   const handleAnswer = (option: string) => {
     if (selectedOption || showResult) return;
-    
+
     setIsTimerRunning(false);
-      // Use math equivalence checker for smart validation
-      const correct = checkMathEquivalence(option, currentQ.answer);
+    setSelectedOption(option);
+    
+    // Use math equivalence checker for smart validation
+    const correct = checkMathEquivalence(option, currentQ.answer);
+
+    setIsCorrect(correct);
 
     if (correct) {
       const timeBonus = timeLeft * 10;

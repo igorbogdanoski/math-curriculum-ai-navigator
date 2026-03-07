@@ -174,6 +174,12 @@ export interface TeachingProfile {
   schoolId?: string;
   schoolName?: string;
   municipality?: string;
+  
+  // Monetization & Quota
+  aiCreditsBalance?: number;
+  isPremium?: boolean;
+  hasUnlimitedCredits?: boolean;
+
   style: 'Constructivist' | 'Direct Instruction' | 'Inquiry-Based' | 'Project-Based';
   experienceLevel: 'Beginner' | 'Intermediate' | 'Expert';
   levelDescription?: string;

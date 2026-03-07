@@ -78,7 +78,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
         }
     };
     
-    const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'clipboard') => {
+    const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
         setIsExportMenuOpen(false);
         if (format === 'pdf') {
             addNotification("Се отвора дијалогот за печатење. Изберете 'Save as PDF' за да го зачувате фајлот.", 'info');
@@ -121,6 +121,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                 extension = 'tex';
                 content = `\\documentclass[12pt]{article}\n\\usepackage[utf8]{inputenc}\n\\title{${escapeLatex(title)}}\n\\author{AI Генератор}\n\\date{}\n\\begin{document}\n\\maketitle\n\\section*{Воведна активност}\n${escapeLatex(openingActivity)}\n\\section*{Главна активност}\n${escapeLatex(mainActivitiesStr)}\n\\section*{Диференцијација}\n${escapeLatex(differentiation)}\n\\section*{Идеја за оценување}\n${escapeLatex(assessmentIdea)}\n\\end{document}`;
                 break;
+            case 'download-doc':
             case 'doc': {
                 const printableElement = document.getElementById('printable-area');
                 if (!printableElement) {
@@ -145,6 +146,20 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                     </body>
                     </html>
                 `;
+                
+                if (format === 'download-doc') {
+                    const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${filename}.doc`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    return;
+                }
+
                  try {
                     const blob = new Blob([fullHtml], { type: 'text/html' });
                     const clipboardItem = new ClipboardItem({ 'text/html': blob });
@@ -187,8 +202,11 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                                     <button type="button" onClick={() => handleExport('tex')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.download className="w-5 h-5 mr-3" /> Сними како LaTeX (.tex)
                                     </button>
+                                    <button type="button" onClick={() => handleExport('download-doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <ICONS.download className="w-5 h-5 mr-3" /> Експортирај во Word (.doc)
+                                    </button>
                                     <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        <ICONS.edit className="w-5 h-5 mr-3" /> Копирај за Word (форматирано)
+                                        <ICONS.copy className="w-5 h-5 mr-3" /> Копирај за Word (форматирано)
                                     </button>
                                     <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF

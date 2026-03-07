@@ -303,7 +303,7 @@ export const translations: Record<Language, Record<string, string>> = {
   'analytics.load.results': 'резултати',
   'analytics.assignments.loading': 'Вчитувам задачи…',
   'analytics.assignments.empty': 'Нема зададени задачи.',
-  'analytics.assignments.emptyHint': 'Генерирајте квиз или тест и кликнете „Задај на класа".',
+  'analytics.assignments.emptyHint': 'Генерирајте квиз или тест и кликнете „Задај на одделение".',
   'analytics.assignments.overdue': 'Задоцнета',
   'analytics.assignments.deadline': 'Рок:',
   'analytics.assignments.completed': 'Завршиле',

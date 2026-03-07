@@ -1,4 +1,5 @@
 import React from 'react';
+import { MathRenderer } from './common/MathRenderer';
 
 export const PrintableQuiz = React.forwardRef(({ title, questions, grade }: any, ref: any) => {
   return (
@@ -34,15 +35,13 @@ export const PrintableQuiz = React.forwardRef(({ title, questions, grade }: any,
           <div key={i} className="break-inside-avoid">
             <div className="flex gap-2 font-bold text-lg mb-2">
                 <span>{i + 1}.</span>
-                <span>{q.question}</span>
-            </div>
-            
+                  <div className="flex-1"><MathRenderer text={q.question} /></div>
             {/* ОПЦИИ (Ако има) */}
             <div className="grid grid-cols-2 gap-y-3 gap-x-8 ml-6 mt-3">
               {q.options.map((opt: string, j: number) => (
-                <div key={j} className="flex items-center gap-3">
-                   <div className="w-5 h-5 border-2 border-black rounded-full flex-shrink-0"></div>
-                   <span className="text-base">{opt}</span>
+                  <div key={j} className="flex items-start gap-3">
+                     <div className="w-5 h-5 border-2 border-black rounded-full flex-shrink-0 mt-1"></div>
+                     <div className="text-base flex-1"><MathRenderer text={opt} /></div>
                 </div>
               ))}
             </div>

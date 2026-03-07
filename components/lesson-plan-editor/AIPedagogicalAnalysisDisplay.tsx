@@ -60,7 +60,7 @@ export const AIPedagogicalAnalysisDisplay: React.FC<AIPedagogicalAnalysisDisplay
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
     
-    const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'clipboard') => {
+    const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
         if (!analysis?.pedagogicalAnalysis) return;
         setIsExportMenuOpen(false);
 
@@ -120,13 +120,27 @@ export const AIPedagogicalAnalysisDisplay: React.FC<AIPedagogicalAnalysisDisplay
             content += `\\subsection*{Ангажман на ученици}\n\\textbf{Статус:} ${escapeLatex(engagement.status)}\\par\n${escapeLatex(engagement.details)}\n\n`;
             content += `\\subsection*{Когнитивни нивоа}\n\\textbf{Статус:} ${escapeLatex(cognitiveLevels.status)}\\par\n${escapeLatex(cognitiveLevels.details)}\n\n`;
             content += `\\end{document}`;
-        } else if (format === 'doc') {
+        } else if (format === 'doc' || format === 'download-doc') {
             let htmlBody = `<h1>AI Педагошка Анализа за: ${escapeHtml(finalPlanTitle)}</h1>`;
             htmlBody += `<h2>Сумарен впечаток</h2><p>${escapeHtml(overallImpression)}</p>`;
             htmlBody += `<h2>Усогласеност</h2><p><b>Статус:</b> ${escapeHtml(alignment.status)}</p><p>${escapeHtml(alignment.details)}</p>`;
             htmlBody += `<h2>Ангажман на ученици</h2><p><b>Статус:</b> ${escapeHtml(engagement.status)}</p><p>${escapeHtml(engagement.details)}</p>`;
             htmlBody += `<h2>Когнитивни нивоа</h2><p><b>Статус:</b> ${escapeHtml(cognitiveLevels.status)}</p><p>${escapeHtml(cognitiveLevels.details)}</p>`;
             
+            if (format === 'download-doc') {
+                const fullHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${htmlBody}</body></html>`;
+                const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `pedagoshka-analiza-${Date.now()}.doc`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                return;
+            }
+
             try {
                 const blob = new Blob([htmlBody], { type: 'text/html' });
                 const clipboardItem = new ClipboardItem({ 'text/html': blob });
@@ -187,7 +201,8 @@ export const AIPedagogicalAnalysisDisplay: React.FC<AIPedagogicalAnalysisDisplay
                                             {/* Export buttons */}
                                             <button onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)</button>
                                             <button onClick={() => handleExport('tex')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><ICONS.download className="w-5 h-5 mr-3" /> Сними како LaTeX (.tex)</button>
-                                            <button onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><ICONS.edit className="w-5 h-5 mr-3"/>Копирај за Word (форматирано)</button>
+                                            <button onClick={() => handleExport('download-doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><ICONS.download className="w-5 h-5 mr-3"/>Експортирај во Word (.doc)</button>
+                            <button onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><ICONS.copy className="w-5 h-5 mr-3"/>Копирај за Word (форматирано)</button>
                                             <button onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF</button>
                                             <button onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст</button>
                                         </div>

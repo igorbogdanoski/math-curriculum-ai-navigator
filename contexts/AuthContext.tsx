@@ -161,7 +161,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             studentProfiles: [],
             favoriteConceptIds: [],
             favoriteLessonPlanIds: [],
-            toursSeen: {}
+            toursSeen: {},
+            aiCreditsBalance: 100,
+            isPremium: false,
+            hasUnlimitedCredits: false,
         };
 
         await setDoc(doc(db, "users", user.uid), newProfile);

@@ -234,7 +234,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         setIsEditing(false);
     };
 
-    const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'clipboard') => {
+    const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
         setIsActionsMenuOpen(false);
         if (format === 'pdf') {
             addNotification("Се отвора дијалогот за печатење. Изберете 'Save as PDF' за да го зачувате фајлот.", 'info');
@@ -271,7 +271,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
             return;
         }
 
-        if (format === 'doc') {
+        if (format === 'doc' || format === 'download-doc') {
             const printableElement = document.getElementById('full-printable-assessment');
             if (!printableElement) {
                 addNotification('Грешка: Содржината за извоз не е пронајдена.', 'error');
@@ -303,6 +303,20 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 </body>
                 </html>
             `;
+            
+            if (format === 'download-doc') {
+                const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${filename}.doc`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                return;
+            }
+
             try {
                 const blob = new Blob([fullHtml], { type: 'text/html' });
                 const clipboardItem = new ClipboardItem({ 'text/html': blob });
@@ -441,8 +455,11 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                                         <button type="button" onClick={() => handleExport('tex')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.download className="w-5 h-5 mr-3" /> Сними како LaTeX (.tex)
                                         </button>
+                                        <button type="button" onClick={() => handleExport('download-doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <ICONS.download className="w-5 h-5 mr-3" /> Експортирај во Word (.doc)
+                                        </button>
                                         <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.edit className="w-5 h-5 mr-3" /> Копирај за Word (форматирано)
+                                            <ICONS.copy className="w-5 h-5 mr-3" /> Копирај за Word (форматирано)
                                         </button>
                                         <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
