@@ -8,6 +8,7 @@ import {
   Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw, Target,
  } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useStudentProgress } from '../hooks/useStudentProgress';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { getDeviceId } from '../utils/studentIdentity';
@@ -39,12 +40,13 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [nameInput, setNameInput] = useState<string>(() => {
     try { return nameProp || localStorage.getItem('studentName') || ''; } catch { return nameProp || ''; }
   });
-  const [results, setResults] = useState<QuizResult[]>([]);
-  const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
   // conceptId ? quizId for "play again" self-navigation
   const [nextQuizIds, setNextQuizIds] = useState<Record<string, string>>({});
+  const { data, isLoading: loading, error, refetch: refetchData } = useStudentProgress(studentName, isReadOnly);
+  const results = data?.results || [];
+  const masteryRecords = data?.mastery || [];
+  const assignments = data?.assignments || [];
   const [gamification, setGamification] = useState<StudentGamification | null>(null);
-  const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [activeTab, setActiveTab] = useState<'activity' | 'map'>('map');
   const [reportPeriod, setReportPeriod] = useState<'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH'>('THIS_WEEK');
@@ -54,7 +56,6 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null);
   // ?2 � Assignments
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
   // E1.2 — Daily Quests
   const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>([]);
   // E1.3 — Leaderboard rank

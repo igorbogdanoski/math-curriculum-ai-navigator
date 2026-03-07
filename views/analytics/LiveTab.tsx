@@ -4,7 +4,7 @@ import QRCode from 'react-qr-code';
 import { firestoreService, type LiveSession } from '../../services/firestoreService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/common/Card';
-import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
+import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 type CachedQuiz = { id: string; title: string; conceptId?: string };
@@ -20,7 +20,7 @@ const STATUS_LABEL_KEYS: Record<string, string> = {
     completed: 'analytics.live.completed',
 };
 
-export const LiveTab: React.FC = () => {
+const LiveTabInner: React.FC = () => {
     const { firebaseUser } = useAuth();
     const { t } = useLanguage();
     const [quizzes, setQuizzes] = useState<CachedQuiz[]>([]);
@@ -102,8 +102,7 @@ export const LiveTab: React.FC = () => {
         : null;
 
     return (
-        <SilentErrorBoundary name="LiveTab">
-            <div className="space-y-6">
+        <div className="space-y-6">
 
                 {/* Active session dashboard */}
                 {session && session.status === 'active' && (
@@ -272,6 +271,11 @@ export const LiveTab: React.FC = () => {
                     </Card>
                 )}
             </div>
-        </SilentErrorBoundary>
     );
 };
+
+export const LiveTab: React.FC = () => (
+    <ErrorBoundary>
+        <LiveTabInner />
+    </ErrorBoundary>
+);

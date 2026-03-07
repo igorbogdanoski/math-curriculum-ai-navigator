@@ -7,7 +7,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
 import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download, Megaphone, Trash2, Send, ChevronDown } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { useTeacherAnalytics } from '../hooks/useTeacherAnalytics';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { StatCard, QuizAggregate, ConceptStat, PerStudentStat, GradeStat, groupBy, fmt } from './analytics/shared';
 import { OverviewTab } from './analytics/OverviewTab';
@@ -37,20 +39,30 @@ export const TeacherAnalyticsView: React.FC = () => {
   const { t } = useLanguage();
     const { firebaseUser } = useAuth();
     const { addNotification } = useNotification();
-    const [results, setResults] = useState<QuizResult[]>([]);
-    const [masteryRecords, setMasteryRecords] = useState<ConceptMastery[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+    const { data: analyticsData, isLoading, error, refetch: loadResults } = useTeacherAnalytics(firebaseUser?.uid);
+
+    const results = analyticsData?.results || [];
+    const masteryRecords = analyticsData?.mastery || [];
+
+    // Local pagination state for "Load More"
+    const [localResults, setLocalResults] = useState<QuizResult[]>([]);
+    
+    
+    // Sync local results when basic query loads
+    useEffect(() => {
+        if (analyticsData) {
+            setLocalResults(analyticsData.results);
+            setLastDoc(analyticsData.lastDoc);
+            setHasMore(analyticsData.lastDoc !== null);
+        }
+    }, [analyticsData]);
     const { getConceptDetails, getStandardsByIds, allConcepts } = useCurriculum();
     const { openGeneratorPanel } = useGeneratorPanel();
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
     // П32 — Pagination
-    const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
-    const [hasMore, setHasMore] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    
     const printRef = React.useRef<HTMLDivElement>(null);
     const handlePrint = useReactToPrint({ contentRef: printRef, documentTitle: `e-dnevnik-report-${new Date().toISOString().slice(0, 10)}` });
     // П27 — Announcements
@@ -63,15 +75,15 @@ export const TeacherAnalyticsView: React.FC = () => {
     // ── Handlers ──────────────────────────────────────────────────────────────
 
     const handleGetRecommendations = async () => {
-        if (isLoadingRecs || results.length === 0) return;
+        if (isLoadingRecs || localResults.length === 0) return;
         setIsLoadingRecs(true);
         setAiRecs(null);
         try {
-            const uniqueStudentSet = new Set(results.filter(r => r.studentName).map(r => r.studentName!));
+            const uniqueStudentSet = new Set(localResults.filter(r => r.studentName).map(r => r.studentName!));
             const recs = await geminiService.generateClassRecommendations({
-                totalAttempts: results.length,
-                avgScore: results.reduce((s, r) => s + r.percentage, 0) / results.length,
-                passRate: (results.filter(r => r.percentage >= 70).length / results.length) * 100,
+                totalAttempts: localResults.length,
+                avgScore: localResults.reduce((s, r) => s + r.percentage, 0) / localResults.length,
+                passRate: (localResults.filter(r => r.percentage >= 70).length / localResults.length) * 100,
                 weakConcepts: weakConcepts,
                 masteredCount: masteryStats?.mastered.length ?? 0,
                 inProgressCount: masteryStats?.inProgress.length ?? 0,
@@ -100,46 +112,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         });
     };
 
-    const loadResults = useCallback(async (forceRefresh = false) => {
-        const uid = firebaseUser?.uid;
-        const cacheKey = uid ?? '__anon__';
-
-        // Serve from cache if fresh and not forced
-        if (!forceRefresh) {
-            const cached = analyticsCache.get(cacheKey);
-            if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-                setResults(cached.results);
-                setMasteryRecords(cached.mastery);
-                setLastDoc(cached.lastDoc);
-                setHasMore(cached.lastDoc !== null);
-                setLastRefresh(new Date(cached.ts));
-                setIsLoading(false);
-                return;
-            }
-        }
-
-        setIsLoading(true);
-        setError(null);
-        setLastDoc(null);
-        setHasMore(false);
-        try {
-            const [page, mastery] = await Promise.all([
-                firestoreService.fetchQuizResultsPage(uid, 200),
-                firestoreService.fetchAllMastery(uid),
-            ]);
-            setResults(page.results);
-            setLastDoc(page.lastDoc);
-            setHasMore(page.lastDoc !== null);
-            setMasteryRecords(mastery);
-            const now = Date.now();
-            setLastRefresh(new Date(now));
-            analyticsCache.set(cacheKey, { results: page.results, mastery, lastDoc: page.lastDoc, ts: now });
-        } catch (err) {
-            setError('Не можеше да се вчитаат резултатите. Проверете ја врската.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, [firebaseUser?.uid]);
+    // loadResults replaced by React Query refetch
 
     const loadMore = async () => {
         if (!lastDoc || isLoadingMore) return;
@@ -147,7 +120,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         try {
             const uid = firebaseUser?.uid;
             const page = await firestoreService.fetchQuizResultsPage(uid, 200, lastDoc);
-            setResults(prev => [...prev, ...page.results]);
+            setLocalResults(prev => [...prev, ...page.results]);
             setLastDoc(page.lastDoc);
             setHasMore(page.lastDoc !== null);
         } catch (err) {
@@ -169,7 +142,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const handleEDnevnikExport = () => {
         const rows: string[][] = [
             ['Ученик / Идентификатор', 'Квиз / Тема', 'Поени', 'Макс. Поени', 'Процент', 'Оценка (Е-Дневник)', 'Датум'],
-            ...results.map(r => {
+            ...localResults.map(r => {
                 const perc = Math.round(r.percentage);
                 const grade = calculateGrade(perc);
                 return [
@@ -205,7 +178,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const handleExportCSV = () => {
         const rows: string[][] = [
             ['Квиз', 'Ученик', 'Точни', 'Вкупно', 'Проценти', 'Датум', 'Концепт ID'],
-            ...results.map(r => [
+            ...localResults.map(r => [
                 r.quizTitle,
                 r.studentName || 'Анонимен',
                 String(r.correctCount),
@@ -231,7 +204,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
-    useEffect(() => { loadResults(); }, [loadResults]);
+    
 
     useEffect(() => {
         if (!firebaseUser?.uid) return;
@@ -268,13 +241,13 @@ export const TeacherAnalyticsView: React.FC = () => {
     // ── Aggregations ──────────────────────────────────────────────────────────
 
     const { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, allConceptStats, uniqueStudents } = useMemo(() => {
-        if (results.length === 0) {
+        if (localResults.length === 0) {
             return { totalAttempts: 0, avgScore: 0, passRate: 0, quizAggregates: [] as QuizAggregate[], distribution: [0, 0, 0, 0], weakConcepts: [] as ConceptStat[], allConceptStats: [] as ConceptStat[], uniqueStudents: [] as string[] };
         }
 
-        const totalAttempts = results.length;
+        const totalAttempts = localResults.length;
         const avgScore = results.reduce((s, r) => s + r.percentage, 0) / totalAttempts;
-        const passRate = (results.filter(r => r.percentage >= 70).length / totalAttempts) * 100;
+        const passRate = (localResults.filter(r => r.percentage >= 70).length / totalAttempts) * 100;
 
         const buckets = [0, 0, 0, 0];
         for (const r of results) {
@@ -348,7 +321,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         const weakConcepts = allConceptStats.filter(c => c.avgPct < 70);
 
         const uniqueStudents = Array.from(
-            new Set(results.filter(r => r.studentName).map(r => r.studentName!))
+            new Set(localResults.filter(r => r.studentName).map(r => r.studentName!))
         ).sort();
 
         return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, allConceptStats, uniqueStudents };
@@ -376,7 +349,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     }, [masteryRecords]);
 
     const weeklyTrend = useMemo(() => {
-        if (results.length === 0) return [];
+        if (localResults.length === 0) return [];
         const weeks: Record<string, { sum: number; count: number; label: string }> = {};
         results.forEach(r => {
             if (!r.playedAt) return;
@@ -396,8 +369,8 @@ export const TeacherAnalyticsView: React.FC = () => {
     }, [results]);
 
     const perStudentStats = useMemo((): PerStudentStat[] => {
-        if (results.length === 0) return [];
-        const grouped = groupBy(results.filter(r => r.studentName), r => r.studentName!);
+        if (localResults.length === 0) return [];
+        const grouped = groupBy(localResults.filter(r => r.studentName), r => r.studentName!);
         return Object.entries(grouped).map(([name, items]) => {
             const avg = Math.round(items.reduce((s, r) => s + r.percentage, 0) / items.length);
             const passedCount = items.filter(r => r.percentage >= 70).length;
@@ -420,7 +393,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     }, [results, masteryRecords]);
 
     const gradeStats = useMemo((): GradeStat[] => {
-        if (results.length === 0) return [];
+        if (localResults.length === 0) return [];
         const grouped = groupBy(results, r => String(r.gradeLevel ?? 'N/A'));
         return Object.entries(grouped).map(([grade, quizzes]) => {
             const avgs = quizzes.map(q => q.percentage);
@@ -433,9 +406,9 @@ export const TeacherAnalyticsView: React.FC = () => {
     }, [results, masteryRecords]);
 
     const standardsCoverage = useMemo(() => {
-        if (results.length === 0) return { tested: [], notTested: [] };
+        if (localResults.length === 0) return { tested: [], notTested: [] };
 
-        const testedConceptIds = Array.from(new Set(results.filter(r => r.conceptId).map(r => r.conceptId!)));
+        const testedConceptIds = Array.from(new Set(localResults.filter(r => r.conceptId).map(r => r.conceptId!)));
         const testedStandardIds = new Set<string>();
         const conceptAvg: Record<string, number> = {};
 
@@ -513,7 +486,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                 <button
                     type="button"
                     onClick={handleExportCSV}
-                    disabled={results.length === 0}
+                    disabled={localResults.length === 0}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition active:scale-95 disabled:opacity-40"
                 >
                     <Download className="w-4 h-4" />
@@ -521,7 +494,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                 </button>
                 <button
                     type="button"
-                    onClick={() => loadResults(true)}
+                    onClick={() => loadResults()}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition active:scale-95"
                 >
                     <RefreshCw className="w-4 h-4" />
@@ -532,11 +505,11 @@ export const TeacherAnalyticsView: React.FC = () => {
 
             {error && (
                 <Card className="mb-6 border-red-200 bg-red-50">
-                    <p className="text-red-600 font-medium">{error}</p>
+                    <p className="text-red-600 font-medium">{error instanceof Error ? error.message : "Не можеше да се вчитаат резултатите. Проверете ја врската."}</p>
                 </Card>
             )}
 
-            {results.length === 0 && !error ? (
+            {localResults.length === 0 && !error ? (
                 <Card className="text-center py-16">
                     <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <h2 className="text-xl font-bold text-gray-500">{t('analytics.noResultsTitle')}</h2>
@@ -708,7 +681,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                     {activeTab === 'overview' && (
                         <OverviewTab
                             masteryStats={masteryStats}
-                            results={results}
+                            results={localResults}
                             weakConcepts={weakConcepts}
                             uniqueStudents={uniqueStudents}
                             distribution={distribution}
@@ -733,7 +706,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                         <AlertsTab
                             perStudentStats={perStudentStats}
                             weakConcepts={weakConcepts}
-                            results={results}
+                            results={localResults}
                             onGenerateRemedial={handleGenerateRemedial}
                         />
                     )}
@@ -773,10 +746,10 @@ export const TeacherAnalyticsView: React.FC = () => {
                             >
                                 {isLoadingMore
                                     ? <><RefreshCw className="w-4 h-4 animate-spin" /> {t('analytics.load.loading')}</>
-                                    : <>↓ {t('analytics.load.loadMore')} ({results.length}</>
+                                    : <>↓ {t('analytics.load.loadMore')} ({localResults.length}</>
                                 }
                             </button>
-                            <p className="text-xs text-gray-400">{t('analytics.load.shown')} {results.length} {t('analytics.load.results')}</p>
+                            <p className="text-xs text-gray-400">{t('analytics.load.shown')} {localResults.length} {t('analytics.load.results')}</p>
                         </div>
                     )}
                 </>

@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../firebaseConfig';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 
 interface QuestionBankTabProps {
   teacherUid: string;
@@ -20,7 +21,7 @@ const QUESTION_TYPE_KEYS: Record<string, string> = {
   FILL_IN_THE_BLANK: 'analytics.qbank.typeFill',
 };
 
-export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) => {
+const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) => {
   const { addNotification } = useNotification();
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -383,3 +384,9 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
     </div>
   );
 };
+
+export const QuestionBankTab: React.FC<QuestionBankTabProps> = (props) => (
+  <ErrorBoundary>
+    <QuestionBankTabInner {...props} />
+  </ErrorBoundary>
+);

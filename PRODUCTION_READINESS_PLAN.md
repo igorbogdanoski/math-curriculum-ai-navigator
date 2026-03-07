@@ -1,5 +1,5 @@
 # Production Readiness Plan
-Created: 07.03.2026 | Status: IN PROGRESS
+Created: 07.03.2026 | Status: COMPLETED
 
 ## Overview
 App is feature-complete (Tier 1-5 + 22 Правци). This plan addresses quality,
@@ -23,7 +23,7 @@ reliability, and maintainability issues before wider rollout.
 |----|------|--------|
 | P2-A | Add TTL cache to TeacherAnalyticsView (5 min module-level Map cache) | DONE |
 | P2-B | Paginate quiz_results (loads 200 + load more, sufficient) | DONE |
-| P2-C | firestoreService.ts split by domain (school, quiz, mastery, assignments, library) | TODO |
+| P2-C | firestoreService.ts split by domain (school, quiz, mastery, assignments, library) | DONE |
 
 ---
 
@@ -32,8 +32,8 @@ reliability, and maintainability issues before wider rollout.
 | ID | Task | Status |
 |----|------|--------|
 | P3-A | i18n audit — QuestionBankTab, LiveTab, ClassesTab, GroupsTab | DONE |
-| P3-B | Mobile responsiveness pass on TeacherAnalyticsView tabs | TODO |
-| P3-C | Error boundary on QuestionBankTab and LiveTab | TODO |
+| P3-B | Mobile responsiveness pass on TeacherAnalyticsView tabs | DONE |
+| P3-C | Error boundary on QuestionBankTab and LiveTab | DONE |
 
 ---
 
@@ -42,8 +42,8 @@ reliability, and maintainability issues before wider rollout.
 | ID | Task | Status |
 |----|------|--------|
 | P4-A | Install @testing-library/dom, exclude Playwright tests — 170/170 passing | DONE |
-| P4-B | Add tests for grading.ts utility | TODO |
-| P4-C | Add tests for firestoreService mock layer | TODO |
+| P4-B | Add tests for grading.ts utility | DONE |
+| P4-C | Add tests for firestoreService mock layer | DONE |
 
 ---
 
