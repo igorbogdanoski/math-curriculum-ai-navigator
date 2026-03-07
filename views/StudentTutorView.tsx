@@ -2,9 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
-
 import { geminiService } from '../services/geminiService';
+import { firestoreService } from '../services/firestoreService';
 import { MathRenderer } from '../components/common/MathRenderer';
+
+/** Parse hash query params, e.g. #/tutor?student=Марко&concept=fractions&title=Дропки */
+const getHashParams = (): URLSearchParams => {
+  const search = window.location.hash.split('?')[1] ?? '';
+  return new URLSearchParams(search);
+};
 
 interface Message {
   id: string;
@@ -14,6 +20,14 @@ interface Message {
 
 export const StudentTutorView: React.FC = () => {
   const { t } = useLanguage();
+
+  // Curriculum context from URL params
+  const params = getHashParams();
+  const studentParam = params.get('student') ?? '';
+  const conceptIdParam = params.get('concept') ?? '';
+  const conceptTitleParam = params.get('title') ?? conceptIdParam;
+
+  const [contextBanner, setContextBanner] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -32,6 +46,41 @@ export const StudentTutorView: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Inject curriculum context when student + concept params are present
+  useEffect(() => {
+    if (!studentParam || !conceptIdParam) return;
+    let cancelled = false;
+
+    const inject = async () => {
+      try {
+        // Fetch last 5 results for this student, filter by concept
+        const allResults = await firestoreService.fetchQuizResultsByStudentName(studentParam);
+        const conceptResults = allResults
+          .filter(r => r.conceptId === conceptIdParam)
+          .slice(0, 5);
+
+        const avgPct = conceptResults.length > 0
+          ? Math.round(conceptResults.reduce((s, r) => s + r.percentage, 0) / conceptResults.length)
+          : null;
+
+        const contextMsg = avgPct !== null
+          ? `Здраво ${studentParam}! Гледам дека го учиш концептот „${conceptTitleParam}". Имаш ${conceptResults.length} обид${conceptResults.length === 1 ? '' : 'и'} со просечен резултат ${avgPct}%. Ајде заедно да го подобриме твоето разбирање! Со што сакаш да почнеме — имаш ли конкретно прашање или задача?`
+          : `Здраво${studentParam ? ` ${studentParam}` : ''}! Денес ќе работиме на „${conceptTitleParam}". Имаш ли конкретно прашање или сакаш да ти го објаснам концептот од почеток?`;
+
+        if (!cancelled) {
+          setContextBanner(`Тема: ${conceptTitleParam}${studentParam ? ` · Ученик: ${studentParam}` : ''}${avgPct !== null ? ` · Просек: ${avgPct}%` : ''}`);
+          setMessages([{ id: 'context-welcome', role: 'assistant', content: contextMsg }]);
+        }
+      } catch {
+        // Non-fatal — just show generic greeting
+      }
+    };
+
+    inject();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -68,13 +117,17 @@ export const StudentTutorView: React.FC = () => {
     <div className="flex flex-col h-[calc(100vh-8rem)] max-w-4xl mx-auto p-4 md:p-6">
       <Card className="flex flex-col flex-1 bg-white shadow-xl overflow-hidden rounded-2xl border-2 border-brand-100">
         <div className="bg-brand-50 p-4 border-b border-brand-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-500 rounded-full flex items-center justify-center text-white shadow-sm">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 bg-brand-500 rounded-full flex items-center justify-center text-white shadow-sm flex-shrink-0">
               <ICONS.messages className="w-6 h-6" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="font-bold text-gray-800 text-lg">AI Тутор по Математика</h2>
-              <p className="text-sm text-gray-500">Безбедно учење. Објаснува, не решава.</p>
+              {contextBanner ? (
+                <p className="text-xs font-semibold text-indigo-600 truncate">{contextBanner}</p>
+              ) : (
+                <p className="text-sm text-gray-500">Безбедно учење. Објаснува, не решава.</p>
+              )}
             </div>
           </div>
         </div>

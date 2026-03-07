@@ -510,6 +510,19 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                       >
                         {loadingExplanation === m.conceptId ? '...' : t('progress.explainAi')}
                       </button>
+                      {!m.mastered && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const enc = (s: string) => encodeURIComponent(s);
+                            window.location.hash = `/tutor?student=${enc(studentName)}&concept=${enc(m.conceptId)}&title=${enc(conceptTitle)}`;
+                          }}
+                          title="Вежбај со AI тутор"
+                          className="flex-shrink-0 text-xs px-2 py-1 rounded-lg border border-purple-200 text-purple-700 hover:bg-purple-50 transition"
+                        >
+                          🤖 Тутор
+                        </button>
+                      )}
                     </div>
                     {explanations[m.conceptId] && (
                       <div className="mt-2 ml-11 text-xs text-slate-600 bg-indigo-50 border border-indigo-100 rounded-lg p-2.5 leading-relaxed">
