@@ -4,11 +4,16 @@ import { ICONS } from '../constants'; // Или import { Calculator, Ruler } fro
 export const GeometryExplorer = () => {
   const [width, setWidth] = useState(150);
   const [height, setHeight] = useState(100);
-  const [shape, setShape] = useState<'rectangle' | 'triangle'>('rectangle');
+  const [shape, setShape] = useState<'rectangle' | 'triangle' | 'circle'>('rectangle');
 
   // Пресметки во живо
-  const perimeter = shape === 'rectangle' ? 2 * (width + height) : width + 2 * Math.sqrt((width/2)**2 + height**2); // Рамностран за едноставност
-  const area = shape === 'rectangle' ? width * height : (width * height) / 2;
+  const perimeter = shape === 'rectangle' ? 2 * (width + height) : 
+                    shape === 'triangle' ? width + 2 * Math.sqrt((width/2)**2 + height**2) : 
+                    2 * Math.PI * (width / 2); // Круг (во земаме width како дијаметар)
+  
+  const area = shape === 'rectangle' ? width * height : 
+               shape === 'triangle' ? (width * height) / 2 : 
+               Math.PI * Math.pow(width / 2, 2); // Круг
 
   // Скалирање за приказ (да не избега од екранот)
   const scale = 1.5; 
@@ -26,11 +31,17 @@ export const GeometryExplorer = () => {
             >
                 Правоаголник
             </button>
-            <button 
+            <button
                 onClick={() => setShape('triangle')}
                 className={`px-3 py-1 rounded ${shape === 'triangle' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}
             >
                 Триаголник
+            </button>
+            <button
+                onClick={() => setShape('circle')}
+                className={`px-3 py-1 rounded ${shape === 'circle' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}
+            >
+                Круг
             </button>
         </div>
       </div>
@@ -108,7 +119,7 @@ export const GeometryExplorer = () => {
                             <text x={0} y={-height / 2 - 10} textAnchor="middle" fill="#2563EB" fontSize="12" fontWeight="bold">a = {width}</text>
                             <text x={width / 2 + 15} y={0} textAnchor="middle" fill="#16A34A" fontSize="12" fontWeight="bold" style={{writingMode: "vertical-rl"}}>b = {height}</text>
                         </>
-                    ) : (
+                    ) : shape === 'triangle' ? (
                         <>
                             {/* Триаголник (Рамнокрак за пример) */}
                             <path 
@@ -123,6 +134,23 @@ export const GeometryExplorer = () => {
                             
                             <text x={0} y={height / 2 + 20} textAnchor="middle" fill="#2563EB" fontSize="12" fontWeight="bold">a = {width}</text>
                             <text x={10} y={0} fill="#16A34A" fontSize="12" fontWeight="bold">h = {height}</text>
+                        </>
+                    ) : (
+                        <>
+                            {/* Круг */}
+                            <circle 
+                                cx="0" 
+                                cy="0" 
+                                r={width / 2} 
+                                fill="rgba(59, 130, 246, 0.1)" 
+                                stroke="#2563EB" 
+                                strokeWidth="3"
+                                className="transition-all duration-300 ease-out"
+                            />
+                            {/* Радиус линија */}
+                            <line x1="0" y1="0" x2={width/2} y2="0" stroke="#16A34A" strokeWidth="1" strokeDasharray="4" />
+                            
+                            <text x={width / 4} y="-10" textAnchor="middle" fill="#16A34A" fontSize="12" fontWeight="bold">r = {Math.round(width / 2)}</text>
                         </>
                     )}
                     
