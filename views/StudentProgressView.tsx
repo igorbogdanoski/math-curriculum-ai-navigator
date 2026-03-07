@@ -59,6 +59,8 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null);
   const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>([]);
+  const [aiReport, setAiReport] = useState<string | null>(null);
+  const [aiReportLoading, setAiReportLoading] = useState(false);
 
   // Update daily quests when mastery data arrives
   useEffect(() => {
@@ -86,6 +88,20 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     if (!isReadOnly) localStorage.setItem('studentName', trimmed);
     setStudentName(trimmed);
     setSearched(true);
+  };
+
+  const handleGenerateReport = async () => {
+    if (aiReportLoading) return;
+    setAiReportLoading(true);
+    setAiReport(null);
+    try {
+      const text = await geminiService.generateParentReport(studentName, results, masteryRecords);
+      setAiReport(text);
+    } catch {
+      setAiReport('Грешка при генерирање на извештај. Обидете се повторно.');
+    } finally {
+      setAiReportLoading(false);
+    }
   };
 
   const totalQuizzes = results.length;
@@ -216,6 +232,14 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                 className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/10 transition h-11"
               >
                 <Printer className="w-4 h-4" /> {t('progress.print')}
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateReport}
+                disabled={aiReportLoading}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-bold bg-purple-500/70 hover:bg-purple-500/90 px-4 py-2 rounded-full border border-purple-300/30 transition h-11 disabled:opacity-60"
+              >
+                {aiReportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : '📄'} AI Извештај
               </button>
             </div>
           )}
@@ -563,6 +587,44 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       )}
 
         </>
+      )}
+
+      {/* AI Parent Report Modal */}
+      {aiReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 no-print">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <p className="font-bold text-slate-800">📄 AI Родителски Извештај — {studentName}</p>
+              <button
+                type="button"
+                onClick={() => setAiReport(null)}
+                className="text-slate-400 hover:text-slate-700 transition"
+                aria-label="Затвори"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              {aiReport}
+            </div>
+            <div className="flex gap-2 px-5 py-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="flex-1 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition"
+              >
+                🖨️ Печати / PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setAiReport(null)}
+                className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-200 transition"
+              >
+                Затвори
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <footer className="mt-10 text-white/50 text-xs font-bold uppercase tracking-widest no-print">

@@ -1481,5 +1481,45 @@ IMPORTANT: You must return the updated material EXACTLY in the same generic JSON
       console.error('Refine material error:', e);
       throw e;
     }
-  }
+  },
+
+  async generateParentReport(
+    studentName: string,
+    results: Array<{ quizTitle: string; percentage: number; conceptId?: string }>,
+    mastery: Array<{ conceptTitle?: string; conceptId: string; mastered: boolean; bestScore: number; attempts: number }>
+  ): Promise<string> {
+    const mastered = mastery.filter(m => m.mastered);
+    const struggling = mastery.filter(m => !m.mastered && m.attempts > 0).sort((a, b) => a.bestScore - b.bestScore);
+    const totalQuizzes = results.length;
+    const avgPct = totalQuizzes > 0
+      ? Math.round(results.reduce((s, r) => s + r.percentage, 0) / totalQuizzes)
+      : 0;
+    const passed = results.filter(r => r.percentage >= 70).length;
+
+    const prompt = `Ти си педагошки советник. Напиши кратко (5-7 параграфи), топло и охрабрувачко родителско писмо на македонски јазик за ученикот „${studentName}".
+
+Податоци за учениковите перформанси:
+- Вкупно одиграни квизови: ${totalQuizzes}
+- Положени (≥70%): ${passed}/${totalQuizzes}
+- Просечен резултат: ${avgPct}%
+- Совладани концепти (${mastered.length}): ${mastered.map(m => m.conceptTitle || m.conceptId).join(', ') || 'Нема'}
+- Области кои треба подобрување (${struggling.length}): ${struggling.slice(0, 5).map(m => `${m.conceptTitle || m.conceptId} (${m.bestScore}%)`).join(', ') || 'Нема'}
+
+Структура на писмото:
+1. Поздравен пасус до родителот
+2. Силни страни на ученикот — пофали конкретни совладани концепти
+3. Области кои треба работа — деликатно, без критика
+4. Конкретни препораки за учење дома (2-3 совети)
+5. Охрабрувачки заклучок
+
+Тон: топол, стручен, позитивен. НЕ употребувај клише. Пишувај конкретно.`;
+
+    const response = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: 'Ти си педагошки советник кој пишува родителски извештаи на македонски јазик.',
+      safetySettings: SAFETY_SETTINGS,
+    });
+    return response.text.trim();
+  },
 };
