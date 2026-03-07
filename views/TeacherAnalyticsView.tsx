@@ -28,6 +28,11 @@ import { useReactToPrint } from 'react-to-print';
 import { PrintableEDnevnikReport } from '../components/analytics/PrintableEDnevnikReport';
 import { Printer } from 'lucide-react';
 
+// Module-level TTL cache (5 min) — survives tab switches, cleared on manual refresh
+const CACHE_TTL_MS = 5 * 60 * 1000;
+type CacheEntry = { results: QuizResult[]; mastery: ConceptMastery[]; lastDoc: DocumentSnapshot | null; ts: number };
+const analyticsCache = new Map<string, CacheEntry>();
+
 export const TeacherAnalyticsView: React.FC = () => {
   const { t } = useLanguage();
     const { firebaseUser } = useAuth();
@@ -95,13 +100,29 @@ export const TeacherAnalyticsView: React.FC = () => {
         });
     };
 
-    const loadResults = useCallback(async () => {
+    const loadResults = useCallback(async (forceRefresh = false) => {
+        const uid = firebaseUser?.uid;
+        const cacheKey = uid ?? '__anon__';
+
+        // Serve from cache if fresh and not forced
+        if (!forceRefresh) {
+            const cached = analyticsCache.get(cacheKey);
+            if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+                setResults(cached.results);
+                setMasteryRecords(cached.mastery);
+                setLastDoc(cached.lastDoc);
+                setHasMore(cached.lastDoc !== null);
+                setLastRefresh(new Date(cached.ts));
+                setIsLoading(false);
+                return;
+            }
+        }
+
         setIsLoading(true);
         setError(null);
         setLastDoc(null);
         setHasMore(false);
         try {
-            const uid = firebaseUser?.uid;
             const [page, mastery] = await Promise.all([
                 firestoreService.fetchQuizResultsPage(uid, 200),
                 firestoreService.fetchAllMastery(uid),
@@ -110,7 +131,9 @@ export const TeacherAnalyticsView: React.FC = () => {
             setLastDoc(page.lastDoc);
             setHasMore(page.lastDoc !== null);
             setMasteryRecords(mastery);
-            setLastRefresh(new Date());
+            const now = Date.now();
+            setLastRefresh(new Date(now));
+            analyticsCache.set(cacheKey, { results: page.results, mastery, lastDoc: page.lastDoc, ts: now });
         } catch (err) {
             setError('Не можеше да се вчитаат резултатите. Проверете ја врската.');
         } finally {
@@ -498,7 +521,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                 </button>
                 <button
                     type="button"
-                    onClick={loadResults}
+                    onClick={() => loadResults(true)}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition active:scale-95"
                 >
                     <RefreshCw className="w-4 h-4" />
