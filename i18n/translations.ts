@@ -263,6 +263,9 @@ export const translations: Record<Language, Record<string, string>> = {
   'progress.confidenceLabel': 'Доверба',
   'progress.explainAi': 'AI',
 
+  'tutor.greeting': 'Здраво! Јас сум твојот AI математички тутор. Постави ми прашање за кое сакаш помош.',
+  'tutor.disclaimer': 'AI туторот може да прави грешки. Секогаш провери кај наставникот.',
+
   'analytics.title': 'Аналитика на Учениците',
   'analytics.subtitle': 'Преглед на резултати, напредок и совладаност на концепти.',
   'analytics.exportCsv': 'Извези CSV',
@@ -615,6 +618,9 @@ export const translations: Record<Language, Record<string, string>> = {
   'progress.noResultsDesc': 'Zgjidh kuize për të parë progresin tuaj këtu.',
   'progress.confidenceLabel': 'Besimi',
   'progress.explainAi': 'AI',
+
+  'tutor.greeting': 'Përshëndetje! Unë jam tutori yt AI i matematikës. Më bëj një pyetje për të cilën ke nevojë për ndihmë.',
+  'tutor.disclaimer': 'Tutori AI mund të bëjë gabime. Gjithmonë kontrollo me mësuesin tënd.',
 
   'analytics.title': 'Analitika e Nxënësve',
   'analytics.subtitle': 'Pasqyrë e rezultateve, progresit dhe zotërimit të koncepteve.',
@@ -969,6 +975,9 @@ export const translations: Record<Language, Record<string, string>> = {
   'progress.noResultsDesc': 'İlerlemenizi burada görmek için quiz çözün.',
   'progress.confidenceLabel': 'Güven',
   'progress.explainAi': 'AI',
+
+  'tutor.greeting': 'Merhaba! Ben senin AI matematik tutor\'unum. Yardım istediğin bir soru sor.',
+  'tutor.disclaimer': 'AI tutor hata yapabilir. Her zaman öğretmenine danış.',
 
   'analytics.title': 'Öğrenci Analitiği',
   'analytics.subtitle': 'Sonuçların, ilerlemenin ve kavram ustalığının genel görünümü.',
