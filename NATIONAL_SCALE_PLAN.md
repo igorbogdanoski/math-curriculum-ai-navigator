@@ -1,132 +1,99 @@
-# Национален План за Скалирање — Math Curriculum AI Navigator
-
-> Документ создаден: 05.03.2026
-> Основа: Експертска анализа по завршување на Фаза Е
-> Цел: Трансформација на прототип → национален EdTech производ за сите училишта во Македонија
+# План за Национална Скала — Math Curriculum AI Navigator
+> **Датум:** 07.03.2026 | **Цел:** Елиминација на слабостите + подигање на апликацијата на државно ниво
 
 ---
 
-## Статус по Фаза Е
+## ФАЗА 1 — Отстранување на евидентирани слабости (Tehnicki Dolg)
 
-| Домен | Статус |
-|---|---|
-| Наставни програми (БРО / МОН) | ✅ Официјални документи, важечки за сите училишта |
-| AI генерирање на материјали | ✅ Gemini 2.5 Flash, квота-свесен |
-| Гемификација (XP, стрикови, лиги) | ✅ Celосно имплементирано |
-| Наставничка аналитика (11 табови) | ✅ Детална |
-| Родителски портал | ✅ Неделен преглед |
-| Пристапност (дислексија, контраст) | ✅ CSS глобален |
-| Верифицирана банка на прашања | ✅ |
-| Мултинаставник / изолација на класа | ✅ |
-| Идентитет на ученик | ⚠️ Само по ime (localStorage string) — КРИТИЧНО |
-| Офлајн поддршка | ❌ Нема Service Worker |
-| Мобилна оптимизација | ⚠️ Делумна |
-| Училиште / Директор | ❌ Нема |
-| Малцинствени јазици (АЛБ/ТУР) | ❌ Нема |
+| # | Задача | Приоритет | Статус | Commit |
+| --- | --- | --- | --- | --- |
+| W1 | Concept name resolution во SystemAdminView Stats (читливо ime наместо raw ID) | Висок | ✅ Завршено | `pending` |
+| W2 | Real-time sync со Firebase `onSnapshot` (огласи + задачи без refresh) | Висок | ✅ Завршено | `pending` |
+| W3 | StudentProgressView декомпозиција во sub-компоненти (<250 линии секоја) | Среден | Планирано | — |
+| W4 | geminiService.real.ts поделба по домен (quiz / ideas / rubric / chat / paths) | Низок | Планирано | — |
+| W5 | useGeneratorActions.ts поделба (useBulkGenerate / useVariantGenerate / useQuotaManager) | Низок | Планирано | — |
 
 ---
 
-## Фаза Ж: Институционална Готовност
+## ФАЗА 2 — Национална Скалабилност (Deployment-Ready)
 
-**Приоритет: КРИТИЧНО — блокира национален deploy**
-
-### Ж1: Стабилен Идентитет на Ученик (Device Token) 🔴 [СЛЕДНО]
-**Проблем**: `studentName` е единствен клуч — судири при исти имиња, загуба при промена на уред.
-**Решение**: UUID `deviceId` генериран при прв посет, зачуван во localStorage.
-
-- [x] `utils/studentIdentity.ts` — `getOrCreateDeviceId()` + `getDeviceId()` со `crypto.randomUUID()`
-- [x] `deviceId?` поле на `QuizResult`, `ConceptMastery`, `StudentGamification` интерфејси
-- [x] `saveQuizResult` / `updateConceptMastery` / `updateStudentGamification` → вклучуваат `deviceId`
-- [x] `fetchQuizResultsByStudentName(name, deviceId?)` / `fetchMasteryByStudent(name, deviceId?)` → deviceId query прво, fallback на studentName
-- [x] `fetchStudentGamification(name, teacherUid?, deviceId?)` → тројна fallback верига
-- [x] `StudentPlayView` → `getOrCreateDeviceId()` при секоја сесија
-- [x] `StudentProgressView` → `getDeviceId()` (само кога student ги гледа своите, не parent view)
-- [x] `firestore.indexes.json` → нови индекси за `deviceId` queries
-- [x] Backward compat: стари записи без deviceId продолжуваат да работат
-
-### Ж2: Ентитет Училиште + Директорски Портал 🟠
-**Проблем**: Нема организациска хиерархија — директорот нема преглед.
-- [ ] `School` интерфејс: id, name, city, teacherUids[], adminUid
-- [x] `SchoolAdminView` — агрегирана аналитика по наставник (просечни резултати, активни ученици)
-- [ ] `firestoreService.fetchSchoolStats(schoolId)` — агрегација
-- [ ] `firestore.rules` — schoolAdmin може да чита, не пишува
-- [ ] Регистрација на наставник → поврзување со училиште
-
-### Ж3: Офлајн-прва Архитектура (Service Worker) 🟠
-**Проблем**: На 3G / без интернет — апликацијата е бескорисна.
-- [x] `vite-plugin-pwa` или рачен Service Worker
-- [ ] Cache: наставни програми (curriculum docs), генерирани квизови (cached_ai_materials)
-- [x] `IndexedDB` за offline quiz play → синк при reconnect
-- [ ] Offline banner („Работите офлајн — резултатите ќе се синкронизираат")
-- [x] `manifest.json` → Install as PWA prompt
+| # | Задача | Приоритет | Статус | Commit |
+| --- | --- | --- | --- | --- |
+| N1 | Offline-First: IndexedDB кеш + Background Sync за рурални општини | Критичен | Планирано | — |
+| N2 | CSV bulk import за ученици (upload список на имиња по клас) | Висок | Планирано | — |
+| N3 | Firestore composite indexes за national stats queries (performance) | Среден | Планирано | — |
 
 ---
 
-## Фаза З: Содржинска Вредност
+## ФАЗА 3 — AI Продлабочување
 
-**Приоритет: ВИСОК — го определува квалитетот на производот**
-
-### З1: Преглед на Содржина со Предметни Наставници 🟡
-- [x] Export на сите AI-генерирани прашања по концепт → Excel/CSV за рецензија
-- [x] `ContentReviewView` (само за admin) — листа на материјали, status: draft/reviewed/approved
-- [x] `isApproved?: boolean` на `CachedMaterial` во Firestore
-- [ ] Approved материјали → приоритет во генерирање
-
-### З2: Македонски Примери по Концепт
-- [ ] За секој концепт: 1-3 реални примери со македонски контекст (денари, килограми, km...)
-- [ ] `Concept.contextExamples?: string[]` во типовите
-- [ ] AI prompt enrichment: вклучи contextExamples во prompt за поприродни прашања
-
-### З3: Наставничка Онбординг Патека
-- [ ] `TourStep` систем за нови наставници (3-5 чекори)
-- [ ] Видео/GIF водичи за: генерирање материјали, аналитика, live сесии
-- [ ] `onboardingCompleted` во user preferences
+| # | Задача | Приоритет | Статус | Commit |
+| --- | --- | --- | --- | --- |
+| A1 | Curriculum-aware AI Tutor (context: концепт + грешки на ученикот) | Висок | Планирано | — |
+| A2 | AI Родителски Извештај (автоматски месечен PDF per student со наратив) | Висок | Планирано | — |
+| A3 | Предиктивна аналитика — предупредувачки систем „ученик во ризик" | Среден | Планирано | — |
+| A4 | Handwriting OCR — Vision API за скенирање домашни задачи | Низок | Планирано | — |
 
 ---
 
-## Фаза И: Диференцијатори
+## ФАЗА 4 — Монетизација и B2B (Долгорочно)
 
-**Приоритет: СРЕДЕН — конкурентска предност**
-
-### И1: Мобилна / Таблет Оптимизација ✅
-- [x] Audit на сите views на 375px (iPhone SE) — fix overflow/truncation
-- [x] `InteractiveQuizPlayer` → touch-friendly (поголеми копчиња ≥44px)
-- [x] `StudentProgressView` на мобилен → collapsed cards, scroll-friendly
-- [x] Тест на iOS Safari + Android Chrome
-
-### И2: МОН Интеграција — Оценки (1-5) Извоз
-- [x] Export на резултати во формат компатибилен со е-Дневник
-- [x] PDF извештај по ученик со МК оценка (1-5) и концепти
-- [ ] QR код линк за родители → директно до PDF
-
-### И3: Јазици на Малцинства (АЛБ / ТУР) 🟢
-- [ ] `i18n` систем: `mk` (default) + `sq` (Албански) + `tr` (Турски)
-- [ ] Превод на UI strings (не на AI генерирање — тоа останува МК за сега)
-- [ ] Копче за избор на јазик во HeaderView
-
-### И4: Национална Библиотека на Содржина
-- [ ] Верификуваните прашања → видливи за сите наставници (не само сопственикот)
-- [x] `isPublic?: boolean` на `SavedQuestion`
-- [ ] `fetchPublicQuestions(conceptId)` — глобална банка
-- [ ] Систем за оценување на јавни прашања (thumbs up/down)
+| # | Задача | Приоритет | Статус | Commit |
+| --- | --- | --- | --- | --- |
+| M1 | Freemium модел — 10 генерации/месец free, Unlimited за претплатени училишта | — | Планирано | — |
+| M2 | Marketplace за материјали — верификувани квизови со цена (National Library paid tier) | — | Планирано | — |
+| M3 | API за издавачи — embedded generator за Просветно дело / Логос | — | Планирано | — |
 
 ---
 
-## Приоритетен Редослед за Имплементација
+## Детални технички спецификации
 
-```
-Ж1 → Ж2 → И1 → З3 → Ж3 → З1 → З2 → И2 → И3 → И4
-```
+### W1 — Concept Name Resolution
+**Проблем:** SystemAdminView прикажува суров `conceptId` (пр. `pythagorean-theorem`) наместо „Питагорова теорема".
+**Решение:** `useCurriculum()` хук во SystemAdminView → lookup map `conceptId → title` → приказ на читливо ime.
 
-**Ж1 е блокер за сè друго** — без стабилен идентитет, сите следни фази градат на нестабилна основа.
+### W2 — Real-Time Student Sync
+**Проблем:** Ученикот мора рачно да refresh-не за да ги види новите огласи/задачи од наставникот.
+**Решение:** Замена на `getDocs()` со `onSnapshot()` во `useStudentProgress.ts` за `announcements` и `assignments`. Cleanup listener во useEffect return.
+
+### W3 — StudentProgressView Decomposition
+**Проблем:** 904 линии во еден фајл.
+**Решение:** Издвојување во 4 sub-компоненти:
+- `components/student/ProgressHeader.tsx` — профил + XP + streak
+- `components/student/MasteryGrid.tsx` — карта на знаење + next steps + prerequisites
+- `components/student/ActivityFeed.tsx` — резултати + задачи + огласи
+- `components/student/GamificationPanel.tsx` — достигнувања грид
+
+### N1 — Offline-First Architecture
+**Проблем:** Рурални општини = нестабилен интернет = неможност за квизови.
+**Решение:**
+1. `utils/offlineCache.ts` — IndexedDB wrapper (чита/пишува quiz_results локално)
+2. `StudentPlayView` — пишува резултат прво во IndexedDB, потоа Firebase
+3. Service Worker `background-sync` — синхронизира кога мрежата се врати
+4. `OfflineBanner` компонент — индикатор дали работи офлајн
+
+### N2 — CSV Bulk Student Import
+**Решение:**
+1. Upload на `.csv` во ClassesTab (Аналитика → Класи)
+2. Parse: `name, gradeLevel` колони
+3. Batch create `student_identity` записи
+4. Preview + потврда пред увоз
+
+### A1 — Curriculum-Aware AI Tutor
+**Проблем:** Туторот е generic — не знае кој концепт го учи ученикот ни какви грешки имал.
+**Решение:**
+1. `/tutor?student=X&concept=Y` — прима URL params
+2. Fetch последните 5 quiz_results за тој концепт
+3. Инјектира контекст: „Ученикот имал 45% на [концепт]. Грешки: [X, Y]. Помогни му..."
+4. „Вежбај со туторот" копче во StudentProgressView за секој слаб концепт
+
+### A2 — AI Родителски Извештај
+**Решение:**
+1. `generateParentReport(studentName, results, mastery)` во geminiService
+2. AI генерира наратив: силни страни, слаби области, препораки за дома
+3. PDF преку `window.print()` на styled `<ParentReportView>`
+4. Надградба на постоечкиот `/parent` QR портал
 
 ---
 
-## Технички Долг (да се адресира паралелно)
-
-- `ACHIEVEMENTS` константата е во `firestoreService.ts` → треба во `utils/achievements.ts`
-- `calcFibonacciLevel` е повикана на повеќе места — доколку се промени формулата, треба refactor
-- Нема unit тестови за `gamification.ts`, `dailyQuests.ts`, `grading.ts`
-- `TeacherAnalyticsView` сè уште е 400+ линии — разгледај дополнително splitting
-
-
+*Овој документ се ажурира по секој завршен sprint. Следен преглед: 14.03.2026.*
