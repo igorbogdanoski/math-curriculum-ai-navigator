@@ -12,7 +12,7 @@ export const PrintableTest = React.forwardRef<HTMLDivElement, PrintableTestProps
     return (
       <div ref={ref} className="bg-white text-black p-10 print-container" style={{ width: '100%', minHeight: '297mm' }}>
         {/* Style specific aimed at print */}
-        <style dangerouslySetInlineStyle={{
+        <style dangerouslySetInnerHTML={{
           __html: `
             @media print {
               @page { size: A4 portrait; margin: 20mm; }

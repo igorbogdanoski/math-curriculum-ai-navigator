@@ -36,6 +36,7 @@ export const PrintableQuiz = React.forwardRef(({ title, questions, grade }: any,
             <div className="flex gap-2 font-bold text-lg mb-2">
                 <span>{i + 1}.</span>
                   <div className="flex-1"><MathRenderer text={q.question} /></div>
+            </div>
             {/* ОПЦИИ (Ако има) */}
             <div className="grid grid-cols-2 gap-y-3 gap-x-8 ml-6 mt-3">
               {q.options.map((opt: string, j: number) => (
