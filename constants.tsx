@@ -1,6 +1,5 @@
 import React from 'react';
-import { 
-  Zap, 
+import { Zap, 
   Star, 
   BookOpen, 
   Layout, 
@@ -51,9 +50,16 @@ import {
   ShieldCheck,
   ShieldAlert,
   Building,
-} from 'lucide-react';
+  Send,
+  AlertTriangle,
+  Info,
+  Play, } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
+  info: Info,
+  play: Play,
+  send: Send,
+  alertTriangle: AlertTriangle,
   logo: Brain,
   star: Star,
   starSolid: Star,

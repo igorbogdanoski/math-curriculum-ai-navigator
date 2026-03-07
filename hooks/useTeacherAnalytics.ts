@@ -23,6 +23,6 @@ export function useTeacherAnalytics(uid: string | undefined) {
         lastDoc: page.lastDoc
       };
     },
-    enabled: true, // Always run, we depend on anon user or real user
+    enabled: !!uid, // Only fetch when uid is present to avoid permission errors
   });
 }
