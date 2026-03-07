@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { firestoreService, type QuizResult, type ConceptMastery, type StudentGamification, type Announcement, type Assignment, ACHIEVEMENTS } from '../services/firestoreService';
-import { signInAnonymously } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { ACHIEVEMENTS } from '../services/firestoreService';
 import { ICONS } from '../constants';
-import { 
+import {
   Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
   Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw, Target,
  } from 'lucide-react';
@@ -11,7 +9,6 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { useStudentProgress } from '../hooks/useStudentProgress';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
-import { getDeviceId } from '../utils/studentIdentity';
 import { GradeBadge } from '../components/common/GradeBadge';
 import { DailyQuestCard } from '../components/common/DailyQuestCard';
 import { loadOrGenerateQuests, type DailyQuest } from '../utils/dailyQuests';
@@ -40,26 +37,33 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [nameInput, setNameInput] = useState<string>(() => {
     try { return nameProp || localStorage.getItem('studentName') || ''; } catch { return nameProp || ''; }
   });
-  // conceptId ? quizId for "play again" self-navigation
-  const [nextQuizIds, setNextQuizIds] = useState<Record<string, string>>({});
-  const { data, isLoading: loading, error, refetch: refetchData } = useStudentProgress(studentName, isReadOnly);
+  const { data, isLoading: loading, error } = useStudentProgress(studentName, isReadOnly);
   const results = data?.results || [];
   const masteryRecords = data?.mastery || [];
   const assignments = data?.assignments || [];
-  const [gamification, setGamification] = useState<StudentGamification | null>(null);
-  const [searched, setSearched] = useState(false);
+  const gamification = data?.gamification ?? null;
+  const announcements = data?.announcements ?? [];
+  const classRank = data?.classRank ?? null;
+  const nextQuizIds = data?.nextQuizIds ?? {};
+
+  const [searched, setSearched] = useState(!!nameProp || !!(() => { try { return localStorage.getItem('studentName'); } catch { return null; } })());
   const [activeTab, setActiveTab] = useState<'activity' | 'map'>('map');
   const [reportPeriod, setReportPeriod] = useState<'THIS_WEEK' | 'LAST_WEEK' | 'THIS_MONTH'>('THIS_WEEK');
-  // ?27 � Teacher announcements
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  // ?28 � AI Concept Explainer
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null);
-  // ?2 � Assignments
-  // E1.2 — Daily Quests
   const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>([]);
-  // E1.3 — Leaderboard rank
-  const [classRank, setClassRank] = useState<{ rank: number; total: number } | null>(null);
+
+  // Update daily quests when mastery data arrives
+  useEffect(() => {
+    if (studentName && masteryRecords.length > 0) {
+      setDailyQuests(loadOrGenerateQuests(studentName, allConcepts, masteryRecords));
+    }
+  }, [studentName, masteryRecords, allConcepts]);
+
+  // Mark as searched when data loads
+  useEffect(() => {
+    if (data) setSearched(true);
+  }, [data]);
 
   const handleExplain = async (conceptId: string, title: string, grade?: number) => {
     if (explanations[conceptId] || loadingExplanation === conceptId) return;
@@ -69,87 +73,12 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     setLoadingExplanation(null);
   };
 
-  const fetchResults = async (name: string) => {
-    if (!name.trim()) return;
-    setLoading(true);
-    setSearched(true);
-    // ?1: Ensure anonymous Firebase Auth session so security rules pass.
-    if (!auth.currentUser) {
-      try { await signInAnonymously(auth); } catch { /* non-fatal */ }
-    }
-    try {
-      // Ж1: use deviceId only when student views their own data (not read-only parent view)
-      const deviceId = isReadOnly ? undefined : getDeviceId() ?? undefined;
-      const [quizData, masteryData] = await Promise.all([
-        firestoreService.fetchQuizResultsByStudentName(name.trim(), deviceId),
-        firestoreService.fetchMasteryByStudent(name.trim(), deviceId),
-      ]);
-      setResults(quizData);
-      setMasteryRecords(masteryData);
-      // E1.2 — load or generate daily quests after mastery data is available
-      setDailyQuests(loadOrGenerateQuests(name.trim(), allConcepts, masteryData));
-
-      // Derive primary teacherUid from most frequent teacher in quiz results
-      const teacherUidCounts: Record<string, number> = {};
-      quizData.forEach(r => { if (r.teacherUid) teacherUidCounts[r.teacherUid] = (teacherUidCounts[r.teacherUid] ?? 0) + 1; });
-      const topTeacherUid = Object.entries(teacherUidCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-
-      // Ж1: Fetch gamification with deviceId + teacherUid scope for precise lookup
-      const gamificationData = await firestoreService.fetchStudentGamification(name.trim(), topTeacherUid, deviceId);
-      setGamification(gamificationData);
-
-      // ?27 � Load announcements for the most frequent teacherUid in results
-      if (topTeacherUid) {
-        firestoreService.fetchAnnouncements(topTeacherUid, 3).then(setAnnouncements);
-        // E1.3 — fetch class leaderboard to show student's rank
-        firestoreService.fetchClassLeaderboard(topTeacherUid).then(board => {
-          const idx = board.findIndex(g => g.studentName === name.trim());
-          if (idx >= 0) setClassRank({ rank: idx + 1, total: board.length });
-        });
-      }
-
-      // ?2 � Load assignments for this student
-      firestoreService.fetchAssignmentsByStudent(name.trim()).then(setAssignments);
-
-      // Pre-fetch quiz links for failed concepts (self-navigation)
-      const failedConceptIds = Array.from(
-        new Set(quizData.filter(r => r.percentage < 70 && r.conceptId).map(r => r.conceptId!))
-      );
-      if (failedConceptIds.length > 0) {
-        const quizLookups = await Promise.all(
-          failedConceptIds.map(cid =>
-            firestoreService.fetchLatestQuizByConcept(cid).then(q => ({ cid, id: q?.id }))
-          )
-        );
-        const map: Record<string, string> = {};
-        quizLookups.forEach(({ cid, id }) => { if (id) map[cid] = id; });
-        setNextQuizIds(map);
-      }
-    } catch (err) {
-      console.error('[StudentProgress] fetchResults failed:', err);
-      setResults([]);
-      setMasteryRecords([]);
-      // Show inline error � visible without toast since this is a public/student page
-      setSearched(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Auto-load on mount if name is known
-  useEffect(() => {
-    if (studentName) {
-      fetchResults(studentName);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleSearch = () => {
     const trimmed = nameInput.trim();
     if (!trimmed) return;
     if (!isReadOnly) localStorage.setItem('studentName', trimmed);
     setStudentName(trimmed);
-    fetchResults(trimmed);
+    setSearched(true);
   };
 
   const totalQuizzes = results.length;

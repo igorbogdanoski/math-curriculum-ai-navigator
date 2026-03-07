@@ -1,6 +1,7 @@
 import { useTour } from '../hooks/useTour';
+import { useGeneratorActions } from '../hooks/useGeneratorActions';
 
-import React, { useState, useMemo, useEffect, useRef, Component, type ReactNode, type ErrorInfo } from 'react';
+import React, { useState, useMemo, Component, type ReactNode, type ErrorInfo } from 'react';
 
 // Local error boundary — catches render errors in result components without crashing the whole panel
 class ResultErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -79,95 +80,66 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const { showModal, hideModal } = useModal();
     
     const [state, dispatch] = useGeneratorState(props);
-    const { materialType, contextType, selectedGrade, selectedTopic, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile, illustrationPrompt, activityTitle, useStudentProfiles, selectedStudentProfileIds, questionTypes, includeSelfAssessment, bloomDistribution } = state;
-
-    // API State
-    const [isGenerating, setIsLoading] = useState(false);
-    const [generatedMaterial, setGeneratedMaterial] = useState<AIGeneratedIdeas | AIGeneratedAssessment | AIGeneratedRubric | AIGeneratedIllustration | AIGeneratedLearningPaths | null>(null);
-    const [isThrottled, setIsThrottled] = useState(false);
-    const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
-
-    // Quota error state — shown as persistent inline banner instead of fleeting toast
-    const [quotaError, setQuotaError] = useState<{ resetTime: string; resetMs: number; exhaustedAt?: string } | null>(null);
-    const [quotaCountdown, setQuotaCountdown] = useState('');
-    // Cancel ref — abort() sets isGenerating=false visually; underlying request finishes in bg
-    const cancelRef = useRef(false);
-
-    // 3× Variants state
-    const [variants, setVariants] = useState<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment> | null>(null);
-    const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
-    const [activeVariantTab, setActiveVariantTab] = useState<'support' | 'standard' | 'advanced'>('standard');
-
-    // Assignment state
-    const [assignTarget, setAssignTarget] = useState<AIGeneratedAssessment | null>(null);
-    // В1 — Library save state (tracks which materials have been saved)
-    const [savedToLibrary, setSavedToLibrary] = useState<Set<string>>(new Set());
-
-    // Г3-alt: Teacher note for the selected concept
-    const [teacherNote, setTeacherNote] = useState('');
-    const [teacherNoteSaved, setTeacherNoteSaved] = useState(false);
-
-    // Bulk generation state
-    const [isGeneratingBulk, setIsGeneratingBulk] = useState(false);
-    const [bulkStep, setBulkStep] = useState<'QUIZ' | 'ASSESSMENT' | 'RUBRIC' | null>(null);
-    const [bulkResults, setBulkResults] = useState<{
-        quiz?: AIGeneratedAssessment;
-        assessment?: AIGeneratedAssessment;
-        rubric?: AIGeneratedRubric;
-    } | null>(null);
+    const { materialType, contextType, selectedGrade, selectedTopic, selectedConcepts, selectedStandard } = state;
 
     // Wizard step state
     const [currentStep, setCurrentStep] = useState(1);
 
-    // Verified question bank state (Е3.2)
-    const [verifiedQs, setVerifiedQs] = useState<import('../types').SavedQuestion[]>([]);
-    useEffect(() => {
-        if (!firebaseUser?.uid || !state.selectedConcepts[0]) { setVerifiedQs([]); return; }
-        firestoreService.fetchVerifiedQuestions(firebaseUser.uid, state.selectedConcepts[0])
-            .then(setVerifiedQs).catch(() => setVerifiedQs([]));
-    }, [firebaseUser?.uid, state.selectedConcepts[0]]);
-
-    // Г3-alt: Load teacher note when concept changes
-    useEffect(() => {
-        const conceptId = state.selectedConcepts[0];
-        if (!firebaseUser?.uid || !conceptId || state.contextType !== 'CONCEPT') {
-            setTeacherNote('');
-            return;
-        }
-        firestoreService.fetchTeacherNote(firebaseUser.uid, conceptId)
-            .then(note => { setTeacherNote(note); setTeacherNoteSaved(false); })
-            .catch(() => setTeacherNote(''));
-    }, [state.selectedConcepts[0], firebaseUser?.uid, state.contextType]);
-
-    const handleSaveTeacherNote = async () => {
-        const conceptId = state.selectedConcepts[0];
-        if (!firebaseUser?.uid || !conceptId) return;
-        await firestoreService.saveTeacherNote(firebaseUser.uid, conceptId, teacherNote).catch(() => {});
-        setTeacherNoteSaved(true);
-        setTimeout(() => setTeacherNoteSaved(false), 2000);
-    };
-
-    // Adaptive difficulty recommendation
-    const [diffRec, setDiffRec] = useState<DifferentiationLevel | null>(null);
-    useEffect(() => {
-        const conceptId = state.selectedConcepts[0];
-        if (!conceptId) { setDiffRec(null); return; }
-        let cancelled = false;
-        firestoreService.fetchQuizResultsByConcept(conceptId, firebaseUser?.uid ?? undefined, 30).then(results => {
-            if (cancelled || results.length === 0) return;
-            const avg = results.reduce((s, r) => s + r.percentage, 0) / results.length;
-            const rec: DifferentiationLevel = avg < 60 ? 'support' : avg < 85 ? 'standard' : 'advanced';
-            setDiffRec(rec);
-            // Auto-pre-select only if teacher hasn't manually changed from default 'standard'
-            if (state.differentiationLevel === 'standard') {
-                dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: rec } });
-            }
-        });
-        return () => { cancelled = true; };
-    }, [state.selectedConcepts[0], firebaseUser?.uid]);
-
-    const filteredTopics = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGrade)?.topics || [], [curriculum, selectedGrade]);
-    const filteredConcepts = useMemo(() => filteredTopics.find((t: Topic) => t.id === selectedTopic)?.concepts || [], [filteredTopics, selectedTopic]);
+    const {
+        filteredTopics,
+        filteredConcepts,
+        isGenerating,
+        generatedMaterial,
+        setGeneratedMaterial,
+        isPlayingQuiz,
+        setIsPlayingQuiz,
+        quotaError,
+        setQuotaError,
+        quotaCountdown,
+        variants,
+        setVariants,
+        isGeneratingVariants,
+        activeVariantTab,
+        setActiveVariantTab,
+        assignTarget,
+        setAssignTarget,
+        teacherNote,
+        setTeacherNote,
+        teacherNoteSaved,
+        isGeneratingBulk,
+        bulkStep,
+        bulkResults,
+        diffRec,
+        verifiedQs,
+        isGenerateDisabled,
+        handleGenerate,
+        handleGenerateVariants,
+        handleBulkGenerate,
+        handleCancel,
+        handleReset,
+        handleSaveAsNote,
+        handleSaveTeacherNote,
+        handleSaveQuestion,
+        handleSaveToLibrary,
+        handleMaterialRate,
+        handleGenerateFromBank,
+        handleClearQuota,
+    } = useGeneratorActions({
+        state,
+        dispatch,
+        curriculum,
+        allConcepts,
+        allNationalStandards,
+        user,
+        firebaseUser,
+        isOnline,
+        addNotification,
+        addItem,
+        showModal,
+        hideModal,
+        getConceptDetails,
+        findConceptAcrossGrades,
+    });
 
     // Collect relevant national standards for the current selection — shown below generated material
     const relevantStandards = useMemo((): NationalStandard[] => {
@@ -181,496 +153,6 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         return allNationalStandards.filter((s: NationalStandard) => standardIds.has(s.id));
     }, [allNationalStandards, contextType, selectedStandard, selectedConcepts, filteredConcepts]);
 
-    
-    // Auto-populate illustration prompt
-    useEffect(() => {
-        if (materialType !== 'ILLUSTRATION') return;
-
-        let newPrompt = '';
-        if (contextType === 'CONCEPT' && selectedConcepts.length > 0) {
-            const concept = filteredConcepts.find((c: Concept) => c.id === selectedConcepts[0]);
-            newPrompt = concept ? `Визуелен приказ на ${concept.title}` : '';
-        } else if (contextType === 'STANDARD' && selectedStandard) {
-            const standard = allNationalStandards?.find((s: NationalStandard) => s.id === selectedStandard);
-            newPrompt = standard ? `Илустрација за: ${standard.description}` : '';
-        } else if (contextType === 'SCENARIO' && scenarioText) {
-            newPrompt = `Илустрација за идејата: ${scenarioText}`;
-        } else if (contextType === 'ACTIVITY' && selectedActivity) {
-            newPrompt = `Илустрација за активноста: ${selectedActivity}`;
-        }
-        dispatch({ type: 'SET_FIELD', payload: { field: 'illustrationPrompt', value: newPrompt } });
-    }, [materialType, contextType, selectedConcepts, selectedStandard, scenarioText, selectedActivity, filteredConcepts, allNationalStandards, dispatch]);
-
-    // Live countdown for quota reset banner
-    useEffect(() => {
-        if (!quotaError?.resetMs) { setQuotaCountdown(''); return; }
-        const update = () => {
-            const diff = quotaError.resetMs - Date.now();
-            if (diff <= 0) { setQuotaCountdown(''); return; }
-            const h = Math.floor(diff / 3_600_000);
-            const m = Math.floor((diff % 3_600_000) / 60_000);
-            setQuotaCountdown(h > 0 ? `${h}ч ${m}{t('common.mins')}` : `${m}мин`);
-        };
-        update();
-        const id = setInterval(update, 60_000);
-        return () => clearInterval(id);
-    }, [quotaError]);
-
-    const handleSaveAsNote = async () => {
-        if (!generatedMaterial || !('openingActivity' in generatedMaterial)) {
-            addNotification('Нема генерирани идеи за зачувување.', 'error');
-            return;
-        }
-
-        const noteContent = `
-### ${generatedMaterial.title}
-
-**Воведна активност:**
-${generatedMaterial.openingActivity}
-
-**Главна активност:**
-${generatedMaterial.mainActivity}
-
-**Диференцијација:**
-${generatedMaterial.differentiation}
-
-**Идеја за оценување:**
-${generatedMaterial.assessmentIdea}
-        `.trim();
-
-        try {
-            await addItem({
-                title: `Белешка: ${generatedMaterial.title}`,
-                date: new Date().toISOString().split('T')[0],
-                type: PlannerItemType.EVENT,
-                description: noteContent,
-            });
-            addNotification('Идејата е успешно зачувана како белешка во планерот!', 'success');
-        } catch (error) {
-            addNotification('Грешка при зачувување на белешката.', 'error');
-        }
-    };
-    
-    const handleReset = () => {
-        showModal(ModalType.Confirm, {
-            title: t('generator.resetTitle'),
-            message: t('generator.resetConfirm'),
-            variant: 'warning',
-            confirmLabel: t('generator.resetBtn'),
-            onConfirm: () => {
-                hideModal();
-                if(curriculum && allNationalStandards) {
-                    dispatch({ type: 'INITIALIZE', payload: getInitialState(curriculum, allNationalStandards) });
-                }
-                setGeneratedMaterial(null);
-                addNotification(t('generator.notifications.reset'), 'info');
-            },
-            onCancel: hideModal,
-        });
-    };
-
-    const MACEDONIAN_CONTEXT_HINT = 'Користи македонски примери: цени во денари (МКД), градови (Скопје, Битола, Охрид), реки (Вардар, Брегалница), ситуации од македонскиот секојдневен живот.';
-
-    // Shared context builder — used by both handleGenerate and handleGenerateVariants
-    const buildContext = (): { context: GenerationContext; imageParam: any; studentProfilesToPass: StudentProfile[] | undefined; tempActivityTitle: string } | null => {
-        if (!curriculum) return null;
-        const gradeData = curriculum.grades.find((g: Grade) => g.id === selectedGrade) || curriculum.grades.find((g: Grade) => String(g.level) === selectedGrade);
-        if (!gradeData && contextType !== 'STANDARD') return null;
-        let context: GenerationContext | null = null;
-        let tempActivityTitle = activityTitle;
-        switch (contextType) {
-            case 'CONCEPT': case 'TOPIC': case 'ACTIVITY': {
-                const topic = gradeData?.topics.find((t: Topic) => t.id === selectedTopic);
-                if (!topic) return null;
-                const concepts = allConcepts.filter((c: Concept) => selectedConcepts.includes(c.id));
-                if ((contextType === 'CONCEPT' || contextType === 'ACTIVITY') && concepts.length === 0) return null;
-                const scenario = contextType === 'ACTIVITY' ? `Креирај материјал за учење базиран на следнава активност од наставната програма: "${selectedActivity}"` : undefined;
-                const activeBlooms = Object.keys(bloomDistribution).length > 0 ? bloomDistribution : undefined;
-                // Resolve prerequisite concept titles for each selected concept
-                const prerequisitesByConceptId: Record<string, string[]> = {};
-                concepts.forEach((c: Concept) => {
-                    if (c.priorKnowledgeIds?.length) {
-                        prerequisitesByConceptId[c.id] = c.priorKnowledgeIds
-                            .map((id: string) => getConceptDetails(id).concept?.title)
-                            .filter((t): t is string => !!t);
-                    }
-                });
-                // Resolve vertical progression for each selected concept across grades
-                const verticalProgression = concepts
-                    .map((c: Concept) => {
-                        const prog = findConceptAcrossGrades(c.id);
-                        if (!prog || prog.progression.length < 2) return null;
-                        return {
-                            conceptId: c.id,
-                            title: prog.title,
-                            progression: prog.progression.map(p => ({ grade: p.grade, conceptTitle: p.concept.title })),
-                        };
-                    })
-                    .filter((p): p is NonNullable<typeof p> => p !== null);
-                context = { type: contextType, grade: gradeData!, topic, concepts, scenario, bloomDistribution: activeBlooms, prerequisitesByConceptId, verticalProgression: verticalProgression.length ? verticalProgression : undefined };
-                if (!tempActivityTitle && materialType === 'RUBRIC') tempActivityTitle = contextType === 'ACTIVITY' ? selectedActivity : `Активност за ${concepts[0]?.title || topic.title}`;
-                break;
-            }
-            case 'STANDARD': {
-                const standard = allNationalStandards?.find((s: NationalStandard) => s.id === selectedStandard);
-                if (!standard) return null;
-                const standardGradeData = curriculum.grades.find((g: Grade) => g.level === standard.gradeLevel) || gradeData;
-                if (!standardGradeData) return null;
-                let topicForStandard: Topic | undefined;
-                const concepts = standard.relatedConceptIds?.map((id: string) => { const details = getConceptDetails(id); if (!topicForStandard && details.topic) topicForStandard = details.topic; return details.concept; }).filter((c: Concept | undefined): c is Concept => !!c);
-                if (!topicForStandard) topicForStandard = { id: 'standard-topic', title: `Стандарди за ${standardGradeData.title}`, description: `Материјали генерирани врз основа на национален стандард.`, concepts: concepts || [] };
-                context = { type: 'STANDARD', grade: standardGradeData, standard, concepts, topic: topicForStandard };
-                if (!tempActivityTitle && materialType === 'RUBRIC') tempActivityTitle = `Активност за стандард ${standard.code}`;
-                break;
-            }
-            case 'SCENARIO': {
-                if (!scenarioText.trim() && !imageFile) return null;
-                if (!gradeData) return null;
-                context = { type: 'SCENARIO', grade: gradeData, scenario: scenarioText, topic: { id: 'scenario-topic', title: 'Генерирање од идеја', description: scenarioText.substring(0, 100), concepts: [] } };
-                if (!tempActivityTitle && materialType === 'RUBRIC') tempActivityTitle = `Активност според идеја`;
-                break;
-            }
-        }
-        if (!context) return null;
-        return {
-            context,
-            imageParam: imageFile ? { base64: imageFile.base64, mimeType: imageFile.file.type } : undefined,
-            studentProfilesToPass: (useStudentProfiles || materialType === 'LEARNING_PATH') ? user?.studentProfiles?.filter((p: StudentProfile) => selectedStudentProfileIds.includes(p.id)) : undefined,
-            tempActivityTitle,
-        };
-    };
-
-    const handleGenerateVariants = async () => {
-        if (!isOnline) { addNotification("Нема интернет конекција.", 'error'); return; }
-        if (isGeneratingVariants || isGenerateDisabled) return;
-        if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
-        const built = buildContext();
-        if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
-        const { context: finalContext } = built;
-        const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
-        const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
-
-        setIsGeneratingVariants(true);
-        setVariants(null);
-        setGeneratedMaterial(null);
-
-        const levels = ['support', 'standard', 'advanced'] as const;
-        const newVariants: Partial<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>> = {};
-        let quotaHit = false;
-        for (const level of levels) {
-            if (quotaHit) break;
-            try {
-                newVariants[level] = await geminiService.generateAssessment(
-                    materialType as 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS',
-                    state.questionTypes, state.numQuestions, finalContext,
-                    user ?? undefined, level, undefined, undefined, effectiveInstruction, state.includeSelfAssessment
-                );
-            } catch (error) {
-                if (error instanceof RateLimitError) {
-                    setQuotaBannerFromStorage();
-                    quotaHit = true;
-                } else {
-                    console.warn(`Failed to generate ${level} variant:`, error);
-                }
-            }
-        }
-        if (!quotaHit && Object.keys(newVariants).length > 0) {
-            setVariants(newVariants as Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>);
-        } else if (!quotaHit) {
-            addNotification('Не можеше да се генерираат варијантите. Обидете се повторно.', 'error');
-        }
-        setIsGeneratingVariants(false);
-    };
-
-    const handleBulkGenerate = async () => {
-        if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
-        if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
-        const built = buildContext();
-        if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
-        const { context, tempActivityTitle } = built;
-        const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
-        const effectiveInstruction = [
-            state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '',
-            teacherNoteInstruction,
-            state.customInstruction,
-        ].filter(Boolean).join(' ');
-
-        setIsGeneratingBulk(true);
-        setBulkResults(null);
-        setGeneratedMaterial(null);
-        const acc: { quiz?: AIGeneratedAssessment; assessment?: AIGeneratedAssessment; rubric?: AIGeneratedRubric } = {};
-
-        const steps: Array<{ key: 'QUIZ' | 'ASSESSMENT' | 'RUBRIC'; fn: () => Promise<void> }> = [
-            { key: 'QUIZ', fn: async () => {
-                acc.quiz = await geminiService.generateAssessment(
-                    'QUIZ', [QuestionType.MULTIPLE_CHOICE], 5, context, user ?? undefined,
-                    undefined, undefined, undefined, effectiveInstruction, false
-                );
-            }},
-            { key: 'ASSESSMENT', fn: async () => {
-                acc.assessment = await geminiService.generateAssessment(
-                    'ASSESSMENT',
-                    state.questionTypes.length ? state.questionTypes : [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER],
-                    10, context, user ?? undefined,
-                    undefined, undefined, undefined, effectiveInstruction, false
-                );
-            }},
-            { key: 'RUBRIC', fn: async () => {
-                acc.rubric = await geminiService.generateRubric(
-                    context.grade.level,
-                    tempActivityTitle || `Активност за ${context.topic?.title ?? ''}`,
-                    state.activityType, '', user ?? undefined, effectiveInstruction
-                );
-            }},
-        ];
-
-        for (const step of steps) {
-            setBulkStep(step.key);
-            try {
-                await step.fn();
-                setBulkResults({ ...acc });
-            } catch (error) {
-                if (error instanceof RateLimitError) { setQuotaBannerFromStorage(); break; }
-                console.error(`[Bulk] ${step.key} failed:`, error);
-            }
-        }
-
-        setBulkStep(null);
-        setIsGeneratingBulk(false);
-    };
-
-    const handleCancel = () => {
-        cancelRef.current = true;
-        setIsLoading(false);
-    };
-
-    // Helper to extract quota reset info (cookie first, then localStorage) and set the inline banner
-    const setQuotaBannerFromStorage = () => {
-        try {
-            const cookieMatch = document.cookie.split('; ').find(r => r.startsWith('ai_quota='));
-            const stored = cookieMatch
-                ? decodeURIComponent(cookieMatch.slice('ai_quota='.length))
-                : localStorage.getItem('ai_daily_quota_exhausted');
-            const { nextResetMs, exhaustedAt } = stored ? JSON.parse(stored) : {};
-            const resetTime = nextResetMs
-                ? new Date(nextResetMs).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })
-                : '09:00';
-            const exhaustedAtStr = exhaustedAt
-                ? new Date(exhaustedAt).toLocaleString('mk-MK', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-                : undefined;
-            setQuotaError({ resetTime, resetMs: nextResetMs ?? 0, exhaustedAt: exhaustedAtStr });
-        } catch {
-            setQuotaError({ resetTime: '09:00', resetMs: 0 });
-        }
-    };
-
-    const handleSaveQuestion = async (q: AssessmentQuestion) => {
-        if (!firebaseUser?.uid) {
-            addNotification('Мора да бидете логирани за да зачувате прашања.', 'error');
-            return;
-        }
-        try {
-            const conceptId = state.selectedConcepts[0];
-            await firestoreService.saveQuestion({
-                teacherUid: firebaseUser?.uid,
-                question: q.question,
-                type: q.type,
-                options: q.options,
-                answer: q.answer,
-                solution: q.solution,
-                cognitiveLevel: q.cognitiveLevel,
-                difficulty_level: q.difficulty_level,
-                conceptId,
-                conceptTitle: filteredConcepts.find((c: Concept) => c.id === conceptId)?.title,
-                topicId: state.selectedTopic,
-                gradeLevel: curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level,
-            });
-            addNotification('Прашањето е зачувано во банката! 📌', 'success');
-        } catch (err) {
-            console.error('Error saving question:', err);
-            addNotification('Грешка при зачувување на прашањето.', 'error');
-        }
-    };
-
-    const handleGenerateFromBank = () => {
-        if (verifiedQs.length === 0) return;
-        const conceptTitle = verifiedQs[0]?.conceptTitle ?? 'Верификуван квиз';
-        const result: AIGeneratedAssessment = {
-            title: `📚 ${conceptTitle} — од верификувана банка`,
-            type: 'QUIZ',
-            questions: verifiedQs.map(q => ({
-                type: q.type as any,
-                question: q.question,
-                options: q.options ?? [],
-                answer: q.answer,
-                solution: q.solution ?? '',
-                cognitiveLevel: (q.cognitiveLevel ?? 'Remembering') as any,
-                difficulty_level: (q.difficulty_level ?? 'Medium') as any,
-            })),
-        };
-        setGeneratedMaterial(result);
-        setVariants(null);
-        setBulkResults(null);
-        addNotification(`Квиз создаден од ${verifiedQs.length} верификувани прашања.`, 'success');
-    };
-
-    const handleMaterialRate = (rating: 'up' | 'down', reportText?: string) => {
-        if (!firebaseUser?.uid || !generatedMaterial) return;
-        const title = ('title' in generatedMaterial ? (generatedMaterial as any).title : '') ?? '';
-        const type  = state.materialType ?? 'UNKNOWN';
-        firestoreService.saveMaterialFeedback(
-            rating, title, type, firebaseUser.uid, reportText,
-            state.selectedConcepts[0] ?? undefined,
-            state.selectedGrade ? Number(state.selectedGrade) || undefined : undefined,
-        ).catch(err => console.warn('[Feedback] save failed:', err));
-    };
-
-    const handleSaveToLibrary = async (material: any, keyHint: string) => {
-        if (!firebaseUser?.uid) { addNotification('Мора да бидете логирани.', 'error'); return; }
-        if (savedToLibrary.has(keyHint)) return; // already saved
-        try {
-            const conceptId = state.selectedConcepts[0];
-            const gradeLevel = curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level;
-            const materialTypeToLibType: Record<string, 'quiz' | 'assessment' | 'rubric' | 'ideas' | 'analogy'> = {
-                QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric', SCENARIO: 'ideas',
-            };
-            const libType = materialTypeToLibType[state.materialType ?? ''] ?? 'quiz';
-            await firestoreService.saveToLibrary(material, {
-                title: material.title || 'Генериран материјал',
-                type: libType,
-                teacherUid: firebaseUser?.uid,
-                conceptId,
-                topicId: state.selectedTopic,
-                gradeLevel,
-            });
-            setSavedToLibrary(prev => new Set(prev).add(keyHint));
-            addNotification('Зачувано во библиотека! Прегледај и публикувај во „Библиотека". 📚', 'success');
-        } catch { addNotification('Грешка при зачувување.', 'error'); }
-    };
-
-    const handleGenerate = async () => {
-        // Prevent re-entry if already generating (e.g. form submitted via Enter key)
-        if (isGenerating || isGeneratingBulk || isGeneratingVariants) return;
-
-        if (!isOnline) {
-            addNotification("Нема интернет конекција. Генераторот е недостапен.", 'error');
-            return;
-        }
-
-        // Check quota upfront — show inline banner immediately instead of waiting for 429
-        if (isDailyQuotaKnownExhausted()) {
-            setQuotaBannerFromStorage();
-            return;
-        }
-
-        if (isThrottled) {
-            addNotification("Ве молиме почекајте малку пред следното барање.", 'warning');
-            return;
-        }
-
-        if(!curriculum) {
-            addNotification('Наставната програма се уште се вчитува.', 'warning');
-            return;
-        }
-
-        setIsThrottled(true);
-        setTimeout(() => setIsThrottled(false), 3000); // 3s throttle
-
-        const built = buildContext();
-        if (!built) {
-            addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error');
-            return;
-        }
-        const { context: finalContext, imageParam, studentProfilesToPass, tempActivityTitle } = built;
-        const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
-        const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
-
-        setIsLoading(true);
-        setGeneratedMaterial(null);
-        setVariants(null);
-
-        try {
-            if (materialType === 'ILLUSTRATION') {
-                if (!illustrationPrompt && !imageFile) {
-                    addNotification('Ве молиме внесете опис или прикачете слика за илустрацијата.', 'error');
-                    setIsLoading(false);
-                    return;
-                }
-                const res = await geminiService.generateIllustration(illustrationPrompt, imageParam);
-                setGeneratedMaterial({ ...res, prompt: illustrationPrompt });
-            } else if (materialType === 'LEARNING_PATH') {
-                if (!studentProfilesToPass || studentProfilesToPass.length === 0) {
-                    addNotification('Ве молиме изберете барем еден профил на ученик.', 'error');
-                    setIsLoading(false);
-                    return;
-                }
-                const result = await geminiService.generateLearningPaths(finalContext, studentProfilesToPass, user ?? undefined, effectiveInstruction);
-                setGeneratedMaterial(result);
-            } else if (materialType) { // SCENARIO, ASSESSMENT, RUBRIC, etc.
-                let result;
-                switch(materialType){
-                    case 'SCENARIO':
-                         if (!finalContext.grade) throw new Error("Недостасува информација за одделение.");
-                         if (!finalContext.topic) throw new Error("Недостасува информација за тема.");
-                         result = await geminiService.generateLessonPlanIdeas(finalContext.concepts || [], finalContext.topic, finalContext.grade.level, user ?? undefined, { focus: state.activityFocus, tone: state.scenarioTone, learningDesign: state.learningDesignModel }, effectiveInstruction);
-                         result.generationContext = finalContext;
-                         break;
-                    case 'ASSESSMENT':
-                    case 'FLASHCARDS':
-                    case 'QUIZ':
-                        result = await geminiService.generateAssessment(materialType, state.questionTypes, state.numQuestions, finalContext, user ?? undefined, state.differentiationLevel, studentProfilesToPass, imageParam, effectiveInstruction, includeSelfAssessment);
-                        break;
-                    case 'EXIT_TICKET':
-                        result = await geminiService.generateExitTicket(state.exitTicketQuestions, state.exitTicketFocus, finalContext, user ?? undefined, effectiveInstruction);
-                        break;
-                    case 'RUBRIC':
-                        if (!finalContext.grade) throw new Error("Недостасува информација за одделение.");
-                        result = await geminiService.generateRubric(finalContext.grade.level, tempActivityTitle, state.activityType, state.criteriaHints, user ?? undefined, effectiveInstruction);
-                        break;
-                }
-                setGeneratedMaterial(result || null);
-            }
-        } catch (error) {
-            if (cancelRef.current) { cancelRef.current = false; return; } // user cancelled — no error shown
-            console.error("[AI Generator]", error);
-            if (error instanceof RateLimitError) {
-                setQuotaBannerFromStorage(); // persistent inline banner instead of toast
-            } else {
-                const msg = (error instanceof Error && error.message)
-                    ? error.message
-                    : "Грешка при генерирање. Обидете се повторно.";
-                addNotification(msg, 'error');
-            }
-            setGeneratedMaterial(null);
-        } finally {
-            cancelRef.current = false;
-            setIsLoading(false);
-        }
-    }
-    
-    const isGenerateDisabled = useMemo(() => {
-        if (isGenerating || isGeneratingBulk || !isOnline) return true;
-        
-        let contextIsValid = false;
-        switch (contextType) {
-            case 'CONCEPT': case 'TOPIC': contextIsValid = selectedConcepts.length > 0; break;
-            case 'STANDARD': contextIsValid = !!selectedStandard; break;
-            case 'SCENARIO': contextIsValid = scenarioText.trim().length > 0 || !!imageFile; break;
-            case 'ACTIVITY': contextIsValid = selectedConcepts.length > 0 && !!selectedActivity; break;
-            default: contextIsValid = false;
-        }
-        if(!contextIsValid) return true;
-
-        if (['ASSESSMENT', 'FLASHCARDS', 'QUIZ'].includes(materialType || '')) {
-             if (questionTypes.length === 0) return true;
-             if (useStudentProfiles && selectedStudentProfileIds.length === 0) return true;
-        }
-        if (materialType === 'LEARNING_PATH' && selectedStudentProfileIds.length === 0) return true;
-        if (materialType === 'RUBRIC' && !activityTitle) return true;
-        if (materialType === 'ILLUSTRATION' && !illustrationPrompt.trim() && !imageFile) return true;
-        
-        return false;
-    }, [isGenerating, isGeneratingBulk, materialType, contextType, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile, questionTypes, useStudentProfiles, selectedStudentProfileIds, activityTitle, illustrationPrompt, isOnline]);
     
     if (isCurriculumLoading) {
          return (
