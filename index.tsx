@@ -4,6 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { registerSW } from 'virtual:pwa-register';
 import './app.css';
 import App from './App';
+import { initSentry } from './services/sentryService';
+
+// Initialize Sentry before rendering — no-op if VITE_SENTRY_DSN is not set
+initSentry();
 
 const queryClient = new QueryClient({
   defaultOptions: {

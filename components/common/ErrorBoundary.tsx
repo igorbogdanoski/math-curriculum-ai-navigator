@@ -1,6 +1,7 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Card } from './Card';
 import { AlertTriangle } from 'lucide-react';
+import { captureException } from '../../services/sentryService';
 
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -27,6 +28,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
     this.state = { ...this.state, errorInfo, error, hasError: true };
     console.error("Uncaught error in ErrorBoundary:", error, errorInfo);
+    captureException(error, { componentStack: errorInfo.componentStack ?? undefined });
   }
 
   handleRefresh = () => {

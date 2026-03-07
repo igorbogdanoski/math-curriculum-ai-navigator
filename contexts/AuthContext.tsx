@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWith
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { app, db, storage } from '../firebaseConfig';
+import { setSentryUser, clearSentryUser } from '../services/sentryService';
 
 interface AuthState {
     firebaseUser: User | null;
@@ -103,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
 
                 console.info("Auth state resolved. IsAuthenticated: true");
+                setSentryUser(user.uid, user.email ?? undefined);
                 setAuthState({
                     firebaseUser: user,
                     profile: finalProfile,
@@ -112,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         } else {
             console.info("No user detected (logged out).");
+            clearSentryUser();
             setAuthState({ firebaseUser: null, profile: null, isAuthenticated: false, isLoading: false });
         }
     });
