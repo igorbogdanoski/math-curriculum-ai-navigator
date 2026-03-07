@@ -6,6 +6,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../firebaseConfig';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface QuestionBankTabProps {
   teacherUid: string;
@@ -22,6 +23,7 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
 export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) => {
   const { addNotification } = useNotification();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [questions, setQuestions] = useState<SavedQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState<Set<string>>(new Set());
@@ -244,22 +246,22 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
             {selected.size === filtered.length
               ? <CheckSquare className="w-4 h-4 text-indigo-600" />
               : <Square className="w-4 h-4" />}
-            {selected.size === filtered.length ? 'Откажи ги сите' : 'Избери ги сите'}
+            {selected.size === filtered.length ? t('analytics.qbank.deselectAll') : t('analytics.qbank.selectAll')}
           </button>
           {selected.size > 0 && (
-            <span className="ml-2 text-indigo-600 font-semibold">{selected.size} означени</span>
+            <span className="ml-2 text-indigo-600 font-semibold">{selected.size} {t('analytics.qbank.marked')}</span>
           )}
         </div>
       )}
 
       {/* Question list */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Вчитувам...</div>
+        <div className="text-center py-12 text-gray-400">{t('analytics.qbank.loading')}</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           {questions.length === 0
-            ? 'Нема зачувани прашања. Генерирај квиз или тест и клини 📌 за да зачуваш прашања.'
-            : 'Нема прашања за избраните филтри.'}
+            ? t('analytics.qbank.empty')
+            : t('analytics.qbank.noFilter')}
         </div>
       ) : (
         <div className="space-y-2">

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Trophy, Loader2 } from 'lucide-react';
 import { firestoreService, type StudentGamification } from '../../services/firestoreService';
 import { calcFibonacciLevel, getAvatar } from '../../utils/gamification';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface Props {
   teacherUid: string;
@@ -31,6 +32,7 @@ interface LeaderRow {
 export const LeagueTab: React.FC<Props> = ({ teacherUid }) => {
   const [rows, setRows] = useState<LeaderRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!teacherUid) return;
@@ -49,7 +51,7 @@ export const LeagueTab: React.FC<Props> = ({ teacherUid }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-gray-400">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" /> Вчитувам лига...
+        <Loader2 className="w-6 h-6 animate-spin mr-2" /> {t('analytics.league.loading')}
       </div>
     );
   }

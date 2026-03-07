@@ -3,6 +3,7 @@ import { ClipboardList, ChevronDown, ChevronUp, Trash2, CheckCircle, Clock, Aler
 import { Card } from '../../components/common/Card';
 import { firestoreService, type Assignment } from '../../services/firestoreService';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface Props {
     teacherUid: string;
@@ -10,6 +11,7 @@ interface Props {
 
 export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
     const { addNotification } = useNotification();
+    const { t } = useLanguage();
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [expanded, setExpanded] = useState<string | null>(null);
@@ -24,13 +26,13 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
     useEffect(() => { load(); }, [teacherUid]);
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Да се избрише задачата?')) return;
+        if (!confirm(t('analytics.assignments.confirmDelete'))) return;
         try {
             await firestoreService.deleteAssignment(id);
             setAssignments(prev => prev.filter(a => a.id !== id));
-            addNotification('Задачата е избришана.', 'info');
+            addNotification(t('analytics.assignments.deleted'), 'info');
         } catch {
-            addNotification('Грешка: задачата не можеше да се избрише.', 'error');
+            addNotification(t('analytics.assignments.deleteError'), 'error');
         }
     };
 
@@ -45,16 +47,16 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
     };
 
     if (loading) {
-        return <div className="p-8 text-center text-gray-400">Вчитувам задачи…</div>;
+        return <div className="p-8 text-center text-gray-400">{t('analytics.assignments.loading')}</div>;
     }
 
     if (assignments.length === 0) {
         return (
             <Card className="p-8 text-center">
                 <ClipboardList className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">Нема зададени задачи.</p>
+                <p className="text-gray-500 font-medium">{t('analytics.assignments.empty')}</p>
                 <p className="text-sm text-gray-400 mt-1">
-                    Генерирајте квиз или тест и кликнете „Задај на класа".
+                    {t('analytics.assignments.emptyHint')}
                 </p>
             </Card>
         );
@@ -81,14 +83,14 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
                                     </span>
                                     {overdue && (
                                         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 flex items-center gap-1">
-                                            <AlertTriangle className="w-3 h-3" />Задоцнета
+                                            <AlertTriangle className="w-3 h-3" />{t('analytics.assignments.overdue')}
                                         </span>
                                     )}
                                 </div>
                                 <p className="font-semibold text-gray-800 truncate">{a.title}</p>
                                 <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                                     <span className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />Рок: {a.dueDate}
+                                        <Clock className="w-3 h-3" />{t('analytics.assignments.deadline')} {a.dueDate}
                                     </span>
                                     <span>{a.classStudentNames.length} ученик{a.classStudentNames.length === 1 ? '' : 'и'}</span>
                                 </div>
@@ -96,7 +98,7 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
                                 {/* Progress bar */}
                                 <div className="mt-2">
                                     <div className="flex items-center justify-between text-xs mb-1">
-                                        <span className="text-gray-500">Завршиле</span>
+                                        <span className="text-gray-500">{t('analytics.assignments.completed')}</span>
                                         <span className="font-bold text-gray-700">{a.completedBy.length}/{a.classStudentNames.length} ({completionRate}%)</span>
                                     </div>
                                     <div className="w-full bg-gray-100 rounded-full h-2">
@@ -131,7 +133,7 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
                             <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-3 text-sm">
                                 <div>
                                     <p className="font-medium text-green-700 flex items-center gap-1 mb-1">
-                                        <CheckCircle className="w-3.5 h-3.5" />Завршиле ({completed.length})
+                                        <CheckCircle className="w-3.5 h-3.5" />{t('analytics.assignments.completed')} ({completed.length})
                                     </p>
                                     {completed.length === 0 ? (
                                         <p className="text-xs text-gray-400">—</p>
@@ -145,10 +147,10 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
                                 </div>
                                 <div>
                                     <p className="font-medium text-amber-700 flex items-center gap-1 mb-1">
-                                        <Clock className="w-3.5 h-3.5" />Не завршиле ({notCompleted.length})
+                                        <Clock className="w-3.5 h-3.5" />{t('analytics.assignments.notCompleted')} ({notCompleted.length})
                                     </p>
                                     {notCompleted.length === 0 ? (
-                                        <p className="text-xs text-gray-400">Сите завршиле! 🎉</p>
+                                        <p className="text-xs text-gray-400">{t('analytics.assignments.allDone')}</p>
                                     ) : (
                                         <ul className="space-y-0.5">
                                             {notCompleted.map(s => (

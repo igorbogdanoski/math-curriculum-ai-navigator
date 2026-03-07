@@ -1,0 +1,55 @@
+# Production Readiness Plan
+Created: 07.03.2026 | Status: IN PROGRESS
+
+## Overview
+App is feature-complete (Tier 1-5 + 22 Правци). This plan addresses quality,
+reliability, and maintainability issues before wider rollout.
+
+---
+
+## P1 — Critical Fixes (no new features, just correctness)
+
+| ID | Task | Status | Commit |
+|----|------|--------|--------|
+| P1-A | Fix Vitest config — exclude `functions/node_modules` from test discovery | DONE | — |
+| P1-B | Add `limit(500)` to fetchSchoolStats per-teacher quiz_results queries | DONE | — |
+| P1-C | Fix i18n — hardcoded MK strings in AssignmentsTab, QuestionBankTab, LeagueTab | DONE | — |
+
+---
+
+## P2 — Performance & Stability
+
+| ID | Task | Status |
+|----|------|--------|
+| P2-A | Add TTL cache to TeacherAnalyticsView (SWR or simple Map cache, 5 min TTL) | TODO |
+| P2-B | Paginate quiz_results in TeacherAnalyticsView (currently loads all into memory) | TODO |
+| P2-C | firestoreService.ts split by domain (school, quiz, mastery, assignments, library) | TODO |
+
+---
+
+## P3 — Polish & UX
+
+| ID | Task | Status |
+|----|------|--------|
+| P3-A | i18n audit pass — check all remaining views for hardcoded MK strings | TODO |
+| P3-B | Mobile responsiveness pass on TeacherAnalyticsView tabs | TODO |
+| P3-C | Error boundary on QuestionBankTab and LiveTab | TODO |
+
+---
+
+## P4 — Tests
+
+| ID | Task | Status |
+|----|------|--------|
+| P4-A | Fix @testing-library/react v16 import pattern in existing test files | TODO |
+| P4-B | Add tests for grading.ts utility | TODO |
+| P4-C | Add tests for firestoreService mock layer | TODO |
+
+---
+
+## Notes
+- `functions/node_modules` contains lru-memoizer with deprecated `done()` callback
+  tests — excluded via `vitest.config.ts` `exclude` array
+- TeacherAnalyticsView has 14 tabs (4 primary + More dropdown) — no further tab
+  additions planned; focus on reliability instead
+- firestoreService.ts is ~1500 lines — P2-C split deferred until P1/P2-A,B done

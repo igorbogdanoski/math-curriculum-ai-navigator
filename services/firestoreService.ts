@@ -245,11 +245,11 @@ export const firestoreService = {
         
         let avgScore = 0;
         if (quizzesGiven > 0) {
-          // fetch to calculate avg
-          const quizzes = await getDocs(qQuizzes);
+          // fetch to calculate avg (limit 500 to avoid large reads)
+          const quizzes = await getDocs(query(quizRef, where('teacherUid', '==', tDoc.id), limit(500)));
           let sum = 0;
           quizzes.forEach(q => sum += (q.data().percentage || 0));
-          avgScore = sum / quizzesGiven;
+          avgScore = sum / quizzes.size;
           
           globalScoreSum += avgScore;
           teachersWithQuizzes++;
@@ -290,7 +290,7 @@ export const firestoreService = {
         const BATCH = 30;
         for (let i = 0; i < teacherUids.length; i += BATCH) {
           const batch = teacherUids.slice(i, i + BATCH);
-          const qrSnap = await getDocs(query(collection(db, 'quiz_results'), where('teacherUid', 'in', batch)));
+          const qrSnap = await getDocs(query(collection(db, 'quiz_results'), where('teacherUid', 'in', batch), limit(500)));
           qrSnap.forEach(d => {
             const r = d.data();
             const grade = r.gradeLevel != null ? String(r.gradeLevel) : null;
