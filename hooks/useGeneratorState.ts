@@ -33,6 +33,9 @@ export interface GeneratorState {
     imageFile: { file: File, base64: string, previewUrl: string } | null;
     customInstruction: string;
     useMacedonianContext: boolean;
+    aiTone: 'creative' | 'formal' | 'friendly' | 'expert' | 'playful';
+    aiVocabLevel: 'simplified' | 'standard' | 'advanced';
+    aiStyle: 'standard' | 'socratic' | 'direct' | 'inquiry' | 'problem';
 }
 
 // Actions
@@ -78,6 +81,9 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         imageFile: null,
         customInstruction: '',
         useMacedonianContext: true,
+        aiTone: 'creative',
+        aiVocabLevel: 'standard',
+        aiStyle: 'standard',
     };
 };
 

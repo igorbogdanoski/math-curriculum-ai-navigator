@@ -17,6 +17,34 @@ import { useVerifiedQuestions, useTeacherNoteQuery, useDifficultyRecommendation,
 const MACEDONIAN_CONTEXT_HINT =
   'Користи македонски примери: цени во денари (МКД), градови (Скопје, Битола, Охрид), реки (Вардар, Брегалница), ситуации од македонскиот секојдневен живот.';
 
+const AI_TONE_MAP: Record<string, string> = {
+  creative: 'Тонот нека биде креативен и ангажирачки — живописни приказни, интересни ликови, изненадувачки контексти.',
+  formal: 'Тонот нека биде формален и академски — прецизни дефиниции, строга терминологија, без разговорни изрази.',
+  friendly: 'Тонот нека биде пријателски и поддржувачки — охрабрувачки зборови, топол јазик, директно обраќање до ученикот.',
+  expert: 'Тонот нека биде стручен и предизвикувачки — апстрактни поими, повеќестепено размислување, засилена когнитивна побарувачка.',
+  playful: 'Тонот нека биде игровен и хумористичен — смешни ситуации, ликови со имиња, приказни со изненадувања.',
+};
+const AI_VOCAB_MAP: Record<string, string> = {
+  simplified: 'НИВО НА РЕЧНИК: Поедноставен — употребувај само основни зборови и кратки реченици. Избегнувај технички жаргон.',
+  standard: '',
+  advanced: 'НИВО НА РЕЧНИК: Напреден — употребувај стручна терминологија, сложени реченици и прецизни математички поими.',
+};
+const AI_STYLE_MAP: Record<string, string> = {
+  standard: '',
+  socratic: 'ОБРАЗОВЕН СТИЛ — Сократски: водечки прашања наместо директни одговори. Учениците сами да ги откријат законитостите.',
+  direct: 'ОБРАЗОВЕН СТИЛ — Директно-инструктивен: јасни чекор-по-чекор инструкции, примери пред задачи, без двосмисленост.',
+  inquiry: 'ОБРАЗОВЕН СТИЛ — Истражувачки: почни со проблем или загатка, наведи го ученикот да истражува и формулира хипотеза.',
+  problem: 'ОБРАЗОВЕН СТИЛ — Проблемски: реален животен контекст пред теоријата, ученикот го решава проблемот со математиката.',
+};
+
+function buildAiPersonalizationSnippet(state: { aiTone: string; aiVocabLevel: string; aiStyle: string }): string {
+  return [
+    state.aiTone !== 'creative' ? AI_TONE_MAP[state.aiTone] : '',
+    AI_VOCAB_MAP[state.aiVocabLevel] ?? '',
+    AI_STYLE_MAP[state.aiStyle] ?? '',
+  ].filter(Boolean).join(' ');
+}
+
 type GeneratedMaterial =
   | AIGeneratedIdeas
   | AIGeneratedAssessment
@@ -477,7 +505,7 @@ export function useGeneratorActions({
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context: finalContext } = built;
     const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
-    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
+    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
 
     setIsGeneratingVariants(true);
     setVariants(null);
@@ -518,7 +546,7 @@ export function useGeneratorActions({
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context, tempActivityTitle } = built;
     const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
-    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
+    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
 
     setIsGeneratingBulk(true);
     setBulkResults(null);
@@ -577,7 +605,7 @@ export function useGeneratorActions({
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context: finalContext, imageParam, studentProfilesToPass, tempActivityTitle } = built;
     const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
-    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
+    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
     const { materialType, questionTypes, numQuestions, differentiationLevel, exitTicketQuestions, exitTicketFocus, activityType, criteriaHints, includeSelfAssessment, activityFocus, scenarioTone, learningDesignModel } = state;
 
     setIsLoading(true);

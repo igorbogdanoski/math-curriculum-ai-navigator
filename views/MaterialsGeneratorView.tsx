@@ -317,12 +317,66 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                 </div>
                             )}
 
+                            {/* AI Персонализација */}
+                            <div className="mt-6 border-t pt-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <ICONS.sparkles className="w-4 h-4 text-purple-500" />
+                                    <span className="text-sm font-bold text-gray-700">AI Персонализација</span>
+                                    <span className="text-xs text-gray-400">(прилагоди го стилот на генерирањето)</span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <label htmlFor="aiTone" className="block text-xs font-semibold text-gray-600 mb-1.5">Тон</label>
+                                        <select
+                                            id="aiTone"
+                                            value={state.aiTone}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'aiTone', value: e.target.value } })}
+                                            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-300"
+                                        >
+                                            <option value="creative">🎨 Креативен</option>
+                                            <option value="formal">📐 Формален</option>
+                                            <option value="friendly">😊 Пријателски</option>
+                                            <option value="expert">🔬 Стручен</option>
+                                            <option value="playful">🎮 Игровен</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="aiVocabLevel" className="block text-xs font-semibold text-gray-600 mb-1.5">Ниво на речник</label>
+                                        <select
+                                            id="aiVocabLevel"
+                                            value={state.aiVocabLevel}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'aiVocabLevel', value: e.target.value } })}
+                                            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-300"
+                                        >
+                                            <option value="simplified">📗 Поедноставен</option>
+                                            <option value="standard">📘 Стандарден</option>
+                                            <option value="advanced">📙 Напреден</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="aiStyle" className="block text-xs font-semibold text-gray-600 mb-1.5">Образовен стил</label>
+                                        <select
+                                            id="aiStyle"
+                                            value={state.aiStyle}
+                                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'aiStyle', value: e.target.value } })}
+                                            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-300"
+                                        >
+                                            <option value="standard">📋 Стандарден</option>
+                                            <option value="socratic">🤔 Сократски</option>
+                                            <option value="direct">➡️ Директен</option>
+                                            <option value="inquiry">🔍 Истражувачки</option>
+                                            <option value="problem">🧩 Проблемски</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="mt-6 border-t pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label htmlFor="customInstruction" className="block text-sm font-bold text-gray-700 mb-2">
                                         <div className="flex items-center gap-2"><ICONS.sparkles className="w-4 h-4 text-brand-primary" />Дополнителни инструкции до AI (опционално)</div>
                                     </label>
-                                    <textarea id="customInstruction" value={state.customInstruction} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'customInstruction', value: e.target.value } })} rows={2} className="block w-full p-3 border-gray-300 rounded-xl bg-gray-50 focus:bg-white resize-none" placeholder="Пр. 'Користи забавен тон', 'Направи го потешко'..."></textarea>
+                                    <textarea id="customInstruction" value={state.customInstruction} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'customInstruction', value: e.target.value } })} rows={2} className="block w-full p-3 border-gray-300 rounded-xl bg-gray-50 focus:bg-white resize-none" placeholder="Пр. 'Направи го потешко', 'Додај повеќе визуелни примери'..."></textarea>
                                 </div>
 
                                 <div className="flex items-center">
