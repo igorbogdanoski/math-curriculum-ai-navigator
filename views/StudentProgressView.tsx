@@ -1,20 +1,19 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { ACHIEVEMENTS } from '../services/firestoreService';
 import { ICONS } from '../constants';
 import {
-  Loader2, User, Star, BookOpen, Home, BarChart2, CheckCircle2, XCircle,
-  Calendar, RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw, Target,
- } from 'lucide-react';
+  Loader2, User, Star, Home, BarChart2, CheckCircle2,
+  RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw, Target,
+} from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useStudentProgress } from '../hooks/useStudentProgress';
 import { useStudentRealtime } from '../hooks/useStudentRealtime';
 import { useCurriculum } from '../hooks/useCurriculum';
-import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
-import { GradeBadge } from '../components/common/GradeBadge';
 import { DailyQuestCard } from '../components/common/DailyQuestCard';
 import { loadOrGenerateQuests, type DailyQuest } from '../utils/dailyQuests';
 import { LogicMap } from '../components/LogicMap';
 import { geminiService } from '../services/geminiService';
+import { GamificationPanel } from '../components/student/GamificationPanel';
+import { ActivityFeed } from '../components/student/ActivityFeed';
 
 const formatDate = (ts: any): string => {
   if (!ts) return '�';
@@ -329,102 +328,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
 
       {/* -- Правец 15: Gamification — XP + Streak + Achievements ------------ */}
       {gamification && (
-        <div className="w-full max-w-2xl mb-4">
-          <div className="bg-white rounded-2xl shadow p-4">
-            {/* Math Gamification Dashboard */}
-              <div className="flex flex-col md:flex-row gap-4 mb-3">
-                
-                {/* Level Frame */}
-                {(() => {
-                  const lvlInfo = calcFibonacciLevel(gamification.totalXP);
-                  
-                  const avatar = getAvatar(lvlInfo.level);
-                  return (
-                    <div className="flex-1 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-3 flex flex-col justify-center relative overflow-hidden">
-                       <div className="absolute -right-4 -bottom-4 opacity-10 pointer-events-none">
-                         <svg width="100" height="100" viewBox="0 0 100 100"><path fill="currentColor" d="M50 0 C77.6 0 100 22.4 100 50 C100 77.6 77.6 100 50 100 C22.4 100 0 77.6 0 50 C0 22.4 22.4 0 50 0 Z"/></svg>
-                       </div>
-
-                       <div className="flex justify-between items-end mb-2 relative z-10">
-                         <div>
-                            <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">{t('progress.learningLevel')}</p>
-                            <div className="flex items-center gap-2">
-                               {/* Avatar emoji */}
-                               <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-2xl shadow-md shadow-indigo-200 select-none">
-                                 {avatar.emoji}
-                               </div>
-                               <div>
-                                  <p className="font-black text-slate-800 text-sm leading-tight">
-                                    {avatar.title} <span className="text-indigo-500 font-bold">{t('progress.level')} {lvlInfo.level}</span>
-                                  </p>
-                                  <p className="text-[10px] text-slate-500 font-medium">{gamification.totalXP} XP · {t('progress.untilNextLevel')}: +{lvlInfo.nextLevelXp - lvlInfo.currentXp} XP</p>
-                               </div>
-                            </div>
-                         </div>
-                       </div>
-
-                       {/* Contextual Progress Bar */}
-                       <div className="w-full bg-indigo-100 rounded-full h-2.5 mt-1 overflow-hidden relative z-10">
-                         <div
-                           className="bg-indigo-600 h-2.5 rounded-full transition-all duration-1000 ease-out relative"
-                           style={{ width: `${lvlInfo.progress}%` }}
-                         >
-                           <div className="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-r from-transparent to-white/30 truncate" />
-                         </div>
-                       </div>
-                       {/* Class rank badge */}
-                       {classRank && (
-                         <div className="mt-2 flex items-center gap-1.5 relative z-10">
-                           <span className="text-xs font-bold text-indigo-600">🏆 #{classRank.rank}</span>
-                           <span className="text-[10px] text-indigo-400">{t('progress.ofInClass').replace('{total}', classRank.total.toString())}</span>
-                         </div>
-                       )}
-                    </div>
-                  );
-                })()}
-
-                <div className="flex flex-1 gap-2">
-                  <div className="flex-1 bg-orange-50 border border-orange-100 rounded-xl p-3 flex flex-col justify-center">
-                    <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-1">{t('progress.streakCurrent').toUpperCase()}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl drop-shadow-sm">{t('progress.streakFire')}</span>
-                      <div>
-                        <p className="font-black text-slate-800 text-sm leading-tight">{gamification.currentStreak} {gamification.currentStreak === 1 ? t('progress.streakDay') : t('progress.streakDays')}</p>
-                        <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">{t('progress.streakCurrent')}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 bg-green-50 border border-green-100 rounded-xl p-3 flex flex-col justify-center">
-                    <p className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1">{t('progress.longestStreak').toUpperCase()}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl drop-shadow-sm">{t('progress.streakMedal')}</span>
-                      <div>
-                        <p className="font-black text-slate-800 text-sm leading-tight">{gamification.totalQuizzes}</p>
-                        <p className="text-[10px] text-slate-500 font-medium whitespace-nowrap">{t('progress.totalQuizCount')}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            {/* Achievements */}
-            {gamification.achievements.length > 0 && (
-              <div className="border-t border-slate-100 pt-3">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">{t('progress.achievements').toUpperCase()}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {gamification.achievements.map(id => {
-                    const a = ACHIEVEMENTS[id];
-                    return a ? (
-                      <span key={id} title={a.label} className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded-full">
-                        {a.icon} {a.label}
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <GamificationPanel gamification={gamification} classRank={classRank} />
       )}
 
       {/* -- E1.2: Daily Quests ------------------------------------------------ */}
@@ -633,114 +537,16 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
         </div>
       )}
 
-      {/* П27 — Teacher Announcements Banner */}
-      {announcements.length > 0 && searched && (
-        <div className="w-full max-w-2xl mb-3">
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <p className="font-bold text-amber-800 text-sm mb-2 flex items-center gap-1.5">
-              {t('progress.announcements')}
-            </p>
-            <ul className="space-y-1">
-              {announcements.map(a => (
-                <li key={a.id} className="text-sm text-amber-700">� {a.message}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* Би 2 — Assignments section */}
-      {assignments.length > 0 && searched && !isReadOnly && (
-        <div className="w-full max-w-2xl mb-3">
-          <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
-            <p className="font-bold text-indigo-800 text-sm mb-3 flex items-center gap-1.5">
-              {t('progress.myTasks')} ({assignments.filter(a => !a.completedBy.includes(studentName)).length} {t('progress.pendingSuffix')})
-            </p>
-            <div className="space-y-2">
-              {assignments.map(a => {
-                const done = a.completedBy.includes(studentName);
-                const today = new Date().toISOString().split('T')[0];
-                const overdue = !done && a.dueDate < today;
-                return (
-                  <div key={a.id} className={`flex items-center justify-between gap-3 p-3 rounded-xl bg-white border ${overdue ? 'border-red-200' : done ? 'border-green-200' : 'border-indigo-100'}`}>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-semibold truncate ${done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{a.title}</p>
-                      <p className={`text-xs mt-0.5 ${overdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
-                        {done ? t('progress.assignmentDone') : overdue ? `${t('progress.assignmentOverdue')} ${a.dueDate}` : `${t('progress.assignmentDueSuffix')} ${a.dueDate}`}
-                      </p>
-                    </div>
-                    {!done && (
-                      <button
-                        type="button"
-                        onClick={() => { window.location.hash = `/play/${a.cacheId}?assignId=${a.id}&tid=${a.teacherUid}`; }}
-                        className="flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
-                      >
-                        {t('progress.solve')}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Results list */}
+      {/* П27 + Би2 + Results — ActivityFeed */}
       {searched && !loading && (
-        <div className="w-full max-w-2xl space-y-3">
-          {totalQuizzes === 0 ? (
-            <div className="bg-white rounded-3xl p-8 text-center shadow">
-              <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="font-bold text-slate-500">{t('progress.noResultsTitle')} "{studentName}"</p>
-              <p className="text-xs text-slate-400 mt-1">
-                {t('progress.noResultsDesc')}
-              </p>
-            </div>
-          ) : (
-            results.map((r, i) => {
-              const isPassed = r.percentage >= 70;
-              const nextQuizId = r.conceptId ? nextQuizIds[r.conceptId] : undefined;
-              return (
-                <div key={i} className="bg-white rounded-2xl p-4 shadow flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isPassed ? 'bg-green-100' : 'bg-amber-100'}`}>
-                    {isPassed
-                      ? <CheckCircle2 className="w-6 h-6 text-green-600" />
-                      : <XCircle className="w-6 h-6 text-amber-500" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 text-sm truncate">{r.quizTitle}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <Calendar className="w-3 h-3 text-slate-400" />
-                      <span className="text-xs text-slate-400">{formatDate(r.playedAt)}</span>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
-                    <p className={`text-xl font-black ${isPassed ? 'text-green-600' : 'text-amber-500'}`}>
-                      {r.percentage}%
-                    </p>
-                    <GradeBadge pct={r.percentage} showLabel={true} />
-                    <p className="text-xs text-slate-400">{r.correctCount}/{r.totalQuestions}</p>
-                    {r.confidence != null && (
-                      <span title={`${t('progress.confidenceLabel')}: ${r.confidence}/5`} className="text-base leading-none">
-                        {['😟','😐','🙂','😊','🤩'][r.confidence - 1]}
-                      </span>
-                    )}
-                    {!isPassed && nextQuizId && (
-                      <button
-                        type="button"
-                        onClick={() => { window.location.hash = `/play/${nextQuizId}`; }}
-                        className="flex items-center gap-1 text-xs font-bold bg-indigo-600 text-white px-2.5 py-1 rounded-lg hover:bg-indigo-700 transition mt-0.5"
-                      >
-                        <PlayCircle className="w-3 h-3" /> {t('progress.practice')}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <ActivityFeed
+          announcements={announcements}
+          assignments={assignments}
+          results={results}
+          studentName={studentName}
+          nextQuizIds={nextQuizIds}
+          isReadOnly={isReadOnly}
+        />
       )}
 
         </>
