@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { Card } from '../components/common/Card';
 import { Building, Plus, ShieldAlert, Users, Copy, Check, BarChart2, TrendingDown, Globe } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
+import { useCurriculum } from '../hooks/useCurriculum';
 
 type Tab = 'schools' | 'users' | 'stats';
 
@@ -22,7 +23,15 @@ const ROLE_COLORS: Record<string, string> = {
 export const SystemAdminView: React.FC = () => {
     const { user, firebaseUser } = useAuth();
     const { navigate } = useNavigation();
+    const { allConcepts } = useCurriculum();
     const [activeTab, setActiveTab] = useState<Tab>('schools');
+
+    // Build conceptId → title lookup map from curriculum data
+    const conceptNameMap = useMemo(() => {
+        const map: Record<string, string> = {};
+        allConcepts.forEach(c => { map[c.id] = c.title; });
+        return map;
+    }, [allConcepts]);
 
     // ── Schools state ──
     const [schools, setSchools] = useState<any[]>([]);
@@ -406,7 +415,7 @@ export const SystemAdminView: React.FC = () => {
                                         {nationalStats.weakConcepts.map((c: any, i: number) => (
                                             <div key={c.conceptId} className="flex items-center gap-3 py-2.5 text-sm">
                                                 <span className="w-6 text-center font-bold text-gray-400">{i + 1}</span>
-                                                <span className="flex-1 font-mono text-gray-600 truncate text-xs">{c.conceptId}</span>
+                                                <span className="flex-1 text-gray-700 truncate text-xs font-medium" title={c.conceptId}>{conceptNameMap[c.conceptId] ?? c.conceptId}</span>
                                                 <div className="w-32 h-3 bg-gray-100 rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full bg-red-400 rounded-full"
