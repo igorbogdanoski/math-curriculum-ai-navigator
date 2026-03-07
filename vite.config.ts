@@ -3,6 +3,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 
 /**
  * Vite plugin: Dev middleware for Gemini API proxy.
@@ -181,11 +182,16 @@ export default defineConfig(({ mode }) => {
         }),
         // Only add dev proxy when API key is available (dev mode)
         apiKey ? geminiDevProxy(apiKey) : undefined,
+        sentryVitePlugin({
+          org: 'math-nav-org', // placeholder, configures auth token locally
+          project: 'math-nav',
+        }),
       ].filter(Boolean) as Plugin[],
       // NOTE: API key is NO LONGER injected into the client bundle.
       // In production, requests go through /api/gemini (Vercel serverless function).
       // In development, requests go through the Vite dev middleware above.
       build: {
+        sourcemap: true, // Enable source maps for Sentry in production
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
           output: {

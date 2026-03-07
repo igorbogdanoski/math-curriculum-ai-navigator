@@ -23,8 +23,8 @@ export function initSentry(): void {
     environment: import.meta.env.MODE, // 'development' | 'production'
     // Only capture events in production to avoid polluting dev data
     enabled: import.meta.env.PROD,
-    // Capture 100% of errors, 10% of performance transactions
-    tracesSampleRate: 0.1,
+    // Capture 100% of errors and 100% of performance transactions for early phase
+    tracesSampleRate: 1.0,
     replaysOnErrorSampleRate: 1.0,
     integrations: [
       Sentry.browserTracingIntegration(),
