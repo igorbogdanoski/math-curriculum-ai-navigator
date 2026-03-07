@@ -197,9 +197,9 @@ export const HomeView: React.FC = () => {
               else if (action === 'live') navigate('/live/host');
               else navigate(`/${action}`);
             }}
-            className={`${color} text-white rounded-xl p-4 text-left transition-all duration-150 shadow-sm hover:shadow-md active:scale-[0.98] group`}
+            className={`${color} text-white rounded-xl p-4 text-left transition-all duration-300 ease-out shadow-sm hover:shadow-lg hover:-translate-y-1 active:scale-[0.97] group`}
           >
-            <Icon className="w-5 h-5 mb-2 opacity-90 group-hover:scale-110 transition-transform" />
+            <Icon className="w-5 h-5 mb-2 opacity-90 group-hover:scale-110 group-hover:opacity-100 transition-all duration-300" />
             <p className="font-bold text-sm leading-tight">{label}</p>
             <p className="text-white/70 text-xs mt-0.5">{desc}</p>
           </button>

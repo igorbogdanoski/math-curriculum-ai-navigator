@@ -191,7 +191,9 @@ const AppContent: React.FC = () => {
                     <div className="flex-1 overflow-y-auto pb-12">
                         <ErrorBoundary>
                             <Suspense fallback={<AppSkeleton />}>
-                                <RenderComponent {...params} />
+                                <div key={path} className="animate-fade-in-up origin-top">
+                                    <RenderComponent {...params} />
+                                </div>
                             </Suspense>
                         </ErrorBoundary>
                     </div>

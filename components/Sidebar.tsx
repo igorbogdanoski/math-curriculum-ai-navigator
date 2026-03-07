@@ -27,8 +27,8 @@ const NavItem: React.FC<{
   const { t, language, setLanguage } = useLanguage();
   const { openGeneratorPanel } = useGeneratorPanel();
   const isActive = currentPath === path || (path !== '/' && currentPath.startsWith(path));
-  const activeClasses = 'bg-brand-primary text-white font-semibold shadow-sm';
-  const inactiveClasses = 'text-gray-600 hover:bg-blue-50 hover:text-brand-primary';
+  const activeClasses = 'bg-brand-primary text-white font-semibold shadow-md';
+  const inactiveClasses = 'text-gray-600 hover:bg-blue-50 hover:text-brand-primary hover:translate-x-1';
 
   return (
     <a
@@ -42,7 +42,7 @@ const NavItem: React.FC<{
         }
         onClick();
       }}
-      className={`flex items-center px-4 py-2.5 my-0.5 rounded-lg transition-colors duration-150 ${
+      className={`flex items-center px-4 py-2.5 my-0.5 rounded-lg transition-all duration-200 ${
         isActive && !isGenerator ? activeClasses : inactiveClasses
       }`}
     >
