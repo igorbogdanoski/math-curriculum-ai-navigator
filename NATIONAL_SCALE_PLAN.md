@@ -7,9 +7,9 @@
 
 | # | Задача | Приоритет | Статус | Commit |
 | --- | --- | --- | --- | --- |
-| W1 | Concept name resolution во SystemAdminView Stats (читливо ime наместо raw ID) | Висок | ✅ Завршено | `pending` |
-| W2 | Real-time sync со Firebase `onSnapshot` (огласи + задачи без refresh) | Висок | ✅ Завршено | `pending` |
-| W3 | StudentProgressView декомпозиција во sub-компоненти (<250 линии секоја) | Среден | Планирано | — |
+| W1 | Concept name resolution во SystemAdminView Stats (читливо ime наместо raw ID) | Висок | ✅ Завршено | `7f8a8ba` |
+| W2 | Real-time sync со Firebase `onSnapshot` (огласи + задачи без refresh) | Висок | ✅ Завршено | `2560251` |
+| W3 | StudentProgressView декомпозиција во sub-компоненти (<250 линии секоја) | Среден | ✅ Завршено | `d5c652a` |
 | W4 | geminiService.real.ts поделба по домен (quiz / ideas / rubric / chat / paths) | Низок | Планирано | — |
 | W5 | useGeneratorActions.ts поделба (useBulkGenerate / useVariantGenerate / useQuotaManager) | Низок | Планирано | — |
 
@@ -20,7 +20,7 @@
 | # | Задача | Приоритет | Статус | Commit |
 | --- | --- | --- | --- | --- |
 | N1 | Offline-First: IndexedDB кеш + Background Sync за рурални општини | Критичен | Планирано | — |
-| N2 | CSV bulk import за ученици (upload список на имиња по клас) | Висок | Планирано | — |
+| N2 | CSV bulk import за ученици (upload список на имиња по клас) | Висок | ✅ Завршено | `ea776e8` |
 | N3 | Firestore composite indexes за national stats queries (performance) | Среден | Планирано | — |
 
 ---
@@ -29,8 +29,8 @@
 
 | # | Задача | Приоритет | Статус | Commit |
 | --- | --- | --- | --- | --- |
-| A1 | Curriculum-aware AI Tutor (context: концепт + грешки на ученикот) | Висок | Планирано | — |
-| A2 | AI Родителски Извештај (автоматски месечен PDF per student со наратив) | Висок | Планирано | — |
+| A1 | Curriculum-aware AI Tutor (context: концепт + грешки на ученикот) | Висок | ✅ Завршено | `a3899fc` |
+| A2 | AI Родителски Извештај (автоматски месечен PDF per student со наратив) | Висок | ✅ Завршено | `600bce9` |
 | A3 | Предиктивна аналитика — предупредувачки систем „ученик во ризик" | Среден | Планирано | — |
 | A4 | Handwriting OCR — Vision API за скенирање домашни задачи | Низок | Планирано | — |
 
@@ -96,4 +96,4 @@
 
 ---
 
-*Овој документ се ажурира по секој завршен sprint. Следен преглед: 14.03.2026.*
+*Овој документ се ажурира по секој завршен sprint. Последно ажурирање: 07.03.2026. Следен преглед: 14.03.2026.*
