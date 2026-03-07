@@ -43,7 +43,9 @@
       "Bash(npx firebase projects:list)",
       "Bash(npx firebase login)",
       "Bash(python3 -c \":*)",
-      "Bash(xargs wc -l)"
+      "Bash(xargs wc -l)",
+      "Read(//tmp/**)",
+      "Bash(awk 'NR>=1 && NR<=20 || NR>=60 && NR<=110' views/StudentProgressView.tsx)"
     ],
     "additionalDirectories": [
       "c:\\Users\\pc4all\\.claude\\plans",

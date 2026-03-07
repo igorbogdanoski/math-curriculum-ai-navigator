@@ -1483,6 +1483,41 @@ IMPORTANT: You must return the updated material EXACTLY in the same generic JSON
     }
   },
 
+  async analyzeHandwriting(
+    base64Image: string,
+    mimeType: string,
+    conceptContext?: string
+  ): Promise<string> {
+    checkDailyQuotaGuard();
+    const contextLine = conceptContext
+      ? `Контекст: ученикот работи на концептот „${conceptContext}".`
+      : '';
+    const prompt = `${contextLine}
+Ти си искусен македонски наставник по математика. Анализирај ја оваа слика од рачно напишана математичка домашна работа или тест.
+
+Твојата анализа треба да содржи:
+1. **Точни делови** — наведи ги сите точно решени задачи (пофали ученикот конкретно).
+2. **Грешки и корекции** — за секоја грешка: прикажи го точниот чекор-по-чекор пат на решавање.
+3. **Општ совет** — еден краток совет за подобрување.
+4. **Проценка** — дај процентуална оценка (пр. 75%) врз основа на точноста.
+
+Пишувај топло и охрабрувачки. Одговори на македонски јазик.`;
+
+    const response = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType, data: base64Image } }
+        ]
+      }],
+      systemInstruction: TEXT_SYSTEM_INSTRUCTION,
+      safetySettings: SAFETY_SETTINGS,
+    });
+    return response.text.trim();
+  },
+
   async generateParentReport(
     studentName: string,
     results: Array<{ quizTitle: string; percentage: number; conceptId?: string }>,

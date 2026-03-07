@@ -53,9 +53,12 @@ import { Zap,
   Send,
   AlertTriangle,
   Info,
-  Play, } from 'lucide-react';
+  Play,
+  Camera
+} from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
+  camera: Camera,
   info: Info,
   play: Play,
   send: Send,
