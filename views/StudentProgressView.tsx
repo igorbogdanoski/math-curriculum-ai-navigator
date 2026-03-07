@@ -7,6 +7,7 @@ import {
  } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useStudentProgress } from '../hooks/useStudentProgress';
+import { useStudentRealtime } from '../hooks/useStudentRealtime';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { GradeBadge } from '../components/common/GradeBadge';
@@ -40,11 +41,18 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const { data, isLoading: loading, error } = useStudentProgress(studentName, isReadOnly);
   const results = data?.results || [];
   const masteryRecords = data?.mastery || [];
-  const assignments = data?.assignments || [];
   const gamification = data?.gamification ?? null;
-  const announcements = data?.announcements ?? [];
   const classRank = data?.classRank ?? null;
   const nextQuizIds = data?.nextQuizIds ?? {};
+
+  // Real-time listeners — announcements and assignments update instantly
+  // when the teacher posts, no manual refresh needed
+  const { announcements, assignments } = useStudentRealtime(
+    data?.teacherUid,
+    studentName,
+    data?.announcements,
+    data?.assignments,
+  );
 
   const [searched, setSearched] = useState(!!nameProp || !!(() => { try { return localStorage.getItem('studentName'); } catch { return null; } })());
   const [activeTab, setActiveTab] = useState<'activity' | 'map'>('map');

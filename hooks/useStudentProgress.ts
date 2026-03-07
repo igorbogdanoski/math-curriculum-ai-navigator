@@ -10,6 +10,7 @@ interface StudentProgressData {
   announcements: Announcement[];
   classRank: { rank: number; total: number } | null;
   nextQuizIds: Record<string, string>;
+  teacherUid?: string;
 }
 
 export function useStudentProgress(studentName: string, isReadOnly: boolean = false) {
@@ -61,6 +62,7 @@ export function useStudentProgress(studentName: string, isReadOnly: boolean = fa
         announcements: announcementsData,
         classRank,
         nextQuizIds,
+        teacherUid: topTeacherUid,
       };
     },
     enabled: !!studentName.trim() && studentName.trim().length >= 2,
