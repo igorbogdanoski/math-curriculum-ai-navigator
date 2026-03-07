@@ -24,6 +24,7 @@ class ResultErrorBoundary extends Component<{ children: ReactNode }, { error: Er
 import { X, ClipboardList, BookmarkPlus, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
+import { MathToolsPanel } from '../components/common/MathToolsPanel';
 import { ICONS } from '../constants';
 import { useLanguage } from '../i18n/LanguageContext';
 import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
@@ -83,6 +84,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
 
     // Wizard step state
     const [currentStep, setCurrentStep] = useState(1);
+    const [showMathTools, setShowMathTools] = useState(false);
 
     const {
         filteredTopics,
@@ -413,11 +415,79 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                 {/* Delete old reset button from footer, keep only powerful generate buttons */}
                                 {(['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as const).includes(state.materialType as any) && (
                                     <button type="button" onClick={handleGenerateVariants} disabled={isGenerateDisabled || isGeneratingVariants || isGenerating} title="3 варијанти: Поддршка, Основно и Збогатување" className="flex items-center gap-2 border-2 border-brand-primary text-brand-primary px-4 py-2.5 rounded-xl hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold">
-                                        {isGeneratingVariants ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пресметувам...</> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">3× Варијанти</span><span className="sm:hidden">3×</span></>}
+                                        {isGeneratingVariants ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пресметувам...{showMathTools && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
+                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />??????????? ??????</h3>
+                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex-1 relative overflow-hidden bg-slate-50">
+                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
+                    </div>
+                </div>
+            </div>
+        )}
+        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="??????????? ?????? (GeoGebra, Desmos...)">
+            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+        </button>
+        </> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">3× Варијанти</span><span className="sm:hidden">3×</span>{showMathTools && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
+                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />??????????? ??????</h3>
+                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex-1 relative overflow-hidden bg-slate-50">
+                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
+                    </div>
+                </div>
+            </div>
+        )}
+        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="??????????? ?????? (GeoGebra, Desmos...)">
+            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+        </button>
+        </>}
                                     </button>
                                 )}
                                 <button type="button" onClick={handleBulkGenerate} disabled={isGenerateDisabled || isGenerating || isGeneratingVariants || isGeneratingBulk} title="Квиз + Тест + Рубрика одеднаш" className="flex items-center gap-2 border-2 border-purple-500 text-purple-700 px-4 py-2.5 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-all font-bold">
-                                    {isGeneratingBulk ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пакет...</> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">Пакет материјали</span><span className="sm:hidden">Пакет</span></>}
+                                    {isGeneratingBulk ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пакет...{showMathTools && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
+                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />??????????? ??????</h3>
+                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex-1 relative overflow-hidden bg-slate-50">
+                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
+                    </div>
+                </div>
+            </div>
+        )}
+        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="??????????? ?????? (GeoGebra, Desmos...)">
+            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+        </button>
+        </> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">Пакет материјали</span><span className="sm:hidden">Пакет</span>{showMathTools && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
+                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />??????????? ??????</h3>
+                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex-1 relative overflow-hidden bg-slate-50">
+                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
+                    </div>
+                </div>
+            </div>
+        )}
+        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="??????????? ?????? (GeoGebra, Desmos...)">
+            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+        </button>
+        </>}
                                 </button>
                                 {verifiedQs.length > 0 && (
                                     <button
@@ -433,7 +503,41 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                     </button>
                                 )}
                                 <button type="submit" disabled={isGenerateDisabled || isGeneratingVariants || isGeneratingBulk} title={!isOnline ? 'Нема интернет' : 'Генерирај'} className="flex items-center gap-2 bg-gradient-to-r from-brand-primary to-blue-700 text-white px-8 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold transform hover:-translate-y-0.5">
-                                    {isGenerating ? <><ICONS.spinner className="w-5 h-5 animate-spin" /> Генерирам...</> : <><ICONS.sparkles className="w-5 h-5" /> Генерирај AI</>}
+                                    {isGenerating ? <><ICONS.spinner className="w-5 h-5 animate-spin" /> Генерирам...{showMathTools && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
+                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />??????????? ??????</h3>
+                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex-1 relative overflow-hidden bg-slate-50">
+                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
+                    </div>
+                </div>
+            </div>
+        )}
+        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="??????????? ?????? (GeoGebra, Desmos...)">
+            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+        </button>
+        </> : <><ICONS.sparkles className="w-5 h-5" /> Генерирај AI{showMathTools && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
+                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />??????????? ??????</h3>
+                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex-1 relative overflow-hidden bg-slate-50">
+                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
+                    </div>
+                </div>
+            </div>
+        )}
+        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="??????????? ?????? (GeoGebra, Desmos...)">
+            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+        </button>
+        </>}
                                 </button>
                             </div>
                         )}
@@ -628,6 +732,23 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                 onClose={() => setAssignTarget(null)}
             />
         )}
+        {showMathTools && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
+                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />??????????? ??????</h3>
+                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex-1 relative overflow-hidden bg-slate-50">
+                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
+                    </div>
+                </div>
+            </div>
+        )}
+        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="??????????? ?????? (GeoGebra, Desmos...)">
+            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+        </button>
         </>
     );
 };

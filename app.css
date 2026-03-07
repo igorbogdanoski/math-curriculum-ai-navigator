@@ -533,3 +533,6 @@ html.high-contrast {
     width: 100%;
   }
 }
+
+
+@media print { html, body, #root, .h-screen, .max-h-screen, .overflow-y-auto, .overflow-hidden { height: auto !important; max-height: none !important; overflow: visible !important; display: block !important; } }

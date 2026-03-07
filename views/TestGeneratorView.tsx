@@ -6,6 +6,7 @@ import { GeneratedTest, Topic } from '../types';
 import { ICONS } from '../constants';
 import { useReactToPrint } from 'react-to-print';
 import { PrintableTest } from '../components/ai/PrintableTest';
+import { MathRenderer } from '../components/common/MathRenderer';
 import { useRef } from 'react';
 
 export const TestGeneratorView: React.FC = () => {
@@ -134,7 +135,18 @@ export const TestGeneratorView: React.FC = () => {
                 </Card>
 
                 <div className="md:col-span-2">
-                    {generatedTest ? (
+                    {isGenerating ? (
+                        <div className="h-full flex flex-col items-center justify-center text-brand-primary bg-white rounded-2xl border-2 border-brand-primary min-h-[400px] shadow-lg animate-pulse">
+                            <ICONS.assessment className="w-20 h-20 mb-6 animate-bounce" />
+                            <h2 className="text-2xl font-bold mb-2 text-center text-brand-primary">Генерирам експертски тест...</h2>
+                            <p className="text-gray-500 mb-6 text-center">Анализирам параметри, креирам задачи и прилагодувам тежина</p>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 bg-brand-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                <div className="w-3 h-3 bg-brand-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                <div className="w-3 h-3 bg-brand-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            </div>
+                        </div>
+                    ) : generatedTest ? (
                         <div className="space-y-6">
                             <Card className="bg-green-50 border-green-200">
                                 <div className="flex justify-between items-center">
@@ -174,16 +186,16 @@ export const TestGeneratorView: React.FC = () => {
                                                         <span className="font-bold text-sm text-gray-700">{i + 1}.</span>
                                                         <span className="text-xs font-mono bg-white border px-1 rounded">{q.points}п</span>
                                                     </div>
-                                                    <p className="text-sm text-gray-800 mb-2">{q.text}</p>
+                                                    <div className="text-sm text-gray-800 mb-2"><MathRenderer text={q.text} /></div>
                                                     {q.type === 'multiple-choice' && (
                                                         <ul className="pl-4 space-y-1">
                                                             {q.options?.map((opt, oi) => (
-                                                                <li key={oi} className="text-xs text-gray-600 list-disc">{opt}</li>
+                                                                <li key={oi} className="text-xs text-gray-600 list-disc"><MathRenderer text={opt} /></li>
                                                             ))}
                                                         </ul>
                                                     )}
                                                      <div className="mt-2 pt-2 border-t border-dashed border-gray-200 text-xs text-green-700 font-medium">
-                                                        Одговор: {q.correctAnswer}
+                                                        Одговор: <MathRenderer text={q.correctAnswer} />
                                                     </div>
                                                 </div>
                                             ))}

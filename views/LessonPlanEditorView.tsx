@@ -11,6 +11,7 @@ import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useNavigation } from '../contexts/NavigationContext';
 import { AIContextSelector } from '../components/lesson-plan-editor/AIContextSelector';
 import { AIPedagogicalAnalysisDisplay } from '../components/lesson-plan-editor/AIPedagogicalAnalysisDisplay';
+import { MathToolsPanel } from '../components/common/MathToolsPanel';
 import { LessonPlanFormFields } from '../components/lesson-plan-editor/LessonPlanFormFields';
 import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 import { LessonPlanDisplay } from '../components/planner/LessonPlanDisplay';
@@ -58,6 +59,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
   );
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showMathTools, setShowMathTools] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<AIPedagogicalAnalysis | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -513,6 +515,30 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         </div>
         <LessonPlanDisplay plan={plan as LessonPlan} />
       </div>
+
+    {showMathTools && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
+          <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+            <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
+            <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+          </div>
+          <div className="flex-1 relative overflow-hidden bg-slate-50">
+            <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Floating Action Button for Math Tools */}
+    <button 
+      onClick={() => setShowMathTools(true)}
+      className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95"
+      title="Математички Алатки (GeoGebra, Desmos...)"
+    >
+      <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
+      <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки за креирање</span>
+    </button>
     </div>
   );
 };

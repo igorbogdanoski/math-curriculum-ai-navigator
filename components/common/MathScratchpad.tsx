@@ -280,7 +280,7 @@ export const MathScratchpad: React.FC<MathScratchpadProps> = ({ isOpen, onClose 
     };
 
     return (
-        <div className="flex flex-col bg-white border border-gray-200 shadow-xl rounded-2xl overflow-hidden mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="flex flex-col bg-white border border-gray-200 shadow-xl rounded-2xl overflow-hidden h-full max-h-[85vh] md:max-h-full animate-in fade-in slide-in-from-right-4 duration-300">
             
             {/* Toolbar */}
             <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 flex flex-wrap gap-3 justify-between items-center select-none touch-none">
@@ -358,8 +358,8 @@ export const MathScratchpad: React.FC<MathScratchpadProps> = ({ isOpen, onClose 
             {/* Canvas Container */}
             <div 
                 ref={containerRef} 
-                className="w-full relative touch-none cursor-crosshair overflow-hidden"
-                style={{ height: '500px', ...getBgStyle() }}
+                className="w-full relative touch-none cursor-crosshair overflow-hidden flex-1 min-h-[400px] md:min-h-[500px]"
+                style={getBgStyle()}
             >
                 {/* Pointer events bound to canvas for universal device support */}
                 <canvas

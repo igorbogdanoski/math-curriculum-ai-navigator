@@ -1,4 +1,4 @@
-﻿import './InteractiveQuizPlayer.css';
+import './InteractiveQuizPlayer.css';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X, Lightbulb, Loader2, PenTool, Calculator, Eye } from 'lucide-react';
@@ -65,7 +65,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     return [];
   }, [propQuestions, quiz]);
 
-  const quizTitle = title || quiz?.title || 'Квиз';
+  const quizTitle = title || quiz?.title || '????';
 
   // State
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -247,7 +247,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
         resetQuiz();
       }
     } catch (err) {
-      console.error("Грешка при генерирање паралелен квиз:", err);
+      console.error("?????? ??? ?????????? ????????? ????:", err);
     } finally {
       setIsGeneratingParallel(false);
     }
@@ -260,7 +260,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       const data = await geminiService.solveSpecificProblemStepByStep(currentQ.question);
       setScaffoldData(data);
     } catch (err) {
-      console.error("Грешка при генерирање помош:", err);
+      console.error("?????? ??? ?????????? ?????:", err);
     } finally {
       setIsGeneratingScaffold(false);
     }
@@ -269,9 +269,9 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   if (normalizedQuestions.length === 0) {
     return (
       <div className="p-8 text-center bg-white rounded-2xl shadow-lg">
-        <p className="text-gray-500">Нема прашања за овој квиз.</p>
+        <p className="text-gray-500">???? ??????? ?? ???? ????.</p>
         {onClose && (
-          <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-100 rounded-lg">Затвори</button>
+          <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-100 rounded-lg">???????</button>
         )}
       </div>
     );
@@ -291,14 +291,14 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
             </div>
           </div>
 
-          <h2 className="text-3xl font-black text-gray-800 mb-2">Квизот е завршен!</h2>
+          <h2 className="text-3xl font-black text-gray-800 mb-2">?????? ? ???????!</h2>
           <p className="text-gray-500 mb-6 font-medium">{quizTitle}</p>
           
           <div className="bg-blue-50 rounded-2xl p-6 mb-8 border border-blue-100">
-            <p className="text-xs text-blue-600 font-black uppercase tracking-widest mb-1">Вкупно Поени</p>
+            <p className="text-xs text-blue-600 font-black uppercase tracking-widest mb-1">?????? ?????</p>
             <div className="text-6xl font-black text-blue-900">{score.toLocaleString()}</div>
             <p className="text-sm text-blue-500 font-bold mt-2">
-              {correctCount} / {normalizedQuestions.length} точни одговори
+              {correctCount} / {normalizedQuestions.length} ????? ????????
               ({Math.round((correctCount / normalizedQuestions.length) * 100)}%)
             </p>
             <div className="mt-3">
@@ -316,7 +316,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-blue-200 flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               <RefreshCw className="w-5 h-5" />
-              Играј повторно
+              ????? ????????
             </button>
             <button
               onClick={handleGenerateParallel}
@@ -324,14 +324,14 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
               className="w-full py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-2 border-indigo-200 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
             >
               <Sparkles className={`w-5 h-5 ${isGeneratingParallel ? 'animate-spin' : ''}`} />
-              {isGeneratingParallel ? 'Генерирање...' : 'Вежбај со нови бројки (Mastery)'}
+              {isGeneratingParallel ? '??????????...' : '?????? ?? ???? ?????? (Mastery)'}
             </button>
             {onClose && (
               <button
                 onClick={onClose}
                 className="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2"
               >
-                Затвори
+                ???????
               </button>
             )}
           </div>
@@ -346,33 +346,32 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
   return (
     <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center md:p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className={`bg-white md:rounded-3xl shadow-2xl md:border border-gray-200 overflow-y-auto overflow-x-hidden w-full relative flex flex-col md:flex-row transition-[max-width,min-width] duration-300 ease-in-out min-h-screen md:min-h-[auto] md:max-h-[90vh] my-auto ${showMathTools ? 'max-w-[70rem]' : 'max-w-xl'}`}>
-        
+        <div className={`bg-white md:rounded-3xl shadow-2xl md:border border-gray-200 overflow-y-auto overflow-x-hidden w-full relative flex flex-col md:flex-row transition-[max-width,min-width] duration-300 ease-in-out min-h-screen md:min-h-[auto] md:max-h-[90vh] my-auto ${(showMathTools || showScratchpad) ? 'max-w-[80rem]' : 'max-w-2xl'}`}>
         {/* Main Quiz Area */}
         <div className="flex-1 flex flex-col min-w-0 pb-10 md:pb-0">
           {/* HEADER */}
           <div className="bg-gray-50 px-4 md:px-6 py-3 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2 sticky top-0 z-10">
             <div className="flex flex-col flex-1 min-w-[120px]">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Прашање {currentIndex + 1}/{normalizedQuestions.length}</span>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">??????? {currentIndex + 1}/{normalizedQuestions.length}</span>
               <h2 className="text-sm font-bold text-gray-700 line-clamp-1">{quizTitle}</h2>
             </div>
 
             <div className="flex items-center gap-1.5 md:gap-4 flex-wrap justify-end">
               <button
-                    onClick={() => setShowScratchpad(!showScratchpad)}
-                  title="Работна табла за цртање (Scratchpad)"
+                    onClick={() => { setShowScratchpad(!showScratchpad); setShowMathTools(false); }}
+                  title="??????? ????? ?? ?????? (Scratchpad)"
                   className={`p-2.5 md:p-1.5 rounded-lg transition-colors border-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center ${showScratchpad ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}                >
                     <PenTool className="w-5 h-5" />              </button>
               <button
-                onClick={() => setShowMathTools(!showMathTools)}
-                title="Математички алатки (GeoGebra / Desmos)"
+                onClick={() => { setShowMathTools(!showMathTools); setShowScratchpad(false); }}
+                title="??????????? ?????? (GeoGebra / Desmos)"
                 className={`p-2.5 md:p-1.5 rounded-lg transition-colors border-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center ${showMathTools ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
               >
                 <Calculator className="w-5 h-5" />
               </button>
               <button
                 onClick={() => patchReadingMode({ active: !readingMode.active })}
-                title="Режим за читање (за помали деца и дислексија)"
+                title="????? ?? ?????? (?? ?????? ???? ? ??????????)"
                 className={`p-2.5 md:p-1.5 rounded-lg transition-colors border-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center ${readingMode.active ? 'bg-amber-50 border-amber-300 text-amber-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
               >
                 <Eye className="w-5 h-5" />
@@ -461,7 +460,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                     <MathInput
                       value={shortAnswer}
                       onChange={setShortAnswer}
-                      placeholder="Внеси го твојот одговор овде..."
+                      placeholder="????? ?? ?????? ??????? ????..."
                       className="flex-1"
                     />
                     <button
@@ -469,11 +468,11 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                       disabled={selectedOption !== null || !shortAnswer.trim()}
                       className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors whitespace-nowrap"
                     >
-                      Потврди
+                      ???????
                     </button>
                   </div>
                   {!selectedOption && (
-                    <p className="text-xs text-gray-400 italic">Користи ја виртуелната тастатура за дропки, корени и формули.</p>
+                    <p className="text-xs text-gray-400 italic">??????? ?? ??????????? ????????? ?? ??????, ?????? ? ???????.</p>
                   )}
                 </div>
             )}
@@ -492,11 +491,11 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
               <div className={`p-5 rounded-2xl mb-6 ${isCorrect ? 'bg-green-50 text-green-800 border border-green-100' : 'bg-red-50 text-red-800 border border-red-100'}`}>
                 <p className="font-black flex items-center gap-2 text-lg">
-                  {isCorrect ? '🎉 ТОЧНО!' : selectedOption === 'TIME_UP' ? '⏰ ВРЕМЕТО ИСТЕЧЕ!' : '🤔 НЕТОЧНО.'}
+                  {isCorrect ? '?? ?????!' : selectedOption === 'TIME_UP' ? '? ??????? ??????!' : '?? ???????.'}
                 </p>
                 {(!isCorrect || currentQ.explanation) && (
                   <div className="text-sm mt-3 pt-3 border-t border-black/5 font-medium leading-relaxed">
-                    {!isCorrect && <p className="mb-2">Точниот одговор е: <strong className="underline decoration-red-200 decoration-2 underline-offset-4">{currentQ.answer}</strong></p>}
+                    {!isCorrect && <p className="mb-2">??????? ??????? ?: <strong className="underline decoration-red-200 decoration-2 underline-offset-4">{currentQ.answer}</strong></p>}
                     {currentQ.explanation && (
                       <div className="flex gap-2 bg-white/50 p-3 rounded-xl mt-2">
                         <Sparkles className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
@@ -513,7 +512,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                             className="bg-white text-indigo-600 hover:bg-indigo-50 border whitespace-nowrap border-indigo-200 px-4 py-3 md:py-2 min-h-[44px] md:min-h-0 font-bold rounded-lg text-sm flex items-center justify-center w-full sm:w-auto gap-2 transition disabled:opacity-50"
                           >
                             {isGeneratingScaffold ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
-                            {isGeneratingScaffold ? 'AI анализира...' : 'Објасни чекор по чекор'}
+                            {isGeneratingScaffold ? 'AI ?????????...' : '??????? ????? ?? ?????'}
                           </button>
                         ) : (
                           <div className="mt-2 text-left">
@@ -536,14 +535,14 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                     onClick={prevQuestion}
                     className="w-1/3 py-5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-2xl font-black text-xl transition-all shadow-xl hover:shadow-gray-300 flex items-center justify-center gap-3 active:scale-[0.98]"
                   >
-                    НАЗАД
+                    ?????
                   </button>
                 )}
                 <button
                   onClick={nextQuestion}
                   className={`${currentIndex > 0 ? 'w-2/3' : 'w-full'} py-5 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-xl transition-all shadow-xl hover:shadow-slate-200 flex items-center justify-center gap-3 active:scale-[0.98]`}
                 >
-                  {currentIndex + 1 === normalizedQuestions.length ? 'ЗАВРШИ' : 'СЛЕДНО'}
+                  {currentIndex + 1 === normalizedQuestions.length ? '??????' : '??????'}
                   <ArrowRight className="w-6 h-6" />
                 </button>
               </div>
@@ -554,7 +553,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
           {/* SCRATCHPAD PANEL */}
           {showScratchpad && (
-            <div className="w-full mt-4">
+            <div className="w-full md:w-[600px] border-t md:border-t-0 md:border-l border-gray-200 bg-slate-50 flex flex-col shrink-0 animate-in fade-in slide-in-from-right-4 duration-300 relative z-20 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.05)] md:shadow-none p-4">
               <MathScratchpad isOpen={showScratchpad} onClose={() => setShowScratchpad(false)} />
             </div>
           )}
