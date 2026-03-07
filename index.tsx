@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { registerSW } from 'virtual:pwa-register';
 import './app.css';
 import App from './App';
-import { initSentry } from './services/sentryService';
+import { initSentry, reportWebVitals } from './services/sentryService';
 
 // Initialize Sentry before rendering — no-op if VITE_SENTRY_DSN is not set
 initSentry();
@@ -46,3 +46,6 @@ root.render(
     </QueryClientProvider>
   </React.StrictMode>
 );
+
+// Report Core Web Vitals to Sentry after render — no-op in dev or without DSN
+reportWebVitals();
