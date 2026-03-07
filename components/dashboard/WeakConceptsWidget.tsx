@@ -2,46 +2,42 @@
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
-import { firestoreService } from '../../services/firestoreService';
+import { useTeacherAnalytics } from '../../hooks/useTeacherAnalytics';
 import { AlertTriangle, ChevronRight } from 'lucide-react';
 import { useNavigation } from '../../contexts/NavigationContext';
 
 export const WeakConceptsWidget: React.FC = () => {
     const { firebaseUser } = useAuth();
     const { navigate } = useNavigation();
+    const { data: analyticsData, isLoading } = useTeacherAnalytics(firebaseUser?.uid);
     const [criticalConcepts, setCriticalConcepts] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const load = async () => {
-            if (!firebaseUser) return;
-            const { results } = await firestoreService.fetchQuizResultsPage(firebaseUser.uid, 50);
+        if (!analyticsData?.results) return;
+        const results = analyticsData.results;
+        
+        // Group by concept
+        const grouped: Record<string, { attempts: number, correct: number, title: string }> = {};
+        (results || []).forEach(r => {
+            if (!r.conceptId) return;
             
-            // Group by concept
-            const grouped: Record<string, { attempts: number, correct: number, title: string }> = {};
-            (results || []).forEach(r => {
-                if (!r.conceptId) return;
-                
-                if (!grouped[r.conceptId]) {
-                    // Try to use quizTitle as proxy for concept title, or fallback to ID
-                    grouped[r.conceptId] = { attempts: 0, correct: 0, title: r.quizTitle || r.conceptId };
-                }
-                // Use totalQuestions instead of questions.length
-                grouped[r.conceptId].attempts += (r.totalQuestions || 0);
-                grouped[r.conceptId].correct += r.score;
-            });
+            if (!grouped[r.conceptId]) {
+                // Try to use quizTitle as proxy for concept title, or fallback to ID
+                grouped[r.conceptId] = { attempts: 0, correct: 0, title: r.quizTitle || r.conceptId };
+            }
+            // Use totalQuestions instead of questions.length
+            grouped[r.conceptId].attempts += (r.totalQuestions || 0);
+            grouped[r.conceptId].correct += r.score;
+        });
 
-            const weak = Object.values(grouped)
-                .map(g => ({ ...g, pct: Math.round((g.correct / g.attempts) * 100) }))
-                .filter(g => g.pct < 60 && g.attempts >= 5) // At least 5 attempts to show up
-                .sort((a, b) => a.pct - b.pct)
-                .slice(0, 3); // top 3 weakest
+        const weak = Object.values(grouped)
+            .map(g => ({ ...g, pct: Math.round((g.correct / Math.max(g.attempts, 1)) * 100) }))
+            .filter(g => g.pct < 60 && g.attempts >= 5) // At least 5 attempts to show up
+            .sort((a, b) => a.pct - b.pct)
+            .slice(0, 3); // top 3 weakest
 
-            setCriticalConcepts(weak);
-            setIsLoading(false);
-        };
-        load();
-    }, [firebaseUser]);
+        setCriticalConcepts(weak);
+    }, [analyticsData?.results]);
 
     if (isLoading || criticalConcepts.length === 0) return null;
 
