@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle, QrCode } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { AlertTriangle, CheckCircle, QrCode, TrendingDown, Clock } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
@@ -14,6 +14,44 @@ interface AlertsTabProps {
     onGenerateRemedial: (conceptId: string, title: string, avgPct: number) => void;
 }
 
+// ── Risk helpers ─────────────────────────────────────────────────────────────
+
+type RiskLevel = 'high' | 'medium' | 'low';
+
+interface RiskSignal {
+    label: string;
+    icon: 'trend' | 'clock' | 'score' | 'confidence';
+}
+
+interface StudentRisk {
+    name: string;
+    level: RiskLevel;
+    signals: RiskSignal[];
+    trendSlope: number | null; // pts per quiz, negative = declining
+    daysSinceActive: number | null;
+    avg: number;
+}
+
+/** Simple linear regression slope over an array of values (y = mx + b → returns m) */
+function linearSlope(values: number[]): number {
+    const n = values.length;
+    if (n < 2) return 0;
+    const sumX = (n * (n - 1)) / 2;
+    const sumX2 = ((n - 1) * n * (2 * n - 1)) / 6;
+    const sumY = values.reduce((s, v) => s + v, 0);
+    const sumXY = values.reduce((s, v, i) => s + i * v, 0);
+    return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+}
+
+function toMs(ts: any): number | null {
+    if (!ts) return null;
+    if (ts.toDate) return ts.toDate().getTime();
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? null : d.getTime();
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConcepts, results, onGenerateRemedial }) => {
     const [qrStudent, setQrStudent] = useState<string | null>(null);
     const qrUrl = qrStudent
@@ -24,9 +62,146 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
     const criticalConcepts = weakConcepts.filter(c => c.avgPct < 60);
     const lowConfidenceStudents = perStudentStats.filter(s => s.avgConfidence !== undefined && s.avgConfidence < 2);
 
+    // ── A3: Predictive Risk ────────────────────────────────────────────────────
+    const predictiveRisks = useMemo((): StudentRisk[] => {
+        if (!results || results.length === 0) return [];
+        const now = Date.now();
+
+        // Group results by student, sorted oldest→newest
+        const byStudent: Record<string, any[]> = {};
+        results.forEach(r => {
+            if (!r.studentName) return;
+            if (!byStudent[r.studentName]) byStudent[r.studentName] = [];
+            byStudent[r.studentName].push(r);
+        });
+        Object.values(byStudent).forEach(arr =>
+            arr.sort((a, b) => (toMs(a.playedAt) ?? 0) - (toMs(b.playedAt) ?? 0))
+        );
+
+        const risks: StudentRisk[] = [];
+
+        perStudentStats.forEach(s => {
+            const studentResults = byStudent[s.name] ?? [];
+            const signals: RiskSignal[] = [];
+
+            // Signal 1 — declining trend (last 5+ results, slope < -4 pts/quiz)
+            const last5 = studentResults.slice(-5).map(r => r.percentage);
+            const slope = last5.length >= 3 ? linearSlope(last5) : null;
+            if (slope !== null && slope < -4) {
+                signals.push({ label: `Опаѓачки тренд (${slope.toFixed(1)} пт/квиз)`, icon: 'trend' });
+            }
+
+            // Signal 2 — inactivity > 14 days and still not mastered much
+            const lastMs = toMs(s.lastAttempt);
+            const daysSinceActive = lastMs !== null ? Math.floor((now - lastMs) / 86_400_000) : null;
+            if (daysSinceActive !== null && daysSinceActive > 14 && s.masteredCount < 3) {
+                signals.push({ label: `Неактивен ${daysSinceActive} дена`, icon: 'clock' });
+            }
+
+            // Signal 3 — low overall performance
+            if (s.avg < 50 || s.passRate < 30) {
+                signals.push({ label: `Просек ${s.avg}% / Положиле ${s.passRate}%`, icon: 'score' });
+            }
+
+            // Signal 4 — low self-confidence
+            if (s.avgConfidence !== undefined && s.avgConfidence < 2) {
+                signals.push({ label: 'Ниска самодоверба', icon: 'confidence' });
+            }
+
+            if (signals.length === 0) return;
+
+            const level: RiskLevel = signals.length >= 3 ? 'high' : signals.length === 2 ? 'medium' : 'low';
+            risks.push({ name: s.name, level, signals, trendSlope: slope, daysSinceActive, avg: s.avg });
+        });
+
+        // Sort: high → medium → low
+        const ORDER: Record<RiskLevel, number> = { high: 0, medium: 1, low: 2 };
+        return risks.sort((a, b) => ORDER[a.level] - ORDER[b.level]);
+    }, [perStudentStats, results]);
+
     return (
         <SilentErrorBoundary name="AlertsTab">
             <div className="space-y-6">
+
+                {/* ── A3: Predictive Risk ─────────────────────────────────── */}
+                <Card>
+                    <div className="flex items-center gap-2 mb-4">
+                        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                            Предиктивен ризик — ученици кои треба интервенција
+                        </h2>
+                        {predictiveRisks.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">
+                                {predictiveRisks.length}
+                            </span>
+                        )}
+                    </div>
+
+                    {predictiveRisks.length === 0 ? (
+                        <div className="flex items-center gap-2 py-6 justify-center text-green-600">
+                            <CheckCircle className="w-5 h-5" />
+                            <p className="text-sm font-semibold">Нема ученици со предиктивни ризик-сигнали.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {predictiveRisks.map(r => {
+                                const levelCfg = r.level === 'high'
+                                    ? { bg: 'bg-red-50 border-red-200', badge: 'bg-red-100 text-red-700', dot: 'bg-red-500', label: '🔴 Висок' }
+                                    : r.level === 'medium'
+                                    ? { bg: 'bg-orange-50 border-orange-200', badge: 'bg-orange-100 text-orange-700', dot: 'bg-orange-400', label: '🟠 Среден' }
+                                    : { bg: 'bg-yellow-50 border-yellow-200', badge: 'bg-yellow-100 text-yellow-700', dot: 'bg-yellow-400', label: '🟡 Низок' };
+                                return (
+                                    <div key={r.name} className={`rounded-xl border px-4 py-3 ${levelCfg.bg}`}>
+                                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${levelCfg.dot}`} />
+                                                <p className="font-bold text-sm text-slate-800 truncate">{r.name}</p>
+                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${levelCfg.badge}`}>
+                                                    {levelCfg.label}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { window.location.hash = `/my-progress?name=${encodeURIComponent(r.name)}`; }}
+                                                    className="text-xs font-bold text-indigo-600 hover:underline"
+                                                >
+                                                    Прогрес →
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { window.location.hash = `/tutor?student=${encodeURIComponent(r.name)}`; }}
+                                                    className="text-xs font-bold text-purple-600 hover:underline"
+                                                >
+                                                    🤖 Тутор →
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setQrStudent(r.name)}
+                                                    title="QR за родители"
+                                                    className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
+                                                >
+                                                    <QrCode className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                            {r.signals.map((sig, i) => (
+                                                <span key={i} className="flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white/80 border border-slate-200 px-2 py-0.5 rounded-full">
+                                                    {sig.icon === 'trend' && <TrendingDown className="w-3 h-3 text-red-500" />}
+                                                    {sig.icon === 'clock' && <Clock className="w-3 h-3 text-amber-500" />}
+                                                    {sig.icon === 'score' && <AlertTriangle className="w-3 h-3 text-orange-500" />}
+                                                    {sig.icon === 'confidence' && <span className="text-xs">😟</span>}
+                                                    {sig.label}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </Card>
+
                 <CopilotInsightBanner
                     results={results}
                     weakConcepts={weakConcepts}
