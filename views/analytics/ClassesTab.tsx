@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { School, Plus, Trash2, UserPlus, X, Edit2, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { School, Plus, Trash2, UserPlus, X, Edit2, Check, Upload, FileText } from 'lucide-react';
 import { firestoreService, type SchoolClass } from '../../services/firestoreService';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
@@ -29,6 +29,57 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     // Rename class
     const [renameId, setRenameId] = useState<string | null>(null);
     const [renameValue, setRenameValue] = useState('');
+
+    // CSV bulk import
+    const csvInputRef = useRef<HTMLInputElement>(null);
+    const [csvTargetClassId, setCsvTargetClassId] = useState<string | null>(null);
+    const [csvPreview, setCsvPreview] = useState<{ classId: string; names: string[] } | null>(null);
+    const [csvImporting, setCsvImporting] = useState(false);
+
+    const handleCsvButtonClick = (classId: string) => {
+        setCsvTargetClassId(classId);
+        setCsvPreview(null);
+        csvInputRef.current?.click();
+    };
+
+    const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !csvTargetClassId) return;
+        e.target.value = ''; // reset so same file can be re-selected
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const text = (ev.target?.result as string) ?? '';
+            // Remove BOM, split lines
+            const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+            const names: string[] = [];
+            lines.forEach((line, idx) => {
+                // If first line looks like a header containing "name", skip it
+                if (idx === 0 && /^name/i.test(line.trim())) return;
+                // Take first CSV column (before comma) and trim
+                const cell = line.split(',')[0].replace(/^["']|["']$/g, '').trim();
+                if (cell.length >= 2) names.push(cell);
+            });
+            if (names.length === 0) {
+                alert('Фајлот не содржи валидни имиња. Очекуван формат: едно ime по ред (или CSV со колона "name").');
+                return;
+            }
+            setCsvPreview({ classId: csvTargetClassId, names });
+        };
+        reader.readAsText(file, 'utf-8');
+    };
+
+    const handleCsvConfirm = async () => {
+        if (!csvPreview) return;
+        const cls = classes.find(c => c.id === csvPreview.classId);
+        if (!cls) return;
+        setCsvImporting(true);
+        const merged = Array.from(new Set([...cls.studentNames, ...csvPreview.names]));
+        await firestoreService.updateClass(csvPreview.classId, { studentNames: merged });
+        setCsvPreview(null);
+        setCsvTargetClassId(null);
+        setCsvImporting(false);
+        await loadClasses();
+    };
 
     const loadClasses = async () => {
         if (!teacherUid) return;
@@ -100,6 +151,53 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
 
     return (
         <SilentErrorBoundary name="ClassesTab">
+            {/* Hidden CSV file input */}
+            <input
+                ref={csvInputRef}
+                type="file"
+                accept=".csv,.txt"
+                aria-label="Избери CSV фајл со имиња на ученици"
+                className="hidden"
+                onChange={handleCsvFile}
+            />
+
+            {/* CSV Preview / Confirm modal */}
+            {csvPreview && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <FileText className="w-5 h-5 text-indigo-600" />
+                            <p className="font-bold text-slate-800">Преглед пред увоз</p>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-3">
+                            Ќе се додадат <span className="font-black text-indigo-700">{csvPreview.names.length}</span> ученика во класата:
+                        </p>
+                        <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl px-3 py-2 mb-4 space-y-0.5">
+                            {csvPreview.names.map((n, i) => (
+                                <p key={i} className="text-sm text-slate-700">{i + 1}. {n}</p>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={handleCsvConfirm}
+                                disabled={csvImporting}
+                                className="flex-1 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition"
+                            >
+                                {csvImporting ? 'Увоз...' : `Увези ${csvPreview.names.length} ученика`}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setCsvPreview(null); setCsvTargetClassId(null); }}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-200 transition"
+                            >
+                                Откажи
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="space-y-4">
 
                 {/* Header */}
@@ -235,6 +333,14 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                                     className="p-1.5 text-gray-400 hover:text-green-600 transition"
                                 >
                                     <UserPlus className="w-4 h-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleCsvButtonClick(cls.id)}
+                                    title="Увези ученици од CSV"
+                                    className="p-1.5 text-gray-400 hover:text-blue-600 transition"
+                                >
+                                    <Upload className="w-4 h-4" />
                                 </button>
                                 <button
                                     type="button"
