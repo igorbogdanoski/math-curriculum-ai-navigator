@@ -48,6 +48,73 @@ export const schoolService = {
     }
   },
 
+  fetchNationalStats: async (): Promise<{
+    totalSchools: number;
+    totalTeachers: number;
+    totalQuizzes: number;
+    nationalAvg: number;
+    gradeStats: { grade: string; avgPct: number; attempts: number }[];
+    weakConcepts: { conceptId: string; avgPct: number; attempts: number }[];
+  }> => {
+    try {
+      const [schoolsSnap, usersSnap, quizSnap] = await Promise.all([
+        getDocs(collection(db, 'schools')),
+        getDocs(query(collection(db, 'users'), where('role', '==', 'teacher'))),
+        getDocs(query(collection(db, 'quiz_results'), orderBy('playedAt', 'desc'), limit(2000))),
+      ]);
+
+      const totalSchools = schoolsSnap.size;
+      const totalTeachers = usersSnap.size;
+      const totalQuizzes = quizSnap.size;
+
+      const gradeMap: Record<string, { sum: number; count: number }> = {};
+      const conceptMap: Record<string, { sum: number; count: number }> = {};
+      let globalSum = 0;
+
+      quizSnap.forEach(d => {
+        const r = d.data();
+        const pct: number = r.percentage ?? 0;
+        globalSum += pct;
+
+        const grade = r.gradeLevel != null ? String(r.gradeLevel) : null;
+        if (grade) {
+          if (!gradeMap[grade]) gradeMap[grade] = { sum: 0, count: 0 };
+          gradeMap[grade].sum += pct;
+          gradeMap[grade].count++;
+        }
+
+        const cid: string | undefined = r.conceptId;
+        if (cid) {
+          if (!conceptMap[cid]) conceptMap[cid] = { sum: 0, count: 0 };
+          conceptMap[cid].sum += pct;
+          conceptMap[cid].count++;
+        }
+      });
+
+      const gradeStats = Object.entries(gradeMap)
+        .map(([grade, v]) => ({ grade: `${grade}. одд.`, avgPct: Math.round(v.sum / v.count), attempts: v.count }))
+        .sort((a, b) => parseInt(a.grade) - parseInt(b.grade));
+
+      const weakConcepts = Object.entries(conceptMap)
+        .filter(([, v]) => v.count >= 3)
+        .map(([conceptId, v]) => ({ conceptId, avgPct: Math.round(v.sum / v.count), attempts: v.count }))
+        .sort((a, b) => a.avgPct - b.avgPct)
+        .slice(0, 10);
+
+      return {
+        totalSchools,
+        totalTeachers,
+        totalQuizzes,
+        nationalAvg: totalQuizzes > 0 ? Math.round(globalSum / totalQuizzes) : 0,
+        gradeStats,
+        weakConcepts,
+      };
+    } catch (error) {
+      console.error('Error fetching national stats:', error);
+      return { totalSchools: 0, totalTeachers: 0, totalQuizzes: 0, nationalAvg: 0, gradeStats: [], weakConcepts: [] };
+    }
+  },
+
   fetchSchoolStats: async (schoolId: string): Promise<any> => {
     try {
       const usersRef = collection(db, 'users');

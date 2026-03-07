@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { Card } from '../components/common/Card';
-import { Building, Plus, ShieldAlert, Users, ChevronDown, Copy, Check } from 'lucide-react';
+import { Building, Plus, ShieldAlert, Users, Copy, Check, BarChart2, TrendingDown, Globe } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 
-type Tab = 'schools' | 'users';
+type Tab = 'schools' | 'users' | 'stats';
 
 const ROLE_LABELS: Record<string, string> = {
   teacher:     '🎓 Наставник',
@@ -40,6 +40,10 @@ export const SystemAdminView: React.FC = () => {
     const [updatingUid, setUpdatingUid] = useState<string | null>(null);
     const [copiedUid, setCopiedUid] = useState(false);
 
+    // ── National stats state ──
+    const [nationalStats, setNationalStats] = useState<any>(null);
+    const [isLoadingStats, setIsLoadingStats] = useState(false);
+
     useEffect(() => {
         if (!user || user.role !== 'admin') {
             navigate('/');
@@ -51,6 +55,9 @@ export const SystemAdminView: React.FC = () => {
     useEffect(() => {
         if (activeTab === 'users' && users.length === 0) {
             loadUsers();
+        }
+        if (activeTab === 'stats' && !nationalStats) {
+            loadNationalStats();
         }
     }, [activeTab]);
 
@@ -79,6 +86,16 @@ export const SystemAdminView: React.FC = () => {
             setUserError('Грешка при вчитување на корисниците.');
         } finally {
             setIsLoadingUsers(false);
+        }
+    };
+
+    const loadNationalStats = async () => {
+        setIsLoadingStats(true);
+        try {
+            const data = await firestoreService.fetchNationalStats();
+            setNationalStats(data);
+        } finally {
+            setIsLoadingStats(false);
         }
     };
 
@@ -157,7 +174,7 @@ export const SystemAdminView: React.FC = () => {
 
             {/* Tabs */}
             <div className="flex gap-1 border-b border-gray-200">
-                {([['schools', '🏫 Училишта'], ['users', '👥 Корисници']] as [Tab, string][]).map(([id, label]) => (
+                {([['schools', '🏫 Училишта'], ['users', '👥 Корисници'], ['stats', '📊 Статистики']] as [Tab, string][]).map(([id, label]) => (
                     <button
                         key={id}
                         type="button"
@@ -321,6 +338,102 @@ export const SystemAdminView: React.FC = () => {
                         </div>
                     )}
                 </Card>
+            )}
+            {/* ── TAB: Stats ── */}
+            {activeTab === 'stats' && (
+                <div className="space-y-6">
+                    {isLoadingStats ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
+                        </div>
+                    ) : nationalStats ? (
+                        <>
+                            {/* KPI Cards */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[
+                                    { label: 'Училишта', value: nationalStats.totalSchools, icon: <Building className="w-5 h-5 text-indigo-500" />, bg: 'bg-indigo-50' },
+                                    { label: 'Наставници', value: nationalStats.totalTeachers, icon: <Users className="w-5 h-5 text-blue-500" />, bg: 'bg-blue-50' },
+                                    { label: 'Квизови (2000)', value: nationalStats.totalQuizzes, icon: <Globe className="w-5 h-5 text-teal-500" />, bg: 'bg-teal-50' },
+                                    { label: 'Нац. просек', value: `${nationalStats.nationalAvg}%`, icon: <BarChart2 className="w-5 h-5 text-green-500" />, bg: 'bg-green-50' },
+                                ].map(card => (
+                                    <Card key={card.label} className={`p-5 ${card.bg}`}>
+                                        <div className="flex items-center gap-3">
+                                            {card.icon}
+                                            <div>
+                                                <p className="text-xs text-gray-500 font-medium">{card.label}</p>
+                                                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+
+                            {/* Grade breakdown */}
+                            {nationalStats.gradeStats.length > 0 && (
+                                <Card className="p-6">
+                                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <BarChart2 className="w-4 h-4" />
+                                        Национален просек по одделение
+                                    </h2>
+                                    <div className="space-y-3">
+                                        {nationalStats.gradeStats.map((g: any) => (
+                                            <div key={g.grade} className="flex items-center gap-3 text-sm">
+                                                <span className="w-16 font-semibold text-gray-700 shrink-0">{g.grade}</span>
+                                                <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full transition-all ${g.avgPct >= 70 ? 'bg-green-400' : g.avgPct >= 50 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                                                        style={{ width: `${Math.max(g.avgPct, 2)}%` }}
+                                                    />
+                                                </div>
+                                                <span className={`w-12 text-right font-bold ${g.avgPct >= 70 ? 'text-green-600' : g.avgPct >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
+                                                    {g.avgPct}%
+                                                </span>
+                                                <span className="text-xs text-gray-400 w-20 text-right">{g.attempts} обиди</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </Card>
+                            )}
+
+                            {/* Weak concepts */}
+                            {nationalStats.weakConcepts.length > 0 && (
+                                <Card className="p-6">
+                                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <TrendingDown className="w-4 h-4 text-red-400" />
+                                        Топ 10 концепти со слаба совладаност (национален пресек)
+                                    </h2>
+                                    <div className="divide-y divide-gray-100">
+                                        {nationalStats.weakConcepts.map((c: any, i: number) => (
+                                            <div key={c.conceptId} className="flex items-center gap-3 py-2.5 text-sm">
+                                                <span className="w-6 text-center font-bold text-gray-400">{i + 1}</span>
+                                                <span className="flex-1 font-mono text-gray-600 truncate text-xs">{c.conceptId}</span>
+                                                <div className="w-32 h-3 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-red-400 rounded-full"
+                                                        style={{ width: `${Math.max(c.avgPct, 2)}%` }}
+                                                    />
+                                                </div>
+                                                <span className="w-10 text-right font-bold text-red-500">{c.avgPct}%</span>
+                                                <span className="text-xs text-gray-400 w-16 text-right">{c.attempts} обиди</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </Card>
+                            )}
+
+                            {nationalStats.gradeStats.length === 0 && nationalStats.weakConcepts.length === 0 && (
+                                <Card className="p-8 text-center text-gray-400 text-sm">
+                                    Нема доволно податоци за национална статистика.
+                                </Card>
+                            )}
+                        </>
+                    ) : null}
+                    <div className="flex justify-end">
+                        <button type="button" onClick={loadNationalStats} className="text-xs text-gray-500 hover:text-gray-700 underline">
+                            Освежи
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
