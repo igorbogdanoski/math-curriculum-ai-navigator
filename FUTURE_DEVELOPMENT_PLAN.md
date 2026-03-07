@@ -7,7 +7,7 @@
 
 - [x] **Оптимизација на Firebase Трошоци (React Query):** React Query е инсталиран и поставен (`@tanstack/react-query`). Аналитичките и progress views се рефакторирани. *(commit 27d73b0)*
 - [x] **Зајакнување на Безбедноста (Firestore Rules):** Ревизија и зацврстување на сите `firestore.rules` — `quiz_results` и `concept_mastery` ограничени на сопствениот наставник/анонимни ученици/school_admin; `classes` ограничени само на сопствениот наставник; додадени `isAnonymousStudent()` и `isDocOwner()` хелпер функции; `classes` create бара `teacherUid == auth.uid`.
-- [ ] **Модуларизација на UI Компоненти:** Разделување на големите React компоненти (над 300 линии) во помали презентациски компоненти и екстракција на сложената бизнис логика во кастом хукови (пр. `useTeacherAnalytics`, `useStudentProgress`).
+- [x] **Модуларизација на UI Компоненти:** `MaterialsGeneratorView` 1097→579 линии (-47%) преку нов `useGeneratorActions` хук (14 handlers + сета генерациска состојба). `StudentProgressView` — отстранет dead `fetchResults` код; `useStudentProgress` проширен со gamification/announcements/classRank/nextQuizIds во еден паралелен round-trip. *(commit 344d643)*
 
 ## 2. Квалитет и Мониторинг (QA & Observability)
 
