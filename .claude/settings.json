@@ -45,7 +45,10 @@
       "Bash(python3 -c \":*)",
       "Bash(xargs wc -l)",
       "Read(//tmp/**)",
-      "Bash(awk 'NR>=1 && NR<=20 || NR>=60 && NR<=110' views/StudentProgressView.tsx)"
+      "Bash(awk 'NR>=1 && NR<=20 || NR>=60 && NR<=110' views/StudentProgressView.tsx)",
+      "Bash(python -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(''Version:'', p.get\\(''version'',''?''\\)\\); print\\(''Build script:'', p.get\\(''scripts'',{}\\).get\\(''build'',''?''\\)\\)\")",
+      "Bash(wc -l views/*.tsx components/**/*.tsx)",
+      "Bash(ls views/*.tsx)"
     ],
     "additionalDirectories": [
       "c:\\Users\\pc4all\\.claude\\plans",
