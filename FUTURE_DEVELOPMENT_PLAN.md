@@ -13,7 +13,7 @@
 
 - [x] **End-to-End (E2E) Тестирање:** Комплетна интеграција на **Playwright** — 27 теста (100% passing) кои покриваат: app health (smoke), auth guard на 5 заштитени routes, и сите 4 јавни student routes (/play, /my-progress, /live, /tutor). Скрипти: `npm run test:e2e`. *(commit 0cf5191, 07.03.2026)*
 - [x] **Апликациски Мониторинг во реално време (Sentry):** `@sentry/react` интегриран — `initSentry()` во index.tsx, `captureException` во ErrorBoundary, `setSentryUser/clearSentryUser` во AuthContext. No-op кога `VITE_SENTRY_DSN` не е поставен. *(commit cf862a3, 07.03.2026)* За активирање: додај DSN во `.env.local`.
-- [ ] **Аналитика на Перформанси (Core Web Vitals):** Континуирано мерење и оптимизација на времето на вчитување (LCP) и стабилноста на интерфејсот (CLS), особено за послаби мобилни уреди.
+- [x] **Аналитика на Перформанси (Core Web Vitals):** `web-vitals@5` интегриран — `reportWebVitals()` испраќа LCP, CLS, INP, FCP, TTFB до Sentry со rating (good/needs-improvement/poor). No-op во dev. *(commit 40a9ae0, 07.03.2026)*
 
 ## 3. Офлајн Поддршка и Достапност (PWA / Offline-First)
 - [ ] **Целосна Офлајн Функционалност:** Унапредување на постоечкиот систем (Service Worker) за да овозможи максимално беспрекорно офлајн решавање на задачи преку кеширање и `IndexedDB`.
