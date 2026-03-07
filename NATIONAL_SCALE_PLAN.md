@@ -19,7 +19,7 @@
 
 | # | Задача | Приоритет | Статус | Commit |
 | --- | --- | --- | --- | --- |
-| N1 | Offline-First: IndexedDB кеш + Background Sync за рурални општини | Критичен | Планирано | — |
+| N1 | Offline-First: IndexedDB кеш + Background Sync за рурални општини | Критичен | ✅ Веќе постои | `indexedDBService` + `NetworkStatusProvider` + `OfflineBanner` |
 | N2 | CSV bulk import за ученици (upload список на имиња по клас) | Висок | ✅ Завршено | `ea776e8` |
 | N3 | Firestore composite indexes за national stats queries (performance) | Среден | Планирано | — |
 
