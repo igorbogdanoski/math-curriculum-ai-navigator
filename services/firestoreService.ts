@@ -266,11 +266,67 @@ export const firestoreService = {
         });
       }
 
+      // Г4: Count generated materials per teacher
+      const teacherUids = teachersData.map(t => t.id);
+      if (teacherUids.length > 0) {
+        // Firestore `in` supports up to 30 values; batch if needed
+        const BATCH = 30;
+        const materialCounts: Record<string, number> = {};
+        for (let i = 0; i < teacherUids.length; i += BATCH) {
+          const batch = teacherUids.slice(i, i + BATCH);
+          const matSnap = await getDocs(query(collection(db, 'cached_ai_materials'), where('teacherUid', 'in', batch)));
+          matSnap.forEach(d => {
+            const uid = d.data().teacherUid as string;
+            materialCounts[uid] = (materialCounts[uid] ?? 0) + 1;
+          });
+        }
+        teachersData.forEach(t => { (t as any).materialsGenerated = materialCounts[t.id] ?? 0; });
+      }
+
+      // Г4: School-wide grade comparison + weekly trend from quiz_results
+      const gradeMap: Record<string, { sum: number; count: number }> = {};
+      const weekMap: Record<string, { sum: number; count: number; label: string }> = {};
+      if (teacherUids.length > 0) {
+        const BATCH = 30;
+        for (let i = 0; i < teacherUids.length; i += BATCH) {
+          const batch = teacherUids.slice(i, i + BATCH);
+          const qrSnap = await getDocs(query(collection(db, 'quiz_results'), where('teacherUid', 'in', batch)));
+          qrSnap.forEach(d => {
+            const r = d.data();
+            const grade = r.gradeLevel != null ? String(r.gradeLevel) : null;
+            if (grade) {
+              if (!gradeMap[grade]) gradeMap[grade] = { sum: 0, count: 0 };
+              gradeMap[grade].sum += r.percentage ?? 0;
+              gradeMap[grade].count++;
+            }
+            // Weekly trend: group by ISO week
+            const ts = r.playedAt?.toDate ? r.playedAt.toDate() : (r.playedAt ? new Date(r.playedAt) : null);
+            if (ts) {
+              const mon = new Date(ts); mon.setDate(ts.getDate() - ts.getDay() + 1);
+              const wk = mon.toISOString().slice(0, 10);
+              const lbl = mon.toLocaleDateString('mk-MK', { day: '2-digit', month: 'short' });
+              if (!weekMap[wk]) weekMap[wk] = { sum: 0, count: 0, label: lbl };
+              weekMap[wk].sum += r.percentage ?? 0;
+              weekMap[wk].count++;
+            }
+          });
+        }
+      }
+      const gradeStats = Object.entries(gradeMap)
+        .map(([grade, v]) => ({ grade: `${grade}. одд.`, avgPct: Math.round(v.sum / v.count), attempts: v.count }))
+        .sort((a, b) => parseInt(a.grade) - parseInt(b.grade));
+      const weeklyTrend = Object.entries(weekMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-8)
+        .map(([, v]) => ({ label: v.label, avg: Math.round(v.sum / v.count), count: v.count }));
+
       return {
         totalTeachers: teachersData.length,
         totalQuizzes: totalSchoolQuizzes,
         averageScore: teachersWithQuizzes > 0 ? (globalScoreSum / teachersWithQuizzes) : 0,
-        teachers: teachersData
+        teachers: teachersData,
+        gradeStats,
+        weeklyTrend,
       };
     } catch (error) {
       console.error("Error fetching school stats:", error);

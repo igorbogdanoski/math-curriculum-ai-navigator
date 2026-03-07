@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
-import { Users, School, TrendingUp, BookOpen, AlertCircle, Printer } from 'lucide-react';
+import { Users, School, TrendingUp, BookOpen, AlertCircle, Printer, BarChart2, FileText } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 
 export const SchoolAdminView: React.FC = () => {
@@ -118,7 +118,59 @@ export const SchoolAdminView: React.FC = () => {
                         </Card>
                     </div>
 
-                    <Card className="mt-8 overflow-hidden">
+                    {/* Г4: Grade comparison */}
+                    {stats.gradeStats?.length > 0 && (
+                        <Card className="mt-6 p-6">
+                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <BarChart2 className="w-4 h-4" />
+                                Споредба по одделение (просечен резултат)
+                            </h2>
+                            <div className="space-y-3">
+                                {stats.gradeStats.map((g: any) => (
+                                    <div key={g.grade} className="flex items-center gap-3 text-sm">
+                                        <span className="w-16 font-semibold text-gray-700 shrink-0">{g.grade}</span>
+                                        <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all ${g.avgPct >= 70 ? 'bg-green-400' : g.avgPct >= 50 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                                                style={{ width: `${Math.max(g.avgPct, 2)}%` }}
+                                            />
+                                        </div>
+                                        <span className={`w-12 text-right font-bold ${g.avgPct >= 70 ? 'text-green-600' : g.avgPct >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
+                                            {g.avgPct}%
+                                        </span>
+                                        <span className="text-xs text-gray-400 w-16 text-right">{g.attempts} обиди</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
+
+                    {/* Г4: Weekly trend */}
+                    {stats.weeklyTrend?.length > 0 && (
+                        <Card className="mt-6 p-6">
+                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <TrendingUp className="w-4 h-4" />
+                                Неделен тренд (просечен резултат на ниво на училиште)
+                            </h2>
+                            <div className="flex items-end gap-2 h-28">
+                                {stats.weeklyTrend.map((w: any, i: number) => (
+                                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                        <span className="text-xs font-bold text-gray-600">{w.avg}%</span>
+                                        <div className="w-full bg-gray-100 rounded-t-md relative" style={{ height: '80px' }}>
+                                            <div
+                                                className={`absolute bottom-0 w-full rounded-t-md transition-all ${w.avg >= 70 ? 'bg-indigo-400' : w.avg >= 50 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                                                style={{ height: `${Math.max(w.avg, 2)}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-xs text-gray-400 text-center leading-tight">{w.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
+
+                    {/* Г4: Teachers table — enhanced with materialsGenerated */}
+                    <Card className="mt-6 overflow-hidden">
                         <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                                 <Users className="w-5 h-5 text-gray-600" />
@@ -130,8 +182,9 @@ export const SchoolAdminView: React.FC = () => {
                                 <thead>
                                     <tr className="bg-gray-50/50 text-gray-500 text-sm border-b border-gray-100">
                                         <th className="py-3 px-6 font-medium">Име и презиме</th>
-                                        <th className="py-3 px-6 font-medium">Одржани квизови</th>
-                                        <th className="py-3 px-6 font-medium">Просечен резултат</th>
+                                        <th className="py-3 px-6 font-medium text-center">Квизови</th>
+                                        <th className="py-3 px-6 font-medium text-center">Материјали</th>
+                                        <th className="py-3 px-6 font-medium text-center">Просек</th>
                                         <th className="py-3 px-6 font-medium">Последна активност</th>
                                     </tr>
                                 </thead>
@@ -142,18 +195,26 @@ export const SchoolAdminView: React.FC = () => {
                                                 <div className="font-medium text-gray-900">{teacher.name}</div>
                                                 <div className="text-xs text-gray-500">Наставник</div>
                                             </td>
-                                            <td className="py-4 px-6 text-gray-700">{teacher.quizzesGiven}</td>
-                                            <td className="py-4 px-6">
+                                            <td className="py-4 px-6 text-center text-gray-700">{teacher.quizzesGiven}</td>
+                                            <td className="py-4 px-6 text-center">
+                                                <span className="flex items-center justify-center gap-1 text-gray-700">
+                                                    <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                                                    {teacher.materialsGenerated ?? '—'}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-6 text-center">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                                     teacher.avgScore >= 80 ? 'bg-green-100 text-green-700' :
                                                     teacher.avgScore >= 60 ? 'bg-orange-100 text-orange-700' :
                                                     'bg-red-100 text-red-700'
                                                 }`}>
-                                                    {teacher.avgScore}%
+                                                    {Math.round(teacher.avgScore)}%
                                                 </span>
                                             </td>
                                             <td className="py-4 px-6 text-gray-500 text-sm">
-                                                {new Date(teacher.lastActive).toLocaleDateString('mk-MK')}
+                                                {teacher.lastActive && teacher.lastActive !== 'Непознато'
+                                                    ? new Date(teacher.lastActive).toLocaleDateString('mk-MK')
+                                                    : '—'}
                                             </td>
                                         </tr>
                                     ))}
