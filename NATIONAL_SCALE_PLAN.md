@@ -21,7 +21,7 @@
 | --- | --- | --- | --- | --- |
 | N1 | Offline-First: IndexedDB кеш + Background Sync за рурални општини | Критичен | ✅ Веќе постои | `indexedDBService` + `NetworkStatusProvider` + `OfflineBanner` |
 | N2 | CSV bulk import за ученици (upload список на имиња по клас) | Висок | ✅ Завршено | `ea776e8` |
-| N3 | Firestore composite indexes за national stats queries (performance) | Среден | Планирано | — |
+| N3 | Firestore composite indexes за national stats queries (performance) | Среден | ✅ Завршено | `pending` |
 
 ---
 
@@ -31,7 +31,7 @@
 | --- | --- | --- | --- | --- |
 | A1 | Curriculum-aware AI Tutor (context: концепт + грешки на ученикот) | Висок | ✅ Завршено | `a3899fc` |
 | A2 | AI Родителски Извештај (автоматски месечен PDF per student со наратив) | Висок | ✅ Завршено | `600bce9` |
-| A3 | Предиктивна аналитика — предупредувачки систем „ученик во ризик" | Среден | Планирано | — |
+| A3 | Предиктивна аналитика — предупредувачки систем „ученик во ризик" | Среден | ✅ Завршено | `2052caa` |
 | A4 | Handwriting OCR — Vision API за скенирање домашни задачи | Низок | Планирано | — |
 
 ---
