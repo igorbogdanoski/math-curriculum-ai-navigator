@@ -13,6 +13,8 @@ import { ModalType, PlannerItemType, QuestionType } from '../types';
 import type { GeneratorState, GeneratorAction } from './useGeneratorState';
 import { getInitialState } from './useGeneratorState';
 import { useVerifiedQuestions, useTeacherNoteQuery, useDifficultyRecommendation, useSaveTeacherNote } from './useGeneratorQueries';
+import { useQuotaManager } from './useQuotaManager';
+import { useVariantGenerate } from './useVariantGenerate';
 
 const MACEDONIAN_CONTEXT_HINT =
   'Користи македонски примери: цени во денари (МКД), градови (Скопје, Битола, Охрид), реки (Вардар, Брегалница), ситуации од македонскиот секојдневен живот.';
@@ -101,16 +103,18 @@ export function useGeneratorActions({
   // Generation state
   const [isGenerating, setIsLoading] = useState(false);
   const [generatedMaterial, setGeneratedMaterial] = useState<GeneratedMaterial>(null);
-  const [isThrottled, setIsThrottled] = useState(false);
   const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
-  const [quotaError, setQuotaError] = useState<{ resetTime: string; resetMs: number; exhaustedAt?: string } | null>(null);
-  const [quotaCountdown, setQuotaCountdown] = useState('');
   const cancelRef = useRef(false);
 
-  // Variants state
-  const [variants, setVariants] = useState<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment> | null>(null);
-  const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
-  const [activeVariantTab, setActiveVariantTab] = useState<'support' | 'standard' | 'advanced'>('standard');
+  const {
+    quotaError,
+    setQuotaError,
+    quotaCountdown,
+    isThrottled,
+    setIsThrottled,
+    setQuotaBannerFromStorage,
+    handleClearQuota,
+  } = useQuotaManager(addNotification);
 
   // Assignment + library state
   const [assignTarget, setAssignTarget] = useState<AIGeneratedAssessment | null>(null);
@@ -175,47 +179,7 @@ export function useGeneratorActions({
     dispatch({ type: 'SET_FIELD', payload: { field: 'illustrationPrompt', value: newPrompt } });
   }, [state.materialType, state.contextType, state.selectedConcepts, state.selectedStandard, state.scenarioText, state.selectedActivity, filteredConcepts, allNationalStandards]);
 
-  // Live countdown for quota reset banner
-  useEffect(() => {
-    if (!quotaError?.resetMs) { setQuotaCountdown(''); return; }
-    const update = () => {
-      const diff = quotaError.resetMs - Date.now();
-      if (diff <= 0) { setQuotaCountdown(''); return; }
-      const h = Math.floor(diff / 3_600_000);
-      const m = Math.floor((diff % 3_600_000) / 60_000);
-      setQuotaCountdown(h > 0 ? `${h}ч ${m}мин` : `${m}мин`);
-    };
-    update();
-    const id = setInterval(update, 60_000);
-    return () => clearInterval(id);
-  }, [quotaError]);
-
   // ── Helpers ──────────────────────────────────────────────────────────────
-
-  const setQuotaBannerFromStorage = () => {
-    try {
-      const cookieMatch = document.cookie.split('; ').find(r => r.startsWith('ai_quota='));
-      const stored = cookieMatch
-        ? decodeURIComponent(cookieMatch.slice('ai_quota='.length))
-        : localStorage.getItem('ai_daily_quota_exhausted');
-      const { nextResetMs, exhaustedAt }: { nextResetMs?: number, exhaustedAt?: number | string } = stored ? JSON.parse(stored) : {};
-      const resetTime = nextResetMs
-        ? new Date(nextResetMs).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })
-        : '09:00';
-      const exhaustedAtStr = exhaustedAt
-        ? new Date(exhaustedAt).toLocaleString('mk-MK', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-        : undefined;
-      setQuotaError({ resetTime, resetMs: nextResetMs ?? 0, exhaustedAt: exhaustedAtStr });
-    } catch {
-      setQuotaError({ resetTime: '09:00', resetMs: 0 });
-    }
-  };
-
-  const handleClearQuota = () => {
-    clearDailyQuotaFlag();
-    setQuotaError(null);
-    addNotification('Квота флагот е ресетиран. Обидете се со генерирање.', 'success');
-  };
 
   const buildContext = (): {
     context: GenerationContext;
@@ -497,47 +461,26 @@ export function useGeneratorActions({
     addNotification(`Квиз создаден од ${verifiedQs.length} верификувани прашања.`, 'success');
   };
 
-  const handleGenerateVariants = async () => {
-    if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
-    if (isGeneratingVariants || isGenerateDisabled) return;
-    if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
-    const built = buildContext();
-    if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
-    const { context: finalContext } = built;
-    const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
-    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
-
-    setIsGeneratingVariants(true);
-    setVariants(null);
-    setGeneratedMaterial(null);
-
-    const levels = ['support', 'standard', 'advanced'] as const;
-    const newVariants: Partial<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>> = {};
-    let quotaHit = false;
-    for (const level of levels) {
-      if (quotaHit) break;
-      try {
-        newVariants[level] = await geminiService.generateAssessment(
-          state.materialType as 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS',
-          state.questionTypes, state.numQuestions, finalContext,
-          user ?? undefined, level, undefined, undefined, effectiveInstruction, state.includeSelfAssessment
-        );
-      } catch (error) {
-        if (error instanceof RateLimitError) {
-          setQuotaBannerFromStorage();
-          quotaHit = true;
-        } else {
-          console.warn(`Failed to generate ${level} variant:`, error);
-        }
-      }
-    }
-    if (!quotaHit && Object.keys(newVariants).length > 0) {
-      setVariants(newVariants as Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>);
-    } else if (!quotaHit) {
-      addNotification('Не можеше да се генерираат варијантите. Обидете се повторно.', 'error');
-    }
-    setIsGeneratingVariants(false);
-  };
+  const {
+    variants,
+    setVariants,
+    isGeneratingVariants,
+    activeVariantTab,
+    setActiveVariantTab,
+    handleGenerateVariants,
+  } = useVariantGenerate({
+    state,
+    isOnline,
+    isGenerateDisabled,
+    teacherNote,
+    user,
+    addNotification,
+    setQuotaBannerFromStorage,
+    buildContext,
+    buildAiPersonalizationSnippet,
+    MACEDONIAN_CONTEXT_HINT,
+    setGeneratedMaterial,
+  });
 
   const handleBulkGenerate = async () => {
     if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }

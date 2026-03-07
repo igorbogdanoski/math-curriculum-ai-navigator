@@ -10,8 +10,8 @@
 | W1 | Concept name resolution во SystemAdminView Stats (читливо ime наместо raw ID) | Висок | ✅ Завршено | `7f8a8ba` |
 | W2 | Real-time sync со Firebase `onSnapshot` (огласи + задачи без refresh) | Висок | ✅ Завршено | `2560251` |
 | W3 | StudentProgressView декомпозиција во sub-компоненти (<250 линии секоја) | Среден | ✅ Завршено | `d5c652a` |
-| W4 | geminiService.real.ts поделба по домен (quiz / ideas / rubric / chat / paths) | Низок | Планирано | — |
-| W5 | useGeneratorActions.ts поделба (useBulkGenerate / useVariantGenerate / useQuotaManager) | Низок | Планирано | — |
+| W4 | geminiService.real.ts поделба по домен (quiz / ideas / rubric / chat / paths) | Низок | **Завршено** | — |
+| W5 | useGeneratorActions.ts поделба (useBulkGenerate / useVariantGenerate / useQuotaManager) | Низок | **Завршено** | — |
 
 ---
 
