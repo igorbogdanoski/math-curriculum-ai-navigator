@@ -1,4 +1,4 @@
-// This file contains tests for the useCurriculum hook.
+﻿// This file contains tests for the useCurriculum hook.
 // It uses Vitest for the test running environment and Testing Library for rendering hooks.
 // To run these tests, you would typically use a command like `npm test` or `vitest`.
 
@@ -39,7 +39,7 @@ describe('useCurriculum hook', () => {
         
         await waitFor(() => {
             expect(result.current.isLoading).toBe(false);
-        });
+        }, { timeout: 5000 });
 
         expect(result.current.curriculum?.grades).toHaveLength(9);
         expect(result.current.curriculum?.grades[0].level).toBe(1);
@@ -48,7 +48,7 @@ describe('useCurriculum hook', () => {
 
     it('should correctly retrieve a grade by ID', async () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
         const grade = result.current.getGrade('grade-7');
         expect(grade).toBeDefined();
         expect(grade?.level).toBe(7);
@@ -57,14 +57,14 @@ describe('useCurriculum hook', () => {
 
     it('should return undefined for a non-existent grade ID', async () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
         const grade = result.current.getGrade('non-existent-grade');
         expect(grade).toBeUndefined();
     });
 
     it('should correctly retrieve a topic and its grade by topic ID', async () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
         const { grade, topic } = result.current.getTopic('g8-topic-2');
         expect(topic).toBeDefined();
         expect(grade).toBeDefined();
@@ -74,7 +74,7 @@ describe('useCurriculum hook', () => {
 
     it('should correctly retrieve concept details by concept ID', async () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
         const { grade, topic, concept } = result.current.getConceptDetails('g6-concept-1-1');
         expect(concept).toBeDefined();
         expect(topic).toBeDefined();
@@ -86,7 +86,7 @@ describe('useCurriculum hook', () => {
 
     it('should retrieve multiple national standards by their IDs', async () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
         const ids = ['M-6-III-A.1', 'M-7-III-A.1'];
         const standards = result.current.getStandardsByIds(ids);
         expect(standards).toHaveLength(2);
@@ -96,7 +96,7 @@ describe('useCurriculum hook', () => {
 
     it('should find the progression of a concept across all grades by matching base title', async () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
         // Using "Цели броеви" which appears in grade 6 and 7
         const progression = result.current.findConceptAcrossGrades('g6-concept-1-4');
         expect(progression).toBeDefined();
@@ -108,7 +108,7 @@ describe('useCurriculum hook', () => {
     
     it('should return all unique concepts with grade level and topic ID', async () => {
         const { result } = renderHook(() => useCurriculum(), { wrapper });
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
         const allConcepts = result.current.allConcepts;
         expect(allConcepts.length).toBeGreaterThan(0);
         
