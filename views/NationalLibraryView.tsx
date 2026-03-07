@@ -45,20 +45,18 @@ export const NationalLibraryView: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    const filters: { gradeLevel?: number } = {};
+    const filters: { gradeLevel?: number; type?: string } = {};
     if (filterGrade) filters.gradeLevel = Number(filterGrade);
+    if (filterType) filters.type = filterType;
     firestoreService.fetchNationalLibrary(filters)
       .then(data => setEntries(data))
       .finally(() => setLoading(false));
-  }, [filterGrade]);
+  }, [filterGrade, filterType]);
 
   const filtered = useMemo(() => {
-    return entries.filter(e => {
-      if (searchText && !e.question.toLowerCase().includes(searchText.toLowerCase())) return false;
-      if (filterType && e.type !== filterType) return false;
-      return true;
-    });
-  }, [entries, searchText, filterType]);
+    if (!searchText) return entries;
+    return entries.filter(e => e.question.toLowerCase().includes(searchText.toLowerCase()));
+  }, [entries, searchText]);
 
   const allTypes = useMemo(() => {
     const s = new Set(entries.map(e => e.type));

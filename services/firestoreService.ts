@@ -1409,19 +1409,13 @@ export const firestoreService = {
     type?: string;
   }) => {
     try {
-      let q = query(
-        collection(db, 'national_library'),
-        orderBy('publishedAt', 'desc'),
-        limit(200),
-      );
-      if (filters?.gradeLevel) {
-        q = query(
-          collection(db, 'national_library'),
-          where('gradeLevel', '==', filters.gradeLevel),
-          orderBy('publishedAt', 'desc'),
-          limit(200),
-        );
-      }
+      const constraints: any[] = [];
+      if (filters?.gradeLevel) constraints.push(where('gradeLevel', '==', filters.gradeLevel));
+      if (filters?.type) constraints.push(where('type', '==', filters.type));
+      if (filters?.conceptId) constraints.push(where('conceptId', '==', filters.conceptId));
+      constraints.push(orderBy('publishedAt', 'desc'));
+      constraints.push(limit(200));
+      const q = query(collection(db, 'national_library'), ...constraints);
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
     } catch (error) {
@@ -1451,10 +1445,10 @@ export const firestoreService = {
       importedFrom: entry.id,
       importedFromAuthor: entry.publishedByName,
     });
-    // Increment importCount on the library entry
+    // Increment importCount atomically — avoids race condition when multiple users import simultaneously
     try {
       await updateDoc(doc(db, 'national_library', entry.id), {
-        importCount: (entry.importCount ?? 0) + 1,
+        importCount: increment(1),
       });
     } catch { /* non-fatal */ }
     return ref.id;
