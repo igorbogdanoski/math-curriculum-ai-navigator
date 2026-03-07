@@ -80,6 +80,7 @@ export interface StudentGamification {
   achievements: string[];
   totalQuizzes: number;
   deviceId?: string;
+  teacherUid?: string;
 }
 
 export const ACHIEVEMENTS: Record<string, { label: string; icon: string; condition: (g: StudentGamification) => boolean }> = {

@@ -91,11 +91,16 @@ service cloud.firestore {
     }
 
     // ── Задачи (assignments) ──
-    // create/read: teacher who owns the assignment
+    // create/read: teacher who owns the assignment, anonymous students see assigned
     // update: any authenticated user can add themselves to completedBy (student marking done)
     // delete: only the owning teacher
     match /assignments/{doc} {
-      allow read:   if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        isDocOwner() ||
+        isAnonymousStudent() ||
+        isAdmin() ||
+        (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
+      );
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
       allow update: if isAuthenticated() && (
         isOwner(resource.data.teacherUid) ||
@@ -127,7 +132,13 @@ service cloud.firestore {
 
     // ── Гамификација (student_gamification) ──
     match /student_gamification/{doc} {
-      allow read:   if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        isAnonymousStudent() ||
+        isAdmin() ||
+        !('teacherUid' in resource.data) ||
+        isDocOwner() ||
+        (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
+      );
       allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName']);
       allow update: if isAuthenticated() && resource.data.studentName == request.resource.data.studentName;
       allow delete: if isAdmin();
@@ -174,7 +185,12 @@ service cloud.firestore {
 
     // ── Огласи (announcements) ──
     match /announcements/{doc} {
-      allow read:   if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        isDocOwner() ||
+        isAnonymousStudent() ||
+        isAdmin() ||
+        (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
+      );
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.teacherUid == request.auth.uid || isAdmin();
       allow update: if isOwner(resource.data.teacherUid) || isAdmin();

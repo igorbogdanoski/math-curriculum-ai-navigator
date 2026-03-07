@@ -334,7 +334,7 @@ export const quizService = {
     const today = new Date().toLocaleDateString('sv-SE');
     const existing: StudentGamification = snap.exists()
       ? (snap.data() as StudentGamification)
-      : { studentName, totalXP: 0, currentStreak: 0, longestStreak: 0, lastActivityDate: '', achievements: [], totalQuizzes: 0, ...(deviceId ? { deviceId } : {}) };
+      : { studentName, totalXP: 0, currentStreak: 0, longestStreak: 0, lastActivityDate: '', achievements: [], totalQuizzes: 0, ...(deviceId ? { deviceId } : {}), ...(teacherUid ? { teacherUid } : {}) };
 
     const xpGained = calcXP(percentage, justMastered);
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -348,6 +348,7 @@ export const quizService = {
       longestStreak: newLongest,
       lastActivityDate: today,
       totalQuizzes: existing.totalQuizzes + 1,
+      ...(teacherUid && !existing.teacherUid ? { teacherUid } : {}),
     };
     const newAchievements = computeNewAchievements(updated.totalQuizzes, updated.longestStreak, percentage, totalMastered, updated.achievements);
     updated.achievements = [...updated.achievements, ...newAchievements];
