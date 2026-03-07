@@ -12,6 +12,7 @@ import type {
 import { ModalType, PlannerItemType, QuestionType } from '../types';
 import type { GeneratorState, GeneratorAction } from './useGeneratorState';
 import { getInitialState } from './useGeneratorState';
+import { useVerifiedQuestions, useTeacherNoteQuery, useDifficultyRecommendation, useSaveTeacherNote } from './useGeneratorQueries';
 
 const MACEDONIAN_CONTEXT_HINT =
   'Користи македонски примери: цени во денари (МКД), градови (Скопје, Битола, Охрид), реки (Вардар, Брегалница), ситуации од македонскиот секојдневен живот.';
@@ -100,43 +101,33 @@ export function useGeneratorActions({
     rubric?: AIGeneratedRubric;
   } | null>(null);
 
-  // Verified question bank
-  const [verifiedQs, setVerifiedQs] = useState<SavedQuestion[]>([]);
-  useEffect(() => {
-    if (!firebaseUser?.uid || !state.selectedConcepts[0]) { setVerifiedQs([]); return; }
-    firestoreService.fetchVerifiedQuestions(firebaseUser.uid, state.selectedConcepts[0])
-      .then(setVerifiedQs).catch(() => setVerifiedQs([]));
-  }, [firebaseUser?.uid, state.selectedConcepts[0]]);
+  // Verified question bank and queries
+  const firstConceptId = state.selectedConcepts[0];
+  const { data: verifiedQs = [] } = useVerifiedQuestions(firebaseUser?.uid, firstConceptId);
 
   // Teacher note loader — reloads when concept changes
+  const { data: fetchedTeacherNote = '' } = useTeacherNoteQuery(firebaseUser?.uid, firstConceptId, state.contextType);
   useEffect(() => {
-    const conceptId = state.selectedConcepts[0];
-    if (!firebaseUser?.uid || !conceptId || state.contextType !== 'CONCEPT') {
-      setTeacherNote('');
-      return;
-    }
-    firestoreService.fetchTeacherNote(firebaseUser.uid, conceptId)
-      .then(note => { setTeacherNote(note); setTeacherNoteSaved(false); })
-      .catch(() => setTeacherNote(''));
-  }, [state.selectedConcepts[0], firebaseUser?.uid, state.contextType]);
+    setTeacherNote(fetchedTeacherNote);
+    setTeacherNoteSaved(false);
+  }, [fetchedTeacherNote]);
 
   // Adaptive difficulty recommendation
+  const { data: recommendedDiff } = useDifficultyRecommendation(firebaseUser?.uid, firstConceptId);
   const [diffRec, setDiffRec] = useState<DifferentiationLevel | null>(null);
+
   useEffect(() => {
-    const conceptId = state.selectedConcepts[0];
-    if (!conceptId) { setDiffRec(null); return; }
-    let cancelled = false;
-    firestoreService.fetchQuizResultsByConcept(conceptId, firebaseUser?.uid ?? undefined, 30).then(results => {
-      if (cancelled || results.length === 0) return;
-      const avg = results.reduce((s: number, r: any) => s + r.percentage, 0) / results.length;
-      const rec: DifferentiationLevel = avg < 60 ? 'support' : avg < 85 ? 'standard' : 'advanced';
-      setDiffRec(rec);
+    if (recommendedDiff) {
+      setDiffRec(recommendedDiff);
       if (state.differentiationLevel === 'standard') {
-        dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: rec } });
+        dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: recommendedDiff } });
       }
-    });
-    return () => { cancelled = true; };
-  }, [state.selectedConcepts[0], firebaseUser?.uid]);
+    } else {
+      setDiffRec(null);
+    }
+  }, [recommendedDiff, state.differentiationLevel, dispatch]);
+
+  const saveTeacherNoteMutation = useSaveTeacherNote();
 
   // Auto-populate illustration prompt when material type or context changes
   useEffect(() => {
@@ -179,7 +170,7 @@ export function useGeneratorActions({
       const stored = cookieMatch
         ? decodeURIComponent(cookieMatch.slice('ai_quota='.length))
         : localStorage.getItem('ai_daily_quota_exhausted');
-      const { nextResetMs, exhaustedAt } = stored ? JSON.parse(stored) : {};
+      const { nextResetMs, exhaustedAt }: { nextResetMs?: number, exhaustedAt?: number | string } = stored ? JSON.parse(stored) : {};
       const resetTime = nextResetMs
         ? new Date(nextResetMs).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })
         : '09:00';
@@ -341,9 +332,12 @@ export function useGeneratorActions({
   const handleSaveTeacherNote = async () => {
     const conceptId = state.selectedConcepts[0];
     if (!firebaseUser?.uid || !conceptId) return;
-    await firestoreService.saveTeacherNote(firebaseUser.uid, conceptId, teacherNote).catch(() => {});
-    setTeacherNoteSaved(true);
-    setTimeout(() => setTeacherNoteSaved(false), 2000);
+    saveTeacherNoteMutation.mutate({ teacherUid: firebaseUser.uid, conceptId, note: teacherNote }, {
+      onSuccess: () => {
+        setTeacherNoteSaved(true);
+        setTimeout(() => setTeacherNoteSaved(false), 2000);
+      }
+    });
   };
 
   const handleSaveAsNote = async () => {
