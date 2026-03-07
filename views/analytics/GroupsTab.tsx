@@ -4,6 +4,7 @@ import { firestoreService, type StudentGroup } from '../../services/firestoreSer
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import type { PerStudentStat } from './shared';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface GroupsTabProps {
     perStudentStats: PerStudentStat[];
@@ -25,6 +26,7 @@ const COLOR_DOT: Record<string, string> = {
 };
 
 export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUid }) => {
+    const { t } = useLanguage();
     const [groups, setGroups] = useState<StudentGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -213,7 +215,7 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
                                     className="border border-indigo-200 rounded-lg px-3 py-2 text-sm bg-white"
                                 >
                                     {COLOR_OPTIONS.map(c => (
-                                        <option key={c} value={c}>{c === 'green' ? 'Зелена' : c === 'blue' ? 'Сина' : c === 'orange' ? 'Портокалова' : c === 'red' ? 'Црвена' : 'Виолетова'}</option>
+                                        <option key={c} value={c}>{c === 'green' ? t('analytics.groups.colorGreen') : c === 'blue' ? t('analytics.groups.colorBlue') : c === 'orange' ? t('analytics.groups.colorOrange') : c === 'red' ? t('analytics.groups.colorRed') : t('analytics.groups.colorPurple')}</option>
                                     ))}
                                 </select>
                                 <button
@@ -222,7 +224,7 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
                                     disabled={!newName.trim() || saving}
                                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-40 transition"
                                 >
-                                    {saving ? 'Зачувување...' : 'Создај'}
+                                    {saving ? t('analytics.groups.saving') : t('analytics.groups.create')}
                                 </button>
                                 <button
                                     type="button"

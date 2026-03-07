@@ -5,6 +5,7 @@ import { firestoreService, type LiveSession } from '../../services/firestoreServ
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 type CachedQuiz = { id: string; title: string; conceptId?: string };
 
@@ -13,14 +14,15 @@ const STATUS_ICON: Record<string, string> = {
     in_progress: '🔄',
     completed: '✅',
 };
-const STATUS_LABEL: Record<string, string> = {
-    joined: 'Се приклучи',
-    in_progress: 'Во тек',
-    completed: 'Завршено',
+const STATUS_LABEL_KEYS: Record<string, string> = {
+    joined: 'analytics.live.joined',
+    in_progress: 'analytics.live.inProgress',
+    completed: 'analytics.live.completed',
 };
 
 export const LiveTab: React.FC = () => {
     const { firebaseUser } = useAuth();
+    const { t } = useLanguage();
     const [quizzes, setQuizzes] = useState<CachedQuiz[]>([]);
     const [loadingQuizzes, setLoadingQuizzes] = useState(true);
     const [selectedQuizId, setSelectedQuizId] = useState('');
@@ -177,7 +179,7 @@ export const LiveTab: React.FC = () => {
                                                 <td className="py-2.5 px-3 font-semibold text-slate-700">{name}</td>
                                                 <td className="py-2.5 px-3 text-center">
                                                     <span className="text-sm">{STATUS_ICON[resp.status] ?? '?'}</span>
-                                                    <span className="ml-1.5 text-xs text-slate-500">{STATUS_LABEL[resp.status] ?? resp.status}</span>
+                                                    <span className="ml-1.5 text-xs text-slate-500">{STATUS_LABEL_KEYS[resp.status] ? t(STATUS_LABEL_KEYS[resp.status]) : resp.status}</span>
                                                 </td>
                                                 <td className="py-2.5 px-3 text-center">
                                                     {resp.status === 'completed' && resp.percentage !== undefined
@@ -255,7 +257,7 @@ export const LiveTab: React.FC = () => {
                                         className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-40 transition"
                                     >
                                         {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                                        {creating ? 'Создавање...' : 'Старт'}
+                                        {creating ? t('analytics.live.creating') : t('analytics.live.start')}
                                     </button>
                                     <button
                                         type="button"

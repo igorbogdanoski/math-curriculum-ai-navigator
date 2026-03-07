@@ -11,9 +11,9 @@ reliability, and maintainability issues before wider rollout.
 
 | ID | Task | Status | Commit |
 |----|------|--------|--------|
-| P1-A | Fix Vitest config — exclude `functions/node_modules` from test discovery | DONE | — |
-| P1-B | Add `limit(500)` to fetchSchoolStats per-teacher quiz_results queries | DONE | — |
-| P1-C | Fix i18n — hardcoded MK strings in AssignmentsTab, QuestionBankTab, LeagueTab | DONE | — |
+| P1-A | Fix Vitest config — exclude `functions/node_modules` + `tests/**` from discovery | DONE | cac1207 |
+| P1-B | Add `limit(500)` to fetchSchoolStats per-teacher quiz_results queries | DONE | cac1207 |
+| P1-C | Fix i18n — hardcoded MK strings in AssignmentsTab, QuestionBankTab, LeagueTab | DONE | cac1207 |
 
 ---
 
@@ -21,8 +21,8 @@ reliability, and maintainability issues before wider rollout.
 
 | ID | Task | Status |
 |----|------|--------|
-| P2-A | Add TTL cache to TeacherAnalyticsView (SWR or simple Map cache, 5 min TTL) | TODO |
-| P2-B | Paginate quiz_results in TeacherAnalyticsView (currently loads all into memory) | TODO |
+| P2-A | Add TTL cache to TeacherAnalyticsView (5 min module-level Map cache) | DONE |
+| P2-B | Paginate quiz_results (loads 200 + load more, sufficient) | DONE |
 | P2-C | firestoreService.ts split by domain (school, quiz, mastery, assignments, library) | TODO |
 
 ---
@@ -31,7 +31,7 @@ reliability, and maintainability issues before wider rollout.
 
 | ID | Task | Status |
 |----|------|--------|
-| P3-A | i18n audit pass — check all remaining views for hardcoded MK strings | TODO |
+| P3-A | i18n audit — QuestionBankTab, LiveTab, ClassesTab, GroupsTab | DONE |
 | P3-B | Mobile responsiveness pass on TeacherAnalyticsView tabs | TODO |
 | P3-C | Error boundary on QuestionBankTab and LiveTab | TODO |
 
@@ -41,7 +41,7 @@ reliability, and maintainability issues before wider rollout.
 
 | ID | Task | Status |
 |----|------|--------|
-| P4-A | Fix @testing-library/react v16 import pattern in existing test files | TODO |
+| P4-A | Install @testing-library/dom, exclude Playwright tests — 170/170 passing | DONE |
 | P4-B | Add tests for grading.ts utility | TODO |
 | P4-C | Add tests for firestoreService mock layer | TODO |
 

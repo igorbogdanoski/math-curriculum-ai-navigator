@@ -3,6 +3,7 @@ import { School, Plus, Trash2, UserPlus, X, Edit2, Check } from 'lucide-react';
 import { firestoreService, type SchoolClass } from '../../services/firestoreService';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface ClassesTabProps {
     teacherUid: string;
@@ -11,6 +12,7 @@ interface ClassesTabProps {
 const GRADE_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
+    const { t } = useLanguage();
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -145,7 +147,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                                 disabled={!newName.trim() || saving}
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-40 transition"
                             >
-                                {saving ? 'Зачувување...' : 'Создај'}
+                                {saving ? t('analytics.classes.saving') : t('analytics.classes.create')}
                             </button>
                             <button
                                 type="button"

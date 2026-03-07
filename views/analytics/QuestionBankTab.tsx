@@ -12,12 +12,12 @@ interface QuestionBankTabProps {
   teacherUid: string;
 }
 
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  MULTIPLE_CHOICE: 'Повеќе избори',
-  SHORT_ANSWER: 'Краток одговор',
-  TRUE_FALSE: 'Точно/Неточно',
-  ESSAY: 'Есеј',
-  FILL_IN_THE_BLANK: 'Пополни',
+const QUESTION_TYPE_KEYS: Record<string, string> = {
+  MULTIPLE_CHOICE: 'analytics.qbank.typeMultiple',
+  SHORT_ANSWER:    'analytics.qbank.typeShort',
+  TRUE_FALSE:      'analytics.qbank.typeTrueFalse',
+  ESSAY:           'analytics.qbank.typeEssay',
+  FILL_IN_THE_BLANK: 'analytics.qbank.typeFill',
 };
 
 export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) => {
@@ -95,43 +95,43 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
       await firestoreService.verifyQuestion(questionId, !current);
       setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, isVerified: !current } : q));
     } catch {
-      addNotification('Грешка при верификација.', 'error');
+      addNotification(t('analytics.qbank.errVerify'), 'error');
     }
   };
 
   const handlePublish = async (q: SavedQuestion) => {
     if (!q.isVerified) {
-      addNotification('Само верификувани прашања можат да се публикуваат.', 'error');
+      addNotification(t('analytics.qbank.errNotVerified'), 'error');
       return;
     }
     setPublishing(prev => new Set(prev).add(q.id));
     try {
-      await firestoreService.publishToNationalLibrary(q, user?.name ?? 'Наставник', user?.schoolName);
+      await firestoreService.publishToNationalLibrary(q, user?.name ?? t('analytics.qbank.defaultTitle'), user?.schoolName);
       setPublished(prev => new Set(prev).add(q.id));
       setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, isPublic: true } : item));
-      addNotification('Прашањето е публикувано во Националната Библиотека!', 'success');
+      addNotification(t('analytics.qbank.published'), 'success');
     } catch {
-      addNotification('Грешка при публикување.', 'error');
+      addNotification(t('analytics.qbank.errPublish'), 'error');
     } finally {
       setPublishing(prev => { const n = new Set(prev); n.delete(q.id); return n; });
     }
   };
 
   const handleDelete = async (questionId: string) => {
-    if (!window.confirm('Да се избрише ова прашање?')) return;
+    if (!window.confirm(t('analytics.qbank.confirmDelete'))) return;
     try {
       await firestoreService.deleteQuestion(questionId);
       setQuestions(prev => prev.filter(q => q.id !== questionId));
       setSelected(prev => { const n = new Set(prev); n.delete(questionId); return n; });
-      addNotification('Прашањето е избришано.', 'success');
+      addNotification(t('analytics.qbank.deleted'), 'success');
     } catch {
-      addNotification('Грешка при бришење.', 'error');
+      addNotification(t('analytics.qbank.errDelete'), 'error');
     }
   };
 
   const handleCreateQuiz = async () => {
     if (selected.size === 0) {
-      addNotification('Означи барем едно прашање.', 'error');
+      addNotification(t('analytics.qbank.errNoneSelected'), 'error');
       return;
     }
     const selectedQs = questions.filter(q => selected.has(q.id));
@@ -144,7 +144,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
         teacherUid,
         gradeLevel: gradeLevel ?? null,
         content: {
-          title: 'Мој квиз од банката',
+          title: t('analytics.qbank.defaultTitle'),
           type: 'QUIZ',
           questions: selectedQs.map(q => ({
             type: q.type,
@@ -164,7 +164,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
       setSelected(new Set());
     } catch (err) {
       console.error('Error creating quiz from bank:', err);
-      addNotification('Грешка при создавање квиз.', 'error');
+      addNotification(t('analytics.qbank.errCreateQuiz'), 'error');
     } finally {
       setCreatingQuiz(false);
     }
@@ -191,7 +191,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-40 transition"
         >
           <PlusSquare className="w-4 h-4" />
-          {creatingQuiz ? 'Создавам...' : `Создај квиз (${selected.size} избрани)`}
+          {creatingQuiz ? t('analytics.qbank.creating') : t('analytics.qbank.createQuiz').replace('{n}', String(selected.size))}
         </button>
       </div>
 
@@ -214,8 +214,8 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
         >
           <option value="">Сите типови</option>
-          {allTypes.map(t => (
-            <option key={t} value={t}>{QUESTION_TYPE_LABELS[t] ?? t}</option>
+          {allTypes.map(qtype => (
+            <option key={qtype} value={qtype}>{t(QUESTION_TYPE_KEYS[qtype] ?? '') || qtype}</option>
           ))}
         </select>
         <select
@@ -283,7 +283,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
                   <p className="text-sm font-medium text-gray-800">{q.question}</p>
                   <div className="flex flex-wrap items-center gap-2 mt-1.5">
                     <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                      {QUESTION_TYPE_LABELS[q.type] ?? q.type}
+                      {t(QUESTION_TYPE_KEYS[q.type] ?? '') || q.type}
                     </span>
                     {q.gradeLevel && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
@@ -329,12 +329,12 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
                     onClick={() => toggleReveal(q.id)}
                     className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
                   >
-                    {revealedAnswers.has(q.id) ? 'Скриј' : 'Одговор'}
+                    {revealedAnswers.has(q.id) ? t('analytics.qbank.hideAnswer') : t('analytics.qbank.revealAnswer')}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleVerify(q.id, !!q.isVerified)}
-                    title={q.isVerified ? 'Откажи верификација' : 'Верификувај прашање'}
+                    title={q.isVerified ? t('analytics.qbank.unverifyTip') : t('analytics.qbank.verifyTip')}
                     className={`p-1.5 transition ${q.isVerified ? 'text-green-600 hover:text-green-800' : 'text-gray-400 hover:text-green-600'}`}
                   >
                     {q.isVerified ? <ShieldCheck className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
@@ -344,7 +344,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
                       type="button"
                       onClick={() => handlePublish(q)}
                       disabled={publishing.has(q.id) || published.has(q.id) || !!q.isPublic}
-                      title={q.isPublic ? 'Веќе публикувано' : 'Публикувај во Националната Библиотека'}
+                      title={q.isPublic ? t('analytics.qbank.alreadyPublished') : t('analytics.qbank.publishTip')}
                       className={`p-1.5 transition ${q.isPublic || published.has(q.id) ? 'text-green-500 cursor-default' : 'text-gray-400 hover:text-indigo-600'}`}
                     >
                       <Globe className="w-4 h-4" />
@@ -368,7 +368,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
       {/* Bottom action bar */}
       {selected.size > 0 && (
         <div className="sticky bottom-4 bg-white border border-indigo-200 rounded-xl shadow-lg p-3 flex items-center justify-between">
-          <span className="text-sm font-semibold text-indigo-700">{selected.size} прашања означени</span>
+          <span className="text-sm font-semibold text-indigo-700">{selected.size} {t('analytics.qbank.marked')}</span>
           <button
             type="button"
             onClick={handleCreateQuiz}
@@ -376,7 +376,7 @@ export const QuestionBankTab: React.FC<QuestionBankTabProps> = ({ teacherUid }) 
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-40 transition"
           >
             <PlusSquare className="w-4 h-4" />
-            {creatingQuiz ? 'Создавам...' : 'Создај квиз од избрани'}
+            {creatingQuiz ? t('analytics.qbank.creating') : t('analytics.qbank.createQuizBtn')}
           </button>
         </div>
       )}
