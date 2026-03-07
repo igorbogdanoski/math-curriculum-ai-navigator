@@ -162,15 +162,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             favoriteConceptIds: [],
             favoriteLessonPlanIds: [],
             toursSeen: {},
-            aiCreditsBalance: 100,
-            isPremium: false,
-            hasUnlimitedCredits: false,
-        };
-
-        await setDoc(doc(db, "users", user.uid), newProfile);
-        
-        // Log out user to force email verification before first login
-        await signOut(auth);
+              aiCreditsBalance: 50
+          };
         
     } catch (error: any) {
         console.error("Firebase registration error:", error.code);

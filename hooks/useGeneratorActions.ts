@@ -70,6 +70,7 @@ interface UseGeneratorActionsParams {
   hideModal: () => void;
   getConceptDetails: (id: string) => any;
   findConceptAcrossGrades: (id: string) => any;
+  deductCredits?: (amount?: number) => Promise<void>;
 }
 
 export function useGeneratorActions({
@@ -87,6 +88,7 @@ export function useGeneratorActions({
   hideModal,
   getConceptDetails,
   findConceptAcrossGrades,
+  deductCredits,
 }: UseGeneratorActionsParams) {
   const { t } = useLanguage();
 
@@ -480,6 +482,7 @@ export function useGeneratorActions({
     buildAiPersonalizationSnippet,
     MACEDONIAN_CONTEXT_HINT,
     setGeneratedMaterial,
+    deductCredits,
   });
 
   const handleBulkGenerate = async () => {
@@ -532,18 +535,17 @@ export function useGeneratorActions({
     }
     setBulkStep(null);
     setIsGeneratingBulk(false);
+      
+      // Deduct 5 credits for bulk generation
+      if (typeof deductCredits === 'function' && Object.keys(acc).length > 0) {
+          await deductCredits(5);
+      }
   };
 
   const handleGenerate = async () => {
     if (isGenerating || isGeneratingBulk || isGeneratingVariants) return;
-    if (!isOnline) { addNotification('Нема интернет конекција. Генераторот е недостапен.', 'error'); return; }
+    if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
     if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
-    if (isThrottled) { addNotification('Ве молиме почекајте малку пред следното барање.', 'warning'); return; }
-    if (!curriculum) { addNotification('Наставната програма се уште се вчитува.', 'warning'); return; }
-
-    setIsThrottled(true);
-    setTimeout(() => setIsThrottled(false), 3000);
-
     const built = buildContext();
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context: finalContext, imageParam, studentProfilesToPass, tempActivityTitle } = built;
@@ -600,6 +602,11 @@ export function useGeneratorActions({
             break;
         }
       }
+
+      if (deductCredits && result) {
+          await deductCredits(1);
+      }
+
       setGeneratedMaterial(result);
     } catch (error) {
       if (cancelRef.current) { cancelRef.current = false; return; }

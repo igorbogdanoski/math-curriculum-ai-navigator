@@ -15,21 +15,23 @@ interface UseVariantGenerateParams {
   buildContext: () => any | null;
   buildAiPersonalizationSnippet: (state: any) => string;
   MACEDONIAN_CONTEXT_HINT: string;
-  setGeneratedMaterial: (material: any) => void;
+    setGeneratedMaterial: (material: any) => void;
+    deductCredits?: (amount?: number) => Promise<void>;
 }
 
 export function useVariantGenerate({
-  state,
-  isOnline,
-  isGenerateDisabled,
-  teacherNote,
-  user,
-  addNotification,
-  setQuotaBannerFromStorage,
-  buildContext,
-  buildAiPersonalizationSnippet,
-  MACEDONIAN_CONTEXT_HINT,
-  setGeneratedMaterial,
+    state,
+    isOnline,
+    isGenerateDisabled,
+    teacherNote,
+    user,
+    addNotification,
+    setQuotaBannerFromStorage,
+    buildContext,
+    buildAiPersonalizationSnippet,
+    MACEDONIAN_CONTEXT_HINT,
+    setGeneratedMaterial,
+    deductCredits,
 }: UseVariantGenerateParams) {
   const [variants, setVariants] = useState<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment> | null>(null);
   const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
@@ -70,8 +72,11 @@ export function useVariantGenerate({
       }
     }
     if (!quotaHit && Object.keys(newVariants).length > 0) {
-      setVariants(newVariants as Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>);
-    } else if (!quotaHit) {
+      setVariants(newVariants as Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>);        
+        // Deduct 3 credits for variants generation if deductCredits is provided
+        if (typeof deductCredits === 'function') {
+            await deductCredits(3);
+        }    } else if (!quotaHit) {
       addNotification('Не можеше да се генерираат варијантите. Обидете се повторно.', 'error');
     }
     setIsGeneratingVariants(false);

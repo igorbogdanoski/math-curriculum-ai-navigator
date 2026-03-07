@@ -65,7 +65,37 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
   const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICONS }[] = [ { id: 'SCENARIO', label: t('generator.types.scenario'), icon: 'lightbulb' }, { id: 'LEARNING_PATH', label: t('generator.types.path'), icon: 'mindmap' }, { id: 'ASSESSMENT', label: t('generator.types.assessment'), icon: 'generator' }, { id: 'RUBRIC', label: t('generator.types.rubric'), icon: 'edit' }, { id: 'FLASHCARDS', label: t('generator.types.flashcards'), icon: 'flashcards' }, { id: 'QUIZ', label: t('generator.types.quiz'), icon: 'quiz' }, { id: 'EXIT_TICKET', label: t('generator.types.exitTicket'), icon: 'quiz' }, { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' } ];
 
     const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails, findConceptAcrossGrades } = useCurriculum();
-    const { user, firebaseUser } = useAuth();
+    const { user, firebaseUser, updateProfile } = useAuth();
+
+    const requirePremiumOrCredits = (action: () => void, costMultiplier = 1, isPremiumOnly = false, featureName = "") => {
+        if (user?.role === 'admin' || user?.isPremium || user?.hasUnlimitedCredits) {
+            action();
+            return;
+        }
+        
+        if (isPremiumOnly) {
+             window.dispatchEvent(new CustomEvent('openUpgradeModal', { detail: { reason: `"${featureName}" е Premium функционалност. Надградете за да ја отклучите!` }}));
+             return;
+        }
+
+        const currentCredits = user?.aiCreditsBalance || 0;
+        if (currentCredits >= costMultiplier) {
+            action();
+        } else {
+             window.dispatchEvent(new CustomEvent('openUpgradeModal', { detail: { reason: 'Останавте без AI кредити! Надградете на Pro пакет за неограничено генерирање.' }}));
+        }
+    };
+
+    const deductCredits = async (amount = 1) => {
+        if (!user || user.role === 'admin' || user.isPremium || user.hasUnlimitedCredits) return;
+        const newBalance = Math.max(0, (user.aiCreditsBalance || 0) - amount);
+        try {
+            await updateProfile({ ...user, aiCreditsBalance: newBalance });
+        } catch (err) {
+            console.error("Failed to deduct credits", err);
+        }
+    };
+
     const { addNotification } = useNotification();
     const { addItem } = usePlanner();
     const handleTourStep = React.useCallback((el: HTMLElement) => {
@@ -137,6 +167,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         isOnline,
         addNotification,
         addItem,
+        deductCredits,
         showModal,
         hideModal,
         getConceptDetails,
@@ -414,7 +445,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                             <div className="flex flex-wrap items-center gap-3">
                                 {/* Delete old reset button from footer, keep only powerful generate buttons */}
                                 {(['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as const).includes(state.materialType as any) && (
-                                    <button type="button" onClick={handleGenerateVariants} disabled={isGenerateDisabled || isGeneratingVariants || isGenerating} title="3 варијанти: Поддршка, Основно и Збогатување" className="flex items-center gap-2 border-2 border-brand-primary text-brand-primary px-4 py-2.5 rounded-xl hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold">
+                                    <button type="button" onClick={() => requirePremiumOrCredits(() => handleGenerateVariants(), 3, false, '3x Варијанти')} disabled={isGenerateDisabled || isGeneratingVariants || isGenerating} title="3 варијанти: Поддршка, Основно и Збогатување" className="flex items-center gap-2 border-2 border-brand-primary text-brand-primary px-4 py-2.5 rounded-xl hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold">
                                         {isGeneratingVariants ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пресметувам...{showMathTools && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
@@ -452,7 +483,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         </>}
                                     </button>
                                 )}
-                                <button type="button" onClick={handleBulkGenerate} disabled={isGenerateDisabled || isGenerating || isGeneratingVariants || isGeneratingBulk} title="Квиз + Тест + Рубрика одеднаш" className="flex items-center gap-2 border-2 border-purple-500 text-purple-700 px-4 py-2.5 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-all font-bold">
+                                <button type="button" onClick={() => requirePremiumOrCredits(() => handleBulkGenerate(), 5, false, 'Пакет материјали')} disabled={isGenerateDisabled || isGenerating || isGeneratingVariants || isGeneratingBulk} title="Квиз + Тест + Рубрика одеднаш" className="flex items-center gap-2 border-2 border-purple-500 text-purple-700 px-4 py-2.5 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-all font-bold">
                                     {isGeneratingBulk ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пакет...{showMathTools && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
