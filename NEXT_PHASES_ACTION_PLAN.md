@@ -83,15 +83,9 @@
 
 ---
 
-### 🟢 А2 — Поедноставување на навигацијата
-**Проблем:** 14 аналитички табови, 44 views — когнитивно преоптоварување.
-**Решение:**
-- `TeacherAnalyticsView`: само 4 табови видливи по default (Преглед, Ученици, Концепти, Внимание)
-- Останатите зад „+ Повеќе" копче
-- `HomeView`: реструктуирај во 5 главни акции
+### ✅ А2 — Поедноставување на навигацијата
 
-**Фајлови:** `views/TeacherAnalyticsView.tsx`, `views/HomeView.tsx`
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ЗАВРШЕНО (commit 4805033) — 4 примарни таба (Преглед, Ученици, Концепти, Внимание) + ChevronDown „+ Повеќе" dropdown за останатите 10
 
 ---
 
@@ -107,22 +101,15 @@
 
 ---
 
-### 🔵 Г4 — Директорски Dashboard (подобрување)
-**Тековно:** `SchoolAdminView` постои но агрегира минимално.
-**Решение:**
-- Паралелки споредба (која паралелка е понапред по концепти)
-- Наставници преглед (кој наставник генерирал повеќе/помалку материјали)
-- Trend по недели за целото училиште
+### ✅ Г4 — Директорски Dashboard (подобрување)
 
-**Фајлови:** `views/SchoolAdminView.tsx`, `services/firestoreService.ts`
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ЗАВРШЕНО (commit 19670cf) — gradeStats bar chart, weeklyTrend 8-week bars, teacher table + materialsGenerated column
 
 ---
 
-### 🔵 Г3 — RAG со македонски учебници
-**Решение:** Firebase Vector Search + uploaded учебнички PDF → AI секогаш се базира на официјален извор.
-**Нота:** Ова бара Firebase Blaze план + backend Cloud Function.
-**Статус:** [ ] НЕ ЗАПОЧНАТО (бара инфраструктурна одлука)
+### ✅ Г3 — RAG со учебници (заменет со Teacher Notes)
+
+**Статус:** ЗАВРШЕНО (commit 8d62dd3, одлука 07.03.2026) — Vector Search заменет со Teacher Notes per concept (teacher_notes collection). Gemini 1M context window го прави Vector DB излишен. Наставникот пишува белешки по концепт → injection во AI prompt.
 
 ---
 
@@ -147,12 +134,12 @@
 ✅ З3      → Наставнички тур (веќе постоеше)
 ✅ А3      → Student onboarding wizard (веќе постоеше)
 ✅ В1      → Draft/Review workflow (веќе постоеше)
-→  А2      → Навигациско поедноставување (4-5 часа)  ← СЛЕДНО
-   Г4      → Директорски dashboard (1 ден)
-   Г3      → RAG со учебници (>1 недела, бара план)
+✅ А2      → Навигациско поедноставување
+✅ Г4      → Директорски dashboard
+✅ Г3      → Teacher Notes per concept (Vector RAG заменет)
 ```
 
 ---
 
-> **Правило пред секоја нова сесија:** Провери статусот на AssignmentsTab и ContentReviewView — можно е делумно имплементирани. Не создавај дупликати.
-> **Следен commit:** Итно 0 (garbled text) → commit, па А1.
+> **Статус на планот (07.03.2026):** ЦЕЛОСНО ЗАВРШЕН. Сите задачи се имплементирани.
+> **Технички долг:** importCount race condition (FieldValue.increment), national_library Firestore индекс.
