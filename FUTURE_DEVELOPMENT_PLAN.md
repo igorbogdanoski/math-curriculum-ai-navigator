@@ -12,7 +12,7 @@
 ## 2. Квалитет и Мониторинг (QA & Observability)
 
 - [x] **End-to-End (E2E) Тестирање:** Комплетна интеграција на **Playwright** — 27 теста (100% passing) кои покриваат: app health (smoke), auth guard на 5 заштитени routes, и сите 4 јавни student routes (/play, /my-progress, /live, /tutor). Скрипти: `npm run test:e2e`. *(commit 0cf5191, 07.03.2026)*
-- [ ] **Апликациски Мониторинг во реално време:** Интеграција на алатка како **Sentry** или **Datadog** за автоматско следење на необработени грешки (exceptions) кај корисниците во продукција, за брза реакција уште пред наставниците да пријават проблем.
+- [x] **Апликациски Мониторинг во реално време (Sentry):** `@sentry/react` интегриран — `initSentry()` во index.tsx, `captureException` во ErrorBoundary, `setSentryUser/clearSentryUser` во AuthContext. No-op кога `VITE_SENTRY_DSN` не е поставен. *(commit cf862a3, 07.03.2026)* За активирање: додај DSN во `.env.local`.
 - [ ] **Аналитика на Перформанси (Core Web Vitals):** Континуирано мерење и оптимизација на времето на вчитување (LCP) и стабилноста на интерфејсот (CLS), особено за послаби мобилни уреди.
 
 ## 3. Офлајн Поддршка и Достапност (PWA / Offline-First)
