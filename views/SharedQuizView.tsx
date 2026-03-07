@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { shareService } from '../services/shareService';
-import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { useNavigation } from '../contexts/NavigationContext';
+
+const InteractiveQuizPlayer = React.lazy(() => import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 
 interface SharedQuizViewProps {
   data: string;
@@ -26,11 +27,13 @@ export const SharedQuizView: React.FC<SharedQuizViewProps> = ({ data }) => {
 
   return (
     <div className="h-screen bg-brand-bg">
-      <InteractiveQuizPlayer 
-        title={quiz.title} 
-        questions={quiz.questions} 
-        onClose={() => navigate('/')} 
-      />
+      <React.Suspense fallback={<div className="p-8 text-center h-full flex flex-col items-center justify-center"><div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div><p className="mt-4 text-brand-text">Се вчитува квизот...</p></div>}>
+        <InteractiveQuizPlayer
+          title={quiz.title}
+          questions={quiz.questions}
+          onClose={() => navigate('/')}
+        />
+      </React.Suspense>
     </div>
   );
 };

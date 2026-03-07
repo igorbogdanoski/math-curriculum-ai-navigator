@@ -6,9 +6,10 @@ import { MathRenderer } from '../common/MathRenderer';
 import type { AIGeneratedAssessment, AssessmentQuestion, DifferentiationLevel } from '../../types';
 import { FlashcardViewer } from './FlashcardViewer';
 import { QuizViewer } from './QuizViewer';
-import { InteractiveQuizPlayer } from './InteractiveQuizPlayer';
 import { shareService } from '../../services/shareService';
 import { useNotification } from '../../contexts/NotificationContext';
+
+const InteractiveQuizPlayer = React.lazy(() => import('./InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 
 type DifferentiatedVersion = { profileName: string; questions: AssessmentQuestion[] };
 
@@ -514,7 +515,11 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         </Card>
         {showFlashcards && <FlashcardViewer questions={editableMaterial.questions} title={editableMaterial.title} onClose={() => setShowFlashcards(false)} />}
         {showQuiz && <QuizViewer questions={editableMaterial.questions} onClose={() => setShowQuiz(false)} />}
-        {isPlayingQuiz && <InteractiveQuizPlayer questions={editableMaterial.questions} title={editableMaterial.title} onClose={() => setIsPlayingQuiz(false)} />}
+        {isPlayingQuiz && (
+            <React.Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 text-white">Вчитување на квизот...</div>}>
+                <InteractiveQuizPlayer questions={editableMaterial.questions} title={editableMaterial.title} onClose={() => setIsPlayingQuiz(false)} />
+            </React.Suspense>
+        )}
         </>
     );
 };

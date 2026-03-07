@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { firestoreService, type ConceptMastery, ACHIEVEMENTS, type StudentGamification } from '../services/firestoreService';
+
+const InteractiveQuizPlayer = React.lazy(() => import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 import { geminiService } from '../services/geminiService';
 import { doc, getDoc } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
@@ -506,19 +507,21 @@ export const StudentPlayView: React.FC = () => {
                 {t('play.onboarding.change')}
               </button>
             </div>
-            <InteractiveQuizPlayer
-              title={quizData.title || 'Квиз'}
-              questions={(quizData.items || quizData.questions || []).map((item: any) => ({
-                question: item.text || item.question,
-                options: item.options || [item.answer, 'Грешка 1', 'Грешка 2', 'Грешка 3'].sort(() => Math.random() - 0.5),
-                answer: item.answer,
-                explanation: item.solution || item.explanation,
-              }))}
-              onComplete={({ score, correctCount, totalQuestions, misconceptions }) => {
-                handleQuizComplete(score, correctCount, totalQuestions, misconceptions);
-              }}
-              onClose={() => { window.location.hash = '/'; }}
-            />
+            <React.Suspense fallback={<div className="p-8 text-center bg-white rounded-3xl m-6 animate-pulse"><div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div><p className="text-slate-500 font-bold">Се вчитува квизот...</p></div>}>
+              <InteractiveQuizPlayer
+                title={quizData.title || 'Квиз'}
+                questions={(quizData.items || quizData.questions || []).map((item: any) => ({   
+                  question: item.text || item.question,
+                  options: item.options || [item.answer, 'Грешка 1', 'Грешка 2', 'Грешка 3'].sort(() => Math.random() - 0.5),                                                                                 
+                  answer: item.answer,
+                  explanation: item.solution || item.explanation,
+                }))}
+                onComplete={({ score, correctCount, totalQuestions, misconceptions }) => {      
+                  handleQuizComplete(score, correctCount, totalQuestions, misconceptions);      
+                }}
+                onClose={() => { window.location.hash = '/'; }}
+              />
+            </React.Suspense>
           </>
         )}
       </main>

@@ -46,7 +46,6 @@ import { RefineGenerationChat } from '../components/generator/RefineGenerationCh
 import { AIFeedbackBar } from '../components/ai/AIFeedbackBar';
 import { AssignDialog } from '../components/AssignDialog';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
-import { InteractiveQuizPlayer } from '../components/ai/InteractiveQuizPlayer';
 import { generatorTourSteps } from '../tours/tour-steps';
 import { useModal } from '../contexts/ModalContext';
 import { useGeneratorState, type GeneratorState, getInitialState } from '../hooks/useGeneratorState';
