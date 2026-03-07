@@ -17,7 +17,7 @@ export function useVerifiedQuestions(teacherUid: string | undefined, conceptId: 
 /**
  * Fetches the teacher's note for a specific concept
  */
-export function useTeacherNoteQuery(teacherUid: string | undefined, conceptId: string | undefined, contextType: string) {
+export function useTeacherNoteQuery(teacherUid: string | undefined, conceptId: string | undefined, contextType: string | null) {
   return useQuery({
     queryKey: ['teacherNote', teacherUid, conceptId],
     queryFn: () => firestoreService.fetchTeacherNote(teacherUid!, conceptId!),

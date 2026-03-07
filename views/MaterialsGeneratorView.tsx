@@ -103,6 +103,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         setActiveVariantTab,
         assignTarget,
         setAssignTarget,
+        savedToLibrary,
         teacherNote,
         setTeacherNote,
         teacherNoteSaved,

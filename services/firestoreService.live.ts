@@ -2,6 +2,7 @@ import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, inc
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
+import { type LiveSession } from './firestoreService.types';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 
 export const fetchCachedQuizList = async (): Promise<{ id: string; title: string; conceptId?: string }[]> => {

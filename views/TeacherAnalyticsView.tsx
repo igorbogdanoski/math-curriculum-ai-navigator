@@ -46,7 +46,10 @@ export const TeacherAnalyticsView: React.FC = () => {
 
     // Local pagination state for "Load More"
     const [localResults, setLocalResults] = useState<QuizResult[]>([]);
-    
+    const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [lastRefresh, setLastRefresh] = useState(Date.now());
     
     // Sync local results when basic query loads
     useEffect(() => {
@@ -651,7 +654,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             icon={<Users className="w-6 h-6 text-blue-600" />}
                             label={t("analytics.stat.totalAttempts")}
                             value={String(totalAttempts)}
-                            sub={`${t("analytics.stat.refreshed")} ${lastRefresh.toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })}`}
+                            sub={`${t("analytics.stat.refreshed")} ${new Date(lastRefresh).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })}`}
                             color="bg-blue-50"
                         />
                         <StatCard

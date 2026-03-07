@@ -31,7 +31,19 @@
       "Bash(npx vitest run hooks/usePersistentState.test.ts services/geminiService.mock.test.ts)",
       "Bash(npx vitest run hooks/usePersistentState.test.ts)",
       "Bash(npx vitest run utils/ hooks/usePersistentState.test.ts services/geminiService.mock.test.ts)",
-      "Bash(npm test)"
+      "Bash(npm test)",
+      "Bash(grep -n '\"\"test\"\"' package.json)",
+      "Bash(npx playwright install --dry-run)",
+      "Bash(npx playwright test tests/smoke.spec.ts --project=chromium)",
+      "Bash(npx playwright test tests/auth-guard.spec.ts --project=chromium)",
+      "Bash(npx playwright test tests/student-flow.spec.ts --project=chromium)",
+      "Bash(npx playwright test --project=chromium)",
+      "Bash(npm install @sentry/react)",
+      "Bash(grep '\"\"web-vitals\"\"' package.json)",
+      "Bash(npx firebase projects:list)",
+      "Bash(npx firebase login)",
+      "Bash(python3 -c \":*)",
+      "Bash(xargs wc -l)"
     ],
     "additionalDirectories": [
       "c:\\Users\\pc4all\\.claude\\plans",
