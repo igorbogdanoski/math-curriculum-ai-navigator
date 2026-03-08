@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react';
 import type { TeachingProfile } from '../types';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile as firebaseUpdateProfile, type User, sendEmailVerification, sendPasswordResetEmail } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile as firebaseUpdateProfile, type User, sendEmailVerification, sendPasswordResetEmail, signInWithPopup } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { app, db, storage } from '../firebaseConfig';
+import { app, db, storage, googleProvider } from '../firebaseConfig';
 import { setSentryUser, clearSentryUser } from '../services/sentryService';
 
 interface AuthState {
@@ -19,6 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin', schoolName?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (profile: TeachingProfile) => Promise<void>;    updateLocalProfile: (profileUpdate: Partial<TeachingProfile>) => void;  resendVerificationEmail: () => Promise<void>;
@@ -153,7 +154,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message || "Најавата е неуспешна. Ве молиме обидете се повторно.");
     }
   }, [auth]);
-  
+
+  const loginWithGoogle = useCallback(async (): Promise<void> => {
+    try {
+        googleProvider.setCustomParameters({ prompt: 'select_account' });
+        await signInWithPopup(auth, googleProvider);
+        // onAuthStateChanged handles profile creation (with 50 credits if new user)
+    } catch (error: any) {
+        console.error("Google sign-in error:", error.code);
+        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+            return; // User cancelled — no error shown
+        }
+        if (error.code === 'auth/popup-blocked') {
+            throw new Error("Прелистувачот го блокираше пропозорецот за најава. Дозволете ги popup-овите за оваа страница и обидете се повторно.");
+        }
+        if (error.code === 'auth/network-request-failed') {
+            throw new Error("Проблем со мрежна врска. Проверете го интернетот и обидете се повторно.");
+        }
+        throw new Error("Најавата со Google е неуспешна. Обидете се повторно.");
+    }
+  }, [auth]);
+
   const register = useCallback(async (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin', schoolName?: string): Promise<void> => {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -268,7 +289,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       firebaseUser: authState.firebaseUser,
       isAuthenticated: authState.isAuthenticated, 
       isLoading: authState.isLoading,
-      login, 
+      login,
+      loginWithGoogle,
       register,
       logout, 
       updateProfile,

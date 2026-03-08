@@ -5,6 +5,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
 import type { User } from "firebase/auth";
 
+
+// Google logo SVG
+const GoogleIcon = () => (
+    <svg viewBox="0 0 48 48" className="w-5 h-5" aria-hidden="true">
+        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.1 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.8 7.1 29.2 5 24 5 12.9 5 4 13.9 4 25s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-4.5z"/>
+        <path fill="#FF3D00" d="M6.3 15.1l6.6 4.8C14.5 16.2 18.9 13 24 13c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.8 7.1 29.2 5 24 5 16.3 5 9.7 9.1 6.3 15.1z"/>
+        <path fill="#4CAF50" d="M24 45c5.2 0 9.8-2 13.2-5.2l-6.1-5.2C29.3 36.3 26.8 37 24 37c-5.2 0-9.7-2.9-11.3-7H6.1C9.3 40 16.1 45 24 45z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.1 5.2C40.9 35.8 44 30.9 44 25c0-1.3-.1-2.6-.4-4.5z"/>
+    </svg>
+);
+
 // --- SUB-COMPONENTS FOR EACH AUTH STATE ---
 
 interface LoginFormProps {
@@ -17,10 +28,22 @@ interface LoginFormProps {
     error: string;
     onSwitchToRegister: () => void;
     onSwitchToReset: () => void;
+    onGoogleLogin: () => void;
+    isGoogleLoading: boolean;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ email, setEmail, password, setPassword, handleSubmit, isLoading, error, onSwitchToRegister, onSwitchToReset }) => (
-    <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
+const LoginForm: React.FC<LoginFormProps> = ({ email, setEmail, password, setPassword, handleSubmit, isLoading, error, onSwitchToRegister, onSwitchToReset, onGoogleLogin, isGoogleLoading }) => (
+    <div className="space-y-4 animate-fade-in">
+        <button type="button" onClick={onGoogleLogin} disabled={isGoogleLoading || isLoading} className="w-full flex justify-center items-center gap-3 bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-medium">
+            {isGoogleLoading ? <ICONS.spinner className="animate-spin w-5 h-5 text-gray-500" /> : <GoogleIcon />}
+            Продолжи со Google
+        </button>
+        <div className="flex items-center gap-3 text-gray-400 text-xs">
+            <div className="flex-1 h-px bg-gray-200" />
+            или со е-пошта
+            <div className="flex-1 h-px bg-gray-200" />
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
         <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Е-пошта</label>
             <input type="email" id="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
@@ -46,7 +69,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ email, setEmail, password, setPas
                 Немате сметка? Регистрирајте се
             </button>
         </div>
-    </form>
+        </form>
+    </div>
 );
 
 interface RegisterFormProps {
@@ -71,12 +95,24 @@ interface RegisterFormProps {
     error: string;
     successMessage: string;
     onSwitchToLogin: () => void;
+    onGoogleLogin: () => void;
+    isGoogleLoading: boolean;
 }
 
-const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEmail, password, setPassword, repeatPassword, setRepeatPassword, schoolId, setSchoolId, schoolName, setSchoolName, schools, schoolsLoading, photoPreview, handlePhotoChange, handleSubmit, isLoading, error, successMessage, onSwitchToLogin }) => {
+const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEmail, password, setPassword, repeatPassword, setRepeatPassword, schoolId, setSchoolId, schoolName, setSchoolName, schools, schoolsLoading, photoPreview, handlePhotoChange, handleSubmit, isLoading, error, successMessage, onSwitchToLogin, onGoogleLogin, isGoogleLoading }) => {
     const isCustomSchool = schoolId === '__other__';
     return (
-    <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
+        <button type="button" onClick={onGoogleLogin} disabled={isGoogleLoading || isLoading} className="w-full flex justify-center items-center gap-3 bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-medium">
+            {isGoogleLoading ? <ICONS.spinner className="animate-spin w-5 h-5 text-gray-500" /> : <GoogleIcon />}
+            Регистрирај се со Google — веднаш 50 кредити
+        </button>
+        <div className="flex items-center gap-3 text-gray-400 text-xs">
+            <div className="flex-1 h-px bg-gray-200" />
+            или со е-пошта
+            <div className="flex-1 h-px bg-gray-200" />
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex flex-col items-center space-y-2 mb-6">
             <label htmlFor="photo-upload" className="cursor-pointer group relative">
                 <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 group-hover:border-brand-accent transition-colors">
@@ -164,7 +200,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEm
                 Веќе имате сметка? Најавете се
             </button>
         </div>
-    </form>
+        </form>
+    </div>
     );
 };
 
@@ -270,7 +307,8 @@ export const LoginView: React.FC = () => {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { login, register, firebaseUser, isAuthenticated, isLoading: isAuthLoading, logout, resendVerificationEmail, resetPassword } = useAuth();
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const { login, loginWithGoogle, register, firebaseUser, isAuthenticated, isLoading: isAuthLoading, logout, resendVerificationEmail, resetPassword } = useAuth();
     
     const [resendCooldown, setResendCooldown] = useState(0);
     const [resendMessage, setResendMessage] = useState('');
@@ -299,6 +337,18 @@ export const LoginView: React.FC = () => {
         setSuccessMessage('');
         setPassword('');
         setRepeatPassword('');
+    };
+
+    const handleGoogleLogin = async () => {
+        setError('');
+        setIsGoogleLoading(true);
+        try {
+            await loginWithGoogle();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Настана непозната грешка.");
+        } finally {
+            setIsGoogleLoading(false);
+        }
     };
 
     const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -394,7 +444,7 @@ export const LoginView: React.FC = () => {
     switch (mode) {
         case 'register':
             headerText = 'Креирајте нова сметка';
-            content = <RegisterForm name={name} setName={setName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} repeatPassword={repeatPassword} setRepeatPassword={setRepeatPassword} schoolId={schoolId} setSchoolId={setSchoolId} schoolName={schoolName} setSchoolName={setSchoolName} schools={schools} schoolsLoading={schoolsLoading} photoPreview={photoPreview} handlePhotoChange={handlePhotoChange} handleSubmit={handleRegisterSubmit} isLoading={isLoading} error={error} successMessage={successMessage} onSwitchToLogin={() => { setMode('login'); clearFormState(); }} />;
+            content = <RegisterForm name={name} setName={setName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} repeatPassword={repeatPassword} setRepeatPassword={setRepeatPassword} schoolId={schoolId} setSchoolId={setSchoolId} schoolName={schoolName} setSchoolName={setSchoolName} schools={schools} schoolsLoading={schoolsLoading} photoPreview={photoPreview} handlePhotoChange={handlePhotoChange} handleSubmit={handleRegisterSubmit} isLoading={isLoading} error={error} successMessage={successMessage} onSwitchToLogin={() => { setMode('login'); clearFormState(); }} onGoogleLogin={handleGoogleLogin} isGoogleLoading={isGoogleLoading} />;
             break;
         case 'reset':
             headerText = 'Ресетирај лозинка';
@@ -403,7 +453,7 @@ export const LoginView: React.FC = () => {
         case 'login':
         default:
             headerText = 'Добредојдовте назад!';
-            content = <LoginForm email={email} setEmail={setEmail} password={password} setPassword={setPassword} handleSubmit={handleLoginSubmit} isLoading={isLoading} error={error} onSwitchToRegister={() => { setMode('register'); clearFormState(); }} onSwitchToReset={() => { setMode('reset'); clearFormState(); }} />;
+            content = <LoginForm email={email} setEmail={setEmail} password={password} setPassword={setPassword} handleSubmit={handleLoginSubmit} isLoading={isLoading} error={error} onSwitchToRegister={() => { setMode('register'); clearFormState(); }} onSwitchToReset={() => { setMode('reset'); clearFormState(); }} onGoogleLogin={handleGoogleLogin} isGoogleLoading={isGoogleLoading} />;
             break;
     }
 
