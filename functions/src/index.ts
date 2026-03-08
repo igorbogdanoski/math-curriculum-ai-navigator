@@ -54,3 +54,56 @@ export const aggregateStudentProgress = functions.firestore
 
     return null;
   });
+
+/**
+ * Cloud Function to securely deduct AI credits from a user's balance.
+ * Protects against client-side tampering of the aiCreditsBalance field.
+ */
+export const deductCredits = functions.https.onCall(async (data, context) => {
+  // Ensure the user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be logged in to deduct credits.');
+  }
+
+  const uid = context.auth.uid;
+  const amountToDeduct = typeof data.amount === 'number' ? data.amount : 1;
+
+  if (amountToDeduct <= 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'Amount must be a positive number.');
+  }
+
+  const db = admin.firestore();
+  const userRef = db.collection('users').doc(uid);
+
+  try {
+    return await db.runTransaction(async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      
+      if (!userDoc.exists) {
+        throw new functions.https.HttpsError('not-found', 'User profile not found.');
+      }
+
+      const userData = userDoc.data();
+      const currentBalance = userData?.aiCreditsBalance || 0;
+      
+      // Allow bypass if they are premium/admin/unlimited (just in case they call it anyway)
+      if (userData?.role === 'admin' || userData?.isPremium || userData?.hasUnlimitedCredits) {
+         return { success: true, newBalance: currentBalance, bypassed: true };
+      }
+
+      if (currentBalance < amountToDeduct) {
+         throw new functions.https.HttpsError('resource-exhausted', 'Insufficient AI credits.');
+      }
+
+      const newBalance = Math.max(0, currentBalance - amountToDeduct);
+      
+      // Perform the update
+      transaction.update(userRef, { aiCreditsBalance: newBalance });
+
+      return { success: true, newBalance };
+    });
+  } catch (error: any) {
+    console.error('Error deducting credits:', error);
+    throw new functions.https.HttpsError('internal', 'Transaction failed: ' + error.message);
+  }
+});

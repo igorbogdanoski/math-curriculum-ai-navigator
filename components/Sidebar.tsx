@@ -150,7 +150,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
             </select>
         </div>
             <InstallPWAButton />
-        <div 
+
+        {/* User Credits / Premium Status Badge */}
+        <div className="px-2 pb-1">
+          {user?.isPremium || user?.hasUnlimitedCredits || user?.role === 'admin' ? (
+            <div className="w-full flex items-center justify-between bg-gradient-to-r from-brand-primary to-purple-800 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm border border-purple-500/30">
+              <span className="flex items-center gap-1.5"><ICONS.star className="w-3.5 h-3.5 text-yellow-300" /> Pro Наставник</span>
+              <span className="opacity-80">∞</span >
+            </div>
+          ) : (
+            <div className="w-full flex items-center justify-between bg-white text-gray-700 text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:border-brand-primary hover:bg-gray-50 transition-colors"
+                 onClick={() => {
+                   // This could dispatch an event or use a Context to open the Upgrade Modal globally
+                   window.dispatchEvent(new CustomEvent('openUpgradeModal', { detail: { reason: 'Овој преглед ви ги прикажува тековните кредити. Надградете за неограничено!' }}));
+                 }}
+            >
+              <span className="flex items-center gap-1.5"><ICONS.coins className="w-3.5 h-3.5 text-brand-primary" /> Кредити</span>
+              <span className={user?.aiCreditsBalance && user.aiCreditsBalance > 10 ? "text-emerald-600" : "text-red-500"}>
+                {user?.aiCreditsBalance || 0}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div
           onClick={() => {
             navigate('/settings');
             onClose();

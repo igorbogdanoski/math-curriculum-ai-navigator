@@ -33,6 +33,7 @@ import { QuotaBanner } from './components/common/QuotaBanner';
 import { ContextualFAB } from './components/common/ContextualFAB';
 import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
 import { AIChatPanel } from './components/ai/AIChatPanel';
+import { UpgradeModal } from './components/common/UpgradeModal';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -72,6 +73,8 @@ const safeLazy = (importFunc: () => Promise<any>) => {
 
 // Views (lazy loaded with safety)
 const StudentPlayView = safeLazy(() => import('./views/StudentPlayView').then(module => ({ default: module.StudentPlayView })));
+const PrivacyPolicy = safeLazy(() => import('./components/common/PrivacyPolicy').then(module => ({ default: module.PrivacyPolicy })));
+const TermsOfUse = safeLazy(() => import('./components/common/TermsOfUse').then(module => ({ default: module.TermsOfUse })));
 const StudentProgressView = safeLazy(() => import('./views/StudentProgressView').then(module => ({ default: module.StudentProgressView })));
 const StudentLiveView = safeLazy(() => import('./views/StudentLiveView').then(module => ({ default: module.StudentLiveView })));
 const StudentTutorView = safeLazy(() => import('./views/StudentTutorView').then(module => ({ default: module.StudentTutorView })));
@@ -121,8 +124,8 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     return <AppSkeleton />; // Show a skeleton while the panel opens and redirects
 };
 
-const routes = [
-    { path: '/play/:id', component: StudentPlayView }, // Student Mode route
+const routes = [      { path: '/privacy', component: PrivacyPolicy },
+      { path: '/terms', component: TermsOfUse },    { path: '/play/:id', component: StudentPlayView }, // Student Mode route
     { path: '/my-progress', component: StudentProgressView }, // Student Progress route
     { path: '/live', component: StudentLiveView }, // Live session join route
     { path: '/tutor', component: StudentTutorView }, // AI Tutor for Students
@@ -160,6 +163,18 @@ const AppContent: React.FC = () => {
     const { path, navigate, Component, params } = useRouter(routes);
     const breadcrumbs = useBreadcrumbs(path);
     const { isSidebarOpen, openSidebar, closeSidebar } = useUI();
+    const [upgradeModalOpen, setUpgradeModalOpen] = React.useState(false);
+    const [upgradeReason, setUpgradeReason] = React.useState<string | undefined>();
+
+    React.useEffect(() => {
+      const handleOpenUpgrade = (e: Event) => {
+        const customEvent = e as CustomEvent;
+        setUpgradeReason(customEvent.detail?.reason);
+        setUpgradeModalOpen(true);
+      };
+      window.addEventListener('openUpgradeModal', handleOpenUpgrade);
+      return () => window.removeEventListener('openUpgradeModal', handleOpenUpgrade);
+    }, []);
 
     const RenderComponent = Component || NotFoundView;
 
@@ -210,6 +225,12 @@ const AppContent: React.FC = () => {
             <SilentErrorBoundary name="AIChatPanel">
                 <AIChatPanel />
             </SilentErrorBoundary>
+
+            <UpgradeModal 
+              isOpen={upgradeModalOpen} 
+              onClose={() => setUpgradeModalOpen(false)} 
+              reason={upgradeReason} 
+            />
         </NavigationContext.Provider>
     );
 };

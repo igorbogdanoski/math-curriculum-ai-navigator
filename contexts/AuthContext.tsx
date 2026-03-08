@@ -21,8 +21,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin') => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (profile: TeachingProfile) => Promise<void>;
-  resendVerificationEmail: () => Promise<void>;
+  updateProfile: (profile: TeachingProfile) => Promise<void>;    updateLocalProfile: (profileUpdate: Partial<TeachingProfile>) => void;  resendVerificationEmail: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
 
@@ -204,6 +203,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [auth]);
 
+  const updateLocalProfile = useCallback((profileUpdate: Partial<TeachingProfile>) => {
+      setAuthState((prev) => prev.profile ? { ...prev, profile: { ...prev.profile, ...profileUpdate } as TeachingProfile } : prev);
+  }, []);
+
   const updateProfile = useCallback(async (profileData: TeachingProfile) => {
     if (!authState.firebaseUser) {
         throw new Error("Корисникот не е автентициран за ажурирање на профилот.");
@@ -228,9 +231,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       register,
       logout, 
       updateProfile,
+      updateLocalProfile,
       resendVerificationEmail,
       resetPassword,
-    }), [authState.profile, authState.firebaseUser, authState.isAuthenticated, authState.isLoading, login, register, logout, updateProfile, resendVerificationEmail, resetPassword]);
+    }), [authState.profile, authState.firebaseUser, authState.isAuthenticated, authState.isLoading, login, register, logout, updateProfile, updateLocalProfile, resendVerificationEmail, resetPassword]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -20,6 +20,91 @@ const ROLE_COLORS: Record<string, string> = {
   admin:        'bg-red-50 text-red-700 border-red-200',
 };
 
+const UserAdminRow = ({ u, isMe, schools, updatingUid, handleChangeRole, handleUpdateSubscription }: any) => {
+    const role = u.role ?? 'teacher';
+    const [isEditingCredits, setIsEditingCredits] = useState(false);
+    const [editCredits, setEditCredits] = useState(u.aiCreditsBalance || 0);
+
+    return (
+        <div className={`flex flex-col gap-2 py-3 ${isMe ? 'bg-amber-50/40' : ''}`}>
+            <div className="flex items-center gap-3">
+                {/* Avatar */}
+                <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
+                    {(u.name ?? '?').charAt(0).toUpperCase()}
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate flex items-center gap-2">
+                        {u.name ?? 'Непознат'}
+                        {isMe && <span className="text-[10px] text-amber-600 font-bold">(ти)</span>}
+                        {u.isPremium && <span className="bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded font-bold">PRO</span>}
+                    </p>
+                    <p className="text-[11px] text-gray-400 truncate font-mono">{u.email || u.uid}</p>
+                    {u.schoolId && (
+                        <p className="text-[11px] text-gray-400 truncate">🏫 {schools.find((s: any) => s.id === u.schoolId)?.name ?? u.schoolId}</p>
+                    )}
+                </div>
+                {/* Role badge + dropdown */}
+                <div className="shrink-0 flex items-center gap-2">
+                    {/* Credits display */}
+                    <div className="flex items-center gap-1 text-xs border rounded-md px-2 py-1 mr-2">
+                        <span>🪙 {u.aiCreditsBalance || 0}</span>
+                        {!isMe && (
+                             <button onClick={() => setIsEditingCredits(!isEditingCredits)} className="text-blue-500 hover:text-blue-700 ml-1">✏️</button>
+                        )}
+                    </div>
+
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ROLE_COLORS[role] ?? ROLE_COLORS.teacher}`}>
+                        {ROLE_LABELS[role] ?? role}
+                    </span>
+                    {!isMe && (
+                        <div className="relative">
+                            <select
+                                aria-label={`Улога за ${u.name ?? u.uid}`}
+                                disabled={updatingUid === u.uid}
+                                value={role}
+                                onChange={e => handleChangeRole(u.uid, e.target.value as any, u.schoolId)}
+                                className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-red-400 outline-none cursor-pointer disabled:opacity-50"
+                            >
+                                <option value="teacher">Наставник</option>
+                                <option value="school_admin">Директор</option>
+                                <option value="admin">Систем Админ</option>
+                            </select>
+                        </div>
+                    )}
+                    {updatingUid === u.uid && (
+                        <span className="text-xs text-gray-400 animate-pulse">Зачувувам...</span>
+                    )}
+                </div>
+            </div>
+            
+            {/* Expanded Edit Form */}
+            {isEditingCredits && !isMe && (
+                <div className="bg-gray-50 p-3 rounded-lg flex items-center gap-4 mt-2 ml-12 text-sm border border-gray-100">
+                    <label className="flex items-center gap-2">
+                        <span>Кредити:</span>
+                        <input type="number" className="w-20 px-2 py-1 border rounded" value={editCredits} onChange={e => setEditCredits(parseInt(e.target.value) || 0)} />
+                    </label>
+                    <div className="flex gap-2">
+                         <button onClick={() => setEditCredits(c => c + 10)} className="px-2 py-1 bg-white border rounded text-xs hover:bg-gray-100">+10</button>
+                         <button onClick={() => setEditCredits(c => c + 50)} className="px-2 py-1 bg-white border rounded text-xs hover:bg-gray-100">+50</button>
+                    </div>
+                    
+                    <button 
+                        onClick={() => {
+                            handleUpdateSubscription(u.uid, editCredits, u.isPremium || false, u.hasUnlimitedCredits || false, u.tier || 'Free');
+                            setIsEditingCredits(false);
+                        }}
+                        className="ml-auto bg-brand-primary text-white px-3 py-1 rounded text-xs font-bold hover:bg-brand-primary/90"
+                    >
+                        Зачувај
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
 export const SystemAdminView: React.FC = () => {
     const { user, firebaseUser } = useAuth();
     const { navigate } = useNavigation();
@@ -137,6 +222,19 @@ export const SystemAdminView: React.FC = () => {
             setUsers(prev => prev.map(u => u.uid === uid ? { ...u, role: newRole, ...(schoolId !== undefined ? { schoolId } : {}) } : u));
         } catch {
             setUserError('Грешка при ажурирање на улогата.');
+        } finally {
+            setUpdatingUid(null);
+        }
+    };
+
+    const handleUpdateSubscription = async (uid: string, credits: number, isPremium: boolean, hasUnlimitedCredits: boolean, tier: 'Free' | 'Pro' | 'Unlimited') => {
+        if (!window.confirm(`Дали сте сигурни дека сакате да ажурирате претплата за овој корисник?\n\nКредити: ${credits}\nPremium: ${isPremium ? 'Да' : 'Не'}\nНеограничени: ${hasUnlimitedCredits ? 'Да' : 'Не'}\nНиво: ${tier}`)) return;
+        setUpdatingUid(uid);
+        try {
+            await firestoreService.updateUserSubscription(uid, { aiCreditsBalance: credits, isPremium, hasUnlimitedCredits, tier });
+            setUsers(prev => prev.map(u => u.uid === uid ? { ...u, aiCreditsBalance: credits, isPremium, hasUnlimitedCredits, tier } : u));
+        } catch (err: any) {
+            setUserError('Грешка при ажурирање претплата.');
         } finally {
             setUpdatingUid(null);
         }
@@ -297,53 +395,17 @@ export const SystemAdminView: React.FC = () => {
                         <p className="text-center py-8 text-gray-400 text-sm">Нема корисници.</p>
                     ) : (
                         <div className="divide-y divide-gray-100">
-                            {users.map(u => {
-                                const role = u.role ?? 'teacher';
-                                const isMe = u.uid === firebaseUser?.uid;
-                                return (
-                                    <div key={u.uid} className={`flex items-center gap-3 py-3 ${isMe ? 'bg-amber-50/40' : ''}`}>
-                                        {/* Avatar */}
-                                        <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
-                                            {(u.name ?? '?').charAt(0).toUpperCase()}
-                                        </div>
-                                        {/* Info */}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-gray-900 truncate">
-                                                {u.name ?? 'Непознат'}
-                                                {isMe && <span className="ml-2 text-[10px] text-amber-600 font-bold">(ти)</span>}
-                                            </p>
-                                            <p className="text-[11px] text-gray-400 truncate font-mono">{u.uid}</p>
-                                            {u.schoolId && (
-                                                <p className="text-[11px] text-gray-400 truncate">🏫 {schools.find(s => s.id === u.schoolId)?.name ?? u.schoolId}</p>
-                                            )}
-                                        </div>
-                                        {/* Role badge + dropdown */}
-                                        <div className="shrink-0 flex items-center gap-2">
-                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ROLE_COLORS[role] ?? ROLE_COLORS.teacher}`}>
-                                                {ROLE_LABELS[role] ?? role}
-                                            </span>
-                                            {!isMe && (
-                                                <div className="relative">
-                                                    <select
-                                                        aria-label={`Улога за ${u.name ?? u.uid}`}
-                                                        disabled={updatingUid === u.uid}
-                                                        value={role}
-                                                        onChange={e => handleChangeRole(u.uid, e.target.value as any, u.schoolId)}
-                                                        className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-red-400 outline-none cursor-pointer disabled:opacity-50"
-                                                    >
-                                                        <option value="teacher">Наставник</option>
-                                                        <option value="school_admin">Директор</option>
-                                                        <option value="admin">Систем Админ</option>
-                                                    </select>
-                                                </div>
-                                            )}
-                                            {updatingUid === u.uid && (
-                                                <span className="text-xs text-gray-400 animate-pulse">Зачувувам...</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            {users.map(u => (
+                                <UserAdminRow 
+                                    key={u.uid} 
+                                    u={u} 
+                                    isMe={u.uid === firebaseUser?.uid} 
+                                    schools={schools} 
+                                    updatingUid={updatingUid} 
+                                    handleChangeRole={handleChangeRole} 
+                                    handleUpdateSubscription={handleUpdateSubscription} 
+                                />
+                            ))}
                         </div>
                     )}
                 </Card>

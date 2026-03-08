@@ -43,10 +43,18 @@ service cloud.firestore {
 
     // ── Кориснички профили (users) ──
     match /users/{uid} {
-      // Users can read/write their own profiles. Admins can read all.
+      // Users can read their own profiles. Admins can read all.
       allow read: if isOwner(uid) || isAdmin() || (isAuthenticated() && resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId));
-      allow write: if isOwner(uid) || isAdmin();
       
+      // Prevent client-side manipulation of credits and tier
+      allow create: if isOwner(uid) || isAdmin();
+      allow update: if isAdmin() || (
+        isOwner(uid) && 
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['aiCreditsBalance', 'tier']))
+      );
+      
+      allow delete: if isAdmin();
+
       // Сите суб-колекции кај корисникот (планови, зачувани прашања итн.)
       match /{document=**} {
         allow read, write: if isOwner(uid) || isAdmin();

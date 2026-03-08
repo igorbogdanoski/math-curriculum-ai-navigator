@@ -28,6 +28,8 @@ import { MathToolsPanel } from '../components/common/MathToolsPanel';
 import { ICONS } from '../constants';
 import { useLanguage } from '../i18n/LanguageContext';
 import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app } from '../firebaseConfig';
 import { RateLimitError } from '../services/apiErrors';
 import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType, DifferentiationLevel, AssessmentQuestion } from '../types';
 import { ModalType, PlannerItemType, QuestionType } from '../types';
@@ -65,7 +67,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
   const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICONS }[] = [ { id: 'SCENARIO', label: t('generator.types.scenario'), icon: 'lightbulb' }, { id: 'LEARNING_PATH', label: t('generator.types.path'), icon: 'mindmap' }, { id: 'ASSESSMENT', label: t('generator.types.assessment'), icon: 'generator' }, { id: 'RUBRIC', label: t('generator.types.rubric'), icon: 'edit' }, { id: 'FLASHCARDS', label: t('generator.types.flashcards'), icon: 'flashcards' }, { id: 'QUIZ', label: t('generator.types.quiz'), icon: 'quiz' }, { id: 'EXIT_TICKET', label: t('generator.types.exitTicket'), icon: 'quiz' }, { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' } ];
 
     const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails, findConceptAcrossGrades } = useCurriculum();
-    const { user, firebaseUser, updateProfile } = useAuth();
+    const { user, firebaseUser, updateLocalProfile } = useAuth();
 
     const requirePremiumOrCredits = (action: () => void, costMultiplier = 1, isPremiumOnly = false, featureName = "") => {
         if (user?.role === 'admin' || user?.isPremium || user?.hasUnlimitedCredits) {
@@ -90,9 +92,16 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         if (!user || user.role === 'admin' || user.isPremium || user.hasUnlimitedCredits) return;
         const newBalance = Math.max(0, (user.aiCreditsBalance || 0) - amount);
         try {
-            await updateProfile({ ...user, aiCreditsBalance: newBalance });
+            // Optimistically update the UI so it doesn't block the user
+            updateLocalProfile({ aiCreditsBalance: newBalance });
+            
+            // Securely deduct on the server using Cloud Function
+            const functions = getFunctions(app);
+            const deductFn = httpsCallable(functions, 'deductCredits');
+            await deductFn({ amount });
         } catch (err) {
-            console.error("Failed to deduct credits", err);
+            console.error("Failed to deduct credits remotely", err);
+            // Revert on fail if needed 
         }
     };
 

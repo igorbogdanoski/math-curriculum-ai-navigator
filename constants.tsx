@@ -1,7 +1,8 @@
 import React from 'react';
-import { Zap, 
-  Star, 
-  BookOpen, 
+import { Zap,
+  Star,
+  Coins,
+  BookOpen,
   Layout, 
   Settings, 
   Calendar, 
@@ -59,6 +60,7 @@ import { Zap,
 
 export const ICONS: Record<string, any> = {
   camera: Camera,
+  coins: Coins,
   info: Info,
   play: Play,
   send: Send,

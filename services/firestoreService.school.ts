@@ -48,6 +48,15 @@ export const schoolService = {
     }
   },
 
+  updateUserSubscription: async (uid: string, updateData: { aiCreditsBalance?: number, isPremium?: boolean, hasUnlimitedCredits?: boolean, tier?: 'Free' | 'Pro' | 'Unlimited' }): Promise<void> => {
+    try {
+      await updateDoc(doc(db, 'users', uid), updateData as any);
+    } catch (error) {
+      console.error('Error updating user subscription:', error);
+      throw error;
+    }
+  },
+
   fetchNationalStats: async (): Promise<{
     totalSchools: number;
     totalTeachers: number;
