@@ -796,6 +796,55 @@ async generateParentReport(
     return response.text.trim();
   },
 
+  // П2 — Teacher Daily Brief
+  async generateDailyBrief(stats: {
+    totalQuizzes: number;
+    weakConcepts: { conceptId?: string; title: string; avg: number; count: number }[];
+    strugglingCount: number;
+  }): Promise<{ summary: string; priority: 'high' | 'medium' | 'low'; primaryAction?: { label: string; conceptId?: string; conceptTitle?: string } }> {
+    checkDailyQuotaGuard();
+    const weakList = stats.weakConcepts.slice(0, 3)
+      .map(c => `„${c.title}" (просек ${c.avg}%, ${c.count} обиди)`)
+      .join('; ');
+
+    const contents: Part[] = [{ text:
+      `Ти си педагошки асистент. Генерирај КРАТКО дневно резиме за наставник.
+ПОДАТОЦИ ОД ПОСЛЕДНИТЕ 48 ЧАСА:
+- Решени квизови: ${stats.totalQuizzes}
+- Слаби концепти (avg<70%): ${weakList || 'Нема'}
+- Ученици со avg<50%: ${stats.strugglingCount}
+
+Врати JSON по оваа структура:
+{
+  "summary": "<2-3 реченици на македонски. Конкретно: кои концепти, колку ученици, акциска препорака за денес>",
+  "priority": "<high ако avg<60% или strugglingCount>3, medium ако avg<70%, иначе low>",
+  "primaryAction": {
+    "label": "<кратка акциска реченица, пр. Генерирај ремедијал за Делење>",
+    "conceptId": "<id на најслабиот концепт или null>",
+    "conceptTitle": "<наслов на концептот или null>"
+  }
+}` }];
+
+    const schema = {
+      type: 'object',
+      properties: {
+        summary: { type: 'string' },
+        priority: { type: 'string', enum: ['high', 'medium', 'low'] },
+        primaryAction: {
+          type: 'object',
+          properties: {
+            label: { type: 'string' },
+            conceptId: { type: 'string' },
+            conceptTitle: { type: 'string' },
+          },
+        },
+      },
+      required: ['summary', 'priority'],
+    };
+
+    return generateAndParseJSON<{ summary: string; priority: 'high' | 'medium' | 'low'; primaryAction?: { label: string; conceptId?: string; conceptTitle?: string } }>(contents, schema, DEFAULT_MODEL);
+  },
+
   // П1 — AI персонализирана повратна информација по квиз
   async generateQuizFeedback(
     studentName: string,

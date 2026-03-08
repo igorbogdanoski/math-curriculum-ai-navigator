@@ -27,6 +27,8 @@ import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ICONS } from '../constants';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useDailyBrief } from '../hooks/useDailyBrief';
+import { DailyBriefCard } from '../components/dashboard/DailyBriefCard';
 
 // ── Quick Actions strip — 5 most-used teacher actions ────────────────────────
 const getQuickActions = (t: any) => [
@@ -102,6 +104,7 @@ export const HomeView: React.FC = () => {
   const { toursSeen, markTourAsSeen } = useUserPreferences();
   const { suggestion, isLoading: isSuggestionLoading, dismissSuggestion } = useProactiveSuggestions();
   const { openGeneratorPanel } = useGeneratorPanel();
+  const { brief, isLoading: isBriefLoading, refresh: refreshBrief } = useDailyBrief();
 
   const handleSuggestionGenerate = () => {
     if (suggestion) {
@@ -185,6 +188,11 @@ export const HomeView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ── П2: TEACHER DAILY BRIEF ──────────────────────────────────── */}
+      {(isBriefLoading || brief) && (
+        <DailyBriefCard brief={brief} isLoading={isBriefLoading} onRefresh={refreshBrief} />
+      )}
 
       {/* ── QUICK ACTIONS STRIP ──────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
