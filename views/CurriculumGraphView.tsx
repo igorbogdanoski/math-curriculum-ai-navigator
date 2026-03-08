@@ -913,9 +913,9 @@ export const CurriculumGraphView: React.FC = () => {
         </Card>
 
       {aiAnalysisConcept && (
-        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex justify-center items-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-fade-in-up">
-                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-4 text-white flex justify-between items-center shrink-0">
+        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex justify-center items-start pt-[8vh] sm:pt-[10vh] pb-8 p-4 overflow-y-auto w-full h-[100dvh]">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col mb-auto animate-fade-in-up relative z-[1001]">
+                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-4 text-white flex justify-between items-center shrink-0 rounded-t-2xl">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-white/20 rounded-full"><ICONS.zap className="w-6 h-6 text-white" /></div>
                         <div>
