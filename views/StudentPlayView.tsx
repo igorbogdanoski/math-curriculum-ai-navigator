@@ -12,7 +12,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import {
   Loader2, AlertCircle, Home, Star, RefreshCw, BookOpen,
-  User, ArrowRight, BarChart2, Sparkles, ExternalLink, Trophy,
+  User, Users, ArrowRight, BarChart2, Sparkles, ExternalLink, Trophy,
   Zap, Target, TrendingUp, MessageSquare, Send,
 } from 'lucide-react';
 import { QuestionType, type DifferentiationLevel } from '../types';
@@ -67,6 +67,9 @@ export const StudentPlayView: React.FC = () => {
   const [metacognitivePrompt, setMetacognitivePrompt] = useState<string | null>(null);
   const [metacognitiveNote, setMetacognitiveNote] = useState('');
   const [metacognitiveSaved, setMetacognitiveSaved] = useState(false);
+
+  // П5 — Peer Learning (Колаборативно учење)
+  const [peerSuggestions, setPeerSuggestions] = useState<string[]>([]);
 
   // Student name — persisted in localStorage so they don't re-enter every time
   // Wrapped in try-catch for private/incognito browser windows where localStorage throws
@@ -365,6 +368,22 @@ export const StudentPlayView: React.FC = () => {
     if (sessionId && studentName) {
       firestoreService.submitLiveResponse(sessionId, studentName, percentage)
         .catch(err => console.warn('[Live] submitLiveResponse failed:', err));
+    }
+
+    // П5 — Peer Learning: Ако резултатот е послаб, најди другари кои го совладале концептот
+    if (percentage < 85 && meta.conceptId) {
+      firestoreService.fetchMasteryByConcept(meta.conceptId, meta.teacherUid)
+        .then(masteries => {
+          const peers = masteries
+            .filter(m => m.mastered && m.studentName !== studentName)
+            .map(m => m.studentName);
+          const uniquePeers = Array.from(new Set(peers));
+          const selected = uniquePeers.sort(() => 0.5 - Math.random()).slice(0, 2);
+          if (isMountedRef.current && selected.length > 0) {
+            setPeerSuggestions(selected);
+          }
+        })
+        .catch(err => console.warn('[Peer Learning] failed:', err));
     }
 
     // 5. Adaptive next quiz (all scores — level depends on percentage)
@@ -689,7 +708,7 @@ export const StudentPlayView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); setMetacognitiveNote(''); setMetacognitiveSaved(false); setMetacognitivePrompt(null); }}
+                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); setMetacognitiveNote(''); setMetacognitiveSaved(false); setMetacognitivePrompt(null); setPeerSuggestions([]); }}
                   className="mt-2 flex items-center gap-2 text-xs font-bold bg-amber-200 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-300 transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -719,7 +738,20 @@ export const StudentPlayView: React.FC = () => {
         </div>
       )}
 
-      {/* ── П26: Confidence Self-Assessment ───────────────────────────────── */}
+      {/* ── П5: Peer Learning ────────────────────────────────────────── */}
+        {quizResult && peerSuggestions.length > 0 && (
+          <div className="w-full max-w-4xl mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-emerald-300" />
+              <p className="text-white font-bold text-sm">Побарај помош од другарче</p>
+            </div>
+            <p className="text-white/90 text-sm leading-relaxed">
+              Ова веќе го совладаа: <strong className="text-emerald-300">{peerSuggestions.join(', ')}</strong>. Можеш да ги замолиш да ти помогнат и објаснат.
+            </p>
+          </div>
+        )}
+
+        {/* ── П26: Confidence Self-Assessment ───────────────────────────────── */}
       {quizResult && (
         <div className="w-full max-w-lg mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm text-center">
           <p className="text-white font-bold text-sm mb-3">{t('play.confidence.title')}</p>
