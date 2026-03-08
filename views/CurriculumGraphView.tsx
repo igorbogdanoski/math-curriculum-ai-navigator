@@ -131,6 +131,8 @@ export const CurriculumGraphView: React.FC = () => {
   
   // Clustering State
   const [isClustered, setIsClustered] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [aiAnalysisConcept, setAiAnalysisConcept] = useState<any>(null);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -206,6 +208,28 @@ export const CurriculumGraphView: React.FC = () => {
           setSearchResults([]);
       }
   }, [searchQuery, allConcepts]);
+
+  const handleExportImage = () => {
+    if (!graphRef.current) return;
+    const canvas = graphRef.current.querySelector('canvas');
+    if (canvas) {
+      // Create a temporary canvas to draw the current graph with white background
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const ctx = tempCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        ctx.drawImage(canvas, 0, 0);
+        const url = tempCanvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `curriculum-graph.png`;
+        a.click();
+      }
+    }
+  };
 
   const handleSearchSelect = (conceptId: string) => {
       setFocusNodeId(conceptId);
@@ -610,6 +634,16 @@ export const CurriculumGraphView: React.FC = () => {
       }
   };
 
+  const handleAIAnalyzer = () => {
+      if(menuState.nodeId) {
+          const nodeConcept = allConcepts.find(c => c.id === menuState.nodeId);
+          if (nodeConcept) {
+               setAiAnalysisConcept(nodeConcept);
+               setMenuState((prev: MenuState) => ({ ...prev, visible: false }));
+          }
+      }
+  };
+
   const handleGenerateIdeas = () => {
       if(menuState.nodeId) {
           const gradeId = `grade-${menuState.gradeLevel}`;
@@ -794,7 +828,15 @@ export const CurriculumGraphView: React.FC = () => {
             )}
       </div>
       
-      <Card className="p-0 relative border-2 border-gray-200 flex-1 min-h-[500px]">
+      <Card className={isFullscreen ? 'fixed inset-0 z-[100] bg-white m-0 rounded-none h-screen w-screen' : 'p-0 relative border-2 border-gray-200 flex-1 min-h-[500px]'}>
+        <div className="absolute top-4 right-4 z-[60] flex gap-2">
+            <button onClick={handleExportImage} className="p-2 bg-white rounded-full shadow-md text-gray-700 hover:text-blue-500 border border-gray-200 transaction-colors" title="Зачувај како слика">
+                <ICONS.download className="w-5 h-5" />
+            </button>
+            <button onClick={() => setIsFullscreen(!isFullscreen)} className="p-2 bg-white rounded-full shadow-md text-gray-700 hover:text-blue-500 border border-gray-200 transaction-colors" title={isFullscreen ? "Излези од цел екран" : "Цел екран"}>
+                {isFullscreen ? <ICONS.minimize className="w-5 h-5" /> : <ICONS.maximize className="w-5 h-5" />}
+            </button>
+        </div>
          <div ref={graphRef} style={{ height: '100%', width: '100%', cursor: 'grab', touchAction: 'none' }} />
          
          {/* Enhanced Legend */}
@@ -863,9 +905,77 @@ export const CurriculumGraphView: React.FC = () => {
                  <button onClick={handleGenerateIdeas} className="flex items-center text-left text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 p-2 rounded transition-colors font-medium">
                      <ICONS.lightbulb className="w-4 h-4 mr-3 text-yellow-500"/> Генерирај Идеи за час
                  </button>
-             </div>
-         )}
-      </Card>
-    </div>
-  );
-};
+                   <button onClick={handleAIAnalyzer} className="flex items-center text-left text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 p-2 rounded transition-colors font-medium border-t border-gray-100 mt-1 pt-3">
+                       <ICONS.zap className="w-4 h-4 mr-3 text-green-500"/> AI Педагошки Анализатор
+                   </button>
+               </div>
+           )}
+        </Card>
+
+      {aiAnalysisConcept && (
+        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex justify-center items-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-fade-in-up">
+                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-4 text-white flex justify-between items-center shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white/20 rounded-full"><ICONS.zap className="w-6 h-6 text-white" /></div>
+                        <div>
+                            <h3 className="font-bold text-lg leading-tight">AI Педагошки Анализатор</h3>
+                            <p className="text-green-100 text-xs opacity-90">{aiAnalysisConcept.title}</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setAiAnalysisConcept(null)} className="text-white hover:text-green-200 transition-colors bg-white/10 hover:bg-white/20 p-1.5 rounded-full">
+                        <ICONS.close className="w-5 h-5"/>
+                    </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6 bg-gray-50 flex flex-col gap-4 text-left">
+                    <p className="text-sm text-gray-600 mb-2 italic">Анализирам когнитивни нивоа, мисконцепции и дијагностика според методиката за <strong>{aiAnalysisConcept.title}</strong>...</p>
+                    
+                    <div className="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm">
+                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
+                           <ICONS.activity className="w-4 h-4 text-blue-500"/> 🎯 Фокус на часот (Когнитивно ниво)
+                        </h4>
+                        <p className="text-gray-700 text-sm pl-6 border-l-2 border-gray-100 mb-2">Овој концепт бара <strong>Анализа и Примена</strong>. Инсистирајте учениците да ги применат правилата во реални/текстуални проблеми.</p>
+                        <p className="text-xs text-gray-500 pl-6 border-l-2 border-gray-100"><em>Очекуван исход:</em> {aiAnalysisConcept.description}</p>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl border-l-4 border-red-500 shadow-sm">
+                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
+                           <ICONS.alertTriangle className="w-4 h-4 text-red-500"/> 🚧 Критични точки / Чести мисконцепции
+                        </h4>
+                        <p className="text-gray-700 text-sm pl-6 border-l-2 border-gray-100">Учениците често прават логичка грешка обидувајќи се да прескокнат чекори. Внимавајте на:<br/>
+                        • Мешање на правилата со претходно учени концепти.<br/>
+                        • Неразбирање на визуелниот приказ на проблемот.</p>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl border-l-4 border-purple-500 shadow-sm">
+                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
+                           <ICONS.gitBranch className="w-4 h-4 text-purple-500 rotate-90"/> 🌉 Педагошки Мост (Зошто е важно?)
+                        </h4>
+                        <p className="text-gray-700 text-sm pl-6 border-l-2 border-gray-100">Ако не се совлада оваа основа, следната година учениците ќе имаат сериозен застој при решавање на посложени проблеми.</p>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl border-l-4 border-orange-500 shadow-sm">
+                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
+                           <ICONS.zap className="w-4 h-4 text-orange-500"/> ⏱️ Блиц Дијагностика (1-минутно прашање)
+                        </h4>
+                        <p className="text-gray-700 font-medium text-sm pl-6 border-l-2 border-gray-100 italic bg-orange-50/50 p-3 rounded">
+                            "Запиши го прашањето на табла пред да почне часот. Ако повеќе од 30% згрешат, направете 5 минутна ревизија на претходната лекција."
+                        </p>
+                    </div>
+                </div>
+                
+                <div className="p-4 border-t border-gray-100 bg-white flex justify-end gap-3 shrink-0">
+                    <button onClick={() => setAiAnalysisConcept(null)} className="px-5 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors">
+                        Затвори
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      </div>
+    );
+  };
+
+export default CurriculumGraphView;

@@ -19,8 +19,8 @@ export const grade8Data: Grade = {
       "concepts": [
         {
           "id": "g8-concept-1-1",
-          "title": "Релации меѓу множества",
           "priorKnowledgeIds": ["g7-concept-1-1"],
+          "title": "Релации меѓу множества",
           "description": "Цели за: Релации меѓу множества",
           "assessmentStandards": [
             "Го објаснува поимот релација меѓу множества.",
@@ -35,8 +35,8 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-1-2",
+          "priorKnowledgeIds": ["g7-concept-1-2"],
           "title": "Рационални броеви и проценти",
-          "priorKnowledgeIds": ["g7-concept-1-5"],
           "description": "Цели за: Рационални броеви и проценти",
           "assessmentStandards": [
             "Ги разликува и опишува множествата Q+, Q- и Q и врската со N и Z.",
@@ -62,8 +62,8 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-1-3",
+          "priorKnowledgeIds": ["g7-concept-1-3"],
           "title": "Размер и пропорционалност",
-          "priorKnowledgeIds": ["g7-concept-1-7"],
           "description": "Цели за: Размер и пропорционалност",
           "assessmentStandards": [
             "Упростува размери и дели количина на повеќе од два дела во даден размер.",
@@ -75,8 +75,8 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-1-4",
+          "priorKnowledgeIds": ["g7-concept-1-4"],
           "title": "Операции со рационални броеви",
-          "priorKnowledgeIds": ["g7-concept-1-6"],
           "description": "Цели за: Операции со рационални броеви",
           "assessmentStandards": [
             "Собира, одзема, множи и дели рационални броеви.",
@@ -90,8 +90,8 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-1-5",
+          "priorKnowledgeIds": ["g7-concept-1-5"],
           "title": "Степени и корени",
-          "priorKnowledgeIds": ["g7-concept-1-4"],
           "description": "Цели за: Степени и корени",
           "assessmentStandards": [
             "Пресметува степен со основа цел број и степенов показател природен број.",
@@ -123,8 +123,8 @@ export const grade8Data: Grade = {
       "concepts": [
         {
           "id": "g8-concept-2-1",
+          "priorKnowledgeIds": ["g7-concept-2-1"],
           "title": "Агол",
-          "priorKnowledgeIds": ["g7-concept-2-3"],
           "description": "Цели за: Агол",
           "assessmentStandards": [
             "Ги користи својствата на агли со заемно паралелни и заемно нормални краци.",
@@ -140,8 +140,8 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-2-2",
+          "priorKnowledgeIds": ["g7-concept-2-2"],
           "title": "2Д форми и Питагорова теорема",
-          "priorKnowledgeIds": ["g7-concept-2-4"],
           "description": "Цели за: 2Д форми и Питагорова теорема",
           "assessmentStandards": [
             "Конструира триаголници (рамностран, рамнокрак, правоаголен) со дадени елементи.",
@@ -164,8 +164,8 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-2-3",
+          "priorKnowledgeIds": ["g7-concept-2-3"],
           "title": "3Д форми",
-          "priorKnowledgeIds": ["g6-concept-2-4"],
           "description": "Цели за: 3Д форми",
           "assessmentStandards": [
             "Именува и опишува полиедар, топка, сфера и правилни полиедри.",
@@ -180,8 +180,8 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-2-4",
+          "priorKnowledgeIds": ["g7-concept-2-4"],
           "title": "Положба и движење",
-          "priorKnowledgeIds": ["g7-concept-2-5"],
           "description": "Цели за: Положба и движење",
           "assessmentStandards": [
             "Трансформира 2Д форми со комбинација на ротација, осна симетрија и транслација."
@@ -204,6 +204,7 @@ export const grade8Data: Grade = {
       "concepts": [
         {
           "id": "g8-concept-3-1",
+          "priorKnowledgeIds": ["g7-concept-3-1"],
           "title": "Изрази равенки и формули",
           "description": "Цели за: Изрази равенки и формули",
           "assessmentStandards": [
@@ -222,6 +223,7 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-3-2",
+          "priorKnowledgeIds": ["g7-concept-3-2"],
           "title": "Низи функции и графици",
           "description": "Цели за: Низи функции и графици",
           "assessmentStandards": [
@@ -249,6 +251,7 @@ export const grade8Data: Grade = {
       "concepts": [
         {
           "id": "g8-concept-4-1",
+          "priorKnowledgeIds": ["g7-concept-4-1"],
           "title": "Време",
           "description": "Цели за: Време",
           "assessmentStandards": [
@@ -261,6 +264,7 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-4-2",
+          "priorKnowledgeIds": ["g7-concept-4-2"],
           "title": "Должина и периметар",
           "description": "Цели за: Должина и периметар",
           "assessmentStandards": [
@@ -274,6 +278,7 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-4-3",
+          "priorKnowledgeIds": ["g7-concept-4-3"],
           "title": "Плоштина",
           "description": "Цели за: Плоштина",
           "assessmentStandards": [
@@ -288,6 +293,7 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-4-4",
+          "priorKnowledgeIds": ["g7-concept-4-3"],
           "title": "Волумен",
           "description": "Цели за: Волумен",
           "assessmentStandards": [
@@ -310,6 +316,7 @@ export const grade8Data: Grade = {
       "concepts": [
         {
           "id": "g8-concept-5-1",
+          "priorKnowledgeIds": ["g7-concept-5-1"],
           "title": "Популација и примерок",
           "description": "Цели за: Популација и примерок",
           "assessmentStandards": [
@@ -325,6 +332,7 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-5-2",
+          "priorKnowledgeIds": ["g7-concept-5-2"],
           "title": "Обработка и толкување",
           "description": "Цели за: Обработка и толкување",
           "assessmentStandards": [
@@ -340,6 +348,7 @@ export const grade8Data: Grade = {
         },
         {
           "id": "g8-concept-5-3",
+          "priorKnowledgeIds": ["g7-concept-5-3"],
           "title": "Веројатност",
           "description": "Цели за: Веројатност",
           "assessmentStandards": [

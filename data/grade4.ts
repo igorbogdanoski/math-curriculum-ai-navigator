@@ -18,6 +18,7 @@ export const grade4Data: Grade = {
       "concepts": [
         {
           "id": "g4-concept-1-1",
+          "priorKnowledgeIds": ["g3-concept-1-1"],
           "title": "Броеви до 10 000",
           "description": "Цели за: Броеви до 10 000",
           "assessmentStandards": [
@@ -52,6 +53,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-1-2",
+          "priorKnowledgeIds": ["g3-concept-1-2"],
           "title": "Негативни броеви",
           "description": "Цели за: Негативни броеви",
           "assessmentStandards": [
@@ -65,6 +67,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-1-3",
+          "priorKnowledgeIds": ["g3-concept-1-3"],
           "title": "Дропки",
           "description": "Цели за: Дропки",
           "assessmentStandards": [
@@ -81,6 +84,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-1-4",
+          "priorKnowledgeIds": ["g3-concept-1-4"],
           "title": "Децимални броеви",
           "description": "Цели за: Децимални броеви",
           "assessmentStandards": [
@@ -108,6 +112,7 @@ export const grade4Data: Grade = {
       "concepts": [
         {
           "id": "g4-concept-2-1",
+          "priorKnowledgeIds": ["g3-concept-2-1"],
           "title": "Полуправа и агол",
           "description": "Цели за: Полуправа и агол",
           "assessmentStandards": [
@@ -125,6 +130,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-2-2",
+          "priorKnowledgeIds": ["g3-concept-2-2"],
           "title": "2Д форми",
           "description": "Цели за: 2Д форми",
           "assessmentStandards": [
@@ -144,6 +150,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-2-3",
+          "priorKnowledgeIds": ["g3-concept-2-3"],
           "title": "3Д форми",
           "description": "Цели за: 3Д форми",
           "assessmentStandards": [
@@ -155,6 +162,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-2-4",
+          "priorKnowledgeIds": ["g3-concept-2-4"],
           "title": "Симетрија",
           "description": "Цели за: Симетрија",
           "assessmentStandards": [
@@ -169,6 +177,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-2-5",
+          "priorKnowledgeIds": ["g3-concept-2-5"],
           "title": "Положба и движење",
           "description": "Цели за: Положба и движење",
           "assessmentStandards": [
@@ -196,6 +205,7 @@ export const grade4Data: Grade = {
       "concepts": [
         {
           "id": "g4-concept-3-1",
+          "priorKnowledgeIds": ["g3-concept-1-1"],
           "title": "Собирање и одземање",
           "description": "Цели за: Собирање и одземање",
           "assessmentStandards": [
@@ -220,6 +230,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-3-2",
+          "priorKnowledgeIds": ["g3-concept-1-2"],
           "title": "Удвојување и преполовување",
           "description": "Цели за: Удвојување и преполовување",
           "assessmentStandards": [
@@ -232,6 +243,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-3-3",
+          "priorKnowledgeIds": ["g3-concept-1-3"],
           "title": "Множење и делење",
           "description": "Цели за: Множење и делење",
           "assessmentStandards": [
@@ -253,6 +265,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-3-4",
+          "priorKnowledgeIds": ["g3-concept-1-4"],
           "title": "Операции со дропки",
           "description": "Цели за: Операции со дропки",
           "assessmentStandards": [
@@ -280,6 +293,7 @@ export const grade4Data: Grade = {
       "concepts": [
         {
           "id": "g4-concept-4-1",
+          "priorKnowledgeIds": ["g3-concept-4-1"],
           "title": "Должина",
           "description": "Цели за: Должина",
           "assessmentStandards": [
@@ -299,6 +313,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-4-2",
+          "priorKnowledgeIds": ["g3-concept-4-2"],
           "title": "Маса",
           "description": "Цели за: Маса",
           "assessmentStandards": [
@@ -312,6 +327,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-4-3",
+          "priorKnowledgeIds": ["g3-concept-4-3"],
           "title": "Течност",
           "description": "Цели за: Течност",
           "assessmentStandards": [
@@ -324,6 +340,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-4-4",
+          "priorKnowledgeIds": ["g3-concept-4-3"],
           "title": "Време",
           "description": "Цели за: Време",
           "assessmentStandards": [
@@ -341,6 +358,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-4-5",
+          "priorKnowledgeIds": ["g3-concept-4-3"],
           "title": "Периметар и плоштина",
           "description": "Цели за: Периметар и плоштина",
           "assessmentStandards": [
@@ -365,6 +383,7 @@ export const grade4Data: Grade = {
       "concepts": [
         {
           "id": "g4-concept-5-1",
+          "priorKnowledgeIds": ["g3-concept-5-1"],
           "title": "Податоци",
           "description": "Цели за: Податоци",
           "assessmentStandards": [
@@ -390,6 +409,7 @@ export const grade4Data: Grade = {
         },
         {
           "id": "g4-concept-5-2",
+          "priorKnowledgeIds": ["g3-concept-5-2"],
           "title": "Веројатност",
           "description": "Цели за: Веројатност",
           "assessmentStandards": [
