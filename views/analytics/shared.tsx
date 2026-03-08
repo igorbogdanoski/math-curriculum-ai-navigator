@@ -48,6 +48,7 @@ export interface ConceptStat {
     masteredCount: number;
     avgConfidence?: number; // В2: 1-5 scale, undefined if no ratings
     misconceptions?: { text: string; count: number }[]; // Фаза Г: начести грешки
+    metacognitiveNotes?: string[]; // П4: рефлексивни белешки на учениците
 }
 
 export interface PerStudentStat {

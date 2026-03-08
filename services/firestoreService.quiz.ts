@@ -114,6 +114,15 @@ export const quizService = {
     }
   },
 
+  updateQuizMetacognitiveNote: async (docId: string, note: string): Promise<void> => {
+    if (!docId || !note.trim()) return;
+    try {
+      await updateDoc(doc(db, 'quiz_results', docId), { metacognitiveNote: note.trim() });
+    } catch (error) {
+      console.error('Error updating metacognitive note:', error);
+    }
+  },
+
   fetchQuizResults: async (maxCount: number = 200, teacherUid?: string): Promise<QuizResult[]> => {
     try {
       const q = teacherUid

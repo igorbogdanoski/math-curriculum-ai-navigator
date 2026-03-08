@@ -115,6 +115,7 @@ export interface QuizResult {
   differentiationLevel?: DifferentiationLevel;
   confidence?: number;
   misconceptions?: { question: string; studentAnswer: string; misconception: string }[];
+  metacognitiveNote?: string; // П4 — рефлексивна белешка на ученикот по квизот
 }
 
 export interface Announcement {

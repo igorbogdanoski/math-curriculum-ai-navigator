@@ -13,7 +13,7 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import {
   Loader2, AlertCircle, Home, Star, RefreshCw, BookOpen,
   User, ArrowRight, BarChart2, Sparkles, ExternalLink, Trophy,
-  Zap, Target, TrendingUp,
+  Zap, Target, TrendingUp, MessageSquare, Send,
 } from 'lucide-react';
 import { QuestionType, type DifferentiationLevel } from '../types';
 import { getAdaptiveLevel } from '../utils/adaptiveDifficulty';
@@ -62,6 +62,11 @@ export const StudentPlayView: React.FC = () => {
   // П1 — AI персонализирана повратна информација по квиз
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+
+  // П4 — Metacognitive промпт по квизот
+  const [metacognitivePrompt, setMetacognitivePrompt] = useState<string | null>(null);
+  const [metacognitiveNote, setMetacognitiveNote] = useState('');
+  const [metacognitiveSaved, setMetacognitiveSaved] = useState(false);
 
   // Student name — persisted in localStorage so they don't re-enter every time
   // Wrapped in try-catch for private/incognito browser windows where localStorage throws
@@ -291,6 +296,25 @@ export const StudentPlayView: React.FC = () => {
     }
 
     setQuizResult({ percentage, correctCount, totalQuestions });
+
+    // П4 — Одбери metacognitive промпт врз основа на резултат
+    const lowPrompts = [
+      'Со кое прашање имаше најмногу тешкотии?',
+      'Што ти беше тешко во оваа тема?',
+      'Кој дел не го разбираш добро?',
+    ];
+    const highPrompts = [
+      'Со свои зборови, објасни го концептот.',
+      'Кај кое прашање требаше најмногу да размислуваш?',
+      'Кој дел ти е најјасен сега?',
+    ];
+    const midPrompts = [
+      'Што би сакал/а да вежбаш повеќе?',
+      'Кое прашање те изненади?',
+      'Напиши едно прашање за кое сè уште не знаеш одговор.',
+    ];
+    const pool = percentage >= 80 ? highPrompts : percentage < 60 ? lowPrompts : midPrompts;
+    setMetacognitivePrompt(pool[Math.floor(Math.random() * pool.length)]);
 
     // П1 — Генерирај AI повратна информација асинхроно (не блокира)
     if (meta.conceptId) {
@@ -665,7 +689,7 @@ export const StudentPlayView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); }}
+                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); setMetacognitiveNote(''); setMetacognitiveSaved(false); setMetacognitivePrompt(null); }}
                   className="mt-2 flex items-center gap-2 text-xs font-bold bg-amber-200 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-300 transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -721,6 +745,47 @@ export const StudentPlayView: React.FC = () => {
           </div>
           {confidence && (
             <p className="text-white/70 text-xs mt-2">{t('play.confidence.saved')}</p>
+          )}
+        </div>
+      )}
+
+      {/* ── П4: Metacognitive промпт ─────────────────────────────────────── */}
+      {quizResult && metacognitivePrompt && (
+        <div className="w-full max-w-4xl mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="w-4 h-4 text-sky-300" />
+            <p className="text-white font-bold text-sm">Размисли за своето учење</p>
+            <span className="ml-auto text-white/40 text-xs">опционално</span>
+          </div>
+          <p className="text-white/80 text-sm mb-2 italic">„{metacognitivePrompt}"</p>
+          {!metacognitiveSaved ? (
+            <div className="flex gap-2">
+              <textarea
+                value={metacognitiveNote}
+                onChange={e => setMetacognitiveNote(e.target.value)}
+                placeholder="Напиши го твојот одговор тука..."
+                rows={2}
+                maxLength={300}
+                className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/30 text-sm resize-none focus:outline-none focus:border-white/40"
+              />
+              <button
+                type="button"
+                disabled={!metacognitiveNote.trim() || !quizResultDocId}
+                onClick={() => {
+                  if (!quizResultDocId || !metacognitiveNote.trim()) return;
+                  firestoreService.updateQuizMetacognitiveNote(quizResultDocId, metacognitiveNote);
+                  setMetacognitiveSaved(true);
+                }}
+                className="flex items-center justify-center w-10 h-10 mt-auto bg-sky-500 text-white rounded-xl hover:bg-sky-400 transition disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+                title="Зачувај"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <p className="text-sky-300 text-xs font-semibold flex items-center gap-1">
+              ✓ Зачувано — наставникот ќе ги види твоите размислувања.
+            </p>
           )}
         </div>
       )}

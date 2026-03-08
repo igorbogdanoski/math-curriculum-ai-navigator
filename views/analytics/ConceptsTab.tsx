@@ -1,5 +1,5 @@
-import React from 'react';
-import { Trophy, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trophy, AlertTriangle, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { ScoreBar, type ConceptStat, confidenceEmoji, confidenceColor } from './shared';
@@ -8,6 +8,39 @@ interface ConceptsTabProps {
     allConceptStats: ConceptStat[];
     onGenerateRemedial: (conceptId: string, title: string, avgPct: number) => void;
 }
+
+const MetacognitiveNotesRow: React.FC<{ notes: string[]; colSpan: number }> = ({ notes, colSpan }) => {
+    const [expanded, setExpanded] = useState(false);
+    const shown = expanded ? notes : notes.slice(0, 3);
+    return (
+        <tr className="bg-blue-50/30 border-b border-gray-100">
+            <td colSpan={colSpan} className="py-2 px-4">
+                <div className="flex flex-col gap-1.5 pl-6">
+                    <span className="text-xs font-bold tracking-tight text-blue-700 uppercase flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" />
+                        Размислувања на учениците:
+                    </span>
+                    <ul className="flex flex-col gap-1">
+                        {shown.map((note, i) => (
+                            <li key={i} className="text-xs text-slate-600 bg-white border border-blue-100 rounded px-2 py-1 italic">
+                                „{note}"
+                            </li>
+                        ))}
+                    </ul>
+                    {notes.length > 3 && (
+                        <button
+                            type="button"
+                            onClick={() => setExpanded(e => !e)}
+                            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold self-start mt-1"
+                        >
+                            {expanded ? <><ChevronUp className="w-3 h-3" />Прикажи помалку</> : <><ChevronDown className="w-3 h-3" />Прикажи уште {notes.length - 3}</>}
+                        </button>
+                    )}
+                </div>
+            </td>
+        </tr>
+    );
+};
 
 export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGenerateRemedial }) => (
     <SilentErrorBoundary name="ConceptsTab">
@@ -106,6 +139,9 @@ export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGen
                                                     </div>
                                                 </td>
                                             </tr>
+                                        )}
+                                        {c.metacognitiveNotes && c.metacognitiveNotes.length > 0 && (
+                                            <MetacognitiveNotesRow notes={c.metacognitiveNotes} colSpan={8} />
                                         )}
                                     </React.Fragment>
                                 );

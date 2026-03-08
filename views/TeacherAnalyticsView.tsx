@@ -279,7 +279,7 @@ export const TeacherAnalyticsView: React.FC = () => {
 
         const conceptStats = results.filter(r => r.conceptId).reduce((acc, r) => {
             const key = r.conceptId!;
-            if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), quizTitle: r.quizTitle, confSum: 0, confCount: 0, misconceptions: [] as string[] };
+            if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), quizTitle: r.quizTitle, confSum: 0, confCount: 0, misconceptions: [] as string[], metacognitiveNotes: [] as string[] };
             acc[key].total++;
             acc[key].sum += r.percentage;
             if (r.percentage >= 70) acc[key].passCount++;
@@ -294,8 +294,12 @@ export const TeacherAnalyticsView: React.FC = () => {
                     }
                 });
             }
+            // П4 — metacognitive notes accumulation
+            if (r.metacognitiveNote && r.metacognitiveNote.trim()) {
+                acc[key].metacognitiveNotes.push(r.metacognitiveNote.trim());
+            }
             return acc;
-        }, {} as Record<string, { total: number; sum: number; passCount: number; students: Set<string>; quizTitle: string; confSum: number; confCount: number; misconceptions: string[] }>);
+        }, {} as Record<string, { total: number; sum: number; passCount: number; students: Set<string>; quizTitle: string; confSum: number; confCount: number; misconceptions: string[]; metacognitiveNotes: string[] }>);
 
         const allConceptStats: ConceptStat[] = Object.entries(conceptStats).map(([conceptId, s]) => {
             const conceptTitle = getConceptDetails(conceptId).concept?.title || s.quizTitle;
@@ -318,6 +322,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                 masteredCount,
                 avgConfidence: s.confCount > 0 ? s.confSum / s.confCount : undefined,
                 misconceptions: sortedMisconceptions.length > 0 ? sortedMisconceptions : undefined,
+                metacognitiveNotes: s.metacognitiveNotes.length > 0 ? s.metacognitiveNotes : undefined,
             };
         }).sort((a, b) => a.avgPct - b.avgPct);
 
