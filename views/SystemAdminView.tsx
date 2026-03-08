@@ -86,8 +86,8 @@ const UserAdminRow = ({ u, isMe, schools, updatingUid, handleChangeRole, handleU
                         <input type="number" className="w-20 px-2 py-1 border rounded" value={editCredits} onChange={e => setEditCredits(parseInt(e.target.value) || 0)} />
                     </label>
                     <div className="flex gap-2">
-                         <button onClick={() => setEditCredits(c => c + 10)} className="px-2 py-1 bg-white border rounded text-xs hover:bg-gray-100">+10</button>
-                         <button onClick={() => setEditCredits(c => c + 50)} className="px-2 py-1 bg-white border rounded text-xs hover:bg-gray-100">+50</button>
+                        <button onClick={() => setEditCredits((c: number) => c + 10)} className="px-2 py-1 bg-white border rounded text-xs hover:bg-gray-100">+10</button>
+                        <button onClick={() => setEditCredits((c: number) => c + 50)} className="px-2 py-1 bg-white border rounded text-xs hover:bg-gray-100">+50</button>
                     </div>
                     
                     <button 

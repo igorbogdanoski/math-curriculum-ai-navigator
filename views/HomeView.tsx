@@ -286,8 +286,8 @@ export const HomeView: React.FC = () => {
                 <Card className="flex items-center justify-center bg-gray-50 border-dashed border-2 border-gray-200 py-8">
                     <div className="text-center">
                         <ICONS.sparkles className="w-8 h-8 text-brand-accent mx-auto mb-2 opacity-50" />
-                        <p className="text-gray-500 font-medium">t('dashboard_no_recommendations')</p>
-                        <p className="text-gray-400 text-sm mt-1">t('dashboard_add_lessons_for_suggestions')</p>
+                        <p className="text-gray-500 font-medium">{t('dashboard_no_recommendations')}</p>
+                        <p className="text-gray-400 text-sm mt-1">{t('dashboard_add_lessons_for_suggestions')}</p>
                     </div>
                 </Card>
             ) : (
