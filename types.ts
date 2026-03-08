@@ -238,6 +238,8 @@ export interface AssessmentQuestion {
   levelDescription?: string;
 
   solution?: string;
+    isWorkedExample?: boolean;
+    workedExampleType?: 'full' | 'partial';
 
   // For context-based generation
   cognitiveLevel: 'Remembering' | 'Understanding' | 'Applying' | 'Analyzing' | 'Evaluating' | 'Creating';
@@ -254,6 +256,8 @@ export interface SavedQuestion {
   options?: string[];
   answer: string;
   solution?: string;
+    isWorkedExample?: boolean;
+    workedExampleType?: 'full' | 'partial';
   cognitiveLevel?: string;
   difficulty_level?: string;
   conceptId?: string;

@@ -21,6 +21,9 @@ export interface Question {
   answer: string;
   explanation?: string;
   type?: QuestionType | string;
+  isWorkedExample?: boolean;
+  workedExampleType?: 'full' | 'partial';
+  cognitiveLevel?: string;
 }
 
 export interface QuizCompletionResult {
@@ -58,7 +61,10 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
           options: item.options || [], // Fallback if no options
           answer: item.answer,
           explanation: item.solution || item.explanation,
-          type: item.type === 'problem' ? QuestionType.SHORT_ANSWER : QuestionType.MULTIPLE_CHOICE
+          type: item.type === 'problem' ? QuestionType.SHORT_ANSWER : QuestionType.MULTIPLE_CHOICE,
+          cognitiveLevel: item.cognitiveLevel,
+          isWorkedExample: item.isWorkedExample,
+          workedExampleType: item.workedExampleType
         }));
       }
     }
@@ -101,15 +107,16 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   
   // Timer Logic
   useEffect(() => {
-    if (isTimerRunning && timeLeft > 0 && !showResult) {
+    const isWorkedExample = normalizedQuestions[currentIndex]?.isWorkedExample;
+    if (isTimerRunning && timeLeft > 0 && !showResult && !isWorkedExample) {
       timerRef.current = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
-    } else if (timeLeft === 0 && isTimerRunning && !showResult) {
+    } else if (timeLeft === 0 && isTimerRunning && !showResult && !isWorkedExample) {
       handleTimeUp();
     }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [timeLeft, isTimerRunning, showResult]);
+  }, [timeLeft, isTimerRunning, showResult, currentIndex, normalizedQuestions]);
 
   // Reset sequential step when question changes
   useEffect(() => {
@@ -351,8 +358,15 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
         <div className="flex-1 flex flex-col min-w-0 pb-10 md:pb-0">
           {/* HEADER */}
           <div className="bg-gray-50 px-4 md:px-6 py-3 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2 sticky top-0 z-10">
-            <div className="flex flex-col flex-1 min-w-[120px]">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">??????? {currentIndex + 1}/{normalizedQuestions.length}</span>
+            <div className="flex flex-col flex-1 min-w-[120px] gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">??????? {currentIndex + 1}/{normalizedQuestions.length}</span>
+                {currentQ?.cognitiveLevel && (
+                  <span className={`text-[9px] uppercase font-black px-1.5 py-0.5 rounded-sm ${currentQ.cognitiveLevel === 'Remembering' ? 'bg-slate-100 text-slate-600' : currentQ.cognitiveLevel === 'Understanding' ? 'bg-green-100 text-green-700' : currentQ.cognitiveLevel === 'Applying' ? 'bg-blue-100 text-blue-700' : currentQ.cognitiveLevel === 'Analyzing' ? 'bg-purple-100 text-purple-700' : currentQ.cognitiveLevel === 'Evaluating' ? 'bg-pink-100 text-pink-700' : currentQ.cognitiveLevel === 'Creating' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
+                    {currentQ.cognitiveLevel}
+                  </span>
+                )}
+              </div>
               <h2 className="text-sm font-bold text-gray-700 line-clamp-1">{quizTitle}</h2>
             </div>
 
@@ -420,6 +434,24 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
           </div>
 
           {/* Options */}
+          {currentQ?.isWorkedExample ? (
+            <div className="p-6 bg-blue-50 border border-blue-200 rounded-2xl mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Lightbulb className="w-6 h-6 text-blue-500" />
+                <h3 className="text-lg font-bold text-blue-900">Решен пример</h3>
+              </div>
+              <div className="prose prose-sm max-w-none text-blue-800 break-words overflow-hidden max-w-full">
+                <MathRenderer text={currentQ.explanation || currentQ.answer || ''} />
+              </div>
+              <button
+                onClick={nextQuestion}
+                className="mt-6 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+              >
+                <span>Разбрав, оди понатаму</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
           <div className="grid gap-3">
             {currentQ.options && currentQ.options.length > 0 ? (
               currentQ.options.map((option: string, idx: number) => {
@@ -477,9 +509,10 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                 </div>
             )}
           </div>
+          )}
 
           {/* FEEDBACK SECTION */}
-          {selectedOption && (
+          {selectedOption && !currentQ?.isWorkedExample && (
             <div className="mt-10 pt-8 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {isCorrect && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">

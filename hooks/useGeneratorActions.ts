@@ -609,7 +609,7 @@ export function useGeneratorActions({
           case 'QUIZ':
             result = await geminiService.generateAssessment(
               materialType, questionTypes, numQuestions, finalContext,
-              user ?? undefined, differentiationLevel, studentProfilesToPass, imageParam, effectiveInstruction, includeSelfAssessment
+              user ?? undefined, differentiationLevel, studentProfilesToPass, imageParam, state.includeWorkedExamples
             );
             break;
           case 'EXIT_TICKET':
