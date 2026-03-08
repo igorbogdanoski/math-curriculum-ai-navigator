@@ -59,6 +59,10 @@ export const StudentPlayView: React.FC = () => {
   const [quizResultDocId, setQuizResultDocId] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<number | null>(null);
 
+  // П1 — AI персонализирана повратна информација по квиз
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+
   // Student name — persisted in localStorage so they don't re-enter every time
   // Wrapped in try-catch for private/incognito browser windows where localStorage throws
   const [studentName, setStudentName] = useState<string>(() => {
@@ -287,6 +291,28 @@ export const StudentPlayView: React.FC = () => {
     }
 
     setQuizResult({ percentage, correctCount, totalQuestions });
+
+    // П1 — Генерирај AI повратна информација асинхроно (не блокира)
+    if (meta.conceptId) {
+      const { concept } = getConceptDetails(meta.conceptId);
+      const conceptTitle = concept?.title ?? quizData.title ?? 'концептот';
+      setIsFeedbackLoading(true);
+      geminiService.generateQuizFeedback(
+        studentName || 'Ученик',
+        percentage,
+        conceptTitle,
+        correctCount,
+        totalQuestions,
+        misconceptions,
+      ).then(feedback => {
+        if (isMountedRef.current) {
+          setAiFeedback(feedback);
+          setIsFeedbackLoading(false);
+        }
+      }).catch(() => {
+        if (isMountedRef.current) setIsFeedbackLoading(false);
+      });
+    }
 
     // 2b. Mark assignment as completed (if arrived from an assignment link)
     if (assignId && studentName) {
@@ -639,7 +665,7 @@ export const StudentPlayView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); }}
+                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); }}
                   className="mt-2 flex items-center gap-2 text-xs font-bold bg-amber-200 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-300 transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -647,6 +673,24 @@ export const StudentPlayView: React.FC = () => {
                 </button>
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── П1: AI персонализирана повратна информација ─────────────────── */}
+      {quizResult && (isFeedbackLoading || aiFeedback) && (
+        <div className="w-full max-w-4xl mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4 text-yellow-300" />
+            <p className="text-white font-bold text-sm">Повратна информација</p>
+          </div>
+          {isFeedbackLoading ? (
+            <div className="flex items-center gap-2 text-white/60 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>AI анализира...</span>
+            </div>
+          ) : (
+            <p className="text-white/90 text-sm leading-relaxed">{aiFeedback}</p>
           )}
         </div>
       )}

@@ -49,6 +49,7 @@ const mockAuthValue = {
     login: vi.fn(),
     logout: vi.fn(),
     register: vi.fn(),
+    loginWithGoogle: vi.fn(),
     updateProfile: vi.fn(),
     updateLocalProfile: vi.fn(),
     resendVerificationEmail: vi.fn(),

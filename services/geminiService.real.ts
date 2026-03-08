@@ -794,5 +794,44 @@ async generateParentReport(
       safetySettings: SAFETY_SETTINGS,
     });
     return response.text.trim();
-  }
+  },
+
+  // П1 — AI персонализирана повратна информација по квиз
+  async generateQuizFeedback(
+    studentName: string,
+    percentage: number,
+    conceptTitle: string,
+    correctCount: number,
+    totalQuestions: number,
+    misconceptions?: { question: string; studentAnswer: string; misconception: string }[],
+  ): Promise<string> {
+    checkDailyQuotaGuard();
+    const wrongParts = misconceptions?.slice(0, 2).map(m =>
+      `- Прашање: "${m.question}" → Одговорено: "${m.studentAnswer}"`
+    ).join('\n') ?? '';
+
+    const toneHint = percentage >= 80
+      ? 'Тонот е позитивен и охрабрувачки — ученикот се справил одлично.'
+      : percentage >= 60
+      ? 'Тонот е поддржувачки — ученикот е на добар пат, но треба уште вежбање.'
+      : 'Тонот е топол и поддржувачки — ученикот треба помош, не критика.';
+
+    const prompt = `Ученикот ${studentName} завршил квиз за концептот „${conceptTitle}".
+Резултат: ${correctCount}/${totalQuestions} (${percentage}%).
+${wrongParts ? `Грешни прашања:\n${wrongParts}\n` : ''}
+${toneHint}
+
+Напиши САМО 2-3 реченици персонализирана повратна информација на македонски јазик.
+Биди конкретен: спомни го концептот и дај еден практичен совет за подобрување.
+НЕ започнувај со „Здраво", „Браво" или генерички пофалби. Биди директен и корисен.`;
+
+    const response = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: 'Ти си пријателски педагог кој дава кратки, конкретни повратни информации на македонски јазик.',
+      safetySettings: SAFETY_SETTINGS,
+      generationConfig: { maxOutputTokens: 150 },
+    });
+    return response.text.trim();
+  },
 };
