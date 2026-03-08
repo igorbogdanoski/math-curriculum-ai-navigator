@@ -1,5 +1,5 @@
 ﻿import React, { useRef, useState, useEffect } from 'react';
-import { Pen, Eraser, Trash2 } from 'lucide-react';
+import { Pen, Eraser, Trash2, Grid3X3, AlignJustify, Square } from 'lucide-react';
 
 interface Props {
   className?: string;
@@ -11,6 +11,7 @@ export const DigitalScratchpad: React.FC<Props> = ({ className = '' }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#1e40af'); // blue default
   const [isEraser, setIsEraser] = useState(false);
+  const [bgType, setBgType] = useState<'none' | 'grid' | 'lines'>('none');
 
   useEffect(() => {
     const resizeCanvas = () => {
@@ -123,6 +124,12 @@ export const DigitalScratchpad: React.FC<Props> = ({ className = '' }) => {
           </button>
         </div>
 
+        <div className="flex bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mx-2">
+          <button type="button" onClick={() => setBgType('none')} className={`p-1.5 flex items-center justify-center transition-colors ${bgType === 'none' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`} title="Празно/Точки"><Square className="w-4 h-4" /></button>
+          <button type="button" onClick={() => setBgType('grid')} className={`p-1.5 flex items-center justify-center transition-colors ${bgType === 'grid' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`} title="Квадратна мрежа"><Grid3X3 className="w-4 h-4" /></button>
+          <button type="button" onClick={() => setBgType('lines')} className={`p-1.5 flex items-center justify-center transition-colors ${bgType === 'lines' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`} title="Линии"><AlignJustify className="w-4 h-4" /></button>
+        </div>
+
         {!isEraser && (
           <div className="flex gap-1">
             {['#1e40af', '#b91c1c', '#15803d', '#1f2937'].map(c => (
@@ -162,7 +169,9 @@ export const DigitalScratchpad: React.FC<Props> = ({ className = '' }) => {
           onTouchCancel={stopDrawing}
           className="absolute inset-0 w-full h-full"
         />
-        <div className="absolute inset-0 pointer-events-none opacity-[0.03] select-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+        {bgType === 'grid' && (<div className="absolute inset-0 pointer-events-none opacity-20 select-none" style={{ backgroundImage: 'linear-gradient(to right, #ccc 1px, transparent 1px), linear-gradient(to bottom, #ccc 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>)}
+        {bgType === 'lines' && (<div className="absolute inset-0 pointer-events-none opacity-20 select-none" style={{ backgroundImage: 'linear-gradient(to bottom, transparent 19px, #ccc 20px)', backgroundSize: '100% 20px' }}></div>)}
+        {bgType === 'none' && (<div className="absolute inset-0 pointer-events-none opacity-[0.03] select-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>)}
       </div>
     </div>
   );
