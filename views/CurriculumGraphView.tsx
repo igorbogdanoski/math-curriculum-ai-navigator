@@ -534,6 +534,7 @@ export const CurriculumGraphView: React.FC = () => {
 
           // Toggle focus
           setFocusNodeId(nodeId);
+            setIsClustered(false);
           
           // Find node data using REF to avoid stale closure
           const nodeData = nodesRef.current.find((n: any) => n.id === nodeId);

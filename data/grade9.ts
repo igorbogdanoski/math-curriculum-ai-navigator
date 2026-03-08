@@ -20,6 +20,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-1",
           "title": "Релации меѓу множества",
+          "priorKnowledgeIds": ["g8-concept-1-1"],
           "description": "Цели за: Релации меѓу множества",
           "assessmentStandards": [
             "Го објаснува поимот инверзна релација меѓу множества.",
@@ -33,6 +34,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-2",
           "title": "Реални броеви",
+          "priorKnowledgeIds": ["g8-concept-1-2"],
           "description": "Цели за: Реални броеви",
           "assessmentStandards": [
             "Ги препознава и објаснува ирационалните и реалните броеви.",
@@ -57,6 +59,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-3",
           "title": "Операции со реални броеви",
+          "priorKnowledgeIds": ["g9-concept-1-2","g8-concept-1-4"],
           "description": "Цели за: Операции со реални броеви",
           "assessmentStandards": [
             "Пресметува вредност на броен израз со рационални броеви (загради, двојни дропки, апсолутна вредност).",
@@ -71,6 +74,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-4",
           "title": "Степени и корени",
+          "priorKnowledgeIds": ["g8-concept-1-5"],
           "description": "Цели за: Степени и корени",
           "assessmentStandards": [
             "Ја користи еднаквоста меѓу 0,1; 1/10 и 10^-1.",
@@ -89,6 +93,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-5",
           "title": "Проценти размер пропорција",
+          "priorKnowledgeIds": ["g8-concept-1-3"],
           "description": "Цели за: Проценти размер пропорција",
           "assessmentStandards": [
             "Решава проблеми со камата, попуст, добивка, загуба и данок.",
@@ -121,6 +126,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-2-1",
           "title": "2Д форми и многуаголници",
+          "priorKnowledgeIds": ["g8-concept-2-2"],
           "description": "Цели за: 2Д форми и многуаголници",
           "assessmentStandards": [
             "Решава проблеми со врската меѓу периферен и централен агол; применува Талесова теорема.",
@@ -147,6 +153,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-2-2",
           "title": "Положба и движење",
+          "priorKnowledgeIds": ["g8-concept-2-4"],
           "description": "Цели за: Положба и движење",
           "assessmentStandards": [
             "Мери агли (азимут) во правец на стрелките на часовникот од север.",
@@ -161,6 +168,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-2-3",
           "title": "Пропорционалност и сличност",
+          "priorKnowledgeIds": ["g8-concept-2-2","g8-concept-1-3"],
           "description": "Цели за: Пропорционалност и сличност",
           "assessmentStandards": [
             "Користи размер меѓу две отсечки, пропорционални отсечки и геометриска средина.",
@@ -182,6 +190,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-2-4",
           "title": "Геометриско место на точки",
+          "priorKnowledgeIds": ["g7-concept-2-2"],
           "description": "Цели за: Геометриско место на точки",
           "assessmentStandards": [
             "Наоѓа геометриско место на точки на одредено растојание од дадена точка или права."
