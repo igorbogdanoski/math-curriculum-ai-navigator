@@ -343,7 +343,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
 
       {searched && !loading && activeTab === 'map' && (
         <div className="w-full max-w-2xl no-print mb-8">
-          <LogicMap masteryRecords={masteryRecords} />
+          <LogicMap masteryRecords={masteryRecords} nextQuizIds={nextQuizIds} />
         </div>
       )}
 
