@@ -60,7 +60,10 @@ interface RegisterFormProps {
     setRepeatPassword: (pass: string) => void;
     schoolId: string;
     setSchoolId: (id: string) => void;
+    schoolName: string;
+    setSchoolName: (name: string) => void;
     schools: any[];
+    schoolsLoading: boolean;
     photoPreview: string | null;
     handlePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleSubmit: (e: React.FormEvent) => Promise<void>;
@@ -70,7 +73,9 @@ interface RegisterFormProps {
     onSwitchToLogin: () => void;
 }
 
-const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEmail, password, setPassword, repeatPassword, setRepeatPassword, schoolId, setSchoolId, schools, photoPreview, handlePhotoChange, handleSubmit, isLoading, error, successMessage, onSwitchToLogin }) => (
+const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEmail, password, setPassword, repeatPassword, setRepeatPassword, schoolId, setSchoolId, schoolName, setSchoolName, schools, schoolsLoading, photoPreview, handlePhotoChange, handleSubmit, isLoading, error, successMessage, onSwitchToLogin }) => {
+    const isCustomSchool = schoolId === '__other__';
+    return (
     <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
         <div className="flex flex-col items-center space-y-2 mb-6">
             <label htmlFor="photo-upload" className="cursor-pointer group relative">
@@ -82,45 +87,77 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEm
                 </div>
             </label>
             <input id="photo-upload" type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
-            <span className="text-xs text-gray-500">Додади профилна слика</span>
+            <span className="text-xs text-gray-500">Додади профилна слика (незадолжително)</span>
         </div>
         <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Име и презиме</label>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Име и презиме *</label>
             <input type="text" id="name" value={name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
         </div>
         <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Е-пошта</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Е-пошта *</label>
             <input type="email" id="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
         </div>
-        
+
         <div>
-            <label htmlFor="school" className="block text-sm font-medium text-gray-700">Училиште (Означете го вашето училиште)</label>
-            <select
-                id="school"
-                value={schoolId}
-                onChange={(e) => setSchoolId(e.target.value)}
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary"
-                required
-            >
-                <option value="">-- Изберете училиште --</option>
-                {schools.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.city})</option>
-                ))}
-            </select>
+            <label htmlFor="school" className="block text-sm font-medium text-gray-700">
+                Училиште <span className="text-gray-400 font-normal">(незадолжително)</span>
+            </label>
+            {schoolsLoading ? (
+                <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 p-2">
+                    <ICONS.spinner className="animate-spin w-4 h-4" /> Се вчитуваат училиштата...
+                </div>
+            ) : schools.length > 0 ? (
+                <>
+                    <select
+                        id="school"
+                        value={schoolId}
+                        onChange={(e) => { setSchoolId(e.target.value); if (e.target.value !== '__other__') setSchoolName(''); }}
+                        className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary"
+                    >
+                        <option value="">-- Изберете училиште --</option>
+                        {schools.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}{s.city ? ` (${s.city})` : ''}</option>
+                        ))}
+                        <option value="__other__">— Моето училиште не е во листата</option>
+                    </select>
+                    {isCustomSchool && (
+                        <input
+                            type="text"
+                            placeholder="Внесете го името на вашето училиште"
+                            value={schoolName}
+                            onChange={(e) => setSchoolName(e.target.value)}
+                            className="mt-2 block w-full p-2 border border-brand-secondary rounded-lg focus:ring-brand-secondary focus:border-brand-secondary"
+                            autoFocus
+                        />
+                    )}
+                </>
+            ) : (
+                <input
+                    type="text"
+                    id="school"
+                    placeholder="Внесете го името на вашето училиште"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary"
+                />
+            )}
+            <p className="mt-1 text-xs text-gray-400">Можете да го додадете подоцна преку вашиот профил.</p>
         </div>
         <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Лозинка</label>
-            <input type="password" id="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Лозинка *</label>
+            <input type="password" id="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required minLength={6} />
         </div>
         <div>
-            <label htmlFor="repeatPassword" className="block text-sm font-medium text-gray-700">Повтори лозинка</label>
-            <input type="password" id="repeatPassword" value={repeatPassword} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRepeatPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required />
+            <label htmlFor="repeatPassword" className="block text-sm font-medium text-gray-700">Повтори лозинка *</label>
+            <input type="password" id="repeatPassword" value={repeatPassword} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRepeatPassword(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-brand-secondary focus:border-brand-secondary" required minLength={6} />
         </div>
         {error && <p className="text-sm text-red-600 text-center bg-red-50 p-2 rounded">{error}</p>}
         {successMessage && <p className="text-sm text-green-600 text-center bg-green-50 p-2 rounded">{successMessage}</p>}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+            По регистрацијата ќе добиете <strong>50 бесплатни кредити</strong> за AI генерирање на материјали.
+        </div>
         <button type="submit" disabled={isLoading} className="w-full flex justify-center items-center gap-2 bg-brand-primary text-white px-4 py-2.5 rounded-lg shadow disabled:opacity-50 disabled:cursor-not-allowed hover:bg-brand-secondary transition-all active:scale-95">
-            {isLoading && <ICONS.spinner className="animate-spin w-5 h-5" />}
-            Регистрирај се
+            {isLoading ? <><ICONS.spinner className="animate-spin w-5 h-5" /> Се регистрира...</> : 'Регистрирај се — 50 кредити бесплатно'}
         </button>
         <div className="text-center text-sm mt-4">
             <button type="button" onClick={onSwitchToLogin} className="font-medium text-brand-secondary hover:text-brand-primary">
@@ -128,7 +165,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ name, setName, email, setEm
             </button>
         </div>
     </form>
-);
+    );
+};
 
 
 interface VerifyEmailNoticeProps {
@@ -153,16 +191,16 @@ const VerifyEmailNotice: React.FC<VerifyEmailNoticeProps> = ({ firebaseUser, han
             <ul className="list-disc list-inside space-y-1">
                 <li>Проверете ја <strong>Spam</strong> или <strong>Junk</strong> папката во вашето сандаче.</li>
                 <li>Почекајте неколку минути. Понекогаш доставата на е-пошта доцни.</li>
-                <li>Проверете дали е-поштата е точно внесена. Ако не е, <button onClick={logout} className="underline font-semibold hover:text-yellow-900">одјавете се</button> и регистрирајте се повторно.</li>
+                <li>Проверете дали е-поштата е точно внесена. Ако не е, <button type="button" onClick={logout} className="underline font-semibold hover:text-yellow-900">одјавете се</button> и регистрирајте се повторно.</li>
             </ul>
         </div>
         {resendMessage && <p className="text-sm text-green-600 mb-4 bg-green-50 p-2 rounded">{resendMessage}</p>}
         {error && <p className="text-sm text-red-600 mb-4 bg-red-50 p-2 rounded">{error}</p>}
         <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
-            <button onClick={handleResendVerification} disabled={resendCooldown > 0} className="bg-brand-secondary text-white px-4 py-2 rounded-lg shadow hover:bg-brand-primary transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+            <button type="button" onClick={handleResendVerification} disabled={resendCooldown > 0} className="bg-brand-secondary text-white px-4 py-2 rounded-lg shadow hover:bg-brand-primary transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
                 {resendCooldown > 0 ? `Испрати повторно за (${resendCooldown}с)` : 'Испрати го линкот повторно'}
             </button>
-            <button onClick={logout} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 font-semibold transition-colors">
+            <button type="button" onClick={logout} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 font-semibold transition-colors">
                 Најави се со друга сметка
             </button>
         </div>
@@ -205,6 +243,8 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, setEmail, 
 export const LoginView: React.FC = () => {
     const [schools, setSchools] = useState<any[]>([]);
     const [schoolId, setSchoolId] = useState('');
+    const [schoolName, setSchoolName] = useState('');
+    const [schoolsLoading, setSchoolsLoading] = useState(true);
 
     useEffect(() => {
         const loadSchools = async () => {
@@ -213,6 +253,8 @@ export const LoginView: React.FC = () => {
                 setSchools(fetchedSchools);
             } catch (err) {
                 console.error("Failed to load schools:", err);
+            } finally {
+                setSchoolsLoading(false);
             }
         };
         loadSchools();
@@ -285,16 +327,16 @@ export const LoginView: React.FC = () => {
             return;
         }
 
-        if (!schoolId) {
-            setError('Ве молиме изберете училиште. Доколку не е во листата, контактирајте со администраторот.');
+        if (schoolId === '__other__' && !schoolName.trim()) {
+            setError('Ве молиме внесете го името на вашето училиште.');
             return;
         }
         setIsLoading(true);
         try {
-            await register(email, password, name, photoFile, schoolId);
-            setSuccessMessage("Регистрацијата е успешна! Ве молиме проверете го вашето сандаче за е-пошта за линк за верификација.");
-            setMode('login');
-            clearFormState();
+            const finalSchoolId = schoolId === '__other__' ? '' : schoolId;
+            const finalSchoolName = schoolId === '__other__' ? schoolName.trim() : '';
+            await register(email, password, name, photoFile, finalSchoolId, undefined, finalSchoolName);
+            // onAuthStateChanged automatically shows VerifyEmailNotice after Firebase user is created
         } catch (err) {
             setError(err instanceof Error ? err.message : "Настана непозната грешка.");
         } finally {
@@ -352,7 +394,7 @@ export const LoginView: React.FC = () => {
     switch (mode) {
         case 'register':
             headerText = 'Креирајте нова сметка';
-            content = <RegisterForm name={name} setName={setName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} repeatPassword={repeatPassword} setRepeatPassword={setRepeatPassword} schoolId={schoolId} setSchoolId={setSchoolId} schools={schools} photoPreview={photoPreview} handlePhotoChange={handlePhotoChange} handleSubmit={handleRegisterSubmit} isLoading={isLoading} error={error} successMessage={successMessage} onSwitchToLogin={() => { setMode('login'); clearFormState(); }} />;
+            content = <RegisterForm name={name} setName={setName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} repeatPassword={repeatPassword} setRepeatPassword={setRepeatPassword} schoolId={schoolId} setSchoolId={setSchoolId} schoolName={schoolName} setSchoolName={setSchoolName} schools={schools} schoolsLoading={schoolsLoading} photoPreview={photoPreview} handlePhotoChange={handlePhotoChange} handleSubmit={handleRegisterSubmit} isLoading={isLoading} error={error} successMessage={successMessage} onSwitchToLogin={() => { setMode('login'); clearFormState(); }} />;
             break;
         case 'reset':
             headerText = 'Ресетирај лозинка';

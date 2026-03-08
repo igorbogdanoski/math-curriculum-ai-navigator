@@ -19,7 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin') => Promise<void>;
+  register: (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin', schoolName?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (profile: TeachingProfile) => Promise<void>;    updateLocalProfile: (profileUpdate: Partial<TeachingProfile>) => void;  resendVerificationEmail: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -89,18 +89,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
                 console.info("Fetching profile for verified user. UID:", user.uid);
                 const profile = await fetchUserProfile(user.uid);
-                
-                const finalProfile: TeachingProfile = profile || {
-                    name: user.displayName || 'Корисник',
-                    photoURL: user.photoURL || undefined,
-                    role: 'teacher', // default role
-                    style: 'Constructivist',
-                    experienceLevel: 'Beginner',
-                    studentProfiles: [],
-                    favoriteConceptIds: [],
-                    favoriteLessonPlanIds: [],
-                    toursSeen: {}
-                };
+
+                let finalProfile: TeachingProfile;
+                if (profile) {
+                    finalProfile = profile;
+                } else {
+                    // Profile missing — create it now with 50 starter credits.
+                    // This handles: setDoc failure during registration, or Google sign-in first login.
+                    console.warn("No profile found for verified user. Creating default profile with 50 credits. UID:", user.uid);
+                    finalProfile = {
+                        name: user.displayName || 'Корисник',
+                        photoURL: user.photoURL || undefined,
+                        role: 'teacher',
+                        schoolId: '',
+                        schoolName: '',
+                        style: 'Constructivist',
+                        experienceLevel: 'Beginner',
+                        studentProfiles: [],
+                        favoriteConceptIds: [],
+                        favoriteLessonPlanIds: [],
+                        toursSeen: {},
+                        aiCreditsBalance: 50,
+                        isPremium: false,
+                        hasUnlimitedCredits: false,
+                        tier: 'Free',
+                    };
+                    try {
+                        await setDoc(doc(db, 'users', user.uid), finalProfile);
+                    } catch (e) {
+                        console.error("Failed to create fallback profile in Firestore:", e);
+                        // Still use the in-memory profile so the user can access the app.
+                    }
+                }
 
                 console.info("Auth state resolved. IsAuthenticated: true");
                 setSentryUser(user.uid, user.email ?? undefined);
@@ -134,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [auth]);
   
-  const register = useCallback(async (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin'): Promise<void> => {
+  const register = useCallback(async (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin', schoolName?: string): Promise<void> => {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
@@ -155,6 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: photoURL,
             role: role || 'teacher',
             schoolId: schoolId || '',
+            schoolName: schoolName || '',
             style: 'Constructivist',
             experienceLevel: 'Beginner',
             studentProfiles: [],
@@ -167,18 +188,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tier: 'Free',
         };
 
-        await setDoc(doc(db, 'users', user.uid), newProfile);
+        try {
+            await setDoc(doc(db, 'users', user.uid), newProfile);
+        } catch (profileError) {
+            // Auth account was created successfully. Profile write failed (e.g. network issue).
+            // The onAuthStateChanged handler will create it on next login.
+            console.error("Failed to write initial profile to Firestore:", profileError);
+        }
 
     } catch (error: any) {
-        console.error("Firebase registration error:", error.code);
+        console.error("Firebase registration error:", error.code, error.message);
         if (error.code === 'auth/email-already-in-use') {
-            throw new Error("Емаилот е веќе во употреба.");
+            throw new Error("Оваа е-пошта е веќе регистрирана. Обидете се да се најавите или ресетирајте ја лозинката.");
         }
         if (error.code === 'auth/weak-password') {
             throw new Error("Лозинката треба да има најмалку 6 карактери.");
         }
         if (error.code === 'auth/invalid-email') {
             throw new Error("Внесената е-пошта не е во валиден формат.");
+        }
+        if (error.code === 'auth/network-request-failed') {
+            throw new Error("Проблем со мрежна врска. Проверете го интернетот и обидете се повторно.");
+        }
+        if (error.code === 'auth/too-many-requests') {
+            throw new Error("Премногу обиди. Почекајте неколку минути и обидете се повторно.");
+        }
+        if (error.code === 'storage/unauthorized') {
+            throw new Error("Регистрацијата е успешна, но сликата не можеше да се прикачи. Продолжете без слика.");
         }
         throw new Error("Регистрацијата е неуспешна. Обидете се повторно.");
     }
