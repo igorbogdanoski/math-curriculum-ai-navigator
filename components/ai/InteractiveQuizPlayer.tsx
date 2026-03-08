@@ -364,7 +364,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                     <PenTool className="w-5 h-5" />              </button>
               <button
                 onClick={() => { setShowMathTools(!showMathTools); setShowScratchpad(false); }}
-                title="??????????? ?????? (GeoGebra / Desmos)"
+                title="Математички Алатки (GeoGebra / Desmos)"
                 className={`p-2.5 md:p-1.5 rounded-lg transition-colors border-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center ${showMathTools ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-transparent hover:bg-gray-200 text-gray-500'}`}
               >
                 <Calculator className="w-5 h-5" />
@@ -472,7 +472,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                     </button>
                   </div>
                   {!selectedOption && (
-                    <p className="text-xs text-gray-400 italic">??????? ?? ??????????? ????????? ?? ??????, ?????? ? ???????.</p>
+                    <p className="text-xs text-gray-400 italic">??????? ?? Математички Алатки??? ?? ??????, ?????? ? ???????.</p>
                   )}
                 </div>
             )}
