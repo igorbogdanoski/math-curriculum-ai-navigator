@@ -77,6 +77,8 @@ const PrivacyPolicy = safeLazy(() => import('./components/common/PrivacyPolicy')
 const TermsOfUse = safeLazy(() => import('./components/common/TermsOfUse').then(module => ({ default: module.TermsOfUse })));
 const StudentProgressView = safeLazy(() => import('./views/StudentProgressView').then(module => ({ default: module.StudentProgressView })));
 const StudentLiveView = safeLazy(() => import('./views/StudentLiveView').then(module => ({ default: module.StudentLiveView })));
+const HostLiveQuizView = safeLazy(() => import('./views/HostLiveQuizView').then(module => ({ default: module.HostLiveQuizView })));
+const LiveDisplayView = safeLazy(() => import('./views/LiveDisplayView').then(module => ({ default: module.LiveDisplayView })));
 const StudentTutorView = safeLazy(() => import('./views/StudentTutorView').then(module => ({ default: module.StudentTutorView })));
 const ParentPortalView = safeLazy(() => import('./views/ParentPortalView').then(module => ({ default: module.ParentPortalView })));
 
@@ -127,6 +129,8 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
 const routes = [      { path: '/privacy', component: PrivacyPolicy },
       { path: '/terms', component: TermsOfUse },    { path: '/play/:id', component: StudentPlayView }, // Student Mode route
     { path: '/my-progress', component: StudentProgressView }, // Student Progress route
+    { path: '/live/host', component: HostLiveQuizView }, // Live session host route
+    { path: '/live/display', component: LiveDisplayView }, // Fullscreen projector display
     { path: '/live', component: StudentLiveView }, // Live session join route
     { path: '/tutor', component: StudentTutorView }, // AI Tutor for Students
     { path: '/parent', component: ParentPortalView }, // Parent Portal — public

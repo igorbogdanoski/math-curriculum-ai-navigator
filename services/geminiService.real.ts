@@ -313,6 +313,46 @@ async enhanceText(textToEnhance: string, action: string, fieldType: string, grad
     return response.text || "";
   },
 
+async analyzeConceptPedagogically(concept: Concept, priorTitles: string[], futureTitles: string[]): Promise<{
+    bloomLevel: string;
+    bloomDetails: string;
+    misconceptions: string[];
+    pedagogicalBridge: string;
+    diagnosticQuestion: string;
+  }> {
+    checkDailyQuotaGuard();
+    const priorStr = priorTitles.length ? priorTitles.join(', ') : 'нема дефинирани предуслови';
+    const futureStr = futureTitles.length ? futureTitles.join(', ') : 'нема дефинирани следни теми';
+    const prompt = `Си педагошки експерт за македонски основношколски наставни програми по математика.
+Анализирај го следниот концепт и врати структуриран одговор на македонски јазик.
+
+КОНЦЕПТ: "${concept.title}"
+ОПИС: "${concept.description || 'нема опис'}"
+ОДДЕЛЕНИЕ: ${(concept as any).gradeLevel || '?'}
+ПРЕДЗНАЕЊЕ (мора да се знае пред): ${priorStr}
+СЛЕДНИ ТЕМИ (се гради врз ова): ${futureStr}
+
+Врати:
+1. bloomLevel: Доминантното ниво на Блумовата таксономија (само едно: Знаење / Разбирање / Примена / Анализа / Синтеза / Вреднување)
+2. bloomDetails: 2-3 реченици — конкретно ШТО треба да направи ученикот за да го демонстрира ова ниво
+3. misconceptions: Листа од точно 3 специфични мисконцепции карактеристични за ОВА конкретно градиво (не генерички)
+4. pedagogicalBridge: 2-3 реченици — конкретно ЗОШТО е важно ова градиво, какви проблеми прави ако се прескокне, и кон кои теми се надоврзува
+5. diagnosticQuestion: Еден конкретен блиц прашање (1-2 реченици) кое наставникот може да го напише на табла пред часот за да провери предзнаење`;
+
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        bloomLevel: { type: Type.STRING },
+        bloomDetails: { type: Type.STRING },
+        misconceptions: { type: Type.ARRAY, items: { type: Type.STRING } },
+        pedagogicalBridge: { type: Type.STRING },
+        diagnosticQuestion: { type: Type.STRING },
+      },
+      required: ['bloomLevel', 'bloomDetails', 'misconceptions', 'pedagogicalBridge', 'diagnosticQuestion'],
+    };
+    return generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false);
+  },
+
 async analyzeLessonPlan(plan: Partial<LessonPlan>, profile?: TeachingProfile): Promise<AIPedagogicalAnalysis> {
     const prompt = `Направи педагошка анализа на подготовка за час.`;
     const schema = { type: Type.OBJECT, properties: { pedagogicalAnalysis: { type: Type.OBJECT, properties: { overallImpression: { type: Type.STRING }, alignment: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } }, engagement: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } }, cognitiveLevels: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } } } } }, required: ["pedagogicalAnalysis"] };

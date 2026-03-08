@@ -1,10 +1,11 @@
 
-import React, { useEffect, useRef, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { ICONS } from '../constants';
+import { geminiService } from '../services/geminiService';
 import type { Concept, Grade, Topic } from '../types';
 
 declare global {
@@ -149,9 +150,20 @@ export const CurriculumGraphView: React.FC = () => {
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
   
   // Context Menu State
-  const [menuState, setMenuState] = useState<MenuState>({ 
+  const [menuState, setMenuState] = useState<MenuState>({
       x: 0, y: 0, nodeId: '', label: '', visible: false, gradeLevel: 0, topicId: '', isCluster: false
   });
+
+  // AI Analyzer: loading + result state
+  const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<{
+    bloomLevel: string;
+    bloomDetails: string;
+    misconceptions: string[];
+    pedagogicalBridge: string;
+    diagnosticQuestion: string;
+  } | null>(null);
+  const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
 
   const gradeColors: { [key: number]: string } = useMemo(() => ({
     1: '#F44336', // Red
@@ -634,15 +646,30 @@ export const CurriculumGraphView: React.FC = () => {
       }
   };
 
-  const handleAIAnalyzer = () => {
-      if(menuState.nodeId) {
-          const nodeConcept = allConcepts.find(c => c.id === menuState.nodeId);
-          if (nodeConcept) {
-               setAiAnalysisConcept(nodeConcept);
-               setMenuState((prev: MenuState) => ({ ...prev, visible: false }));
-          }
-      }
-  };
+  const handleAIAnalyzer = useCallback(() => {
+      if (!menuState.nodeId) return;
+      const nodeConcept = allConcepts.find((c: EnrichedConcept) => c.id === menuState.nodeId);
+      if (!nodeConcept) return;
+
+      // Resolve prior + future concept titles for richer AI context
+      const priorTitles = (nodeConcept.priorKnowledgeIds || [])
+          .map((pid: string) => allConcepts.find((c: EnrichedConcept) => c.id === pid)?.title)
+          .filter(Boolean) as string[];
+      const futureTitles = allConcepts
+          .filter((c: EnrichedConcept) => (c.priorKnowledgeIds || []).includes(nodeConcept.id))
+          .map((c: EnrichedConcept) => c.title);
+
+      setAiAnalysisConcept(nodeConcept);
+      setAiAnalysisResult(null);
+      setAiAnalysisError(null);
+      setAiAnalysisLoading(true);
+      setMenuState((prev: MenuState) => ({ ...prev, visible: false }));
+
+      geminiService.analyzeConceptPedagogically(nodeConcept, priorTitles, futureTitles)
+          .then(result => { setAiAnalysisResult(result); })
+          .catch(() => { setAiAnalysisError('Настана грешка при AI анализата. Обиди се повторно.'); })
+          .finally(() => setAiAnalysisLoading(false));
+  }, [menuState.nodeId, allConcepts]);
 
   const handleGenerateIdeas = () => {
       if(menuState.nodeId) {
@@ -699,7 +726,28 @@ export const CurriculumGraphView: React.FC = () => {
       <Card className="mb-4 flex-shrink-0 overflow-visible z-20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className={`flex flex-wrap items-center gap-4 ${focusNodeId ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                    {/* Select All / Deselect All shortcut */}
+                    <button
+                        onClick={() => {
+                            if (!curriculum || focusNodeId) return;
+                            const allLevels = curriculum.grades.map((g: Grade) => g.level);
+                            setSelectedGrades(
+                                selectedGrades.length === allLevels.length ? [6] : allLevels
+                            );
+                        }}
+                        type="button"
+                        disabled={!!focusNodeId}
+                        className={`px-3 py-1 text-xs font-bold rounded-full border-2 transition-all duration-200 ${
+                            curriculum && selectedGrades.length === curriculum.grades.length
+                                ? 'bg-slate-700 text-white border-slate-700'
+                                : 'bg-white text-slate-500 border-slate-300 hover:border-slate-500'
+                        }`}
+                        title="Избери / одбери ги сите одделенија"
+                    >
+                        {curriculum && selectedGrades.length === curriculum.grades.length ? '✕ Сите' : '✓ Сите'}
+                    </button>
+                    <div className="w-px h-5 bg-gray-300" />
                     {curriculum?.grades.map((grade: Grade) => (
                         <button
                             key={grade.level}
@@ -923,50 +971,64 @@ export const CurriculumGraphView: React.FC = () => {
                             <p className="text-green-100 text-xs opacity-90">{aiAnalysisConcept.title}</p>
                         </div>
                     </div>
-                    <button onClick={() => setAiAnalysisConcept(null)} className="text-white hover:text-green-200 transition-colors bg-white/10 hover:bg-white/20 p-1.5 rounded-full">
+                    <button onClick={() => { setAiAnalysisConcept(null); setAiAnalysisResult(null); setAiAnalysisError(null); }} className="text-white hover:text-green-200 transition-colors bg-white/10 hover:bg-white/20 p-1.5 rounded-full">
                         <ICONS.close className="w-5 h-5"/>
                     </button>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-6 bg-gray-50 flex flex-col gap-4 text-left">
-                    <p className="text-sm text-gray-600 mb-2 italic">Анализирам когнитивни нивоа, мисконцепции и дијагностика според методиката за <strong>{aiAnalysisConcept.title}</strong>...</p>
-                    
-                    <div className="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm">
-                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
-                           <ICONS.activity className="w-4 h-4 text-blue-500"/> 🎯 Фокус на часот (Когнитивно ниво)
-                        </h4>
-                        <p className="text-gray-700 text-sm pl-6 border-l-2 border-gray-100 mb-2">Овој концепт бара <strong>Анализа и Примена</strong>. Инсистирајте учениците да ги применат правилата во реални/текстуални проблеми.</p>
-                        <p className="text-xs text-gray-500 pl-6 border-l-2 border-gray-100"><em>Очекуван исход:</em> {aiAnalysisConcept.description}</p>
-                    </div>
+                    {aiAnalysisLoading && (
+                        <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
+                            <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm text-gray-500 font-medium">AI анализира когнитивни нивоа и мисконцепции за<br/><strong className="text-gray-700">{aiAnalysisConcept.title}</strong>...</p>
+                        </div>
+                    )}
 
-                    <div className="bg-white p-4 rounded-xl border-l-4 border-red-500 shadow-sm">
-                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
-                           <ICONS.alertTriangle className="w-4 h-4 text-red-500"/> 🚧 Критични точки / Чести мисконцепции
-                        </h4>
-                        <p className="text-gray-700 text-sm pl-6 border-l-2 border-gray-100">Учениците често прават логичка грешка обидувајќи се да прескокнат чекори. Внимавајте на:<br/>
-                        • Мешање на правилата со претходно учени концепти.<br/>
-                        • Неразбирање на визуелниот приказ на проблемот.</p>
-                    </div>
+                    {aiAnalysisError && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
+                            <ICONS.alertTriangle className="w-4 h-4 inline mr-2" />{aiAnalysisError}
+                        </div>
+                    )}
 
-                    <div className="bg-white p-4 rounded-xl border-l-4 border-purple-500 shadow-sm">
-                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
-                           <ICONS.gitBranch className="w-4 h-4 text-purple-500 rotate-90"/> 🌉 Педагошки Мост (Зошто е важно?)
-                        </h4>
-                        <p className="text-gray-700 text-sm pl-6 border-l-2 border-gray-100">Ако не се совлада оваа основа, следната година учениците ќе имаат сериозен застој при решавање на посложени проблеми.</p>
-                    </div>
+                    {aiAnalysisResult && !aiAnalysisLoading && (<>
+                        <div className="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm">
+                            <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
+                               <ICONS.activity className="w-4 h-4 text-blue-500"/> 🎯 Блумова таксономија — <span className="text-blue-600">{aiAnalysisResult.bloomLevel}</span>
+                            </h4>
+                            <p className="text-gray-700 text-sm pl-6 border-l-2 border-blue-100">{aiAnalysisResult.bloomDetails}</p>
+                        </div>
 
-                    <div className="bg-white p-4 rounded-xl border-l-4 border-orange-500 shadow-sm">
-                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
-                           <ICONS.zap className="w-4 h-4 text-orange-500"/> ⏱️ Блиц Дијагностика (1-минутно прашање)
-                        </h4>
-                        <p className="text-gray-700 font-medium text-sm pl-6 border-l-2 border-gray-100 italic bg-orange-50/50 p-3 rounded">
-                            "Запиши го прашањето на табла пред да почне часот. Ако повеќе од 30% згрешат, направете 5 минутна ревизија на претходната лекција."
-                        </p>
-                    </div>
+                        <div className="bg-white p-4 rounded-xl border-l-4 border-red-500 shadow-sm">
+                            <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
+                               <ICONS.alertTriangle className="w-4 h-4 text-red-500"/> 🚧 Чести мисконцепции
+                            </h4>
+                            <ul className="space-y-1.5 pl-6 border-l-2 border-red-100">
+                                {aiAnalysisResult.misconceptions.map((m, i) => (
+                                    <li key={i} className="text-gray-700 text-sm flex gap-2"><span className="text-red-400 font-bold flex-shrink-0">•</span>{m}</li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-xl border-l-4 border-purple-500 shadow-sm">
+                            <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
+                               <ICONS.gitBranch className="w-4 h-4 text-purple-500 rotate-90"/> 🌉 Педагошки Мост
+                            </h4>
+                            <p className="text-gray-700 text-sm pl-6 border-l-2 border-purple-100">{aiAnalysisResult.pedagogicalBridge}</p>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-xl border-l-4 border-orange-500 shadow-sm">
+                            <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-2">
+                               <ICONS.zap className="w-4 h-4 text-orange-500"/> ⏱️ Блиц Дијагностика
+                            </h4>
+                            <p className="text-gray-700 font-medium text-sm pl-4 border-l-2 border-orange-200 italic bg-orange-50 py-3 pr-3 rounded-r-lg">
+                                {aiAnalysisResult.diagnosticQuestion}
+                            </p>
+                        </div>
+                    </>)}
                 </div>
                 
                 <div className="p-4 border-t border-gray-100 bg-white flex justify-end gap-3 shrink-0">
-                    <button onClick={() => setAiAnalysisConcept(null)} className="px-5 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors">
+                    <button onClick={() => { setAiAnalysisConcept(null); setAiAnalysisResult(null); setAiAnalysisError(null); }} className="px-5 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors">
                         Затвори
                     </button>
                 </div>

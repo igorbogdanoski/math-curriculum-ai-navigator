@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { firestoreService, type ConceptMastery, ACHIEVEMENTS, type StudentGamification } from '../services/firestoreService';
 
@@ -79,6 +79,9 @@ export const StudentPlayView: React.FC = () => {
   // Ж1: device-bound identity — created once per device, persists in localStorage
   const deviceId = getOrCreateDeviceId();
 
+  // Live session: mark in_progress as soon as the quiz loads (once per session join)
+  const inProgressMarkedRef = useRef(false);
+
   // А1: Auth re-init — if returning student (nameConfirmed from localStorage) but
   // Firebase session expired (cleared storage/browser restart), re-auth silently.
   useEffect(() => {
@@ -147,6 +150,13 @@ export const StudentPlayView: React.FC = () => {
     };
     fetchQuiz();
   }, [id]);
+
+  // Mark student as in_progress in the live session the moment the quiz content is ready
+  useEffect(() => {
+    if (!quizData || !sessionId || !studentName || !nameConfirmed || inProgressMarkedRef.current) return;
+    inProgressMarkedRef.current = true;
+    firestoreService.markLiveInProgress(sessionId, studentName).catch(() => {});
+  }, [quizData, sessionId, studentName, nameConfirmed]);
 
   const handleConfirmName = async () => {
     const result = validateStudentName(nameInput);

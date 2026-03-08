@@ -64,6 +64,12 @@ export const submitLiveResponse = async (sessionId: string, studentName: string,
     }).catch(err => console.warn('[Live] submitLiveResponse failed:', err));
   };
 
+export const markLiveInProgress = async (sessionId: string, studentName: string): Promise<void> => {
+    await updateDoc(doc(db, 'live_sessions', sessionId), {
+      [`studentResponses.${studentName}`]: { status: 'in_progress' },
+    }).catch(() => { /* non-fatal */ });
+  };
+
 export const subscribeLiveSession = (sessionId: string, callback: (session: LiveSession | null) => void): (() => void) => {
     const ref = doc(db, 'live_sessions', sessionId);
     return onSnapshot(ref, snap => {
