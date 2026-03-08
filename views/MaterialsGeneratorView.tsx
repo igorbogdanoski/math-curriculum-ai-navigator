@@ -181,6 +181,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         hideModal,
         getConceptDetails,
         findConceptAcrossGrades,
+        openUpgradeModal: (reason: string) => window.dispatchEvent(new CustomEvent('openUpgradeModal', { detail: { reason } })),
     });
 
     // Collect relevant national standards for the current selection — shown below generated material

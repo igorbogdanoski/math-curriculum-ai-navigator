@@ -154,16 +154,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name: name,
             photoURL: photoURL,
             role: role || 'teacher',
-            schoolId: schoolId || '', // default role
+            schoolId: schoolId || '',
             style: 'Constructivist',
             experienceLevel: 'Beginner',
             studentProfiles: [],
             favoriteConceptIds: [],
             favoriteLessonPlanIds: [],
             toursSeen: {},
-              aiCreditsBalance: 50
-          };
-        
+            aiCreditsBalance: 50,
+            isPremium: false,
+            hasUnlimitedCredits: false,
+            tier: 'Free',
+        };
+
+        await setDoc(doc(db, 'users', user.uid), newProfile);
+
     } catch (error: any) {
         console.error("Firebase registration error:", error.code);
         if (error.code === 'auth/email-already-in-use') {

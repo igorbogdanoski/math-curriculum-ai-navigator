@@ -71,6 +71,7 @@ interface UseGeneratorActionsParams {
   getConceptDetails: (id: string) => any;
   findConceptAcrossGrades: (id: string) => any;
   deductCredits?: (amount?: number) => Promise<void>;
+  openUpgradeModal?: (reason: string) => void;
 }
 
 export function useGeneratorActions({
@@ -89,6 +90,7 @@ export function useGeneratorActions({
   getConceptDetails,
   findConceptAcrossGrades,
   deductCredits,
+  openUpgradeModal,
 }: UseGeneratorActionsParams) {
   const { t } = useLanguage();
 
@@ -483,11 +485,20 @@ export function useGeneratorActions({
     MACEDONIAN_CONTEXT_HINT,
     setGeneratedMaterial,
     deductCredits,
+    openUpgradeModal,
   });
 
   const handleBulkGenerate = async () => {
     if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
     if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
+
+    // Upfront credit gate (cost: 5 credits for bulk)
+    if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+      if ((user.aiCreditsBalance ?? 0) < 5) {
+        openUpgradeModal?.('Останавте без AI кредити! Пакетот чини 5 кредити. Надградете на Pro за неограничено генерирање.');
+        return;
+      }
+    }
     const built = buildContext();
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context, tempActivityTitle } = built;
@@ -546,6 +557,14 @@ export function useGeneratorActions({
     if (isGenerating || isGeneratingBulk || isGeneratingVariants) return;
     if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
     if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
+
+    // Upfront credit gate — check before calling AI
+    if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+      if ((user.aiCreditsBalance ?? 0) < 1) {
+        openUpgradeModal?.('Останавте без AI кредити! Надградете на Pro пакет за неограничено генерирање.');
+        return;
+      }
+    }
     const built = buildContext();
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context: finalContext, imageParam, studentProfilesToPass, tempActivityTitle } = built;

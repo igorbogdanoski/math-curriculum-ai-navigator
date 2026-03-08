@@ -17,6 +17,7 @@ interface UseVariantGenerateParams {
   MACEDONIAN_CONTEXT_HINT: string;
     setGeneratedMaterial: (material: any) => void;
     deductCredits?: (amount?: number) => Promise<void>;
+    openUpgradeModal?: (reason: string) => void;
 }
 
 export function useVariantGenerate({
@@ -32,6 +33,7 @@ export function useVariantGenerate({
     MACEDONIAN_CONTEXT_HINT,
     setGeneratedMaterial,
     deductCredits,
+    openUpgradeModal,
 }: UseVariantGenerateParams) {
   const [variants, setVariants] = useState<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment> | null>(null);
   const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
@@ -41,6 +43,14 @@ export function useVariantGenerate({
     if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
     if (isGeneratingVariants || isGenerateDisabled) return;
     if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
+
+    // Upfront credit gate (cost: 3 credits for variants)
+    if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+      if ((user.aiCreditsBalance ?? 0) < 3) {
+        openUpgradeModal?.('Останавте без AI кредити! Варијантите чинат 3 кредити. Надградете на Pro за неограничено генерирање.');
+        return;
+      }
+    }
     const built = buildContext();
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context: finalContext } = built;

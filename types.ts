@@ -179,6 +179,7 @@ export interface TeachingProfile {
   aiCreditsBalance?: number;
   isPremium?: boolean;
   hasUnlimitedCredits?: boolean;
+  tier?: 'Free' | 'Pro' | 'Unlimited';
 
   style: 'Constructivist' | 'Direct Instruction' | 'Inquiry-Based' | 'Project-Based';
   experienceLevel: 'Beginner' | 'Intermediate' | 'Expert';
