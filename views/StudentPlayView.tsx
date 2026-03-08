@@ -82,6 +82,13 @@ export const StudentPlayView: React.FC = () => {
   // Live session: mark in_progress as soon as the quiz loads (once per session join)
   const inProgressMarkedRef = useRef(false);
 
+  // Guard async state updates after component unmount (e.g. gamification .then())
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   // А1: Auth re-init — if returning student (nameConfirmed from localStorage) but
   // Firebase session expired (cleared storage/browser restart), re-auth silently.
   useEffect(() => {
@@ -299,7 +306,7 @@ export const StudentPlayView: React.FC = () => {
       const totalMastered = allMastery.filter(m => m.mastered).length;
       firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered, meta.teacherUid, deviceId)
         .then(({ xpGained, newAchievements, gamification }) => {
-          setGamificationUpdate({ xpGained, newAchievements, gamification });
+          if (isMountedRef.current) setGamificationUpdate({ xpGained, newAchievements, gamification });
         })
         .catch(err => console.warn('[Gamification] update failed:', err));
     }

@@ -297,7 +297,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateLocalProfile,
       resendVerificationEmail,
       resetPassword,
-    }), [authState.profile, authState.firebaseUser, authState.isAuthenticated, authState.isLoading, login, register, logout, updateProfile, updateLocalProfile, resendVerificationEmail, resetPassword]);
+    }), [authState.profile, authState.firebaseUser, authState.isAuthenticated, authState.isLoading, login, loginWithGoogle, register, logout, updateProfile, updateLocalProfile, resendVerificationEmail, resetPassword]);
 
   return (
     <AuthContext.Provider value={value}>

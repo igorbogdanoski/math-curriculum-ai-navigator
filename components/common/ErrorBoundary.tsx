@@ -26,7 +26,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
-    this.state = { ...this.state, errorInfo, error, hasError: true };
+    // getDerivedStateFromError already set hasError+error; here we add errorInfo for the stack trace UI.
+    this.setState({ errorInfo });
     console.error("Uncaught error in ErrorBoundary:", error, errorInfo);
     captureException(error, { componentStack: errorInfo.componentStack ?? undefined });
   }
