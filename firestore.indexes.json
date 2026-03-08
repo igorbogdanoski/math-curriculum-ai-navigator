@@ -1,216 +1,363 @@
 {
-  "indexes": [
-    {
-      "collectionGroup": "quiz_results",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "studentName", "order": "ASCENDING" },
-        { "fieldPath": "playedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quiz_results",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "quizId", "order": "ASCENDING" },
-        { "fieldPath": "playedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "cached_ai_materials",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "conceptId", "order": "ASCENDING" },
-        { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "concept_mastery",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "studentName", "order": "ASCENDING" },
-        { "fieldPath": "mastered", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "concept_mastery",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "conceptId", "order": "ASCENDING" },
-        { "fieldPath": "mastered", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quiz_results",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "playedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "student_groups",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "classes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quiz_results",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "conceptId", "order": "ASCENDING" },
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "playedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "concept_mastery",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "assignments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "classStudentNames", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "dueDate", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "assignments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quiz_results",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "deviceId", "order": "ASCENDING" },
-        { "fieldPath": "playedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "concept_mastery",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "deviceId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "national_library",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gradeLevel", "order": "ASCENDING" },
-        { "fieldPath": "publishedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "national_library",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "publishedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "national_library",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "conceptId", "order": "ASCENDING" },
-        { "fieldPath": "publishedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "national_library",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gradeLevel", "order": "ASCENDING" },
-        { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "publishedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "announcements",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "saved_questions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "savedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "saved_questions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "isVerified", "order": "ASCENDING" },
-        { "fieldPath": "savedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "cached_ai_materials",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "live_sessions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "joinCode", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quiz_results",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "gradeLevel", "order": "ASCENDING" },
-        { "fieldPath": "playedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quiz_results",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "gradeLevel", "order": "ASCENDING" },
-        { "fieldPath": "playedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "student_gamification",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "teacherUid", "order": "ASCENDING" },
-        { "fieldPath": "totalXP", "order": "DESCENDING" }
-      ]
-    }
-  ],
-  "fieldOverrides": []
+    "indexes":  [
+                    {
+                        "collectionGroup":  "quiz_results",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "studentName",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "playedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "quiz_results",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "quizId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "playedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "cached_ai_materials",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "conceptId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "type",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "createdAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "concept_mastery",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "studentName",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "mastered",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "concept_mastery",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "conceptId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "mastered",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "quiz_results",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "playedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "classes",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "createdAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "quiz_results",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "conceptId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "playedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "concept_mastery",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "updatedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "assignments",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "classStudentNames",
+                                           "arrayConfig":  "CONTAINS"
+                                       },
+                                       {
+                                           "fieldPath":  "dueDate",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "assignments",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "createdAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "quiz_results",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "deviceId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "playedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "gradeLevel",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "publishedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "type",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "publishedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "conceptId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "publishedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "gradeLevel",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "type",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "publishedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "announcements",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "createdAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "saved_questions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "savedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "saved_questions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "isVerified",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "savedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "cached_ai_materials",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "createdAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "live_sessions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "joinCode",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "status",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "quiz_results",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "gradeLevel",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "playedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "quiz_results",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "gradeLevel",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "playedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "student_gamification",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "teacherUid",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "totalXP",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    }
+                ],
+    "fieldOverrides":  [
+
+                       ]
 }
