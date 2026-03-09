@@ -1,8 +1,0 @@
-﻿import fs from 'fs';
-let v = fs.readFileSync('views/MaterialsGeneratorView.tsx', 'utf8');
-v = v.replace(/\?\?\?\?\?\?\?\?\?\?\? \?\?\?\?\?\?/g, 'Математички Алатки');
-fs.writeFileSync('views/MaterialsGeneratorView.tsx', v, 'utf8');
-
-let q = fs.readFileSync('components/ai/InteractiveQuizPlayer.tsx', 'utf8');
-q = q.replace(/\?\?\?\?\?\?\?\?\?\?\? \?\?\?\?\?\?/g, 'Математички Алатки');
-fs.writeFileSync('components/ai/InteractiveQuizPlayer.tsx', q, 'utf8');
