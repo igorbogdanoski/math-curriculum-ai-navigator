@@ -136,25 +136,32 @@ function StepCard({ step, onNext, isLast }: { step: WorkedExampleStep; onNext: (
         )
       )}
 
-      {/* Next button */}
-      {(step.phase !== 'partial' || submitted) && (step.phase !== 'quiz' || submitted) && step.phase !== 'quiz' && (
+      {/* Next / Finish button */}
+      {step.phase === 'solved' && (
         <button
           type="button"
           onClick={onNext}
           className="mt-4 flex items-center gap-1.5 text-sm font-bold text-white bg-slate-700 hover:bg-slate-800 px-4 py-2 rounded-xl transition"
         >
-          {isLast ? 'Заврши' : 'Следно'} <ChevronRight className="w-4 h-4" />
+          Следно <ChevronRight className="w-4 h-4" />
         </button>
       )}
-
-      {/* Quiz done: finish */}
-      {step.phase === 'quiz' && submitted && !isLast && (
+      {step.phase === 'partial' && submitted && (
+        <button
+          type="button"
+          onClick={onNext}
+          className="mt-4 flex items-center gap-1.5 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-xl transition"
+        >
+          Следно <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
+      {step.phase === 'quiz' && submitted && (
         <button
           type="button"
           onClick={onNext}
           className="mt-4 flex items-center gap-1.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 px-4 py-2 rounded-xl transition"
         >
-          Следно <ChevronRight className="w-4 h-4" />
+          {isLast ? 'Заврши!' : 'Следно'} <ChevronRight className="w-4 h-4" />
         </button>
       )}
     </div>

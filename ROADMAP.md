@@ -250,7 +250,8 @@
 
 ---
 
-### П5 — Peer Learning предлози
+### П5 — Peer Learning предлози ✅ ЗАВРШЕНО (09.03.2026, commit fbc88af)
+
 **Принцип:** Peer Explanation = Feynman Technique (d=0.55)
 **Проблем:** Апликацијата е 100% индивидуална. Нема социјален аспект на учење.
 **Решение:**
@@ -264,7 +265,8 @@
 
 ---
 
-### П6 — Worked Examples со Scaffolded Fading
+### П6 — Worked Examples со Scaffolded Fading ✅ ЗАВРШЕНО (09.03.2026, commit fbc88af)
+
 **Принцип:** Scaffolding + Zone of Proximal Development (Vygotsky, d=0.59)
 **Проблем:** AI генерира само прашања (You do). Нема I do → We do → You do прогресија.
 **Решение:**
@@ -274,21 +276,22 @@
   2. **Делумен пример** — прашањето е поставено, решено до половина, ученикот го завршува
   3. **Самостојно** — стандарден квиз
 - Прикажи ги секвенцијално со „Следно →" навигација
-**Файлови:** `services/geminiService.real.ts`, `views/MaterialsGeneratorView.tsx`, Нов `components/materials/WorkedExample.tsx`
-**Effort:** ~5-6h | **Статус:** [ ] НЕ ЗАПОЧНАТО
+- Нов `types.ts`: `AIGeneratedWorkedExample`, `WorkedExampleStep`
+- `geminiService.generateWorkedExample(conceptTitle, gradeLevel)` → JSON со 3 фази
 
 ---
 
-### П7 — Bloom's Taxonomy визуелна распределба
+### П7 — Bloom's Taxonomy визуелна распределба ✅ ЗАВРШЕНО (09.03.2026, commit fbc88af)
+
 **Принцип:** Cognitive Taxonomy Balance (Bloom, Anderson revision)
 **Проблем:** Прашањата се тагирани со Bloom ниво, но наставникот нема контрола врз распределбата.
 **Решение:**
+
 - Во MaterialsGeneratorView, пред генерирање: 6 слајдери (Remember→Create)
 - Default: 25% Remember, 20% Understand, 25% Apply, 15% Analyze, 10% Evaluate, 5% Create
-- Наставникот прилагодува → % влегуваат во системскиот промпт
-- По генерирање: Donut chart прикажува реалната распределба на генерираните прашања
-**Файлови:** `views/MaterialsGeneratorView.tsx`, `services/geminiService.real.ts`
-**Effort:** ~3-4h | **Статус:** [ ] НЕ ЗАПОЧНАТО
+- Наставникот прилагодува → % се нормализираат и влегуваат во AI промптот
+- По генерирање: SVG Donut chart ја прикажува реалната распределба на генерираните прашања
+- `components/generator/BloomSliders.tsx`: `BloomSliders` + `BloomDonutChart` компоненти
 
 ---
 
