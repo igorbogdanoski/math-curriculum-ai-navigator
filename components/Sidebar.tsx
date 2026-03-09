@@ -1,4 +1,4 @@
-﻿import { LANGUAGES } from '../i18n';
+import { LANGUAGES } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -62,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     const { user, logout } = useAuth();
     const { navigate } = useNavigation();
 
-    // Progressive disclosure Ã¢â‚¬â€ secondary nav collapsed by default
+    // Progressive disclosure â€” secondary nav collapsed by default
     const [showMore, setShowMore] = useState(() => {
       const secondaryPaths = ['/explore', '/graph', '/roadmap', '/assistant', '/vision-assessment',
         '/test-generator', '/reports/coverage', '/favorites', '/gallery'];
@@ -77,14 +77,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         <button
           onClick={onClose}
           className="md:hidden p-1 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
-          aria-label="Ð—Ð°Ñ‚Ð²Ð¾Ñ€Ð¸ ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ‡Ð½Ð° Ð»ÐµÐ½Ñ‚Ð°"
+          aria-label="Затвори странична лента"
         >
           <ICONS.close className="w-6 h-6" />
         </button>
       </div>
 
-      <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar" aria-label="Ð“Ð»Ð°Ð²Ð½Ð° Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸Ñ˜Ð°">
-        {/* â”€â”€ PRIMARY NAV (always visible) â”€â”€ */}
+      <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar" aria-label="Главна навигација">
+        {/* ── PRIMARY NAV (always visible) ── */}
         <div className="space-y-0.5">
           <NavItem path="/" currentPath={currentPath} icon={ICONS.home} label={t("nav.home")} onClick={onClose} />
           <NavItem path="/academy" currentPath={currentPath} icon={ICONS.education} label={t("nav.academy")} onClick={onClose} badge="NEW" />
@@ -92,48 +92,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label={t("nav.planner")} onClick={onClose} />
           <NavItem path="/annual-planner" currentPath={currentPath} icon={ICONS.planner} label={"Годишна Програма"} onClick={onClose} badge="AI" />
           <NavItem path="/annual-gallery" currentPath={currentPath} icon={ICONS.database} label={"Галерија на Планови"} onClick={onClose} badge="COMMUNITY" />
-          <NavItem path="/annual-gallery" currentPath={currentPath} icon={ICONS.database} label={"Галерија на Планови"} onClick={onClose} badge="COMMUNITY" />
           <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label={t("nav.analytics")} onClick={onClose} />
           <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label={t("nav.mylessons")} onClick={onClose} />
           <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.library")} onClick={onClose} />            
           {(user?.role === 'school_admin' || user?.role === 'admin') && (
               <>
                 <NavItem path="/school-admin" currentPath={currentPath} icon={ICONS.school} label={t("nav.schooladmin")} onClick={onClose} />
-                <NavItem path="/reviews" currentPath={currentPath} icon={ICONS.shieldCheck} label="Ð ÐµÑ†ÐµÐ½Ð·Ð¸Ð¸" onClick={onClose} />
+                <NavItem path="/reviews" currentPath={currentPath} icon={ICONS.shieldCheck} label="Рецензии" onClick={onClose} />
               </>
             )}          
           {user?.role === 'admin' && (
-              <NavItem path="/system-admin" currentPath={currentPath} icon={ICONS.shieldAlert} label="Ð£Ñ‡Ð¸Ð»Ð¸ÑˆÑ‚Ð°" onClick={onClose} />
+              <NavItem path="/system-admin" currentPath={currentPath} icon={ICONS.shieldAlert} label="Училишта" onClick={onClose} />
           )}
           <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label={t("nav.settings")} onClick={onClose} />
         </div>
 
-        {/* â”€â”€ SECONDARY NAV (collapsible) â”€â”€ */}
+        {/* ── SECONDARY NAV (collapsible) ── */}
         <div className="mt-3">
           <button
             type="button"
             onClick={() => setShowMore(v => !v)}
             className="w-full flex items-center justify-between px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50"
           >
-            <span>{showMore ? 'ÐŸÐ¾Ð¼Ð°Ð»ÐºÑƒ' : 'ÐŸÐ¾Ð²ÐµÑœÐµ Ð°Ð»Ð°Ñ‚ÐºÐ¸'}</span>
+            <span>{showMore ? 'Помалку' : 'Повеќе алатки'}</span>
             {showMore ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
 
           {showMore && (
             <div className="mt-1 space-y-0.5 animate-fade-in">
               <hr className="mb-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Ð˜ÑÑ‚Ñ€Ð°Ð¶Ð¸</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Истражи</p>
               <NavItem path="/explore" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.explore")} onClick={onClose} />
               <NavItem path="/graph" currentPath={currentPath} icon={ICONS.share} label={t("nav.graph")} onClick={onClose} />
               <NavItem path="/roadmap" currentPath={currentPath} icon={ICONS.mindmap} label={t("nav.roadmap")} onClick={onClose} />
               <hr className="my-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">AI ÐÐ»Ð°Ñ‚ÐºÐ¸</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">AI Алатки</p>
               <NavItem path="/assistant" currentPath={currentPath} icon={ICONS.assistant} label={t("nav.assistant")} onClick={onClose} />
               <NavItem path="/vision-assessment" currentPath={currentPath} icon={ICONS.camera} label={t("nav.visionAssessment")} onClick={onClose} badge="NEW" />
               <NavItem path="/test-generator" currentPath={currentPath} icon={ICONS.assessment} label={t("nav.testgenerator")} onClick={onClose} />
               <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label={t("nav.coverage")} onClick={onClose} />
               <hr className="my-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Ð ÐµÑÑƒÑ€ÑÐ¸</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Ресурси</p>
               <NavItem path="/favorites" currentPath={currentPath} icon={ICONS.star} label={t("nav.favorites")} onClick={onClose} />
               <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label={t("nav.gallery")} onClick={onClose} />
               <NavItem path="/national-library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.nationalLibrary")} onClick={onClose} />
@@ -148,9 +147,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               onChange={(e) => setLanguage(e.target.value as any)}
               className="w-full text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary py-1.5 px-2"
             >
-              <option value="mk">ðŸ‡²ðŸ‡° ÐœÐ°ÐºÐµÐ´Ð¾Ð½ÑÐºÐ¸</option>
-              <option value="sq">ðŸ‡¦ðŸ‡± Shqip</option>
-              <option value="tr">ðŸ‡¹ðŸ‡· TÃ¼rkÃ§e</option>
+              <option value="mk">🇲🇰 Македонски</option>
+              <option value="sq">🇦🇱 Shqip</option>
+              <option value="tr">🇹🇷 Türkçe</option>
             </select>
         </div>
             <InstallPWAButton />
@@ -159,17 +158,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         <div className="px-2 pb-1">
           {user?.isPremium || user?.hasUnlimitedCredits || user?.role === 'admin' ? (
             <div className="w-full flex items-center justify-between bg-gradient-to-r from-brand-primary to-purple-800 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm border border-purple-500/30">
-              <span className="flex items-center gap-1.5"><ICONS.star className="w-3.5 h-3.5 text-yellow-300" /> Pro ÐÐ°ÑÑ‚Ð°Ð²Ð½Ð¸Ðº</span>
-              <span className="opacity-80">âˆž</span >
+              <span className="flex items-center gap-1.5"><ICONS.star className="w-3.5 h-3.5 text-yellow-300" /> Pro Наставник</span>
+              <span className="opacity-80">∞</span >
             </div>
           ) : (
             <div className="w-full flex items-center justify-between bg-white text-gray-700 text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:border-brand-primary hover:bg-gray-50 transition-colors"
                  onClick={() => {
                    // This could dispatch an event or use a Context to open the Upgrade Modal globally
-                   window.dispatchEvent(new CustomEvent('openUpgradeModal', { detail: { reason: 'ÐžÐ²Ð¾Ñ˜ Ð¿Ñ€ÐµÐ³Ð»ÐµÐ´ Ð²Ð¸ Ð³Ð¸ Ð¿Ñ€Ð¸ÐºÐ°Ð¶ÑƒÐ²Ð° Ñ‚ÐµÐºÐ¾Ð²Ð½Ð¸Ñ‚Ðµ ÐºÑ€ÐµÐ´Ð¸Ñ‚Ð¸. ÐÐ°Ð´Ð³Ñ€Ð°Ð´ÐµÑ‚Ðµ Ð·Ð° Ð½ÐµÐ¾Ð³Ñ€Ð°Ð½Ð¸Ñ‡ÐµÐ½Ð¾!' }}));
+                   window.dispatchEvent(new CustomEvent('openUpgradeModal', { detail: { reason: 'Овој преглед ви ги прикажува тековните кредити. Надградете за неограничено!' }}));
                  }}
             >
-              <span className="flex items-center gap-1.5"><ICONS.coins className="w-3.5 h-3.5 text-brand-primary" /> ÐšÑ€ÐµÐ´Ð¸Ñ‚Ð¸</span>
+              <span className="flex items-center gap-1.5"><ICONS.coins className="w-3.5 h-3.5 text-brand-primary" /> Кредити</span>
               <span className={user?.aiCreditsBalance && user.aiCreditsBalance > 10 ? "text-emerald-600" : "text-red-500"}>
                 {user?.aiCreditsBalance || 0}
               </span>
@@ -210,5 +209,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     </aside>
   );
 };
-
 
