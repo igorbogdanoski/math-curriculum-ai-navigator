@@ -471,7 +471,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         )}
         <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
             <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
         </button>
         </> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">3× Варијанти</span><span className="sm:hidden">3×</span>{showMathTools && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
@@ -488,7 +488,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         )}
         <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
             <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
         </button>
         </>}
                                     </button>
@@ -509,7 +509,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         )}
         <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
             <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
         </button>
         </> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">Пакет материјали</span><span className="sm:hidden">Пакет</span>{showMathTools && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
@@ -526,7 +526,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         )}
         <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
             <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
         </button>
         </>}
                                 </button>
@@ -559,7 +559,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         )}
         <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
             <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
         </button>
         </> : <><ICONS.sparkles className="w-5 h-5" /> Генерирај AI{showMathTools && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
@@ -576,7 +576,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         )}
         <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
             <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
         </button>
         </>}
                                 </button>
@@ -788,7 +788,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         )}
         <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
             <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">??????</span>
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
         </button>
         </>
     );
