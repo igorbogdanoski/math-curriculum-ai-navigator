@@ -1,20 +1,26 @@
 const fs = require('fs');
-let code = fs.readFileSync('i18n/translations.ts', 'utf8');
 
-code = code.replace(
-  /'nav\.home':\s*'Почетна',/,
-  "'nav.academy': 'Едукативен Центар',\n    'nav.home': 'Почетна',"
+let indexCode = fs.readFileSync('i18n/index.ts', 'utf8');
+
+indexCode = indexCode.replace(
+  /export type Language = 'mk' \| 'sq' \| 'tr';/,
+  "export type Language = 'mk' | 'sq' | 'tr' | 'en';"
 );
 
-code = code.replace(
-  /'nav\.home':\s*'Home',/,
-  "'nav.academy': 'Teacher Academy',\n    'nav.home': 'Home',"
+indexCode = indexCode.replace(
+  /export const LANGUAGES = \[/,
+  "export const LANGUAGES = [\n  { code: 'en', name: 'English', flag: '????' },"
 );
 
-code = code.replace(
-  /'nav\.home':\s*'Ballina',/,
-  "'nav.academy': 'Qëndra Edukative',\n    'nav.home': 'Ballina',"
+indexCode = indexCode.replace(
+  /\['mk', 'sq', 'tr'\]/,
+  "['mk', 'sq', 'tr', 'en']"
 );
 
-fs.writeFileSync('i18n/translations.ts', code, 'utf8');
-console.log('patched');
+indexCode = indexCode.replace(
+  /if \(navigator\.language\.startsWith\('tr'\)\) return 'tr';/,
+  "if (navigator.language.startsWith('tr')) return 'tr';\n  if (navigator.language.startsWith('en')) return 'en';"
+);
+
+fs.writeFileSync('i18n/index.ts', indexCode);
+console.log('Updated i18n/index.ts');

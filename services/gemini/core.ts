@@ -461,7 +461,7 @@ export const TEXT_SYSTEM_INSTRUCTION = `
 Твојата цел е да генерираш креативни, ангажирачки и педагошки издржани содржини.
 
 ПРАВИЛА ЗА ИЗЛЕЗ:
-1. Јазик: Користи литературен македонски јазик.
+1. Јазик: {{LANGUAGE_RULE}}
 2. Форматирање: Користи Markdown за добра читливост.
 3. Математички формули: Користи стандарден LaTeX со $ за инлајн и $$ за блок. Користи \\cdot за множење и : за делење. Користи децимална запирка (,).
 
@@ -499,6 +499,20 @@ export const MACEDONIAN_CONTEXT_SNIPPET = `
 
 export async function buildDynamicSystemInstruction(baseInstruction: string, gradeLevel?: number, conceptId?: string, topicId?: string): Promise<string> {
     let instruction = baseInstruction;
+    let lang = 'mk';
+    try { lang = localStorage.getItem('preferred_language') || 'mk'; } catch(e){}
+    let langRule = "Користи литературен македонски јазик.";
+    if (lang === 'sq') langRule = "Задолжително користи АЛБАНСКИ јазик (Shqip) за целиот текст и содржина.";
+    if (lang === 'tr') langRule = "Задолжително користи ТУРСКИ јазик (Türkçe) за целиот текст и содржина.";
+    if (lang === 'en') langRule = "Задолжително користи АНГЛИСКИ јазик (English) за целиот текст и содржина.";
+    
+    instruction = instruction.replace('{{LANGUAGE_RULE}}', langRule);
+    
+    if (!instruction.includes('{{LANGUAGE_RULE}}') && lang && lang !== 'mk') {
+        instruction += "\nВАЖНА НАПОМЕНА: Сите текстуални вредности во JSON објектот (наслови, описи, задачи) МОРА да бидат напишани исклучиво на " + 
+                       (lang === 'sq' ? 'АЛБАНСКИ (Shqip)' : lang === 'tr' ? 'ТУРСКИ (Türkçe)' : 'АНГЛИСКИ (English)') + " јазик!";
+    }
+
     if (gradeLevel && conceptId) {
         instruction += await ragService.getConceptContext(gradeLevel, conceptId);
     } else if (gradeLevel && topicId) {

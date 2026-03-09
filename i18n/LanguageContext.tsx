@@ -26,7 +26,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (key: string): string => {
-    return translations[language]?.[key] || translations['mk'][key] || key;
+    return translations[language]?.[key] || (translations['mk'] ? translations['mk'][key] : undefined) || key;
   };
 
   return (

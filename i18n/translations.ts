@@ -1,6 +1,6 @@
 import { Language } from './index';
 
-export const translations: Record<Language, Record<string, string>> = {
+export const translations: Partial<Record<Language, Record<string, string>>> = {
   mk: {
   dashboard_default_user: 'Корисник',
   sidebar_logout: 'Одјави се',

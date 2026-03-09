@@ -550,6 +550,5 @@ declare global {
     }
   }
 }
-e x p o r t   i n t e r f a c e   A I G e n e r a t e d A n n u a l P l a n T o p i c   {   t i t l e :   s t r i n g ;   d u r a t i o n W e e k s :   n u m b e r ;   o b j e c t i v e s :   s t r i n g [ ] ;   s u g g e s t e d A c t i v i t i e s :   s t r i n g [ ] ;   } 
- e x p o r t   i n t e r f a c e   A I G e n e r a t e d A n n u a l P l a n   {   g r a d e :   s t r i n g ;   s u b j e c t :   s t r i n g ;   t o t a l W e e k s :   n u m b e r ;   t o p i c s :   A I G e n e r a t e d A n n u a l P l a n T o p i c [ ] ;   }  
- 
+export interface AIGeneratedAnnualPlanTopic { title: string; durationWeeks: number; objectives: string[]; suggestedActivities: string[]; }
+export interface AIGeneratedAnnualPlan { grade: string; subject: string; totalWeeks: number; topics: AIGeneratedAnnualPlanTopic[]; }
