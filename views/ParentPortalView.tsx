@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Bell, BellRing } from 'lucide-react';
+import { requestNotificationPermission, sendLocalPushNotification } from '../services/pushService';
 import { StudentProgressView } from './StudentProgressView';
 import { BookOpen, Loader2, BarChart2, CheckCircle2, Flame, Star, ExternalLink, AlertTriangle, Home } from 'lucide-react';
 import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
