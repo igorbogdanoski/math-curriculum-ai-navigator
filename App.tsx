@@ -10,6 +10,7 @@ import { ModalProvider } from './contexts/ModalContext';
 import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
 import { NavigationContext, useNavigation } from './contexts/NavigationContext';
 import { LastVisitedProvider } from './contexts/LastVisitedContext';
+import { AcademyProgressProvider } from './contexts/AcademyProgressContext';
 import { CurriculumProvider, useCurriculum } from './hooks/useCurriculum';
 import { UIProvider, useUI } from './contexts/UIContext';
 import { GeneratorPanelProvider, useGeneratorPanel } from './contexts/GeneratorPanelContext';
@@ -324,12 +325,14 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
               <PlannerProvider>
                 <ModalProvider>
                   <LastVisitedProvider>
-                    <UIProvider>
-                      <GeneratorPanelProvider>
-                        {children}
-                        <GlobalTour />
-                      </GeneratorPanelProvider>
-                    </UIProvider>
+                    <AcademyProgressProvider>
+                      <UIProvider>
+                        <GeneratorPanelProvider>
+                          {children}
+                          <GlobalTour />
+                        </GeneratorPanelProvider>
+                      </UIProvider>
+                    </AcademyProgressProvider>
                   </LastVisitedProvider>
                 </ModalProvider>
               </PlannerProvider>

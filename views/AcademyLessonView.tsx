@@ -1,15 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowLeft, BookOpen, BrainCircuit, Rocket, Target, Wand2 } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ACADEMY_CONTENT } from '../data/academy/content';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { GeneratorState } from '../hooks/useGeneratorState';
+import { useAcademyProgress } from '../contexts/AcademyProgressContext';
 
 export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
+  const { markLessonAsRead, markLessonAsApplied } = useAcademyProgress();
 
   const lesson = ACADEMY_CONTENT[id];
+
+  useEffect(() => {
+    if (lesson) {
+      markLessonAsRead(id);
+    }
+  }, [id, lesson, markLessonAsRead]);
 
   if (!lesson) {
     return (
@@ -31,6 +39,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
 
   // Handle Dynamic Action Generation Logic
   const handleTryItOut = () => {
+    markLessonAsApplied(id);
     let statePayload: Partial<GeneratorState> = {};
     if (lesson.type === 'model') {
       statePayload.learningDesignModel = lesson.generatorKey;
