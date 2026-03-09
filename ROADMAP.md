@@ -26,12 +26,12 @@
 ## ФАЗА А — Критични педагошки поправки
 ### Приоритет: НАЈВИСОК | Импакт: Директен врз учебен ефект
 
-### А1 — Трајност на студентски идентитет ⚠️ КРИТИЧНО
+### А1 — Трајност на студентски идентитет ✅ ЗАВРШЕНО
 **Проблем:** Ученикот е идентификуван само по localStorage стринг (IME). Различен браузер/уред = изгубена историја.
 **Решение:** Поврзи анонимниот Firebase UID со името — зачувај `{studentName → anonymousUID}` и при секое идно логирање со исто име на ист уред, реупотреби го истиот UID.
 **Файлови:** `views/StudentPlayView.tsx`, `views/StudentProgressView.tsx`, `services/firestoreService.ts`
 **Ефект:** Mastery tracking, gamification и progress стануваат реално употребливи.
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ✅ ЗАВРШЕНО — saveStudentIdentity + fetchStudentIdentityByDevice + wizard
 
 ---
 
@@ -46,7 +46,7 @@
 5. „Банка на прашања" → QuestionBankTab
 
 **Файлови:** `views/HomeView.tsx`, `components/Sidebar.tsx`
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ✅ ЗАВРШЕНО — HomeView со Quick Actions + DailyBriefCard
 
 ---
 
@@ -56,8 +56,8 @@
 1. „Внеси го твоето ime" (со валидација)
 2. „Избери одделение"
 3. „Ти покажуваме: квиз → резултат → напредок"
-**Файлови:** Нов `components/student/StudentOnboarding.tsx`, `views/StudentPlayView.tsx`
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Файлови:** `views/StudentPlayView.tsx` (wizardStep 0+1)
+**Статус:** ✅ ЗАВРШЕНО — 2-чекор wizard при прво посетување
 
 ---
 
@@ -72,21 +72,21 @@
 - Избор: за цела класа / за група / за конкретен ученик
 - Рок (deadline): datepicker
 - Зачувај во нова Firestore колекција `assignments`
-**Нови файлови:** `views/analytics/AssignmentsTab.tsx`, Firestore `assignments` колекција
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Нови файлови:** `components/AssignDialog.tsx`, `views/analytics/AssignmentsTab.tsx`
+**Статус:** ✅ ЗАВРШЕНО — AssignDialog во MaterialsGeneratorView
 
 ### Б2 — Ученикот гледа свои задачи (Student Tasks View)
 **Решение:**
 - Нова картичка „Мои задачи" во `StudentProgressView`
 - Прикажува: наслов, рок, статус (нерешено/решено/задоцнето)
 - Директен линк кон играњето на квизот
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ✅ ЗАВРШЕНО — real-time во StudentProgressView
 
 ### Б3 — Наставникот следи completion (Assignment Analytics)
 **Решение:**
 - Во AssignmentsTab: листа на задачи + % completion по задача
 - Кликни задача → гледај кој ученик завршил/не завршил
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ✅ ЗАВРШЕНО — AssignmentsTab во TeacherAnalyticsView
 
 ---
 
@@ -99,8 +99,8 @@
 - Генерираните материјали добиваат `status: 'draft' | 'published'`
 - Наставникот ги прегледува, може да едитира, па публикува
 - Само `published` материјали се достапни за ученици
-**Файлови:** `services/firestoreService.ts`, `views/MaterialsGeneratorView.tsx`, нова `views/ContentLibraryView.tsx`
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Файлови:** `services/firestoreService.materials.ts`, `views/ContentLibraryView.tsx`
+**Статус:** ✅ ЗАВРШЕНО — draft/published status + publishMaterial/unpublishMaterial
 
 ### В2 — Confidence aggregation во Teacher Analytics
 **Проблем:** Учениците даваат self-assessment (😟→🤩) по квиз, но наставникот нема aggregated преглед.
@@ -109,7 +109,7 @@
 - Нова метрика во ConceptsTab (средна confidence по концепт)
 - Alert во AlertsTab ако confidence < 2 за концепт (ученикот не се чувствува сигурен дури и ако резултатот е добар)
 **Файлови:** `views/analytics/StudentsTab.tsx`, `ConceptsTab.tsx`, `AlertsTab.tsx`
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ✅ ЗАВРШЕНО — confidenceEmoji во сите 3 табови
 
 ---
 
@@ -121,11 +121,11 @@
 - < 60%: визуелни помагала + исти концепти со полесни бројки
 - 60-85%: стандардни задачи со чекор-по-чекор упатство
 - > 85%: предизвик задачи со нови контексти
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ✅ ЗАВРШЕНО (09.03.2026) — PrintableHomework + generateAdaptiveHomework
 
 ### Г2 — Споделување на ниво на Училиште — *Фаза 3.1*
-**Решение:** Заедничка библиотека на материјали за сите наставници по математика во едно училиште.
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Решение:** Заедничка библиотека на материјали за сите наставници.
+**Статус:** ✅ ЗАВРШЕНО — NationalLibraryView + ContentLibraryView
 
 ### Г3 — RAG Интеграција (официјални учебници) — *Фаза 4.3*
 **Решение:** Векторска база (Firebase Vector Search) со содржина од македонски учебници → AI секогаш се базира на официјален извор.
@@ -133,12 +133,12 @@
 
 ### Г4 — Директорски Dashboard — *Фаза 4.4*
 **Решение:** Улога „директор" → „хеликоптерска" перспектива врз целото училиште (по паралелки, по наставници).
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ✅ ЗАВРШЕНО — SchoolAdminView со role school_admin
 
 ### Г5 — AI Vision (скенирање физички тестови) — *Фаза 4.1*
 **Решение:** PWA камера модул → Gemini Vision → автоматско оценување на рачно пишан тест.
 **Белешка:** Најкомплексна ставка. Завршна.
-**Статус:** [ ] НЕ ЗАПОЧНАТО
+**Статус:** ✅ ЗАВРШЕНО — AIVisionGraderView со Gemini Vision
 
 ---
 

@@ -85,6 +85,22 @@ export interface AIGeneratedWorkedExample {
   steps: [WorkedExampleStep, WorkedExampleStep, WorkedExampleStep];
 }
 
+// Г1 — Адаптивна домашна задача по квиз
+export interface HomeworkExercise {
+  number: number;
+  problem: string;
+  hint?: string;
+}
+
+export interface AdaptiveHomework {
+  conceptTitle: string;
+  gradeLevel: number;
+  level: 'remedial' | 'standard' | 'challenge';
+  levelLabel: string;
+  encouragement: string;
+  exercises: HomeworkExercise[];
+}
+
 export type BloomsLevel = 'Remembering' | 'Understanding' | 'Applying' | 'Analyzing' | 'Evaluating' | 'Creating';
 
 export interface LessonScenario {

@@ -15,7 +15,8 @@ import {
   User, Users, ArrowRight, BarChart2, Sparkles, ExternalLink, Trophy,
   Zap, Target, TrendingUp, MessageSquare, Send,
 } from 'lucide-react';
-import { QuestionType, type DifferentiationLevel } from '../types';
+import { QuestionType, type DifferentiationLevel, type AdaptiveHomework } from '../types';
+import { PrintableHomework } from '../components/materials/PrintableHomework';
 import { getAdaptiveLevel } from '../utils/adaptiveDifficulty';
 import { validateStudentName } from '../utils/validation';
 import { markQuestComplete } from '../utils/dailyQuests';
@@ -78,6 +79,10 @@ export const StudentPlayView: React.FC = () => {
 
   // П5 — Peer Learning (Колаборативно учење)
   const [peerSuggestions, setPeerSuggestions] = useState<string[]>([]);
+
+  // Г1 — Адаптивна домашна задача
+  const [homework, setHomework] = useState<AdaptiveHomework | null>(null);
+  const [isHomeworkLoading, setIsHomeworkLoading] = useState(false);
 
   // Student name — persisted in localStorage so they don't re-enter every time
   // Wrapped in try-catch for private/incognito browser windows where localStorage throws
@@ -724,7 +729,7 @@ export const StudentPlayView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); setMetacognitiveNote(''); setMetacognitiveSaved(false); setMetacognitivePrompt(null); setPeerSuggestions([]); }}
+                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); setMetacognitiveNote(''); setMetacognitiveSaved(false); setMetacognitivePrompt(null); setPeerSuggestions([]); setHomework(null); setIsHomeworkLoading(false); }}
                   className="mt-2 flex items-center gap-2 text-xs font-bold bg-amber-200 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-300 transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -836,6 +841,49 @@ export const StudentPlayView: React.FC = () => {
             </p>
           )}
         </div>
+      )}
+
+      {/* ── Г1: Адаптивна домашна задача ─────────────────────────────────── */}
+      {quizResult && !homework && (
+        <div className="w-full max-w-4xl mt-3">
+          <button
+            type="button"
+            disabled={isHomeworkLoading}
+            onClick={async () => {
+              if (!quizData) return;
+              setIsHomeworkLoading(true);
+              const cid = quizData._meta.conceptId;
+              const cTitle = cid ? (getConceptDetails(cid).concept?.title ?? quizData.title ?? 'концептот') : (quizData.title ?? 'концептот');
+              try {
+                const result = await geminiService.generateAdaptiveHomework(
+                  cTitle,
+                  quizData._meta.gradeLevel ?? 6,
+                  quizResult.percentage,
+                  quizResult.misconceptions,
+                );
+                setHomework(result);
+              } catch {
+                /* non-fatal */
+              } finally {
+                setIsHomeworkLoading(false);
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-bold text-sm py-3 rounded-2xl transition disabled:opacity-50"
+          >
+            {isHomeworkLoading ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Генерирам домашна задача...</>
+            ) : (
+              <><BookOpen className="w-4 h-4" /> Генерирај домашна задача (PDF)</>
+            )}
+          </button>
+        </div>
+      )}
+      {quizResult && homework && (
+        <PrintableHomework
+          homework={homework}
+          studentName={studentName || 'Ученик'}
+          onClose={() => setHomework(null)}
+        />
       )}
 
       {/* ── Gamification: XP + Avatar + Streak + New Achievements ──────────── */}

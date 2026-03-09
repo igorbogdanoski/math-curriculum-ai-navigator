@@ -169,7 +169,7 @@ function StepCard({ step, onNext, isLast }: { step: WorkedExampleStep; onNext: (
 }
 
 export const WorkedExample: React.FC<Props> = ({ example }) => {
-  const storageKey = `we_${example.title.slice(0, 50)}`;
+  const storageKey = `we_${example.concept.slice(0, 50)}`;
 
   const [currentStep, setCurrentStep] = useState(() => {
     try {

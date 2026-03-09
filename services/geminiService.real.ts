@@ -7,7 +7,7 @@ import {
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, AssessmentQuestion, AIGeneratedWorkedExample } from '../types';
+import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, AssessmentQuestion, AIGeneratedWorkedExample, AdaptiveHomework } from '../types';
 import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalAnalysisSchema, CoverageAnalysisSchema, AIRecommendationSchema, GeneratedTestSchema } from '../utils/schemas';
 
 // Core exports
@@ -932,6 +932,81 @@ ${toneHint}
 Сите текстови на македонски јазик. Задачите мора да се математички точни.`;
 
     return generateAndParseJSON<AIGeneratedWorkedExample>(
+      [{ text: prompt }],
+      schema,
+      DEFAULT_MODEL,
+      undefined,
+      MAX_RETRIES,
+      false,
+    );
+  },
+
+  // Г1 — Адаптивна домашна задача по квиз
+  async generateAdaptiveHomework(
+    conceptTitle: string,
+    gradeLevel: number,
+    percentage: number,
+    misconceptions?: { question: string; studentAnswer: string; misconception: string }[],
+  ): Promise<AdaptiveHomework> {
+    checkDailyQuotaGuard();
+
+    const level = percentage < 60 ? 'remedial' : percentage < 80 ? 'standard' : 'challenge';
+    const levelLabel = level === 'remedial' ? 'Ремедијална' : level === 'standard' ? 'Стандардна' : 'Предизвик';
+    const difficultyInstruction = level === 'remedial'
+      ? 'лесни задачи со чекор-по-чекор помош (hint). Задачите треба да ги покриваат истите концепти каде ученикот греши, со помали бројки и поедноставен контекст.'
+      : level === 'standard'
+      ? 'средно тешки задачи. Мешај директна примена и мал трансфер. Hint само за 2 задачи.'
+      : 'предизвик задачи — нови контексти, примена на концептот на нов начин, проширување. Без hints.';
+
+    const misconceptionContext = misconceptions && misconceptions.length > 0
+      ? `\nУченикот специфично греши кај:\n${misconceptions.slice(0, 3).map(m => `- „${m.question}" → дал „${m.studentAnswer}" (грешка: ${m.misconception})`).join('\n')}`
+      : '';
+
+    const prompt = `Генерирај адаптивна домашна задача за ученик ${gradeLevel}. одделение.
+Концепт: „${conceptTitle}"
+Резултат на квизот: ${percentage}%
+Ниво на домашна: ${levelLabel}${misconceptionContext}
+
+Генерирај точно 5 ${difficultyInstruction}
+
+Врати JSON со:
+- conceptTitle: стрингот „${conceptTitle}"
+- gradeLevel: ${gradeLevel}
+- level: „${level}"
+- levelLabel: „${levelLabel}"
+- encouragement: 1 реченица охрабрување прилагодена на резултатот (${percentage}%)
+- exercises: низа од 5 задачи, секоја со:
+  - number: реден број (1-5)
+  - problem: формулација на задачата (само текст, без решение)
+  - hint: краток совет (само ако е remedial или standard ниво, иначе null)
+
+Сите текстови на македонски јазик. Задачите мора да бидат математички точни.`;
+
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        conceptTitle: { type: Type.STRING },
+        gradeLevel: { type: Type.INTEGER },
+        level: { type: Type.STRING },
+        levelLabel: { type: Type.STRING },
+        encouragement: { type: Type.STRING },
+        exercises: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              number: { type: Type.INTEGER },
+              problem: { type: Type.STRING },
+              hint: { type: Type.STRING },
+            },
+            required: ['number', 'problem'],
+          },
+        },
+      },
+      required: ['conceptTitle', 'gradeLevel', 'level', 'levelLabel', 'encouragement', 'exercises'],
+    };
+
+    return generateAndParseJSON<AdaptiveHomework>(
       [{ text: prompt }],
       schema,
       DEFAULT_MODEL,
