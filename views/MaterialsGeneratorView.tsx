@@ -228,13 +228,21 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                             Генерирањето ќе биде достапно во <strong>09:00 МК</strong>
                             {quotaCountdown ? ` — уште ${quotaCountdown}` : ''}.
                         </p>
-                        <button
-                            type="button"
-                            onClick={() => { clearDailyQuotaFlag(); setQuotaError(null); addNotification('Квота флагот е ресетиран. Обидете се со генерирање.', 'success'); }}
-                            className="mt-1.5 text-xs text-orange-600 underline hover:text-orange-800 transition"
-                        >
-                            Ресетирај рачно ако е грешка
-                        </button>
+                        <div className="mt-2 flex items-center gap-3 flex-wrap">
+                            <a
+                                href="#/my-lessons"
+                                className="text-xs font-bold text-orange-700 bg-orange-100 hover:bg-orange-200 px-3 py-1 rounded-lg transition"
+                            >
+                                📁 Прегледај Мои Подготовки →
+                            </a>
+                            <button
+                                type="button"
+                                onClick={() => { clearDailyQuotaFlag(); setQuotaError(null); addNotification('Квота флагот е ресетиран. Обидете се со генерирање.', 'success'); }}
+                                className="text-xs text-orange-500 underline hover:text-orange-700 transition"
+                            >
+                                Ресетирај рачно ако е грешка
+                            </button>
+                        </div>
                     </div>
                     <button
                         type="button"

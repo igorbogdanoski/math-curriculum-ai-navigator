@@ -65,13 +65,19 @@ export const QuotaBanner: React.FC = () => {
         <div className="bg-red-600 text-white px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 shadow-md animate-fade-in-up fixed bottom-0 left-0 right-0 z-50 md:left-64">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>
-                Дневната AI квота е исцрпена. Обновување за <strong>{countdown}</strong> — денес во <strong>{resetAt}</strong> (полноќ Pacific Time).
+                AI квотата е исцрпена. Обновување за <strong>{countdown}</strong> — во <strong>{resetAt}</strong>.
             </span>
+            <a
+                href="#/my-lessons"
+                className="ml-2 flex-shrink-0 text-xs font-bold bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg transition"
+            >
+                📁 Мои Подготовки
+            </a>
             <button
                 type="button"
                 onClick={handleDismiss}
                 title="Исчисти ознаката и провери повторно"
-                className="ml-2 flex items-center gap-1 underline underline-offset-2 opacity-80 hover:opacity-100 transition text-xs font-semibold flex-shrink-0"
+                className="flex items-center gap-1 underline underline-offset-2 opacity-80 hover:opacity-100 transition text-xs font-semibold flex-shrink-0"
             >
                 <RefreshCw className="w-3 h-3" />
                 Провери повторно
