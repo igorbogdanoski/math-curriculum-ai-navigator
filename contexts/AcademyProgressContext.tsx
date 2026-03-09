@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
+import { db } from '../firebaseConfig';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
-// Defines the structure of a user's progress in the Academy
 export interface AcademyProgress {
-  readLessons: string[]; // Array of lesson IDs the user has opened/read
-  appliedLessons: string[]; // Array of lesson IDs the user has actually generated material with
+  readLessons: string[]; 
+  appliedLessons: string[];
 }
 
 export interface AcademyProgressContextType {
@@ -23,8 +25,8 @@ const AcademyProgressContext = createContext<AcademyProgressContextType | undefi
 export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [progress, setProgress] = useState<AcademyProgress>(defaultProgress);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { firebaseUser } = useAuth();
 
-  // Load from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem('math-navigator-academy-progress');
@@ -37,37 +39,75 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
     setIsLoaded(true);
   }, []);
 
-  // Save to localStorage whenever progress changes
+  useEffect(() => {
+    if (!firebaseUser) return;
+    
+    const progressRef = doc(db, 'users', firebaseUser.uid, 'academy', 'progress');
+    
+    const unsubscribe = onSnapshot(progressRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data() as AcademyProgress;
+        
+        setProgress(prev => {
+          const mergedRead = Array.from(new Set([...prev.readLessons, ...(data.readLessons || [])]));
+          const mergedApplied = Array.from(new Set([...prev.appliedLessons, ...(data.appliedLessons || [])]));
+          
+          const merged = {
+            readLessons: mergedRead,
+            appliedLessons: mergedApplied
+          };
+          
+          if (mergedRead.length > (data.readLessons?.length || 0) || mergedApplied.length > (data.appliedLessons?.length || 0)) {
+            setDoc(progressRef, merged, { merge: true }).catch(console.error);
+          }
+          
+          return merged;
+        });
+      } else {
+        setProgress(prev => {
+           setDoc(progressRef, prev, { merge: true }).catch(console.error);
+           return prev;
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [firebaseUser]);
+
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem('math-navigator-academy-progress', JSON.stringify(progress));
     }
   }, [progress, isLoaded]);
 
-  const markLessonAsRead = (lessonId: string) => {
+  const markLessonAsRead = async (lessonId: string) => {
     setProgress(prev => {
       if (prev.readLessons.includes(lessonId)) return prev;
-      return {
-        ...prev,
-        readLessons: [...prev.readLessons, lessonId]
-      };
+      
+      const newReadLessons = [...prev.readLessons, lessonId];
+      if (firebaseUser) {
+        const progressRef = doc(db, 'users', firebaseUser.uid, 'academy', 'progress');
+        setDoc(progressRef, { readLessons: newReadLessons }, { merge: true }).catch(console.error);
+      }
+      return { ...prev, readLessons: newReadLessons };
     });
   };
 
-  const markLessonAsApplied = (lessonId: string) => {
+  const markLessonAsApplied = async (lessonId: string) => {
     setProgress(prev => {
       if (prev.appliedLessons.includes(lessonId)) return prev;
-      return {
-        ...prev,
-        appliedLessons: [...prev.appliedLessons, lessonId]
-      };
+      
+      const newAppliedLessons = [...prev.appliedLessons, lessonId];
+      if (firebaseUser) {
+        const progressRef = doc(db, 'users', firebaseUser.uid, 'academy', 'progress');
+        setDoc(progressRef, { appliedLessons: newAppliedLessons }, { merge: true }).catch(console.error);
+      }
+      return { ...prev, appliedLessons: newAppliedLessons };
     });
   };
 
   const getCompletionPercentage = (totalLessons: number) => {
     if (totalLessons === 0) return 0;
-    // For now, completion means having read it and applied it.
-    // Let's count reading as progress.
     return Math.round((progress.readLessons.length / totalLessons) * 100);
   };
 

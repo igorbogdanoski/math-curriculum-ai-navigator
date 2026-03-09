@@ -8,7 +8,8 @@ import { slugify } from '../utils/slugify';
 
 export const AcademyView: React.FC = () => {
   const { navigate } = useNavigation();
-  const { readLessons, appliedLessons } = useAcademyProgress();
+  const { progress } = useAcademyProgress();
+  const { readLessons, appliedLessons } = progress;
 
   const MODULES = [
     {
