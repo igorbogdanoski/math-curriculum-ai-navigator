@@ -7,7 +7,7 @@ import {
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, AssessmentQuestion } from '../types';
+import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, AssessmentQuestion, AIGeneratedWorkedExample } from '../types';
 import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalAnalysisSchema, CoverageAnalysisSchema, AIRecommendationSchema, GeneratedTestSchema } from '../utils/schemas';
 
 // Core exports
@@ -882,5 +882,62 @@ ${toneHint}
       generationConfig: { maxOutputTokens: 150 },
     });
     return response.text.trim();
+  },
+
+  // П6 — Worked Examples со Scaffolded Fading (I do → We do → You do)
+  async generateWorkedExample(conceptTitle: string, gradeLevel: number): Promise<AIGeneratedWorkedExample> {
+    checkDailyQuotaGuard();
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        concept: { type: Type.STRING },
+        gradeLevel: { type: Type.INTEGER },
+        steps: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              phase: { type: Type.STRING },
+              title: { type: Type.STRING },
+              problem: { type: Type.STRING },
+              solution: { type: Type.ARRAY, items: { type: Type.STRING } },
+              partialPlaceholder: { type: Type.STRING },
+            },
+            required: ['phase', 'title', 'problem'],
+          },
+        },
+      },
+      required: ['concept', 'gradeLevel', 'steps'],
+    };
+    const prompt = `Креирај Worked Example со Scaffolded Fading за концептот „${conceptTitle}", ${gradeLevel}. одделение.
+
+Врати JSON со точно 3 чекори (steps):
+
+1. phase: "solved" — Целосно решен пример (I do):
+   - Задача со реални македонски бројки
+   - solution: низа од 4-6 чекори, секој чекор е 1 реченица + пресметка
+   - title: „Погледни — решено заедно"
+
+2. phase: "partial" — Делумно решен пример (We do):
+   - Иста или слична структура на задача
+   - solution: само првите 2-3 чекори се дадени
+   - partialPlaceholder: „Твој ред — заврши го решението"
+   - title: „Заврши го ти"
+
+3. phase: "quiz" — Самостојна задача (You do):
+   - Нова задача, ист концепт, без помош
+   - title: „Самостојно!"
+   - НЕ давај solution
+
+Сите текстови на македонски јазик. Задачите мора да се математички точни.`;
+
+    return generateAndParseJSON<AIGeneratedWorkedExample>(
+      [{ text: prompt }],
+      schema,
+      DEFAULT_MODEL,
+      undefined,
+      MAX_RETRIES,
+      false,
+    );
   },
 };

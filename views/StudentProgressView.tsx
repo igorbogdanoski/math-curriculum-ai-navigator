@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { ICONS } from '../constants';
 import {
   Loader2, User, Star, Home, BarChart2, CheckCircle2,
-  RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw, Target,
+  RefreshCw, Trophy, Flame, PlayCircle, Printer, AlertTriangle, RotateCcw, Target, Users,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useStudentProgress } from '../hooks/useStudentProgress';
@@ -12,6 +12,7 @@ import { DailyQuestCard } from '../components/common/DailyQuestCard';
 import { loadOrGenerateQuests, type DailyQuest } from '../utils/dailyQuests';
 import { LogicMap } from '../components/LogicMap';
 import { geminiService } from '../services/geminiService';
+import { firestoreService } from '../services/firestoreService';
 import { GamificationPanel } from '../components/student/GamificationPanel';
 import { ActivityFeed } from '../components/student/ActivityFeed';
 
@@ -61,6 +62,37 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>([]);
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [aiReportLoading, setAiReportLoading] = useState(false);
+  const [peerHelpers, setPeerHelpers] = useState<Record<string, string[]>>({});
+
+  // П5: Peer Learning — fetch students who mastered the same concepts the current student struggles with
+  useEffect(() => {
+    const teacherUid = data?.teacherUid;
+    if (!teacherUid || !studentName || masteryRecords.length === 0) return;
+    const struggling = masteryRecords.filter(m => !m.mastered && m.attempts >= 2).slice(0, 3);
+    if (struggling.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const results: Record<string, string[]> = {};
+      await Promise.all(struggling.map(async m => {
+        try {
+          const peers = await firestoreService.fetchMasteryByConcept(m.conceptId, teacherUid);
+          const helpers = peers
+            .filter(p => p.mastered && p.studentName !== studentName)
+            .map(p => p.studentName)
+            .filter(Boolean)
+            .slice(0, 3) as string[];
+          if (helpers.length > 0) results[m.conceptId] = helpers;
+        } catch { /* ignore */ }
+      }));
+      if (!cancelled) setPeerHelpers(results);
+    })();
+    return () => { cancelled = true; };
+  }, [data?.teacherUid, studentName, masteryRecords.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const peerHelpConcepts = useMemo(() =>
+    masteryRecords.filter(m => !m.mastered && m.attempts >= 2 && (peerHelpers[m.conceptId]?.length ?? 0) > 0),
+    [masteryRecords, peerHelpers]
+  );
 
   // Update daily quests when mastery data arrives
   useEffect(() => {
@@ -401,6 +433,34 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* -- П5: Peer Learning — предлози за врснички помош -------------------- */}
+      {!isReadOnly && peerHelpConcepts.length > 0 && (
+        <div className="w-full max-w-2xl mb-4">
+          <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-5 h-5 text-violet-600" />
+              <p className="font-bold text-violet-800 text-sm">Побарај помош од врсник</p>
+              <span className="px-2 py-0.5 rounded-full bg-violet-200 text-violet-800 text-xs font-bold">{peerHelpConcepts.length}</span>
+            </div>
+            <p className="text-xs text-violet-600 mb-3">Овие ученици го совладале концептот со кој ти имаш тешкотии. Побарај помош од нив!</p>
+            <div className="space-y-2">
+              {peerHelpConcepts.map(m => (
+                <div key={m.conceptId} className="bg-white rounded-xl px-3 py-2.5 border border-violet-100">
+                  <p className="text-sm font-semibold text-slate-700 mb-1">{m.conceptTitle || m.conceptId}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {peerHelpers[m.conceptId].map(name => (
+                      <span key={name} className="inline-flex items-center gap-1 text-xs font-semibold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
+                        💬 {name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

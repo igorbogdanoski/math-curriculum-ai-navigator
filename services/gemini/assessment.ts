@@ -19,10 +19,11 @@ async generatePracticeMaterials(concept: Concept, gradeLevel: number, materialTy
   },
 
 async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean, includeWorkedExamples?: boolean): Promise<AIGeneratedAssessment> {
-    const bloomLevels = context.bloomDistribution && Object.keys(context.bloomDistribution).length > 0
-      ? Object.keys(context.bloomDistribution)
-      : null;
-    const bloomPart = bloomLevels ? ` Нагласени Блумови нивоа: ${bloomLevels.join(', ')}.` : '';
+    const bloomDist = context.bloomDistribution;
+    const hasBloom = bloomDist && Object.keys(bloomDist).length > 0;
+    const bloomPart = hasBloom
+      ? ` BLOOM РАСПРЕДЕЛБА (придржувај се строго): ${Object.entries(bloomDist!).map(([k, v]) => `${k} ${v}%`).join(', ')}.`
+      : '';
     const selfAssessmentPart = includeSelfAssessment ? ' Додај 2-3 метакогнитивни прашања за само-оценување на крајот.' : '';
       const workedExamplePart = includeWorkedExamples ? ' Првите 1 или 2 прашања нека бидат решени примери (Worked Examples) за учење (Scaffolding). На нив постави го полето isWorkedExample на true, а во workedExampleType стави "full". Објаснувањето на решението напиши го во полето solution, а answer да биде точниот одговор.' : '';
     const diffDescriptions: Record<string, string> = {

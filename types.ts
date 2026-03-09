@@ -69,7 +69,21 @@ export enum PlannerItemType {
   HOLIDAY = 'HOLIDAY',
 }
 
-export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH';
+export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH' | 'WORKED_EXAMPLE';
+
+export interface WorkedExampleStep {
+  phase: 'solved' | 'partial' | 'quiz';
+  title: string;
+  problem: string;
+  solution?: string[];
+  partialPlaceholder?: string;
+}
+
+export interface AIGeneratedWorkedExample {
+  concept: string;
+  gradeLevel: number;
+  steps: [WorkedExampleStep, WorkedExampleStep, WorkedExampleStep];
+}
 
 export type BloomsLevel = 'Remembering' | 'Understanding' | 'Applying' | 'Analyzing' | 'Evaluating' | 'Creating';
 

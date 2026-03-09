@@ -7,7 +7,7 @@ import type {
   AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric,
   GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile,
   AIGeneratedIllustration, AIGeneratedLearningPaths, DifferentiationLevel,
-  AssessmentQuestion, TeachingProfile, SavedQuestion,
+  AssessmentQuestion, TeachingProfile, SavedQuestion, AIGeneratedWorkedExample,
 } from '../types';
 import { ModalType, PlannerItemType, QuestionType } from '../types';
 import type { GeneratorState, GeneratorAction } from './useGeneratorState';
@@ -53,6 +53,7 @@ type GeneratedMaterial =
   | AIGeneratedRubric
   | AIGeneratedIllustration
   | AIGeneratedLearningPaths
+  | AIGeneratedWorkedExample
   | null;
 
 interface UseGeneratorActionsParams {
@@ -612,6 +613,13 @@ export function useGeneratorActions({
               user ?? undefined, differentiationLevel, studentProfilesToPass, imageParam, effectiveInstruction, state.includeSelfAssessment, state.includeWorkedExamples
             );
             break;
+          case 'WORKED_EXAMPLE': {
+            const conceptObj = finalContext.concepts?.[0];
+            const conceptTitle = conceptObj?.title ?? finalContext.topic?.title ?? 'Математика';
+            const gradeLevel = finalContext.grade?.level ?? 1;
+            result = await geminiService.generateWorkedExample(conceptTitle, gradeLevel);
+            break;
+          }
           case 'EXIT_TICKET':
             result = await geminiService.generateExitTicket(exitTicketQuestions, exitTicketFocus, finalContext, user ?? undefined, effectiveInstruction);
             break;
