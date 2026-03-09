@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy, updateDoc, doc, increment, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { Card } from '../components/common/Card';
-import { Button } from '../components/common/Button';
+
 import { ICONS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import { AIGeneratedAnnualPlan } from '../types';
@@ -187,13 +187,13 @@ export const AnnualPlanGalleryView: React.FC = () => {
                                     </button>
                                 </div>
                                 
-                                <Button 
+                                <button 
                                     variant="outline" 
                                     size="sm"
                                     onClick={() => alert('Опцијата за детален преглед е во изработка.')}
                                 >
                                     Преглед
-                                </Button>
+                                </button>
                             </div>
                         </Card>
                     ))}
