@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StudentProgressView } from './StudentProgressView';
-import { BookOpen, Loader2, BarChart2, CheckCircle2, Flame, Star, ExternalLink } from 'lucide-react';
-import { firestoreService } from '../services/firestoreService';
+import { BookOpen, Loader2, BarChart2, CheckCircle2, Flame, Star, ExternalLink, AlertTriangle, Home } from 'lucide-react';
+import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
@@ -11,6 +11,8 @@ interface WeeklySummary {
   avgPct: number;
   masteredThisWeek: number;
   currentStreak: number;
+  recentResults: QuizResult[];
+  weakConcepts: { title: string; avgPct: number }[];
 }
 
 function getWeekStart(): Date {
@@ -85,12 +87,31 @@ export const ParentPortalView: React.FC = () => {
         ? Math.round(weekResults.reduce((s, r) => s + r.percentage, 0) / weekResults.length)
         : 0;
 
+      // Last 5 quiz results (most recent first)
+      const recentResults = results.slice(0, 5);
+
+      // Concepts with avg < 60% (from all mastery data, not mastered)
+      const conceptMap: Record<string, { sum: number; count: number; title: string }> = {};
+      results.filter(r => r.conceptId && r.quizTitle).forEach(r => {
+        const key = r.conceptId!;
+        if (!conceptMap[key]) conceptMap[key] = { sum: 0, count: 0, title: r.quizTitle };
+        conceptMap[key].sum += r.percentage;
+        conceptMap[key].count++;
+      });
+      const weakConcepts = Object.entries(conceptMap)
+        .map(([, v]) => ({ title: v.title, avgPct: Math.round(v.sum / v.count) }))
+        .filter(c => c.avgPct < 60)
+        .sort((a, b) => a.avgPct - b.avgPct)
+        .slice(0, 3);
+
       setSummary({
         studentName: trimmed,
         quizzesThisWeek: weekResults.length,
         avgPct,
         masteredThisWeek,
         currentStreak: gamification?.currentStreak ?? 0,
+        recentResults,
+        weakConcepts,
       });
     } catch {
       setSummaryError('Не можевме да ги вчитаме податоците. Проверете го името и обидете се повторно.');
@@ -209,6 +230,67 @@ export const ParentPortalView: React.FC = () => {
                   : summary.avgPct >= 60
                     ? 'Добар напредок! Продолжете со редовна вежба.'
                     : 'Детето треба малку помош. Разговарајте со наставникот за подршка.'}
+            </div>
+
+            {/* Recent quiz results */}
+            {summary.recentResults.length > 0 && (
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-xs font-bold text-gray-500 mb-2">Последни квизови</p>
+                <div className="space-y-1.5">
+                  {summary.recentResults.map((r, i) => {
+                    const d = r.playedAt && ('toDate' in (r.playedAt as any))
+                      ? (r.playedAt as any).toDate()
+                      : r.playedAt ? new Date(r.playedAt as any) : null;
+                    return (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600 truncate max-w-[180px]">{r.quizTitle}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {d && <span className="text-gray-400">{d.toLocaleDateString('mk-MK', { day: '2-digit', month: '2-digit' })}</span>}
+                          <span className={`font-bold px-1.5 py-0.5 rounded-md ${r.percentage >= 70 ? 'bg-green-100 text-green-700' : r.percentage >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                            {Math.round(r.percentage)}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Weak concepts */}
+            {summary.weakConcepts.length > 0 && (
+              <div className="pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                  <p className="text-xs font-bold text-amber-700">Теми кои бараат внимание</p>
+                </div>
+                <div className="space-y-1">
+                  {summary.weakConcepts.map((c, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs bg-amber-50 rounded-lg px-2.5 py-1.5">
+                      <span className="text-amber-800 font-medium">{c.title}</span>
+                      <span className="text-amber-600 font-bold">{c.avgPct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Home support recommendation */}
+            <div className="pt-2 border-t border-gray-100">
+              <div className={`flex items-start gap-2 text-xs rounded-xl px-3 py-2.5 ${
+                summary.avgPct >= 80 ? 'bg-green-50' : summary.avgPct >= 60 ? 'bg-blue-50' : 'bg-amber-50'
+              }`}>
+                <Home className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${
+                  summary.avgPct >= 80 ? 'text-green-600' : summary.avgPct >= 60 ? 'text-blue-600' : 'text-amber-600'
+                }`} />
+                <p className={summary.avgPct >= 80 ? 'text-green-800' : summary.avgPct >= 60 ? 'text-blue-800' : 'text-amber-800'}>
+                  {summary.avgPct >= 80
+                    ? 'Вашето дете постигнува одлични резултати! Поттикнете го да пробува потешки задачи и да ги објасни концептите на гласно — тоа го зајакнува знаењето.'
+                    : summary.avgPct >= 60
+                      ? 'Добар напредок! Посветете 10–15 мин дневно на вежби. Прашајте го детето да ви ги објасни задачите кои ги решило — разговорот помага.'
+                      : 'Детето има тешкотии со одредени теми. Контактирајте го наставникот за дополнителна поддршка и вежбајте заедно дома со задачи прилагодени на неговото ниво.'}
+                </p>
+              </div>
             </div>
 
             {/* Full report link */}
