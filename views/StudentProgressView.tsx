@@ -82,7 +82,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             .filter(Boolean)
             .slice(0, 3) as string[];
           if (helpers.length > 0) results[m.conceptId] = helpers;
-        } catch { /* ignore */ }
+        } catch (err) { console.warn('[PeerLearning] fetchMasteryByConcept failed:', err); }
       }));
       if (!cancelled) setPeerHelpers(results);
     })();

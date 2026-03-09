@@ -303,7 +303,8 @@ export function useGeneratorActions({
 
   const isGenerateDisabled = useMemo(() => {
     const { contextType, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile,
-      materialType, questionTypes, useStudentProfiles, selectedStudentProfileIds, activityTitle, illustrationPrompt } = state;
+      materialType, questionTypes, useStudentProfiles, selectedStudentProfileIds, activityTitle, illustrationPrompt,
+      bloomDistribution } = state;
     if (isGenerating || isGeneratingBulk || !isOnline) return true;
     let contextIsValid = false;
     switch (contextType) {
@@ -317,6 +318,11 @@ export function useGeneratorActions({
     if (['ASSESSMENT', 'FLASHCARDS', 'QUIZ'].includes(materialType || '')) {
       if (questionTypes.length === 0) return true;
       if (useStudentProfiles && selectedStudentProfileIds.length === 0) return true;
+      // Bloom sliders must sum to exactly 100% when set
+      if (bloomDistribution && Object.keys(bloomDistribution).length > 0) {
+        const bloomTotal = Object.values(bloomDistribution).reduce((s, v) => s + (v ?? 0), 0);
+        if (bloomTotal !== 100) return true;
+      }
     }
     if (materialType === 'LEARNING_PATH' && selectedStudentProfileIds.length === 0) return true;
     if (materialType === 'RUBRIC' && !activityTitle) return true;
