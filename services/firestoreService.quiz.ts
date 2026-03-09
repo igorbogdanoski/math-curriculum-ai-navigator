@@ -277,6 +277,20 @@ export const quizService = {
     }
   },
 
+  fetchMasteryByConceptBulk: async (conceptIds: string[], teacherUid?: string): Promise<ConceptMastery[]> => {
+    if (conceptIds.length === 0) return [];
+    try {
+      const qConstraints = [where('conceptId', 'in', conceptIds.slice(0, 30))];
+      if (teacherUid) qConstraints.push(where('teacherUid', '==', teacherUid));
+      const q = query(collection(db, 'concept_mastery'), ...qConstraints);
+      const snap = await getDocs(q);
+      return snap.docs.map(d => d.data() as ConceptMastery);
+    } catch (error) {
+      console.error('Error fetching mastery by concept bulk:', error);
+      return [];
+    }
+  },
+
   fetchAllMastery: async (teacherUid?: string): Promise<ConceptMastery[]> => {
     try {
       const q = teacherUid

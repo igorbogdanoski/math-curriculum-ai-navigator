@@ -73,17 +73,18 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     let cancelled = false;
     (async () => {
       const results: Record<string, string[]> = {};
-      await Promise.all(struggling.map(async m => {
-        try {
-          const peers = await firestoreService.fetchMasteryByConcept(m.conceptId, teacherUid);
-          const helpers = peers
-            .filter(p => p.mastered && p.studentName !== studentName)
+      try {
+        const conceptIds = struggling.map(m => m.conceptId);
+        const allPeers = await firestoreService.fetchMasteryByConceptBulk(conceptIds, teacherUid);
+        for (const m of struggling) {
+          const helpers = allPeers
+            .filter(p => p.conceptId === m.conceptId && p.mastered && p.studentName !== studentName)
             .map(p => p.studentName)
             .filter(Boolean)
             .slice(0, 3) as string[];
           if (helpers.length > 0) results[m.conceptId] = helpers;
-        } catch (err) { console.warn('[PeerLearning] fetchMasteryByConcept failed:', err); }
-      }));
+        }
+      } catch (err) { console.warn('[PeerLearning] fetchMasteryByConceptBulk failed:', err); }
       if (!cancelled) setPeerHelpers(results);
     })();
     return () => { cancelled = true; };
@@ -165,7 +166,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     const now = Date.now();
     return masteryRecords.filter(m => {
       if (!m.updatedAt) return false;
-      const lastMs = ('toDate' in m.updatedAt ? (m.updatedAt as any).toDate() : new Date(m.updatedAt as any)).getTime();
+      const lastMs = m.updatedAt.toDate().getTime();
       const daysSince = (now - lastMs) / 86_400_000;
       return m.mastered ? daysSince > 30 : (daysSince > 7 && m.attempts > 0);
     });
@@ -211,7 +212,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     }
     const pq = results.filter(r => {
       if (!r.playedAt) return false;
-      const d = ('toDate' in (r.playedAt as any)) ? (r.playedAt as any).toDate() : new Date(r.playedAt as any);
+      const d = r.playedAt.toDate();
       return d >= start && d <= end;
     });
     const total = pq.length;
@@ -219,7 +220,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
     const passedCount = pq.filter(r => r.percentage >= 70).length;
     const newlyMastered = masteryRecords.filter(m => {
       if (!m.mastered || !m.masteredAt) return false;
-      const d = ('toDate' in (m.masteredAt as any)) ? (m.masteredAt as any).toDate() : new Date(m.masteredAt as any);
+      const d = m.masteredAt.toDate();
       return d >= start && d <= end;
     }).length;
     return { periodLabel: label, periodQuizzes: pq, periodStats: { total, avg, passed: passedCount, newlyMastered } };
