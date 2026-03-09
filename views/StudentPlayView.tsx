@@ -262,7 +262,7 @@ export const StudentPlayView: React.FC = () => {
   };
 
   const handleQuizComplete = async (score: number, correctCount: number, totalQuestions: number, misconceptions?: { question: string; studentAnswer: string; misconception: string }[]) => {
-    const percentage = Math.round((correctCount / totalQuestions) * 100);
+    const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     const meta = quizData._meta || {};
 
     // 1. Save quiz result

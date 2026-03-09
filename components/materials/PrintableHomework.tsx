@@ -56,7 +56,7 @@ const HomeworkSheet = React.forwardRef<HTMLDivElement, { homework: AdaptiveHomew
 
         {/* Exercises */}
         <div className="space-y-7">
-          {homework.exercises.map((ex) => (
+          {(homework.exercises ?? []).map((ex) => (
             <div key={ex.number} className="break-inside-avoid">
               <div className="flex gap-3 items-start mb-1">
                 <span className="flex-shrink-0 w-7 h-7 rounded-full bg-black text-white text-sm font-black flex items-center justify-center">
@@ -131,7 +131,7 @@ export const PrintableHomework: React.FC<Props> = ({ homework, studentName, onCl
 
         {/* Exercise preview — first 3 */}
         <div className="px-5 py-3 space-y-3">
-          {homework.exercises.slice(0, 3).map((ex) => (
+          {(homework.exercises ?? []).slice(0, 3).map((ex) => (
             <div key={ex.number} className="flex gap-3 items-start">
               <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 text-white text-[10px] font-black flex items-center justify-center">
                 {ex.number}
@@ -147,7 +147,7 @@ export const PrintableHomework: React.FC<Props> = ({ homework, studentName, onCl
               </div>
             </div>
           ))}
-          {homework.exercises.length > 3 && (
+          {(homework.exercises?.length ?? 0) > 3 && (
             <p className="text-white/40 text-[10px] pl-8">
               + уште {homework.exercises.length - 3} задачи во испринтаната верзија
             </p>
