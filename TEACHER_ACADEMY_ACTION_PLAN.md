@@ -168,4 +168,129 @@
 
 UI во `AcademyView`: progress bar + checklist по лекции + сертификат badge при 100% applied.
 
-Статус: ЗАВРШЕНО (09.03.2026)
+**Статус: ✅ ЗАВРШЕНО (09.03.2026)**
+
+---
+
+## 🧠 ФАЗА П — Педагошко издигнување (Learning Science)
+
+*Базирано на Learning Science истражување: retrieval practice, metacognition, peer learning, scaffolding, Bloom's taxonomy.*
+
+---
+
+### П1 — AI повратна информација по квиз ✅ ЗАВРШЕНО
+
+**Принцип:** Feedback Loop (Hattie, d=0.73)
+
+- По завршен квиз, Gemini генерира 2-3 реченици персонализирана повратна информација
+- Анализира погрешни прашања, ги именува конкретните грешки, дава практичен совет
+- Прикажано во `StudentPlayView` по completion, пред score screen (non-blocking spinner)
+- Не се зачувува во Firestore — само UI
+
+**Фајлови:** `services/geminiService.real.ts` → `generateQuizFeedback()`, `views/StudentPlayView.tsx`
+
+---
+
+### П2 — Teacher Daily Brief ✅ ЗАВРШЕНО
+
+**Принцип:** Data-driven instruction + Formative Assessment Loop
+
+- Картичка на врвот на HomeView: AI генерира дневен брифинг врз основа на последните резултати (48h)
+- Кеширано 24h во `localStorage` за да не троши кредити
+- Приоритетно кодирање: червена (критично), жолта (внимание), зелена (добро)
+
+**Фајлови:** `hooks/useDailyBrief.ts`, `components/dashboard/DailyBriefCard.tsx`
+
+---
+
+### П3 — Skill Tree / LogicMap ✅ ЗАВРШЕНО
+
+**Принцип:** Student Agency + Goal Setting (Locke & Latham, d=0.68)
+
+- `components/LogicMap.tsx` целосно преработена: 4 состојби (mastered/in-progress/unlocked/locked)
+- Tooltip за locked јазли: „Прво: [концепт]"
+- Progress bar + grade selector + легенда + finish banner
+- Директна навигација кон квиз преку `nextQuizIds`
+
+---
+
+### П4 — Metacognitive промпти ✅ ЗАВРШЕНО
+
+**Принцип:** Metacognition + Self-Regulated Learning (Flavell, d=0.69)
+
+- По confidence рејтингот, ротирачки опционален промпт (low/mid/high pools)
+- Textarea + Send → `firestoreService.updateQuizMetacognitiveNote()`
+- Наставникот ги гледа агрегирано во ConceptsTab (`MetacognitiveNotesRow`)
+
+---
+
+### П5 — Peer Learning предлози ✅ ЗАВРШЕНО (commit fbc88af)
+
+**Принцип:** Peer Explanation = Feynman Technique (d=0.55)
+
+**Логика:**
+
+- Кога ученик има ≥2 неуспешни обиди (attempts) на концепт и не е совладан
+- Системот бара `concept_mastery` за иста `teacherUid` + `mastered == true` + различно `studentName`
+- Прикажува виолетова картичка „Побарај помош од врсник" со имиња на peer helpers (до 3)
+- Само во student режим (скриено во readOnly/parent мод)
+- Async, non-blocking, со cancel на unmount
+
+**Фајлови:** `views/StudentProgressView.tsx` (нови: `peerHelpers` state, `peerHelpConcepts` memo, useEffect за fetch)
+
+---
+
+### П6 — Worked Examples со Scaffolded Fading ✅ ЗАВРШЕНО (commit fbc88af)
+
+**Принцип:** Scaffolding + Zone of Proximal Development (Vygotsky, d=0.59)
+
+**Имплементација:**
+
+- Нов тип `WORKED_EXAMPLE` во `MaterialType` — достапен во AI Генераторот (Чекор 1)
+- `geminiService.generateWorkedExample(conceptTitle, gradeLevel)` → AI генерира 3 фази:
+  1. **I do — „Гледај"**: целосно решена задача со нумерирани чекори (сина картичка)
+  2. **We do — „Заврши"**: делумно решена задача, ученикот пишува преостанатите чекори (жолта)
+  3. **You do — „Самостојно!"**: нова задача без помош, ученикот пишува целото решение (зелена)
+- `components/materials/WorkedExample.tsx`: progressbar со 3 фази, per-phase интерактивност, completion screen со „Повтори"
+- Completion screen е достапна само откако ученикот ќе го поднесе одговорот во последната фаза
+
+**Нови типови:** `AIGeneratedWorkedExample`, `WorkedExampleStep` во `types.ts`
+
+**Фајлови:** `types.ts`, `services/geminiService.real.ts`, `hooks/useGeneratorActions.ts`, `views/MaterialsGeneratorView.tsx`, `components/materials/WorkedExample.tsx`
+
+---
+
+### П7 — Bloom's Taxonomy слајдери + Donut Chart ✅ ЗАВРШЕНО (commit fbc88af, bugfix a48a736)
+
+**Принцип:** Cognitive Taxonomy Balance (Bloom, Anderson revision)
+
+**Имплементација:**
+
+* Во `MaterialsGeneratorView` (Чекор 3 — Опции), при избор на QUIZ или ASSESSMENT се прикажуваат 6 слајдери:
+  * Помнење 25% / Разбирање 20% / Примена 25% / Анализа 15% / Евалуација 10% / Креирање 5% (default)
+  * Live шарена лента покажува визуелна распределба
+  * Amber предупредување ако вкупното ≠ 100% (вредностите се нормализираат пред испраќање до AI)
+
+* AI промптот добива: `BLOOM РАСПРЕДЕЛБА (придржувај се строго): Remembering 25%, Applying 25%...`
+* По генерирање: SVG Donut Chart ја прикажува реалната когнитивна распределба на генерираните прашања
+* „Ресетирај" копче враќа на default вредности
+
+**Нормализација:** Вредностите од слајдерите се нормализираат на 100% во `services/gemini/assessment.ts` пред да влезат во AI промптот, без разлика дали сумираат повеќе или помалку.
+
+**Фајлови:** `components/generator/BloomSliders.tsx` (`BloomSliders` + `BloomDonutChart`), `services/gemini/assessment.ts`, `views/MaterialsGeneratorView.tsx`
+
+---
+
+## 📋 Целосен преглед — Фаза П статус
+
+| # | Функција | Принцип (d=) | Commit | Статус |
+| --- | ---------- | ------------ | ------ | ------ |
+| П1 | AI feedback по квиз | Hattie d=0.73 | 64d2357 | ✅ |
+| П2 | Teacher Daily Brief | Formative Assessment | fd94d9d | ✅ |
+| П3 | Skill Tree LogicMap | Goal Setting d=0.68 | dd0ee8f | ✅ |
+| П4 | Metacognitive промпти | Flavell d=0.69 | 10c3278 | ✅ |
+| П5 | Peer Learning | Feynman d=0.55 | fbc88af | ✅ |
+| П6 | Worked Examples | Vygotsky d=0.59 | fbc88af | ✅ |
+| П7 | Bloom's Taxonomy UI | Anderson revision | fbc88af | ✅ |
+
+**Сите 7 педагошки приоритети завршени. Апликацијата е подигната до ниво на research-backed платформа.**
