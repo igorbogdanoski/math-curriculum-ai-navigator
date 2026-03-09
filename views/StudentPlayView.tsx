@@ -83,6 +83,7 @@ export const StudentPlayView: React.FC = () => {
   // Г1 — Адаптивна домашна задача
   const [homework, setHomework] = useState<AdaptiveHomework | null>(null);
   const [isHomeworkLoading, setIsHomeworkLoading] = useState(false);
+  const [homeworkError, setHomeworkError] = useState(false);
 
   // Student name — persisted in localStorage so they don't re-enter every time
   // Wrapped in try-catch for private/incognito browser windows where localStorage throws
@@ -729,7 +730,7 @@ export const StudentPlayView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); setMetacognitiveNote(''); setMetacognitiveSaved(false); setMetacognitivePrompt(null); setPeerSuggestions([]); setHomework(null); setIsHomeworkLoading(false); }}
+                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); setMetacognitiveNote(''); setMetacognitiveSaved(false); setMetacognitivePrompt(null); setPeerSuggestions([]); setHomework(null); setIsHomeworkLoading(false); setHomeworkError(false); }}
                   className="mt-2 flex items-center gap-2 text-xs font-bold bg-amber-200 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-300 transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -845,13 +846,14 @@ export const StudentPlayView: React.FC = () => {
 
       {/* ── Г1: Адаптивна домашна задача ─────────────────────────────────── */}
       {quizResult && !homework && (
-        <div className="w-full max-w-4xl mt-3">
+        <div className="w-full max-w-4xl mt-3 space-y-1">
           <button
             type="button"
             disabled={isHomeworkLoading}
             onClick={async () => {
               if (!quizData) return;
               setIsHomeworkLoading(true);
+              setHomeworkError(false);
               const cid = quizData._meta.conceptId;
               const cTitle = cid ? (getConceptDetails(cid).concept?.title ?? quizData.title ?? 'концептот') : (quizData.title ?? 'концептот');
               try {
@@ -861,11 +863,12 @@ export const StudentPlayView: React.FC = () => {
                   quizResult.percentage,
                   quizResult.misconceptions,
                 );
-                setHomework(result);
-              } catch {
-                /* non-fatal */
+                if (isMountedRef.current) setHomework(result);
+              } catch (err) {
+                console.warn('[Homework] generateAdaptiveHomework failed:', err);
+                if (isMountedRef.current) setHomeworkError(true);
               } finally {
-                setIsHomeworkLoading(false);
+                if (isMountedRef.current) setIsHomeworkLoading(false);
               }
             }}
             className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-bold text-sm py-3 rounded-2xl transition disabled:opacity-50"
@@ -876,6 +879,9 @@ export const StudentPlayView: React.FC = () => {
               <><BookOpen className="w-4 h-4" /> Генерирај домашна задача (PDF)</>
             )}
           </button>
+          {homeworkError && (
+            <p className="text-red-300 text-xs text-center">Грешка при генерирање — обиди се повторно.</p>
+          )}
         </div>
       )}
       {quizResult && homework && (
