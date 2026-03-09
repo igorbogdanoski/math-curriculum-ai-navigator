@@ -77,7 +77,7 @@ type QuizSessionAction =
   | { type: 'CLOSE_HOMEWORK' }
   | { type: 'RETRY' };
 
-const QUIZ_SESSION_INITIAL: QuizSessionState = {
+export const QUIZ_SESSION_INITIAL: QuizSessionState = {
   quizResult: null,
   masteryUpdate: null,
   gamificationUpdate: null,
@@ -96,7 +96,7 @@ const QUIZ_SESSION_INITIAL: QuizSessionState = {
   homeworkError: false,
 };
 
-function quizSessionReducer(state: QuizSessionState, action: QuizSessionAction): QuizSessionState {
+export function quizSessionReducer(state: QuizSessionState, action: QuizSessionAction): QuizSessionState {
   switch (action.type) {
     case 'QUIZ_COMPLETE':
       return { ...QUIZ_SESSION_INITIAL, quizResult: action.quizResult, quizResultDocId: action.docId, masteryUpdate: action.mastery, metacognitivePrompt: action.metacognitivePrompt, isFeedbackLoading: true };
