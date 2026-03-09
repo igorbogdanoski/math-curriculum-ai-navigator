@@ -1,6 +1,7 @@
 export type Language = 'mk' | 'sq' | 'tr' | 'en';
 
 export const LANGUAGES = [
+  { code: 'en', name: 'English', flag: '????' },
   { code: 'mk', name: 'Македонски', flag: '🇲🇰' },
   { code: 'sq', name: 'Shqip', flag: '🇦🇱' },
   { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
@@ -19,6 +20,7 @@ export const getLanguagePreference = (): Language => {
 
   if (navigator.language.startsWith('sq')) return 'sq';
   if (navigator.language.startsWith('tr')) return 'tr';
+  if (navigator.language.startsWith('en')) return 'en';
   if (navigator.language.startsWith('en')) return 'en';
   return 'mk';
 };
