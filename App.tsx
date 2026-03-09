@@ -1,4 +1,4 @@
-import { GlobalTour } from './components/GlobalTour';
+﻿import { GlobalTour } from './components/GlobalTour';
 import React, { Suspense, useEffect } from 'react';
 
 // Providers
@@ -59,8 +59,8 @@ const safeLazy = (importFunc: () => Promise<any>) => {
         default: () => (
           <div className="p-8 text-center">
             <Card className="border-red-200 bg-red-50">
-              <h2 className="text-xl font-bold text-red-600 mb-2">Грешка при вчитување</h2>
-              <p className="text-gray-700">Оваа страница моментално не е достапна. Ве молиме освежете ја апликацијата.</p>
+              <h2 className="text-xl font-bold text-red-600 mb-2">Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ Ð²Ñ‡Ð¸Ñ‚ÑƒÐ²Ð°ÑšÐµ</h2>
+              <p className="text-gray-700">ÐžÐ²Ð°Ð° ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ð° Ð¼Ð¾Ð¼ÐµÐ½Ñ‚Ð°Ð»Ð½Ð¾ Ð½Ðµ Ðµ Ð´Ð¾ÑÑ‚Ð°Ð¿Ð½Ð°. Ð’Ðµ Ð¼Ð¾Ð»Ð¸Ð¼Ðµ Ð¾ÑÐ²ÐµÐ¶ÐµÑ‚Ðµ Ñ˜Ð° Ð°Ð¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ñ˜Ð°Ñ‚Ð°.</p>
               <pre className="mt-4 text-xs text-left bg-white p-2 rounded border text-red-500 overflow-auto">
                 {error instanceof Error ? error.message : 'Unknown module error'}
               </pre>
@@ -105,6 +105,7 @@ const ContentLibraryView = safeLazy(() => import('./views/ContentLibraryView').t
 const LessonPlanDetailView = safeLazy(() => import('./views/LessonPlanDetailView').then(module => ({ default: module.LessonPlanDetailView })));
 const SharedPlanView = safeLazy(() => import('./views/SharedPlanView').then(module => ({ default: module.SharedPlanView })));
 const SharedAnnualPlanView = safeLazy(() => import('./views/SharedAnnualPlanView').then(module => ({ default: module.SharedAnnualPlanView })));
+const AnnualPlanGeneratorView = safeLazy(() => import('./views/AnnualPlanGeneratorView').then(module => ({ default: module.AnnualPlanGeneratorView })));
 const SharedQuizView = safeLazy(() => import('./views/SharedQuizView').then(module => ({ default: module.SharedQuizView })));
 const FavoritesView = safeLazy(() => import('./views/FavoritesView').then(module => ({ default: module.FavoritesView })));
 const NationalLibraryView = safeLazy(() => import('./views/NationalLibraryView').then(module => ({ default: module.NationalLibraryView })));
@@ -136,7 +137,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/live/display', component: LiveDisplayView }, // Fullscreen projector display
     { path: '/live', component: StudentLiveView }, // Live session join route
     { path: '/tutor', component: StudentTutorView }, // AI Tutor for Students
-    { path: '/parent', component: ParentPortalView }, // Parent Portal — public
+    { path: '/parent', component: ParentPortalView }, // Parent Portal â€” public
     { path: '/academy/lesson/:id', component: AcademyLessonView },
     { path: '/academy', component: AcademyView },
     { path: '/', component: HomeView },
@@ -205,7 +206,7 @@ const AppContent: React.FC = () => {
                         <button
                             className="p-1 text-gray-600 md:hidden"
                             onClick={openSidebar}
-                            aria-label="Отвори мени"
+                            aria-label="ÐžÑ‚Ð²Ð¾Ñ€Ð¸ Ð¼ÐµÐ½Ð¸"
                         >
                             <ICONS.menu className="w-6 h-6" />
                         </button>
@@ -258,7 +259,7 @@ const AuthenticatedApp: React.FC = () => {
         return (
             <div className="flex items-center justify-center h-screen bg-brand-bg">
                 <Card className="text-center max-w-lg">
-                    <h1 className="text-xl font-bold text-red-600">Грешка при вчитување на податоци</h1>
+                    <h1 className="text-xl font-bold text-red-600">Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ Ð²Ñ‡Ð¸Ñ‚ÑƒÐ²Ð°ÑšÐµ Ð½Ð° Ð¿Ð¾Ð´Ð°Ñ‚Ð¾Ñ†Ð¸</h1>
                     <p className="mt-2 text-gray-700">{error}</p>
                 </Card>
             </div>
@@ -273,14 +274,14 @@ const AIGeneratorPanelFallback: React.FC = () => {
     return (
         <div className="fixed inset-0 bg-gray-900/40 z-50 flex items-center justify-center no-print">
             <div className="bg-white rounded-2xl p-8 max-w-sm shadow-xl text-center mx-4">
-                <p className="text-red-600 text-xl font-bold mb-2">⚠️ Грешка во генераторот</p>
-                <p className="text-gray-500 text-sm mb-6">Настана неочекувана грешка. Ве молиме затворете и обидете се повторно.</p>
+                <p className="text-red-600 text-xl font-bold mb-2">âš ï¸ Ð“Ñ€ÐµÑˆÐºÐ° Ð²Ð¾ Ð³ÐµÐ½ÐµÑ€Ð°Ñ‚Ð¾Ñ€Ð¾Ñ‚</p>
+                <p className="text-gray-500 text-sm mb-6">ÐÐ°ÑÑ‚Ð°Ð½Ð° Ð½ÐµÐ¾Ñ‡ÐµÐºÑƒÐ²Ð°Ð½Ð° Ð³Ñ€ÐµÑˆÐºÐ°. Ð’Ðµ Ð¼Ð¾Ð»Ð¸Ð¼Ðµ Ð·Ð°Ñ‚Ð²Ð¾Ñ€ÐµÑ‚Ðµ Ð¸ Ð¾Ð±Ð¸Ð´ÐµÑ‚Ðµ ÑÐµ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾.</p>
                 <button
                     type="button"
                     onClick={closeGeneratorPanel}
                     className="px-5 py-2.5 bg-brand-primary text-white rounded-xl hover:bg-brand-secondary font-bold"
                 >
-                    Затвори
+                    Ð—Ð°Ñ‚Ð²Ð¾Ñ€Ð¸
                 </button>
             </div>
         </div>
@@ -345,7 +346,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </ErrorBoundary>
 );
 
-// E2.2 — Apply global accessibility settings from localStorage on startup
+// E2.2 â€” Apply global accessibility settings from localStorage on startup
 function applyAccessibilityOnStartup() {
   try {
     if (localStorage.getItem('accessibility_dyslexic') === 'true') {
@@ -372,4 +373,5 @@ const App: React.FC = () => (
 );
 
 export default App;
+
 
