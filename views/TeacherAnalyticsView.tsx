@@ -249,11 +249,11 @@ export const TeacherAnalyticsView: React.FC = () => {
         }
 
         const totalAttempts = localResults.length;
-        const avgScore = results.reduce((s, r) => s + r.percentage, 0) / totalAttempts;
+        const avgScore = localResults.reduce((s, r) => s + r.percentage, 0) / totalAttempts;
         const passRate = (localResults.filter(r => r.percentage >= 70).length / totalAttempts) * 100;
 
         const buckets = [0, 0, 0, 0];
-        for (const r of results) {
+        for (const r of localResults) {
             if (r.percentage < 50) buckets[0]++;
             else if (r.percentage < 70) buckets[1]++;
             else if (r.percentage < 85) buckets[2]++;
@@ -261,7 +261,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         }
         const distribution = buckets.map(b => (b / totalAttempts) * 100);
 
-        const grouped = groupBy(results, r => r.quizId);
+        const grouped = groupBy(localResults, r => r.quizId);
         const quizAggregates: QuizAggregate[] = Object.entries(grouped).map(([quizId, items]) => {
             const pcts = items.map(i => i.percentage);
             const avg = pcts.reduce((s, p) => s + p, 0) / pcts.length;
@@ -277,7 +277,7 @@ export const TeacherAnalyticsView: React.FC = () => {
             };
         }).sort((a, b) => b.attempts - a.attempts);
 
-        const conceptStats = results.filter(r => r.conceptId).reduce((acc, r) => {
+        const conceptStats = localResults.filter(r => r.conceptId).reduce((acc, r) => {
             const key = r.conceptId!;
             if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), quizTitle: r.quizTitle, confSum: 0, confCount: 0, misconceptions: [] as string[], metacognitiveNotes: [] as string[] };
             acc[key].total++;
@@ -333,7 +333,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         ).sort();
 
         return { totalAttempts, avgScore, passRate, quizAggregates, distribution, weakConcepts, allConceptStats, uniqueStudents };
-    }, [results, masteryRecords, getConceptDetails]);
+    }, [localResults, masteryRecords, getConceptDetails]);
 
     const masteryStats = useMemo(() => {
         if (masteryRecords.length === 0) return null;
@@ -359,7 +359,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const weeklyTrend = useMemo(() => {
         if (localResults.length === 0) return [];
         const weeks: Record<string, { sum: number; count: number; label: string }> = {};
-        results.forEach(r => {
+        localResults.forEach(r => {
             if (!r.playedAt) return;
             const d = r.playedAt.toDate ? r.playedAt.toDate() : new Date(r.playedAt as any);
             const weekStart = new Date(d);
@@ -374,7 +374,7 @@ export const TeacherAnalyticsView: React.FC = () => {
             .sort(([a], [b]) => a.localeCompare(b))
             .slice(-8)
             .map(([, v]) => ({ label: v.label, avg: Math.round(v.sum / v.count), count: v.count }));
-    }, [results]);
+    }, [localResults]);
 
     const perStudentStats = useMemo((): PerStudentStat[] => {
         if (localResults.length === 0) return [];
@@ -398,11 +398,11 @@ export const TeacherAnalyticsView: React.FC = () => {
                 avgConfidence,
             };
         }).sort((a, b) => a.avg - b.avg);
-    }, [results, masteryRecords]);
+    }, [localResults, masteryRecords]);
 
     const gradeStats = useMemo((): GradeStat[] => {
         if (localResults.length === 0) return [];
-        const grouped = groupBy(results, r => String(r.gradeLevel ?? 'N/A'));
+        const grouped = groupBy(localResults, r => String(r.gradeLevel ?? 'N/A'));
         return Object.entries(grouped).map(([grade, quizzes]) => {
             const avgs = quizzes.map(q => q.percentage);
             const avgPct = Math.round(avgs.reduce((a, b) => a + b, 0) / avgs.length);
@@ -411,7 +411,7 @@ export const TeacherAnalyticsView: React.FC = () => {
             const masteredCount = masteryRecords.filter(m => m.gradeLevel === Number(grade) && m.mastered).length;
             return { grade, attempts: quizzes.length, avgPct, passRate, uniqueStudents, masteredCount };
         }).sort((a, b) => Number(a.grade) - Number(b.grade));
-    }, [results, masteryRecords]);
+    }, [localResults, masteryRecords]);
 
     const standardsCoverage = useMemo(() => {
         if (localResults.length === 0) return { tested: [], notTested: [] };
@@ -423,7 +423,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         testedConceptIds.forEach(cid => {
             const { concept } = getConceptDetails(cid);
             concept?.nationalStandardIds?.forEach(sid => testedStandardIds.add(sid));
-            const conceptResults = results.filter(r => r.conceptId === cid);
+            const conceptResults = localResults.filter(r => r.conceptId === cid);
             if (conceptResults.length > 0) {
                 conceptAvg[cid] = Math.round(conceptResults.reduce((s, r) => s + r.percentage, 0) / conceptResults.length);
             }
@@ -440,7 +440,7 @@ export const TeacherAnalyticsView: React.FC = () => {
         }).sort((a, b) => a.avgScore - b.avgScore);
 
         return { tested: testedStandards, notTested: [] };
-    }, [results, getConceptDetails, getStandardsByIds]);
+    }, [localResults, getConceptDetails, getStandardsByIds]);
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -673,7 +673,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             icon={<Award className="w-6 h-6 text-green-600" />}
                             label={t("analytics.stat.passRate")}
                             value={`${fmt(passRate, 1)}%`}
-                            sub={`${results.filter(r => r.percentage >= 70).length} ${t("analytics.stat.from")} ${totalAttempts} ${t("analytics.stat.students")}`}
+                            sub={`${localResults.filter(r => r.percentage >= 70).length} ${t("analytics.stat.from")} ${totalAttempts} ${t("analytics.stat.students")}`}
                             color="bg-green-50"
                         />
                         <StatCard
