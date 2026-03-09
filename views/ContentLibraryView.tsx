@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw } from 'lucide-react';
+import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users } from 'lucide-react';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -25,6 +25,7 @@ export const ContentLibraryView: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
     const [viewMode, setViewMode] = useState<'my' | 'national'>('my');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
@@ -47,6 +48,15 @@ export const ContentLibraryView: React.FC = () => {
     useEffect(() => { load(); }, [firebaseUser?.uid, viewMode]);
 
     const filtered = materials.filter(m => {
+        if (searchQuery) {
+            const sq = searchQuery.toLowerCase();
+            const matchesTitle = m.title?.toLowerCase().includes(sq);
+            const matchesConcept = m.conceptId?.toLowerCase().includes(sq);
+            const matchesTopic = m.topicId?.toLowerCase().includes(sq);
+            if (!matchesTitle && !matchesConcept && !matchesTopic) {
+                return false;
+            }
+        }
         if (viewMode === 'national') return true;
         if (filter === 'draft') return m.status === 'draft' || !m.status;
         if (filter === 'published') return m.status === 'published';
@@ -119,20 +129,34 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 </p>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex bg-gray-100 p-1 rounded-xl mb-4 w-fit">
-                <button
-                    onClick={() => setViewMode('my')}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${viewMode === 'my' ? 'bg-white shadow text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                    <Lock className="w-4 h-4" /> Мои материјали
-                </button>
-                <button
-                    onClick={() => setViewMode('national')}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${viewMode === 'national' ? 'bg-white shadow text-emerald-700' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                    <Globe className="w-4 h-4" /> Национална библиотека
-                </button>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                {/* View Mode Toggle */}
+                <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
+                    <button
+                        onClick={() => setViewMode('my')}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${viewMode === 'my' ? 'bg-white shadow text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <Lock className="w-4 h-4" /> Мои материјали
+                    </button>
+                    <button
+                        onClick={() => setViewMode('national')}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${viewMode === 'national' ? 'bg-white shadow text-emerald-700' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <Globe className="w-4 h-4" /> Национална библиотека
+                    </button>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative w-full md:w-64">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input 
+                        type="text"
+                        placeholder="Пребарај материјали..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-primary outline-none transition-all"
+                    />
+                </div>
             </div>
 
             {/* Stats + Filter */}
@@ -160,7 +184,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
             {viewMode === 'national' && (
                 <div className="flex flex-wrap items-center gap-3 mb-5">
                     <p className="text-sm text-gray-500">
-                        Овие материјали се одобрени од Министерството за образование и наука и се достапни за сите наставници.
+                        Истражете материјали креирани од заедницата и ресурси официјално одобрени од МОН.
                     </p>
                     <button type="button" onClick={load}
                         className="ml-auto flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100">
@@ -235,7 +259,13 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                         {/* Actions */}
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
                                         {viewMode === 'national' ? (
-                                            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">Одобрено</span>
+                                            m.isApproved ? (
+                                                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">Одобрено</span>
+                                            ) : (
+                                                <span className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-200" title="Креирано од друг наставник">
+                                                    <Users className="w-3.5 h-3.5" /> Од заедницата
+                                                </span>
+                                            )
                                         ) : (
                                             <>
                                                 {isPublished ? (

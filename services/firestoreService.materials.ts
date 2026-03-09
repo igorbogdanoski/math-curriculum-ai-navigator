@@ -339,10 +339,9 @@ export const fetchLibraryMaterials = async (teacherUid: string): Promise<CachedM
 export const fetchGlobalLibraryMaterials = async (): Promise<CachedMaterial[]> => {
     try {
       const q = query(
-        collection(db, 'cached_ai_materials'), 
-        where('isApproved', '==', true), 
+        collection(db, 'cached_ai_materials'),
         where('status', '==', 'published'),
-        limit(100)
+        limit(200)
       );
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as CachedMaterial));
