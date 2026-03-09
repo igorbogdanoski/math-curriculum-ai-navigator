@@ -30,10 +30,6 @@ import { useReactToPrint } from 'react-to-print';
 import { PrintableEDnevnikReport } from '../components/analytics/PrintableEDnevnikReport';
 import { Printer } from 'lucide-react';
 
-// Module-level TTL cache (5 min) — survives tab switches, cleared on manual refresh
-const CACHE_TTL_MS = 5 * 60 * 1000;
-type CacheEntry = { results: QuizResult[]; mastery: ConceptMastery[]; lastDoc: DocumentSnapshot | null; ts: number };
-const analyticsCache = new Map<string, CacheEntry>();
 
 export const TeacherAnalyticsView: React.FC = () => {
   const { t } = useLanguage();
