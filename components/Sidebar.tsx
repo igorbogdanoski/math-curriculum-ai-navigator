@@ -91,6 +91,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           <NavItem path="/generator" currentPath={currentPath} icon={ICONS.generator} label={t("nav.generator")} onClick={onClose} isGenerator={true} badge="AI" />
           <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label={t("nav.planner")} onClick={onClose} />
           <NavItem path="/annual-planner" currentPath={currentPath} icon={ICONS.planner} label={"Годишна Програма"} onClick={onClose} badge="AI" />
+          <NavItem path="/annual-gallery" currentPath={currentPath} icon={ICONS.database} label={"Галерија на Планови"} onClick={onClose} badge="COMMUNITY" />
+          <NavItem path="/annual-gallery" currentPath={currentPath} icon={ICONS.database} label={"Галерија на Планови"} onClick={onClose} badge="COMMUNITY" />
           <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label={t("nav.analytics")} onClick={onClose} />
           <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label={t("nav.mylessons")} onClick={onClose} />
           <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.library")} onClick={onClose} />            
