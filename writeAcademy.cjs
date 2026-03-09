@@ -1,13 +1,14 @@
-import { educationalHints } from '../data/educationalModelsInfo';
+const fs = require('fs');
+const content = `import { educationalHints } from '../data/educationalModelsInfo';
 import React from 'react';
 import { Card } from '../components/common/Card';
 import { Target, Shapes, Wand2, Play, GraduationCap } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
-import { slugify } from '../utils/slugify';
 
 export const AcademyView: React.FC = () => {
   const { navigate } = useNavigation();
 
+  // Mapping AI Generator dropdown options directly to Academy modules
   const MODULES = [
     {
       id: 'models',
@@ -18,7 +19,7 @@ export const AcademyView: React.FC = () => {
       borderColor: 'border-blue-200',
       topics: Object.entries(educationalHints.pedagogicalModels).map(([key, data]) => ({
         title: data.title,
-        id: slugify('model ' + key)
+        id: 'model-' + key.toLowerCase().replace(/[^a-z0-eng]/g, '-')
       }))
     },
     {
@@ -30,7 +31,7 @@ export const AcademyView: React.FC = () => {
       borderColor: 'border-amber-200',
       topics: Object.entries(educationalHints.tones).map(([key, _]) => ({
         title: key,
-        id: slugify('tone ' + key)
+        id: 'tone-' + key.toLowerCase().replace(/[^a-z0-9]/g, '-')
       }))
     },
     {
@@ -42,7 +43,7 @@ export const AcademyView: React.FC = () => {
       borderColor: 'border-purple-200',
       topics: Object.entries(educationalHints.focuses).map(([key, _]) => ({
         title: key,
-        id: slugify('focus ' + key)
+        id: 'focus-' + key.toLowerCase().replace(/[^a-z0-9]/g, '-')
       }))
     }
   ];
@@ -78,11 +79,11 @@ export const AcademyView: React.FC = () => {
         {MODULES.map((module) => (
           <Card 
             key={module.id} 
-            className={`overflow-hidden border-2 bg-white ${module.borderColor} flex flex-col`}
+            className={\`overflow-hidden border-2 bg-white \${module.borderColor} flex flex-col\`}
           >
             <div className="p-6 h-full flex flex-col">
               <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-xl ${module.color}`}>
+                <div className={\`p-3 rounded-xl \${module.color}\`}>
                   <module.icon className="w-7 h-7" />
                 </div>
               </div>
@@ -120,3 +121,5 @@ export const AcademyView: React.FC = () => {
     </div>
   );
 };
+`;
+fs.writeFileSync('views/AcademyView.tsx', content);

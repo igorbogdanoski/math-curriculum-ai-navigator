@@ -1,4 +1,6 @@
-import { educationalHints } from '../data/educationalModelsInfo';
+const fs = require('fs');
+
+const content = `import { educationalHints } from '../data/educationalModelsInfo';
 import React from 'react';
 import { Card } from '../components/common/Card';
 import { Target, Shapes, Wand2, Play, GraduationCap } from 'lucide-react';
@@ -78,11 +80,11 @@ export const AcademyView: React.FC = () => {
         {MODULES.map((module) => (
           <Card 
             key={module.id} 
-            className={`overflow-hidden border-2 bg-white ${module.borderColor} flex flex-col`}
+            className={\`overflow-hidden border-2 bg-white \${module.borderColor} flex flex-col\`}
           >
             <div className="p-6 h-full flex flex-col">
               <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-xl ${module.color}`}>
+                <div className={\`p-3 rounded-xl \${module.color}\`}>
                   <module.icon className="w-7 h-7" />
                 </div>
               </div>
@@ -120,3 +122,6 @@ export const AcademyView: React.FC = () => {
     </div>
   );
 };
+`;
+
+fs.writeFileSync('views/AcademyView.tsx', content);
