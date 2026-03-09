@@ -169,8 +169,36 @@ function StepCard({ step, onNext, isLast }: { step: WorkedExampleStep; onNext: (
 }
 
 export const WorkedExample: React.FC<Props> = ({ example }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [done, setDone] = useState(false);
+  const storageKey = `we_${example.title.slice(0, 50)}`;
+
+  const [currentStep, setCurrentStep] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(`${storageKey}_step`);
+      const step = saved !== null ? parseInt(saved, 10) : 0;
+      return Number.isFinite(step) && step < example.steps.length ? step : 0;
+    } catch { return 0; }
+  });
+
+  const [done, setDone] = useState(() => {
+    try { return sessionStorage.getItem(`${storageKey}_done`) === '1'; } catch { return false; }
+  });
+
+  const handleNext = () => {
+    if (isLast) {
+      try { sessionStorage.setItem(`${storageKey}_done`, '1'); } catch { /* ignore */ }
+      setDone(true);
+    } else {
+      const next = currentStep + 1;
+      try { sessionStorage.setItem(`${storageKey}_step`, String(next)); } catch { /* ignore */ }
+      setCurrentStep(next);
+    }
+  };
+
+  const handleRestart = () => {
+    try { sessionStorage.removeItem(`${storageKey}_step`); sessionStorage.removeItem(`${storageKey}_done`); } catch { /* ignore */ }
+    setCurrentStep(0);
+    setDone(false);
+  };
 
   if (done) {
     return (
@@ -182,7 +210,7 @@ export const WorkedExample: React.FC<Props> = ({ example }) => {
         </p>
         <button
           type="button"
-          onClick={() => { setCurrentStep(0); setDone(false); }}
+          onClick={handleRestart}
           className="mt-4 text-xs font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 px-4 py-2 rounded-xl transition"
         >
           Повтори
@@ -217,7 +245,7 @@ export const WorkedExample: React.FC<Props> = ({ example }) => {
 
       <StepCard
         step={step}
-        onNext={() => isLast ? setDone(true) : setCurrentStep(prev => prev + 1)}
+        onNext={handleNext}
         isLast={isLast}
       />
     </div>

@@ -24,6 +24,14 @@ import { getOrCreateDeviceId } from '../utils/studentIdentity';
 
 type QuizResult = { percentage: number; correctCount: number; totalQuestions: number; misconceptions?: { question: string; studentAnswer: string; misconception: string }[] };
 
+type QuizItem = { text?: string; question?: string; options?: string[]; answer: string; solution?: string; explanation?: string };
+type QuizPlayData = {
+  title?: string;
+  questions?: QuizItem[];
+  items?: QuizItem[];
+  _meta: { conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid?: string; [key: string]: unknown };
+};
+
 export const StudentPlayView: React.FC = () => {
   const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
@@ -36,7 +44,7 @@ export const StudentPlayView: React.FC = () => {
     return { sessionId: p.get('sessionId'), tid: p.get('tid') ?? undefined, assignId: p.get('assignId') ?? undefined };
   })();
 
-  const [quizData, setQuizData] = useState<any>(null);
+  const [quizData, setQuizData] = useState<QuizPlayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
@@ -300,29 +308,37 @@ export const StudentPlayView: React.FC = () => {
 
     setQuizResult({ percentage, correctCount, totalQuestions });
 
-    // П4 — Одбери metacognitive промпт врз основа на резултат
+    // П1 + П4 — Пресметај conceptTitle прво (користи се и за промпт и за AI feedback)
+    const conceptTitleForPrompt: string = (() => {
+      if (meta.conceptId) {
+        const { concept } = getConceptDetails(meta.conceptId);
+        return concept?.title ?? quizData?.title ?? 'концептот';
+      }
+      return quizData?.title ?? 'концептот';
+    })();
+
+    // П4 — Одбери metacognitive промпт врз основа на резултат и концепт
     const lowPrompts = [
-      'Со кое прашање имаше најмногу тешкотии?',
-      'Што ти беше тешко во оваа тема?',
-      'Кој дел не го разбираш добро?',
+      `Со кое прашање од „${conceptTitleForPrompt}" имаше најмногу тешкотии?`,
+      `Што точно ти беше тешко кај „${conceptTitleForPrompt}"?`,
+      `Кој дел од „${conceptTitleForPrompt}" не го разбираш добро?`,
     ];
     const highPrompts = [
-      'Со свои зборови, објасни го концептот.',
-      'Кај кое прашање требаше најмногу да размислуваш?',
-      'Кој дел ти е најјасен сега?',
+      `Со свои зборови, објасни го „${conceptTitleForPrompt}".`,
+      `Кај кое прашање од „${conceptTitleForPrompt}" требаше најмногу да размислуваш?`,
+      `Кој дел од „${conceptTitleForPrompt}" ти е сега најјасен?`,
     ];
     const midPrompts = [
-      'Што би сакал/а да вежбаш повеќе?',
-      'Кое прашање те изненади?',
-      'Напиши едно прашање за кое сè уште не знаеш одговор.',
+      `Што би сакал/а уште да вежбаш кај „${conceptTitleForPrompt}"?`,
+      `Кое прашање те изненади кај „${conceptTitleForPrompt}"?`,
+      `Напиши едно прашање за „${conceptTitleForPrompt}" за кое сè уште не знаеш одговор.`,
     ];
     const pool = percentage >= 80 ? highPrompts : percentage < 60 ? lowPrompts : midPrompts;
     setMetacognitivePrompt(pool[Math.floor(Math.random() * pool.length)]);
 
     // П1 — Генерирај AI повратна информација асинхроно (не блокира)
     if (meta.conceptId) {
-      const { concept } = getConceptDetails(meta.conceptId);
-      const conceptTitle = concept?.title ?? quizData.title ?? 'концептот';
+      const conceptTitle = conceptTitleForPrompt;
       setIsFeedbackLoading(true);
       geminiService.generateQuizFeedback(
         studentName || 'Ученик',
@@ -596,7 +612,7 @@ export const StudentPlayView: React.FC = () => {
             <React.Suspense fallback={<div className="p-8 text-center bg-white rounded-3xl m-6 animate-pulse"><div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div><p className="text-slate-500 font-bold">Се вчитува квизот...</p></div>}>
               <InteractiveQuizPlayer
                 title={quizData.title || 'Квиз'}
-                questions={(quizData.items || quizData.questions || []).map((item: any) => ({   
+                questions={(quizData.items || quizData.questions || []).map((item: QuizItem) => ({
                   question: item.text || item.question,
                   options: item.options || [item.answer, 'Грешка 1', 'Грешка 2', 'Грешка 3'].sort(() => Math.random() - 0.5),                                                                                 
                   answer: item.answer,
