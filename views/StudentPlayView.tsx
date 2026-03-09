@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useReducer } from 'react';
 import { useParams } from 'react-router-dom';
 import { firestoreService, type ConceptMastery, ACHIEVEMENTS, type StudentGamification } from '../services/firestoreService';
 
@@ -33,6 +33,106 @@ type QuizPlayData = {
   _meta: { conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid?: string; [key: string]: unknown };
 };
 
+// ── Quiz session state (all post-quiz fields that reset together on RETRY) ──────
+
+type GamificationUpdate = {
+  xpGained: number;
+  newAchievements: string[];
+  gamification: StudentGamification;
+};
+
+type QuizSessionState = {
+  quizResult: QuizResult | null;
+  masteryUpdate: ConceptMastery | null;
+  gamificationUpdate: GamificationUpdate | null;
+  remediaQuizId: string | null;
+  isGeneratingRemedia: boolean;
+  quizResultDocId: string | null;
+  confidence: number | null;
+  aiFeedback: string | null;
+  isFeedbackLoading: boolean;
+  metacognitivePrompt: string | null;
+  metacognitiveNote: string;
+  metacognitiveSaved: boolean;
+  peerSuggestions: string[];
+  homework: AdaptiveHomework | null;
+  isHomeworkLoading: boolean;
+  homeworkError: boolean;
+};
+
+type QuizSessionAction =
+  | { type: 'QUIZ_COMPLETE'; quizResult: QuizResult; docId: string; mastery: ConceptMastery | null; metacognitivePrompt: string }
+  | { type: 'SET_CONFIDENCE'; confidence: number }
+  | { type: 'SET_AI_FEEDBACK'; feedback: string }
+  | { type: 'SET_FEEDBACK_LOADING'; loading: boolean }
+  | { type: 'SET_GAMIFICATION'; update: GamificationUpdate }
+  | { type: 'SET_METACOGNITIVE_NOTE'; note: string }
+  | { type: 'SET_METACOGNITIVE_SAVED' }
+  | { type: 'SET_PEER_SUGGESTIONS'; peers: string[] }
+  | { type: 'SET_REMEDIA_QUIZ'; quizId: string }
+  | { type: 'SET_GENERATING_REMEDIA'; loading: boolean }
+  | { type: 'HOMEWORK_LOADING' }
+  | { type: 'HOMEWORK_SUCCESS'; homework: AdaptiveHomework }
+  | { type: 'HOMEWORK_ERROR' }
+  | { type: 'CLOSE_HOMEWORK' }
+  | { type: 'RETRY' };
+
+const QUIZ_SESSION_INITIAL: QuizSessionState = {
+  quizResult: null,
+  masteryUpdate: null,
+  gamificationUpdate: null,
+  remediaQuizId: null,
+  isGeneratingRemedia: false,
+  quizResultDocId: null,
+  confidence: null,
+  aiFeedback: null,
+  isFeedbackLoading: false,
+  metacognitivePrompt: null,
+  metacognitiveNote: '',
+  metacognitiveSaved: false,
+  peerSuggestions: [],
+  homework: null,
+  isHomeworkLoading: false,
+  homeworkError: false,
+};
+
+function quizSessionReducer(state: QuizSessionState, action: QuizSessionAction): QuizSessionState {
+  switch (action.type) {
+    case 'QUIZ_COMPLETE':
+      return { ...QUIZ_SESSION_INITIAL, quizResult: action.quizResult, quizResultDocId: action.docId, masteryUpdate: action.mastery, metacognitivePrompt: action.metacognitivePrompt, isFeedbackLoading: true };
+    case 'SET_CONFIDENCE':
+      return { ...state, confidence: action.confidence };
+    case 'SET_AI_FEEDBACK':
+      return { ...state, aiFeedback: action.feedback, isFeedbackLoading: false };
+    case 'SET_FEEDBACK_LOADING':
+      return { ...state, isFeedbackLoading: action.loading };
+    case 'SET_GAMIFICATION':
+      return { ...state, gamificationUpdate: action.update };
+    case 'SET_METACOGNITIVE_NOTE':
+      return { ...state, metacognitiveNote: action.note };
+    case 'SET_METACOGNITIVE_SAVED':
+      return { ...state, metacognitiveSaved: true };
+    case 'SET_PEER_SUGGESTIONS':
+      return { ...state, peerSuggestions: action.peers };
+    case 'SET_REMEDIA_QUIZ':
+      return { ...state, remediaQuizId: action.quizId };
+    case 'SET_GENERATING_REMEDIA':
+      return { ...state, isGeneratingRemedia: action.loading };
+    case 'HOMEWORK_LOADING':
+      return { ...state, isHomeworkLoading: true, homeworkError: false };
+    case 'HOMEWORK_SUCCESS':
+      return { ...state, homework: action.homework, isHomeworkLoading: false };
+    case 'HOMEWORK_ERROR':
+      return { ...state, homeworkError: true, isHomeworkLoading: false };
+    case 'CLOSE_HOMEWORK':
+      return { ...state, homework: null };
+    case 'RETRY':
+      return QUIZ_SESSION_INITIAL;
+    default:
+      return state;
+  }
+}
+
 export const StudentPlayView: React.FC = () => {
   const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
@@ -48,42 +148,8 @@ export const StudentPlayView: React.FC = () => {
   const [quizData, setQuizData] = useState<QuizPlayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
-
-  // Mastery state — updated after each quiz
-  const [masteryUpdate, setMasteryUpdate] = useState<ConceptMastery | null>(null);
-
-  // Gamification state — XP + streak + achievements earned this quiz
-  const [gamificationUpdate, setGamificationUpdate] = useState<{
-    xpGained: number;
-    newAchievements: string[];
-    gamification: StudentGamification;
-  } | null>(null);
-
-  // Adaptive remediation state
-  const [remediaQuizId, setRemediaQuizId] = useState<string | null>(null);
-  const [isGeneratingRemedia, setIsGeneratingRemedia] = useState(false);
-
-  // П26 — Self-assessment confidence rating
-  const [quizResultDocId, setQuizResultDocId] = useState<string | null>(null);
-  const [confidence, setConfidence] = useState<number | null>(null);
-
-  // П1 — AI персонализирана повратна информација по квиз
-  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
-  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
-
-  // П4 — Metacognitive промпт по квизот
-  const [metacognitivePrompt, setMetacognitivePrompt] = useState<string | null>(null);
-  const [metacognitiveNote, setMetacognitiveNote] = useState('');
-  const [metacognitiveSaved, setMetacognitiveSaved] = useState(false);
-
-  // П5 — Peer Learning (Колаборативно учење)
-  const [peerSuggestions, setPeerSuggestions] = useState<string[]>([]);
-
-  // Г1 — Адаптивна домашна задача
-  const [homework, setHomework] = useState<AdaptiveHomework | null>(null);
-  const [isHomeworkLoading, setIsHomeworkLoading] = useState(false);
-  const [homeworkError, setHomeworkError] = useState(false);
+  const [session, dispatch] = useReducer(quizSessionReducer, QUIZ_SESSION_INITIAL);
+  const { quizResult, masteryUpdate, gamificationUpdate, remediaQuizId, isGeneratingRemedia, quizResultDocId, confidence, aiFeedback, isFeedbackLoading, metacognitivePrompt, metacognitiveNote, metacognitiveSaved, peerSuggestions, homework, isHomeworkLoading, homeworkError } = session;
 
   // Student name — persisted in localStorage so they don't re-enter every time
   // Wrapped in try-catch for private/incognito browser windows where localStorage throws
@@ -216,7 +282,7 @@ export const StudentPlayView: React.FC = () => {
 
   const generateRemediaQuiz = async (meta: { conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid?: string }, percentage: number) => {
     if (!meta.conceptId) return;
-    setIsGeneratingRemedia(true);
+    dispatch({ type: 'SET_GENERATING_REMEDIA', loading: true });
     try {
       const { grade, topic, concept } = getConceptDetails(meta.conceptId);
       if (!grade || !concept) return;
@@ -253,11 +319,11 @@ export const StudentPlayView: React.FC = () => {
         gradeLevel: meta.gradeLevel,
         sourceQuizId: id,
       }, meta.teacherUid);
-      if (newId) setRemediaQuizId(newId);
+      if (newId) dispatch({ type: 'SET_REMEDIA_QUIZ', quizId: newId });
     } catch (err) {
       console.error('Грешка при генерирање следен квиз:', err);
     } finally {
-      setIsGeneratingRemedia(false);
+      dispatch({ type: 'SET_GENERATING_REMEDIA', loading: false });
     }
   };
 
@@ -284,7 +350,6 @@ export const StudentPlayView: React.FC = () => {
         differentiationLevel: meta.differentiationLevel,
         misconceptions
       });
-      setQuizResultDocId(savedDocId);
     } catch (err) {
       console.error('[Quiz] saveQuizResult failed:', err);
     }
@@ -306,13 +371,10 @@ export const StudentPlayView: React.FC = () => {
           meta.teacherUid,
           deviceId,
         );
-        setMasteryUpdate(freshMastery);
       } catch (err) {
         console.error('[Quiz] updateConceptMastery failed:', err);
       }
     }
-
-    setQuizResult({ percentage, correctCount, totalQuestions });
 
     // П1 + П4 — Пресметај conceptTitle прво (користи се и за промпт и за AI feedback)
     const conceptTitleForPrompt: string = (() => {
@@ -340,12 +402,14 @@ export const StudentPlayView: React.FC = () => {
       `Напиши едно прашање за „${conceptTitleForPrompt}" за кое сè уште не знаеш одговор.`,
     ];
     const pool = percentage >= 80 ? highPrompts : percentage < 60 ? lowPrompts : midPrompts;
-    setMetacognitivePrompt(pool[Math.floor(Math.random() * pool.length)]);
+    const chosenPrompt = pool[Math.floor(Math.random() * pool.length)];
+
+    // Dispatch QUIZ_COMPLETE — sets quizResult, docId, mastery, metacognitivePrompt, isFeedbackLoading=true atomically
+    dispatch({ type: 'QUIZ_COMPLETE', quizResult: { percentage, correctCount, totalQuestions, misconceptions }, docId: savedDocId, mastery: freshMastery, metacognitivePrompt: chosenPrompt });
 
     // П1 — Генерирај AI повратна информација асинхроно (не блокира)
     if (meta.conceptId) {
       const conceptTitle = conceptTitleForPrompt;
-      setIsFeedbackLoading(true);
       geminiService.generateQuizFeedback(
         studentName || 'Ученик',
         percentage,
@@ -354,12 +418,9 @@ export const StudentPlayView: React.FC = () => {
         totalQuestions,
         misconceptions,
       ).then(feedback => {
-        if (isMountedRef.current) {
-          setAiFeedback(feedback);
-          setIsFeedbackLoading(false);
-        }
+        if (isMountedRef.current) dispatch({ type: 'SET_AI_FEEDBACK', feedback });
       }).catch(() => {
-        if (isMountedRef.current) setIsFeedbackLoading(false);
+        if (isMountedRef.current) dispatch({ type: 'SET_FEEDBACK_LOADING', loading: false });
       });
     }
 
@@ -381,7 +442,7 @@ export const StudentPlayView: React.FC = () => {
       const totalMastered = allMastery.filter(m => m.mastered).length;
       firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered, meta.teacherUid, deviceId)
         .then(({ xpGained, newAchievements, gamification }) => {
-          if (isMountedRef.current) setGamificationUpdate({ xpGained, newAchievements, gamification });
+          if (isMountedRef.current) dispatch({ type: 'SET_GAMIFICATION', update: { xpGained, newAchievements, gamification } });
         })
         .catch(err => console.warn('[Gamification] update failed:', err));
     }
@@ -402,7 +463,7 @@ export const StudentPlayView: React.FC = () => {
           const uniquePeers = Array.from(new Set(peers));
           const selected = uniquePeers.sort(() => 0.5 - Math.random()).slice(0, 2);
           if (isMountedRef.current && selected.length > 0) {
-            setPeerSuggestions(selected);
+            dispatch({ type: 'SET_PEER_SUGGESTIONS', peers: selected });
           }
         })
         .catch(err => console.warn('[Peer Learning] failed:', err));
@@ -730,7 +791,7 @@ export const StudentPlayView: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => { setQuizResult(null); setRemediaQuizId(null); setMasteryUpdate(null); setGamificationUpdate(null); setConfidence(null); setQuizResultDocId(null); setAiFeedback(null); setIsFeedbackLoading(false); setMetacognitiveNote(''); setMetacognitiveSaved(false); setMetacognitivePrompt(null); setPeerSuggestions([]); setHomework(null); setIsHomeworkLoading(false); setHomeworkError(false); }}
+                  onClick={() => dispatch({ type: 'RETRY' })}
                   className="mt-2 flex items-center gap-2 text-xs font-bold bg-amber-200 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-300 transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -786,7 +847,7 @@ export const StudentPlayView: React.FC = () => {
                   key={rating}
                   type="button"
                   onClick={() => {
-                    setConfidence(rating);
+                    dispatch({ type: 'SET_CONFIDENCE', confidence: rating });
                     if (quizResultDocId) firestoreService.updateQuizConfidence(quizResultDocId, rating);
                   }}
                   className={`text-2xl w-12 h-12 rounded-xl transition-all ${isSelected ? 'bg-white/30 scale-125 ring-2 ring-white' : 'hover:bg-white/20 hover:scale-110'}`}
@@ -816,7 +877,7 @@ export const StudentPlayView: React.FC = () => {
             <div className="flex gap-2">
               <textarea
                 value={metacognitiveNote}
-                onChange={e => setMetacognitiveNote(e.target.value)}
+                onChange={e => dispatch({ type: 'SET_METACOGNITIVE_NOTE', note: e.target.value })}
                 placeholder="Напиши го твојот одговор тука..."
                 rows={2}
                 maxLength={300}
@@ -828,7 +889,7 @@ export const StudentPlayView: React.FC = () => {
                 onClick={() => {
                   if (!quizResultDocId || !metacognitiveNote.trim()) return;
                   firestoreService.updateQuizMetacognitiveNote(quizResultDocId, metacognitiveNote);
-                  setMetacognitiveSaved(true);
+                  dispatch({ type: 'SET_METACOGNITIVE_SAVED' });
                 }}
                 className="flex items-center justify-center w-10 h-10 mt-auto bg-sky-500 text-white rounded-xl hover:bg-sky-400 transition disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
                 title="Зачувај"
@@ -852,8 +913,7 @@ export const StudentPlayView: React.FC = () => {
             disabled={isHomeworkLoading}
             onClick={async () => {
               if (!quizData) return;
-              setIsHomeworkLoading(true);
-              setHomeworkError(false);
+              dispatch({ type: 'HOMEWORK_LOADING' });
               const cid = quizData._meta.conceptId;
               const cTitle = cid ? (getConceptDetails(cid).concept?.title ?? quizData.title ?? 'концептот') : (quizData.title ?? 'концептот');
               try {
@@ -863,12 +923,10 @@ export const StudentPlayView: React.FC = () => {
                   quizResult.percentage,
                   quizResult.misconceptions,
                 );
-                if (isMountedRef.current) setHomework(result);
+                if (isMountedRef.current) dispatch({ type: 'HOMEWORK_SUCCESS', homework: result });
               } catch (err) {
                 console.warn('[Homework] generateAdaptiveHomework failed:', err);
-                if (isMountedRef.current) setHomeworkError(true);
-              } finally {
-                if (isMountedRef.current) setIsHomeworkLoading(false);
+                if (isMountedRef.current) dispatch({ type: 'HOMEWORK_ERROR' });
               }
             }}
             className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 hover:bg-white/20 text-white font-bold text-sm py-3 rounded-2xl transition disabled:opacity-50"
@@ -888,7 +946,7 @@ export const StudentPlayView: React.FC = () => {
         <PrintableHomework
           homework={homework}
           studentName={studentName || 'Ученик'}
-          onClose={() => setHomework(null)}
+          onClose={() => dispatch({ type: 'CLOSE_HOMEWORK' })}
         />
       )}
 
