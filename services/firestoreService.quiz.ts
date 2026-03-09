@@ -294,8 +294,8 @@ export const quizService = {
   fetchAllMastery: async (teacherUid?: string): Promise<ConceptMastery[]> => {
     try {
       const q = teacherUid
-        ? query(collection(db, 'concept_mastery'), where('teacherUid', '==', teacherUid))
-        : collection(db, 'concept_mastery');
+        ? query(collection(db, 'concept_mastery'), where('teacherUid', '==', teacherUid), limit(5000))
+        : query(collection(db, 'concept_mastery'), limit(5000));
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data() as ConceptMastery);
     } catch (error) {
