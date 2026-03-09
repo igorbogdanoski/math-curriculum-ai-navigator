@@ -1,15 +1,20 @@
 import { educationalHints } from '../data/educationalModelsInfo';
 import React from 'react';
 import { Card } from '../components/common/Card';
-import { Target, Shapes, Wand2, Play, GraduationCap, CheckCircle2, Trophy } from 'lucide-react';
+import { Target, Shapes, Wand2, Play, GraduationCap, CheckCircle2, Trophy, Star, Cpu, BookOpenCheck, FlaskConical } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAcademyProgress } from '../contexts/AcademyProgressContext';
 import { slugify } from '../utils/slugify';
+import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
+import { ACADEMY_CONTENT } from '../data/academy/content';
+import { SPECIALIZATIONS } from '../data/academy/specializations';
 
 export const AcademyView: React.FC = () => {
   const { navigate } = useNavigation();
   const { progress } = useAcademyProgress();
-  const { readLessons, appliedLessons } = progress;
+  const { readLessons, appliedLessons, xp } = progress;
+  const levelInfo = calcFibonacciLevel(xp);
+  const avatar = getAvatar(levelInfo.level);
 
   const MODULES = [
     {
@@ -54,6 +59,21 @@ export const AcademyView: React.FC = () => {
   const readCount = readLessons.length;
   const appliedCount = appliedLessons.length;
 
+  // TPACK domain progress
+  const allLessons = Object.values(ACADEMY_CONTENT);
+  const tpackDomains = (['technology', 'pedagogy', 'content'] as const).map(domain => {
+    const domainIds = allLessons.filter(l => l.tpackDomain === domain).map(l => l.id);
+    const applied = domainIds.filter(id => appliedLessons.includes(id)).length;
+    return { domain, total: domainIds.length, applied };
+  });
+  const tpackMaster = tpackDomains.every(d => d.applied >= 1);
+
+  const TPACK_META = {
+    technology: { label: 'Technology', icon: Cpu,           color: 'text-blue-600',   bar: 'bg-blue-500',   bg: 'bg-blue-50'   },
+    pedagogy:   { label: 'Pedagogy',   icon: FlaskConical,  color: 'text-purple-600', bar: 'bg-purple-500', bg: 'bg-purple-50' },
+    content:    { label: 'Content',    icon: BookOpenCheck, color: 'text-green-600',  bar: 'bg-green-500',  bg: 'bg-green-50'  },
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
 
@@ -77,31 +97,144 @@ export const AcademyView: React.FC = () => {
             </div>
             
             {/* Progress Gamification Box */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 md:p-6 w-full md:w-auto md:min-w-[280px]">
-               <h3 className="text-white font-semibold mb-3">Вашиот Напредок</h3>
-               <div className="space-y-4">
-                 <div>
-                   <div className="flex justify-between text-sm mb-1">
-                     <span className="text-green-300 font-medium">Прочитани</span>
-                     <span className="text-white font-bold">{readCount}/{totalLessons}</span>
-                   </div>
-                   <div className="w-full bg-white/20 rounded-full h-2">
-                     <div className="bg-green-400 h-2 rounded-full" style={{ width: `${Math.min(100, (readCount/totalLessons)*100)}%` }}></div>
-                   </div>
-                 </div>
-                 
-                 <div>
-                   <div className="flex justify-between text-sm mb-1">
-                     <span className="text-amber-300 font-medium">Применети</span>
-                     <span className="text-white font-bold">{appliedCount}/{totalLessons}</span>
-                   </div>
-                   <div className="w-full bg-white/20 rounded-full h-2">
-                     <div className="bg-amber-400 h-2 rounded-full" style={{ width: `${Math.min(100, (appliedCount/totalLessons)*100)}%` }}></div>
-                   </div>
-                 </div>
-               </div>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 md:p-6 w-full md:w-auto md:min-w-[300px]">
+              {/* Level + XP row */}
+              <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/20">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{avatar.emoji}</span>
+                  <div>
+                    <p className="text-white font-bold leading-tight">{avatar.title}</p>
+                    <p className="text-indigo-200 text-xs">Ниво {levelInfo.level}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center gap-1 justify-end">
+                    <Star className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
+                    <span className="text-yellow-300 font-bold text-sm">{xp} XP</span>
+                  </div>
+                  <p className="text-indigo-200 text-xs">{levelInfo.currentXp}/{levelInfo.nextLevelXp} за ниво {levelInfo.level + 1}</p>
+                </div>
+              </div>
+              {/* XP level progress bar */}
+              <div className="mb-4">
+                <div className="w-full bg-white/20 rounded-full h-1.5">
+                  <div className="bg-yellow-400 h-1.5 rounded-full transition-all duration-500" style={{ width: `${levelInfo.progress}%` }}></div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-green-300 font-medium">Прочитани</span>
+                    <span className="text-white font-bold">{readCount}/{totalLessons}</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-2">
+                    <div className="bg-green-400 h-2 rounded-full" style={{ width: `${Math.min(100, (readCount / totalLessons) * 100)}%` }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-amber-300 font-medium">Применети</span>
+                    <span className="text-white font-bold">{appliedCount}/{totalLessons}</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-2">
+                    <div className="bg-amber-400 h-2 rounded-full" style={{ width: `${Math.min(100, (appliedCount / totalLessons) * 100)}%` }}></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* TPACK Section */}
+      <div className={`mb-8 rounded-2xl border-2 p-6 ${tpackMaster ? 'border-yellow-300 bg-yellow-50' : 'border-gray-100 bg-white'}`}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-800">TPACK Рамка — Ваш напредок</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Применете барем по 1 лекција од секој домен за да го освоите TPACK Мајстор беџот</p>
+          </div>
+          {tpackMaster && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-yellow-900 rounded-xl font-bold text-sm shadow">
+              <Trophy className="w-4 h-4" /> TPACK Мајстор
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {tpackDomains.map(({ domain, total, applied }) => {
+            const meta = TPACK_META[domain];
+            const Icon = meta.icon;
+            const pct = total > 0 ? Math.round((applied / total) * 100) : 0;
+            const done = applied >= 1;
+            return (
+              <div key={domain} className={`rounded-xl p-4 ${meta.bg} border ${done ? 'border-transparent' : 'border-gray-100'}`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon className={`w-4 h-4 ${meta.color}`} />
+                  <span className={`font-bold text-sm ${meta.color}`}>{meta.label}</span>
+                  {done && <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto" />}
+                </div>
+                <div className="w-full bg-white/70 rounded-full h-2 mb-2">
+                  <div className={`${meta.bar} h-2 rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                </div>
+                <p className="text-xs text-gray-500">{applied}/{total} применети</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Specializations */}
+      <div className="mb-8">
+        <div className="mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">Специјализации</h2>
+          <p className="text-sm text-gray-500 mt-1">Применете ги сите лекции во патеката за да заработите сертификат</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {SPECIALIZATIONS.map(spec => {
+            const applied = spec.lessonIds.filter(id => appliedLessons.includes(id)).length;
+            const completed = applied === spec.lessonIds.length;
+            const pct = Math.round((applied / spec.lessonIds.length) * 100);
+            return (
+              <div key={spec.id} className={`rounded-2xl border-2 p-6 bg-white ${completed ? spec.borderColor : 'border-gray-100'} transition-all`}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{spec.emoji}</span>
+                    <div>
+                      <h3 className="font-bold text-gray-900">{spec.title}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5 max-w-[200px]">{spec.subtitle}</p>
+                    </div>
+                  </div>
+                  {completed && (
+                    <span className={`flex items-center gap-1 text-xs font-bold text-white px-3 py-1 rounded-full ${spec.badgeColor}`}>
+                      <Trophy className="w-3 h-3" /> Сертификат
+                    </span>
+                  )}
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                  <div className={`h-2 rounded-full transition-all duration-500 ${spec.badgeColor}`} style={{ width: `${pct}%` }} />
+                </div>
+                <p className="text-xs text-gray-400">{applied}/{spec.lessonIds.length} лекции применети</p>
+                <ul className="mt-4 space-y-1.5">
+                  {spec.lessonIds.map(id => {
+                    const lesson = ACADEMY_CONTENT[id];
+                    const isApplied = appliedLessons.includes(id);
+                    return lesson ? (
+                      <li
+                        key={id}
+                        onClick={() => navigate('/academy/lesson/' + id)}
+                        className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer hover:text-brand-primary transition-colors"
+                      >
+                        {isApplied
+                          ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                          : <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                        }
+                        <span className={isApplied ? 'line-through text-gray-400' : ''}>{lesson.title}</span>
+                      </li>
+                    ) : null;
+                  })}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       </div>
 
