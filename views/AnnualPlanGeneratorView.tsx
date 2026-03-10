@@ -7,7 +7,6 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card } from '../components/common/Card';
-import { GradeSelector } from '../components/curriculum/GradeSelector';
 import { ICONS } from '../constants';
 import { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
 import { geminiService } from '../services/geminiService';
@@ -219,10 +218,16 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Одделение
                                 </label>
-                                <GradeSelector
-                                    selectedGradeId={selectedGradeId}
-                                    onGradeSelect={setSelectedGradeId}
-                                />
+                                <select
+                                    title="Одделение"
+                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    value={selectedGradeId}
+                                    onChange={(e) => setSelectedGradeId(e.target.value)}
+                                >
+                                    {curriculum?.grades.map(g => (
+                                        <option key={g.id} value={g.id}>{g.title}</option>
+                                    ))}
+                                </select>
                             </div>
                             
                             <div>
