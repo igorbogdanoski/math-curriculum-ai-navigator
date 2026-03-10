@@ -213,7 +213,7 @@ export const translations: Partial<Record<Language, Record<string, string>>> = {
   'progress.learningLevel': 'НИВО НА УЧЕЊЕ',
   'progress.level': 'Ниво',
   'progress.untilNextLevel': 'До следно ниво',
-  'progress.ofInClass': 'од {total} во класата',
+  'progress.ofInClass': 'од {total} во одделението',
   'progress.stat.quizzes': 'Квизови',
   'progress.stat.passed': 'Положени',
   'progress.stat.average': 'Просек',

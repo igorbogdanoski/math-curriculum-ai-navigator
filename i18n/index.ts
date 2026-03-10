@@ -1,7 +1,6 @@
 export type Language = 'mk' | 'sq' | 'tr' | 'en';
 
 export const LANGUAGES = [
-  { code: 'en', name: 'English', flag: '????' },
   { code: 'mk', name: 'Македонски', flag: '🇲🇰' },
   { code: 'sq', name: 'Shqip', flag: '🇦🇱' },
   { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },

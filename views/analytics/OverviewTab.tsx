@@ -116,7 +116,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
                 {!aiRecs && !isLoadingRecs && (
                     <p className="text-sm text-indigo-600 text-center py-4 opacity-70">
-                        Кликни „Генерирај препораки" за да добиеш конкретни совети базирани на реалните резултати на класата.
+                        Кликни „Генерирај препораки" за да добиеш конкретни совети базирани на реалните резултати на одделението.
                     </p>
                 )}
 

@@ -77,7 +77,7 @@ export const LeagueTab: React.FC<Props> = ({ teacherUid }) => {
     <div className="space-y-6">
       {/* Podium */}
       <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-6">
-        <h3 className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-4 text-center">Топ 3 на класата</h3>
+        <h3 className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-4 text-center">Топ 3 на одделението</h3>
         <div className="flex items-end justify-center gap-4">
           {/* 2nd place */}
           {top3[1] && (

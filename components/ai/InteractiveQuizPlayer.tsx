@@ -71,7 +71,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     return [];
   }, [propQuestions, quiz]);
 
-  const quizTitle = title || quiz?.title || '????';
+  const quizTitle = title || quiz?.title || 'Квиз';
 
   // State
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -254,7 +254,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
         resetQuiz();
       }
     } catch (err) {
-      console.error("?????? ??? ?????Решен пример??? ????:", err);
+      console.error("Грешка при генерирање паралелни прашања:", err);
     } finally {
       setIsGeneratingParallel(false);
     }
@@ -298,14 +298,14 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
             </div>
           </div>
 
-          <h2 className="text-3xl font-black text-gray-800 mb-2">?????? ? Затвори!</h2>
+          <h2 className="text-3xl font-black text-gray-800 mb-2">Квизот е завршен!</h2>
           <p className="text-gray-500 mb-6 font-medium">{quizTitle}</p>
           
           <div className="bg-blue-50 rounded-2xl p-6 mb-8 border border-blue-100">
             <p className="text-xs text-blue-600 font-black uppercase tracking-widest mb-1">Вкупно поени</p>
             <div className="text-6xl font-black text-blue-900">{score.toLocaleString()}</div>
             <p className="text-sm text-blue-500 font-bold mt-2">
-              {correctCount} / {normalizedQuestions.length} Решен пример??
+              {correctCount} / {normalizedQuestions.length} точни одговори
               ({Math.round((correctCount / normalizedQuestions.length) * 100)}%)
             </p>
             <div className="mt-3">
@@ -323,7 +323,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-blue-200 flex items-center justify-center gap-2 active:scale-[0.98]"
             >
               <RefreshCw className="w-5 h-5" />
-              Решен пример??
+              Обиди се повторно
             </button>
             <button
               onClick={handleGenerateParallel}
@@ -331,7 +331,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
               className="w-full py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-2 border-indigo-200 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
             >
               <Sparkles className={`w-5 h-5 ${isGeneratingParallel ? 'animate-spin' : ''}`} />
-              {isGeneratingParallel ? 'Затвори???...' : 'Помини на ново ниво (Mastery)'}
+              {isGeneratingParallel ? 'Генерирам...' : 'Помини на ново ниво (Mastery)'}
             </button>
             {onClose && (
               <button
@@ -360,7 +360,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
           <div className="bg-gray-50 px-4 md:px-6 py-3 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2 sticky top-0 z-10">
             <div className="flex flex-col flex-1 min-w-[120px] gap-1">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Затвори {currentIndex + 1}/{normalizedQuestions.length}</span>
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Прашање {currentIndex + 1}/{normalizedQuestions.length}</span>
                 {currentQ?.cognitiveLevel && (
                   <span className={`text-[9px] uppercase font-black px-1.5 py-0.5 rounded-sm ${currentQ.cognitiveLevel === 'Remembering' ? 'bg-slate-100 text-slate-600' : currentQ.cognitiveLevel === 'Understanding' ? 'bg-green-100 text-green-700' : currentQ.cognitiveLevel === 'Applying' ? 'bg-blue-100 text-blue-700' : currentQ.cognitiveLevel === 'Analyzing' ? 'bg-purple-100 text-purple-700' : currentQ.cognitiveLevel === 'Evaluating' ? 'bg-pink-100 text-pink-700' : currentQ.cognitiveLevel === 'Creating' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
                     {currentQ.cognitiveLevel}
@@ -492,7 +492,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                     <MathInput
                       value={shortAnswer}
                       onChange={setShortAnswer}
-                      placeholder="????? ?? ?Решен пример? ????..."
+                      placeholder="Внесете го вашиот одговор..."
                       className="flex-1"
                     />
                     <button
@@ -500,11 +500,11 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                       disabled={selectedOption !== null || !shortAnswer.trim()}
                       className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors whitespace-nowrap"
                     >
-                      Затвори
+                      Провери
                     </button>
                   </div>
                   {!selectedOption && (
-                    <p className="text-xs text-gray-400 italic">Затвори ?? Математички Алатки??? ?? ??????, ?????? ? Затвори.</p>
+                    <p className="text-xs text-gray-400 italic">Користете ги математичките алатки за помош при решавањето.</p>
                   )}
                 </div>
             )}
@@ -524,11 +524,11 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
 
               <div className={`p-5 rounded-2xl mb-6 ${isCorrect ? 'bg-green-50 text-green-800 border border-green-100' : 'bg-red-50 text-red-800 border border-red-100'}`}>
                 <p className="font-black flex items-center gap-2 text-lg">
-                  {isCorrect ? '?? ?????!' : selectedOption === 'TIME_UP' ? '? ??Решен пример!' : '?? Затвори.'}
+                  {isCorrect ? 'Точно!' : selectedOption === 'TIME_UP' ? 'Времето истече!' : 'Неточно.'}
                 </p>
                 {(!isCorrect || currentQ.explanation) && (
                   <div className="text-sm mt-3 pt-3 border-t border-black/5 font-medium leading-relaxed">
-                    {!isCorrect && <p className="mb-2">??Решен пример? ?: <strong className="underline decoration-red-200 decoration-2 underline-offset-4">{currentQ.answer}</strong></p>}
+                    {!isCorrect && <p className="mb-2">Точен одговор: <strong className="underline decoration-red-200 decoration-2 underline-offset-4">{currentQ.answer}</strong></p>}
                     {currentQ.explanation && (
                       <div className="flex gap-2 bg-white/50 p-3 rounded-xl mt-2">
                         <Sparkles className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
@@ -545,7 +545,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                             className="bg-white text-indigo-600 hover:bg-indigo-50 border whitespace-nowrap border-indigo-200 px-4 py-3 md:py-2 min-h-[44px] md:min-h-0 font-bold rounded-lg text-sm flex items-center justify-center w-full sm:w-auto gap-2 transition disabled:opacity-50"
                           >
                             {isGeneratingScaffold ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
-                            {isGeneratingScaffold ? 'AI Затвори??...' : 'Затвори ????? ?? ?????'}
+                            {isGeneratingScaffold ? 'AI Објаснување...' : 'Помогни ми да решам'}
                           </button>
                         ) : (
                           <div className="mt-2 text-left">
@@ -568,14 +568,14 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                     onClick={prevQuestion}
                     className="w-1/3 py-5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-2xl font-black text-xl transition-all shadow-xl hover:shadow-gray-300 flex items-center justify-center gap-3 active:scale-[0.98]"
                   >
-                    ?????
+                    Претходно
                   </button>
                 )}
                 <button
                   onClick={nextQuestion}
                   className={`${currentIndex > 0 ? 'w-2/3' : 'w-full'} py-5 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-xl transition-all shadow-xl hover:shadow-slate-200 flex items-center justify-center gap-3 active:scale-[0.98]`}
                 >
-                  {currentIndex + 1 === normalizedQuestions.length ? '??????' : '??????'}
+                  {currentIndex + 1 === normalizedQuestions.length ? 'Заврши' : 'Следно'}
                   <ArrowRight className="w-6 h-6" />
                 </button>
               </div>

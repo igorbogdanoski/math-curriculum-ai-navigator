@@ -59,8 +59,8 @@ const safeLazy = (importFunc: () => Promise<any>) => {
         default: () => (
           <div className="p-8 text-center">
             <Card className="border-red-200 bg-red-50">
-              <h2 className="text-xl font-bold text-red-600 mb-2">Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ Ð²Ñ‡Ð¸Ñ‚ÑƒÐ²Ð°ÑšÐµ</h2>
-              <p className="text-gray-700">ÐžÐ²Ð°Ð° ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ð° Ð¼Ð¾Ð¼ÐµÐ½Ñ‚Ð°Ð»Ð½Ð¾ Ð½Ðµ Ðµ Ð´Ð¾ÑÑ‚Ð°Ð¿Ð½Ð°. Ð’Ðµ Ð¼Ð¾Ð»Ð¸Ð¼Ðµ Ð¾ÑÐ²ÐµÐ¶ÐµÑ‚Ðµ Ñ˜Ð° Ð°Ð¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ñ˜Ð°Ñ‚Ð°.</p>
+              <h2 className="text-xl font-bold text-red-600 mb-2">Грешка при вчитување</h2>
+              <p className="text-gray-700">Оваа страница моментално не е достапна. Ве молиме освежете ја апликацијата.</p>
               <pre className="mt-4 text-xs text-left bg-white p-2 rounded border text-red-500 overflow-auto">
                 {error instanceof Error ? error.message : 'Unknown module error'}
               </pre>

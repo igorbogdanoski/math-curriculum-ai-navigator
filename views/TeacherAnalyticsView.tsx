@@ -108,7 +108,7 @@ export const TeacherAnalyticsView: React.FC = () => {
             contextType: 'CONCEPT',
             materialType: 'ASSESSMENT',
             differentiationLevel: 'support',
-            customInstruction: `РЕМЕДИЈАЛНА ВЕЖБА: Класата постигна само ${avgPct}% за концептот "${conceptTitle}". Генерирај работен лист со ПОДДРШКА ниво — поедноставени прашања, чекор-по-чекор упатства, детални примери, и визуелни помагала каде е можно.`,
+            customInstruction: `РЕМЕДИЈАЛНА ВЕЖБА: Одделението постигна само ${avgPct}% за концептот "${conceptTitle}". Генерирај работен лист со ПОДДРШКА ниво — поедноставени прашања, чекор-по-чекор упатства, детални примери, и визуелни помагала каде е можно.`,
         });
     };
 
@@ -534,17 +534,8 @@ export const TeacherAnalyticsView: React.FC = () => {
                 </Card>
             )}
 
-            {localResults.length === 0 && !error ? (
-                <Card className="text-center py-16">
-                    <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold text-gray-500">{t('analytics.noResultsTitle')}</h2>
-                    <p className="text-gray-400 mt-2 max-w-sm mx-auto">
-                        {t('analytics.noResultsDesc')}
-                    </p>
-                </Card>
-            ) : (
-                <>
-                    {/* П27 — Огласна Табла */}
+            {/* Огласна Табла и Табови се секогаш видливи */}
+            {/* П27 — Огласна Табла */}
                     <Card className="mb-4">
                         <div className="flex items-center gap-2 mb-3">
                             <Megaphone className="w-5 h-5 text-amber-500" />
@@ -608,7 +599,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'standards' as const, label: t('analytics.tabs.standards') },
                             { id: 'groups' as const, label: '👥 ' + t('analytics.tabs.groups') },
                             { id: 'live' as const, label: '🔴 Live' },
-                            { id: 'classes' as const, label: '🏫 Класи' },
+                            { id: 'classes' as const, label: '🏫 Одделенија' },
                             { id: 'questionBank' as const, label: '📚 ' + t('analytics.tabs.questionBank') },
                             { id: 'coverage' as const, label: '📊 ' + t('analytics.tabs.coverage') },
                             { id: 'assignments' as const, label: '📋 ' + t('analytics.tabs.assignments') },
@@ -671,101 +662,115 @@ export const TeacherAnalyticsView: React.FC = () => {
                         );
                     })()}
 
-                    {/* Summary stats — always visible */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                        <StatCard
-                            icon={<Users className="w-6 h-6 text-blue-600" />}
-                            label={t("analytics.stat.totalAttempts")}
-                            value={String(totalAttempts)}
-                            sub={`${t("analytics.stat.refreshed")} ${new Date(lastRefresh).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })}`}
-                            color="bg-blue-50"
-                        />
-                        <StatCard
-                            icon={<TrendingUp className="w-6 h-6 text-indigo-600" />}
-                            label={t("analytics.stat.avgResult")}
-                            value={`${fmt(avgScore, 1)}%`}
-                            sub={`\${t('analytics.stat.basedOn')} \${totalAttempts} \${totalAttempts === 1 ? t('analytics.stat.attemptSingular') : t('analytics.stat.attemptPlural')}`}
-                            color="bg-indigo-50"
-                        />
-                        <StatCard
-                            icon={<Award className="w-6 h-6 text-green-600" />}
-                            label={t("analytics.stat.passRate")}
-                            value={`${fmt(passRate, 1)}%`}
-                            sub={`${localResults.filter(r => r.percentage >= 70).length} ${t("analytics.stat.from")} ${totalAttempts} ${t("analytics.stat.students")}`}
-                            color="bg-green-50"
-                        />
-                        <StatCard
-                            icon={<BarChart3 className="w-6 h-6 text-orange-500" />}
-                            label={t("analytics.stat.distinctQuizzes")}
-                            value={String(quizAggregates.length)}
-                            sub={t("analytics.stat.quizzesWithResults")}
-                            color="bg-orange-50"
-                        />
-                    </div>
+                    {/* Summary stats — само ако има резултати */}
+                    {localResults.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                            <StatCard
+                                icon={<Users className="w-6 h-6 text-blue-600" />}
+                                label={t("analytics.stat.totalAttempts")}
+                                value={String(totalAttempts)}
+                                sub={`${t("analytics.stat.refreshed")} ${new Date(lastRefresh).toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' })}`}
+                                color="bg-blue-50"
+                            />
+                            <StatCard
+                                icon={<TrendingUp className="w-6 h-6 text-indigo-600" />}
+                                label={t("analytics.stat.avgResult")}
+                                value={`${fmt(avgScore, 1)}%`}
+                                sub={`${t('analytics.stat.basedOn')} ${totalAttempts} ${totalAttempts === 1 ? t('analytics.stat.attemptSingular') : t('analytics.stat.attemptPlural')}`}
+                                color="bg-indigo-50"
+                            />
+                            <StatCard
+                                icon={<Award className="w-6 h-6 text-green-600" />}
+                                label={t("analytics.stat.passRate")}
+                                value={`${fmt(passRate, 1)}%`}
+                                sub={`${localResults.filter(r => r.percentage >= 70).length} ${t("analytics.stat.from")} ${totalAttempts} ${t("analytics.stat.students")}`}
+                                color="bg-green-50"
+                            />
+                            <StatCard
+                                icon={<BarChart3 className="w-6 h-6 text-orange-500" />}
+                                label={t("analytics.stat.distinctQuizzes")}
+                                value={String(quizAggregates.length)}
+                                sub={t("analytics.stat.quizzesWithResults")}
+                                color="bg-orange-50"
+                            />
+                        </div>
+                    )}
 
                     {/* Tab content */}
-                    {activeTab === 'overview' && (
-                        <OverviewTab
-                            masteryStats={masteryStats}
-                            results={localResults}
-                            weakConcepts={weakConcepts}
-                            uniqueStudents={uniqueStudents}
-                            distribution={distribution}
-                            quizAggregates={quizAggregates}
-                            aiRecs={aiRecs}
-                            isLoadingRecs={isLoadingRecs}
-                            copiedName={copiedName}
-                            onGetRecommendations={handleGetRecommendations}
-                            onGenerateRemedial={handleGenerateRemedial}
-                            onCopyName={(name) => {
-                                setCopiedName(name);
-                                setTimeout(() => setCopiedName(null), 2000);
-                            }}
-                        />
-                    )}
-                    {activeTab === 'trend' && <TrendTab weeklyTrend={weeklyTrend} />}
-                    {activeTab === 'students' && <StudentsTab perStudentStats={perStudentStats} />}
-                    {activeTab === 'grades' && <GradeTab gradeStats={gradeStats} />}
-                    {activeTab === 'standards' && <StandardsTab standardsCoverage={standardsCoverage} />}
-                    {activeTab === 'concepts' && <ConceptsTab allConceptStats={allConceptStats} onGenerateRemedial={handleGenerateRemedial} />}
-                    {activeTab === 'alerts' && (
-                        <AlertsTab
-                            perStudentStats={perStudentStats}
-                            weakConcepts={weakConcepts}
-                            results={localResults}
-                            onGenerateRemedial={handleGenerateRemedial}
-                        />
-                    )}
-                    {activeTab === 'groups' && (
-                        <GroupsTab perStudentStats={perStudentStats} teacherUid={firebaseUser?.uid} />
-                    )}
-                    {activeTab === 'live' && <LiveTab />}
-                    {activeTab === 'classes' && (
-                        <ClassesTab teacherUid={firebaseUser?.uid ?? ''} />
-                    )}
-                    {activeTab === 'questionBank' && (
-                        <QuestionBankTab teacherUid={firebaseUser?.uid ?? ''} />
-                    )}
-                    {activeTab === 'coverage' && (
-                        <QuizCoverageTab
-                            allConceptStats={allConceptStats}
-                            allConcepts={allConcepts ?? []}
-                            onGenerateRemedial={handleGenerateRemedial}
-                        />
-                    )}
+                    {localResults.length === 0 && ['overview', 'trend', 'students', 'standards', 'concepts', 'grades', 'alerts', 'groups', 'coverage', 'league', 'cohort'].includes(activeTab) ? (
+                        <Card className="text-center py-16">
+                            <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <h2 className="text-xl font-bold text-gray-500">{t('analytics.noResultsTitle')}</h2>
+                            <p className="text-gray-400 mt-2 max-w-sm mx-auto">
+                                {t('analytics.noResultsDesc')}
+                            </p>
+                        </Card>
+                    ) : (
+                        <>
+                            {activeTab === 'overview' && (
+                                <OverviewTab
+                                    masteryStats={masteryStats}
+                                    results={localResults}
+                                    weakConcepts={weakConcepts}
+                                    uniqueStudents={uniqueStudents}
+                                    distribution={distribution}
+                                    quizAggregates={quizAggregates}
+                                    aiRecs={aiRecs}
+                                    isLoadingRecs={isLoadingRecs}
+                                    copiedName={copiedName}
+                                    onGetRecommendations={handleGetRecommendations}
+                                    onGenerateRemedial={handleGenerateRemedial}
+                                    onCopyName={(name) => {
+                                        setCopiedName(name);
+                                        setTimeout(() => setCopiedName(null), 2000);
+                                    }}
+                                />
+                            )}
+                            {activeTab === 'trend' && <TrendTab weeklyTrend={weeklyTrend} />}
+                            {activeTab === 'students' && <StudentsTab perStudentStats={perStudentStats} />}
+                            {activeTab === 'grades' && <GradeTab gradeStats={gradeStats} />}
+                            {activeTab === 'standards' && <StandardsTab standardsCoverage={standardsCoverage} />}
+                            {activeTab === 'concepts' && <ConceptsTab allConceptStats={allConceptStats} onGenerateRemedial={handleGenerateRemedial} />}
+                            {activeTab === 'alerts' && (
+                                <AlertsTab
+                                    perStudentStats={perStudentStats}
+                                    weakConcepts={weakConcepts}
+                                    results={localResults}
+                                    onGenerateRemedial={handleGenerateRemedial}
+                                />
+                            )}
+                            {activeTab === 'groups' && (
+                                <GroupsTab perStudentStats={perStudentStats} teacherUid={firebaseUser?.uid} />
+                            )}
+                            {activeTab === 'live' && <LiveTab />}
+                            {activeTab === 'classes' && (
+                                <ClassesTab teacherUid={firebaseUser?.uid ?? ''} />
+                            )}
+                            {activeTab === 'questionBank' && (
+                                <QuestionBankTab teacherUid={firebaseUser?.uid ?? ''} />
+                            )}
+                            {activeTab === 'coverage' && (
+                                <QuizCoverageTab
+                                    allConceptStats={allConceptStats}
+                                    allConcepts={allConcepts ?? []}
+                                    onGenerateRemedial={handleGenerateRemedial}
+                                />
+                            )}
 
-                    {activeTab === 'assignments' && firebaseUser?.uid && (
-                        <AssignmentsTab teacherUid={firebaseUser.uid} />
-                    )}
-                    {activeTab === 'league' && firebaseUser?.uid && (
-                        <LeagueTab teacherUid={firebaseUser.uid} />
-                    )}
-                    {activeTab === 'cohort' && (
-                        <CohortTab results={localResults} />
+                            {activeTab === 'assignments' && firebaseUser?.uid && (
+                                <AssignmentsTab teacherUid={firebaseUser.uid} />
+                            )}
+                            {activeTab === 'league' && firebaseUser?.uid && (
+                                <LeagueTab teacherUid={firebaseUser.uid} />
+                            )}
+                            {activeTab === 'cohort' && (
+                                <CohortTab results={localResults} />
+                            )}
+                        </>
                     )}
 
                     {/* П32 — Pagination: Load More */}
-                    {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments', 'league', 'cohort'].includes(activeTab) && (
+                    {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments', 'league', 'cohort'].includes(activeTab) && localResults.length > 0 && (
                         <div className="mt-6 flex flex-col items-center gap-1">
                             <button
                                 type="button"
@@ -775,7 +780,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             >
                                 {isLoadingMore
                                     ? <><RefreshCw className="w-4 h-4 animate-spin" /> {t('analytics.load.loading')}</>
-                                    : <>↓ {t('analytics.load.loadMore')} ({localResults.length}</>
+                                    : <>↓ {t('analytics.load.loadMore')} ({localResults.length})</>
                                 }
                             </button>
                             <p className="text-xs text-gray-400">{t('analytics.load.shown')} {localResults.length} {t('analytics.load.results')}</p>

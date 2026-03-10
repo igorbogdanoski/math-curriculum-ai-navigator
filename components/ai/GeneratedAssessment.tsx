@@ -507,28 +507,30 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
             </div>
 
-            <div className="hidden print:block" id="full-printable-assessment">
-                {/* Printable view */}
-                <h3 className="text-xl font-bold">{editableMaterial.title}</h3>
-                { hasDifferentiatedVersions ? (
-                    <>
-                        <h4 className="text-lg font-semibold mt-4">Стандардна верзија</h4>
-                        <QuestionList questions={editableMaterial.questions} isEditing={false} handleQuestionFieldChange={()=>{}} handleOptionChange={()=>{}} />
-                        {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
-                        {editableMaterial.differentiatedVersions?.map((v: DifferentiatedVersion) => (
-                            <div key={v.profileName} className="mt-6 pt-6 border-t" style={{pageBreakBefore: 'always'}}>
-                                <h4 className="text-lg font-semibold">Верзија за: {v.profileName}</h4>
-                                <QuestionList questions={v.questions} isEditing={false} handleQuestionFieldChange={()=>{}} handleOptionChange={()=>{}} />
-                            </div>
-                        ))}
-                    </>
-                ) : (
-                    <>
-                        <QuestionList questions={editableMaterial.questions} isEditing={false} handleQuestionFieldChange={()=>{}} handleOptionChange={()=>{}} />
-                        {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
-                    </>
-                )}
-            </div>
+            {!showFlashcards && !showQuiz && !isPlayingQuiz && (
+                <div className="hidden print:block" id="full-printable-assessment">
+                    {/* Printable view */}
+                    <h3 className="text-xl font-bold">{editableMaterial.title}</h3>
+                    { hasDifferentiatedVersions ? (
+                        <>
+                            <h4 className="text-lg font-semibold mt-4">Стандардна верзија</h4>
+                            <QuestionList questions={editableMaterial.questions} isEditing={false} handleQuestionFieldChange={()=>{}} handleOptionChange={()=>{}} />
+                            {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
+                            {editableMaterial.differentiatedVersions?.map((v: DifferentiatedVersion) => (
+                                <div key={v.profileName} className="mt-6 pt-6 border-t" style={{pageBreakBefore: 'always'}}>
+                                    <h4 className="text-lg font-semibold">Верзија за: {v.profileName}</h4>
+                                    <QuestionList questions={v.questions} isEditing={false} handleQuestionFieldChange={()=>{}} handleOptionChange={()=>{}} />
+                                </div>
+                            ))}
+                        </>
+                    ) : (
+                        <>
+                            <QuestionList questions={editableMaterial.questions} isEditing={false} handleQuestionFieldChange={()=>{}} handleOptionChange={()=>{}} />
+                            {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
+                        </>
+                    )}
+                </div>
+            )}
         </Card>
         {showFlashcards && <FlashcardViewer questions={editableMaterial.questions} title={editableMaterial.title} onClose={() => setShowFlashcards(false)} />}
         {showQuiz && <QuizViewer questions={editableMaterial.questions} onClose={() => setShowQuiz(false)} />}

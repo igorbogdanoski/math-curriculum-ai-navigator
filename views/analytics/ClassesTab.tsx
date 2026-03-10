@@ -108,7 +108,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     };
 
     const handleDelete = async (classId: string, name: string) => {
-        if (!window.confirm(`Избриши ја класата „${name}"?`)) return;
+        if (!window.confirm(`Избриши го одделението „${name}"?`)) return;
         await firestoreService.deleteClass(classId);
         await loadClasses();
     };
@@ -170,7 +170,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                             <p className="font-bold text-slate-800">Преглед пред увоз</p>
                         </div>
                         <p className="text-sm text-slate-600 mb-3">
-                            Ќе се додадат <span className="font-black text-indigo-700">{csvPreview.names.length}</span> ученика во класата:
+                            Ќе се додадат <span className="font-black text-indigo-700">{csvPreview.names.length}</span> ученика во одделението:
                         </p>
                         <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl px-3 py-2 mb-4 space-y-0.5">
                             {csvPreview.names.map((n, i) => (
@@ -204,7 +204,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                 <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                         <School className="w-4 h-4" />
-                        Мои класи ({classes.length})
+                        Мои одделенија ({classes.length})
                     </h2>
                     <button
                         type="button"
@@ -212,18 +212,18 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                         className="flex items-center gap-1.5 text-xs font-bold bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition"
                     >
                         <Plus className="w-3.5 h-3.5" />
-                        Нова класа
+                        Ново одделение
                     </button>
                 </div>
 
                 {/* Create form */}
                 {showForm && (
                     <Card className="border-indigo-200 bg-indigo-50">
-                        <p className="text-xs font-bold text-indigo-700 uppercase tracking-widest mb-3">Нова класа</p>
+                        <p className="text-xs font-bold text-indigo-700 uppercase tracking-widest mb-3">Ново одделение</p>
                         <div className="flex flex-col sm:flex-row gap-2">
                             <input
                                 type="text"
-                                placeholder="Назив на класата (напр. V-б)"
+                                placeholder="Назив на одделението (напр. V-б)"
                                 value={newName}
                                 onChange={e => setNewName(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter') handleCreate(); }}
@@ -262,8 +262,8 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                 {classes.length === 0 && !showForm && (
                     <Card className="text-center py-12">
                         <School className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                        <p className="text-sm font-semibold text-gray-400">Нема создадени класи.</p>
-                        <p className="text-xs text-gray-300 mt-1">Кликни „Нова класа" за да создадеш своја прва класа.</p>
+                        <p className="text-sm font-semibold text-gray-400">Нема создадени одделенија.</p>
+                        <p className="text-xs text-gray-300 mt-1">Кликни „Ново одделение" за да создадеш свое прво одделение.</p>
                     </Card>
                 )}
 
