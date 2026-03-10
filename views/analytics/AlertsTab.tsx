@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { AlertTriangle, CheckCircle, QrCode, TrendingDown, Clock } from 'lucide-react';
+import { AlertTriangle, CheckCircle, QrCode, TrendingDown, Clock, Bell } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { sendLocalNotification } from '../../services/pushService';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { GradeBadge } from '../../components/common/GradeBadge';
@@ -54,6 +55,16 @@ function toMs(ts: any): number | null {
 
 export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConcepts, results, onGenerateRemedial }) => {
     const [qrStudent, setQrStudent] = useState<string | null>(null);
+    const [notifiedStudents, setNotifiedStudents] = useState<Set<string>>(new Set());
+
+    const handleNotifyParent = (studentName: string, avg: number) => {
+        sendLocalNotification(
+            `⚠️ Ученик бара внимание: ${studentName}`,
+            `Просечен резултат: ${avg}% — Контактирај го родителот.`,
+            { icon: '/icons/icon-192x192.png' }
+        );
+        setNotifiedStudents(prev => new Set(prev).add(studentName));
+    };
     const qrUrl = qrStudent
         ? `${window.location.origin}/#/my-progress?name=${encodeURIComponent(qrStudent)}`
         : '';
@@ -182,6 +193,14 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
                                                 >
                                                     <QrCode className="w-3.5 h-3.5" />
                                                 </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleNotifyParent(r.name, r.avg)}
+                                                    title="Испрати известување"
+                                                    className={`p-1 transition-colors ${notifiedStudents.has(r.name) ? 'text-amber-500' : 'text-gray-400 hover:text-amber-500'}`}
+                                                >
+                                                    <Bell className="w-3.5 h-3.5" />
+                                                </button>
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap gap-1.5 mt-2">
@@ -268,6 +287,14 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
                                                         className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
                                                     >
                                                         <QrCode className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleNotifyParent(s.name, s.avg)}
+                                                        title="Испрати известување"
+                                                        className={`p-1 transition-colors ${notifiedStudents.has(s.name) ? 'text-amber-500' : 'text-gray-400 hover:text-amber-500'}`}
+                                                    >
+                                                        <Bell className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </td>
