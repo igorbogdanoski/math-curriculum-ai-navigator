@@ -26,6 +26,7 @@ import { QuestionBankTab } from './analytics/QuestionBankTab';
 import { QuizCoverageTab } from './analytics/QuizCoverageTab';
 import { AssignmentsTab } from './analytics/AssignmentsTab';
 import { LeagueTab } from './analytics/LeagueTab';
+import { CohortTab } from './analytics/CohortTab';
 import { useReactToPrint } from 'react-to-print';
 import { PrintableEDnevnikReport } from '../components/analytics/PrintableEDnevnikReport';
 import { Printer } from 'lucide-react';
@@ -68,7 +69,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [newMsg, setNewMsg] = useState('');
     const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage' | 'assignments' | 'league'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage' | 'assignments' | 'league' | 'cohort'>('overview');
     const [showMoreTabs, setShowMoreTabs] = useState(false);
 
     // ── Handlers ──────────────────────────────────────────────────────────────
@@ -486,15 +487,35 @@ export const TeacherAnalyticsView: React.FC = () => {
                         {t('analytics.subtitle')}
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                 <button
                     type="button"
                     onClick={handleExportCSV}
                     disabled={localResults.length === 0}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition active:scale-95 disabled:opacity-40"
+                    title="Извези резултати во CSV"
                 >
                     <Download className="w-4 h-4" />
                     {t('analytics.exportCsv')}
+                </button>
+                <button
+                    type="button"
+                    onClick={handleEDnevnikExport}
+                    disabled={localResults.length === 0}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-sm font-medium transition active:scale-95 disabled:opacity-40"
+                    title="Извези во формат за Е-Дневник (оценки)"
+                >
+                    <Download className="w-4 h-4" />
+                    Е-Дневник
+                </button>
+                <button
+                    type="button"
+                    onClick={handlePrint}
+                    disabled={localResults.length === 0}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition active:scale-95 disabled:opacity-40"
+                    title="Печати извештај"
+                >
+                    🖨️ Печати
                 </button>
                 <button
                     type="button"
@@ -592,6 +613,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             { id: 'coverage' as const, label: '📊 ' + t('analytics.tabs.coverage') },
                             { id: 'assignments' as const, label: '📋 ' + t('analytics.tabs.assignments') },
                             { id: 'league' as const, label: '🏆 ' + t('analytics.tabs.league') },
+                            { id: 'cohort' as const, label: '📊 Кохортна анализа' },
                         ];
                         const activeSecondary = SECONDARY_TABS.find(t => t.id === activeTab);
                         return (
@@ -738,9 +760,12 @@ export const TeacherAnalyticsView: React.FC = () => {
                     {activeTab === 'league' && firebaseUser?.uid && (
                         <LeagueTab teacherUid={firebaseUser.uid} />
                     )}
+                    {activeTab === 'cohort' && (
+                        <CohortTab results={localResults} />
+                    )}
 
                     {/* П32 — Pagination: Load More */}
-                    {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments', 'league'].includes(activeTab) && (
+                    {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments', 'league', 'cohort'].includes(activeTab) && (
                         <div className="mt-6 flex flex-col items-center gap-1">
                             <button
                                 type="button"
