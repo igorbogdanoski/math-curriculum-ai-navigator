@@ -201,7 +201,7 @@ export const AnnualPlanGeneratorView: React.FC = () => {
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        {ICONS.planner} AI Годишна Програма
+                        <ICONS.planner className="w-8 h-8" /> AI Годишна Програма
                     </h1>
                     <p className="text-gray-500 mt-2">
                         Автоматско генерирање на структуриран годишен план (Annual Curriculum Planner)
@@ -264,7 +264,7 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                             >
                                 {isGenerating ? (
                                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                                ) : ICONS.sparkles}
+                                ) : <ICONS.sparkles className="w-4 h-4" />}
                                 {isGenerating ? 'Генерирање...' : 'Генерирај Програма'}
                             </button>
                         </div>
@@ -335,7 +335,7 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                     ) : (
                         <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-12 text-center bg-gray-50/50">
                             <div>
-                                <div className="text-4xl mb-4 text-gray-300">{ICONS.planner}</div>
+                                <div className="mb-4 text-gray-300 flex justify-center"><ICONS.planner className="w-12 h-12" /></div>
                                 <h3 className="text-lg font-medium text-gray-900 mb-1">Нема генерирано програма</h3>
                                 <p className="text-gray-500">
                                     Споделете ги параметрите и кликнете "Генерирај Програма" за да создадете нова годишна програма со помош на AI.
