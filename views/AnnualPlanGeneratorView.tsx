@@ -14,6 +14,7 @@ import { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
 import { geminiService } from '../services/geminiService';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { generatePlanICS, downloadICS } from '../utils/icalExport';
 
 
 interface SortableTopicProps {
@@ -282,6 +283,16 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                                             {savedId ? '✓ Зачувано' : 'Зачувај'}
                                         </Button>
                                     )}
+                                    <button
+                                        onClick={() => {
+                                            const ics = generatePlanICS(plan);
+                                            downloadICS(ics, `Годишна_Програма_${plan.subject}_${plan.grade}.ics`);
+                                        }}
+                                        className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center gap-1"
+                                        title="Извези во Google Calendar / Outlook"
+                                    >
+                                        📅 iCal
+                                    </button>
                                     <button
                                         onClick={handlePrint}
                                         className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition"

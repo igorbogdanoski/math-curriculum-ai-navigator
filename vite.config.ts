@@ -182,17 +182,17 @@ export default defineConfig(({ mode }) => {
         }),
         // Only add dev proxy when API key is available (dev mode)
         apiKey ? geminiDevProxy(apiKey) : undefined,
-        // process.env.SENTRY_AUTH_TOKEN ? sentryVitePlugin({
-        //   org: 'math-nav-org', // placeholder, configures auth token locally
-        //   project: 'math-nav',
-        //   authToken: process.env.SENTRY_AUTH_TOKEN,
-        // }) : undefined,
+        process.env.SENTRY_AUTH_TOKEN ? sentryVitePlugin({
+          org: process.env.SENTRY_ORG || 'math-nav-org',
+          project: process.env.SENTRY_PROJECT || 'math-nav',
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+        }) : undefined,
       ].filter(Boolean) as Plugin[],
       // NOTE: API key is NO LONGER injected into the client bundle.
       // In production, requests go through /api/gemini (Vercel serverless function).
       // In development, requests go through the Vite dev middleware above.
       build: {
-        // sourcemap: true, // commented out to test build crashes
+        sourcemap: !!process.env.SENTRY_AUTH_TOKEN, // Enable source maps when Sentry is configured
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
           output: {

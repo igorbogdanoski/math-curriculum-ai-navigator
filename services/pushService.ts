@@ -1,50 +1,184 @@
+/**
+ * Push Notification Service — FCM (Firebase Cloud Messaging)
+ *
+ * Full implementation:
+ * 1. Request browser notification permission
+ * 2. Register Firebase Messaging SW + get FCM device token (VAPID)
+ * 3. Persist token to Firestore (`user_tokens` collection)
+ * 4. Send Firebase config to SW so background notifications work
+ * 5. Foreground message listener
+ * 6. Local (browser-native) notifications as fallback
+ *
+ * Prerequisites in .env:
+ *   VITE_FCM_VAPID_KEY = your Web Push certificate public key
+ *   (Firebase Console → Project Settings → Cloud Messaging → Web Push certificates)
+ */
+
 import { getToken, onMessage } from 'firebase/messaging';
-import { getFirebaseMessaging } from '../firebaseConfig';
+import { doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { getFirebaseMessaging, db } from '../firebaseConfig';
 
-export const requestNotificationPermission = async () => {
+const VAPID_KEY = import.meta.env.VITE_FCM_VAPID_KEY as string | undefined;
+
+// ── Send Firebase config to the SW (needed for background messages) ──────────
+function sendConfigToSW() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then((registration) => {
+    registration.active?.postMessage({
+      type: 'FIREBASE_CONFIG',
+      config: {
+        apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
+        authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+        projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
+        storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+      },
+    });
+  });
+}
+
+// ── Persist / remove FCM token in Firestore ──────────────────────────────────
+async function saveTokenToFirestore(uid: string, token: string): Promise<void> {
+  await setDoc(
+    doc(db, 'user_tokens', `${uid}_web`),
+    {
+      uid,
+      token,
+      platform: 'web',
+      userAgent: navigator.userAgent,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function removeTokenFromFirestore(uid: string): Promise<void> {
   try {
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      console.log('Notification permission granted.');
-      
-      const messaging = await getFirebaseMessaging();
-      if (!messaging) {
-        console.log('Firebase Messaging not supported on this browser.');
-        return null;
-      }
-
-      // We don't have a VAPID key in this demo so we just use the browser's raw notification.
-      // But if we did:
-      // const currentToken = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY' });
-      // console.log('FCM Token:', currentToken);
-      
-      return true;
-    } else {
-      console.log('Unable to get permission to notify.');
-      return false;
-    }
-  } catch (error) {
-    console.error('Error requesting notification permission:', error);
-    return false;
+    await deleteDoc(doc(db, 'user_tokens', `${uid}_web`));
+  } catch {
+    // Ignore — token may not exist
   }
-};
+}
 
+// ── Main: request permission + register token ─────────────────────────────────
+/**
+ * Requests notification permission, obtains an FCM device token, and saves it
+ * to Firestore so Cloud Functions can send targeted pushes.
+ *
+ * @param uid  Authenticated Firebase user UID
+ * @returns FCM token string on success, null if unsupported or denied
+ */
+export async function requestNotificationPermission(uid?: string): Promise<string | null> {
+  // Check browser support
+  if (!('Notification' in window)) {
+    console.log('[Push] Notifications not supported');
+    return null;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    console.log('[Push] Permission denied');
+    return null;
+  }
+
+  const messaging = await getFirebaseMessaging();
+  if (!messaging) {
+    console.log('[Push] Firebase Messaging not supported on this browser');
+    // Fallback: local notifications only
+    return null;
+  }
+
+  if (!VAPID_KEY) {
+    console.warn(
+      '[Push] VITE_FCM_VAPID_KEY not set — FCM token skipped. ' +
+      'Add your Web Push certificate key from Firebase Console → Cloud Messaging.'
+    );
+    return null;
+  }
+
+  try {
+    // Register the messaging SW and get token
+    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+      scope: '/',
+    });
+
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: swReg,
+    });
+
+    if (token) {
+      console.log('[Push] FCM Token registered:', token.slice(0, 20) + '...');
+      // Forward Firebase config to SW so background messages work
+      sendConfigToSW();
+      // Persist to Firestore if user is logged in
+      if (uid) {
+        await saveTokenToFirestore(uid, token);
+      }
+      return token;
+    }
+    return null;
+  } catch (error) {
+    console.error('[Push] Error getting FCM token:', error);
+    return null;
+  }
+}
+
+// ── Foreground message listener ───────────────────────────────────────────────
+/**
+ * Listen for messages while the app is in the foreground.
+ * Call this once after the app mounts (e.g. in App.tsx useEffect).
+ *
+ * @param callback  Receives the FCM MessagePayload
+ */
+export async function onForegroundMessage(
+  callback: (payload: any) => void,
+): Promise<(() => void) | null> {
+  const messaging = await getFirebaseMessaging();
+  if (!messaging) return null;
+
+  const unsubscribe = onMessage(messaging, callback);
+  return unsubscribe;
+}
+
+// ── Local (browser-native) notification ──────────────────────────────────────
+/**
+ * Shows a local OS notification without going through FCM.
+ * Useful for in-app events (quota reset, daily brief ready, etc.)
+ */
+export function sendLocalNotification(
+  title: string,
+  body: string,
+  options?: { icon?: string; tag?: string; url?: string },
+): void {
+  if (Notification.permission !== 'granted') return;
+
+  const notification = new Notification(title, {
+    body,
+    icon: options?.icon || '/icons/icon-192.png',
+    badge: '/icons/badge-72.png',
+    tag: options?.tag || 'math-nav-local',
+  });
+
+  if (options?.url) {
+    notification.onclick = () => {
+      window.open(options.url, '_blank');
+      notification.close();
+    };
+  }
+}
+
+// ── Legacy alias (backward compat) ───────────────────────────────────────────
+/** @deprecated Use sendLocalNotification instead */
+export const sendLocalPushNotification = (title: string, body: string, icon?: string) =>
+  sendLocalNotification(title, body, { icon });
+
+/** @deprecated Use onForegroundMessage instead */
 export const onMessageListener = async () => {
   const messaging = await getFirebaseMessaging();
   if (!messaging) return null;
   return new Promise((resolve) => {
-    onMessage(messaging, (payload) => {
-      resolve(payload);
-    });
+    onMessage(messaging, resolve);
   });
-};
-
-export const sendLocalPushNotification = (title: string, body: string, icon?: string) => {
-  if (Notification.permission === 'granted') {
-    new Notification(title, {
-      body,
-      icon: icon || '/vite.svg',
-      badge: '/vite.svg'
-    });
-  }
 };

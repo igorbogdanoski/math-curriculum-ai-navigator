@@ -1,0 +1,84 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Помошни функции ──────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isPDF() {
+      return request.resource.contentType == 'application/pdf';
+    }
+
+    function isAllowedFileType() {
+      return isImage() || isPDF();
+    }
+
+    // Max 10MB за слики, 25MB за PDF
+    function isWithinSizeLimit() {
+      return (isImage() && request.resource.size <= 10 * 1024 * 1024)
+          || (isPDF()   && request.resource.size <= 25 * 1024 * 1024);
+    }
+
+    // ── Кориснички профилни слики ─────────────────────────────
+    // /user_avatars/{uid}/avatar.{ext}
+    match /user_avatars/{uid}/{fileName} {
+      allow read:  if true; // Јавно — потребно за приказ во заедницата
+      allow write: if isOwner(uid)
+                   && isImage()
+                   && isWithinSizeLimit();
+      allow delete: if isOwner(uid);
+    }
+
+    // ── Материјали прикачени од наставниците ──────────────────
+    // /teacher_uploads/{uid}/{fileName}
+    match /teacher_uploads/{uid}/{fileName} {
+      allow read:  if isAuthenticated(); // Само автентицирани
+      allow write: if isOwner(uid)
+                   && isAllowedFileType()
+                   && isWithinSizeLimit();
+      allow delete: if isOwner(uid);
+    }
+
+    // ── PDF извози на годишни планови ─────────────────────────
+    // /annual_plans/{uid}/{planId}.pdf
+    match /annual_plans/{uid}/{planId} {
+      allow read:  if isAuthenticated();
+      allow write: if isOwner(uid)
+                   && isPDF()
+                   && isWithinSizeLimit();
+      allow delete: if isOwner(uid);
+    }
+
+    // ── Слики за квизови (прикачени преку Gemini Vision) ──────
+    // /quiz_images/{uid}/{imageId}
+    match /quiz_images/{uid}/{imageId} {
+      allow read:  if isOwner(uid);
+      allow write: if isOwner(uid)
+                   && isImage()
+                   && request.resource.size <= 5 * 1024 * 1024; // Max 5MB за quiz слики
+      allow delete: if isOwner(uid);
+    }
+
+    // ── Јавна национална библиотека — само читање ─────────────
+    // /national_library/{resourceId}
+    match /national_library/{resourceId} {
+      allow read:  if true; // Јавно
+      allow write: if false; // Само преку Cloud Functions / Admin SDK
+    }
+
+    // ── Блокирај сè останато ──────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
