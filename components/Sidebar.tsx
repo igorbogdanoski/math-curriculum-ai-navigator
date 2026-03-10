@@ -98,6 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           {(user?.role === 'school_admin' || user?.role === 'admin') && (
               <>
                 <NavItem path="/school-admin" currentPath={currentPath} icon={ICONS.school} label={t("nav.schooladmin")} onClick={onClose} />
+                <NavItem path="/school-admin/curriculum" currentPath={currentPath} icon={ICONS.bookOpen} label="Уреди Курикулум" onClick={onClose} badge="NEW" />
                 <NavItem path="/reviews" currentPath={currentPath} icon={ICONS.shieldCheck} label="Рецензии" onClick={onClose} />
               </>
             )}          

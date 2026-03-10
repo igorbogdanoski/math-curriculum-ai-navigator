@@ -4,6 +4,7 @@ import type { Curriculum, VerticalProgressionAnalysis, Concept, ConceptProgressi
 import type { CurriculumModule } from '../data/curriculum';
 import { firestoreService } from '../services/firestoreService';
 import { useNotification } from '../contexts/NotificationContext';
+import { fetchCurriculumOverrides, type CurriculumOverridesDoc } from '../services/firestoreService.curriculumOverrides';
 
 interface ConceptChainEntry { grade: Grade; topic: Topic; concept: Concept; }
 
@@ -34,6 +35,7 @@ export const useCurriculum = () => {
 
 export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [data, setData] = useState<CurriculumModule | null>(null);
+    const [overrides, setOverrides] = useState<CurriculumOverridesDoc | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { addNotification } = useNotification();
@@ -49,40 +51,48 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }
         });
 
-        // 2. Background Sync with Firestore - TEMPORARILY DISABLED to use local files with full activities
-        /* 
-        const syncWithFirestore = async () => {
-            try {
-                const remoteModule = await firestoreService.fetchFullCurriculum();
-                
-                // CRITICAL STABILITY CHECK:
-                // Only overwrite local data if the remote data is strictly valid and contains content.
-                // This prevents a "bad deployment" or empty DB from breaking the live app.
-                const isValid = remoteModule && 
-                                remoteModule.curriculumData && 
-                                Array.isArray(remoteModule.curriculumData.grades) && 
-                                remoteModule.curriculumData.grades.length > 0;
+        // 2. Load curriculum overrides added by school admin via CurriculumEditorView
+        // Uses a well-known "school" key — overrides are school-wide, not per-teacher.
+        // Silent failure: local data always works as fallback.
+        fetchCurriculumOverrides('school_overrides').then(doc => {
+            if (!cancelled && doc) setOverrides(doc);
+        }).catch(() => { /* silent — overrides are optional */ });
 
-                if (isValid) {
-                    setData(remoteModule);
-                    console.log("Curriculum data successfully synced with Firestore.");
-                } else {
-                    console.warn("Remote curriculum data was empty or invalid. Retaining local fallback data.");
-                }
-            } catch (err) {
-                // Silent failure pattern: If remote fetch fails (offline, server error),
-                // we intentionally do NOT block the user because we already have localData loaded.
-                // We just log it for debugging.
-                console.warn("Background sync failed (using local data):", err);
-            }
-        };
-
-        syncWithFirestore();
-        */
         return () => { cancelled = true; };
     }, []); // Dependency array empty to run only on mount
 
-    const curriculum = useMemo(() => data?.curriculumData, [data]);
+    // Merge curriculum overrides (custom concepts/topics added via CurriculumEditorView)
+    const curriculum = useMemo((): Curriculum | undefined => {
+        if (!data?.curriculumData) return undefined;
+        if (!overrides || (overrides.addedConcepts.length === 0 && overrides.addedTopics.length === 0)) {
+            return data.curriculumData;
+        }
+        // Deep-clone grades to avoid mutating static data
+        const grades = data.curriculumData.grades.map(grade => ({
+            ...grade,
+            topics: grade.topics.map(topic => ({ ...topic, concepts: [...topic.concepts] })),
+        }));
+        // Inject custom concepts into their target topics
+        for (const addition of overrides.addedConcepts) {
+            const grade = grades.find(g => g.id === addition.gradeId);
+            if (!grade) continue;
+            const topic = grade.topics.find(t => t.id === addition.topicId);
+            if (!topic) continue;
+            // Avoid duplicates on hot-reload
+            if (!topic.concepts.find(c => c.id === addition.concept.id)) {
+                topic.concepts.push(addition.concept as any);
+            }
+        }
+        // Inject custom topics into their target grades
+        for (const topicAdd of overrides.addedTopics) {
+            const grade = grades.find(g => g.id === topicAdd.gradeId);
+            if (!grade) continue;
+            if (!grade.topics.find(t => t.id === topicAdd.topic.id)) {
+                grade.topics.push(topicAdd.topic as any);
+            }
+        }
+        return { grades };
+    }, [data, overrides]);
     const verticalProgression = useMemo(() => data?.verticalProgressionData, [data]);
     const allNationalStandards = useMemo(() => {
         if (!data) return undefined;

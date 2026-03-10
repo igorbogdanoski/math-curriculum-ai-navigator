@@ -119,6 +119,7 @@ const TeacherAnalyticsView = safeLazy(() => import('./views/TeacherAnalyticsView
 const SystemAdminView = safeLazy(() => import('./views/SystemAdminView').then(module => ({ default: module.SystemAdminView })));
 const TestGeneratorView = safeLazy(() => import('./views/TestGeneratorView').then(module => ({ default: module.TestGeneratorView })));
 const SchoolAdminView = safeLazy(() => import('./views/SchoolAdminView').then(module => ({ default: module.SchoolAdminView })));
+const CurriculumEditorView = safeLazy(() => import('./views/CurriculumEditorView').then(module => ({ default: module.CurriculumEditorView })));
 
 const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     const { openGeneratorPanel } = useGeneratorPanel();
@@ -159,7 +160,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/my-lessons', component: LessonPlanLibraryView },
     { path: '/library', component: ContentLibraryView },
     { path: '/gallery', component: ExamplesGalleryView },
-    { path: '/settings', component: SettingsView },      { path: '/school-admin', component: SchoolAdminView },    { path: '/system-admin', component: SystemAdminView }, { path: '/progression', component: ProgressionView },
+    { path: '/settings', component: SettingsView },      { path: '/school-admin', component: SchoolAdminView }, { path: '/school-admin/curriculum', component: CurriculumEditorView },    { path: '/system-admin', component: SystemAdminView }, { path: '/progression', component: ProgressionView },
     { path: '/reviews', component: ContentReviewView },
     { path: '/graph', component: CurriculumGraphView },
     { path: '/roadmap', component: RoadmapView },
@@ -305,7 +306,9 @@ const AppCore: React.FC = () => {
       window.location.hash.startsWith('#/play/') ||
       window.location.hash.startsWith('#/my-progress') ||
       window.location.hash.startsWith('#/live') ||
-      window.location.hash.startsWith('#/tutor');
+      window.location.hash.startsWith('#/tutor') ||
+      window.location.hash.startsWith('#/portfolio') ||
+      window.location.hash.startsWith('#/parent');
 
     if (!isAuthenticated && !isPublicRoute) {
         return (

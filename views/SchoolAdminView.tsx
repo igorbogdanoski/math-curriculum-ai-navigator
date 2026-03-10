@@ -47,15 +47,25 @@ export const SchoolAdminView: React.FC = () => {
                     </h1>
                     <p className="text-gray-500 mt-1">Извештај за вашето училиште: {user.schoolName || 'Непознато училиште'}</p>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-                >
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={() => navigate('/school-admin/curriculum')}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+                    >
+                        <BookOpen className="w-5 h-5" />
+                        Уреди Курикулум
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                    >
                     <Printer className="w-5 h-5" />
                     Печати / PDF Извештај
                 </button>
             </div>
+        </div>
 
             {/* Print Header - Only visible when printing */}
             <div className="hidden print:block text-center mb-8 border-b pb-4">
