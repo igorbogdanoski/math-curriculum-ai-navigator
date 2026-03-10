@@ -411,6 +411,7 @@ export const translations: Partial<Record<Language, Record<string, string>>> = {
   dash_start_searching_topics: 'Filloni duke kërkuar.',
   dash_grade_label: '. Klasa',
 
+    'nav.academy': 'Qendra Edukative',
     'nav.home': 'Kreu',
     'nav.generator': 'AI Gjenerator',
     'nav.planner': 'Planifikuesi',
@@ -769,6 +770,7 @@ export const translations: Partial<Record<Language, Record<string, string>>> = {
   dash_start_searching_topics: 'Konuları arayarak başlayın.',
   dash_grade_label: '. Sınıf',
 
+    'nav.academy': 'Eğitim Merkezi',
     'nav.home': 'Ana Sayfa',
     'nav.generator': 'Yapay Zeka',
     'nav.planner': 'Planlayıcı',

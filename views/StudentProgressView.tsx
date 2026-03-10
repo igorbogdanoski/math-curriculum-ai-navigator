@@ -13,6 +13,7 @@ import { loadOrGenerateQuests, type DailyQuest } from '../utils/dailyQuests';
 import { LogicMap } from '../components/LogicMap';
 import { geminiService } from '../services/geminiService';
 import { firestoreService } from '../services/firestoreService';
+import { isDueForReview, sortByReviewUrgency, getNextReviewLabel, type SpacedRepRecord } from '../utils/spacedRepetition';
 import { GamificationPanel } from '../components/student/GamificationPanel';
 import { ActivityFeed } from '../components/student/ActivityFeed';
 
@@ -63,6 +64,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [aiReportLoading, setAiReportLoading] = useState(false);
   const [peerHelpers, setPeerHelpers] = useState<Record<string, string[]>>({});
+  const [sm2Records, setSm2Records] = useState<SpacedRepRecord[]>([]);
 
   // П5: Peer Learning — fetch students who mastered the same concepts the current student struggles with
   useEffect(() => {
@@ -101,6 +103,16 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       setDailyQuests(loadOrGenerateQuests(studentName, allConcepts, masteryRecords));
     }
   }, [studentName, masteryRecords, allConcepts]);
+
+  // Fetch SM-2 spaced repetition records for this student
+  useEffect(() => {
+    if (!studentName) return;
+    // Use device ID from localStorage as studentId (same key as StudentPlayView)
+    const studentId = (() => { try { return localStorage.getItem('deviceId') || studentName; } catch { return studentName; } })();
+    firestoreService.fetchSpacedRepRecords(studentId)
+      .then(records => setSm2Records(records))
+      .catch(() => {/* non-critical, fall back to timestamp logic */});
+  }, [studentName]);
 
   // Mark as searched when data loads
   useEffect(() => {
@@ -161,8 +173,18 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       });
   }, [masteryRecords, getConceptChain]);
 
-  // -- Правец 14: Spaced Repetition -----------------------------------------
+  // -- Правец 14: Spaced Repetition (SM-2) ------------------------------------
   const reviewToday = useMemo(() => {
+    // If we have real SM-2 records from Firestore, use the algorithm
+    if (sm2Records.length > 0) {
+      const sm2Map = new Map(sm2Records.map(r => [r.conceptId, r]));
+      const dueRecords = sortByReviewUrgency(sm2Records.filter(isDueForReview));
+      return dueRecords.map(r => {
+        const mastery = masteryRecords.find(m => m.conceptId === r.conceptId);
+        return { ...mastery, conceptId: r.conceptId, conceptTitle: mastery?.conceptTitle || r.conceptId, sm2Label: getNextReviewLabel(r) };
+      }).filter(m => m.conceptId);
+    }
+    // Fallback: timestamp-based heuristic (original logic)
     const now = Date.now();
     return masteryRecords.filter(m => {
       if (!m.updatedAt) return false;
@@ -170,7 +192,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
       const daysSince = (now - lastMs) / 86_400_000;
       return m.mastered ? daysSince > 30 : (daysSince > 7 && m.attempts > 0);
     });
-  }, [masteryRecords]);
+  }, [masteryRecords, sm2Records]);
 
   // -- Правец 21: Персонализирана патека "Следни чекори" --------------------
   const nextUpConcepts = useMemo(() => {

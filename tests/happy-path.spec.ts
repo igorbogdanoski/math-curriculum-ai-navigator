@@ -1,28 +1,164 @@
 import { test, expect } from '@playwright/test';
 
-// NOTE: This test requires a valid test student and teacher environment, 
-// or it relies on basic routing/mocking if database is restricted.
-// Since production db is protected, this test will focus on the UI flow 
-// assuming basic mock responses or valid state if it's run in a test project.
-// We will test the "Happy Path" as defined: Teacher creates quiz -> Student plays -> Results.
-// To keep it resilient, we will navigate through the real UI flows.
+/**
+ * Happy Path E2E Tests — Core User Flows
+ *
+ * Tests the most critical public-facing flows without auth:
+ * 1. Student Progress page — name entry, tab navigation
+ * 2. Annual Planner — form is interactive (grade select, subject, weeks, button)
+ * 3. Public route coverage — no JS errors on load
+ * 4. Accessibility — basic a11y checks
+ *
+ * Auth-gated flows (quiz generation, analytics) require test credentials.
+ */
 
-test.describe('Core Happy Path: Learning Cycle', () => {
+test.describe('Happy Path: Core User Flows', () => {
 
-  test('generates a quiz, assignment is played by student, teacher views results', async ({ page, context }) => {
-    // 1. TEACHER LOGS IN
-    await page.goto('/#/login');
-    // For this e2e test to be truly functional it needs a test user or bypass
-    // We will just verify the login form is present and attempt to submit
-    // In a real CI environment, we would use testing credentials from env vars.
-    // E.g.: await page.fill('input[type="email"]', process.env.TEST_TEACHER_EMAIL);
-    
-    // We will simulate the happy path steps conceptually for now to satisfy the structure
-    // Since Firebase Auth is required, we document the flow assertions.
-    
-    test.info().annotations.push({
-      type: 'issue',
-      description: 'Full E2E requires a seeded test database and test user credentials. The flow is outlined here.'
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+  });
+
+  // ── 1. Student Progress ───────────────────────────────────────────────────
+  test.describe('Student: My Progress flow', () => {
+
+    test('progress page loads and shows name search UI', async ({ page }) => {
+      await page.goto('/#/my-progress');
+      await page.waitForLoadState('networkidle');
+
+      await expect(page.locator('body')).toBeVisible();
+      await expect(page.locator('text=/нешто тргна наопаку/i')).not.toBeVisible();
+    });
+
+    test('entering a student name triggers search without crash', async ({ page }) => {
+      await page.goto('/#/my-progress');
+
+      const nameInput = page.locator('input[placeholder*="Внеси"]').first();
+      if (await nameInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await nameInput.fill('Тест Ученик');
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(2000);
+        await expect(page.locator('text=/нешто тргна наопаку/i')).not.toBeVisible();
+      }
+    });
+
+    test('Map and Activity tabs are switchable', async ({ page }) => {
+      await page.evaluate(() => localStorage.setItem('studentName', 'Тест'));
+      await page.goto('/#/my-progress');
+      await page.waitForTimeout(2000);
+
+      const activityTab = page.locator('button', { hasText: /Активност|Activity/i }).first();
+      const mapTab = page.locator('button', { hasText: /Карта|Map/i }).first();
+
+      if (await activityTab.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await activityTab.click();
+        await expect(activityTab).toBeVisible();
+        await mapTab.click();
+        await expect(mapTab).toBeVisible();
+      }
+    });
+
+  });
+
+  // ── 2. Annual Planner ─────────────────────────────────────────────────────
+  test.describe('Annual Planner: Generator form', () => {
+
+    test('page loads without crash', async ({ page }) => {
+      await page.goto('/#/annual-planner');
+      await page.waitForLoadState('networkidle');
+      await expect(page.locator('text=/нешто тргна наопаку/i')).not.toBeVisible();
+    });
+
+    test('Grade selector is visible', async ({ page }) => {
+      await page.goto('/#/annual-planner');
+      await expect(page.locator('select[title="Одделение"]')).toBeVisible({ timeout: 5000 });
+    });
+
+    test('Subject input accepts text', async ({ page }) => {
+      await page.goto('/#/annual-planner');
+      const subjectInput = page.locator('input[type="text"]').first();
+      if (await subjectInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await subjectInput.fill('Физика');
+        await expect(subjectInput).toHaveValue('Физика');
+      }
+    });
+
+    test('Weeks input has correct min/max constraints', async ({ page }) => {
+      await page.goto('/#/annual-planner');
+      const weeksInput = page.locator('input[type="number"]').first();
+      if (await weeksInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await expect(weeksInput).toHaveAttribute('min', '20');
+        await expect(weeksInput).toHaveAttribute('max', '40');
+      }
+    });
+
+    test('Generate button is present and enabled', async ({ page }) => {
+      await page.goto('/#/annual-planner');
+      const btn = page.locator('button', { hasText: /Генерирај/i }).first();
+      await expect(btn).toBeVisible({ timeout: 5000 });
+      await expect(btn).not.toBeDisabled();
+    });
+
+  });
+
+  // ── 3. Public routes — no JS errors ──────────────────────────────────────
+  test.describe('Navigation: Public routes reachable', () => {
+
+    const publicRoutes = [
+      { path: '/#/', label: 'Home' },
+      { path: '/#/my-progress', label: 'Student Progress' },
+      { path: '/#/live', label: 'Live Session' },
+      { path: '/#/tutor', label: 'AI Tutor' },
+      { path: '/#/annual-planner', label: 'Annual Planner' },
+    ];
+
+    for (const route of publicRoutes) {
+      test(`${route.label} loads without critical JS errors`, async ({ page }) => {
+        const errors: string[] = [];
+        page.on('pageerror', err => errors.push(err.message));
+
+        await page.goto(route.path);
+        await page.waitForTimeout(1500);
+
+        const critical = errors.filter(e =>
+          !e.includes('auth/') &&
+          !e.includes('firebase') &&
+          !e.includes('ResizeObserver')
+        );
+        expect(critical, `JS errors on ${route.path}: ${critical.join(', ')}`).toHaveLength(0);
+      });
+    }
+
+  });
+
+  // ── 4. Accessibility ──────────────────────────────────────────────────────
+  test.describe('Accessibility: Basic checks', () => {
+
+    test('No images without alt attribute on home page', async ({ page }) => {
+      await page.goto('/');
+      await page.waitForTimeout(2000);
+      const imgsWithoutAlt = await page.locator('img:not([alt])').count();
+      expect(imgsWithoutAlt).toBe(0);
+    });
+
+    test('Interactive buttons have accessible text or aria-label (max 3 exceptions)', async ({ page }) => {
+      await page.goto('/');
+      await page.waitForTimeout(2000);
+
+      const inaccessibleButtons = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('button')).filter(b => {
+          const hasText = (b.textContent || '').trim().length > 0;
+          return !hasText && !b.hasAttribute('aria-label') && !b.hasAttribute('title');
+        }).length
+      );
+      expect(inaccessibleButtons).toBeLessThanOrEqual(3);
+    });
+
+    test('Annual Planner grade select has a title for screen readers', async ({ page }) => {
+      await page.goto('/#/annual-planner');
+      const select = page.locator('select[title="Одделение"]');
+      await expect(select).toBeVisible({ timeout: 5000 });
+      await expect(select).toHaveAttribute('title', 'Одделение');
     });
 
   });
