@@ -7,7 +7,6 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card } from '../components/common/Card';
-import { Button } from '../components/common/Button';
 import { GradeSelector } from '../components/curriculum/GradeSelector';
 import { ICONS } from '../constants';
 import { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
@@ -252,14 +251,17 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                                 />
                             </div>
 
-                            <Button 
-                                onClick={handleGenerate} 
-                                isLoading={isGenerating}
-                                className="w-full"
-                                icon={ICONS.sparkles}
+                            <button
+                                type="button"
+                                onClick={handleGenerate}
+                                disabled={isGenerating}
+                                className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
                             >
-                                Генерирај Програма
-                            </Button>
+                                {isGenerating ? (
+                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                                ) : ICONS.sparkles}
+                                {isGenerating ? 'Генерирање...' : 'Генерирај Програма'}
+                            </button>
                         </div>
                     </Card>
                 </div>
@@ -279,9 +281,14 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                                         Вкупно: {plan.totalWeeks} недели
                                     </span>
                                     {user && (
-                                        <Button onClick={handleSave} isLoading={isSaving} className="text-sm px-3 py-1.5">
-                                            {savedId ? '✓ Зачувано' : 'Зачувај'}
-                                        </Button>
+                                        <button
+                                            type="button"
+                                            onClick={handleSave}
+                                            disabled={isSaving}
+                                            className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                                        >
+                                            {isSaving ? '...' : savedId ? '✓ Зачувано' : 'Зачувај'}
+                                        </button>
                                     )}
                                     <button
                                         onClick={() => {
