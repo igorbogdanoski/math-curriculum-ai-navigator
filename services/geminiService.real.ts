@@ -941,6 +941,48 @@ ${toneHint}
     );
   },
 
+  // Ж7.5 — AI нарација за Студентско Портфолио
+  async generateStudentNarrative(
+    studentName: string,
+    masteredCount: number,
+    avgPercentage: number,
+    totalQuizzes: number,
+    topConcepts: string[],
+    weakConcepts: string[],
+    metacognitiveNotes: string[],
+  ): Promise<string> {
+    checkDailyQuotaGuard();
+    const topStr = topConcepts.slice(0, 3).join(', ') || 'нема';
+    const weakStr = weakConcepts.slice(0, 2).join(', ') || 'нема';
+    const notesSample = metacognitiveNotes.slice(0, 3).map(n => `"${n}"`).join('; ');
+    const prompt = `Напиши кратка (3–4 параграфи) персонализирана нарација за учениковото портфолио на македонски јазик.
+
+Ученик: ${studentName}
+Совладани концепти: ${masteredCount}
+Просечен резултат: ${Math.round(avgPercentage)}%
+Вкупно квизови: ${totalQuizzes}
+Најдобри концепти: ${topStr}
+Концепти за подобрување: ${weakStr}
+${notesSample ? `Рефлексивни белешки на ученикот: ${notesSample}` : ''}
+
+Структура:
+1. Општа оценка на напредокот
+2. Силни страни (кои концепти се совладани добро)
+3. Области за раст (со конкретен совет)
+4. Охрабрување и следен чекор
+
+Пишувај топло, конкретно и мотивирачки. НЕ пишувај „Здраво" или формален поздрав.`;
+
+    const response = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: 'Ти си педагог кој пишува персонализирани нарации за ученичко портфолио на македонски јазик.',
+      safetySettings: SAFETY_SETTINGS,
+      generationConfig: { maxOutputTokens: 400 },
+    });
+    return response.text.trim();
+  },
+
   // Г1 — Адаптивна домашна задача по квиз
   // Е2 — AI Годишна Програма
   async generateAnnualPlan(

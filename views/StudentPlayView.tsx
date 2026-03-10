@@ -447,6 +447,12 @@ export const StudentPlayView: React.FC = () => {
         .catch(err => console.warn('[Gamification] update failed:', err));
     }
 
+    // 3b. Spaced Repetition — update SM-2 record after every quiz attempt
+    if (meta.conceptId && deviceId) {
+      firestoreService.updateSpacedRepRecord(deviceId, meta.conceptId, percentage)
+        .catch(err => console.warn('[SM-2] updateSpacedRepRecord failed:', err));
+    }
+
     // 4. Submit live response if this quiz is part of a live session
     if (sessionId && studentName) {
       firestoreService.submitLiveResponse(sessionId, studentName, percentage)

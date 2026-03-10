@@ -82,6 +82,7 @@ const HostLiveQuizView = safeLazy(() => import('./views/HostLiveQuizView').then(
 const LiveDisplayView = safeLazy(() => import('./views/LiveDisplayView').then(module => ({ default: module.LiveDisplayView })));
 const StudentTutorView = safeLazy(() => import('./views/StudentTutorView').then(module => ({ default: module.StudentTutorView })));
 const ParentPortalView = safeLazy(() => import('./views/ParentPortalView').then(module => ({ default: module.ParentPortalView })));
+const StudentPortfolioView = safeLazy(() => import('./views/StudentPortfolioView').then(module => ({ default: module.StudentPortfolioView })));
 
 const LoginView = safeLazy(() => import('./views/LoginView').then(module => ({ default: module.LoginView })));
 const AcademyLessonView = safeLazy(() => import('./views/AcademyLessonView').then(module => ({ default: module.AcademyLessonView })));
@@ -139,6 +140,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/live', component: StudentLiveView }, // Live session join route
     { path: '/tutor', component: StudentTutorView }, // AI Tutor for Students
     { path: '/parent', component: ParentPortalView }, // Parent Portal â€” public
+    { path: '/portfolio', component: StudentPortfolioView }, // Ж7.5 Student Portfolio
     { path: '/academy/lesson/:id', component: AcademyLessonView },
     { path: '/academy', component: AcademyView },
     { path: '/', component: HomeView },

@@ -441,7 +441,9 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-700 truncate">{m.conceptTitle || m.conceptId}</p>
                       <p className="text-xs text-slate-400">
-                        {m.mastered ? t('progress.masteredLongAgo') : `${m.consecutiveHighScores}/3 ${t('progress.moreToGo')} 85%`}
+                        {(m as any).sm2Label
+                          ? <span className="font-medium text-blue-600">{(m as any).sm2Label}</span>
+                          : m.mastered ? t('progress.masteredLongAgo') : `${m.consecutiveHighScores}/3 ${t('progress.moreToGo')} 85%`}
                       </p>
                     </div>
                     {nextId && (
