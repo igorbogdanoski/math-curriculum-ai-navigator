@@ -786,8 +786,6 @@ export const TeacherAnalyticsView: React.FC = () => {
                             <p className="text-xs text-gray-400">{t('analytics.load.shown')} {localResults.length} {t('analytics.load.results')}</p>
                         </div>
                     )}
-                </>
-            )}
         </div>
     );
 };
