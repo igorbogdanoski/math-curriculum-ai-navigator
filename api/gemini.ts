@@ -27,6 +27,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const { model, contents, config } = validated;
+  let modelName = model;
+  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-1.5-flash-8b' || modelName === 'gemini-1.5-flash-8b-latest' || modelName === 'gemini-2.0-flash' || modelName === 'gemini-2.5-flash') modelName = 'gemini-3.1-flash';
+  else if (modelName.includes('thinking')) modelName = 'gemini-3.1-pro';
+
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
   // Normalize contents once — reused across key rotation attempts
@@ -55,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const apiKey = apiKeys[i];
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const modelInstance = genAI.getGenerativeModel({ model, safetySettings: safetySettings as any });
+      const modelInstance = genAI.getGenerativeModel({ model: modelName, safetySettings: safetySettings as any });
       const result = await modelInstance.generateContent({
         contents: normalizedContents,
         generationConfig: generationConfig as any,

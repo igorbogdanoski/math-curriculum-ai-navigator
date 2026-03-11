@@ -42,6 +42,8 @@ function getFirebaseAdmin() {
 // Model whitelist — only these models can be called
 // ---------------------------------------------------------------------------
 const ALLOWED_MODELS = new Set([
+  'gemini-3.1-pro',
+  'gemini-3.1-flash',
   'gemini-2.5-flash',
   'gemini-2.5-flash-preview-04-17',
   'gemini-2.0-flash',
