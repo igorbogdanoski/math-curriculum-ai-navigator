@@ -29,7 +29,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
           </div>
           <div className="p-2 border-t-2 border-black flex items-center">
             <span className="font-bold mr-2">Време за реализација:</span>
-            <span>{plan.scenario.introductory.duration || '45 мин'}</span>
+            <span>{plan.scenario?.introductory?.duration || '45 мин'}</span>
           </div>
           
           <div className="p-2 border-t-2 border-r-2 border-black">
@@ -66,7 +66,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
             </td>
             <td className="border border-black p-2 align-top text-left italic">
               <ul className="list-none space-y-2">
-                {plan.assessmentStandards.map((std, i) => (
+                {(plan.assessmentStandards || []).map((std, i) => (
                   <li key={i}><MathRenderer text={std} /></li>
                 ))}
               </ul>
@@ -83,8 +83,8 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                 <section>
                   <h4 className="font-bold underline mb-2">Воведна активност:</h4>
                   <div className="pl-2 space-y-2">
-                    <MathRenderer text={getStepText(plan.scenario.introductory)} />
-                    {plan.scenario.introductory.duration && (
+                    <MathRenderer text={getStepText(plan.scenario?.introductory || '')} />
+                    {plan.scenario?.introductory?.duration && (
                        <p className="mt-2 font-bold italic">({plan.scenario.introductory.duration})</p>
                     )}
                   </div>
@@ -93,7 +93,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                 <section>
                   <h4 className="font-bold underline mb-2 uppercase">Главна активност:</h4>
                   <div className="pl-2 space-y-4">
-                    {plan.scenario.main.map((step, i) => (
+                    {(plan.scenario?.main || []).map((step, i) => (
                       <div key={i} className="flex">
                         <span className="font-bold mr-2">{i + 1}.</span>
                         <div><MathRenderer text={getStepText(step)} /></div>
@@ -108,7 +108,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                 <section>
                   <h4 className="font-bold underline mb-2 uppercase">Завршна активност:</h4>
                   <div className="pl-2 space-y-4">
-                    <MathRenderer text={getStepText(plan.scenario.concluding)} />
+                    <MathRenderer text={getStepText(plan.scenario?.concluding || '')} />
                     
                     {/* Reflection questions often included in concluding step or separately */}
                     {plan.selfAssessmentPrompt && (
@@ -130,7 +130,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
             </td>
             <td className="border border-black p-2 align-top">
                <ul className="list-none space-y-1">
-                 {plan.materials.map((mat, i) => (
+                 {(plan.materials || []).map((mat, i) => (
                    <li key={i} className="flex">
                      <span className="mr-1">•</span>
                      <MathRenderer text={mat} />
@@ -140,7 +140,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
             </td>
             <td className="border border-black p-2 align-top">
                <ul className="list-none space-y-2">
-                 {plan.progressMonitoring.map((mon, i) => (
+                 {(plan.progressMonitoring || []).map((mon, i) => (
                    <li key={i} className="flex">
                      <span className="mr-1">•</span>
                      <MathRenderer text={mon} />

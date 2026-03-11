@@ -100,14 +100,14 @@ export const OfficialThematicPlanTable: React.FC<OfficialThematicPlanTableProps>
               </td>
               <td className="border border-black p-2 align-top text-left leading-normal">
                  <ul className="list-disc list-outside ml-3 space-y-1">
-                   {lesson.resources?.split(',').map((res, i) => (
+                   {(typeof lesson.resources === 'string' ? lesson.resources.split(',') : []).map((res, i) => (
                      <li key={i}><MathRenderer text={res.trim()} /></li>
                    ))}
                  </ul>
               </td>
               <td className="border border-black p-2 align-top text-left leading-normal">
                  <ul className="list-disc list-outside ml-3 space-y-2">
-                    {lesson.assessment.split(';').map((item, i) => (
+                    {(typeof lesson.assessment === 'string' ? lesson.assessment.split(';') : []).map((item, i) => (
                       <li key={i}><MathRenderer text={item.trim()} /></li>
                     ))}
                  </ul>
