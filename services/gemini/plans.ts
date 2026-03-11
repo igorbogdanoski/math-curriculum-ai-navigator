@@ -259,5 +259,41 @@ async generateThematicPlan(grade: Grade, topic: Topic): Promise<AIGeneratedThema
       console.error('Error generating thematic plan:', error);
       throw error;
     }
+  },
+
+  async regenerateLessonPlanSection(section: 'introductory' | 'main' | 'concluding', currentPlan: Partial<LessonPlan>, customInstruction?: string): Promise<any> {
+    const sectionNames = {
+        introductory: 'Воведна активност',
+        main: 'Главни активности',
+        concluding: 'Завршна активност'
+    };
+
+    const prompt = `
+### УЛОГА
+Ти си експерт за методичка ревизија. Твоја задача е да РЕГЕНЕРИРАШ само еден специфичен дел од постоечка подготовка за час.
+
+### КОНТЕКСТ НА ПЛАНОТ
+- Наслов: ${currentPlan.title}
+- Одделение: ${currentPlan.grade}
+- Тема: ${currentPlan.theme}
+- Секција за регенерација: ${sectionNames[section]}
+
+### БАРАЊЕ
+Креирај НОВА и ПОДОБРА верзизо само за овој дел. Биди креативен и оригинален.
+${customInstruction ? `ДОПОЛНИТЕЛНО БАРАЊЕ: ${customInstruction}` : ''}
+
+### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА
+1. Анализирај го тековниот план за да обезбедиш конзистентност со останатите делови.
+2. Осигурај се дека новата активност е ангажирачка и цели кон предвидените стандарди.
+`;
+
+    const schema = section === 'main' 
+        ? { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, bloomsLevel: { type: Type.STRING } }, required: ["text"] } }
+        : { type: Type.OBJECT, properties: { text: { type: Type.STRING }, duration: { type: Type.STRING } }, required: ["text"] };
+
+    const contents: Part[] = [{ text: prompt }];
+    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, currentPlan.grade);
+    
+    return generateAndParseJSON<any>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr);
   }
 };

@@ -7,7 +7,10 @@ interface LessonPlanFormFieldsProps {
     plan: Partial<LessonPlan>;
     setPlan: React.Dispatch<React.SetStateAction<Partial<LessonPlan>>>;
     onEnhanceField: (fieldName: string, currentText: string, action?: string, selection?: {start: number, end: number}) => void;
+    onRegenerateSection?: (section: 'introductory' | 'main' | 'concluding') => Promise<void>;
+    onGenerateIllustration?: (prompt: string) => Promise<void>;
     enhancingField: string | null;
+    isRegenerating?: string | null;
 }
 
 const arrayToString = (arr: any[] = []) => arr.map(item => typeof item === 'string' ? item : (item.text || '')).join('\n');
@@ -21,10 +24,12 @@ interface EnhancedTextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAre
     label: string;
     value: string;
     onEnhance: (fieldName: string, currentText: string, action: string, selection?: {start: number, end: number}) => void;
+    onRegenerate?: () => void;
+    onGenerateIllustration?: (prompt: string) => void;
     isEnhancing: boolean;
 }
 
-const EnhancedTextArea: React.FC<EnhancedTextAreaProps> = ({ fieldName, label, value, onEnhance, isEnhancing, ...props }) => {
+const EnhancedTextArea: React.FC<EnhancedTextAreaProps> = ({ fieldName, label, value, onEnhance, onRegenerate, onGenerateIllustration, isEnhancing, ...props }) => {
     const [showOptions, setShowOptions] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -65,7 +70,7 @@ const EnhancedTextArea: React.FC<EnhancedTextAreaProps> = ({ fieldName, label, v
                     <button
                         type="button"
                         onClick={() => setShowOptions(!showOptions)}
-                        disabled={!value || isEnhancing}
+                        disabled={isEnhancing}
                         title="Подобри го текстот со AI"
                         className="p-1 text-gray-400 rounded-full hover:bg-blue-100 hover:text-brand-secondary disabled:cursor-not-allowed disabled:text-gray-300 transition-transform hover:scale-110"
                     >
@@ -78,6 +83,30 @@ const EnhancedTextArea: React.FC<EnhancedTextAreaProps> = ({ fieldName, label, v
                             <button type="button" onClick={() => handleAction('shorten')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">✂️ Скрати</button>
                             <button type="button" onClick={() => handleAction('expand')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">🎨 Подетално / Поинтересно</button>
                             <button type="button" onClick={() => handleAction('inclusion')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">♿ Прилагоди за инклузија</button>
+                            
+                            {onGenerateIllustration && (
+                                <>
+                                    <div className="border-t border-gray-100 my-1"></div>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { setShowOptions(false); onGenerateIllustration(value); }} 
+                                        className="w-full text-left px-4 py-2 hover:bg-teal-50 text-teal-700 text-sm font-medium flex items-center gap-2"
+                                    >
+                                        <ICONS.image className="w-4 h-4" />
+                                        Генерирај илустрација
+                                    </button>
+                                </>
+                            )}
+
+                            {onRegenerate && (
+                                <>
+                                    <div className="border-t border-gray-100 my-1"></div>
+                                    <button type="button" onClick={() => { setShowOptions(false); onRegenerate(); }} className="w-full text-left px-4 py-2 hover:bg-blue-50 text-blue-600 text-sm font-medium flex items-center gap-2">
+                                        <ICONS.refresh className="w-4 h-4" />
+                                        Регенерирај ја секцијата
+                                    </button>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
@@ -87,7 +116,7 @@ const EnhancedTextArea: React.FC<EnhancedTextAreaProps> = ({ fieldName, label, v
     );
 };
 
-export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan, setPlan, onEnhanceField, enhancingField }) => {
+export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan, setPlan, onEnhanceField, onRegenerateSection, onGenerateIllustration, enhancingField, isRegenerating }) => {
     const { curriculum } = useCurriculum();
     const [newMaterial, setNewMaterial] = useState('');
 
@@ -261,7 +290,9 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                         value={plan.scenario?.introductory?.text || ''}
                         onChange={handleScenarioChange}
                         onEnhance={onEnhanceField}
-                        isEnhancing={enhancingField === 'scenario.introductory'}
+                        onRegenerate={onRegenerateSection ? () => onRegenerateSection('introductory') : undefined}
+                        onGenerateIllustration={onGenerateIllustration}
+                        isEnhancing={enhancingField === 'scenario.introductory' || isRegenerating === 'introductory'}
                         name="introductory"
                         rows={3}
                     />
@@ -272,7 +303,9 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                         value={arrayToString(plan.scenario?.main || [])}
                         onChange={handleScenarioChange}
                         onEnhance={onEnhanceField}
-                        isEnhancing={enhancingField === 'scenario.main'}
+                        onRegenerate={onRegenerateSection ? () => onRegenerateSection('main') : undefined}
+                        onGenerateIllustration={onGenerateIllustration}
+                        isEnhancing={enhancingField === 'scenario.main' || isRegenerating === 'main'}
                         name="main"
                         rows={5}
                         placeholder="Внесете секоја активност во нов ред..."
@@ -284,7 +317,9 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                         value={plan.scenario?.concluding?.text || ''}
                         onChange={handleScenarioChange}
                         onEnhance={onEnhanceField}
-                        isEnhancing={enhancingField === 'scenario.concluding'}
+                        onRegenerate={onRegenerateSection ? () => onRegenerateSection('concluding') : undefined}
+                        onGenerateIllustration={onGenerateIllustration}
+                        isEnhancing={enhancingField === 'scenario.concluding' || isRegenerating === 'concluding'}
                         name="concluding"
                         rows={3}
                     />

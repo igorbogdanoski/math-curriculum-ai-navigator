@@ -9,16 +9,22 @@
  *   downloadICS(ics, 'годишна-програма.ics');
  */
 
-import { AIGeneratedAnnualPlan } from '../types';
+import { AIGeneratedAnnualPlan, LessonPlan } from '../types';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function toICSDate(date: Date): string {
-  // Format: YYYYMMDD (all-day event — no time component)
+function toICSDate(date: Date, includeTime = false): string {
+  // Format: YYYYMMDD (all-day event) or YYYYMMDDTHHMMSS (with time)
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
-  return `${y}${m}${d}`;
+  
+  if (!includeTime) return `${y}${m}${d}`;
+  
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+  return `${y}${m}${d}T${hh}${mm}${ss}`;
 }
 
 function addWeeks(date: Date, weeks: number): Date {
@@ -28,6 +34,7 @@ function addWeeks(date: Date, weeks: number): Date {
 }
 
 function escapeICS(str: string): string {
+  if (!str) return '';
   return str
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
@@ -57,11 +64,89 @@ function uid(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}@math-nav`;
 }
 
-// ── Main export ───────────────────────────────────────────────────────────────
+// ── Main exports ───────────────────────────────────────────────────────────────
+
+/**
+ * Generates a .ics calendar string for the given individual lesson plan.
+ */
+export function generateLessonICS(plan: LessonPlan, date?: Date): string {
+  const eventDate = date ?? new Date();
+  const dtStart = new Date(eventDate);
+  // Default to 45 mins lesson if not specified
+  const dtEnd = new Date(eventDate.getTime() + 45 * 60000);
+
+  const description = [
+    `Предмет: ${plan.subject}`,
+    `Тема: ${plan.theme}`,
+    `Одделение: ${plan.grade}`,
+    '',
+    'Цели:',
+    ...plan.objectives.map((o) => `• ${o.text}`),
+    '',
+    'Материјали:',
+    ...plan.materials.map((m) => `• ${m}`),
+    '',
+    'Сценарио (кратко):',
+    `Вовед: ${plan.scenario.introductory.text.substring(0, 100)}...`,
+    `Завршен дел: ${plan.scenario.concluding.text.substring(0, 100)}...`,
+  ].join('\\n');
+
+  const lines: string[] = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Math AI Navigator//MK',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:lesson-${plan.id || uid()}`,
+    `DTSTART:${toICSDate(dtStart, true)}`,
+    `DTEND:${toICSDate(dtEnd, true)}`,
+    foldLine(`SUMMARY:${escapeICS(`[Математика] ${plan.title}`)}`),
+    foldLine(`DESCRIPTION:${escapeICS(description)}`),
+    `CATEGORIES:${escapeICS(plan.subject)}`,
+    `SEQUENCE:0`,
+    `STATUS:CONFIRMED`,
+    'TRANSP:OPAQUE',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ];
+
+  return lines.join('\r\n');
+}
+
+/**
+ * Generates a Google Calendar Template URL for a lesson.
+ */
+export function getGoogleCalendarUrl(plan: LessonPlan, date?: Date): string {
+  const eventDate = date ?? new Date();
+  const dtStart = toICSDate(eventDate, true) + 'Z';
+  const dtEnd = toICSDate(new Date(eventDate.getTime() + 45 * 60000), true) + 'Z';
+
+  const description = [
+    `Предмет: ${plan.subject}`,
+    `Тема: ${plan.theme}`,
+    `Одделение: ${plan.grade}`,
+    '',
+    'Цели:',
+    ...plan.objectives.map((o) => `• ${o.text}`),
+    '',
+    'Материјали:',
+    ...plan.materials.map((m) => `• ${m}`),
+  ].join('\n');
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `[Математика] ${plan.title}`,
+    details: description,
+    dates: `${dtStart}/${dtEnd}`,
+  });
+
+  return `https://www.google.com/calendar/render?${params.toString()}`;
+}
 
 /**
  * Generates a .ics calendar string for the given annual plan.
- *
+ * 
  * Each topic becomes a multi-day (all-day) VEVENT spanning its duration in weeks.
  * Topics are laid out sequentially starting from `schoolYearStart`.
  *

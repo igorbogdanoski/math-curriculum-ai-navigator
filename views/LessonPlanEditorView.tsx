@@ -3,7 +3,7 @@ import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import type { LessonPlan, AIPedagogicalAnalysis, GenerationContext, Grade, Topic, Concept } from '../types';
+import type { LessonPlan, AIPedagogicalAnalysis, GenerationContext, Grade, Topic, Concept, AIGeneratedIllustration } from '../types';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,7 +17,9 @@ import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 import { LessonPlanDisplay } from '../components/planner/LessonPlanDisplay';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { PedagogicalDashboard } from '../components/lesson-plan-editor/PedagogicalDashboard';
+import { GeneratedIllustration } from '../components/ai/GeneratedIllustration';
 import { exportLessonPlanToWord } from '../utils/wordExport';
+import { generateLessonICS, downloadICS, getGoogleCalendarUrl } from '../utils/icalExport';
 
 
 interface LessonPlanEditorViewProps {
@@ -65,8 +67,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
   const [isSaving, setIsSaving] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isGeneratingWord, setIsGeneratingWord] = useState(false);
+  const [isGeneratingIllustration, setIsGeneratingIllustration] = useState(false);
+  const [generatedIllustration, setGeneratedIllustration] = useState<AIGeneratedIllustration | null>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
+  const [isRegeneratingSection, setIsRegeneratingSection] = useState<'introductory' | 'main' | 'concluding' | null>(null);
   
   // Ref to track mounted status for async operations
   const isMounted = useRef(true);
@@ -214,7 +219,68 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         }
     }
   }, [plan.grade, user, addNotification, enhancingField, isOnline]);
+
+  const handleRegenerateSection = useCallback(async (section: 'introductory' | 'main' | 'concluding') => {
+    if (!isOnline) {
+        addNotification('Нема интернет конекција.', 'error');
+        return;
+    }
+    
+    setIsRegeneratingSection(section);
+    try {
+        const newData = await geminiService.regenerateLessonPlanSection(section, plan, "");
+        
+        if (isMounted.current) {
+            setPlan((prev: Partial<LessonPlan>) => {
+                const newPlan = { ...prev };
+                const scenario = { ...(newPlan.scenario || { introductory: { text: '' }, main: [], concluding: { text: '' } }) };
+                
+                if (section === 'main') {
+                    scenario.main = newData;
+                } else {
+                    scenario[section] = newData;
+                }
+                
+                newPlan.scenario = scenario;
+                return newPlan;
+            });
+            addNotification(`Секцијата е успешно регенерирана!`, 'success');
+        }
+    } catch (error) {
+        if (isMounted.current) {
+            addNotification((error as Error).message, 'error');
+        }
+    } finally {
+        if (isMounted.current) {
+            setIsRegeneratingSection(null);
+        }
+    }
+  }, [plan, user, addNotification, isOnline]);
   
+  const handleGenerateIllustration = useCallback(async (prompt: string) => {
+    if (!isOnline) {
+        addNotification('Нема интернет конекција.', 'error');
+        return;
+    }
+    setIsGeneratingIllustration(true);
+    setGeneratedIllustration(null);
+    try {
+        const illustration = await geminiService.generateIllustration(`Наставна илустрација за математика: ${prompt}`);
+        if (isMounted.current) {
+            setGeneratedIllustration(illustration);
+            addNotification('Илустрацијата е успешно генерирана!', 'success');
+        }
+    } catch (error) {
+        if (isMounted.current) {
+            addNotification((error as Error).message, 'error');
+        }
+    } finally {
+        if (isMounted.current) {
+            setIsGeneratingIllustration(false);
+        }
+    }
+  }, [addNotification, isOnline]);
+
   const handleAnalyze = useCallback(async () => {
     if (!isOnline) {
         addNotification('Нема интернет конекција. Оваа функција е недостапна.', 'error');
@@ -328,6 +394,30 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
           }
         return;
     }
+
+    if (format === 'ics') {
+        try {
+            const ics = generateLessonICS(plan as LessonPlan);
+            downloadICS(ics, `${filename}.ics`);
+            addNotification('Календарскиот настан е успешно преземен', 'success');
+        } catch (error) {
+            console.error('Export to ICS failed:', error);
+            addNotification('Грешка при генерирање на ICS.', 'error');
+        }
+        return;
+    }
+
+    if (format === 'google') {
+        try {
+            const url = getGoogleCalendarUrl(plan as LessonPlan);
+            window.open(url, '_blank');
+            addNotification('Се отвора Google Calendar...', 'success');
+        } catch (error) {
+            console.error('Google Calendar link failed:', error);
+            addNotification('Грешка при креирање на Google Calendar линк.', 'error');
+        }
+        return;
+    }
     
     if (format === 'md') {
         content = `# ${title || 'Без наслов'}\n\n**Одделение:** ${grade || ''}\n**Тема:** ${theme || ''}\n\n---\n\n## Цели\n${arrayToLines(objectives)}\n\n## Стандарди за оценување\n${arrayToLines(assessmentStandards)}\n\n## Сценарио\n### Вовед\n${introductoryText || ''}\n### Главни активности\n${arrayToLines(scenario?.main)}\n### Завршна активност\n${concludingText || ''}\n\n---\n\n## Материјали\n${arrayToLines(materials)}\n\n## Следење на напредокот\n${arrayToLines(progressMonitoring)}`;
@@ -439,8 +529,30 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                         plan={plan}
                         setPlan={setPlan}
                         onEnhanceField={handleEnhanceField}
+                        onRegenerateSection={handleRegenerateSection}
+                        onGenerateIllustration={handleGenerateIllustration}
                         enhancingField={enhancingField}
+                        isRegenerating={isRegeneratingSection || (isGeneratingIllustration ? 'illustration' : null)}
                     />
+                    
+                    {isGeneratingIllustration && (
+                        <div className="flex flex-col items-center justify-center p-8 bg-teal-50 rounded-xl border-2 border-dashed border-teal-200 animate-pulse">
+                            <ICONS.spinner className="w-10 h-10 text-teal-500 animate-spin mb-3" />
+                            <p className="text-teal-700 font-semibold text-lg">Генерирам илустрација за вашата активност...</p>
+                        </div>
+                    )}
+
+                    {generatedIllustration && (
+                        <div className="mt-6 relative">
+                            <button 
+                                onClick={() => setGeneratedIllustration(null)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors z-10"
+                            >
+                                <ICONS.close className="w-4 h-4" />
+                            </button>
+                            <GeneratedIllustration material={generatedIllustration} />
+                        </div>
+                    )}
                     
                     <div className="flex justify-end items-center pt-4 gap-3 border-t mt-6">
                         <div className="relative" ref={exportMenuRef}>
@@ -464,6 +576,12 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                                         <button type="button" onClick={() => handleExport('doc')} disabled={isGeneratingWord} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50">
                                             {isGeneratingWord ? <ICONS.spinner className="w-5 h-5 mr-3 animate-spin" /> : <ICONS.edit className="w-5 h-5 mr-3" />}
                                             {isGeneratingWord ? 'Генерирам Word...' : 'Сними како Word (.doc)'}
+                                        </button>
+                                        <button type="button" onClick={() => handleExport('ics')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <ICONS.calendar className="w-5 h-5 mr-3" /> Сними како Календар (.ics)
+                                        </button>
+                                        <button type="button" onClick={() => handleExport('google')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <ICONS.externalLink className="w-5 h-5 mr-3" /> Додај во Google Calendar
                                         </button>
                                         <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
