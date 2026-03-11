@@ -20,8 +20,35 @@ async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: num
 
     const conceptList = concepts.map(c => c.title).join(', ');
     const topicTitle = topic?.title || "Општа математичка тема";
-    let prompt = `Генерирај идеи за час на македонски јазик. Контекст: Одделение ${gradeLevel}, Тема: ${topicTitle}. Поими: ${conceptList}.`;
-    if (customInstruction) prompt += `\nДополнителна инструкција: ${customInstruction}`;
+    
+    // Advanced Prompt Engineering: Chain-of-Thought + Tree of Thoughts + Persona
+    let prompt = `
+### УЛОГА
+Ти си врвен експерт за методика на наставата по математика со 20-годишно искуство во креирање иновативни сценарија за часови според најновите Кембриџ и национални стандарди.
+
+### КОНТЕКСТ
+- Одделение: ${gradeLevel}
+- Тема: ${topicTitle}
+- Клучни поими: ${conceptList}
+${options?.focus ? `- Примарен фокус: ${options.focus}` : ''}
+${options?.learningDesign ? `- Педагошки модел: ${options.learningDesign}` : ''}
+
+### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА (Chain-of-Thought)
+Пред да го дадеш финалниот JSON, размисли (интерно) за следниве чекори:
+1. АНАЛИЗА: Кои се најчестите мисконцепции кај учениците за овие поими?
+2. СТРАТЕГИЈА (Tree of Thoughts): Разгледај три различни пристапи (на пр. истражувачки, директна инструкција, игровен). Избери го оној кој е најсоодветен за оваа тема и возраст.
+3. ПЛАНИРАЊЕ: Како активностите да водат од пониски (Паметење) кон повисоки (Креирање) нивоа на Блумовата таксономија?
+
+### ИНСТРУКЦИИ ЗА СОДРЖИНА
+- Биди екстремно креативен. Избегнувај генерички задачи.
+- Вметни реални македонски контексти (денри, локални имиња, градови).
+- Секоја активност МОРА да биде детално објаснета "чекор-по-чекор".
+
+### ФОРМАТ
+Генерирај го сценариото СТРИКТНО според официјалниот JSON шаблон.
+`;
+
+    if (customInstruction) prompt += `\nДополнителна инструкција од наставникот: ${customInstruction}`;
 
     const schema = {
         type: Type.OBJECT,
@@ -46,36 +73,186 @@ async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: num
     };
 
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id);
-    const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, false, systemInstr);
+    // Use Thinking model (gemini-2.0-flash-thinking-exp) for better pedagogical reasoning
+    const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr);
     await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'ideas', conceptId, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return result;
   },
 
 async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingProfile, image?: { base64: string, mimeType: string }): Promise<Partial<LessonPlan>> {
-      const prompt = `Генерирај детална подготовка за час на македонски јазик.`;
-      const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, objectives: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, bloomsLevel: { type: Type.STRING } }, required: ["text"] } }, scenario: { type: Type.OBJECT, properties: { introductory: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } }, main: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } } }, concluding: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } } } } }, required: ["title", "objectives", "scenario"] };
+      const topicTitle = context.topic?.title || "Општа тема";
+      const gradeLevel = context.grade?.level || 6;
+      
+      const prompt = `
+### УЛОГА
+Ти си врвен експерт за методика на наставата по математика со долгогодишно искуство. Твоја задача е да креираш детална и професионална подготовка за час.
+
+### КОНТЕКСТ
+- Одделение: ${gradeLevel}
+- Тема: ${topicTitle}
+- Концепти: ${context.concepts?.map(c => c.title).join(', ')}
+
+### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА (Chain-of-Thought)
+1. АНАЛИЗА: Размисли за клучните математички вештини кои треба да се развијат.
+2. ПЕДАГОГИЈА (Tree of Thoughts): Оцени дали е подобро да се користи дедуктивен или индуктивен пристап за оваа специфична единица. Избери го најефективниот.
+3. СТРУКТУРА: Осигурај се дека воведот ги мотивира учениците, главниот дел е прогресивен, а заклучокот го проверува наученото.
+
+### ИНСТРУКЦИИ ЗА СОДРЖИНА
+- Користи ја ОФИЦИЈАЛНАТА МАКЕДОНСКА СТРУКТУРА за сценарио.
+- Воведна активност: Јасен план со времетраење.
+- Главна активност: Повеќестепени чекори со Блумова таксономија.
+- Завршна активност: Сумирање и евалуација.
+- Вклучи специфични македонски примери (денари, градови).
+`;
+      const schema = { 
+          type: Type.OBJECT, 
+          properties: { 
+              title: { type: Type.STRING }, 
+              objectives: { 
+                  type: Type.ARRAY, 
+                  items: { 
+                      type: Type.OBJECT, 
+                      properties: { 
+                          text: { type: Type.STRING }, 
+                          bloomsLevel: { type: Type.STRING, enum: ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'] } 
+                      }, 
+                      required: ["text"] 
+                  } 
+              }, 
+              scenario: { 
+                  type: Type.OBJECT, 
+                  properties: { 
+                      introductory: { 
+                          type: Type.OBJECT, 
+                          properties: { 
+                              text: { type: Type.STRING },
+                              duration: { type: Type.STRING }
+                          } 
+                      }, 
+                      main: { 
+                          type: Type.ARRAY, 
+                          items: { 
+                              type: Type.OBJECT, 
+                              properties: { 
+                                  text: { type: Type.STRING },
+                                  bloomsLevel: { type: Type.STRING }
+                              } 
+                          } 
+                      }, 
+                      concluding: { 
+                          type: Type.OBJECT, 
+                          properties: { 
+                              text: { type: Type.STRING },
+                              duration: { type: Type.STRING }
+                          } 
+                      } 
+                  } 
+              },
+              materials: { type: Type.ARRAY, items: { type: Type.STRING } },
+              progressMonitoring: { type: Type.ARRAY, items: { type: Type.STRING } },
+              differentiation: { type: Type.STRING }
+          }, 
+          required: ["title", "objectives", "scenario"] 
+      };
       const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
       if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
-      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, context.grade?.level || 6, context.concepts?.[0]?.id, context.topic?.id);
-      return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, systemInstr);
+      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, context.concepts?.[0]?.id, context.topic?.id);
+      
+      // Use Thinking model for high-quality pedagogical planning
+      return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr);
   },
 
 async generateAnnualPlan(grade: Grade, startDate: string, endDate: string, holidays: string, winterBreak: {start: string, end: string}): Promise<Omit<PlannerItem, 'id'>[]> {
-      const prompt = `Генерирај годишен распоред за ${grade.title}.`;
-      const schema = { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { date: { type: Type.STRING }, title: { type: Type.STRING }, description: { type: Type.STRING } }, required: ["date", "title"] } };
-      return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{ text: prompt }, { text: `Датуми: ${startDate} до ${endDate}` }], schema, DEFAULT_MODEL, AnnualPlanSchema);
+      const prompt = `
+### УЛОГА
+Ти си врвен стратешки планер во образованието. Твоја задача е да креираш ГОДИШЕН ПЛАН за наставата по математика.
+
+### КОНТЕКСТ
+- Одделение: ${grade.title}
+- Период: ${startDate} до ${endDate}
+- Празници и неработни денови: ${holidays}
+- Зимски распуст: ${winterBreak.start} до ${winterBreak.end}
+
+### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА (Chain-of-Thought)
+1. КАЛЕНДАР: Прво идентификувај ги сите работни денови во периодот, исклучувајќи ги празниците и распустот.
+2. ТЕМИ: Распредели ги главните теми (Броеви, Алгебра, Геометрија, Мерење, Работа со податоци) логично низ месеците.
+3. БАЛАНС: Осигурај се дека има доволно часови за вежбање, повторување и формативно оценување по секоја тема.
+
+### ИНСТРУКЦИИ ЗА СОДРЖИНА
+- Секоја единица мора да има датум и јасен наслов.
+- Внимавај на вертикалната прогресија — потешките теми не треба да дојдат одеднаш.
+- Исходот треба да биде низа од настани кои формираат кохерентна целина за целата учебна година.
+`;
+      const schema = { 
+          type: Type.ARRAY, 
+          items: { 
+              type: Type.OBJECT, 
+              properties: { 
+                  date: { type: Type.STRING }, 
+                  title: { type: Type.STRING }, 
+                  description: { type: Type.STRING } 
+              }, 
+              required: ["date", "title"] 
+          } 
+      };
+      // Use Thinking model for complex calendar and curriculum alignment
+      return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{ text: prompt }, { text: `Датуми: ${startDate} до ${endDate}` }], schema, DEFAULT_MODEL, AnnualPlanSchema, MAX_RETRIES, true);
   },
 
 async generateThematicPlan(grade: Grade, topic: Topic): Promise<AIGeneratedThematicPlan> {
       const cacheKey = `thematic_${topic.id}_g${grade.level}`;
       try {
-          const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
-      const cached = await getCached<AIGeneratedThematicPlan>(cacheKey);
-      if (cached) return cached;
+          const cached = await getCached<AIGeneratedThematicPlan>(cacheKey);
+          if (cached) return cached;
 
-      const prompt = `Генерирај тематски план за "${topic.title}" (${grade.level} одд.).`;
-      const schema = { type: Type.OBJECT, properties: { thematicUnit: { type: Type.STRING }, lessons: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { lessonNumber: { type: Type.INTEGER }, lessonUnit: { type: Type.STRING }, learningOutcomes: { type: Type.STRING }, keyActivities: { type: Type.STRING }, assessment: { type: Type.STRING } }, required: ["lessonNumber", "lessonUnit"] } } }, required: ["thematicUnit", "lessons"] };
-      const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema);
+      const prompt = `
+### УЛОГА
+Ти си експерт за курикулум по математика. Креирај ТЕМАТСКО ПЛАНИРАЊЕ (Прилог 1) за конкретна тема.
+
+### КОНТЕКСТ
+- Одделение: ${grade.level}
+- Тема: "${topic.title}"
+- Поими во темата: ${topic.concepts.map(c => c.title).join(', ')}
+
+### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА (Tree of Thoughts)
+1. АНАЛИЗА НА ТЕМА: Кои се клучните стандарди за оценување според националната програма?
+2. ПЕДАГОШКИ ПРИСТАП: Разгледај три опции за редослед на лекциите. Избери ја онаа која гради најцврста логичка основа.
+3. ИНКЛУЗИВНОСТ: Како активностите ќе ги поддржат и талентираните и учениците со потешкотии?
+
+### ИНСТРУКЦИИ ЗА СОДРЖИНА
+- Пополни ги сите 6 клучни колони од официјалниот македонски шаблон.
+- Активностите мора да бидат разновидни: индивидуални, во парови и групни.
+- Следењето на напредокот мора да вклучува ФОРМАТИВНИ методи (портфолија, дискусии, набљудување).
+- Колоната за СРЕДСТВА треба да содржи конкретни наставни помагала.
+- Колоната за ЧАСОВИ треба да содржи број на часови за таа подтема.
+`;
+      const schema = { 
+          type: Type.OBJECT, 
+          properties: { 
+              thematicUnit: { type: Type.STRING }, 
+              lessons: { 
+                  type: Type.ARRAY, 
+                  items: { 
+                      type: Type.OBJECT, 
+                      properties: { 
+                          lessonNumber: { type: Type.INTEGER }, 
+                          lessonUnit: { type: Type.STRING }, 
+                          learningOutcomes: { type: Type.STRING }, 
+                          keyActivities: { type: Type.STRING }, 
+                          assessment: { type: Type.STRING },
+                          resources: { type: Type.STRING },
+                          hours: { type: Type.INTEGER }
+                      }, 
+                      required: ["lessonNumber", "lessonUnit"] 
+                  } 
+              } 
+          }, 
+          required: ["thematicUnit", "lessons"] 
+      };
+      
+      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, grade.level, undefined, topic.id);
+      // Use Thinking model for structural curriculum mapping
+      const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema, MAX_RETRIES, true, systemInstr);
       await setCached(cacheKey, result, { type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id });
       return result;
     } catch (error) {

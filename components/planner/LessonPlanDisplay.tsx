@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { Card } from '../common/Card';
 import type { LessonPlan, Grade, Topic, Concept } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 import { useNavigation } from '../../contexts/NavigationContext';
+import { OfficialLessonScenarioTable } from './OfficialLessonScenarioTable';
+import { ICONS } from '../../constants';
 
 interface LessonPlanDisplayProps {
   plan: LessonPlan | Omit<LessonPlan, 'id'>;
@@ -48,16 +50,43 @@ const BloomBadge: React.FC<{ level?: string }> = ({ level }) => {
 export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) => {
     const { navigate } = useNavigation();
     const { getConceptDetails } = useCurriculum();
+    const [viewMode, setViewMode] = useState<'modern' | 'official'>('official');
     
     const linkedConcepts = useMemo(() => {
         if (!plan?.conceptIds) return [];
         return plan.conceptIds.map((conceptId: string) => getConceptDetails(conceptId)).filter((details: { grade?: Grade; topic?: Topic; concept?: Concept }) => details.concept);
     }, [plan, getConceptDetails]);
 
+    if (viewMode === 'official') {
+        return (
+            <div className="space-y-4">
+                <div className="flex justify-end no-print">
+                    <button 
+                        onClick={() => setViewMode('modern')}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium transition-colors"
+                    >
+                        <ICONS.eye className="w-4 h-4" />
+                        Префрли на модерен приказ
+                    </button>
+                </div>
+                <OfficialLessonScenarioTable plan={plan} />
+            </div>
+        );
+    }
+
     return (
         <Card>
+            <div className="flex justify-end mb-4 no-print">
+                <button 
+                    onClick={() => setViewMode('official')}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-brand-bg hover:bg-blue-50 text-brand-primary border border-brand-accent rounded-md text-sm font-medium transition-colors"
+                >
+                    <ICONS.fileText className="w-4 h-4" />
+                    Официјален државен формат
+                </button>
+            </div>
             <div className="grid grid-cols-12 gap-x-6 text-sm">
-                {/* --- Left Column Group --- */}
+...                {/* --- Left Column Group --- */}
                 <div className="col-span-12 md:col-span-8">
                     <div className="grid grid-cols-5 gap-x-6">
                         {/* Цели и Стандарди */}

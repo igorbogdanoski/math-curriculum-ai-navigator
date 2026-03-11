@@ -105,7 +105,9 @@ export const AIGeneratedThematicPlanSchema = z.object({
         lessonUnit: z.string(),
         learningOutcomes: z.string(),
         keyActivities: z.string(),
-        assessment: z.string()
+        assessment: z.string(),
+        hours: FlexibleNumber.optional(),
+        resources: z.string().optional()
     }))
 });
 

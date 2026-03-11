@@ -353,6 +353,8 @@ export interface ThematicPlanLesson {
   learningOutcomes: string;
   keyActivities: string;
   assessment: string;
+  hours?: number;
+  resources?: string;
   levelDescription?: string;
 }
 
