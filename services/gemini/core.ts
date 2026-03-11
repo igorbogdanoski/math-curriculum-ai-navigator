@@ -46,7 +46,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
-export const DEFAULT_MODEL = 'gemini-2.5-flash';
+export const DEFAULT_MODEL = 'gemini-3.1-flash';
 export const MAX_RETRIES = 2;
 export const GENERATION_TIMEOUT_MS = 45_000; // 45 seconds per attempt before aborting
 
@@ -285,8 +285,8 @@ export async function callGeminiProxy(params: {
       
       // Мапирање на моделот за Vercel Whitelist
       let modelName = params.model;
-      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-1.5-flash-8b' || modelName === 'gemini-1.5-flash-8b-latest') modelName = 'gemini-2.0-flash';
-      else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp';
+      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-1.5-flash-8b' || modelName === 'gemini-1.5-flash-8b-latest' || modelName === 'gemini-2.0-flash' || modelName === 'gemini-2.5-flash') modelName = 'gemini-3.1-flash';
+      else if (modelName.includes('thinking')) modelName = 'gemini-3.1-pro';
       // Остави ги другите како што се (на пр. gemini-2.0-flash)
 
       const response = await fetch('/api/gemini', {
@@ -574,7 +574,7 @@ export const SAFETY_SETTINGS: SafetySetting[] = [
 
 // --- CORE JSON HELPER ---
 export async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false, customSystemInstruction?: string): Promise<T> {
-    const activeModel = useThinking ? 'gemini-2.0-flash-thinking-exp' : model;
+    const activeModel = useThinking ? 'gemini-3.1-pro' : model;
     const _controller = new AbortController();
     const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
     try {
