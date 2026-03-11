@@ -28,8 +28,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { model, contents, config } = validated;
   let modelName = model;
-  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-1.5-flash-8b' || modelName === 'gemini-1.5-flash-8b-latest' || modelName === 'gemini-2.0-flash' || modelName === 'gemini-2.5-flash') modelName = 'gemini-3.1-flash';
-  else if (modelName.includes('thinking')) modelName = 'gemini-3.1-pro';
+  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-1.5-flash-8b' || modelName === 'gemini-1.5-flash-8b-latest' || modelName === 'gemini-2.0-flash' || modelName === 'gemini-2.5-flash' || modelName === 'gemini-3.1-flash') modelName = 'gemini-3.1-flash-preview';
+  else if (modelName.includes('thinking') || modelName === 'gemini-3.1-pro') modelName = 'gemini-3.1-pro-preview';
 
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
