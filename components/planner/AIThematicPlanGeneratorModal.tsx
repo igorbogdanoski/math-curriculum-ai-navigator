@@ -195,7 +195,7 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
         
          return null;
     }
-...
+
         return (
             <form onSubmit={handleSubmit}>
                 <div className="p-6 space-y-4">
