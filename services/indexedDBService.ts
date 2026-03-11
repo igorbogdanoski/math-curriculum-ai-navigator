@@ -10,6 +10,14 @@ interface MathNavDB extends DBSchema {
       timestamp: number;
     };
   };
+  ai_cache: {
+    key: string;
+    value: {
+      id: string;
+      content: any;
+      timestamp: number;
+    };
+  };
 }
 
 const DB_NAME = 'MathNavOfflineDB';
@@ -23,6 +31,9 @@ export const initDB = () => {
       upgrade(db) {
         if (!db.objectStoreNames.contains('pending_quizzes')) {
           db.createObjectStore('pending_quizzes', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('ai_cache')) {
+          db.createObjectStore('ai_cache', { keyPath: 'id' });
         }
       },
     });
@@ -57,4 +68,23 @@ export const clearPendingQuiz = async (id: string): Promise<void> => {
 export const getPendingQuizzesCount = async (): Promise<number> => {
   const db = await initDB();
   return db.count('pending_quizzes');
+};
+
+export const saveAICache = async (id: string, content: any): Promise<void> => {
+  const db = await initDB();
+  await db.put('ai_cache', {
+    id,
+    content,
+    timestamp: Date.now()
+  });
+};
+
+export const getAICache = async (id: string): Promise<any | null> => {
+  const db = await initDB();
+  const cached = await db.get('ai_cache', id);
+  // Cache for 24 hours
+  if (cached && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) {
+    return cached.content;
+  }
+  return null;
 };

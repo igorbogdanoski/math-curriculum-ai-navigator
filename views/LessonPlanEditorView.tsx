@@ -20,6 +20,7 @@ import { PedagogicalDashboard } from '../components/lesson-plan-editor/Pedagogic
 import { GeneratedIllustration } from '../components/ai/GeneratedIllustration';
 import { exportLessonPlanToWord } from '../utils/wordExport';
 import { generateLessonICS, downloadICS, getGoogleCalendarUrl } from '../utils/icalExport';
+import { saveAICache, getAICache } from '../services/indexedDBService';
 
 
 interface LessonPlanEditorViewProps {
@@ -225,10 +226,27 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         addNotification('Нема интернет конекција.', 'error');
         return;
     }
-    
+
+    const cacheKey = `regen-${section}-${plan.topicId}-${plan.grade}`;
+    const cachedData = await getAICache(cacheKey);
+
+    if (cachedData) {
+        setPlan((prev: Partial<LessonPlan>) => {
+            const newPlan = { ...prev };
+            const scenario = { ...(newPlan.scenario || { introductory: { text: '' }, main: [], concluding: { text: '' } }) };
+            if (section === 'main') scenario.main = cachedData;
+            else scenario[section] = cachedData;
+            newPlan.scenario = scenario;
+            return newPlan;
+        });
+        addNotification(`Вчитано од кеш!`, 'info');
+        return;
+    }
+
     setIsRegeneratingSection(section);
     try {
         const newData = await geminiService.regenerateLessonPlanSection(section, plan, "");
+        await saveAICache(cacheKey, newData);
         
         if (isMounted.current) {
             setPlan((prev: Partial<LessonPlan>) => {
@@ -418,6 +436,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         }
         return;
     }
+
+    if (format === 'teams') {
+        const teamsUrl = `https://teams.microsoft.com/share?href=${encodeURIComponent(window.location.href)}&msgText=${encodeURIComponent(`Погледнете ја мојата подготовка за час по Математика: ${plan.title}`)}`;
+        window.open(teamsUrl, '_blank');
+        addNotification('Се отвора Microsoft Teams...', 'info');
+        return;
+    }
     
     if (format === 'md') {
         content = `# ${title || 'Без наслов'}\n\n**Одделение:** ${grade || ''}\n**Тема:** ${theme || ''}\n\n---\n\n## Цели\n${arrayToLines(objectives)}\n\n## Стандарди за оценување\n${arrayToLines(assessmentStandards)}\n\n## Сценарио\n### Вовед\n${introductoryText || ''}\n### Главни активности\n${arrayToLines(scenario?.main)}\n### Завршна активност\n${concludingText || ''}\n\n---\n\n## Материјали\n${arrayToLines(materials)}\n\n## Следење на напредокот\n${arrayToLines(progressMonitoring)}`;
@@ -581,7 +606,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                                             <ICONS.calendar className="w-5 h-5 mr-3" /> Сними како Календар (.ics)
                                         </button>
                                         <button type="button" onClick={() => handleExport('google')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.externalLink className="w-5 h-5 mr-3" /> Додај во Google Calendar
+                                            <ICONS.calendar className="w-5 h-5 mr-3 text-blue-600" /> Додај во Google Calendar
+                                        </button>
+                                        <button type="button" onClick={() => handleExport('teams')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <ICONS.externalLink className="w-5 h-5 mr-3 text-indigo-600" /> Сподели во Microsoft Teams
                                         </button>
                                         <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
