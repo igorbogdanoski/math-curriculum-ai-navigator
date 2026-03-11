@@ -86,7 +86,7 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                 </button>
             </div>
             <div className="grid grid-cols-12 gap-x-6 text-sm">
-...                {/* --- Left Column Group --- */}
+                {/* --- Left Column Group --- */}
                 <div className="col-span-12 md:col-span-8">
                     <div className="grid grid-cols-5 gap-x-6">
                         {/* Цели и Стандарди */}

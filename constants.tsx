@@ -57,7 +57,10 @@ import { Zap,
   Play,
   Camera,
   Maximize,
-  Minimize
+  Minimize,
+  Eye,
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -130,6 +133,9 @@ export const ICONS: Record<string, any> = {
   shieldCheck: ShieldCheck,
   shieldAlert: ShieldAlert,
   building: Building,
+  eye: Eye,
+  fileText: FileText,
+  externalLink: ExternalLink,
 };
 
 export const SUBJECTS = [

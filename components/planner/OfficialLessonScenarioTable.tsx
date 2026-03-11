@@ -121,7 +121,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                       <span className="font-bold">Домашна работа:</span>
                       <p className="italic">Учениците треба да ги завршат задачите од работниот лист.</p>
                     </div>
-                    {plan.scenario.concluding.duration && (
+                    {plan.scenario?.concluding?.duration && (
                        <p className="mt-2 font-bold italic">({plan.scenario.concluding.duration})</p>
                     )}
                   </div>
