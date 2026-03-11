@@ -325,6 +325,38 @@ export async function callGeminiProxy(params: {
   });
 }
 
+export async function callGeminiEmbed(params: {
+  model?: string;
+  contents: any;
+}): Promise<{ embeddings: { values: number[] } }> {
+  return queueRequest(async () => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/gemini-embed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          model: params.model || 'gemini-embedding-2-preview',
+          contents: normalizeContents(params.contents)[0].parts
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err: any) {
+      console.error("Gemini Embedding Error:", err.message || err);
+      throw err;
+    }
+  });
+}
+
 export async function* streamGeminiProxy(params: { 
   model: string; 
   contents: any; 

@@ -1,58 +1,54 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useModal } from '../../contexts/ModalContext';
+import React, { useState, useMemo } from 'react';
+import { usePlanner } from '../../contexts/PlannerContext';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { useNotification } from '../../contexts/NotificationContext';
 import { geminiService } from '../../services/geminiService';
+import type { Grade, Topic, ThematicPlanLesson, AIGeneratedThematicPlan } from '../../types';
 import { ICONS } from '../../constants';
-import type { AIGeneratedThematicPlan, Grade, Topic, ThematicPlanLesson } from '../../types';
 import { OfficialThematicPlanTable } from './OfficialThematicPlanTable';
 
-export const AIThematicPlanGeneratorModal: React.FC = () => {
-    const { hideModal } = useModal();
+interface AIThematicPlanGeneratorModalProps {
+    hideModal: () => void;
+}
+
+export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModalProps> = ({ hideModal }) => {
     const { curriculum } = useCurriculum();
     const { addNotification } = useNotification();
     
-    const [selectedGradeId, setSelectedGradeId] = useState<string>('');
+    const [selectedGradeId, setSelectedGradeId] = useState<string>(curriculum?.grades[0]?.id || '');
     const [selectedTopicId, setSelectedTopicId] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [generatedPlan, setGeneratedPlan] = useState<AIGeneratedThematicPlan | null>(null);
     const [viewMode, setViewMode] = useState<'preview' | 'official'>('official');
-    
-    useEffect(() => {
-        if (curriculum?.grades?.[0]) {
-            const defaultGrade = curriculum.grades[0];
-            setSelectedGradeId(defaultGrade.id);
-            if (defaultGrade.topics?.[0]) {
-                setSelectedTopicId(defaultGrade.topics[0].id);
-            }
-        }
-    }, [curriculum]);
 
-    const topicsForGrade = useMemo(() => {
-        if (!selectedGradeId || !curriculum) return [];
-        return curriculum.grades.find((g: Grade) => g.id === selectedGradeId)?.topics || [];
-    }, [curriculum, selectedGradeId]);
+    const selectedGradeObj = useMemo(() => 
+        curriculum?.grades.find(g => g.id === selectedGradeId), 
+    [curriculum, selectedGradeId]);
 
-    const selectedGradeObj = useMemo(() => curriculum?.grades.find((g: Grade) => g.id === selectedGradeId), [curriculum, selectedGradeId]);
-    const selectedTopicObj = useMemo(() => topicsForGrade.find((t: Topic) => t.id === selectedTopicId), [topicsForGrade, selectedTopicId]);
+    const topicsForGrade = useMemo(() => selectedGradeObj?.topics || [], [selectedGradeObj]);
+
+    const selectedTopicObj = useMemo(() => 
+        topicsForGrade.find(t => t.id === selectedTopicId), 
+    [topicsForGrade, selectedTopicId]);
 
     const handleGradeChange = (gradeId: string) => {
         setSelectedGradeId(gradeId);
-        const firstTopicId = curriculum?.grades.find((g: Grade) => g.id === gradeId)?.topics[0]?.id || '';
-        setSelectedTopicId(firstTopicId);
+        const grade = curriculum?.grades.find(g => g.id === gradeId);
+        if (grade && grade.topics.length > 0) {
+            setSelectedTopicId(grade.topics[0].id);
+        } else {
+            setSelectedTopicId('');
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        setGeneratedPlan(null);
-        
         if (!selectedGradeObj || !selectedTopicObj) {
             addNotification('Ве молиме изберете валидно одделение и тема.', 'error');
-            setIsLoading(false);
             return;
         }
         
+        setIsLoading(true);
         try {
             const plan = await geminiService.generateThematicPlan(selectedGradeObj, selectedTopicObj);
             setGeneratedPlan(plan);
@@ -62,17 +58,6 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
             setIsLoading(false);
         }
     };
-    
-    // Guard clause to prevent rendering with incomplete data
-    if (!curriculum) {
-        return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-thematic-plan-title">
-                <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
-                    <p className="text-center text-gray-600">Вчитување на податоците за наставната програма...</p>
-                </div>
-            </div>
-        );
-    }
 
     const renderContent = () => {
         if (isLoading) {
@@ -135,12 +120,13 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
                     <div>
                         <label htmlFor="grade-select" className="block text-sm font-medium text-gray-700">Одделение</label>
                         <select id="grade-select" value={selectedGradeId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleGradeChange(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md">
-                            {curriculum.grades.map((g: Grade) => <option key={g.id} value={g.id}>{g.title}</option>)}
+                            {curriculum?.grades.map((g: Grade) => <option key={g.id} value={g.id}>{g.title}</option>)}
                         </select>
                     </div>
                     <div>
                         <label htmlFor="topic-select" className="block text-sm font-medium text-gray-700">Тематска целина</label>
                         <select id="topic-select" value={selectedTopicId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedTopicId(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md" disabled={topicsForGrade.length === 0}>
+                             <option value="">-- Избери тема --</option>
                              {topicsForGrade.map((t: Topic) => <option key={t.id} value={t.id}>{t.title}</option>)}
                         </select>
                     </div>
@@ -149,104 +135,54 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
                     <button type="button" onClick={hideModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 mr-3">
                         Откажи
                     </button>
-                    <button type="submit" className="px-4 py-2 bg-brand-primary text-white rounded-lg shadow hover:bg-brand-secondary" disabled={!selectedTopicId}>
-                        Генерирај тематски план
+                    <button type="submit" className="px-4 py-2 bg-brand-primary text-white rounded-lg shadow hover:bg-brand-secondary" disabled={!selectedTopicId || isLoading}>
+                        {isLoading ? 'Генерирам...' : 'Генерирај тематски план'}
                     </button>
                 </div>
             </form>
         );
-    }
+    };
 
     const renderFooter = () => {
-         if (isLoading) return null;
+         if (isLoading || !generatedPlan) return null;
 
-         if (generatedPlan) {
-            return (
-                 <div className="flex justify-between items-center bg-gray-50 p-4 rounded-b-lg">
-                    <div className="flex gap-2">
-                        <button type="button" onClick={() => setGeneratedPlan(null)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
-                            Назад
-                        </button>
-                        <button 
-                            type="button" 
-                            onClick={() => setViewMode(viewMode === 'official' ? 'preview' : 'official')} 
-                            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-                        >
-                            <ICONS.eye className="w-4 h-4" />
-                            {viewMode === 'official' ? 'Поедноставен приказ' : 'Официјален формат'}
-                        </button>
-                    </div>
-                    <div className="flex gap-2">
-                        <button 
-                            type="button" 
-                            onClick={() => window.print()} 
-                            className="px-4 py-2 bg-brand-accent text-white rounded-lg shadow hover:bg-opacity-90 flex items-center gap-2"
-                        >
-                            <ICONS.printer className="w-4 h-4" />
-                            Испечати
-                        </button>
-                        <button type="button" onClick={hideModal} className="px-4 py-2 bg-brand-primary text-white rounded-lg shadow hover:bg-brand-secondary">
-                            Затвори
-                        </button>
-                    </div>
-                </div>
-            );
-         }
-        
-         return null;
-    }
-
-        return (
-            <form onSubmit={handleSubmit}>
-                <div className="p-6 space-y-4">
-                    <p className="text-sm text-gray-600">Изберете одделение и тема, а AI асистентот ќе ви генерира предлог-план со наставни единици, цели и активности за целата тема.</p>
-                    <div>
-                        <label htmlFor="grade-select" className="block text-sm font-medium text-gray-700">Одделение</label>
-                        <select id="grade-select" value={selectedGradeId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleGradeChange(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md">
-                            {curriculum.grades.map((g: Grade) => <option key={g.id} value={g.id}>{g.title}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="topic-select" className="block text-sm font-medium text-gray-700">Тематска целина</label>
-                        <select id="topic-select" value={selectedTopicId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedTopicId(e.target.value)} className="mt-1 block w-full p-2 border-gray-300 rounded-md" disabled={topicsForGrade.length === 0}>
-                             {topicsForGrade.map((t: Topic) => <option key={t.id} value={t.id}>{t.title}</option>)}
-                        </select>
-                    </div>
-                </div>
-                 <div className="flex justify-end items-center bg-gray-50 p-4 rounded-b-lg">
-                    <button type="button" onClick={hideModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 mr-3">
-                        Откажи
-                    </button>
-                    <button type="submit" className="px-4 py-2 bg-brand-primary text-white rounded-lg shadow hover:bg-brand-secondary" disabled={!selectedTopicId}>
-                        Генерирај тематски план
-                    </button>
-                </div>
-            </form>
-        );
-    }
-
-    const renderFooter = () => {
-         if (isLoading) return null;
-
-         if (generatedPlan) {
-            return (
-                 <div className="flex justify-between items-center bg-gray-50 p-4 rounded-b-lg">
-                    <button type="button" onClick={() => setGeneratedPlan(null)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
-                        Назад
-                    </button>
+         return (
+              <div className="flex justify-between items-center bg-gray-50 p-4 rounded-b-lg">
+                 <div className="flex gap-2">
+                     <button type="button" onClick={() => setGeneratedPlan(null)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                         Назад
+                     </button>
+                     <button 
+                         type="button" 
+                         onClick={() => setViewMode(viewMode === 'official' ? 'preview' : 'official')} 
+                         className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                     >
+                         <ICONS.eye className="w-4 h-4" />
+                         {viewMode === 'official' ? 'Поедноставен приказ' : 'Официјален формат'}
+                     </button>
+                 </div>
+                 <div className="flex gap-2">
+                     <button 
+                         type="button" 
+                         onClick={() => window.print()} 
+                         className="px-4 py-2 bg-brand-accent text-white rounded-lg shadow hover:bg-opacity-90 flex items-center gap-2"
+                     >
+                         <ICONS.printer className="w-4 h-4" />
+                         Испечати
+                     </button>
                      <button type="button" onClick={hideModal} className="px-4 py-2 bg-brand-primary text-white rounded-lg shadow hover:bg-brand-secondary">
-                        Затвори
-                    </button>
-                </div>
-            );
-         }
-        
-         return null;
-    }
+                         Затвори
+                     </button>
+                 </div>
+             </div>
+         );
+    };
+
+    if (!curriculum) return null;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={hideModal} role="dialog" aria-modal="true" aria-labelledby="ai-thematic-plan-title">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full overflow-hidden" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <div className="p-6 border-b">
                     <div className="flex justify-between items-center">
                         <h2 id="ai-thematic-plan-title" className="text-2xl font-bold text-brand-primary flex items-center gap-2">
@@ -258,9 +194,11 @@ export const AIThematicPlanGeneratorModal: React.FC = () => {
                         </button>
                     </div>
                 </div>
-                {renderContent()}
-                {renderFooter()}
+                <div className="overflow-y-auto max-h-[85vh]">
+                    {renderContent()}
+                    {renderFooter()}
+                </div>
             </div>
         </div>
     );
-}
+};

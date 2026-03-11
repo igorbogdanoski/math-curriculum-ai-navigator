@@ -64,6 +64,28 @@ function geminiDevProxy(apiKey: string): Plugin {
         }
       });
 
+      server.middlewares.use('/api/gemini-embed', async (req: any, res: any, next: any) => {
+        if (req.method === 'OPTIONS') { res.writeHead(200); return res.end(); }
+        if (req.method !== 'POST') return next();
+
+        try {
+          const { GoogleGenerativeAI } = await import('@google/generative-ai');
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const { model, contents } = await readBody(req);
+
+          const modelInstance = genAI.getGenerativeModel({ model: model || 'gemini-embedding-2-preview' });
+          const result = await modelInstance.embedContent({
+            content: { role: 'user', parts: contents as any[] }
+          });
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ embeddings: result.embedding }));
+        } catch (error: any) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: error.message }));
+        }
+      });
+
       server.middlewares.use('/api/gemini', async (req: any, res: any, next: any) => {
         if (req.method === 'OPTIONS') { res.writeHead(200); return res.end(); }
         if (req.method !== 'POST') return next();
