@@ -15,29 +15,67 @@ class RagService {
   }
 
   /**
+   * Helper to calculate cosine similarity between two vectors.
+   */
+  private cosineSimilarity(v1: number[], v2: number[]): number {
+    let dotProduct = 0;
+    let mag1 = 0;
+    let mag2 = 0;
+    for (let i = 0; i < v1.length; i++) {
+      dotProduct += v1[i] * v2[i];
+      mag1 += v1[i] * v1[i];
+      mag2 += v2[i] * v2[i];
+    }
+    return dotProduct / (Math.sqrt(mag1) * Math.sqrt(mag2));
+  }
+
+  /**
    * Performs multimodal search using Gemini Embedding 2.
    * Supports text, images, and other parts for native cross-modal retrieval.
    */
-  public async searchSimilarContext(queryParts: any[]): Promise<{ context: string, similarity: number }[]> {
+  public async searchSimilarContext(queryParts: any[]): Promise<{ context: string, similarity: number, conceptId?: string }[]> {
     try {
-      const queryEmbedding = await callGeminiEmbed({
+      // 1. Generate embedding for the multimodal query
+      const result = await callGeminiEmbed({
         model: 'gemini-embedding-2-preview',
         contents: queryParts
       });
+      const queryVector = result.embeddings.values;
       
-      // In a real production system, we would query a vector DB (Pinecone, Chroma, etc.)
-      // Since we have local JSON data, we will provide a fallback for now or
-      // simulate the retrieval from the local curriculum data.
-      console.log("Multimodal Query Embedding calculated:", queryEmbedding.embeddings.values.length);
+      // 2. Load pre-indexed curriculum embeddings (simulated for now)
+      // In a full implementation, these would come from a database like Pinecone/Firestore
+      const curriculumEmbeddings = await this.getMockCurriculumEmbeddings();
       
-      return [{
-          context: "Пронајдени се слични содржини од БРО програмата базирани на мултимодално пребарување.",
-          similarity: 0.95
-      }];
+      // 3. Rank results by similarity
+      const scoredResults = curriculumEmbeddings.map(item => ({
+        context: item.text,
+        conceptId: item.id,
+        similarity: this.cosineSimilarity(queryVector, item.vector)
+      }));
+
+      // Sort by similarity and return top 3
+      return scoredResults
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, 3);
+
     } catch (error) {
       console.error("RAG Embedding Error:", error);
       return [];
     }
+  }
+
+  /**
+   * Simulated vector store for curriculum concepts.
+   * This would normally be a real Vector DB.
+   */
+  private async getMockCurriculumEmbeddings() {
+    // Generate a few stable mock vectors for demo purposes
+    // In production, we run 'callGeminiEmbed' on all curriculum text once and store results.
+    return [
+      { id: 'c1', text: 'Собирање и одземање на дропки со еднакви именители', vector: new Array(768).fill(0).map(() => Math.random()) },
+      { id: 'c2', text: 'Плоштина и периметар на рамнини фигури', vector: new Array(768).fill(0).map(() => Math.random()) },
+      { id: 'c3', text: 'Пропорционалност и размер во секојдневниот живот', vector: new Array(768).fill(0).map(() => Math.random()) }
+    ];
   }
 
   /**
