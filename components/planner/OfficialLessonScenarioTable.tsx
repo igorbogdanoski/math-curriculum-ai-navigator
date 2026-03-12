@@ -8,7 +8,11 @@ interface OfficialLessonScenarioTableProps {
 
 export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTableProps> = ({ plan }) => {
   // Helper to safely get text from scenario steps
-  const getStepText = (step: any) => (typeof step === 'string' ? step : step.text);
+  const getStepText = (step: any) => {
+    if (!step) return '';
+    if (typeof step === 'string') return step;
+    return step.text || '';
+  };
 
   return (
     <div className="official-lesson-scenario bg-white p-4 print:p-0 print:m-0 text-black font-serif leading-tight">
@@ -29,7 +33,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
           </div>
           <div className="p-2 border-t-2 border-black flex items-center">
             <span className="font-bold mr-2">Време за реализација:</span>
-            <span>{plan.scenario?.introductory?.duration || '45 мин'}</span>
+            <span>{plan.scenario?.introductory?.duration || (plan as any).scenario?.intro?.duration || '45 мин'}</span>
           </div>
           
           <div className="p-2 border-t-2 border-r-2 border-black">
@@ -83,9 +87,9 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                 <section>
                   <h4 className="font-bold underline mb-2">Воведна активност:</h4>
                   <div className="pl-2 space-y-2">
-                    <MathRenderer text={getStepText(plan.scenario?.introductory || '')} />
-                    {plan.scenario?.introductory?.duration && (
-                       <p className="mt-2 font-bold italic">({plan.scenario.introductory.duration})</p>
+                    <MathRenderer text={getStepText(plan.scenario?.introductory || (plan as any).scenario?.intro || '')} />
+                    {(plan.scenario?.introductory?.duration || (plan as any).scenario?.intro?.duration) && (
+                       <p className="mt-2 font-bold italic">({plan.scenario?.introductory?.duration || (plan as any).scenario?.intro?.duration})</p>
                     )}
                   </div>
                 </section>
@@ -93,7 +97,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                 <section>
                   <h4 className="font-bold underline mb-2 uppercase">Главна активност:</h4>
                   <div className="pl-2 space-y-4">
-                    {(plan.scenario?.main || []).map((step, i) => (
+                    {(plan.scenario?.main || (plan as any).scenario?.activities || []).map((step: any, i: number) => (
                       <div key={i} className="flex">
                         <span className="font-bold mr-2">{i + 1}.</span>
                         <div><MathRenderer text={getStepText(step)} /></div>
@@ -108,7 +112,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                 <section>
                   <h4 className="font-bold underline mb-2 uppercase">Завршна активност:</h4>
                   <div className="pl-2 space-y-4">
-                    <MathRenderer text={getStepText(plan.scenario?.concluding || '')} />
+                    <MathRenderer text={getStepText(plan.scenario?.concluding || (plan as any).scenario?.conclusion || '')} />
                     
                     {/* Reflection questions often included in concluding step or separately */}
                     {plan.selfAssessmentPrompt && (
@@ -121,8 +125,8 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                       <span className="font-bold">Домашна работа:</span>
                       <p className="italic">Учениците треба да ги завршат задачите од работниот лист.</p>
                     </div>
-                    {plan.scenario?.concluding?.duration && (
-                       <p className="mt-2 font-bold italic">({plan.scenario.concluding.duration})</p>
+                    {(plan.scenario?.concluding?.duration || (plan as any).scenario?.conclusion?.duration) && (
+                       <p className="mt-2 font-bold italic">({plan.scenario?.concluding?.duration || (plan as any).scenario?.conclusion?.duration})</p>
                     )}
                   </div>
                 </section>

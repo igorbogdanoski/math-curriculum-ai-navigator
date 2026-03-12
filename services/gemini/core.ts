@@ -46,7 +46,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
-export const DEFAULT_MODEL = 'gemini-3.1-flash-preview';
+export const DEFAULT_MODEL = 'gemini-2.0-flash';
 export const MAX_RETRIES = 2;
 export const GENERATION_TIMEOUT_MS = 45_000; // 45 seconds per attempt before aborting
 
@@ -285,9 +285,9 @@ export async function callGeminiProxy(params: {
       
       // Мапирање на моделот за Vercel Whitelist
       let modelName = params.model;
-      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-1.5-flash-8b' || modelName === 'gemini-1.5-flash-8b-latest' || modelName === 'gemini-2.0-flash' || modelName === 'gemini-2.5-flash' || modelName === 'gemini-3.1-flash') modelName = 'gemini-3.1-flash-preview';
-      else if (modelName.includes('thinking') || modelName === 'gemini-3.1-pro') modelName = 'gemini-3.1-pro-preview';
-      // Остави ги другите како што се (на пр. gemini-2.0-flash)
+      if (modelName.includes('flash') || modelName === 'gemini-3.1-flash') modelName = 'gemini-2.0-flash';
+      else if (modelName.includes('thinking') || modelName.includes('pro') || modelName === 'gemini-3.1-pro') modelName = 'gemini-1.5-pro';
+      else modelName = 'gemini-2.0-flash'; // Global fallback
 
       const response = await fetch('/api/gemini', {
         method: 'POST',
@@ -367,9 +367,9 @@ export async function* streamGeminiProxy(params: {
   const token = await getAuthToken();
   
   let modelName = params.model;
-  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-1.5-flash-8b' || modelName === 'gemini-1.5-flash-8b-latest') modelName = 'gemini-2.0-flash';
-  else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp';
-  // Остави ги другите како што се (на пр. gemini-2.0-flash)
+  if (modelName.includes('flash') || modelName === 'gemini-3.1-flash') modelName = 'gemini-2.0-flash';
+  else if (modelName.includes('thinking') || modelName.includes('pro') || modelName === 'gemini-3.1-pro') modelName = 'gemini-1.5-pro';
+  else modelName = 'gemini-2.0-flash'; // Global fallback
 
   const response = await fetch('/api/gemini-stream', {
     method: 'POST',

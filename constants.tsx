@@ -59,8 +59,9 @@ import { Zap,
   Maximize,
   Minimize,
   Eye,
-  FileText,
-  ExternalLink
+  ExternalLink,
+  Image,
+  RefreshCw
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -78,6 +79,7 @@ export const ICONS: Record<string, any> = {
   activity: Activity,
   dashboard: Layout,
   planner: Calendar,
+  calendar: Calendar,
   database: Database,
   curriculum: BookOpen,
   settings: Settings,
@@ -136,6 +138,8 @@ export const ICONS: Record<string, any> = {
   eye: Eye,
   fileText: FileText,
   externalLink: ExternalLink,
+  image: Image,
+  refresh: RefreshCw,
 };
 
 export const SUBJECTS = [
