@@ -80,8 +80,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         msg.includes('PerDay') || msg.includes('per_day') ||
         msg.includes('free_tier') || msg.includes('quota')
       );
-      if (isDailyQuota && i < apiKeys.length - 1) {
-        console.warn(`[/api/gemini] Key ${i + 1}/${apiKeys.length} daily quota exhausted, trying next key...`);
+      const isInvalidKey = msg.includes('API_KEY_INVALID') || msg.includes('API key expired') || msg.includes('API key not valid');
+      if ((isDailyQuota || isInvalidKey) && i < apiKeys.length - 1) {
+        console.warn(`[/api/gemini] Key ${i + 1}/${apiKeys.length} ${isInvalidKey ? 'invalid/expired' : 'daily quota exhausted'}, trying next key...`);
         continue; // try next key
       }
       break; // non-quota error or last key — stop

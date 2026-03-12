@@ -39,7 +39,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       const msg = lastError.message;
-      if (msg.includes('429') && i < apiKeys.length - 1) {
+      const isDailyQuota = msg.includes('429');
+      const isInvalidKey = msg.includes('API_KEY_INVALID') || msg.includes('API key expired') || msg.includes('API key not valid');
+      if ((isDailyQuota || isInvalidKey) && i < apiKeys.length - 1) {
+        console.warn(`[/api/gemini-embed] Key ${i + 1}/${apiKeys.length} ${isInvalidKey ? 'invalid/expired' : 'daily quota exhausted'}, trying next...`);
         continue;
       }
       break;

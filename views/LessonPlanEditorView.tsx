@@ -286,6 +286,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
         const illustration = await geminiService.generateIllustration(`Наставна илустрација за математика: ${prompt}`);
         if (isMounted.current) {
             setGeneratedIllustration(illustration);
+            setPlan((prev: Partial<LessonPlan>) => ({
+                ...prev,
+                illustrationUrl: illustration.imageUrl
+            }));
             addNotification('Илустрацијата е успешно генерирана!', 'success');
         }
     } catch (error) {

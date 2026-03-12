@@ -129,6 +129,19 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                     )}
                   </div>
                 </section>
+
+                {plan.illustrationUrl && (
+                  <section className="mt-4 pt-4 border-t border-black">
+                    <h4 className="font-bold underline mb-2 uppercase">Визуелна илустрација / Приказ:</h4>
+                    <div className="flex justify-center">
+                      <img 
+                        src={plan.illustrationUrl} 
+                        alt="Илустрација за часот" 
+                        className="max-w-[300px] border border-black shadow-sm"
+                      />
+                    </div>
+                  </section>
+                )}
               </div>
             </td>
             <td className="border border-black p-2 align-top">

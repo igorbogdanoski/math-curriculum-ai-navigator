@@ -1,10 +1,10 @@
+
+require('dotenv').config();
 const fetch = require('node-fetch');
 
-const API_KEY = process.env.GEMINI_API_KEY || 'YOUR_GEMINI_API_KEY'; // Zameni so tvojot kluch ili koristi ENV
+const API_KEY = process.env.GEMINI_API_KEY;
 
-fetch('https://generativelanguage.googleapis.com/v1/models', {
-  headers: { 'Authorization': `Bearer ${API_KEY}` }
-})
+fetch(`https://generativelanguage.googleapis.com/v1/models?key=${API_KEY}`)
   .then(res => res.json())
   .then(data => {
     if (data.models) {

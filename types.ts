@@ -137,6 +137,7 @@ export interface LessonPlan {
   lessonNumber?: number;
   assessmentStandards: string[];
   scenario: LessonScenario;
+  illustrationUrl?: string;
   progressMonitoring: string[];
   levelDescription?: string;
   differentiation?: string;
