@@ -27,9 +27,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { model, contents, config } = validated;
   let modelName = model;
-  if (modelName.includes('flash') || modelName === 'gemini-3.1-flash') modelName = 'gemini-2.0-flash';
-  else if (modelName.includes('thinking') || modelName.includes('pro') || modelName === 'gemini-3.1-pro') modelName = 'gemini-1.5-pro';
-  else modelName = 'gemini-2.0-flash'; // Global fallback for safety
+  // Upgrade logic: intelligent mapping to latest stable/available models
+  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.0-flash';
+  else if (modelName.includes('thinking')) modelName = 'gemini-3-pro-preview';
+  else if (modelName.includes('pro') && !modelName.includes('3')) modelName = 'gemini-3-pro-preview';
+  else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-3-pro-preview';
+  // Allow gemini-2.5 and gemini-3.x models to pass through if they are in the whitelist
 
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 

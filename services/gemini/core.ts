@@ -263,6 +263,23 @@ export function normalizeContents(contents: any): any[] {
   if (typeof contents === 'string') return [{ role: 'user', parts: [{ text: contents }] }];
   if (!Array.isArray(contents)) return [{ role: 'user', parts: [{ text: String(contents) }] }];
   
+  // Check if it's already an array of Content objects
+  if (contents.length > 0 && contents[0].parts) return contents;
+
+  // Check if it's an array of Parts (text or inlineData)
+  const isPartsArray = contents.every((c: any) => c.text || c.inlineData || c.inline_data);
+  if (isPartsArray) {
+    return [{
+      role: 'user',
+      parts: contents.map((c: any) => {
+        if (c.text) return { text: c.text };
+        const data = c.inlineData || c.inline_data;
+        if (data) return { inlineData: { mimeType: data.mimeType || data.mime_type, data: data.data } };
+        return c;
+      })
+    }];
+  }
+
   return contents.map(c => {
     if (typeof c === 'string') return { role: 'user', parts: [{ text: c }] };
     if (c.role && c.parts) return c;
@@ -285,9 +302,9 @@ export async function callGeminiProxy(params: {
       
       // Мапирање на моделот за Vercel Whitelist
       let modelName = params.model;
-      if (modelName.includes('flash') || modelName === 'gemini-3.1-flash') modelName = 'gemini-2.0-flash';
-      else if (modelName.includes('thinking') || modelName.includes('pro') || modelName === 'gemini-3.1-pro') modelName = 'gemini-1.5-pro';
-      else modelName = 'gemini-2.0-flash'; // Global fallback
+      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.0-flash';
+      else if (modelName.includes('thinking-exp-01-21')) modelName = 'gemini-2.0-flash-thinking-exp';
+      else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
 
       const response = await fetch('/api/gemini', {
         method: 'POST',
@@ -340,7 +357,7 @@ export async function callGeminiEmbed(params: {
         },
         body: JSON.stringify({
           model: params.model || 'gemini-embedding-2-preview',
-          contents: normalizeContents(params.contents)[0].parts
+          contents: normalizeContents(params.contents)[0]?.parts || []
         }),
       });
 
@@ -367,9 +384,9 @@ export async function* streamGeminiProxy(params: {
   const token = await getAuthToken();
   
   let modelName = params.model;
-  if (modelName.includes('flash') || modelName === 'gemini-3.1-flash') modelName = 'gemini-2.0-flash';
-  else if (modelName.includes('thinking') || modelName.includes('pro') || modelName === 'gemini-3.1-pro') modelName = 'gemini-1.5-pro';
-  else modelName = 'gemini-2.0-flash'; // Global fallback
+  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.0-flash';
+  else if (modelName.includes('thinking-exp-01-21')) modelName = 'gemini-2.0-flash-thinking-exp';
+  else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
 
   const response = await fetch('/api/gemini-stream', {
     method: 'POST',
