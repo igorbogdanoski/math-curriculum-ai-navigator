@@ -300,11 +300,11 @@ export async function callGeminiProxy(params: {
     try {
       const token = await getAuthToken();
       
-      // Мапирање на моделот за Vercel Whitelist
+      // Мапирање на моделот за Vercel Whitelist (потврдено преку API)
       let modelName = params.model;
-      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.0-flash';
-      else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp-01-21';
-      else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-2.0-pro-exp-02-05';
+      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.5-flash';
+      else if (modelName.includes('thinking')) modelName = 'gemini-3.1-pro-preview';
+      else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-3.1-pro-preview';
       else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
 
       const response = await fetch('/api/gemini', {
@@ -385,9 +385,9 @@ export async function* streamGeminiProxy(params: {
   const token = await getAuthToken();
   
   let modelName = params.model;
-  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.0-flash';
-  else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp-01-21';
-  else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-2.0-pro-exp-02-05';
+  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.5-flash';
+  else if (modelName.includes('thinking')) modelName = 'gemini-3.1-pro-preview';
+  else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-3.1-pro-preview';
   else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
 
   const response = await fetch('/api/gemini-stream', {
