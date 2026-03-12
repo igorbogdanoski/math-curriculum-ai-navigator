@@ -29,9 +29,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let modelName = model;
   // Upgrade logic: intelligent mapping to latest stable/available models
   if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.0-flash';
-  else if (modelName.includes('thinking')) modelName = 'gemini-3-pro-preview';
-  else if (modelName.includes('pro') && !modelName.includes('3')) modelName = 'gemini-3-pro-preview';
-  else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-3-pro-preview';
+  else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp-01-21';
+  else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-2.0-pro-exp-02-05';
+  else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
   // Allow gemini-2.5 and gemini-3.x models to pass through if they are in the whitelist
 
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};

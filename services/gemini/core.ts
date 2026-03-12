@@ -303,7 +303,8 @@ export async function callGeminiProxy(params: {
       // Мапирање на моделот за Vercel Whitelist
       let modelName = params.model;
       if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.0-flash';
-      else if (modelName.includes('thinking-exp-01-21')) modelName = 'gemini-2.0-flash-thinking-exp';
+      else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp-01-21';
+      else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-2.0-pro-exp-02-05';
       else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
 
       const response = await fetch('/api/gemini', {
@@ -385,7 +386,8 @@ export async function* streamGeminiProxy(params: {
   
   let modelName = params.model;
   if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.0-flash';
-  else if (modelName.includes('thinking-exp-01-21')) modelName = 'gemini-2.0-flash-thinking-exp';
+  else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp-01-21';
+  else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-2.0-pro-exp-02-05';
   else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
 
   const response = await fetch('/api/gemini-stream', {
