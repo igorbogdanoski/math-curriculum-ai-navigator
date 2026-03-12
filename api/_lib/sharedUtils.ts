@@ -43,11 +43,14 @@ function getFirebaseAdmin() {
 // ---------------------------------------------------------------------------
 const ALLOWED_MODELS = new Set([
   'gemini-3.1-pro-preview',
+  'gemini-3.1-flash-preview',
   'gemini-3.1-flash-lite-preview',
   'gemini-2.5-pro',
   'gemini-2.5-flash',
   'gemini-2.0-flash',
   'gemini-2.0-flash-lite',
+  'gemini-2.0-flash-thinking-exp',
+  'gemini-2.0-pro-exp-02-05',
   'gemini-embedding-2-preview',
   'gemini-1.5-pro',
   'gemini-1.5-flash',

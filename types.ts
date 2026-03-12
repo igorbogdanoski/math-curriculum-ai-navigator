@@ -332,6 +332,8 @@ export interface AIGeneratedIdeas {
   }>;
   differentiation: string;
   assessmentIdea: string;
+  assessmentStandards?: string[];
+  concepts?: string[];
   error?: string;
   levelDescription?: string;
   generationContext?: GenerationContext;

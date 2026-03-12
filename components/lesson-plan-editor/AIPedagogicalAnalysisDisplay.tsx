@@ -26,7 +26,8 @@ const statusConfig: Record<string, { icon: React.ComponentType<{className?: stri
     'фокус на повисоки нивоа': { icon: ICONS.lightbulb, color: 'text-yellow-600' },
 };
 
-const AnalysisCriteriaDisplay: React.FC<{ title: string; data: PedagogicalAnalysisCriteria }> = ({ title, data }) => {
+const AnalysisCriteriaDisplay: React.FC<{ title: string; data?: PedagogicalAnalysisCriteria }> = ({ title, data }) => {
+    if (!data || !data.status) return null;
     const lowerCaseStatus = data.status.toLowerCase();
     const configKey = Object.keys(statusConfig).find(key => lowerCaseStatus.includes(key));
     const { icon: Icon, color } = configKey ? statusConfig[configKey] : { icon: ICONS.assistant, color: 'text-gray-600' };

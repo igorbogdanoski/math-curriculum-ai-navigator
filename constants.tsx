@@ -16,7 +16,7 @@ import { Zap,
   ChevronDown,
   Link as LinkIcon,
   Sparkles,
-  RefreshCw,
+  RefreshCw as RefreshIcon,
   Check,
   Plus,
   Printer,
@@ -60,8 +60,7 @@ import { Zap,
   Minimize,
   Eye,
   ExternalLink,
-  Image as ImageIcon,
-  RefreshCw as RefreshIcon
+  Image as ImageIcon
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -101,7 +100,7 @@ export const ICONS: Record<string, any> = {
   link: LinkIcon,
   bookOpen: BookOpen,
   sparkles: Sparkles,
-  arrowPath: RefreshCw,
+  arrowPath: RefreshIcon,
   check: Check,
   plus: Plus,
   printer: Printer,

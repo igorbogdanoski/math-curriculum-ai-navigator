@@ -94,7 +94,7 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                             <div>
                                 <SectionHeader title="Цели" />
                                 <ul className="list-disc list-inside text-gray-700 space-y-1">
-                                    {plan.objectives.map((obj: any, i: number) => (
+                                    {Array.isArray(plan.objectives) && plan.objectives.map((obj: any, i: number) => (
                                         <ListItem key={i}>
                                             <MathRenderer text={typeof obj === 'string' ? obj : obj.text} />
                                             {typeof obj !== 'string' && <BloomBadge level={obj.bloomsLevel} />}
@@ -105,7 +105,7 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                             <div>
                                 <SectionHeader title="Стандарди за оценување" />
                                 <ul className="list-disc list-inside text-gray-700 space-y-1">
-                                    {plan.assessmentStandards.map((std: string, i: number) => <ListItem key={i}><MathRenderer text={std} /></ListItem>)}
+                                    {Array.isArray(plan.assessmentStandards) && plan.assessmentStandards.map((std: string, i: number) => <ListItem key={i}><MathRenderer text={std} /></ListItem>)}
                                 </ul>
                             </div>
                         </div>
@@ -121,7 +121,7 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                                 <div>
                                     <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-tighter">Главни активности:</h4>
                                     <ul className="list-decimal list-inside space-y-2 mt-1">
-                                        {plan.scenario.main.map((act: any, i: number) => (
+                                        {Array.isArray(plan.scenario?.main) && plan.scenario.main.map((act: any, i: number) => (
                                             <ListItem key={i}>
                                                 <MathRenderer text={typeof act === 'string' ? act : act.text} />
                                                 {typeof act !== 'string' && <BloomBadge level={act.bloomsLevel} />}
@@ -143,13 +143,13 @@ export const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({ plan }) =>
                     <div>
                         <SectionHeader title="Средства" />
                         <ul className="list-disc list-inside text-gray-700 space-y-1">
-                            {plan.materials.map((mat: string, i: number) => <ListItem key={i}><MathRenderer text={mat} /></ListItem>)}
+                            {Array.isArray(plan.materials) && plan.materials.map((mat: string, i: number) => <ListItem key={i}><MathRenderer text={mat} /></ListItem>)}
                         </ul>
                     </div>
                      <div>
                         <SectionHeader title="Следење на напредокот" />
                         <ul className="list-disc list-inside text-gray-700 space-y-1">
-                            {plan.progressMonitoring.map((mon: string, i: number) => <ListItem key={i}><MathRenderer text={mon} /></ListItem>)}
+                            {Array.isArray(plan.progressMonitoring) && plan.progressMonitoring.map((mon: string, i: number) => <ListItem key={i}><MathRenderer text={mon} /></ListItem>)}
                         </ul>
                     </div>
                     {plan.differentiation && (

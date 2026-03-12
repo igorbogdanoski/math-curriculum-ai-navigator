@@ -300,10 +300,10 @@ export async function callGeminiProxy(params: {
     try {
       const token = await getAuthToken();
       
-      // Мапирање на моделот за Vercel Whitelist (потврдено преку API)
+      // Upgrade logic: intelligent mapping to latest stable/available models (Gemini 2.5/3.1)
       let modelName = params.model;
-      if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.5-flash';
-      else if (modelName.includes('thinking')) modelName = 'gemini-3.1-pro-preview';
+      if (modelName.includes('flash') && !modelName.includes('lite') && !modelName.includes('2.0')) modelName = 'gemini-3.1-flash-preview';
+      else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp';
       else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-3.1-pro-preview';
       else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
 

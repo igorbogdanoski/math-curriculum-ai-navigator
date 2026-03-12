@@ -52,7 +52,7 @@ export const PedagogicalDashboard: React.FC<PedagogicalDashboardProps> = ({ acti
         <div className="space-y-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Препораки</p>
           <div className="space-y-2">
-            {analysis.feedback.map((msg, i) => {
+            {Array.isArray(analysis.feedback) && analysis.feedback.map((msg, i) => {
               const isPositive = msg.includes('✅') || msg.includes('🌟') || msg.includes('🔍') || msg.includes('Браво');
               const isWarning = msg.includes('⚠️') || msg.includes('⚡');
               

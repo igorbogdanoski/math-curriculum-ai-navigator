@@ -21,19 +21,24 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
         <div className="bg-blue-600 print:bg-blue-600 text-white p-2 border-b-2 border-black font-bold text-center uppercase">
           Сценарио за наставен час
         </div>
-        <div className="grid grid-cols-2">
-          <div className="p-2 border-r-2 border-black bg-blue-600 text-white font-semibold">
+        <div className="grid grid-cols-3">
+          <div className="p-2 border-r-2 border-black bg-blue-600 text-white font-semibold col-span-2">
             Предмет: {plan.subject || 'Математика за VII одделение'}
           </div>
-          <div className="p-2"></div>
+          <div className="p-2 border-l border-black bg-gray-50 flex flex-col justify-center items-center">
+             <span className="font-bold text-[10px] uppercase">час и дата на реализација</span>
+             <div className="text-center font-bold">
+               {plan.lessonNumber || 1} / {new Date().toLocaleDateString('mk-MK')}
+             </div>
+          </div>
           
-          <div className="p-2 border-t-2 border-r-2 border-black flex items-center">
+          <div className="p-2 border-t-2 border-r-2 border-black flex items-center col-span-2">
             <span className="font-bold mr-2">Тема:</span>
             <span className="uppercase font-bold underline italic tracking-tight">{plan.theme || 'Операции со броеви'}</span>
           </div>
           <div className="p-2 border-t-2 border-black flex items-center">
             <span className="font-bold mr-2">Време за реализација:</span>
-            <span>{plan.scenario?.introductory?.duration || (plan as any).scenario?.intro?.duration || '45 мин'}</span>
+            <span>40 мин</span>
           </div>
           
           <div className="p-2 border-t-2 border-r-2 border-black">
@@ -56,9 +61,8 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
         <thead>
           <tr className="bg-gray-50 text-center font-bold">
             <th className="border border-black p-2 w-[15%]">содржини (и поими)</th>
-            <th className="border border-black p-2 w-[15%]">стандарди за оценување</th>
-            <th className="border border-black p-2 w-[10%]">час и дата на реализација</th>
-            <th className="border border-black p-2 w-[35%] uppercase">Сценарио</th>
+            <th className="border border-black p-2 w-[20%]">стандарди за оценување</th>
+            <th className="border border-black p-2 w-[40%] uppercase">Сценарио</th>
             <th className="border border-black p-2 w-[10%] uppercase">средства</th>
             <th className="border border-black p-2 w-[15%]">следење на напредокот</th>
           </tr>
@@ -66,21 +70,14 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
         <tbody>
           <tr>
             <td className="border border-black p-2 align-top text-center font-medium">
-              <MathRenderer text={Array.isArray((plan as any).concepts) ? (plan as any).concepts.map((c: any) => c.title).join(', ') : plan.title} />
+              <MathRenderer text={Array.isArray((plan as any).concepts) ? (plan as any).concepts.map((c: any) => c?.title || '').join(', ') : (plan.title || '')} />
             </td>
             <td className="border border-black p-2 align-top text-left italic">
               <ul className="list-none space-y-2">
-                {(plan.assessmentStandards || []).map((std, i) => (
+                {Array.isArray(plan.assessmentStandards) && plan.assessmentStandards.map((std, i) => (
                   <li key={i}><MathRenderer text={std} /></li>
                 ))}
               </ul>
-            </td>
-            <td className="border border-black p-2 align-top text-center font-bold">
-               {plan.lessonNumber || 1}<br />
-               <span className="text-[10px] font-normal">
-                 {new Date().toLocaleDateString('mk-MK')}<br />
-                 (бр. во дневник - за ориентација)
-               </span>
             </td>
             <td className="border border-black p-2 align-top">
               <div className="space-y-4">
@@ -136,7 +133,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
             </td>
             <td className="border border-black p-2 align-top">
                <ul className="list-none space-y-1">
-                 {(plan.materials || []).map((mat, i) => (
+                 {Array.isArray(plan.materials) && plan.materials.map((mat, i) => (
                    <li key={i} className="flex">
                      <span className="mr-1">•</span>
                      <MathRenderer text={mat} />
@@ -146,7 +143,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
             </td>
             <td className="border border-black p-2 align-top">
                <ul className="list-none space-y-2">
-                 {(plan.progressMonitoring || []).map((mon, i) => (
+                 {Array.isArray(plan.progressMonitoring) && plan.progressMonitoring.map((mon, i) => (
                    <li key={i} className="flex">
                      <span className="mr-1">•</span>
                      <MathRenderer text={mon} />
@@ -173,7 +170,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
           }
           table { border-width: 2px !important; border-color: black !important; }
           th, td { border-width: 1px !important; border-color: black !important; }
-          @page { size: A4; margin: 1cm; }
+          @page { size: landscape; margin: 1cm; }
         }
       `}} />
     </div>

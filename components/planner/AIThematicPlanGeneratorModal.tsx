@@ -97,7 +97,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {generatedPlan.lessons.map((lesson: ThematicPlanLesson) => (
+                                {Array.isArray(generatedPlan.lessons) && generatedPlan.lessons.map((lesson: ThematicPlanLesson) => (
                                     <tr key={lesson.lessonNumber}>
                                         <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{lesson.lessonNumber}</td>
                                         <td className="px-4 py-2 whitespace-normal text-sm text-gray-800 font-semibold">{lesson.lessonUnit}</td>

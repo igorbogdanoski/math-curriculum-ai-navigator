@@ -42,7 +42,9 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 ### ИНСТРУКЦИИ ЗА СОДРЖИНА
 - Биди екстремно креативен. Избегнувај генерички задачи.
 - Вметни реални македонски контексти (денри, локални имиња, градови).
+- ВКУПНО ВРЕМЕ: Планирај за наставен час од 40 минути.
 - Секоја активност МОРА да биде детално објаснета "чекор-по-чекор".
+- СТАНДАРДИ: Користи ги официјалните национални стандарди од контекстот.
 
 ### ФОРМАТ
 Генерирај го сценариото СТРИКТНО според официјалниот JSON шаблон.
@@ -68,8 +70,10 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
             },
             differentiation: { type: Type.STRING },
             assessmentIdea: { type: Type.STRING },
+            assessmentStandards: { type: Type.ARRAY, items: { type: Type.STRING } },
+            concepts: { type: Type.ARRAY, items: { type: Type.STRING } }
         },
-        required: ["title", "openingActivity", "mainActivity", "differentiation", "assessmentIdea"]
+        required: ["title", "openingActivity", "mainActivity", "differentiation", "assessmentIdea", "assessmentStandards", "concepts"]
     };
 
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id);
@@ -99,15 +103,21 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
 
 ### ИНСТРУКЦИИ ЗА СОДРЖИНА
 - Користи ја ОФИЦИЈАЛНАТА МАКЕДОНСКА СТРУКТУРА за сценарио.
+- ВКУПНО ВРЕМЕ: Часот трае ТОЧНО 40 минути. Распредели го времето соодветно (пр. 5-10 мин вовед, 25 мин главна, 5-10 мин заклучок).
 - Воведна активност: Јасен план со времетраење.
 - Главна активност: Повеќестепени чекори со Блумова таксономија.
 - Завршна активност: Сумирање и евалуација.
 - Вклучи специфични македонски примери (денари, градови).
+- СТАНДАРДИ И СОДРЖИНИ: Задолжително превземи ги и пополни ги колоните "Стандарди за оценување" и "Содржини (и поими)" директно од дадениот RAG контекст. Овие полиња НЕ СМЕАТ да бидат празни.
+- СРЕДСТВА: Наведи конкретни наставни средства (табла, креда, дигитален уред, работен лист).
+- СЛЕДЕЊЕ: Наведи конкретни методи за следење на напредокот (набљудување, прашања/одговори).
 `;
       const schema = { 
           type: Type.OBJECT, 
           properties: { 
               title: { type: Type.STRING }, 
+              subject: { type: Type.STRING }, 
+              theme: { type: Type.STRING }, 
               objectives: { 
                   type: Type.ARRAY, 
                   items: { 
@@ -148,11 +158,22 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
                       } 
                   } 
               },
+              assessmentStandards: { type: Type.ARRAY, items: { type: Type.STRING } },
               materials: { type: Type.ARRAY, items: { type: Type.STRING } },
               progressMonitoring: { type: Type.ARRAY, items: { type: Type.STRING } },
-              differentiation: { type: Type.STRING }
+              differentiation: { type: Type.STRING },
+              concepts: { 
+                  type: Type.ARRAY, 
+                  items: { 
+                      type: Type.OBJECT, 
+                      properties: { 
+                          title: { type: Type.STRING } 
+                      }, 
+                      required: ["title"] 
+                  } 
+              }
           }, 
-          required: ["title", "objectives", "scenario"] 
+          required: ["title", "objectives", "scenario", "assessmentStandards", "concepts"] 
       };
       const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
       if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
