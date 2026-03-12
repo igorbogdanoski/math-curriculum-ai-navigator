@@ -46,7 +46,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
-export const DEFAULT_MODEL = 'gemini-2.0-flash';
+export const DEFAULT_MODEL = 'gemini-2.5-flash';
 export const MAX_RETRIES = 2;
 export const GENERATION_TIMEOUT_MS = 45_000; // 45 seconds per attempt before aborting
 
@@ -302,7 +302,8 @@ export async function callGeminiProxy(params: {
       
       // Upgrade logic: intelligent mapping to latest stable/available models (Gemini 2.5/3.1)
       let modelName = params.model;
-      if (modelName.includes('flash') && !modelName.includes('lite') && !modelName.includes('2.0')) modelName = 'gemini-3.1-flash-preview';
+      if (modelName === 'gemini-2.0-flash') modelName = 'gemini-2.5-flash';
+      else if (modelName.includes('flash') && !modelName.includes('lite') && !modelName.includes('2.0') && !modelName.includes('2.5')) modelName = 'gemini-3.1-flash-preview';
       else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp';
       else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-3.1-pro-preview';
       else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
