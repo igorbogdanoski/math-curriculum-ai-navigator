@@ -66,7 +66,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
         <tbody>
           <tr>
             <td className="border border-black p-2 align-top text-center font-medium">
-              <MathRenderer text={(plan as any).concepts?.map((c: any) => c.title).join(', ') || plan.title} />
+              <MathRenderer text={Array.isArray((plan as any).concepts) ? (plan as any).concepts.map((c: any) => c.title).join(', ') : plan.title} />
             </td>
             <td className="border border-black p-2 align-top text-left italic">
               <ul className="list-none space-y-2">
@@ -97,12 +97,14 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                 <section>
                   <h4 className="font-bold underline mb-2 uppercase">Главна активност:</h4>
                   <div className="pl-2 space-y-4">
-                    {(plan.scenario?.main || (plan as any).scenario?.activities || []).map((step: any, i: number) => (
+                    {Array.isArray(plan.scenario?.main || (plan as any).scenario?.activities) ? (plan.scenario?.main || (plan as any).scenario?.activities || []).map((step: any, i: number) => (
                       <div key={i} className="flex">
                         <span className="font-bold mr-2">{i + 1}.</span>
                         <div><MathRenderer text={getStepText(step)} /></div>
                       </div>
-                    ))}
+                    )) : (
+                      <div><MathRenderer text={getStepText(plan.scenario?.main || (plan as any).scenario?.activities)} /></div>
+                    )}
                     {(plan as any).mainDuration && (
                        <p className="mt-2 font-bold italic">({(plan as any).mainDuration})</p>
                     )}

@@ -60,8 +60,8 @@ import { Zap,
   Minimize,
   Eye,
   ExternalLink,
-  Image,
-  RefreshCw
+  Image as ImageIcon,
+  RefreshCw as RefreshIcon
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -138,8 +138,8 @@ export const ICONS: Record<string, any> = {
   eye: Eye,
   fileText: FileText,
   externalLink: ExternalLink,
-  image: Image,
-  refresh: RefreshCw,
+  image: ImageIcon,
+  refresh: RefreshIcon,
 };
 
 export const SUBJECTS = [
