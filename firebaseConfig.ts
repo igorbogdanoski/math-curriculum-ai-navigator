@@ -17,7 +17,8 @@ const firebaseConfig = {
 // Иницијализација на апликацијата (Спречување на дупликати)
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Иницијализација на App Check (САМО на клиентска страна)
+// Иницијализација на App Check - ПРИВРЕМЕНО ОНЕВОЗМОЖЕНО ЗА ДЕБАГИРАЊЕ
+/*
 if (typeof window !== 'undefined') {
   if (import.meta.env.DEV) {
     (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
@@ -31,6 +32,7 @@ if (typeof window !== 'undefined') {
     });
   }
 }
+*/
 
 // Иницијализација на Firestore со едноставен getFirestore прво
 export const db = getFirestore(app);
