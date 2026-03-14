@@ -6,6 +6,8 @@ import { MathRenderer } from '../common/MathRenderer';
 import { geminiService } from '../../services/geminiService';
 import { useNotification } from '../../contexts/NotificationContext';
 
+import { useAuth } from '../../contexts/AuthContext';
+
 declare const PptxGenJS: any;
 
 interface GeneratedPresentationProps {
@@ -13,6 +15,7 @@ interface GeneratedPresentationProps {
 }
 
 export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ data }) => {
+  const { user, updateLocalProfile } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [visuals, setVisuals] = useState<Record<number, { loading: boolean, url?: string }>>({});
   const [theme, setTheme] = useState<'modern' | 'classic' | 'dark' | 'creative'>('modern');
@@ -20,9 +23,36 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
   const { addNotification } = useNotification();
 
   const handleGenerateImage = async (idx: number, prompt: string) => {
+    const cost = 5; // AI_COSTS.ILLUSTRATION
+    
+    // Credit check
+    if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+      if ((user.aiCreditsBalance ?? 0) < cost) {
+        window.dispatchEvent(new CustomEvent('openUpgradeModal', { 
+            detail: { reason: `Останавте без AI кредити! Генерирањето на илустрација за слајд чини ${cost} кредити. Надградете на Pro пакет.` }
+        }));
+        return;
+      }
+    }
+
     setVisuals(prev => ({ ...prev, [idx]: { loading: true } }));
     try {
-      const result = await geminiService.generateIllustration(`Educational presentation slide visual for math: ${prompt}. Clean, high quality, vector style.`);
+      const result = await geminiService.generateIllustration(
+        `Educational presentation slide visual for math: ${prompt}. Clean, high quality, vector style.`,
+        undefined,
+        user ?? undefined
+      );
+
+      // Deduct credits
+      if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+          const { getFunctions, httpsCallable } = await import('firebase/functions');
+          const { app } = await import('../../firebaseConfig');
+          const functions = getFunctions(app);
+          const deductFn = httpsCallable(functions, 'deductCredits');
+          await deductFn({ amount: cost });
+          updateLocalProfile({ aiCreditsBalance: (user.aiCreditsBalance || 0) - cost });
+      }
+
       setVisuals(prev => ({ ...prev, [idx]: { loading: false, url: result.imageUrl } }));
       addNotification('Сликата за слајдот е генерирана!', 'success');
     } catch (error) {
