@@ -1,5 +1,6 @@
 import { getAuth } from 'firebase/auth';
-import { db } from '../../firebaseConfig';
+import { db, ai } from '../../firebaseConfig';
+import { getGenerativeModel } from 'firebase/vertexai';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 import {
@@ -298,8 +299,6 @@ export async function callGeminiProxy(params: {
 }, signal?: AbortSignal): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      const token = await getAuthToken();
-      
       // Upgrade logic: intelligent mapping to latest stable/available models (Gemini 2.5/3.1)
       let modelName = params.model;
       if (modelName === 'gemini-2.0-flash') modelName = 'gemini-2.5-flash';
@@ -308,35 +307,19 @@ export async function callGeminiProxy(params: {
       else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-3.1-pro-preview';
       else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
 
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          model: modelName,
-          contents: normalizeContents(params.contents),
-          config: {
-            ...params.generationConfig,
-            systemInstruction: params.systemInstruction,
-            safetySettings: params.safetySettings
-          }
-        }),
-        signal,
+      const model = getGenerativeModel(ai, {
+        model: modelName,
+        generationConfig: params.generationConfig,
+        systemInstruction: params.systemInstruction,
+        safetySettings: params.safetySettings
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        // If the proxy flagged this as a daily quota error, mark it and throw immediately
-        if (response.status === 429 && errorData.quotaType === 'daily') {
-          markDailyQuotaExhausted();
-          throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.");
-        }
-        throw new Error(errorData.error || `Server error: ${response.status}`);
-      }
+      const requestOptions = signal ? { signal } : undefined;
 
-      return await response.json();
+      const result = await model.generateContent({ contents: normalizeContents(params.contents) });
+
+      const response = result.response;
+      return { text: response.text(), candidates: response.candidates || [] };
     } catch (err: any) {
       console.error("Gemini Proxy Error:", err.message || err);
       throw err;
@@ -383,63 +366,38 @@ export async function* streamGeminiProxy(params: {
   systemInstruction?: string;
   safetySettings?: any;
 }): AsyncGenerator<string, void, unknown> {
-  const token = await getAuthToken();
-  
   let modelName = params.model;
   if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.5-flash';
   else if (modelName.includes('thinking')) modelName = 'gemini-3.1-pro-preview';
   else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-3.1-pro-preview';
   else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
 
-  const response = await fetch('/api/gemini-stream', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      model: modelName,
-      contents: normalizeContents(params.contents),
-      config: {
-        ...params.generationConfig,
-        systemInstruction: params.systemInstruction,
-        safetySettings: params.safetySettings
-      }
-    })
+  const model = getGenerativeModel(ai, {
+    model: modelName,
+    generationConfig: params.generationConfig,
+    systemInstruction: params.systemInstruction,
+    safetySettings: params.safetySettings
   });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    // Mirror the same daily-quota detection as callGeminiProxy
-    if (response.status === 429 && errorData.quotaType === 'daily') {
+  try {
+    const result = await model.generateContentStream({
+      contents: normalizeContents(params.contents)
+    });
+
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      if (chunkText) {
+        yield chunkText;
+      }
+    }
+  } catch (error: any) {
+    console.error("Gemini Stream Error:", error);
+    const errorMessage = error.message?.toLowerCase() || "";
+    if (errorMessage.includes("429") && (errorMessage.includes("quota") || errorMessage.includes("perday"))) {
       markDailyQuotaExhausted();
       throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.");
     }
-    throw new Error(errorData.error || `Stream error: ${response.status}`);
-  }
-
-  const reader = response.body?.getReader();
-  const decoder = new TextDecoder();
-  if (!reader) throw new Error("No reader available");
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    const chunk = decoder.decode(value);
-    const lines = chunk.split('\n');
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') break;
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.text) yield parsed.text;
-          if (parsed.error) throw new Error(parsed.error);
-        } catch (e) {
-          console.warn("Error parsing stream chunk", e);
-        }
-      }
-    }
+    throw error;
   }
 }
 

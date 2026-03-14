@@ -1,6 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { VertexAI } from "@google-cloud/vertexai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
+
+// Helper for Google Cloud Auth from Base64 String
+const getCredentials = () => {
+  const b64 = process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
+  if (!b64) throw new Error('Missing GOOGLE_APPLICATION_CREDENTIALS_BASE64');
+  return JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
+};
+
+let vertexAIInstance: VertexAI | null = null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -8,46 +17,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const validated = await authenticateAndValidate(req, res);
   if (!validated) return;
 
-  const apiKeys = [
-    process.env.GEMINI_API_KEY,
-    process.env.VITE_GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_1,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
-    process.env.GEMINI_API_KEY_4,
-  ].filter((k): k is string => !!k && k.trim().length > 10);
-
-  if (apiKeys.length === 0) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server.' });
-  }
-
   const { model, contents } = validated;
 
-  let lastError: Error | null = null;
-  for (let i = 0; i < apiKeys.length; i++) {
-    const apiKey = apiKeys[i];
-    try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const modelInstance = genAI.getGenerativeModel({ model: model || 'gemini-embedding-2-preview' });
-      
-      // Batch embedding if contents is an array of parts
-      const result = await modelInstance.embedContent({
-        content: { role: 'user', parts: contents as any[] }
+  try {
+    if (!vertexAIInstance) {
+      const credentials = getCredentials();
+      vertexAIInstance = new VertexAI({
+        project: credentials.project_id,
+        location: 'us-central1',
+        googleAuthOptions: {
+          credentials: {
+            client_email: credentials.client_email,
+            private_key: credentials.private_key,
+          }
+        }
       });
-      
-      return res.status(200).json({ embeddings: result.embedding });
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      const msg = lastError.message;
-      const isDailyQuota = msg.includes('429');
-      const isInvalidKey = msg.includes('API_KEY_INVALID') || msg.includes('API key expired') || msg.includes('API key not valid');
-      if ((isDailyQuota || isInvalidKey) && i < apiKeys.length - 1) {
-        console.warn(`[/api/gemini-embed] Key ${i + 1}/${apiKeys.length} ${isInvalidKey ? 'invalid/expired' : 'daily quota exhausted'}, trying next...`);
-        continue;
-      }
-      break;
     }
-  }
 
-  res.status(500).json({ error: lastError?.message ?? 'Internal server error' });
+    const modelInstance = vertexAIInstance.getGenerativeModel({ 
+      model: model || 'text-embedding-004' 
+    });
+    
+    // Vertex AI expectation: array of content parts
+    const result = await modelInstance.embedContent({
+      content: { role: 'user', parts: contents as any[] }
+    });
+    
+    return res.status(200).json({ embeddings: result.embeddings[0] });
+  } catch (error: any) {
+    console.error('[/api/gemini-embed] Error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
 }

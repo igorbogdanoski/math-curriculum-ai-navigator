@@ -3,6 +3,8 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, isSupported } from 'firebase/messaging';
+import { getVertexAI } from 'firebase/vertexai';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,6 +18,17 @@ const firebaseConfig = {
 // Иницијализација на апликацијата
 export const app = initializeApp(firebaseConfig);
 
+// Иницијализација на App Check (Само на клиентска страна)
+if (typeof window !== 'undefined') {
+  const reCaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  if (reCaptchaKey) {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(reCaptchaKey),
+      isTokenAutoRefreshEnabled: true
+    });
+  }
+}
+
 // Иницијализација на сервисите
 // Овозможуваме ignoreUndefinedProperties за постабилна синхронизација
 export const db = initializeFirestore(app, {
@@ -28,6 +41,7 @@ export const db = initializeFirestore(app, {
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
+export const ai = getVertexAI(app);
 
 export default app;
 
