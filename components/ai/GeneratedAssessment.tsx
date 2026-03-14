@@ -545,6 +545,17 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
             )}
 
             <div className="print:hidden">
+                {material.illustrationUrl && (
+                    <div className="mb-8 rounded-2xl overflow-hidden border-2 border-gray-100 shadow-sm bg-white">
+                        <img src={material.illustrationUrl} alt="Контекстуална илустрација" className="w-full h-auto max-h-80 object-cover" />
+                        <div className="p-3 bg-gray-50 flex items-center justify-between border-t border-gray-100">
+                            <span className="text-xs text-gray-500 italic flex items-center gap-2">
+                                <ICONS.sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                AI Генерирана контекстуална илустрација
+                            </span>
+                        </div>
+                    </div>
+                )}
                 <QuestionList
                     questions={currentQuestions}
                     isEditing={isEditing}

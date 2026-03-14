@@ -91,7 +91,7 @@ export const AnnualPlanGeneratorView: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [plan, setPlan] = useState<AIGeneratedAnnualPlan | null>(null);
 
-    const { user } = useAuth();
+    const { user, updateLocalProfile } = useAuth();
     const printRef = useRef<HTMLDivElement>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [savedId, setSavedId] = useState<string | null>(null);
@@ -143,6 +143,17 @@ export const AnnualPlanGeneratorView: React.FC = () => {
 
 
     const handleGenerate = async () => {
+        const cost = 10; // AI_COSTS.ANNUAL_PLAN
+        
+        if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+            if ((user.aiCreditsBalance || 0) < cost) {
+                window.dispatchEvent(new CustomEvent('openUpgradeModal', { 
+                    detail: { reason: `Останавте без AI кредити! Генерирањето на годишна програма чини ${cost} кредити. Надградете на Pro пакет.` }
+                }));
+                return;
+            }
+        }
+
         setIsGenerating(true);
         try {
             // Extract curriculum data to inject into prompt
@@ -164,8 +175,23 @@ export const AnnualPlanGeneratorView: React.FC = () => {
             }
 
             if (geminiService.generateAnnualPlan) {
-                const generated = await geminiService.generateAnnualPlan(gradeName, subject, weeks, curriculumContext);
+                const generated = await geminiService.generateAnnualPlan(gradeName, subject, weeks, curriculumContext, user || undefined);
                 setPlan(generated);
+                
+                // Deduct credits
+                if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+                    try {
+                        const { getFunctions, httpsCallable } = await import('firebase/functions');
+                        const { app } = await import('../firebaseConfig');
+                        const functions = getFunctions(app);
+                        const deductFn = httpsCallable(functions, 'deductCredits');
+                        await deductFn({ amount: cost });
+                        // Update local state
+                        updateLocalProfile({ aiCreditsBalance: (user.aiCreditsBalance || 0) - cost });
+                    } catch (err) {
+                        console.error("Error deducting credits:", err);
+                    }
+                }
             } else {
                 console.warn("geminiService.generateAnnualPlan is not implemented yet!");
                 // Mock for now so UI works

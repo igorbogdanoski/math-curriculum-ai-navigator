@@ -33,7 +33,7 @@ async *getChatResponseStream(history: ChatMessage[], profile?: TeachingProfile, 
     });
   },
 
-async generateIllustration(prompt: string, image?: { base64: string, mimeType: string }): Promise<AIGeneratedIllustration> {
+async generateIllustration(prompt: string, image?: { base64: string, mimeType: string }, profile?: TeachingProfile): Promise<AIGeneratedIllustration> {
     const response = await callImagenProxy({ 
         model: IMAGEN_MODEL, 
         prompt: prompt
@@ -62,10 +62,10 @@ async generateLearningPaths(context: GenerationContext, studentProfiles: Student
 ${vertProgText}
 ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, paths: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { profileName: { type: Type.STRING }, steps: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { stepNumber: { type: Type.INTEGER }, activity: { type: Type.STRING }, type: { type: Type.STRING } }, required: ["stepNumber", "activity"] } } }, required: ["profileName", "steps"] } } }, required: ["title", "paths"] };
-    return generateAndParseJSON<AIGeneratedLearningPaths>([{ text: prompt }, { text: JSON.stringify(minifyContext(context)) }], schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, MAX_RETRIES, false);
+    return generateAndParseJSON<AIGeneratedLearningPaths>([{ text: prompt }, { text: JSON.stringify(minifyContext(context)) }], schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, MAX_RETRIES, false, undefined, profile?.tier);
   },
 
-async generateAnalogy(concept: Concept, gradeLevel: number): Promise<string> {
+async generateAnalogy(concept: Concept, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
     const cacheKey = `analogy_${concept.id}_g${gradeLevel}`;
     try {
         const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
@@ -77,7 +77,8 @@ async generateAnalogy(concept: Concept, gradeLevel: number): Promise<string> {
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 
         systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
-        safetySettings: SAFETY_SETTINGS 
+        safetySettings: SAFETY_SETTINGS,
+        userTier: profile?.tier
     });
     const text = response.text || "";
     await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: text, type: 'analogy', conceptId: concept.id, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
@@ -227,7 +228,7 @@ async diagnoseMisconception(question: string, correctAnswer: string, studentAnsw
     }
   },
 
-async explainSpecificStep(problem: string, stepExplanation: string, stepExpression: string): Promise<string> {
+async explainSpecificStep(problem: string, stepExplanation: string, stepExpression: string, profile?: TeachingProfile): Promise<string> {
     const prompt = `
       Како наставник по математика, објасни му на ученик ЗОШТО го направивме овој чекор во контекст на задачата.
       Задача: ${problem}
@@ -238,7 +239,8 @@ async explainSpecificStep(problem: string, stepExplanation: string, stepExpressi
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 
         systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
-        safetySettings: SAFETY_SETTINGS 
+        safetySettings: SAFETY_SETTINGS,
+        userTier: profile?.tier
     });
     return response.text || "";
   },
@@ -259,7 +261,7 @@ async generateRubric(gradeLevel: number, activityTitle: string, activityType: st
     return generateAndParseJSON<AIGeneratedRubric>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedRubricSchema);
   },
 
-async generatePresentationOutline(concept: Concept, gradeLevel: number): Promise<string> {
+async generatePresentationOutline(concept: Concept, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
     const cacheKey = `outline_${concept.id}_g${gradeLevel}`;
     const cached = await getCached<string>(cacheKey);
     if (cached) return cached;
@@ -269,7 +271,8 @@ async generatePresentationOutline(concept: Concept, gradeLevel: number): Promise
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 
         systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
-        safetySettings: SAFETY_SETTINGS 
+        safetySettings: SAFETY_SETTINGS,
+        userTier: profile?.tier
     });
     const text = response.text || "";
     await setCached(cacheKey, text, { type: 'outline', conceptId: concept.id, gradeLevel });
@@ -304,7 +307,8 @@ async enhanceText(textToEnhance: string, action: string, fieldType: string, grad
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 
         systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
-        safetySettings: SAFETY_SETTINGS 
+        safetySettings: SAFETY_SETTINGS,
+        userTier: profile?.tier
     });
     return response.text || "";
   },
@@ -346,7 +350,7 @@ async analyzeConceptPedagogically(concept: Concept, priorTitles: string[], futur
       },
       required: ['bloomLevel', 'bloomDetails', 'misconceptions', 'pedagogicalBridge', 'diagnosticQuestion'],
     };
-    return generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false);
+    return generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, (assessmentAPI as any)._tier);
   },
 
 async analyzeLessonPlan(plan: Partial<LessonPlan>, profile?: TeachingProfile): Promise<AIPedagogicalAnalysis> {
@@ -1046,6 +1050,8 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
       undefined,
       MAX_RETRIES,
       false,
+      undefined,
+      profile?.tier
     );
   },
 
@@ -1054,6 +1060,7 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
     gradeLevel: number,
     percentage: number,
     misconceptions?: { question: string; studentAnswer: string; misconception: string }[],
+    profile?: TeachingProfile,
   ): Promise<AdaptiveHomework> {
     checkDailyQuotaGuard();
 
@@ -1120,11 +1127,13 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
       undefined,
       MAX_RETRIES,
       false,
+      undefined,
+      profile?.tier
     );
   },
 
-  async generatePresentation(topic: string, gradeLevel: number, concepts: string[], customInstruction?: string): Promise<AIGeneratedPresentation> {
+  async generatePresentation(topic: string, gradeLevel: number, concepts: string[], customInstruction?: string, profile?: TeachingProfile): Promise<AIGeneratedPresentation> {
     checkDailyQuotaGuard();
-    return plansAPI.generatePresentation(topic, gradeLevel, concepts, customInstruction);
+    return plansAPI.generatePresentation(topic, gradeLevel, concepts, customInstruction, profile);
   }
 };

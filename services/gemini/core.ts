@@ -47,11 +47,23 @@ import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
-export const DEFAULT_MODEL = 'gemini-2.5-flash';
-export const PRO_MODEL = 'gemini-3.1-pro-preview';
+export const DEFAULT_MODEL = 'gemini-1.5-flash';
+export const PRO_MODEL = 'gemini-1.5-pro-002'; // Or gemini-1.5-pro
+export const ULTIMATE_MODEL = 'gemini-3.1-pro-preview';
 export const IMAGEN_MODEL = 'imagen-3';
 export const MAX_RETRIES = 2;
 export const GENERATION_TIMEOUT_MS = 60_000; // 60 seconds for 3.1 Pro
+
+// --- CREDIT COSTS ---
+export const AI_COSTS = {
+    TEXT_BASIC: 1,      // Quiz, assessment, worked example, ideas
+    ILLUSTRATION: 5,   // Contextual AI Illustrations (Imagen)
+    PRESENTATION: 10,  // Math Gamma Presentations (PRO)
+    BULK: 5,           // Bulk generation of multiple materials
+    LEARNING_PATH: 3,  // Complex multi-step learning paths
+    VARIANTS: 3,       // 3 levels of differentiation
+    ANNUAL_PLAN: 10    // Full year curriculum planning
+};
 
 // Initialize the Generative AI with the API Key from environment
 // VITE_ prefix is used for client-side access, but for security, 
@@ -305,10 +317,22 @@ export async function callGeminiProxy(params: {
   generationConfig?: any;
   systemInstruction?: string;
   safetySettings?: any;
+  userTier?: string; // Optional user tier
 }, signal?: AbortSignal): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
       const token = await getAuthToken();
+      
+      // Select model based on user tier if tier is provided
+      let modelToUse = params.model;
+      if (params.userTier === 'Pro' || params.userTier === 'Unlimited') {
+          modelToUse = ULTIMATE_MODEL;
+      } else if (params.userTier === 'Standard') {
+          modelToUse = PRO_MODEL;
+      } else {
+          modelToUse = DEFAULT_MODEL;
+      }
+
       const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: {
@@ -316,7 +340,7 @@ export async function callGeminiProxy(params: {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          model: params.model.includes('pro') ? PRO_MODEL : DEFAULT_MODEL,
+          model: modelToUse,
           contents: normalizeContents(params.contents),
           config: {
             systemInstruction: params.systemInstruction,
@@ -413,8 +437,20 @@ export async function* streamGeminiProxy(params: {
   generationConfig?: any;
   systemInstruction?: string;
   safetySettings?: any;
+  userTier?: string;
 }): AsyncGenerator<string, void, unknown> {
   const token = await getAuthToken();
+
+  // Select model based on user tier
+  let modelToUse = params.model;
+  if (params.userTier === 'Pro' || params.userTier === 'Unlimited') {
+      modelToUse = ULTIMATE_MODEL;
+  } else if (params.userTier === 'Standard') {
+      modelToUse = PRO_MODEL;
+  } else {
+      modelToUse = DEFAULT_MODEL;
+  }
+
   const response = await fetch('/api/gemini-stream', {
     method: 'POST',
     headers: {
@@ -422,7 +458,7 @@ export async function* streamGeminiProxy(params: {
       'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify({
-      model: params.model.includes('pro') ? PRO_MODEL : DEFAULT_MODEL,
+      model: modelToUse,
       contents: normalizeContents(params.contents),
       config: {
         systemInstruction: params.systemInstruction,
@@ -621,7 +657,7 @@ export const SAFETY_SETTINGS: SafetySetting[] = [
 ];
 
 // --- CORE JSON HELPER ---
-export async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false, customSystemInstruction?: string): Promise<T> {
+export async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false, customSystemInstruction?: string, userTier?: string): Promise<T> {
     const activeModel = useThinking ? 'gemini-3.1-pro' : model;
     const _controller = new AbortController();
     const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
@@ -653,7 +689,8 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
         contents: enrichedContents,
         generationConfig,
         systemInstruction: customSystemInstruction || JSON_SYSTEM_INSTRUCTION,
-      safetySettings: SAFETY_SETTINGS
+        safetySettings: SAFETY_SETTINGS,
+        userTier
     }, _controller.signal);
 
     // responseMimeType guarantees clean JSON for the standard model.

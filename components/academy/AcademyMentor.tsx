@@ -3,6 +3,7 @@ import { MessageSquare, Send, X, Bot, Loader2, Sparkles } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
 import { callGeminiProxy } from '../../services/gemini/core';
 import { useAcademyProgress } from '../../contexts/AcademyProgressContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -10,6 +11,7 @@ interface Message {
 }
 
 export const AcademyMentor: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -59,7 +61,8 @@ export const AcademyMentor: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) =
       const response = await callGeminiProxy({
         model: 'gemini-1.5-flash',
         contents,
-        systemInstruction: systemPrompt
+        systemInstruction: systemPrompt,
+        userTier: user?.tier
       });
 
       if (response && response.text) {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
+import { AI_COSTS } from '../services/gemini/core';
 import { RateLimitError } from '../services/apiErrors';
 import type { AIGeneratedAssessment, GenerationContext, TeachingProfile } from '../types';
 import type { GeneratorState } from './useGeneratorState';
@@ -44,10 +45,11 @@ export function useVariantGenerate({
     if (isGeneratingVariants || isGenerateDisabled) return;
     if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
 
+    const cost = AI_COSTS.VARIANTS;
     // Upfront credit gate (cost: 3 credits for variants)
     if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
-      if ((user.aiCreditsBalance ?? 0) < 3) {
-        openUpgradeModal?.('Останавте без AI кредити! Варијантите чинат 3 кредити. Надградете на Pro за неограничено генерирање.');
+      if ((user.aiCreditsBalance ?? 0) < cost) {
+        openUpgradeModal?.(`Останавте без AI кредити! Варијантите чинат ${cost} кредити. Надградете на Pro за неограничено генерирање.`);
         return;
       }
     }
@@ -83,9 +85,9 @@ export function useVariantGenerate({
     }
     if (!quotaHit && Object.keys(newVariants).length > 0) {
       setVariants(newVariants as Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>);        
-        // Deduct 3 credits for variants generation if deductCredits is provided
+        // Deduct credits for variants generation if deductCredits is provided
         if (typeof deductCredits === 'function') {
-            await deductCredits(3);
+            await deductCredits(cost);
         }    } else if (!quotaHit) {
       addNotification('Не можеше да се генерираат варијантите. Обидете се повторно.', 'error');
     }

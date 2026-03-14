@@ -136,6 +136,28 @@ const ScenarioOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispatch'>
                 </select>
             </div>
         </div>
+        
+        {/* А1: Contextual Illustrations toggle */}
+        <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                    <ICONS.gallery className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                    <h4 className="text-sm font-bold text-gray-800">Вклучи AI илустрација</h4>
+                    <p className="text-xs text-gray-500">Генерирај контекстуална слика за наставниот план (Imagen 3)</p>
+                </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                    type="checkbox" 
+                    className="sr-only peer"
+                    checked={state.includeIllustration}
+                    onChange={(e) => dispatch({ type: 'SET_FIELD', payload: { field: 'includeIllustration', value: e.target.checked } })}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+        </div>
     </div>
 );
 
@@ -192,6 +214,28 @@ const AssessmentOptions: React.FC<MaterialOptionsProps> = ({ state, dispatch, us
                             <input id="numQuestions" type="number" value={state.numQuestions} onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'numQuestions', value: Math.max(1, parseInt(e.target.value) || 1)}})} min="1" max="20" className="w-20 p-3 text-center border-2 font-bold border-gray-200 rounded-xl bg-white focus:ring-0 focus:border-brand-primary outline-none transition-all shadow-sm" />
                         </div>
                     </div>
+                </div>
+
+                {/* А1: Contextual Illustrations toggle */}
+                <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-50 rounded-lg">
+                            <ICONS.gallery className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-gray-800">Вклучи AI илустрација</h4>
+                            <p className="text-xs text-gray-500">Генерирај контекстуална слика за работниот лист (Imagen 3)</p>
+                        </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            className="sr-only peer"
+                            checked={state.includeIllustration}
+                            onChange={(e) => dispatch({ type: 'SET_FIELD', payload: { field: 'includeIllustration', value: e.target.checked } })}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
                 </div>
             </div>
 

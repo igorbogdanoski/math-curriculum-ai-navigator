@@ -13,7 +13,7 @@ async generatePracticeMaterials(concept: Concept, gradeLevel: number, materialTy
     const task = materialType === 'problems' ? 'quiz with 5 multiple-choice problems' : 'discussion guide with 5 questions';
     const prompt = `Create a ${task} for "${concept.title}" (${gradeLevel} od.). Врати JSON: { "title": "...", "items": [{"type": "multiple-choice", "text": "...", "answer": "...", "solution": "...", "options": ["...", "..."]}] }`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, items: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, text: { type: Type.STRING }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ["text", "answer"] } } }, required: ["title", "items"] };
-    const result = await generateAndParseJSON<AIGeneratedPracticeMaterial>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedPracticeMaterialSchema);
+    const result = await generateAndParseJSON<AIGeneratedPracticeMaterial>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedPracticeMaterialSchema, undefined, undefined, undefined, (assessmentAPI as any)._tier);
     await setCached(cacheKey, result, { type: typeKey, conceptId: concept.id, gradeLevel });
     return result;
   },
@@ -73,7 +73,8 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
         AIGeneratedAssessmentSchema, 
         MAX_RETRIES, 
         false, 
-        systemInstr
+        systemInstr,
+        profile?.tier
     );
     
     if (canCache && cacheKey) {

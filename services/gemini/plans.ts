@@ -78,7 +78,7 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id);
     // Use high-quality model for better pedagogical reasoning
-    const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr);
+    const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
     await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'ideas', conceptId, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return result;
   },
@@ -180,10 +180,10 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
       const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, context.concepts?.[0]?.id, context.topic?.id);
       
       // Use Thinking model for high-quality pedagogical planning
-      return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr);
+      return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   },
 
-async generateAnnualPlan(grade: Grade, startDate: string, endDate: string, holidays: string, winterBreak: {start: string, end: string}): Promise<Omit<PlannerItem, 'id'>[]> {
+async generateAnnualPlan(grade: Grade, startDate: string, endDate: string, holidays: string, winterBreak: {start: string, end: string}, profile?: TeachingProfile): Promise<Omit<PlannerItem, 'id'>[]> {
       const prompt = `
 ### УЛОГА
 Ти си врвен стратешки планер во образованието. Твоја задача е да креираш ГОДИШЕН ПЛАН за наставата по математика.
@@ -217,10 +217,10 @@ async generateAnnualPlan(grade: Grade, startDate: string, endDate: string, holid
           } 
       };
       // Use Thinking model for complex calendar and curriculum alignment
-      return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{ text: prompt }, { text: `Датуми: ${startDate} до ${endDate}` }], schema, DEFAULT_MODEL, AnnualPlanSchema, MAX_RETRIES, true);
+      return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{ text: prompt }, { text: `Датуми: ${startDate} до ${endDate}` }], schema, DEFAULT_MODEL, AnnualPlanSchema, MAX_RETRIES, true, undefined, profile?.tier);
   },
 
-async generateThematicPlan(grade: Grade, topic: Topic): Promise<AIGeneratedThematicPlan> {
+async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile): Promise<AIGeneratedThematicPlan> {
       const cacheKey = `thematic_${topic.id}_g${grade.level}`;
       try {
           const cached = await getCached<AIGeneratedThematicPlan>(cacheKey);
@@ -273,7 +273,7 @@ async generateThematicPlan(grade: Grade, topic: Topic): Promise<AIGeneratedThema
       
       const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, grade.level, undefined, topic.id);
       // Use Thinking model for structural curriculum mapping
-      const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema, MAX_RETRIES, true, systemInstr);
+      const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
       await setCached(cacheKey, result, { type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id });
       return result;
     } catch (error) {
@@ -282,7 +282,7 @@ async generateThematicPlan(grade: Grade, topic: Topic): Promise<AIGeneratedThema
     }
   },
 
-  async regenerateLessonPlanSection(section: 'introductory' | 'main' | 'concluding', currentPlan: Partial<LessonPlan>, customInstruction?: string): Promise<any> {
+  async regenerateLessonPlanSection(section: 'introductory' | 'main' | 'concluding', currentPlan: Partial<LessonPlan>, customInstruction?: string, profile?: TeachingProfile): Promise<any> {
     const sectionNames = {
         introductory: 'Воведна активност',
         main: 'Главни активности',
@@ -315,10 +315,10 @@ ${customInstruction ? `ДОПОЛНИТЕЛНО БАРАЊЕ: ${customInstructio
     const contents: Part[] = [{ text: prompt }];
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, currentPlan.grade);
     
-    return generateAndParseJSON<any>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr);
+    return generateAndParseJSON<any>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   },
 
-  async generatePresentation(topic: string, gradeLevel: number, concepts: string[], customInstruction?: string): Promise<any> {
+  async generatePresentation(topic: string, gradeLevel: number, concepts: string[], customInstruction?: string, profile?: TeachingProfile): Promise<any> {
     const prompt = `
 ### УЛОГА
 Ти си експерт за дизајн на едукативни презентации по математика. Твоја задача е да креираш преглед на слајдови за наставен час.
@@ -371,6 +371,6 @@ ${customInstruction ? `- Дополнителни барања: ${customInstruct
       required: ["title", "topic", "gradeLevel", "slides"]
     };
 
-    return generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true);
+    return generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, undefined, profile?.tier);
   }
 };

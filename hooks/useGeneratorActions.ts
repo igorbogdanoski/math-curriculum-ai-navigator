@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
+import { AI_COSTS } from '../services/gemini/core';
 import { RateLimitError } from '../services/apiErrors';
 import { firestoreService } from '../services/firestoreService';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -501,10 +502,11 @@ export function useGeneratorActions({
     if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
     if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
 
+    const cost = AI_COSTS.BULK;
     // Upfront credit gate (cost: 5 credits for bulk)
     if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
-      if ((user.aiCreditsBalance ?? 0) < 5) {
-        openUpgradeModal?.('Останавте без AI кредити! Пакетот чини 5 кредити. Надградете на Pro за неограничено генерирање.');
+      if ((user.aiCreditsBalance ?? 0) < cost) {
+        openUpgradeModal?.(`Останавте без AI кредити! Пакетот чини ${cost} кредити. Надградете на Pro за неограничено генерирање.`);
         return;
       }
     }
@@ -556,9 +558,9 @@ export function useGeneratorActions({
     setBulkStep(null);
     setIsGeneratingBulk(false);
       
-      // Deduct 5 credits for bulk generation
+      // Deduct credits for bulk generation
       if (typeof deductCredits === 'function' && Object.keys(acc).length > 0) {
-          await deductCredits(5);
+          await deductCredits(cost);
       }
   };
 
@@ -567,10 +569,21 @@ export function useGeneratorActions({
     if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
     if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
 
+    const { materialType, includeIllustration } = state;
+    let cost = AI_COSTS.TEXT_BASIC;
+    if (materialType === 'ILLUSTRATION') cost = AI_COSTS.ILLUSTRATION;
+    else if (materialType === 'PRESENTATION') cost = AI_COSTS.PRESENTATION;
+    else if (materialType === 'LEARNING_PATH') cost = AI_COSTS.LEARNING_PATH;
+    
+    // If user wants an illustration with their material, add its cost
+    if (includeIllustration && materialType !== 'ILLUSTRATION') {
+        cost += AI_COSTS.ILLUSTRATION;
+    }
+
     // Upfront credit gate — check before calling AI
     if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
-      if ((user.aiCreditsBalance ?? 0) < 1) {
-        openUpgradeModal?.('Останавте без AI кредити! Надградете на Pro пакет за неограничено генерирање.');
+      if ((user.aiCreditsBalance ?? 0) < cost) {
+        openUpgradeModal?.(`Останавте без AI кредити! Оваа опција чини ${cost} кредити. Надградете на Pro пакет за неограничено генерирање.`);
         return;
       }
     }
@@ -579,7 +592,7 @@ export function useGeneratorActions({
     const { context: finalContext, imageParam, studentProfilesToPass, tempActivityTitle } = built;
     const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
     const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
-    const { materialType, questionTypes, numQuestions, differentiationLevel, exitTicketQuestions, exitTicketFocus, activityType, criteriaHints, includeSelfAssessment, activityFocus, scenarioTone, learningDesignModel } = state;
+    const { questionTypes, numQuestions, differentiationLevel, exitTicketQuestions, exitTicketFocus, activityType, criteriaHints, includeSelfAssessment, activityFocus, scenarioTone, learningDesignModel } = state;
 
     setIsLoading(true);
     setGeneratedMaterial(null);
@@ -593,7 +606,7 @@ export function useGeneratorActions({
           setIsLoading(false);
           return;
         }
-        const res = await geminiService.generateIllustration(state.illustrationPrompt, imageParam);
+        const res = await geminiService.generateIllustration(state.illustrationPrompt, imageParam, user ?? undefined);
         result = { ...res, prompt: state.illustrationPrompt };
       } else if (materialType === 'LEARNING_PATH') {
         if (!studentProfilesToPass || studentProfilesToPass.length === 0) {
@@ -641,14 +654,40 @@ export function useGeneratorActions({
               finalContext.topic.title, 
               finalContext.grade?.level ?? 1, 
               finalContext.concepts?.map(c => c.title) || [], 
-              effectiveInstruction
+              effectiveInstruction,
+              user ?? undefined
             );
             break;
         }
       }
 
       if (deductCredits && result) {
-          await deductCredits(1);
+          await deductCredits(cost);
+      }
+
+      // If user requested an illustration to be included with the material
+      if (includeIllustration && result && materialType !== 'ILLUSTRATION') {
+          try {
+              let illustrationPrompt = "";
+              const contextTitle = finalContext.concepts?.[0]?.title || finalContext.topic?.title || "Математика";
+              const gradeLevel = finalContext.grade?.level || 1;
+              
+              if (materialType === 'SCENARIO') {
+                  illustrationPrompt = `Креативен визуелен приказ за наставен час по математика на тема "${contextTitle}" за ${gradeLevel}. одделение.`;
+              } else if (materialType === 'ASSESSMENT' || materialType === 'QUIZ') {
+                  illustrationPrompt = `Илустрација за работен лист или квиз по математика за "${contextTitle}" (${gradeLevel}. одд).`;
+              } else {
+                  illustrationPrompt = `Визуелен приказ за ${contextTitle} (${gradeLevel}. одд).`;
+              }
+
+              const illRes = await geminiService.generateIllustration(illustrationPrompt, undefined, user ?? undefined);
+              if (illRes && illRes.imageUrl) {
+                  (result as any).illustrationUrl = illRes.imageUrl;
+              }
+          } catch (illErr) {
+              console.warn("Failed to generate contextual illustration:", illErr);
+              // Non-fatal, we already have the main result
+          }
       }
 
       setGeneratedMaterial(result);

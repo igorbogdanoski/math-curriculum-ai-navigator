@@ -20,7 +20,8 @@ export interface GeneratorState {
     numQuestions: number;
     questionTypes: QuestionType[];
     includeSelfAssessment: boolean;
-  includeWorkedExamples?: boolean;
+    includeIllustration: boolean;
+    includeWorkedExamples?: boolean;
     bloomDistribution: BloomDistribution;
     useStudentProfiles: boolean;
     selectedStudentProfileIds: string[];
@@ -69,6 +70,7 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         numQuestions: 5,
         questionTypes: [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER, QuestionType.TRUE_FALSE],
         includeSelfAssessment: false,
+        includeIllustration: false,
         includeWorkedExamples: false,
         bloomDistribution: {},
         useStudentProfiles: false,

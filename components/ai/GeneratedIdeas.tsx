@@ -281,6 +281,17 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                 <p className="text-red-500">{material.error}</p>
             ) : (
                 <div className="prose prose-sm max-w-none">
+                    {material.illustrationUrl && (
+                        <div className="mb-8 rounded-2xl overflow-hidden border-2 border-gray-100 shadow-sm bg-white">
+                            <img src={material.illustrationUrl} alt="Контекстуална илустрација" className="w-full h-auto max-h-96 object-cover" />
+                            <div className="p-3 bg-gray-50 flex items-center justify-between">
+                                <span className="text-xs text-gray-500 italic flex items-center gap-2">
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                    AI Генерирана контекстуална илустрација
+                                </span>
+                            </div>
+                        </div>
+                    )}
                     <IdeaSection 
                         icon={ICONS.sparkles} 
                         title="Воведна активност" 

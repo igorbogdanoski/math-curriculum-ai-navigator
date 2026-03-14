@@ -323,6 +323,7 @@ export interface AIGeneratedAssessment {
   type: 'TEST' | 'WORKSHEET' | 'QUIZ' | 'FLASHCARDS';
   questions: AssessmentQuestion[];
   selfAssessmentQuestions?: string[];
+  illustrationUrl?: string; // AI Generated Contextual Illustration
   error?: string;
   levelDescription?: string;
   differentiationLevel?: DifferentiationLevel;
@@ -349,6 +350,7 @@ export interface AIGeneratedIdeas {
   assessmentIdea: string;
   assessmentStandards?: string[];
   concepts?: string[];
+  illustrationUrl?: string; // AI Generated Contextual Illustration
   error?: string;
   levelDescription?: string;
   generationContext?: GenerationContext;
