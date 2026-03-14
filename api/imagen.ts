@@ -35,8 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const apiKey = apiKeys[i];
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      // Use the provided model or fallback to imagen-3
-      const modelName = model === 'imagen-3-fast' ? 'imagen-3-fast' : 'imagen-3';
+      // Use the provided model or fallback to imagen-3.0-generate-001
+      const modelName = model || 'imagen-3.0-generate-001';
       const modelInstance = genAI.getGenerativeModel({ model: modelName });
       
       const result = await modelInstance.generateContent(prompt);

@@ -50,7 +50,7 @@ export const CACHE_COLLECTION = 'cached_ai_materials';
 export const DEFAULT_MODEL = 'gemini-1.5-flash';
 export const PRO_MODEL = 'gemini-1.5-pro-002'; // Or gemini-1.5-pro
 export const ULTIMATE_MODEL = 'gemini-3.1-pro-preview';
-export const IMAGEN_MODEL = 'imagen-3';
+export const IMAGEN_MODEL = 'imagen-3.0-generate-001';
 export const MAX_RETRIES = 2;
 export const GENERATION_TIMEOUT_MS = 60_000; // 60 seconds for 3.1 Pro
 
