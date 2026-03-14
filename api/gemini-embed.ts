@@ -39,7 +39,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     
     // Vertex AI expectation: array of content parts
-    const result = await modelInstance.embedContent({
+    // Cast to any to bypass TS error if the SDK version has a discrepancy in type definitions
+    const result = await (modelInstance as any).embedContent({
       content: { role: 'user', parts: contents as any[] }
     });
     
