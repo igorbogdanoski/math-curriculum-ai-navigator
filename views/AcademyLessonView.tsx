@@ -3,7 +3,7 @@ import { ArrowLeft, BookOpen, BrainCircuit, Rocket, Target, Wand2 } from 'lucide
 import { useNavigation } from '../contexts/NavigationContext';
 import { ACADEMY_CONTENT } from '../data/academy/content';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
-import { AppState } from '../types';
+import { GeneratorState } from '../hooks/useGeneratorState';
 import { AcademyMentor } from '../components/academy/AcademyMentor';
 import { AcademyQuiz } from '../components/academy/AcademyQuiz';
 import { useAcademyProgress } from '../contexts/AcademyProgressContext';
@@ -42,13 +42,13 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
 
   // Handle Dynamic Action Generation Logic
   const handleTryItOut = () => {
-    let statePayload: Partial<AppState> = {};
+    let statePayload: Partial<GeneratorState> = {};
     if (lesson.type === 'model') {
       statePayload.learningDesignModel = lesson.generatorKey;
     } else if (lesson.type === 'tone') {
       statePayload.scenarioTone = lesson.generatorKey;
     } else if (lesson.type === 'focus') {
-      statePayload.focus = lesson.generatorKey;
+      statePayload.activityFocus = lesson.generatorKey;
     }
     
     openGeneratorPanel(statePayload);

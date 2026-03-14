@@ -199,6 +199,7 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
       progress,
       markLessonAsRead,
       markLessonAsApplied,
+      markQuizAsCompleted,
       saveReflection,
       addXp,
       getCompletionPercentage,

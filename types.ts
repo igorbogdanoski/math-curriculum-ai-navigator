@@ -69,7 +69,21 @@ export enum PlannerItemType {
   HOLIDAY = 'HOLIDAY',
 }
 
-export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH' | 'WORKED_EXAMPLE';
+export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH' | 'WORKED_EXAMPLE' | 'PRESENTATION';
+
+export interface PresentationSlide {
+  title: string;
+  content: string[];
+  visualPrompt?: string; // Prompt for Imagen if teacher wants a background/image
+  type: 'title' | 'content' | 'example' | 'task' | 'summary';
+}
+
+export interface AIGeneratedPresentation {
+  title: string;
+  topic: string;
+  gradeLevel: number;
+  slides: PresentationSlide[];
+}
 
 export interface WorkedExampleStep {
   phase: 'solved' | 'partial' | 'quiz';

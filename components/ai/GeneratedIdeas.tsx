@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
+import { Image as ImageIcon, Loader2, Sparkles } from 'lucide-react';
 import type { AIGeneratedIdeas, LessonPlan, Concept } from '../../types';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useNotification } from '../../contexts/NotificationContext';
+import { geminiService } from '../../services/geminiService';
 
 interface GeneratedIdeasProps {
   material: AIGeneratedIdeas;
@@ -16,13 +18,51 @@ const convertToStandardLatex = (text: string): string => {
     return text.replace(/\\\\/g, '\\');
 };
 
-const IdeaSection: React.FC<{icon: React.ComponentType<{className?: string}>, title: string, content: string}> = ({icon: Icon, title, content}) => (
-    <div className="mb-4">
-        <h4 className="text-lg font-semibold text-brand-secondary flex items-center mb-1">
-            <Icon className="w-5 h-5 mr-2" />
-            {title}
-        </h4>
-        <div className="text-gray-700 pl-7"><MathRenderer text={content} /></div>
+const IdeaSection: React.FC<{
+    icon: React.ComponentType<{className?: string}>, 
+    title: string, 
+    content: string,
+    onVisualize?: () => void,
+    isVisualizing?: boolean,
+    imageUrl?: string
+}> = ({icon: Icon, title, content, onVisualize, isVisualizing, imageUrl}) => (
+    <div className="mb-6 group">
+        <div className="flex items-center justify-between mb-2">
+            <h4 className="text-lg font-bold text-brand-secondary flex items-center">
+                <Icon className="w-5 h-5 mr-2" />
+                {title}
+            </h4>
+            {onVisualize && !imageUrl && (
+                <button
+                    onClick={onVisualize}
+                    disabled={isVisualizing}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-full border border-amber-200 text-xs font-bold hover:bg-amber-100 disabled:opacity-50 no-print"
+                >
+                    {isVisualizing ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                        <ImageIcon className="w-3.5 h-3.5" />
+                    )}
+                    Визуелизирај со AI
+                </button>
+            )}
+        </div>
+        
+        <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 text-gray-700 pl-7">
+                <MathRenderer text={content} />
+            </div>
+            {imageUrl && (
+                <div className="md:w-1/3 flex-shrink-0 animate-in fade-in zoom-in duration-500">
+                    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+                        <img src={imageUrl} alt={title} className="w-full h-auto object-cover" />
+                        <div className="p-2 bg-gray-50 text-[10px] text-gray-400 italic text-center">
+                            AI Генерирана илустрација
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     </div>
 );
 
@@ -31,7 +71,24 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
     const { navigate } = useNavigation();
     const { addNotification } = useNotification();
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [visualizations, setVisualizations] = useState<Record<string, { loading: boolean, url?: string }>>({});
     const exportMenuRef = useRef<HTMLDivElement>(null);
+
+    const handleVisualize = async (section: string, promptText: string) => {
+        setVisualizations(prev => ({ ...prev, [section]: { loading: true } }));
+        try {
+            const result = await geminiService.generateIllustration(`Educational math illustration for: ${promptText}. Professional, clean style.`);
+            setVisualizations(prev => ({ 
+                ...prev, 
+                [section]: { loading: false, url: result.imageUrl } 
+            }));
+            addNotification('Илустрацијата е успешно генерирана!', 'success');
+        } catch (error) {
+            console.error('Visualization error:', error);
+            setVisualizations(prev => ({ ...prev, [section]: { loading: false } }));
+            addNotification('Грешка при генерирање на илустрацијата.', 'error');
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -224,10 +281,38 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                 <p className="text-red-500">{material.error}</p>
             ) : (
                 <div className="prose prose-sm max-w-none">
-                    <IdeaSection icon={ICONS.sparkles} title="Воведна активност" content={material.openingActivity} />
-                    <IdeaSection icon={ICONS.bookOpen} title="Главна активност" content={Array.isArray(material.mainActivity) ? material.mainActivity.map(a => '- ' + a.text).join('\n') : String(material.mainActivity)} />
-                    <IdeaSection icon={ICONS.share} title="Диференцијација" content={material.differentiation} />
-                    <IdeaSection icon={ICONS.check} title="Идеја за оценување" content={material.assessmentIdea} />
+                    <IdeaSection 
+                        icon={ICONS.sparkles} 
+                        title="Воведна активност" 
+                        content={material.openingActivity} 
+                        onVisualize={() => handleVisualize('opening', material.openingActivity)}
+                        isVisualizing={visualizations['opening']?.loading}
+                        imageUrl={visualizations['opening']?.url}
+                    />
+                    <IdeaSection 
+                        icon={ICONS.bookOpen} 
+                        title="Главна активност" 
+                        content={Array.isArray(material.mainActivity) ? material.mainActivity.map(a => '- ' + a.text).join('\n') : String(material.mainActivity)} 
+                        onVisualize={() => handleVisualize('main', Array.isArray(material.mainActivity) ? material.mainActivity[0].text : String(material.mainActivity))}
+                        isVisualizing={visualizations['main']?.loading}
+                        imageUrl={visualizations['main']?.url}
+                    />
+                    <IdeaSection 
+                        icon={ICONS.share} 
+                        title="Диференцијација" 
+                        content={material.differentiation} 
+                        onVisualize={() => handleVisualize('differentiation', material.differentiation)}
+                        isVisualizing={visualizations['differentiation']?.loading}
+                        imageUrl={visualizations['differentiation']?.url}
+                    />
+                    <IdeaSection 
+                        icon={ICONS.check} 
+                        title="Идеја за оценување" 
+                        content={material.assessmentIdea} 
+                        onVisualize={() => handleVisualize('assessment', material.assessmentIdea)}
+                        isVisualizing={visualizations['assessment']?.loading}
+                        imageUrl={visualizations['assessment']?.url}
+                    />
                 </div>
             )}
              <div className="mt-4 flex flex-wrap gap-2 no-print">

@@ -316,5 +316,61 @@ ${customInstruction ? `ДОПОЛНИТЕЛНО БАРАЊЕ: ${customInstructio
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, currentPlan.grade);
     
     return generateAndParseJSON<any>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr);
+  },
+
+  async generatePresentation(topic: string, gradeLevel: number, concepts: string[], customInstruction?: string): Promise<any> {
+    const prompt = `
+### УЛОГА
+Ти си експерт за дизајн на едукативни презентации по математика. Твоја задача е да креираш преглед на слајдови за наставен час.
+
+### КОНТЕКСТ
+- Тема: ${topic}
+- Одделение: ${gradeLevel}
+- Клучни поими: ${concepts.join(', ')}
+${customInstruction ? `- Дополнителни барања: ${customInstruction}` : ''}
+
+### СТРУКТУРА НА ПРЕЗЕНТАЦИЈАТА
+1. Насловен слајд
+2. Цели на часот
+3. Вовед / Мотивација (со визуелна идеја)
+4. Разработка на концептот (2-3 слајдови)
+5. Практичен пример
+6. Задача за учениците
+7. Заклучок / Рефлексија
+
+### ФОРМАТ
+Врати JSON објект со слајдови. Секој слајд треба да има:
+- title: наслов на слајдот
+- content: низа од кратки точки (bullet points)
+- type: 'title', 'content', 'example', 'task', 'summary'
+- visualPrompt: краток опис на слика/дијаграм што би одел добро на слајдот (на англиски јазик за Imagen)
+
+Одговорите да бидат на македонски јазик.
+`;
+
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING },
+        topic: { type: Type.STRING },
+        gradeLevel: { type: Type.INTEGER },
+        slides: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              content: { type: Type.ARRAY, items: { type: Type.STRING } },
+              visualPrompt: { type: Type.STRING },
+              type: { type: Type.STRING, enum: ['title', 'content', 'example', 'task', 'summary'] }
+            },
+            required: ["title", "content", "type"]
+          }
+        }
+      },
+      required: ["title", "topic", "gradeLevel", "slides"]
+    };
+
+    return generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true);
   }
 };

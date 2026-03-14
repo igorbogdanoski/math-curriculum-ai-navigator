@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
@@ -8,6 +8,7 @@ import { FlashcardViewer } from './FlashcardViewer';
 import { QuizViewer } from './QuizViewer';
 import { shareService } from '../../services/shareService';
 import { useNotification } from '../../contexts/NotificationContext';
+import { geminiService } from '../../services/geminiService';
 
 const InteractiveQuizPlayer = React.lazy(() => import('./InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 
@@ -38,6 +39,25 @@ const QuestionList: React.FC<{
     handleOptionChange: (qIndex: number, optIndex: number, value: string) => void;
     onSaveQuestion?: (q: AssessmentQuestion) => void;
 }> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion }) => {
+    const { addNotification } = useNotification();
+    const [visualizations, setVisualizations] = useState<Record<number, { loading: boolean, url?: string }>>({});
+
+    const handleVisualize = async (idx: number, questionText: string) => {
+        setVisualizations(prev => ({ ...prev, [idx]: { loading: true } }));
+        try {
+            const result = await geminiService.generateIllustration(`Mathematical educational illustration for this problem: ${questionText}. Simple, clear, whiteboard style.`);
+            setVisualizations(prev => ({ 
+                ...prev, 
+                [idx]: { loading: false, url: result.imageUrl } 
+            }));
+            addNotification('Илустрацијата е успешно генерирана!', 'success');
+        } catch (error) {
+            console.error('Visualization error:', error);
+            setVisualizations(prev => ({ ...prev, [idx]: { loading: false } }));
+            addNotification('Грешка при генерирање на илустрацијата.', 'error');
+        }
+    };
+
     const questionTypeIcons: Record<string, React.ComponentType<{className?: string}>> = {
         MULTIPLE_CHOICE: ICONS.myLessons,
         SHORT_ANSWER: ICONS.edit,
@@ -51,8 +71,10 @@ const QuestionList: React.FC<{
             {questions?.map((q: AssessmentQuestion, index: number) => {
                 const Icon = questionTypeIcons[q.type] || ICONS.lightbulb;
                 const levelInfo = cognitiveLevelConfig[q.cognitiveLevel] || cognitiveLevelConfig['Understanding'];
+                const visual = visualizations[index];
+
                 return (
-                    <div key={q.id || index} className="mb-4 pb-4 border-b last:border-b-0">
+                    <div key={q.id || index} className="mb-8 pb-6 border-b last:border-b-0 group">
                         <div className="font-semibold flex items-start gap-2 mb-2">
                             <Icon className="w-4 h-4 text-brand-secondary mt-1 flex-shrink-0" />
                             <div className="flex-1">
@@ -64,83 +86,109 @@ const QuestionList: React.FC<{
                                         rows={2}
                                     />
                                 ) : (
-                                    <span>{index + 1}. <MathRenderer text={q.question} /></span>
+                                    <span className="text-lg text-gray-900">{index + 1}. <MathRenderer text={q.question} /></span>
                                 )}
                             </div>
-                            {onSaveQuestion && (
-                                <button
-                                    type="button"
-                                    onClick={() => onSaveQuestion(q)}
-                                    title="Зачувај во банка"
-                                    className="p-1 text-gray-300 hover:text-indigo-600 transition flex-shrink-0 no-print"
-                                >
-                                    <Bookmark className="w-4 h-4" />
-                                </button>
-                            )}
+                            <div className="flex items-center gap-1 flex-shrink-0 no-print">
+                                {!isEditing && !visual?.url && (
+                                    <button
+                                        onClick={() => handleVisualize(index, q.question)}
+                                        disabled={visual?.loading}
+                                        title="Визуелизирај со AI"
+                                        className="p-1.5 text-gray-300 hover:text-amber-600 transition opacity-0 group-hover:opacity-100"
+                                    >
+                                        {visual?.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                                    </button>
+                                )}
+                                {onSaveQuestion && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onSaveQuestion(q)}
+                                        title="Зачувај во банка"
+                                        className="p-1.5 text-gray-300 hover:text-indigo-600 transition flex-shrink-0"
+                                    >
+                                        <Bookmark className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         
-                        <div className="ml-8 mt-1 space-y-2">
-                            {q.type === 'MULTIPLE_CHOICE' && q.options && (
-                                <ul className={`list-['A)_'] list-inside space-y-2`}>
-                                    {q.options.map((opt: string, i: number) => (
-                                        <li key={i} className="flex items-center">
-                                            {isEditing ? (
-                                                <input
-                                                    type="text"
-                                                    value={opt}
-                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOptionChange(index, i, e.target.value)}
-                                                    className="w-full text-sm p-1 border-b"
-                                                />
-                                            ) : (
-                                                <MathRenderer text={opt} />
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                             {(q.type === 'SHORT_ANSWER' || q.type === 'FILL_IN_THE_BLANK' || q.type === 'ESSAY') && !isEditing && (
-                                <div className="h-16 border-b-2 border-dotted border-gray-400"></div>
-                            )}
-                            <div className={`p-2 rounded-md mt-2 no-print ${isEditing ? 'bg-gray-50' : 'bg-gray-100'}`}>
-                                <span className="font-semibold text-sm">Точен одговор:</span>
+                        <div className="flex flex-col md:flex-row gap-6 ml-8">
+                            <div className="flex-1">
+                                {q.type === 'MULTIPLE_CHOICE' && q.options && (
+                                    <ul className={`list-['A)_'] list-inside space-y-2`}>
+                                        {q.options.map((opt: string, i: number) => (
+                                            <li key={i} className="flex items-center text-gray-700">
+                                                {isEditing ? (
+                                                    <input
+                                                        type="text"
+                                                        value={opt}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOptionChange(index, i, e.target.value)}
+                                                        className="w-full text-sm p-1 border-b"
+                                                    />
+                                                ) : (
+                                                    <MathRenderer text={opt} />
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                 {(q.type === 'SHORT_ANSWER' || q.type === 'FILL_IN_THE_BLANK' || q.type === 'ESSAY') && !isEditing && (
+                                    <div className="h-16 border-b-2 border-dotted border-gray-400"></div>
+                                )}
+                                
+                                <div className={`p-2 rounded-md mt-4 no-print ${isEditing ? 'bg-gray-50' : 'bg-gray-100/50 border border-gray-100'}`}>
+                                    <span className="font-bold text-xs uppercase tracking-wider text-gray-500 block mb-1">Точен одговор:</span>
+                                    {isEditing ? (
+                                        <input 
+                                            type="text"
+                                            value={q.answer}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuestionFieldChange(index, 'answer', e.target.value)}
+                                            className="w-full text-sm p-1 border-b bg-transparent"
+                                        />
+                                    ) : (
+                                        <span className="text-sm font-medium text-brand-primary"><MathRenderer text={q.answer} /></span>
+                                    )}
+                                </div>
+
                                 {isEditing ? (
-                                    <input 
-                                        type="text"
-                                        value={q.answer}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuestionFieldChange(index, 'answer', e.target.value)}
-                                        className="w-full text-sm p-1 border-b"
-                                    />
-                                ) : (
-                                    <span className="text-sm ml-2"><MathRenderer text={q.answer} /></span>
+                                    <div className="mt-4">
+                                        <span className="font-bold text-xs uppercase tracking-wider text-gray-500 block mb-1">Решение чекор-по-чекор:</span>
+                                        <textarea 
+                                            value={q.solution || ''}
+                                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleQuestionFieldChange(index, 'solution', e.target.value)}
+                                            className="w-full p-2 border rounded-md text-sm mt-1"
+                                            rows={3}
+                                            placeholder="Внесете детално решение..."
+                                        />
+                                    </div>
+                                ) : q.solution && (
+                                    <div className="mt-4 p-3 bg-blue-50/50 border-l-4 border-blue-400 text-sm rounded-r-lg">
+                                        <span className="font-bold text-xs uppercase tracking-wider text-blue-600 block mb-1">Решение чекор-по-чекор:</span>
+                                        <div className="text-gray-700 italic">
+                                            <MathRenderer text={q.solution} />
+                                        </div>
+                                    </div>
                                 )}
                             </div>
 
-                            {isEditing ? (
-                                <div className="mt-2">
-                                    <span className="font-semibold text-sm">Решение чекор-по-чекор:</span>
-                                    <textarea 
-                                        value={q.solution || ''}
-                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleQuestionFieldChange(index, 'solution', e.target.value)}
-                                        className="w-full p-2 border rounded-md text-sm mt-1"
-                                        rows={3}
-                                        placeholder="Внесете детално решение..."
-                                    />
-                                </div>
-                            ) : q.solution && (
-                                <div className="mt-2 p-3 bg-blue-50 border-l-4 border-blue-400 text-sm">
-                                    <span className="font-semibold block mb-1 text-blue-800">Решение чекор-по-чекор:</span>
-                                    <div className="text-gray-700 italic">
-                                        <MathRenderer text={q.solution} />
+                            {visual?.url && (
+                                <div className="md:w-64 flex-shrink-0 animate-in fade-in zoom-in duration-500">
+                                    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+                                        <img src={visual.url} alt={`Визуелизација за прашање ${index + 1}`} className="w-full h-auto" />
+                                        <div className="p-1.5 bg-gray-50 text-[10px] text-gray-400 text-center italic border-t">
+                                            AI Илустрација
+                                        </div>
                                     </div>
                                 </div>
                             )}
                         </div>
 
                         {!isEditing && (
-                            <div className="ml-8 mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs no-print">
-                                <span className={`px-2 py-0.5 rounded-full font-medium ${levelInfo.color}`}>{levelInfo.label}</span>
-                                {q.difficulty_level && <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Тежина: {q.difficulty_level}</span>}
-                                {q.concept_evaluated && <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Поим: {q.concept_evaluated}</span>}
+                            <div className="ml-8 mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[10px] no-print">
+                                <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-widest ${levelInfo.color}`}>{levelInfo.label}</span>
+                                {q.difficulty_level && <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Тежина: {q.difficulty_level}</span>}
+                                {q.concept_evaluated && <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Поим: {q.concept_evaluated}</span>}
                             </div>
                         )}
                     </div>

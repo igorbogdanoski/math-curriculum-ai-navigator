@@ -1,7 +1,7 @@
 import { educationalHints } from '../data/educationalModelsInfo';
 import React from 'react';
 import { Card } from '../components/common/Card';
-import { Target, Shapes, Wand2, Play, GraduationCap, CheckCircle2, Trophy, Star, Cpu, BookOpenCheck, FlaskConical } from 'lucide-react';
+import { Target, Shapes, Wand2, Play, GraduationCap, CheckCircle2, Trophy, Star, Cpu, BookOpenCheck, FlaskConical, Brain } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAcademyProgress } from '../contexts/AcademyProgressContext';
 import { slugify } from '../utils/slugify';

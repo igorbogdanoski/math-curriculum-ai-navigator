@@ -8,6 +8,7 @@ import type {
   GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile,
   AIGeneratedIllustration, AIGeneratedLearningPaths, DifferentiationLevel,
   AssessmentQuestion, TeachingProfile, SavedQuestion, AIGeneratedWorkedExample,
+  AIGeneratedPresentation
 } from '../types';
 import { ModalType, PlannerItemType, QuestionType } from '../types';
 import type { GeneratorState, GeneratorAction } from './useGeneratorState';
@@ -54,6 +55,7 @@ type GeneratedMaterial =
   | AIGeneratedIllustration
   | AIGeneratedLearningPaths
   | AIGeneratedWorkedExample
+  | AIGeneratedPresentation
   | null;
 
 interface UseGeneratorActionsParams {
@@ -632,6 +634,15 @@ export function useGeneratorActions({
           case 'RUBRIC':
             if (!finalContext.grade) throw new Error('Недостасува информација за одделение.');
             result = await geminiService.generateRubric(finalContext.grade.level, tempActivityTitle, activityType, criteriaHints, user ?? undefined, effectiveInstruction);
+            break;
+          case 'PRESENTATION':
+            if (!finalContext.topic) throw new Error('Недостасува информација за тема.');
+            result = await geminiService.generatePresentation(
+              finalContext.topic.title, 
+              finalContext.grade?.level ?? 1, 
+              finalContext.concepts?.map(c => c.title) || [], 
+              effectiveInstruction
+            );
             break;
         }
       }

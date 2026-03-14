@@ -45,6 +45,7 @@ import { GeneratedAssessment } from '../components/ai/GeneratedAssessment';
 import { GeneratedRubric } from '../components/ai/GeneratedRubric';
 import { usePlanner } from '../contexts/PlannerContext';
 import { GeneratedLearningPaths } from '../components/ai/GeneratedLearningPaths';
+import { GeneratedPresentation } from '../components/ai/GeneratedPresentation';
 import { WorkedExample } from '../components/materials/WorkedExample';
 import { BloomSliders, BloomDonutChart } from '../components/generator/BloomSliders';
 import { RefineGenerationChat } from '../components/generator/RefineGenerationChat';
@@ -66,7 +67,18 @@ import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 
 export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props: Partial<GeneratorState>) => {
   const { t } = useLanguage();
-  const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICONS }[] = [ { id: 'SCENARIO', label: t('generator.types.scenario'), icon: 'lightbulb' }, { id: 'LEARNING_PATH', label: t('generator.types.path'), icon: 'mindmap' }, { id: 'ASSESSMENT', label: t('generator.types.assessment'), icon: 'generator' }, { id: 'RUBRIC', label: t('generator.types.rubric'), icon: 'edit' }, { id: 'FLASHCARDS', label: t('generator.types.flashcards'), icon: 'flashcards' }, { id: 'QUIZ', label: t('generator.types.quiz'), icon: 'quiz' }, { id: 'EXIT_TICKET', label: t('generator.types.exitTicket'), icon: 'quiz' }, { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' }, { id: 'WORKED_EXAMPLE', label: 'Работен Пример', icon: 'lightbulb' } ];
+  const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICONS }[] = [ 
+    { id: 'SCENARIO', label: t('generator.types.scenario'), icon: 'lightbulb' }, 
+    { id: 'LEARNING_PATH', label: t('generator.types.path'), icon: 'mindmap' }, 
+    { id: 'PRESENTATION', label: 'Презентација (PRO)', icon: 'gallery' },
+    { id: 'ASSESSMENT', label: t('generator.types.assessment'), icon: 'generator' }, 
+    { id: 'RUBRIC', label: t('generator.types.rubric'), icon: 'edit' }, 
+    { id: 'FLASHCARDS', label: t('generator.types.flashcards'), icon: 'flashcards' }, 
+    { id: 'QUIZ', label: t('generator.types.quiz'), icon: 'quiz' }, 
+    { id: 'EXIT_TICKET', label: t('generator.types.exitTicket'), icon: 'quiz' }, 
+    { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' }, 
+    { id: 'WORKED_EXAMPLE', label: 'Работен Пример', icon: 'lightbulb' } 
+  ];
 
     const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails, findConceptAcrossGrades } = useCurriculum();
     const { user, firebaseUser, updateLocalProfile } = useAuth();
@@ -684,6 +696,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                         </div>
                     )}
                     {'criteria' in generatedMaterial && <GeneratedRubric material={generatedMaterial} />}
+                    {'slides' in generatedMaterial && <GeneratedPresentation data={generatedMaterial as any} />}
                     {'paths' in generatedMaterial && <GeneratedLearningPaths material={generatedMaterial} />}
                     {'steps' in generatedMaterial && <WorkedExample example={generatedMaterial as AIGeneratedWorkedExample} />}
                     
