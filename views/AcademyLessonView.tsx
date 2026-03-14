@@ -1,15 +1,26 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowLeft, BookOpen, BrainCircuit, Rocket, Target, Wand2 } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ACADEMY_CONTENT } from '../data/academy/content';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { AppState } from '../types';
+import { AcademyMentor } from '../components/academy/AcademyMentor';
+import { AcademyQuiz } from '../components/academy/AcademyQuiz';
+import { useAcademyProgress } from '../contexts/AcademyProgressContext';
 
 export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
+  const { markLessonAsRead } = useAcademyProgress();
 
   const lesson = ACADEMY_CONTENT[id];
+
+  // Mark as read when viewing
+  useEffect(() => {
+    if (lesson) {
+      markLessonAsRead(lesson.id);
+    }
+  }, [lesson, markLessonAsRead]);
 
   if (!lesson) {
     return (
@@ -137,6 +148,9 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                </div>
             </div>
             
+            {/* Mastery Quiz */}
+            <AcademyQuiz lesson={lesson} />
+            
             {/* Final CTA */}
             <div className="mt-8 mb-12 flex flex-col items-center p-12 bg-gray-50 border border-gray-200 rounded-3xl text-center">
                 <div className="w-16 h-16 bg-brand-primary/10 rounded-full flex items-center justify-center mb-6">
@@ -157,6 +171,9 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
 
         </div>
       </div>
+      
+      {/* AI Mentor */}
+      <AcademyMentor lesson={lesson} />
     </div>
   );
 };

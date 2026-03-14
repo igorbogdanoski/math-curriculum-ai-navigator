@@ -9,10 +9,14 @@ import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { ACADEMY_CONTENT } from '../data/academy/content';
 import { SPECIALIZATIONS } from '../data/academy/specializations';
 
+import { AcademyCertificateButton } from '../components/academy/AcademyCertificate';
+import { useAuth } from '../contexts/AuthContext';
+
 export const AcademyView: React.FC = () => {
   const { navigate } = useNavigation();
+  const { user } = useAuth();
   const { progress } = useAcademyProgress();
-  const { readLessons, appliedLessons, xp } = progress;
+  const { readLessons, appliedLessons, completedQuizzes, xp } = progress;
   const levelInfo = calcFibonacciLevel(xp);
   const avatar = getAvatar(levelInfo.level);
 
@@ -140,6 +144,15 @@ export const AcademyView: React.FC = () => {
                     <div className="bg-amber-400 h-2 rounded-full" style={{ width: `${Math.min(100, (appliedCount / totalLessons) * 100)}%` }}></div>
                   </div>
                 </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-blue-300 font-medium">Квизови</span>
+                    <span className="text-white font-bold">{completedQuizzes.length}/{totalLessons}</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-2">
+                    <div className="bg-blue-400 h-2 rounded-full" style={{ width: `${Math.min(100, (completedQuizzes.length / totalLessons) * 100)}%` }}></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -189,52 +202,66 @@ export const AcademyView: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">Применете ги сите лекции во патеката за да заработите сертификат</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {SPECIALIZATIONS.map(spec => {
-            const applied = spec.lessonIds.filter(id => appliedLessons.includes(id)).length;
-            const completed = applied === spec.lessonIds.length;
-            const pct = Math.round((applied / spec.lessonIds.length) * 100);
-            return (
-              <div key={spec.id} className={`rounded-2xl border-2 p-6 bg-white ${completed ? spec.borderColor : 'border-gray-100'} transition-all`}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{spec.emoji}</span>
-                    <div>
-                      <h3 className="font-bold text-gray-900">{spec.title}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5 max-w-[200px]">{spec.subtitle}</p>
+            {SPECIALIZATIONS.map(spec => {
+              const applied = spec.lessonIds.filter(id => appliedLessons.includes(id)).length;
+              const quizzed = spec.lessonIds.filter(id => completedQuizzes.includes(id)).length;
+              const total = spec.lessonIds.length;
+              
+              const isAppliedComplete = applied === total;
+              const isQuizComplete = quizzed === total;
+              const completed = isAppliedComplete && isQuizComplete;
+              
+              const pct = Math.round(((applied + quizzed) / (total * 2)) * 100);
+              return (
+                <div key={spec.id} className={`rounded-2xl border-2 p-6 bg-white ${completed ? spec.borderColor : 'border-gray-100'} transition-all`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{spec.emoji}</span>
+                      <div>
+                        <h3 className="font-bold text-gray-900">{spec.title}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5 max-w-[200px]">{spec.subtitle}</p>
+                      </div>
                     </div>
+                    {completed && (
+                      <div className="flex flex-col items-end gap-2">
+                        <span className={`flex items-center gap-1 text-xs font-bold text-white px-3 py-1 rounded-full ${spec.badgeColor}`}>
+                          <Trophy className="w-3 h-3" /> Сертификат
+                        </span>
+                        <AcademyCertificateButton 
+                          userName={user?.name || 'Наставник'} 
+                          specializationTitle={spec.title} 
+                          date={new Date().toLocaleDateString('mk-MK')} 
+                        />
+                      </div>
+                    )}
                   </div>
-                  {completed && (
-                    <span className={`flex items-center gap-1 text-xs font-bold text-white px-3 py-1 rounded-full ${spec.badgeColor}`}>
-                      <Trophy className="w-3 h-3" /> Сертификат
-                    </span>
-                  )}
+                  <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                    <div className={`h-2 rounded-full transition-all duration-500 ${spec.badgeColor}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-xs text-gray-400">Прогрес: {applied + quizzed}/{total * 2} цели остварени</p>
+                  <ul className="mt-4 space-y-1.5">
+                    {spec.lessonIds.map(id => {
+                      const lesson = ACADEMY_CONTENT[id];
+                      const isApplied = appliedLessons.includes(id);
+                      const isQuizzed = completedQuizzes.includes(id);
+                      return lesson ? (
+                        <li
+                          key={id}
+                          onClick={() => navigate('/academy/lesson/' + id)}
+                          className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer hover:text-brand-primary transition-colors"
+                        >
+                          <div className="flex items-center gap-1 w-10">
+                            {isApplied ? <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" /> : <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-200" />}
+                            {isQuizzed ? <Brain className="w-3.5 h-3.5 text-blue-500" /> : <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-200" />}
+                          </div>
+                          <span className={isApplied && isQuizzed ? 'line-through text-gray-400' : ''}>{lesson.title}</span>
+                        </li>
+                      ) : null;
+                    })}
+                  </ul>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
-                  <div className={`h-2 rounded-full transition-all duration-500 ${spec.badgeColor}`} style={{ width: `${pct}%` }} />
-                </div>
-                <p className="text-xs text-gray-400">{applied}/{spec.lessonIds.length} лекции применети</p>
-                <ul className="mt-4 space-y-1.5">
-                  {spec.lessonIds.map(id => {
-                    const lesson = ACADEMY_CONTENT[id];
-                    const isApplied = appliedLessons.includes(id);
-                    return lesson ? (
-                      <li
-                        key={id}
-                        onClick={() => navigate('/academy/lesson/' + id)}
-                        className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer hover:text-brand-primary transition-colors"
-                      >
-                        {isApplied
-                          ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                          : <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 flex-shrink-0" />
-                        }
-                        <span className={isApplied ? 'line-through text-gray-400' : ''}>{lesson.title}</span>
-                      </li>
-                    ) : null;
-                  })}
-                </ul>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       </div>
 

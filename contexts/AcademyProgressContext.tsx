@@ -7,11 +7,14 @@ export const ACADEMY_XP = {
   READ_LESSON: 5,
   APPLY_LESSON: 20,
   SAVE_REFLECTION: 30,
+  MENTOR_CHAT: 10,
+  QUIZ_COMPLETE: 50,
 } as const;
 
 export interface AcademyProgress {
   readLessons: string[];
   appliedLessons: string[];
+  completedQuizzes: string[]; // lessonId
   reflections: Record<string, string>; // lessonId → reflection note
   xp: number;
 }
@@ -20,13 +23,16 @@ export interface AcademyProgressContextType {
   progress: AcademyProgress;
   markLessonAsRead: (lessonId: string) => void;
   markLessonAsApplied: (lessonId: string) => void;
+  markQuizAsCompleted: (lessonId: string) => void;
   saveReflection: (lessonId: string, note: string) => void;
+  addXp: (amount: number, reason?: string) => void;
   getCompletionPercentage: (totalLessons: number) => number;
 }
 
 const defaultProgress: AcademyProgress = {
   readLessons: [],
   appliedLessons: [],
+  completedQuizzes: [],
   reflections: {},
   xp: 0,
 };
@@ -67,24 +73,28 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
         setProgress(prev => {
           const mergedRead = Array.from(new Set([...prev.readLessons, ...(data.readLessons || [])]));
           const mergedApplied = Array.from(new Set([...prev.appliedLessons, ...(data.appliedLessons || [])]));
+          const mergedQuizzes = Array.from(new Set([...prev.completedQuizzes, ...(data.completedQuizzes || [])]));
           const mergedReflections = { ...(data.reflections || {}), ...prev.reflections };
           const mergedXp = Math.max(prev.xp, data.xp || 0);
 
           const merged: AcademyProgress = {
             readLessons: mergedRead,
             appliedLessons: mergedApplied,
+            completedQuizzes: mergedQuizzes,
             reflections: mergedReflections,
             xp: mergedXp,
           };
 
           const remoteReadLen = data.readLessons?.length || 0;
           const remoteAppliedLen = data.appliedLessons?.length || 0;
+          const remoteQuizLen = data.completedQuizzes?.length || 0;
           const remoteReflCount = Object.keys(data.reflections || {}).length;
           const localReflCount = Object.keys(prev.reflections).length;
 
           if (
             mergedRead.length > remoteReadLen ||
             mergedApplied.length > remoteAppliedLen ||
+            mergedQuizzes.length > remoteQuizLen ||
             localReflCount > remoteReflCount ||
             mergedXp > (data.xp || 0)
           ) {
@@ -139,6 +149,20 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
     });
   }, [firebaseUser]);
 
+  const markQuizAsCompleted = useCallback((lessonId: string) => {
+    setProgress(prev => {
+      if (prev.completedQuizzes.includes(lessonId)) return prev;
+      const newQuizzes = [...prev.completedQuizzes, lessonId];
+      const newXp = prev.xp + ACADEMY_XP.QUIZ_COMPLETE;
+      const next = { ...prev, completedQuizzes: newQuizzes, xp: newXp };
+      if (firebaseUser) {
+        const progressRef = doc(db, 'users', firebaseUser.uid, 'academy', 'progress');
+        setDoc(progressRef, { completedQuizzes: newQuizzes, xp: newXp }, { merge: true }).catch(console.error);
+      }
+      return next;
+    });
+  }, [firebaseUser]);
+
   const saveReflection = useCallback((lessonId: string, note: string) => {
     setProgress(prev => {
       const isFirstReflection = !prev.reflections[lessonId];
@@ -148,6 +172,18 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
       if (firebaseUser) {
         const progressRef = doc(db, 'users', firebaseUser.uid, 'academy', 'progress');
         setDoc(progressRef, { reflections: newReflections, xp: newXp }, { merge: true }).catch(console.error);
+      }
+      return next;
+    });
+  }, [firebaseUser]);
+
+  const addXp = useCallback((amount: number) => {
+    setProgress(prev => {
+      const newXp = prev.xp + amount;
+      const next = { ...prev, xp: newXp };
+      if (firebaseUser) {
+        const progressRef = doc(db, 'users', firebaseUser.uid, 'academy', 'progress');
+        setDoc(progressRef, { xp: newXp }, { merge: true }).catch(console.error);
       }
       return next;
     });
@@ -164,6 +200,7 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
       markLessonAsRead,
       markLessonAsApplied,
       saveReflection,
+      addXp,
       getCompletionPercentage,
     }}>
       {children}
