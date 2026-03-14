@@ -379,7 +379,7 @@ export async function callImagenProxy(params: {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          model: params.model || 'imagen-3',
+          model: params.model || IMAGEN_MODEL,
           contents: params.prompt
         }),
         signal

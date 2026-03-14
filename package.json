@@ -31,6 +31,7 @@
     "lucide-react": "^0.563.0",
     "mathjs": "^15.1.1",
     "mathlive": "^0.108.3",
+    "pptxgenjs": "^4.0.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",

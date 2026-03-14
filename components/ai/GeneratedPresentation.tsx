@@ -5,10 +5,9 @@ import { Card } from '../common/Card';
 import { MathRenderer } from '../common/MathRenderer';
 import { geminiService } from '../../services/geminiService';
 import { useNotification } from '../../contexts/NotificationContext';
+import pptxgen from 'pptxgenjs';
 
 import { useAuth } from '../../contexts/AuthContext';
-
-declare const PptxGenJS: any;
 
 interface GeneratedPresentationProps {
   data: AIGeneratedPresentation;
@@ -63,12 +62,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
   };
 
   const downloadPPTX = () => {
-    if (typeof PptxGenJS === 'undefined') {
-      addNotification('Библиотеката за PPTX не е вчитана. Ве молиме почекајте или рефреширајте.', 'error');
-      return;
-    }
-
-    const pptx = new PptxGenJS();
+    const pptx = new pptxgen();
     pptx.layout = 'LAYOUT_16x9';
 
     data.slides.forEach((slide: PresentationSlide, idx: number) => {

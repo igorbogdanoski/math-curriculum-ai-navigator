@@ -88,6 +88,7 @@ export const AnnualPlanGeneratorView: React.FC = () => {
     const [selectedGradeId, setSelectedGradeId] = useState<string>('grade-6');
     const [subject, setSubject] = useState<string>('Математика');
     const [weeks, setWeeks] = useState<number>(36);
+    const [currentStep, setCurrentStep] = useState(1);
     const [isGenerating, setIsGenerating] = useState(false);
     const [plan, setPlan] = useState<AIGeneratedAnnualPlan | null>(null);
 
@@ -235,18 +236,51 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1 space-y-6">
-                    <Card>
-                        <h2 className="text-xl font-bold mb-4">Параметри</h2>
-                        <div className="space-y-4">
+            {/* Progress Stepper */}
+            <div className="mb-10 w-full px-2 relative flex items-center justify-between max-w-2xl mx-auto">
+                <div className="absolute left-[10%] right-[10%] top-5 h-[2px] bg-gray-200 -z-10">
+                    <div className="h-full bg-blue-600 transition-all duration-300 ease-in-out" style={{ width: `${((currentStep - 1) / 2) * 100}%` }}></div>
+                </div>
+                
+                {[
+                    { step: 1, label: 'Одделение & Предмет' },
+                    { step: 2, label: 'Параметри' },
+                    { step: 3, label: 'Генерирање & Преглед' }
+                ].map((s) => (
+                    <div key={s.step} className="flex flex-col items-center gap-2 text-center">
+                        <button 
+                            type="button"
+                            onClick={() => s.step < currentStep || (plan && s.step === 3) ? setCurrentStep(s.step) : null}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border-4 z-10
+                                ${currentStep === s.step 
+                                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg scale-110' 
+                                    : currentStep > s.step 
+                                        ? 'bg-blue-600 border-blue-600 text-white' 
+                                        : 'bg-white border-gray-200 text-gray-400'
+                                }`}
+                        >
+                            {currentStep > s.step ? '✓' : s.step}
+                        </button>
+                        <span className={`text-[10px] sm:text-xs font-bold transition-colors ${currentStep === s.step ? 'text-blue-600' : 'text-gray-500'}`}>
+                            {s.label}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="max-w-4xl mx-auto">
+                {currentStep === 1 && (
+                    <Card className="animate-fade-in p-8">
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">1</span>
+                            Изберете Одделение и Предмет
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Одделение
-                                </label>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Одделение</label>
                                 <select
                                     title="Одделение"
-                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full p-3 border-2 border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium"
                                     value={selectedGradeId}
                                     onChange={(e) => setSelectedGradeId(e.target.value)}
                                 >
@@ -255,121 +289,158 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                                     ))}
                                 </select>
                             </div>
-                            
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Предмет
-                                </label>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Предмет</label>
                                 <input 
                                     type="text"
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full p-3 border-2 border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium"
                                 />
                             </div>
+                        </div>
+                        <div className="mt-8 flex justify-end">
+                            <button 
+                                onClick={() => setCurrentStep(2)}
+                                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all flex items-center gap-2"
+                            >
+                                Следно <ICONS.chevronDown className="w-5 h-5 -rotate-90" />
+                            </button>
+                        </div>
+                    </Card>
+                )}
 
+                {currentStep === 2 && (
+                    <Card className="animate-fade-in p-8">
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg flex items-center justify-center text-sm">2</span>
+                            Параметри на планирањето
+                        </h2>
+                        <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Вкупно недели
+                                <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center justify-between">
+                                    <span>Вкупно недели во учебната година</span>
+                                    <span className="text-blue-600">{weeks} недели</span>
                                 </label>
                                 <input 
-                                    type="number"
+                                    type="range"
                                     min="20"
                                     max="40"
                                     value={weeks}
                                     onChange={(e) => setWeeks(Number(e.target.value))}
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                 />
+                                <div className="flex justify-between text-[10px] text-gray-400 mt-2">
+                                    <span>20 недели</span>
+                                    <span>36 недели (Стандардно)</span>
+                                    <span>40 недели</span>
+                                </div>
                             </div>
-
-                            <button
-                                type="button"
-                                onClick={handleGenerate}
-                                disabled={isGenerating}
-                                className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                        </div>
+                        <div className="mt-8 flex justify-between">
+                            <button 
+                                onClick={() => setCurrentStep(1)}
+                                className="px-6 py-3 bg-white border-2 border-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition-all flex items-center gap-2"
                             >
-                                {isGenerating ? (
-                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                                ) : <ICONS.sparkles className="w-4 h-4" />}
-                                {isGenerating ? 'Генерирање...' : 'Генерирај Програма'}
+                                <ICONS.chevronDown className="w-5 h-5 rotate-90" /> Назад
+                            </button>
+                            <button 
+                                onClick={() => { setCurrentStep(3); if (!plan) handleGenerate(); }}
+                                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all flex items-center gap-2"
+                            >
+                                Генерирај <ICONS.sparkles className="w-5 h-5" />
                             </button>
                         </div>
                     </Card>
-                </div>
+                )}
 
-                <div className="lg:col-span-2">
-                    {plan ? (
-                        <Card>
-                            <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
-                                <div>
-                                    <h2 className="text-2xl font-bold">
-                                        Годишна Програма: {plan.subject} ({plan.grade})
-                                    </h2>
-                                    <p className="text-xs text-gray-400 mt-1">Повлечи ги темите за да го смениш редоследот</p>
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                                        Вкупно: {plan.totalWeeks} недели
-                                    </span>
-                                    {user && (
+                {currentStep === 3 && (
+                    <div className="space-y-6 animate-fade-in">
+                        {!plan && isGenerating ? (
+                            <Card className="p-12 text-center flex flex-col items-center">
+                                <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">Генерирање на Годишна Програма</h3>
+                                <p className="text-gray-500 max-w-sm">AI ги анализира националните стандарди и ги распределува темите за Вашето одделение...</p>
+                            </Card>
+                        ) : plan ? (
+                            <Card>
+                                <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+                                    <div>
+                                        <h2 className="text-2xl font-bold">
+                                            {plan.subject} ({plan.grade})
+                                        </h2>
+                                        <p className="text-xs text-gray-400 mt-1">Повлечи ги темите за да го смениш редоследот</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                                            {plan.totalWeeks} недели
+                                        </span>
+                                        {user && (
+                                            <button
+                                                type="button"
+                                                onClick={handleSave}
+                                                disabled={isSaving}
+                                                className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:opacity-60 transition shadow-sm"
+                                            >
+                                                {isSaving ? '...' : savedId ? '✓ Зачувано' : 'Зачувај'}
+                                            </button>
+                                        )}
                                         <button
-                                            type="button"
-                                            onClick={handleSave}
-                                            disabled={isSaving}
-                                            className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                                            onClick={() => {
+                                                const ics = generatePlanICS(plan);
+                                                downloadICS(ics, `Годишна_Програма_${plan.subject}_${plan.grade}.ics`);
+                                            }}
+                                            className="p-2 border-2 border-gray-100 rounded-xl hover:bg-gray-50 transition text-gray-600"
+                                            title="iCal Експорт"
                                         >
-                                            {isSaving ? '...' : savedId ? '✓ Зачувано' : 'Зачувај'}
+                                            📅
                                         </button>
-                                    )}
-                                    <button
-                                        onClick={() => {
-                                            const ics = generatePlanICS(plan);
-                                            downloadICS(ics, `Годишна_Програма_${plan.subject}_${plan.grade}.ics`);
-                                        }}
-                                        className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center gap-1"
-                                        title="Извези во Google Calendar / Outlook"
+                                        <button
+                                            onClick={handlePrint}
+                                            className="p-2 border-2 border-gray-100 rounded-xl hover:bg-gray-50 transition text-gray-600"
+                                            title="Печати"
+                                        >
+                                            🖨️
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="print:p-8 print:bg-white" ref={printRef}>
+                                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                        <SortableContext
+                                            items={plan.topics.map((_, idx) => `topic-${idx}`)}
+                                            strategy={verticalListSortingStrategy}
+                                        >
+                                            {plan.topics.map((topic, idx) => (
+                                                <SortableTopic
+                                                    key={`topic-${idx}`}
+                                                    id={`topic-${idx}`}
+                                                    topic={topic}
+                                                    idx={idx}
+                                                />
+                                            ))}
+                                        </SortableContext>
+                                    </DndContext>
+                                </div>
+                                <div className="mt-8 pt-6 border-t flex justify-start">
+                                    <button 
+                                        onClick={() => setCurrentStep(2)}
+                                        className="px-6 py-3 text-blue-600 font-bold hover:bg-blue-50 rounded-xl transition-all"
                                     >
-                                        📅 iCal
-                                    </button>
-                                    <button
-                                        onClick={handlePrint}
-                                        className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                                    >
-                                        🖨️ Печати
+                                        ← Назад кон параметри
                                     </button>
                                 </div>
-                            </div>
-
-                            <div className="print:p-8 print:bg-white" ref={printRef}>
-                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                    <SortableContext
-                                        items={plan.topics.map((_, idx) => `topic-${idx}`)}
-                                        strategy={verticalListSortingStrategy}
-                                    >
-                                        {plan.topics.map((topic, idx) => (
-                                            <SortableTopic
-                                                key={`topic-${idx}`}
-                                                id={`topic-${idx}`}
-                                                topic={topic}
-                                                idx={idx}
-                                            />
-                                        ))}
-                                    </SortableContext>
-                                </DndContext>
-                            </div>
-                        </Card>
-                    ) : (
-                        <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl p-12 text-center bg-gray-50/50">
-                            <div>
+                            </Card>
+                        ) : (
+                            <Card className="p-12 text-center">
                                 <div className="mb-4 text-gray-300 flex justify-center"><ICONS.planner className="w-12 h-12" /></div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">Нема генерирано програма</h3>
-                                <p className="text-gray-500">
-                                    Споделете ги параметрите и кликнете "Генерирај Програма" за да создадете нова годишна програма со помош на AI.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">Грешка при генерирање</h3>
+                                <p className="text-gray-500 mb-6">Настана грешка. Ве молиме обидете се повторно.</p>
+                                <button onClick={() => setCurrentStep(2)} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold">Обиди се повторно</button>
+                            </Card>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
