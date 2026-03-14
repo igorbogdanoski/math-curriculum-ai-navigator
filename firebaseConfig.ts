@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
@@ -15,11 +15,15 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Иницијализација на апликацијата
-export const app = initializeApp(firebaseConfig);
+// Иницијализација на апликацијата (Спречување на дупликати)
+export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Иницијализација на App Check (Само на клиентска страна)
+// Иницијализација на App Check (САМО на клиентска страна)
 if (typeof window !== 'undefined') {
+  if (import.meta.env.DEV) {
+    (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+  
   const reCaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   if (reCaptchaKey) {
     initializeAppCheck(app, {
@@ -29,14 +33,16 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Иницијализација на сервисите
-// Овозможуваме ignoreUndefinedProperties за постабилна синхронизација
-export const db = initializeFirestore(app, {
-  ignoreUndefinedProperties: true,
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-});
+// Иницијализација на Firestore со едноставен getFirestore прво
+export const db = getFirestore(app);
 
-// Напомена: localCache и persistentMultipleTabManager горе автоматски се справуваат со офлајн поддршка за повеќе табови
+// Овозможуваме кеширање во позадина за да не ја кочиме почетната иницијализација
+if (typeof window !== 'undefined') {
+  initializeFirestore(app, {
+    ignoreUndefinedProperties: true,
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  }, "default"); // Специфицираме име на база за да избегнеме конфликти
+}
 
 export const auth = getAuth(app);
 export const storage = getStorage(app);
