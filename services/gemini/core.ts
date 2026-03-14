@@ -49,6 +49,7 @@ import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 export const CACHE_COLLECTION = 'cached_ai_materials';
 export const DEFAULT_MODEL = 'gemini-2.5-flash';
 export const PRO_MODEL = 'gemini-3.1-pro-preview';
+export const IMAGEN_MODEL = 'imagen-3';
 export const MAX_RETRIES = 2;
 export const GENERATION_TIMEOUT_MS = 60_000; // 60 seconds for 3.1 Pro
 
@@ -335,6 +336,40 @@ export async function callGeminiProxy(params: {
     } catch (err: any) {
       if (err.name === 'AbortError') throw err;
       console.error("Gemini Proxy Error:", err.message || err);
+      throw err;
+    }
+  });
+}
+
+export async function callImagenProxy(params: {
+  model?: string;
+  prompt: string;
+}, signal?: AbortSignal): Promise<any> {
+  return queueRequest(async () => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/imagen', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          model: params.model || 'imagen-3',
+          contents: params.prompt
+        }),
+        signal
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err: any) {
+      if (err.name === 'AbortError') throw err;
+      console.error("Imagen Proxy Error:", err.message || err);
       throw err;
     }
   });

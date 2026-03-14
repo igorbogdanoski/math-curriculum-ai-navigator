@@ -2,7 +2,7 @@ import { assessmentAPI } from './gemini/assessment';
 import { plansAPI } from './gemini/plans';
 import { 
     Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, streamGeminiProxy,
-    checkDailyQuotaGuard, TEXT_SYSTEM_INSTRUCTION, SAFETY_SETTINGS, callGeminiProxy,
+    checkDailyQuotaGuard, TEXT_SYSTEM_INSTRUCTION, SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
     CACHE_COLLECTION, JSON_SYSTEM_INSTRUCTION, minifyContext
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -34,17 +34,13 @@ async *getChatResponseStream(history: ChatMessage[], profile?: TeachingProfile, 
   },
 
 async generateIllustration(prompt: string, image?: { base64: string, mimeType: string }): Promise<AIGeneratedIllustration> {
-    const contents: Part[] = [{ text: prompt }];
-    if (image) contents.unshift({ inlineData: { data: image.base64, mimeType: image.mimeType } });
-    const response = await callGeminiProxy({ 
-        model: DEFAULT_MODEL, 
-        contents: [{ parts: contents }], 
-        generationConfig: { responseModalities: ['IMAGE'] }, 
-        safetySettings: SAFETY_SETTINGS 
+    const response = await callImagenProxy({ 
+        model: IMAGEN_MODEL, 
+        prompt: prompt
     });
-    const candidate = response.candidates[0];
-    if (candidate && candidate.content.parts[0].inlineData) {
-        const data = candidate.content.parts[0].inlineData;
+    
+    if (response.inlineData) {
+        const data = response.inlineData;
         return { imageUrl: `data:${data.mimeType};base64,${data.data}`, prompt };
     }
     throw new Error("AI did not return image");

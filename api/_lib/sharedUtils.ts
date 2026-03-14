@@ -1,11 +1,25 @@
 /**
- * Shared utilities for Vercel Serverless Functions:
- * - Firebase Admin initialization (singleton)
- * - ID token verification
- * - Zod request body validation
- * - CORS helpers
- * - Model whitelist
+ * Model whitelist — only these models can be called
  */
+export const ALLOWED_MODELS = new Set([
+  'gemini-3.1-pro-preview',
+  'gemini-3.1-pro-preview-customtools',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash-001',
+  'gemini-2.0-flash-lite-preview-02-05',
+  'gemini-1.5-pro-002',
+  'gemini-1.5-flash-002',
+  'gemini-1.5-pro',
+  'gemini-1.5-flash',
+  'gemini-pro',
+  'gemini-flash',
+  'text-embedding-004',
+  'imagen-3',
+  'imagen-3-fast'
+]);
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -42,26 +56,6 @@ function getFirebaseAdmin() {
   if (!firebaseAuthAvailable) return null;
   return getAuth();
 }
-
-// ---------------------------------------------------------------------------
-// Model whitelist — only these models can be called
-// ---------------------------------------------------------------------------
-const ALLOWED_MODELS = new Set([
-  'gemini-3.1-pro-preview',
-  'gemini-3.1-pro-preview-customtools',
-  'gemini-3.1-flash-lite-preview',
-  'gemini-2.5-pro',
-  'gemini-2.5-flash',
-  'gemini-2.0-flash-001',
-  'gemini-2.0-flash-lite-preview-02-05',
-  'gemini-1.5-pro-002',
-  'gemini-1.5-flash-002',
-  'gemini-1.5-pro',
-  'gemini-1.5-flash',
-  'gemini-pro',
-  'gemini-flash',
-  'text-embedding-004'
-]);
 
 // ---------------------------------------------------------------------------
 // Zod schemas for request body validation
