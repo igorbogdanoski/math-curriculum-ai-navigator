@@ -77,7 +77,7 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
     };
 
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id);
-    // Use Thinking model (gemini-3.1-pro-preview) for better pedagogical reasoning
+    // Use high-quality model for better pedagogical reasoning
     const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr);
     await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'ideas', conceptId, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return result;

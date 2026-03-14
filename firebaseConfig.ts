@@ -3,7 +3,6 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentMult
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, isSupported } from 'firebase/messaging';
-import { getVertexAI } from 'firebase/vertexai';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 const firebaseConfig = {
@@ -47,7 +46,6 @@ if (typeof window !== 'undefined') {
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
-export const ai = getVertexAI(app);
 
 export default app;
 

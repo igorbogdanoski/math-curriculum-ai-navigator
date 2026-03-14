@@ -18,10 +18,15 @@ let firebaseAuthAvailable = true;
 
 function getFirebaseAdmin() {
   if (getApps().length === 0) {
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
     if (serviceAccount) {
       try {
-        initializeApp({ credential: cert(JSON.parse(serviceAccount)) });
+        // Handle both raw JSON and base64 encoded strings
+        const decoded = serviceAccount.trim().startsWith('{') 
+          ? serviceAccount 
+          : Buffer.from(serviceAccount, 'base64').toString('utf8');
+        
+        initializeApp({ credential: cert(JSON.parse(decoded)) });
       } catch (err) {
         console.error('[auth] Failed to init Firebase Admin with service account:', err);
         firebaseAuthAvailable = false;
@@ -42,16 +47,10 @@ function getFirebaseAdmin() {
 // Model whitelist — only these models can be called
 // ---------------------------------------------------------------------------
 const ALLOWED_MODELS = new Set([
-  'gemini-3.1-pro-preview',
-  'gemini-3.1-flash-preview',
-  'gemini-3.1-flash-lite-preview',
-  'gemini-2.5-pro',
-  'gemini-2.5-flash',
-  'gemini-2.5-pro',
-  'gemini-2.0-flash-lite',
-  'gemini-2.0-flash-thinking-exp',
-  'gemini-2.0-pro-exp-02-05',
-  'gemini-embedding-2-preview',
+  'gemini-2.0-flash-001',
+  'gemini-2.0-flash-lite-preview-02-05',
+  'gemini-1.5-pro-002',
+  'gemini-1.5-flash-002',
   'gemini-1.5-pro',
   'gemini-1.5-flash',
 ]);

@@ -1,6 +1,6 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getAuth } from 'firebase/auth';
-import { db, ai } from '../../firebaseConfig';
-import { getGenerativeModel } from 'firebase/vertexai';
+import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 import {
@@ -48,8 +48,15 @@ import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
 export const DEFAULT_MODEL = 'gemini-2.5-flash';
+export const PRO_MODEL = 'gemini-3.1-pro-preview';
 export const MAX_RETRIES = 2;
-export const GENERATION_TIMEOUT_MS = 45_000; // 45 seconds per attempt before aborting
+export const GENERATION_TIMEOUT_MS = 60_000; // 60 seconds for 3.1 Pro
+
+// Initialize the Generative AI with the API Key from environment
+// VITE_ prefix is used for client-side access, but for security, 
+// we'll prefer the proxy/server-side for sensitive operations if possible.
+// For now, we use the key directly as it was in .env.local
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
 
 // --- TYPES FOR INTERNAL USE ---
 export enum Type {
@@ -299,24 +306,21 @@ export async function callGeminiProxy(params: {
 }, signal?: AbortSignal): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // Upgrade logic: intelligent mapping to latest stable/available models (Gemini 2.5/3.1)
+      // Map to the absolute latest models available for your API Key
       let modelName = params.model;
-      if (modelName === 'gemini-2.0-flash') modelName = 'gemini-2.5-flash';
-      else if (modelName.includes('flash') && !modelName.includes('lite') && !modelName.includes('2.0') && !modelName.includes('2.5')) modelName = 'gemini-3.1-flash-preview';
-      else if (modelName.includes('thinking')) modelName = 'gemini-2.0-flash-thinking-exp';
-      else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-3.1-pro-preview';
-      else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
+      if (modelName.includes('pro')) modelName = PRO_MODEL;
+      else if (modelName.includes('flash')) modelName = DEFAULT_MODEL;
+      else modelName = DEFAULT_MODEL;
 
-      const model = getGenerativeModel(ai, {
+      const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: params.generationConfig,
         systemInstruction: params.systemInstruction,
         safetySettings: params.safetySettings
       });
 
-      const requestOptions = signal ? { signal } : undefined;
-
-      const result = await model.generateContent({ contents: normalizeContents(params.contents) });
+      const contents = normalizeContents(params.contents);
+      const result = await model.generateContent({ contents });
 
       const response = result.response;
       return { text: response.text(), candidates: response.candidates || [] };
@@ -366,13 +370,13 @@ export async function* streamGeminiProxy(params: {
   systemInstruction?: string;
   safetySettings?: any;
 }): AsyncGenerator<string, void, unknown> {
+  // Map to the absolute latest models available for your API Key
   let modelName = params.model;
-  if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest') modelName = 'gemini-2.5-flash';
-  else if (modelName.includes('thinking')) modelName = 'gemini-3.1-pro-preview';
-  else if (modelName.includes('pro') && !modelName.includes('1.5')) modelName = 'gemini-3.1-pro-preview';
-  else if (modelName === 'gemini-1.5-pro-latest') modelName = 'gemini-1.5-pro';
+  if (modelName.includes('pro')) modelName = PRO_MODEL;
+  else if (modelName.includes('flash')) modelName = DEFAULT_MODEL;
+  else modelName = DEFAULT_MODEL;
 
-  const model = getGenerativeModel(ai, {
+  const model = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: params.generationConfig,
     systemInstruction: params.systemInstruction,
@@ -392,11 +396,6 @@ export async function* streamGeminiProxy(params: {
     }
   } catch (error: any) {
     console.error("Gemini Stream Error:", error);
-    const errorMessage = error.message?.toLowerCase() || "";
-    if (errorMessage.includes("429") && (errorMessage.includes("quota") || errorMessage.includes("perday"))) {
-      markDailyQuotaExhausted();
-      throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.");
-    }
     throw error;
   }
 }
