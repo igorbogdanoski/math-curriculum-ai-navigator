@@ -280,6 +280,7 @@ export interface AssessmentQuestion {
   question: string;
   options?: string[];
   answer: string;
+  imageUrl?: string;
   levelDescription?: string;
 
   solution?: string;
@@ -300,6 +301,7 @@ export interface SavedQuestion {
   type: string;
   options?: string[];
   answer: string;
+  imageUrl?: string;
   solution?: string;
     isWorkedExample?: boolean;
     workedExampleType?: 'full' | 'partial';

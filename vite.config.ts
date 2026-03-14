@@ -123,7 +123,7 @@ function geminiDevProxy(apiKey: string): Plugin {
           const { model, contents } = await readBody(req);
           const prompt = typeof contents === 'string' ? contents : (contents as any[])[0]?.parts[0]?.text || '';
 
-          const modelInstance = genAI.getGenerativeModel({ model: model || 'imagen-3' });
+          const modelInstance = genAI.getGenerativeModel({ model: model || 'imagen-3.0-generate-001' });
           const result = await modelInstance.generateContent(prompt);
           const response = await result.response;
           const part = response.candidates?.[0]?.content?.parts?.[0];

@@ -38,26 +38,9 @@ const QuestionList: React.FC<{
     handleQuestionFieldChange: (qIndex: number, field: keyof AssessmentQuestion, value: string) => void;
     handleOptionChange: (qIndex: number, optIndex: number, value: string) => void;
     onSaveQuestion?: (q: AssessmentQuestion) => void;
-}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion }) => {
-    const { addNotification } = useNotification();
-    const [visualizations, setVisualizations] = useState<Record<number, { loading: boolean, url?: string }>>({});
-
-    const handleVisualize = async (idx: number, questionText: string) => {
-        setVisualizations(prev => ({ ...prev, [idx]: { loading: true } }));
-        try {
-            const result = await geminiService.generateIllustration(`Mathematical educational illustration for this problem: ${questionText}. Simple, clear, whiteboard style.`);
-            setVisualizations(prev => ({ 
-                ...prev, 
-                [idx]: { loading: false, url: result.imageUrl } 
-            }));
-            addNotification('Илустрацијата е успешно генерирана!', 'success');
-        } catch (error) {
-            console.error('Visualization error:', error);
-            setVisualizations(prev => ({ ...prev, [idx]: { loading: false } }));
-            addNotification('Грешка при генерирање на илустрацијата.', 'error');
-        }
-    };
-
+    onVisualize?: (idx: number, questionText: string) => Promise<void>;
+    visualizingIdx?: number | null;
+}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion, onVisualize, visualizingIdx }) => {
     const questionTypeIcons: Record<string, React.ComponentType<{className?: string}>> = {
         MULTIPLE_CHOICE: ICONS.myLessons,
         SHORT_ANSWER: ICONS.edit,
@@ -71,7 +54,7 @@ const QuestionList: React.FC<{
             {questions?.map((q: AssessmentQuestion, index: number) => {
                 const Icon = questionTypeIcons[q.type] || ICONS.lightbulb;
                 const levelInfo = cognitiveLevelConfig[q.cognitiveLevel] || cognitiveLevelConfig['Understanding'];
-                const visual = visualizations[index];
+                const isVisualizing = visualizingIdx === index;
 
                 return (
                     <div key={q.id || index} className="mb-8 pb-6 border-b last:border-b-0 group">
@@ -90,14 +73,14 @@ const QuestionList: React.FC<{
                                 )}
                             </div>
                             <div className="flex items-center gap-1 flex-shrink-0 no-print">
-                                {!isEditing && !visual?.url && (
+                                {!isEditing && !q.imageUrl && onVisualize && (
                                     <button
-                                        onClick={() => handleVisualize(index, q.question)}
-                                        disabled={visual?.loading}
+                                        onClick={() => onVisualize(index, q.question)}
+                                        disabled={isVisualizing}
                                         title="Визуелизирај со AI"
                                         className="p-1.5 text-gray-300 hover:text-amber-600 transition opacity-0 group-hover:opacity-100"
                                     >
-                                        {visual?.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                                        {isVisualizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
                                     </button>
                                 )}
                                 {onSaveQuestion && (
@@ -172,10 +155,10 @@ const QuestionList: React.FC<{
                                 )}
                             </div>
 
-                            {visual?.url && (
+                            {q.imageUrl && (
                                 <div className="md:w-64 flex-shrink-0 animate-in fade-in zoom-in duration-500">
                                     <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
-                                        <img src={visual.url} alt={`Визуелизација за прашање ${index + 1}`} className="w-full h-auto" />
+                                        <img src={q.imageUrl} alt={`Визуелизација за прашање ${index + 1}`} className="w-full h-auto" />
                                         <div className="p-1.5 bg-gray-50 text-[10px] text-gray-400 text-center italic border-t">
                                             AI Илустрација
                                         </div>
@@ -207,8 +190,72 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
     const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
     const [activeTab, setActiveTab] = useState('standard');
     const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+    const [visualizingIdx, setVisualizingIdx] = useState<number | null>(null);
+    const [isBatchVisualizing, setIsBatchVisualizing] = useState(false);
     const actionsMenuRef = useRef<HTMLDivElement>(null);
     const { addNotification } = useNotification();
+
+    const handleVisualize = async (idx: number, questionText: string) => {
+        setVisualizingIdx(idx);
+        try {
+            const result = await geminiService.generateIllustration(`Mathematical educational illustration for this problem: ${questionText}. Simple, clear, whiteboard style.`);
+            
+            setEditableMaterial(prev => {
+                if (activeTab === 'standard') {
+                    const newQuestions = [...prev.questions];
+                    newQuestions[idx] = { ...newQuestions[idx], imageUrl: result.imageUrl };
+                    return { ...prev, questions: newQuestions };
+                }
+                const newVersions = prev.differentiatedVersions?.map(v => {
+                    if (v.profileName === activeTab) {
+                        const newQuestions = [...v.questions];
+                        newQuestions[idx] = { ...newQuestions[idx], imageUrl: result.imageUrl };
+                        return { ...v, questions: newQuestions };
+                    }
+                    return v;
+                }) || [];
+                return { ...prev, differentiatedVersions: newVersions };
+            });
+
+            addNotification('Илустрацијата е успешно генерирана!', 'success');
+        } catch (error) {
+            console.error('Visualization error:', error);
+            addNotification('Грешка при генерирање на илустрацијата.', 'error');
+        } finally {
+            setVisualizingIdx(null);
+        }
+    };
+
+    const handleBatchVisualize = async () => {
+        const questions = activeTab === 'standard' 
+            ? editableMaterial.questions 
+            : (editableMaterial.differentiatedVersions?.find(v => v.profileName === activeTab)?.questions || []);
+        
+        const indicesToGen = questions
+            .map((q, i) => (!q.imageUrl ? i : -1))
+            .filter(i => i !== -1);
+        
+        if (indicesToGen.length === 0) {
+            addNotification('Сите прашања веќе имаат илустрации.', 'info');
+            return;
+        }
+
+        setIsBatchVisualizing(true);
+        setIsActionsMenuOpen(false);
+        addNotification(`Започнува сериско генерирање на ${indicesToGen.length} илустрации...`, 'info');
+
+        try {
+            for (const idx of indicesToGen) {
+                const q = questions[idx];
+                await handleVisualize(idx, q.question);
+            }
+            addNotification('Сите илустрации се успешно генерирани!', 'success');
+        } catch (error) {
+            addNotification('Дел од илустрациите не беа генерирани.', 'warning');
+        } finally {
+            setIsBatchVisualizing(false);
+        }
+    };
 
 
     useEffect(() => {
@@ -481,6 +528,19 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                                         <button type="button" onClick={() => { setIsPlayingQuiz(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.play className="w-5 h-5 mr-3" /> Интерактивен квиз (Игра)
                                         </button>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleBatchVisualize} 
+                                            disabled={isBatchVisualizing}
+                                            className="w-full text-left flex items-center px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 font-bold disabled:opacity-50"
+                                        >
+                                            {isBatchVisualizing ? (
+                                                <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                                            ) : (
+                                                <ICONS.sparkles className="w-5 h-5 mr-3" />
+                                            )}
+                                            Генерирај илустрации за сите
+                                        </button>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -562,6 +622,8 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                     handleQuestionFieldChange={(qIndex: number, field: keyof AssessmentQuestion, value: string) => handleQuestionFieldChangeForVersion(activeTab, qIndex, field, value)}
                     handleOptionChange={(qIndex: number, optIndex: number, value: string) => handleOptionChangeForVersion(activeTab, qIndex, optIndex, value)}
                     onSaveQuestion={onSaveQuestion}
+                    onVisualize={handleVisualize}
+                    visualizingIdx={visualizingIdx}
                 />
                 {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
             </div>

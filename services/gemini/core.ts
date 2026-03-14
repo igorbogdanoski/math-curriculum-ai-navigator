@@ -399,6 +399,37 @@ export async function callImagenProxy(params: {
   });
 }
 
+export async function callEmbeddingProxy(text: string, signal?: AbortSignal): Promise<number[]> {
+  return queueRequest(async () => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/embed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          contents: text
+        }),
+        signal
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.embedding.values;
+    } catch (err: any) {
+      if (err.name === 'AbortError') throw err;
+      console.error("Embedding Proxy Error:", err.message || err);
+      throw err;
+    }
+  });
+}
+
 export async function callGeminiEmbed(params: {
   model?: string;
   contents: any;

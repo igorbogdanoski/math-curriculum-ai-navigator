@@ -1,9 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles } from 'lucide-react';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
+import { callEmbeddingProxy } from '../services/gemini/core';
+
+// Helper: Cosine Similarity between two vectors
+const cosineSimilarity = (a: number[], b: number[]): number => {
+    if (!a || !b || a.length !== b.length) return 0;
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < a.length; i++) {
+        dotProduct += a[i] * b[i];
+        normA += a[i] * a[i];
+        normB += b[i] * b[i];
+    }
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+};
 
 const typeLabel: Record<string, string> = {
     quiz: 'Квиз', assessment: 'Тест', rubric: 'Рубрика',
@@ -26,6 +41,9 @@ export const ContentLibraryView: React.FC = () => {
     const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
     const [viewMode, setViewMode] = useState<'my' | 'national'>('my');
     const [searchQuery, setSearchQuery] = useState('');
+    const [useSemanticSearch, setUseSemanticSearch] = useState(false);
+    const [queryEmbedding, setQueryEmbedding] = useState<number[] | null>(null);
+    const [isEmbedding, setIsEmbedding] = useState(false);
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
@@ -47,21 +65,63 @@ export const ContentLibraryView: React.FC = () => {
 
     useEffect(() => { load(); }, [firebaseUser?.uid, viewMode]);
 
-    const filtered = materials.filter(m => {
-        if (searchQuery) {
+    // Generate query embedding when semantic search is toggled and query changes
+    useEffect(() => {
+        const getQueryEmbedding = async () => {
+            if (!useSemanticSearch || !searchQuery.trim()) {
+                setQueryEmbedding(null);
+                return;
+            }
+            setIsEmbedding(true);
+            try {
+                const emb = await callEmbeddingProxy(searchQuery);
+                setQueryEmbedding(emb);
+            } catch (err) {
+                console.error('Semantic search error:', err);
+                addNotification('Проблем со семантичкото пребарување.', 'warning');
+            } finally {
+                setIsEmbedding(false);
+            }
+        };
+
+        const timer = setTimeout(getQueryEmbedding, 500); // Debounce
+        return () => clearTimeout(timer);
+    }, [searchQuery, useSemanticSearch]);
+
+    const filtered = useMemo(() => {
+        let results = [...materials];
+
+        // 1. Text or Semantic Filter
+        if (searchQuery.trim()) {
             const sq = searchQuery.toLowerCase();
-            const matchesTitle = m.title?.toLowerCase().includes(sq);
-            const matchesConcept = m.conceptId?.toLowerCase().includes(sq);
-            const matchesTopic = m.topicId?.toLowerCase().includes(sq);
-            if (!matchesTitle && !matchesConcept && !matchesTopic) {
-                return false;
+            if (useSemanticSearch && queryEmbedding) {
+                // Semantic ranking
+                results = results
+                    .map(m => ({ 
+                        ...m, 
+                        score: m.embedding ? cosineSimilarity(queryEmbedding, m.embedding) : 0 
+                    }))
+                    .filter(m => (m as any).score > 0.4) // Threshold
+                    .sort((a, b) => (b as any).score - (a as any).score);
+            } else {
+                // Classic filter
+                results = results.filter(m => {
+                    const matchesTitle = m.title?.toLowerCase().includes(sq);
+                    const matchesConcept = m.conceptId?.toLowerCase().includes(sq);
+                    const matchesTopic = m.topicId?.toLowerCase().includes(sq);
+                    return matchesTitle || matchesConcept || matchesTopic;
+                });
             }
         }
-        if (viewMode === 'national') return true;
-        if (filter === 'draft') return m.status === 'draft' || !m.status;
-        if (filter === 'published') return m.status === 'published';
-        return true;
-    });
+
+        // 2. Status Filter (only for 'my' view)
+        if (viewMode === 'my') {
+            if (filter === 'draft') results = results.filter(m => m.status === 'draft' || !m.status);
+            if (filter === 'published') results = results.filter(m => m.status === 'published');
+        }
+
+        return results;
+    }, [materials, searchQuery, filter, viewMode, useSemanticSearch, queryEmbedding]);
 
     const handlePublish = async (m: CachedMaterial) => {
         try {
@@ -147,15 +207,29 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 </div>
 
                 {/* Search Bar */}
-                <div className="relative w-full md:w-64">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
-                        type="text"
-                        placeholder="Пребарај материјали..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-primary outline-none transition-all"
-                    />
+                <div className="flex flex-col gap-2 w-full md:w-80">
+                    <div className="relative w-full">
+                        <Search className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${isEmbedding ? 'text-indigo-500 animate-pulse' : 'text-gray-400'}`} />
+                        <input 
+                            type="text"
+                            placeholder={useSemanticSearch ? "Опишете што барате..." : "Пребарај материјали..."}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-primary outline-none transition-all"
+                        />
+                    </div>
+                    <button
+                        onClick={() => setUseSemanticSearch(!useSemanticSearch)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                            useSemanticSearch 
+                                ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm' 
+                                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                        }`}
+                    >
+                        <Sparkles className={`w-3 h-3 ${useSemanticSearch ? 'fill-indigo-500' : ''}`} />
+                        Семантичко пребарување (AI)
+                        {useSemanticSearch && <span className="ml-auto bg-indigo-500 text-white px-1.5 py-0.5 rounded text-[10px]">PRO</span>}
+                    </button>
                 </div>
             </div>
 

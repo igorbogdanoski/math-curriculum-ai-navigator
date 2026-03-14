@@ -21,20 +21,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server.' });
   }
 
-  const { model, contents } = validated;
-  let modelName = model || 'imagen-3.0-generate-001';
-  
-  // Normalize model name (some older clients might send 'imagen-3')
-  if (modelName === 'imagen-3' || modelName === 'imagen-3-fast') {
-      modelName = 'imagen-3.0-generate-001';
-  }
-
-  const prompt = typeof contents === 'string' 
+  const { contents } = validated;
+  const text = typeof contents === 'string' 
     ? contents 
     : (contents as any[])[0]?.parts[0]?.text || '';
 
-  if (!prompt) {
-    return res.status(400).json({ error: 'Missing prompt for image generation' });
+  if (!text) {
+    return res.status(400).json({ error: 'Missing text for embedding' });
   }
 
   let lastError: Error | null = null;
@@ -42,23 +35,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const apiKey = apiKeys[i];
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const modelInstance = genAI.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' });
+      const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
       
-      const result = await modelInstance.generateContent(prompt);
-      const response = await result.response;
+      const result = await model.embedContent(text);
+      const embedding = result.embedding;
       
-      // Imagen returns image data in the parts
-      const part = response.candidates?.[0]?.content?.parts?.[0];
-      if (part?.inlineData) {
-        return res.status(200).json({ 
-          inlineData: {
-            mimeType: part.inlineData.mimeType,
-            data: part.inlineData.data
-          }
-        });
-      }
-      
-      throw new Error("AI did not return image data");
+      return res.status(200).json({ embedding });
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       const msg = lastError.message;
@@ -72,6 +54,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  console.error('[/api/imagen] Error:', lastError);
+  console.error('[/api/embed] Error:', lastError);
   res.status(500).json({ error: lastError?.message || 'Internal server error' });
 }

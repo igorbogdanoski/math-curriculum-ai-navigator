@@ -189,11 +189,22 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
             </div>
         </div>
 
-        <div className="p-8 flex-1">
+        <div className="p-8 flex-1 overflow-y-auto">
           <p className="text-sm text-gray-500 mb-2">Прашање {currentIndex + 1} од {questions.length}</p>
-          <div className="text-xl font-semibold mb-6 min-h-[6rem]">
-            <MathRenderer text={currentQuestion.question} />
+          
+          <div className="flex flex-col md:flex-row gap-6 mb-8">
+            <div className="text-xl font-semibold flex-1">
+              <MathRenderer text={currentQuestion.question} />
+            </div>
+            {currentQuestion.imageUrl && (
+              <div className="w-full md:w-48 flex-shrink-0 animate-in fade-in zoom-in">
+                <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+                  <img src={currentQuestion.imageUrl} alt="Илустрација" className="w-full h-auto" />
+                </div>
+              </div>
+            )}
           </div>
+
           <div className="space-y-3">
             {renderOptions()}
           </div>

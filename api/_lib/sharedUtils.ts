@@ -16,6 +16,7 @@ export const ALLOWED_MODELS = new Set([
   'gemini-pro',
   'gemini-flash',
   'text-embedding-004',
+  'imagen-3.0-generate-001',
   'imagen-3',
   'imagen-3-fast'
 ]);

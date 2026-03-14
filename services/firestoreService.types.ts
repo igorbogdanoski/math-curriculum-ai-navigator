@@ -136,6 +136,7 @@ export interface CachedMaterial {
   gradeLevel: number;
   teacherUid?: string;
   status?: 'draft' | 'published';
+  embedding?: number[];
   createdAt: Timestamp;
   helpfulCount?: number;
   notHelpfulCount?: number;

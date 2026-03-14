@@ -4,6 +4,7 @@ import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
 import { type CachedMaterial, type Assignment } from './firestoreService.types';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
+import { callEmbeddingProxy } from './gemini/core';
 
 export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
     console.log("Attempting to fetch data from Firestore...");
@@ -310,20 +311,34 @@ export const saveToLibrary = async (content: any, meta: {
     conceptId?: string;
     topicId?: string;
     gradeLevel?: number;
-  }): Promise<string> => {
+}): Promise<string> => {
+    // Generate embedding for semantic search
+    let embedding: number[] | undefined;
+    try {
+        // Embed the title and a snippet of the content for semantic relevance
+        const contentSnippet = typeof content === 'string' 
+            ? content.substring(0, 1000) 
+            : JSON.stringify(content).substring(0, 1000);
+        const textToEmbed = `${meta.title}\n${contentSnippet}`;
+        embedding = await callEmbeddingProxy(textToEmbed);
+    } catch (err) {
+        console.warn('Failed to generate embedding for library item:', err);
+    }
+
     const ref = await addDoc(collection(db, 'cached_ai_materials'), {
-      content,
-      type: meta.type,
-      title: meta.title,
-      teacherUid: meta.teacherUid,
-      conceptId: meta.conceptId,
-      topicId: meta.topicId,
-      gradeLevel: meta.gradeLevel ?? 0,
-      status: 'draft',
-      createdAt: serverTimestamp(),
+        content,
+        type: meta.type,
+        title: meta.title,
+        teacherUid: meta.teacherUid,
+        conceptId: meta.conceptId,
+        topicId: meta.topicId,
+        gradeLevel: meta.gradeLevel ?? 0,
+        status: 'draft',
+        embedding,
+        createdAt: serverTimestamp(),
     });
     return ref.id;
-  };
+};
 
 export const fetchLibraryMaterials = async (teacherUid: string): Promise<CachedMaterial[]> => {
     try {

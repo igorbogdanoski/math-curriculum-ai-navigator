@@ -19,6 +19,7 @@ export interface Question {
   question: string;
   options?: string[];
   answer: string;
+  imageUrl?: string;
   explanation?: string;
   type?: QuestionType | string;
   isWorkedExample?: boolean;
@@ -60,6 +61,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
           question: item.text,
           options: item.options || [], // Fallback if no options
           answer: item.answer,
+          imageUrl: item.imageUrl,
           explanation: item.solution || item.explanation,
           type: item.type === 'problem' ? QuestionType.SHORT_ANSWER : QuestionType.MULTIPLE_CHOICE,
           cognitiveLevel: item.cognitiveLevel,
@@ -428,9 +430,21 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
         )}
 
         <div className="p-6 md:p-10">
-          {/* Question */}
-          <div className="mb-10">
-            <ReadingModeQuestion text={currentQ.question} mode={readingMode} />
+          {/* Question and Illustration */}
+          <div className="flex flex-col md:flex-row gap-8 mb-10">
+            <div className="flex-1">
+              <ReadingModeQuestion text={currentQ.question} mode={readingMode} />
+            </div>
+            {currentQ.imageUrl && (
+              <div className="w-full md:w-64 flex-shrink-0 animate-in fade-in zoom-in duration-500">
+                <div className="rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-white rotate-1 hover:rotate-0 transition-transform">
+                  <img src={currentQ.imageUrl} alt="Илустрација на задачата" className="w-full h-auto" />
+                  <div className="p-2 bg-gray-50 text-[10px] text-gray-400 text-center font-bold uppercase tracking-wider">
+                    AI Контекст
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Options */}
