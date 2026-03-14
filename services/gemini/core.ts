@@ -297,6 +297,7 @@ export function normalizeContents(contents: any): any[] {
   });
 }
 
+// --- PROXY API HELPERS ---
 export async function callGeminiProxy(params: {
   model: string;
   contents: any;
@@ -306,25 +307,33 @@ export async function callGeminiProxy(params: {
 }, signal?: AbortSignal): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
     try {
-      // Map to the absolute latest models available for your API Key
-      let modelName = params.model;
-      if (modelName.includes('pro')) modelName = PRO_MODEL;
-      else if (modelName.includes('flash')) modelName = DEFAULT_MODEL;
-      else modelName = DEFAULT_MODEL;
-
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: params.generationConfig,
-        systemInstruction: params.systemInstruction,
-        safetySettings: params.safetySettings
+      const token = await getAuthToken();
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          model: params.model,
+          contents: normalizeContents(params.contents),
+          config: {
+            systemInstruction: params.systemInstruction,
+            safetySettings: params.safetySettings,
+            ...params.generationConfig
+          }
+        }),
+        signal
       });
 
-      const contents = normalizeContents(params.contents);
-      const result = await model.generateContent({ contents });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
 
-      const response = result.response;
-      return { text: response.text(), candidates: response.candidates || [] };
+      return await response.json();
     } catch (err: any) {
+      if (err.name === 'AbortError') throw err;
       console.error("Gemini Proxy Error:", err.message || err);
       throw err;
     }
@@ -345,7 +354,7 @@ export async function callGeminiEmbed(params: {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          model: params.model || 'gemini-embedding-2-preview',
+          model: params.model || 'text-embedding-004',
           contents: normalizeContents(params.contents)[0]?.parts || []
         }),
       });
@@ -370,33 +379,60 @@ export async function* streamGeminiProxy(params: {
   systemInstruction?: string;
   safetySettings?: any;
 }): AsyncGenerator<string, void, unknown> {
-  // Map to the absolute latest models available for your API Key
-  let modelName = params.model;
-  if (modelName.includes('pro')) modelName = PRO_MODEL;
-  else if (modelName.includes('flash')) modelName = DEFAULT_MODEL;
-  else modelName = DEFAULT_MODEL;
-
-  const model = genAI.getGenerativeModel({
-    model: modelName,
-    generationConfig: params.generationConfig,
-    systemInstruction: params.systemInstruction,
-    safetySettings: params.safetySettings
+  const token = await getAuthToken();
+  const response = await fetch('/api/gemini-stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      model: params.model,
+      contents: normalizeContents(params.contents),
+      config: {
+        systemInstruction: params.systemInstruction,
+        safetySettings: params.safetySettings,
+        ...params.generationConfig
+      }
+    }),
   });
 
-  try {
-    const result = await model.generateContentStream({
-      contents: normalizeContents(params.contents)
-    });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Server error: ${response.status}`);
+  }
 
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      if (chunkText) {
-        yield chunkText;
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("No response body");
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const dataStr = line.slice(6).trim();
+        if (dataStr === '[DONE]') return;
+
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.text) yield data.text;
+          if (data.error) throw new Error(data.error);
+        } catch (e) {
+          console.error("Error parsing stream chunk:", e);
+        }
       }
     }
-  } catch (error: any) {
-    console.error("Gemini Stream Error:", error);
-    throw error;
+  } finally {
+    reader.releaseLock();
   }
 }
 
