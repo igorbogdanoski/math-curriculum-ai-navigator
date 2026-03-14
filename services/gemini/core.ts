@@ -315,7 +315,7 @@ export async function callGeminiProxy(params: {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          model: params.model,
+          model: params.model.includes('pro') ? PRO_MODEL : DEFAULT_MODEL,
           contents: normalizeContents(params.contents),
           config: {
             systemInstruction: params.systemInstruction,
@@ -387,7 +387,7 @@ export async function* streamGeminiProxy(params: {
       'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify({
-      model: params.model,
+      model: params.model.includes('pro') ? PRO_MODEL : DEFAULT_MODEL,
       contents: normalizeContents(params.contents),
       config: {
         systemInstruction: params.systemInstruction,

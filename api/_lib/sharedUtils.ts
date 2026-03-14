@@ -58,6 +58,8 @@ const ALLOWED_MODELS = new Set([
   'gemini-1.5-flash-002',
   'gemini-1.5-pro',
   'gemini-1.5-flash',
+  'gemini-pro',
+  'gemini-flash',
   'text-embedding-004'
 ]);
 
