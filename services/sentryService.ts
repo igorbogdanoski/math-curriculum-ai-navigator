@@ -16,7 +16,11 @@ import { onCLS, onFCP, onINP, onLCP, onTTFB, type Metric } from 'web-vitals';
 
 export function initSentry(): void {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
-  if (!dsn) return; // no-op in dev or when DSN is not configured
+  // Basic validation to prevent "Invalid Sentry Dsn" noise in console
+  if (!dsn || !dsn.startsWith('http') || !dsn.includes('@')) {
+    if (dsn) console.warn("[Sentry] Invalid DSN detected, skipping initialization.");
+    return;
+  }
 
   Sentry.init({
     dsn,
