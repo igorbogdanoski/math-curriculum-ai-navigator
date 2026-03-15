@@ -147,7 +147,7 @@ AI одговор + source citations (badge)
 | 🟠 P1 | М4 | **`step-by-step` слајд layout** | Нов тип слајд во GeneratedPresentation: нумерирани чекори со прогрес бар, клик-анимација, идеален за докажување теореми. | ✅ ЗАВРШЕНО |
 | 🟡 P2 | М5 | **Archive на материјали** | Soft-delete: `archivedAt` поле во Firestore. Таб „Архива" во ContentLibraryView. Копче „Врати" и „Избриши засекогаш". | ✅ ЗАВРШЕНО |
 | 🟡 P2 | М6 | **Unit тестови** | `bm25Score` edge cases + `cosineSimilarity` + `hybridScore` — 21 теста во `utils/search.test.ts`. `bm25Score` извлечен во `utils/search.ts` (делен помеѓу ContentLibraryView и AssistantView). | ✅ ЗАВРШЕНО |
-| 🟢 P3 | М7 | **`formula-centered` слајд layout** | Layout само со голема формула + визуелизација — за клучни дефиниции и теореми. | ⏳ |
+| 🟢 P3 | М7 | **`formula-centered` слајд layout** | Layout само со голема формула + визуелизација — за клучни дефиниции и теореми. content[0] = главна формула, content[1..] = белешки. Централна box + PPTX roundRect export. | ✅ ЗАВРШЕНО |
 | 🟢 P3 | М8 | **Live quiz од слајд** | Директно стартување на квиз-сесија од презентациски слајд (Premium WOW feature). | ⏳ |
 
 ### Архитектура — GeoGebra + Desmos

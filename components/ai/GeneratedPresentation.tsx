@@ -123,6 +123,38 @@ const StepByStepSlide: React.FC<StepByStepSlideProps> = ({ steps, theme }) => {
   );
 };
 
+// ─── Formula-centered slide UI ────────────────────────────────────────────────
+/** Displays a large centred formula + optional sub-points beneath it.
+ *  content[0] is the main formula/definition; content[1..] are short notes. */
+const FormulaCenteredSlide: React.FC<{ content: string[]; theme: 'modern' | 'classic' | 'dark' | 'creative' }> = ({ content, theme }) => {
+  const [formula, ...notes] = content;
+  const borderColor = theme === 'dark' ? 'border-indigo-400/50' : theme === 'creative' ? 'border-amber-400/50' : 'border-brand-primary/30';
+  const formulaColor = theme === 'dark' ? 'text-indigo-200' : theme === 'creative' ? 'text-orange-700' : 'text-brand-primary';
+
+  return (
+    <div className="flex flex-col items-center justify-center w-full h-full gap-6 py-4">
+      {/* Central formula box */}
+      <div className={`w-full max-w-2xl rounded-3xl border-2 ${borderColor} px-10 py-8 text-center shadow-lg bg-black/3`}>
+        <div className={`text-4xl font-black leading-tight tracking-tight ${formulaColor}`}>
+          <MathRenderer text={formula} />
+        </div>
+      </div>
+
+      {/* Supporting notes */}
+      {notes.length > 0 && (
+        <ul className="space-y-2 w-full max-w-xl">
+          {notes.map((note, i) => (
+            <li key={i} className={`flex items-start gap-3 text-base ${theme === 'dark' ? 'text-indigo-200' : 'text-gray-600'}`}>
+              <span className={`mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 ${theme === 'dark' ? 'bg-indigo-400' : 'bg-brand-primary/60'}`} />
+              <MathRenderer text={note} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 interface GeneratedPresentationProps {
   data: AIGeneratedPresentation;
 }
@@ -209,6 +241,51 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             x: 0.5, y: 3.2, w: SLIDE_W - 1, h: 0.6,
             fontSize: 24, color: colors.body, align: 'center',
           });
+        } else if (slide.type === 'formula-centered') {
+          // Slide title
+          pptSlide.addText(slide.title, {
+            x: 0.4, y: 0.25, w: SLIDE_W - 0.8, h: 0.75,
+            fontSize: 28, bold: true, color: colors.title, fontFace: 'Arial',
+          });
+          pptSlide.addShape((pptxgen as any).ShapeType?.line ?? 'line', {
+            x: 0.4, y: 1.05, w: SLIDE_W - 0.8, h: 0,
+            line: { color: colors.line, width: 1.5 },
+          });
+
+          const [mainFormula, ...notes] = slide.content;
+
+          // Central formula box
+          if (mainFormula) {
+            const boxX = 1.0, boxY = 1.3, boxW = SLIDE_W - 2, boxH = 1.8;
+            pptSlide.addShape('roundRect', {
+              x: boxX, y: boxY, w: boxW, h: boxH,
+              fill: { color: theme === 'dark' ? '1a1a5e' : 'EEF2FF' },
+              line: { color: colors.line, width: 2 },
+            });
+            if (HAS_MATH.test(mainFormula)) {
+              try {
+                const png = await renderBulletToPng(mainFormula, colors.title);
+                const img = new Image();
+                await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
+                const ratio = img.naturalHeight / img.naturalWidth;
+                const imgW = Math.min(boxW - 0.4, 6.5);
+                const imgH = Math.min(imgW * ratio, boxH - 0.2);
+                pptSlide.addImage({ data: png, x: boxX + (boxW - imgW) / 2, y: boxY + (boxH - imgH) / 2, w: imgW, h: imgH });
+              } catch {
+                pptSlide.addText(mainFormula, { x: boxX, y: boxY + 0.4, w: boxW, h: boxH - 0.8, fontSize: 22, bold: true, color: colors.title, align: 'center', fontFace: 'Arial' });
+              }
+            } else {
+              pptSlide.addText(mainFormula, { x: boxX, y: boxY + 0.4, w: boxW, h: boxH - 0.8, fontSize: 22, bold: true, color: colors.title, align: 'center', fontFace: 'Arial' });
+            }
+          }
+
+          // Supporting notes below the box
+          let noteY = 3.3;
+          for (const note of notes) {
+            pptSlide.addText(`• ${note}`, { x: 1.0, y: noteY, w: SLIDE_W - 2, h: 0.42, fontSize: 14, color: colors.body, fontFace: 'Arial' });
+            noteY += 0.44;
+            if (noteY > 5.0) break;
+          }
         } else if (slide.type === 'step-by-step') {
           // Slide title
           pptSlide.addText(slide.title, {
@@ -424,6 +501,11 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                                 theme={theme}
                                 key={currentSlide}
                             />
+                        ) : current.type === 'formula-centered' ? (
+                            <FormulaCenteredSlide
+                                content={current.content}
+                                theme={theme}
+                            />
                         ) : (
                             <ul className="space-y-6">
                                 {current.content.map((point, idx) => (
@@ -542,7 +624,11 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                         <div>
                             <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest block mb-2">Предлог Активности</span>
                             <div className="space-y-2">
-                                {current.type === 'step-by-step' ? (
+                                {current.type === 'formula-centered' ? (
+                                    <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-200 text-xs italic">
+                                        Слајд со централна формула/дефиниција. Идеален за теореми и клучни равенства.
+                                    </div>
+                                ) : current.type === 'step-by-step' ? (
                                     <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/20 text-purple-200 text-xs italic">
                                         Постапка чекор-по-чекор. Кликнете на секој чекор за да го истакнете. Идеално за доказ или алгоритам.
                                     </div>

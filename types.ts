@@ -75,7 +75,7 @@ export interface PresentationSlide {
   title: string;
   content: string[];
   visualPrompt?: string; // Prompt for Imagen if teacher wants a background/image
-  type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step';
+  type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step' | 'formula-centered';
 }
 
 export interface AIGeneratedPresentation {

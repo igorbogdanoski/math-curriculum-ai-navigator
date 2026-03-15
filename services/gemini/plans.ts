@@ -333,7 +333,7 @@ ${customInstruction ? `- Дополнителни барања: ${customInstruct
 1. Насловен слајд
 2. Цели на часот
 3. Вовед / Мотивација (со визуелна идеја)
-4. Разработка на концептот (2-3 слајдови)
+4. Разработка на концептот (2-3 слајдови; употреби type='formula-centered' ако е клучна дефиниција/теорема — content[0] е главната формула, content[1..] се кратки белешки)
 5. Практичен пример — ЗАДОЛЖИТЕЛНО type='step-by-step' за докажување/постапки (чекор по чекор, секоја точка е еден нумериран чекор)
 6. Задача за учениците
 7. Заклучок / Рефлексија
@@ -341,11 +341,13 @@ ${customInstruction ? `- Дополнителни барања: ${customInstruct
 ### ФОРМАТ
 Врати JSON објект со слајдови. Секој слајд треба да има:
 - title: наслов на слајдот
-- content: низа од кратки точки (bullet points) — за 'step-by-step' слајдовите секоја точка е еден нумериран чекор
-- type: 'title', 'content', 'example', 'task', 'summary', 'step-by-step'
-- visualPrompt: краток опис на слика/дијаграм што би одел добро на слајдот (на англиски јазик за Imagen)
+- content: низа од кратки точки; за 'step-by-step' секоја точка е чекор; за 'formula-centered' content[0] е главната формула
+- type: 'title', 'content', 'example', 'task', 'summary', 'step-by-step', 'formula-centered'
+- visualPrompt: краток опис на слика/дијаграм (на англиски јазик за Imagen)
 
-ВАЖНО: Употреби type='step-by-step' за слајдови кои прикажуваат постапка/алгоритам/доказ чекор-по-чекор.
+ВАЖНО:
+- type='step-by-step' за слајдови со постапка/алгоритам/доказ
+- type='formula-centered' за слајдови со централна формула, теорема или дефиниција
 
 Одговорите да бидат на македонски јазик.
 `;
@@ -364,7 +366,7 @@ ${customInstruction ? `- Дополнителни барања: ${customInstruct
               title: { type: Type.STRING },
               content: { type: Type.ARRAY, items: { type: Type.STRING } },
               visualPrompt: { type: Type.STRING },
-              type: { type: Type.STRING, enum: ['title', 'content', 'example', 'task', 'summary', 'step-by-step'] }
+              type: { type: Type.STRING, enum: ['title', 'content', 'example', 'task', 'summary', 'step-by-step', 'formula-centered'] }
             },
             required: ["title", "content", "type"]
           }
