@@ -696,7 +696,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                         </div>
                     )}
                     {'criteria' in generatedMaterial && <GeneratedRubric material={generatedMaterial} />}
-                    {'slides' in generatedMaterial && <GeneratedPresentation data={generatedMaterial as any} />}
+                    {'slides' in generatedMaterial && <GeneratedPresentation data={generatedMaterial as any} conceptId={state.selectedConcepts[0]} />}
                     {'paths' in generatedMaterial && <GeneratedLearningPaths material={generatedMaterial} />}
                     {'steps' in generatedMaterial && <WorkedExample example={generatedMaterial as AIGeneratedWorkedExample} />}
                     

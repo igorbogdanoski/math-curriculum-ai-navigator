@@ -148,7 +148,7 @@ AI одговор + source citations (badge)
 | 🟡 P2 | М5 | **Archive на материјали** | Soft-delete: `archivedAt` поле во Firestore. Таб „Архива" во ContentLibraryView. Копче „Врати" и „Избриши засекогаш". | ✅ ЗАВРШЕНО |
 | 🟡 P2 | М6 | **Unit тестови** | `bm25Score` edge cases + `cosineSimilarity` + `hybridScore` — 21 теста во `utils/search.test.ts`. `bm25Score` извлечен во `utils/search.ts` (делен помеѓу ContentLibraryView и AssistantView). | ✅ ЗАВРШЕНО |
 | 🟢 P3 | М7 | **`formula-centered` слајд layout** | Layout само со голема формула + визуелизација — за клучни дефиниции и теореми. content[0] = главна формула, content[1..] = белешки. Централна box + PPTX roundRect export. | ✅ ЗАВРШЕНО |
-| 🟢 P3 | М8 | **Live quiz од слајд** | Директно стартување на квиз-сесија од презентациски слајд (Premium WOW feature). | ⏳ |
+| 🟢 P3 | М8 | **Live quiz од слајд** | Директно стартување на квиз-сесија од презентациски слајд (Premium WOW feature). | ✅ |
 
 ### Архитектура — GeoGebra + Desmos
 
@@ -238,12 +238,12 @@ InfographicPreviewModal → base64 PNG preview + Download копче
 | 🟠 P1 | П-В | **Bloom Objective Builder** — dropdown глаголи + мерлив исход | ⭐⭐⭐⭐ | Среден | ✅ |
 | 🟡 P2 | П-Д | **Spaced Rep во HomeView** — due concepts + 1-click review quiz | ⭐⭐⭐ | Низок | ✅ |
 | 🟡 P2 | П-Е | **Teacher Onboarding Wizard** — 4 чекори на прво логирање | ⭐⭐⭐ | Среден | ✅ |
-| 🟡 P2 | П-Ж | **PDF Export** (branded A4, формули + слика) | ⭐⭐⭐ | Висок | ⏳ |
+| 🟡 P2 | П-Ж | **PDF Export** (branded A4, формули + слика) | ⭐⭐⭐ | Висок | ✅ |
 | 🟡 P2 | П-З | **MathRenderer a11y** — `aria-label` + `role="math"` | ⭐⭐ | Низок | ✅ |
 | 🟡 P2 | П-Л | **Print Quiz** — `@media print` CSS visibility | ⭐⭐ | Низок | ✅ |
 | 🟢 P3 | М8 | **Live Quiz од слајд** (Premium WOW feature) | ⭐⭐⭐ | Висок | ⏳ |
-| 🟢 P3 | П-И | **Collaborative Share** — share lesson plan со колега | ⭐⭐⭐ | Среден | ⏳ |
-| 🟢 P3 | П-Ј | **Smart Quiz Title** — Gemini Flash генерира наслов при зачувување | ⭐⭐ | Низок | ⏳ |
+| 🟢 P3 | П-И | **Collaborative Share** — share lesson plan со колега | ⭐⭐⭐ | Среден | ✅ |
+| 🟢 P3 | П-Ј | **Smart Quiz Title** — Gemini Flash генерира наслов при зачувување | ⭐⭐ | Низок | ✅ |
 
 ### 🧠 Дијагностицирани Критични Дефицити
 
