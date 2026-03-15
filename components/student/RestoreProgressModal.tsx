@@ -43,12 +43,13 @@ export const RestoreProgressModal: React.FC<RestoreProgressModalProps> = ({
       await firestoreService.linkDeviceToStudentAccount(uid, deviceId);
 
       // Зачувај локално
+      const restoredName = account.name?.trim() || 'Ученик';
       try {
-        localStorage.setItem('studentName', account.name);
+        localStorage.setItem('studentName', restoredName);
         localStorage.setItem('student_google_uid', uid);
       } catch { /* incognito */ }
 
-      onRestored(account.name, uid);
+      onRestored(restoredName, uid);
     } catch (err: any) {
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         setLoading(false);

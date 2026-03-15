@@ -11,7 +11,7 @@
  *  error    → „Грешка — обиди се повторно"
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { signInWithPopup, linkWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebaseConfig';
 import { firestoreService } from '../../services/firestoreService';
@@ -35,10 +35,13 @@ export const SaveProgressModal: React.FC<SaveProgressModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const isProcessingRef = useRef(false);
 
   if (dismissed) return null;
 
   const handleGoogleSignIn = async () => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
     setState('loading');
     setErrorMsg('');
     try {
@@ -91,6 +94,8 @@ export const SaveProgressModal: React.FC<SaveProgressModalProps> = ({
         setErrorMsg('Грешка при зачувување. Обиди се повторно.');
         setState('error');
       }
+    } finally {
+      isProcessingRef.current = false;
     }
   };
 

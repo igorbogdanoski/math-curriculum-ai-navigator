@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
-import { Users, School, TrendingUp, BookOpen, AlertCircle, Printer, BarChart2, FileText, RefreshCw, Copy, UserMinus, Loader2 } from 'lucide-react';
+import { Users, School, TrendingUp, BookOpen, AlertCircle, Printer, BarChart2, FileText, RefreshCw, Copy, UserMinus, Loader2, CheckCircle2 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import type { School as SchoolType } from '../types';
 
@@ -16,6 +16,7 @@ export const SchoolAdminView: React.FC = () => {
     const [school, setSchool] = useState<SchoolType | null>(null);
     const [joinCodeLoading, setJoinCodeLoading] = useState(false);
     const [removingUid, setRemovingUid] = useState<string | null>(null);
+    const [codeCopied, setCodeCopied] = useState(false);
 
     useEffect(() => {
         if (!user || (user.role !== 'school_admin' && user.role !== 'admin')) {
@@ -236,10 +237,14 @@ export const SchoolAdminView: React.FC = () => {
                                 <button
                                     type="button"
                                     title="Копирај код"
-                                    onClick={() => { navigator.clipboard.writeText(school.joinCode ?? ''); addNotification('Кодот е копиран!', 'success'); }}
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(school.joinCode ?? '');
+                                        setCodeCopied(true);
+                                        setTimeout(() => setCodeCopied(false), 2000);
+                                    }}
                                     className="p-2 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 rounded-lg transition-colors"
                                 >
-                                    <Copy className="w-5 h-5" />
+                                    {codeCopied ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
                                 </button>
                                 <button
                                     type="button"

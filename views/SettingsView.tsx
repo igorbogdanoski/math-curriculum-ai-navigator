@@ -33,6 +33,10 @@ export const SettingsView: React.FC = () => {
 
     const handleJoinSchool = async () => {
         if (!firebaseUser || joinCodeInput.trim().length < 4) return;
+        if (user?.schoolId) {
+            addNotification('Веќе сте член на училиште. Прво напуштете го тековното пред да се приклучите кон ново.', 'error');
+            return;
+        }
         setJoinLoading(true);
         try {
             const school = await firestoreService.joinSchoolByCode(joinCodeInput.trim(), firebaseUser.uid);
@@ -702,7 +706,7 @@ export const SettingsView: React.FC = () => {
                         <input
                             type="text"
                             value={joinCodeInput}
-                            onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
+                            onChange={e => setJoinCodeInput(e.target.value.trim().toUpperCase())}
                             maxLength={8}
                             placeholder="пр. AB1234"
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-400"

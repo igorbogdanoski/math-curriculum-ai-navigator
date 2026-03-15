@@ -6,7 +6,8 @@ export const schoolService = {
 
   createSchool: async (name: string, city: string, adminUid: string = '', opts?: { municipality?: string; address?: string }): Promise<School> => {
     try {
-      const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const joinCode = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+        .map(b => b.toString(36).padStart(2, '0')).join('').substring(0, 6).toUpperCase();
       const docRef = await addDoc(collection(db, 'schools'), {
         name,
         city,
@@ -54,6 +55,7 @@ export const schoolService = {
    * Adds teacherUid to school.teacherUids[] and updates the user profile.
    */
   joinSchoolByCode: async (code: string, teacherUid: string): Promise<School | null> => {
+    if (!code?.trim() || !teacherUid?.trim()) return null;
     try {
       const school = await schoolService.fetchSchoolByJoinCode(code);
       if (!school) return null;
@@ -111,7 +113,8 @@ export const schoolService = {
 
   /** Regenerate the join code for a school (invalidates the old one) */
   regenerateJoinCode: async (schoolId: string): Promise<string> => {
-    const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const newCode = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+      .map(b => b.toString(36).padStart(2, '0')).join('').substring(0, 6).toUpperCase();
     await updateDoc(doc(db, 'schools', schoolId), {
       joinCode: newCode,
       joinCodeGeneratedAt: serverTimestamp(),
