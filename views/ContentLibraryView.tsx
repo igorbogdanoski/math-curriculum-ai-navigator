@@ -1,46 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles } from 'lucide-react';
+import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore } from 'lucide-react';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
 import { callEmbeddingProxy } from '../services/gemini/core';
-
-// Helper: Cosine Similarity between two vectors
-const cosineSimilarity = (a: number[], b: number[]): number => {
-    if (!a || !b || a.length !== b.length) return 0;
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-    for (let i = 0; i < a.length; i++) {
-        dotProduct += a[i] * b[i];
-        normA += a[i] * a[i];
-        normB += b[i] * b[i];
-    }
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-};
-
-const stripMd = (t: string) => t.replace(/[*_`~[\]#>]/g, ' ');
-
-// Helper: BM25-lite keyword score (no pre-computed IDF, normalized to ~[0,1])
-const bm25Score = (query: string, docText: string): number => {
-    const k1 = 1.5, b = 0.75, avgDocLen = 25;
-    const queryTerms = stripMd(query).toLowerCase().split(/[\s,.\-/]+/).filter(Boolean);
-    const docTokens = stripMd(docText).toLowerCase().split(/[\s,.\-/]+/).filter(Boolean);
-    const docLen = docTokens.length || 1;
-    let score = 0;
-    for (const term of queryTerms) {
-        const tf = docTokens.filter(t => t === term || t.includes(term)).length;
-        if (tf > 0) {
-            score += (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * docLen / avgDocLen));
-        }
-    }
-    return score / Math.max(queryTerms.length, 1);
-};
-
-// Hybrid score: 60% semantic + 40% keyword
-const hybridScore = (cosine: number, bm25: number): number =>
-    0.6 * cosine + 0.4 * Math.min(bm25, 1);
+import { bm25Score, cosineSimilarity, hybridScore } from '../utils/search';
 
 const typeLabel: Record<string, string> = {
     quiz: 'Квиз', assessment: 'Тест', rubric: 'Рубрика',
@@ -61,7 +26,7 @@ export const ContentLibraryView: React.FC = () => {
     const [materials, setMaterials] = useState<CachedMaterial[]>([]);
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
-    const [viewMode, setViewMode] = useState<'my' | 'national'>('my');
+    const [viewMode, setViewMode] = useState<'my' | 'national' | 'archive'>('my');
     const [searchQuery, setSearchQuery] = useState('');
     const [useSemanticSearch, setUseSemanticSearch] = useState(false);
     const [queryEmbedding, setQueryEmbedding] = useState<number[] | null>(null);
@@ -75,9 +40,15 @@ export const ContentLibraryView: React.FC = () => {
         if (!firebaseUser?.uid) return;
         setLoading(true);
         try {
-            const data = viewMode === 'my' 
-                ? await firestoreService.fetchLibraryMaterials(firebaseUser.uid)
-                : await firestoreService.fetchGlobalLibraryMaterials();
+            let data: CachedMaterial[];
+            if (viewMode === 'archive') {
+                data = await firestoreService.fetchArchivedMaterials(firebaseUser.uid);
+            } else if (viewMode === 'national') {
+                data = await firestoreService.fetchGlobalLibraryMaterials();
+            } else {
+                data = (await firestoreService.fetchLibraryMaterials(firebaseUser.uid))
+                    .filter(m => !m.archivedAt);
+            }
             setMaterials(data);
         } catch {
             addNotification('Грешка при вчитување на библиотеката.', 'error');
@@ -161,15 +132,6 @@ export const ContentLibraryView: React.FC = () => {
         } catch { addNotification('Грешка при публикување.', 'error'); }
     };
 
-          const handleApproveToggle = async (m: CachedMaterial) => {
-          try {
-              const newStatus = !m.isApproved;
-              await firestoreService.approveMaterial(m.id, newStatus);
-              setMaterials(prev => prev.map(x => x.id === m.id ? { ...x, isApproved: newStatus } : x));
-              addNotification(newStatus ? 'Материјалот е одобрен и видлив за сите! ✅' : 'Одобрувањето е повлечено.', 'success');
-          } catch { addNotification('Грешка при одобрување.', 'error'); }
-      };
-
 const handleUnpublish = async (m: CachedMaterial) => {
         try {
             await firestoreService.unpublishMaterial(m.id);
@@ -178,12 +140,28 @@ const handleUnpublish = async (m: CachedMaterial) => {
         } catch { addNotification('Грешка.', 'error'); }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Да се избрише материјалот?')) return;
+    const handleArchive = async (m: CachedMaterial) => {
+        try {
+            await firestoreService.archiveMaterial(m.id);
+            setMaterials(prev => prev.filter(x => x.id !== m.id));
+            addNotification(`„${m.title || 'Материјал'}" е архивиран.`, 'info');
+        } catch { addNotification('Грешка при архивирање.', 'error'); }
+    };
+
+    const handleRestore = async (m: CachedMaterial) => {
+        try {
+            await firestoreService.restoreMaterial(m.id);
+            setMaterials(prev => prev.filter(x => x.id !== m.id));
+            addNotification(`„${m.title || 'Материјал'}" е вратен во библиотеката.`, 'success');
+        } catch { addNotification('Грешка при враќање.', 'error'); }
+    };
+
+    const handleDeleteForever = async (id: string) => {
+        if (!confirm('Трајно бришење — ова не може да се врати. Продолжи?')) return;
         try {
             await firestoreService.deleteCachedMaterial(id);
             setMaterials(prev => prev.filter(m => m.id !== id));
-            addNotification('Избришано.', 'info');
+            addNotification('Трајно избришано.', 'info');
         } catch { addNotification('Грешка при бришење.', 'error'); }
     };
 
@@ -223,16 +201,25 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 {/* View Mode Toggle */}
                 <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
                     <button
+                        type="button"
                         onClick={() => setViewMode('my')}
                         className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${viewMode === 'my' ? 'bg-white shadow text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         <Lock className="w-4 h-4" /> Мои материјали
                     </button>
                     <button
+                        type="button"
                         onClick={() => setViewMode('national')}
                         className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${viewMode === 'national' ? 'bg-white shadow text-emerald-700' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         <Globe className="w-4 h-4" /> Национална библиотека
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setViewMode('archive')}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition ${viewMode === 'archive' ? 'bg-white shadow text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <Archive className="w-4 h-4" /> Архива
                     </button>
                 </div>
 
@@ -297,16 +284,34 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 </div>
             )}
 
+            {viewMode === 'archive' && (
+                <div className="flex flex-wrap items-center gap-3 mb-5">
+                    <p className="text-sm text-gray-500">
+                        Архивираните материјали се скриени од главната библиотека. Можете да ги вратите или трајно да ги избришете.
+                    </p>
+                    <button type="button" onClick={load}
+                        className="ml-auto flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100">
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />Освежи
+                    </button>
+                </div>
+            )}
+
             {/* Content */}
             {loading ? (
                 <div className="text-center py-12 text-gray-400">Вчитувам…</div>
             ) : filtered.length === 0 ? (
                 <Card className="p-10 text-center">
-                    <BookOpen className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                    {viewMode === 'archive'
+                        ? <Archive className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                        : <BookOpen className="w-12 h-12 text-gray-200 mx-auto mb-3" />}
                     <p className="text-gray-500 font-medium">
-                        {filter === 'all' ? 'Нема зачувани материјали.' : filter === 'draft' ? 'Нема нацрти.' : 'Нема публикувани материјали.'}
+                        {viewMode === 'archive'
+                            ? 'Архивата е празна.'
+                            : filter === 'all' ? 'Нема зачувани материјали.'
+                            : filter === 'draft' ? 'Нема нацрти.'
+                            : 'Нема публикувани материјали.'}
                     </p>
-                    {filter === 'all' && (
+                    {viewMode !== 'archive' && filter === 'all' && (
                         <p className="text-sm text-gray-400 mt-1">
                             Генерирајте квиз или тест и кликнете „Зачувај" за да го зачувате овде.
                         </p>
@@ -327,19 +332,21 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                             <div className="flex items-center gap-2 mb-2">
                                                 <input
                                                     autoFocus
+                                                    title="Наслов на материјал"
+                                                    placeholder="Внеси наслов…"
                                                     value={editTitle}
                                                     onChange={e => setEditTitle(e.target.value)}
                                                     onKeyDown={e => { if (e.key === 'Enter') handleSaveTitle(m.id); if (e.key === 'Escape') setEditingId(null); }}
                                                     className="flex-1 border rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                                                 />
-                                                <button type="button" onClick={() => handleSaveTitle(m.id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="w-4 h-4" /></button>
-                                                <button type="button" onClick={() => setEditingId(null)} className="p-1 text-gray-400 hover:bg-gray-100 rounded"><X className="w-4 h-4" /></button>
+                                                <button type="button" title="Зачувај наслов" onClick={() => handleSaveTitle(m.id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="w-4 h-4" /></button>
+                                                <button type="button" title="Откажи" onClick={() => setEditingId(null)} className="p-1 text-gray-400 hover:bg-gray-100 rounded"><X className="w-4 h-4" /></button>
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2 mb-1">
                                                 <p className="font-semibold text-gray-800 truncate">{m.title || 'Без наслов'}</p>
                                                 {viewMode !== 'national' && (
-                                                    <button type="button" onClick={() => { setEditingId(m.id); setEditTitle(m.title || ''); }}
+                                                    <button type="button" title="Уреди наслов" onClick={() => { setEditingId(m.id); setEditTitle(m.title || ''); }}
                                                         className="flex-shrink-0 p-0.5 text-gray-400 hover:text-gray-600 rounded">
                                                         <Edit3 className="w-3.5 h-3.5" />
                                                     </button>
@@ -370,6 +377,19 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                                     <Users className="w-3.5 h-3.5" /> Од заедницата
                                                 </span>
                                             )
+                                        ) : viewMode === 'archive' ? (
+                                            <>
+                                                <button type="button" onClick={() => handleRestore(m)}
+                                                    title="Врати во библиотеката"
+                                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+                                                    <ArchiveRestore className="w-3.5 h-3.5" />Врати
+                                                </button>
+                                                <button type="button" onClick={() => handleDeleteForever(m.id)}
+                                                    title="Избриши засекогаш"
+                                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </>
                                         ) : (
                                             <>
                                                 {isPublished ? (
@@ -385,9 +405,10 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                                         <Globe className="w-3.5 h-3.5" />Публикувај
                                                     </button>
                                                 )}
-                                                <button type="button" onClick={() => handleDelete(m.id)}
-                                                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
-                                                    <Trash2 className="w-4 h-4" />
+                                                <button type="button" onClick={() => handleArchive(m)}
+                                                    title="Архивирај (скриј од библиотеката)"
+                                                    className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg">
+                                                    <Archive className="w-4 h-4" />
                                                 </button>
                                             </>
                                         )}

@@ -75,7 +75,7 @@ export interface PresentationSlide {
   title: string;
   content: string[];
   visualPrompt?: string; // Prompt for Imagen if teacher wants a background/image
-  type: 'title' | 'content' | 'example' | 'task' | 'summary';
+  type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step';
 }
 
 export interface AIGeneratedPresentation {
@@ -158,6 +158,9 @@ export interface LessonPlan {
   reflectionPrompt?: string;
   selfAssessmentPrompt?: string;
   tags?: string[];
+
+  // Math tool exports (GeoGebra / Desmos screenshots embedded in the plan)
+  mathEmbeds?: Array<{ tool: 'geogebra' | 'desmos'; dataUrl: string; createdAt: string }>;
 
   // Community Features
   isPublished?: boolean;

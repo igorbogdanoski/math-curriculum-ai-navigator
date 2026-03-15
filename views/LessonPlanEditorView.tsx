@@ -706,7 +706,20 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
             <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
           </div>
           <div className="flex-1 relative overflow-hidden bg-slate-50">
-            <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
+            <MathToolsPanel
+              onClose={() => setShowMathTools(false)}
+              className="h-full"
+              onExportImage={(dataUrl, tool) => {
+                setPlan(prev => ({
+                  ...prev,
+                  mathEmbeds: [
+                    ...(prev.mathEmbeds ?? []),
+                    { tool, dataUrl, createdAt: new Date().toISOString() },
+                  ],
+                }));
+                addNotification(`${tool === 'geogebra' ? 'GeoGebra' : 'Desmos'} сликата е додадена во планот.`, 'success');
+              }}
+            />
           </div>
         </div>
       </div>

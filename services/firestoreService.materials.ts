@@ -400,6 +400,34 @@ export const deleteCachedMaterial = async (id: string): Promise<void> => {
     await deleteDoc(doc(db, 'cached_ai_materials', id));
   };
 
+/** Soft-delete: sets archivedAt timestamp. The material stays in Firestore but is hidden from the main library. */
+export const archiveMaterial = async (id: string): Promise<void> => {
+  await updateDoc(doc(db, 'cached_ai_materials', id), { archivedAt: serverTimestamp() });
+};
+
+/** Restore: clears archivedAt so the material reappears in the main library. */
+export const restoreMaterial = async (id: string): Promise<void> => {
+  await updateDoc(doc(db, 'cached_ai_materials', id), { archivedAt: null });
+};
+
+/** Fetch all archived materials for the given teacher. */
+export const fetchArchivedMaterials = async (teacherUid: string): Promise<import('./firestoreService.types').CachedMaterial[]> => {
+  try {
+    const q = query(
+      collection(db, 'cached_ai_materials'),
+      where('teacherUid', '==', teacherUid),
+      where('archivedAt', '!=', null),
+      orderBy('archivedAt', 'desc'),
+      limit(100),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as import('./firestoreService.types').CachedMaterial));
+  } catch (error) {
+    console.error('fetchArchivedMaterials error:', error);
+    return [];
+  }
+};
+
 export const updateMaterialTitle = async (id: string, title: string): Promise<void> => {
     await updateDoc(doc(db, 'cached_ai_materials', id), { title });
   };

@@ -141,4 +141,5 @@ export interface CachedMaterial {
   helpfulCount?: number;
   notHelpfulCount?: number;
   isApproved?: boolean;
+  archivedAt?: Timestamp | null;
 }

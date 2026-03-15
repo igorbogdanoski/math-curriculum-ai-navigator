@@ -6,8 +6,122 @@ import { MathRenderer } from '../common/MathRenderer';
 import { geminiService } from '../../services/geminiService';
 import { useNotification } from '../../contexts/NotificationContext';
 import pptxgen from 'pptxgenjs';
-
+import html2canvas from 'html2canvas';
 import { useAuth } from '../../contexts/AuthContext';
+
+// ─── Helpers for LaTeX→PNG conversion ────────────────────────────────────────
+const HAS_MATH = /\$[\s\S]+?\$/;
+
+/** Renders a bullet text (may contain $...$ / $$...$$) into a PNG data-URI.
+ *  Uses KaTeX (loaded via CDN) + html2canvas. Falls back to plain text image. */
+const renderBulletToPng = async (text: string, hexColor: string): Promise<string> => {
+  const container = document.createElement('div');
+  container.style.cssText = [
+    'position:fixed', 'top:-9999px', 'left:-9999px',
+    'background:#ffffff', 'padding:6px 14px',
+    'font-size:20px', 'font-family:Arial,Helvetica,sans-serif',
+    `color:#${hexColor}`, 'max-width:640px',
+    'line-height:1.65', 'white-space:pre-wrap',
+  ].join(';');
+
+  const katex = (window as any).katex;
+  const toHtml = (src: string): string => {
+    if (!katex) return src;
+    return src
+      .replace(/\$\$([\s\S]+?)\$\$/g, (_, f) =>
+        katex.renderToString(f, { throwOnError: false, displayMode: true }))
+      .replace(/\$([^$\n]+?)\$/g, (_, f) =>
+        katex.renderToString(f, { throwOnError: false, displayMode: false }));
+  };
+
+  container.innerHTML = toHtml(text);
+  document.body.appendChild(container);
+  try {
+    const canvas = await html2canvas(container, {
+      scale: 2, backgroundColor: '#ffffff', logging: false,
+    });
+    return canvas.toDataURL('image/png', 1.0);
+  } finally {
+    document.body.removeChild(container);
+  }
+};
+
+// ─── Step-by-step slide UI ────────────────────────────────────────────────────
+interface StepByStepSlideProps {
+  steps: string[];
+  theme: 'modern' | 'classic' | 'dark' | 'creative';
+  key?: number; // resets active step when slide changes
+}
+
+const STEP_ACCENT: Record<string, string[]> = {
+  modern:   ['bg-blue-600', 'bg-blue-500', 'bg-blue-400', 'bg-blue-300'],
+  classic:  ['bg-gray-700', 'bg-gray-600', 'bg-gray-500', 'bg-gray-400'],
+  dark:     ['bg-indigo-500', 'bg-indigo-400', 'bg-indigo-300', 'bg-indigo-200'],
+  creative: ['bg-orange-600', 'bg-orange-500', 'bg-amber-500', 'bg-amber-400'],
+};
+
+const StepByStepSlide: React.FC<StepByStepSlideProps> = ({ steps, theme }) => {
+  const [activeStep, setActiveStep] = useState<number | null>(null);
+  const accents = STEP_ACCENT[theme];
+  const total = steps.length;
+
+  return (
+    <div className="flex flex-col gap-3 w-full">
+      {/* Progress bar */}
+      <div className="w-full h-1.5 bg-gray-200/40 rounded-full overflow-hidden mb-1">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: activeStep !== null ? `${((activeStep + 1) / total) * 100}%` : '0%',
+            background: theme === 'dark' ? '#818cf8' : theme === 'creative' ? '#f97316' : '#1d4ed8',
+          }}
+        />
+      </div>
+
+      {steps.map((step, idx) => {
+        const isActive = activeStep === idx;
+        const isDone   = activeStep !== null && idx < activeStep;
+        const accent   = accents[idx % accents.length];
+        return (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => setActiveStep(isActive ? null : idx)}
+            className={`flex items-start gap-4 text-left w-full rounded-2xl px-4 py-3 transition-all duration-300 border-2 group ${
+              isActive
+                ? theme === 'dark'
+                  ? 'border-indigo-400 bg-indigo-400/10'
+                  : 'border-blue-400 bg-blue-50/80 shadow-md'
+                : isDone
+                  ? 'border-transparent bg-green-50/30 opacity-70'
+                  : 'border-transparent hover:bg-black/5'
+            }`}
+          >
+            {/* Step number badge */}
+            <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-black text-white transition-all duration-300 ${
+              isDone ? 'bg-green-500' : isActive ? accent : 'bg-gray-300 group-hover:bg-gray-400'
+            }`}>
+              {isDone ? '✓' : idx + 1}
+            </div>
+
+            {/* Step text */}
+            <div className={`flex-1 text-lg leading-snug transition-colors duration-200 ${
+              isActive
+                ? theme === 'dark' ? 'text-white font-bold' : 'text-blue-900 font-bold'
+                : theme === 'dark' ? 'text-indigo-200' : 'text-gray-700'
+            }`}>
+              <MathRenderer text={step} />
+            </div>
+          </button>
+        );
+      })}
+
+      <p className="text-[10px] text-gray-400 text-center mt-1 uppercase tracking-widest font-bold">
+        {activeStep !== null ? `Чекор ${activeStep + 1} / ${total}` : 'Кликни за да продолжиш'}
+      </p>
+    </div>
+  );
+};
 
 interface GeneratedPresentationProps {
   data: AIGeneratedPresentation;
@@ -61,62 +175,165 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
     }
   };
 
-  const downloadPPTX = () => {
-    const pptx = new pptxgen();
-    pptx.layout = 'LAYOUT_16x9';
+  const [isExportingPptx, setIsExportingPptx] = useState(false);
 
-    data.slides.forEach((slide: PresentationSlide, idx: number) => {
-      const pptSlide = pptx.addSlide();
-      const slideVisual = visuals[idx];
-      
-      // Theme colors based on selection
-      const colors = {
-        modern: { bg: 'FFFFFF', text: '0D47A1', body: '333333' },
-        classic: { bg: 'F5F5F5', text: '000000', body: '000000' },
-        dark: { bg: '1A237E', text: 'FFFFFF', body: 'E0E0E0' },
-        creative: { bg: 'FFF9C4', text: 'E65100', body: '424242' }
-      }[theme];
+  const downloadPPTX = async () => {
+    setIsExportingPptx(true);
+    addNotification('Генерирам PPTX — формулите се рендерираат…', 'info');
+    try {
+      const pptx = new pptxgen();
+      pptx.layout = 'LAYOUT_16x9';
+      // Slide dimensions: 10 × 5.625 inches (16:9)
+      const SLIDE_W = 10;
 
-      pptSlide.background = { color: colors.bg };
+      const THEMES = {
+        modern:   { bg: 'FFFFFF', title: '0D47A1', body: '333333', line: 'BBDEFB' },
+        classic:  { bg: 'F5F5F5', title: '1A1A1A', body: '222222', line: 'CCCCCC' },
+        dark:     { bg: '1A237E', title: 'FFFFFF', body: 'E0E0E0', line: '3949AB' },
+        creative: { bg: 'FFF9C4', title: 'E65100', body: '424242', line: 'FFE082' },
+      };
+      const colors = THEMES[theme];
 
-      if (slide.type === 'title') {
-        pptSlide.addText(slide.title, { 
-          x: 0.5, y: 1.5, w: '90%', h: 1.5, 
-          fontSize: 44, bold: true, color: colors.text, align: 'center',
-          fontFace: 'Arial'
-        });
-        pptSlide.addText(data.topic, { 
-          x: 0.5, y: 3.5, w: '90%', h: 0.5, 
-          fontSize: 24, color: colors.body, align: 'center' 
-        });
-      } else {
-        pptSlide.addText(slide.title, { 
-          x: 0.5, y: 0.3, w: '90%', h: 0.8, 
-          fontSize: 32, bold: true, color: colors.text,
-          border: { pos: 'b', color: 'E0E0E0', size: 1 }
-        });
+      for (let idx = 0; idx < data.slides.length; idx++) {
+        const slide: PresentationSlide = data.slides[idx];
+        const slideVisual = visuals[idx];
+        const pptSlide = pptx.addSlide();
+        pptSlide.background = { color: colors.bg };
 
-        const contentText = slide.content.join('\n\n');
-        pptSlide.addText(contentText, { 
-          x: slideVisual?.url ? 4.5 : 0.5, y: 1.5, w: slideVisual?.url ? '55%' : '90%', h: 3.5, 
-          fontSize: 18, color: colors.body, 
-          bullet: { indent: 20 },
-          valign: 'top'
-        });
+        if (slide.type === 'title') {
+          pptSlide.addText(slide.title, {
+            x: 0.5, y: 1.4, w: SLIDE_W - 1, h: 1.6,
+            fontSize: 44, bold: true, color: colors.title, align: 'center', fontFace: 'Arial',
+          });
+          pptSlide.addText(data.topic, {
+            x: 0.5, y: 3.2, w: SLIDE_W - 1, h: 0.6,
+            fontSize: 24, color: colors.body, align: 'center',
+          });
+        } else if (slide.type === 'step-by-step') {
+          // Slide title
+          pptSlide.addText(slide.title, {
+            x: 0.4, y: 0.25, w: SLIDE_W - 0.8, h: 0.75,
+            fontSize: 28, bold: true, color: colors.title, fontFace: 'Arial',
+          });
+          pptSlide.addShape((pptxgen as any).ShapeType?.line ?? 'line', {
+            x: 0.4, y: 1.05, w: SLIDE_W - 0.8, h: 0,
+            line: { color: colors.line, width: 1.5 },
+          });
+          // Numbered steps with circle badge
+          const stepColors = ['0D47A1', '1565C0', '1976D2', '1E88E5', '2196F3', '42A5F5', '64B5F6', '90CAF9'];
+          let stepY = 1.15;
+          const stepH = 0.55;
+          for (let si = 0; si < slide.content.length; si++) {
+            const stepText = slide.content[si];
+            const badgeColor = stepColors[si % stepColors.length];
+            // Circle badge
+            pptSlide.addShape('ellipse', {
+              x: 0.4, y: stepY + 0.04, w: 0.38, h: 0.38,
+              fill: { color: badgeColor },
+            });
+            pptSlide.addText(`${si + 1}`, {
+              x: 0.4, y: stepY + 0.04, w: 0.38, h: 0.38,
+              fontSize: 13, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle',
+            });
+            // Step text (with math rendering if needed)
+            if (HAS_MATH.test(stepText)) {
+              try {
+                const png = await renderBulletToPng(stepText, colors.body);
+                const img = new Image();
+                await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
+                const ratio = img.naturalHeight / img.naturalWidth;
+                const imgW = Math.min(SLIDE_W - 1.2, 7.5);
+                const imgH = Math.min(imgW * ratio, stepH + 0.1);
+                pptSlide.addImage({ data: png, x: 0.9, y: stepY, w: imgW, h: imgH });
+                stepY += imgH + 0.1;
+              } catch {
+                pptSlide.addText(stepText, { x: 0.9, y: stepY, w: SLIDE_W - 1.3, h: stepH, fontSize: 15, color: colors.body, fontFace: 'Arial' });
+                stepY += stepH;
+              }
+            } else {
+              pptSlide.addText(stepText, { x: 0.9, y: stepY, w: SLIDE_W - 1.3, h: stepH, fontSize: 15, color: colors.body, fontFace: 'Arial' });
+              stepY += stepH;
+            }
+            if (stepY > 5.0) break;
+          }
+          // Progress bar
+          const progressW = (SLIDE_W - 0.8) * Math.min(slide.content.length, 8) / 8;
+          pptSlide.addShape('rect', { x: 0.4, y: 5.1, w: SLIDE_W - 0.8, h: 0.06, fill: { color: colors.line } });
+          pptSlide.addShape('rect', { x: 0.4, y: 5.1, w: progressW, h: 0.06, fill: { color: colors.title } });
+        } else {
+          // Title bar with bottom line
+          pptSlide.addText(slide.title, {
+            x: 0.4, y: 0.25, w: SLIDE_W - 0.8, h: 0.75,
+            fontSize: 28, bold: true, color: colors.title, fontFace: 'Arial',
+          });
+          pptSlide.addShape((pptxgen as any).ShapeType?.line ?? 'line', {
+            x: 0.4, y: 1.05, w: SLIDE_W - 0.8, h: 0,
+            line: { color: colors.line, width: 1.5 },
+          });
 
-        if (slideVisual?.url) {
-            // Note: PptxGenJS supports data URIs for images
-            pptSlide.addImage({ data: slideVisual.url, x: 0.5, y: 1.5, w: 3.5, h: 3.5 });
+          // Content area bounds
+          const hasAiImage = !!slideVisual?.url;
+          const contentX   = 0.4;
+          const contentW   = hasAiImage ? SLIDE_W * 0.55 : SLIDE_W - 0.8;
+          let   curY       = 1.2;
+          const lineH      = 0.52; // inches per plain-text bullet
+          const maxImgW    = contentW - 0.1;
+
+          for (const bullet of slide.content) {
+            if (HAS_MATH.test(bullet)) {
+              // Render math bullet as PNG image
+              try {
+                const png = await renderBulletToPng(`• ${bullet}`, colors.body);
+                // Calculate proportional height (canvas is 2× scale → divide by 2)
+                const img = new Image();
+                await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
+                const ratio   = img.naturalHeight / img.naturalWidth;
+                const imgW    = Math.min(maxImgW, SLIDE_W * 0.7);
+                const imgH    = Math.min(imgW * ratio, 1.2);
+                pptSlide.addImage({ data: png, x: contentX, y: curY, w: imgW, h: imgH });
+                curY += imgH + 0.08;
+              } catch {
+                // Fallback: plain text if rendering fails
+                pptSlide.addText(`• ${bullet}`, {
+                  x: contentX, y: curY, w: contentW, h: lineH,
+                  fontSize: 16, color: colors.body,
+                });
+                curY += lineH;
+              }
+            } else {
+              pptSlide.addText(`• ${bullet}`, {
+                x: contentX, y: curY, w: contentW, h: lineH,
+                fontSize: 16, color: colors.body, fontFace: 'Arial',
+              });
+              curY += lineH;
+            }
+            if (curY > 5.1) break; // guard slide overflow
+          }
+
+          // AI-generated illustration on the right
+          if (hasAiImage) {
+            pptSlide.addImage({
+              data: slideVisual!.url!,
+              x: SLIDE_W * 0.57, y: 1.15,
+              w: SLIDE_W * 0.38, h: SLIDE_W * 0.38,
+            });
+          }
         }
+
+        pptSlide.addText('Генерирано со Math Navigator AI', {
+          x: 0.4, y: 5.25, w: SLIDE_W - 0.8, h: 0.28,
+          fontSize: 9, color: 'AAAAAA', align: 'right',
+        });
       }
 
-      pptSlide.addText('Генерирано со Math Navigator AI', { 
-        x: 0.5, y: 5.2, w: '90%', h: 0.3, 
-        fontSize: 10, color: 'CCCCCC', align: 'right' 
-      });
-    });
-
-    pptx.writeFile({ fileName: `${data.title.replace(/\s+/g, '_')}.pptx` });
+      await pptx.writeFile({ fileName: `${data.title.replace(/\s+/g, '_')}.pptx` });
+      addNotification('PPTX успешно генериран! ✅', 'success');
+    } catch (err) {
+      console.error('PPTX export error:', err);
+      addNotification('Грешка при генерирање на PPTX.', 'error');
+    } finally {
+      setIsExportingPptx(false);
+    }
   };
 
   const current = data.slides[currentSlide];
@@ -162,11 +379,15 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             </button>
 
             <button
+                type="button"
                 onClick={downloadPPTX}
-                className="flex items-center gap-2 px-6 py-2.5 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition-all shadow-lg active:scale-95"
+                disabled={isExportingPptx}
+                className="flex items-center gap-2 px-6 py-2.5 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition-all shadow-lg active:scale-95 disabled:opacity-60 disabled:cursor-wait"
+                title="Преземи PPTX (формулите се рендерираат во слики)"
             >
-                <FileDown className="w-5 h-5" />
-                PPTX
+                {isExportingPptx
+                    ? <><Loader2 className="w-5 h-5 animate-spin" /> Рендерирам…</>
+                    : <><FileDown className="w-5 h-5" /> PPTX</>}
             </button>
         </div>
       </div>
@@ -197,6 +418,12 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                                     <span className="px-4 py-2 bg-black/5 rounded-2xl text-sm font-bold uppercase tracking-widest">Одделение {data.gradeLevel}</span>
                                 </div>
                             </div>
+                        ) : current.type === 'step-by-step' ? (
+                            <StepByStepSlide
+                                steps={current.content}
+                                theme={theme}
+                                key={currentSlide}
+                            />
                         ) : (
                             <ul className="space-y-6">
                                 {current.content.map((point, idx) => (
@@ -252,6 +479,8 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                 {/* Navigation Controls */}
                 <div className="absolute bottom-10 right-10 flex gap-2">
                     <button
+                        type="button"
+                        title="Претходен слајд"
                         onClick={() => setCurrentSlide(prev => Math.max(0, prev - 1))}
                         disabled={currentSlide === 0}
                         className="w-12 h-12 bg-black/10 backdrop-blur-md rounded-2xl flex items-center justify-center hover:bg-black/20 disabled:opacity-10 transition-all"
@@ -259,6 +488,8 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                         <ChevronLeft className="w-6 h-6" />
                     </button>
                     <button
+                        type="button"
+                        title="Следен слајд"
                         onClick={() => setCurrentSlide(prev => Math.min(data.slides.length - 1, prev + 1))}
                         disabled={currentSlide === data.slides.length - 1}
                         className="w-12 h-12 bg-black/10 backdrop-blur-md rounded-2xl flex items-center justify-center hover:bg-black/20 disabled:opacity-10 transition-all"
@@ -311,7 +542,11 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                         <div>
                             <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest block mb-2">Предлог Активности</span>
                             <div className="space-y-2">
-                                {current.type === 'example' ? (
+                                {current.type === 'step-by-step' ? (
+                                    <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/20 text-purple-200 text-xs italic">
+                                        Постапка чекор-по-чекор. Кликнете на секој чекор за да го истакнете. Идеално за доказ или алгоритам.
+                                    </div>
+                                ) : current.type === 'example' ? (
                                     <div className="p-3 bg-green-500/10 rounded-xl border border-green-500/20 text-green-200 text-xs italic">
                                         Слајдот е фокусиран на конкретен пример. Обезбедете детално објаснување на табла.
                                     </div>

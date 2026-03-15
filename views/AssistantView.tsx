@@ -6,6 +6,7 @@ import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiSer
 import { firestoreService, type CachedMaterial, type ChatSession, type StoredMessage } from '../services/firestoreService';
 import { callEmbeddingProxy } from '../services/gemini/core';
 import { RateLimitError } from '../services/apiErrors';
+import { bm25Score, cosineSimilarity } from '../utils/search';
 import type { ChatMessage } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { MathRenderer } from '../components/common/MathRenderer';
@@ -23,35 +24,6 @@ const fileToBase64 = (file: File): Promise<string> => {
     });
 };
 
-// Helper: cosine similarity
-const cosineSimilarity = (a: number[], b: number[]): number => {
-    if (!a || !b || a.length !== b.length) return 0;
-    let dot = 0, normA = 0, normB = 0;
-    for (let i = 0; i < a.length; i++) {
-        dot += a[i] * b[i];
-        normA += a[i] * a[i];
-        normB += b[i] * b[i];
-    }
-    return dot / (Math.sqrt(normA) * Math.sqrt(normB));
-};
-
-const stripMd = (t: string) => t.replace(/[*_`~[\]#>]/g, ' ');
-
-// Helper: BM25-lite keyword score (normalized to ~[0,1])
-const bm25Score = (query: string, docText: string): number => {
-    const k1 = 1.5, b = 0.75, avgDocLen = 25;
-    const queryTerms = stripMd(query).toLowerCase().split(/[\s,.\-/]+/).filter(Boolean);
-    const docTokens = docText.toLowerCase().split(/[\s,.\-/]+/).filter(Boolean);
-    const docLen = docTokens.length || 1;
-    let score = 0;
-    for (const term of queryTerms) {
-        const tf = docTokens.filter(t => t === term || t.includes(term)).length;
-        if (tf > 0) {
-            score += (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * docLen / avgDocLen));
-        }
-    }
-    return score / Math.max(queryTerms.length, 1);
-};
 
 const typeLabel: Record<string, string> = {
     quiz: 'Квиз', assessment: 'Тест', rubric: 'Рубрика',

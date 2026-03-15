@@ -334,16 +334,18 @@ ${customInstruction ? `- Дополнителни барања: ${customInstruct
 2. Цели на часот
 3. Вовед / Мотивација (со визуелна идеја)
 4. Разработка на концептот (2-3 слајдови)
-5. Практичен пример
+5. Практичен пример — ЗАДОЛЖИТЕЛНО type='step-by-step' за докажување/постапки (чекор по чекор, секоја точка е еден нумериран чекор)
 6. Задача за учениците
 7. Заклучок / Рефлексија
 
 ### ФОРМАТ
 Врати JSON објект со слајдови. Секој слајд треба да има:
 - title: наслов на слајдот
-- content: низа од кратки точки (bullet points)
-- type: 'title', 'content', 'example', 'task', 'summary'
+- content: низа од кратки точки (bullet points) — за 'step-by-step' слајдовите секоја точка е еден нумериран чекор
+- type: 'title', 'content', 'example', 'task', 'summary', 'step-by-step'
 - visualPrompt: краток опис на слика/дијаграм што би одел добро на слајдот (на англиски јазик за Imagen)
+
+ВАЖНО: Употреби type='step-by-step' за слајдови кои прикажуваат постапка/алгоритам/доказ чекор-по-чекор.
 
 Одговорите да бидат на македонски јазик.
 `;
@@ -362,7 +364,7 @@ ${customInstruction ? `- Дополнителни барања: ${customInstruct
               title: { type: Type.STRING },
               content: { type: Type.ARRAY, items: { type: Type.STRING } },
               visualPrompt: { type: Type.STRING },
-              type: { type: Type.STRING, enum: ['title', 'content', 'example', 'task', 'summary'] }
+              type: { type: Type.STRING, enum: ['title', 'content', 'example', 'task', 'summary', 'step-by-step'] }
             },
             required: ["title", "content", "type"]
           }
