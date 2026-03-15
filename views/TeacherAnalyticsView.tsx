@@ -30,6 +30,8 @@ import { CohortTab } from './analytics/CohortTab';
 import { useReactToPrint } from 'react-to-print';
 import { PrintableEDnevnikReport } from '../components/analytics/PrintableEDnevnikReport';
 import { Printer } from 'lucide-react';
+import type { SchoolClass } from '../services/firestoreService';
+import { AssignRemedialModal } from '../components/analytics/AssignRemedialModal';
 
 
 export const TeacherAnalyticsView: React.FC = () => {
@@ -71,6 +73,39 @@ export const TeacherAnalyticsView: React.FC = () => {
     const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades' | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage' | 'assignments' | 'league' | 'cohort'>('overview');
     const [showMoreTabs, setShowMoreTabs] = useState(false);
+
+    // П-Б — Assign Remedial to Struggling Students
+    const [classes, setClasses] = useState<SchoolClass[]>([]);
+    const [assignRemedialState, setAssignRemedialState] = useState<{
+        conceptId: string;
+        title: string;
+        students: string[];
+        misconceptions: { text: string; count: number }[];
+        topicId?: string;
+        gradeLevel: number;
+    } | null>(null);
+
+    useEffect(() => {
+        if (!firebaseUser?.uid) return;
+        firestoreService.fetchClasses(firebaseUser.uid).then(setClasses).catch(() => {});
+    }, [firebaseUser?.uid]);
+
+    const handleShowAssignRemedial = (
+        conceptId: string,
+        title: string,
+        students: string[],
+        misconceptions: { text: string; count: number }[],
+    ) => {
+        const { grade, topic } = getConceptDetails(conceptId);
+        setAssignRemedialState({
+            conceptId,
+            title,
+            students,
+            misconceptions,
+            topicId: topic?.id,
+            gradeLevel: parseInt(grade?.id || '1') || 1,
+        });
+    };
 
     // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -297,11 +332,15 @@ export const TeacherAnalyticsView: React.FC = () => {
 
         const conceptStats = localResults.filter(r => r.conceptId).reduce((acc, r) => {
             const key = r.conceptId!;
-            if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), quizTitle: r.quizTitle, confSum: 0, confCount: 0, misconceptions: [] as string[], metacognitiveNotes: [] as string[] };
+            if (!acc[key]) acc[key] = { total: 0, sum: 0, passCount: 0, students: new Set<string>(), failedStudents: new Set<string>(), quizTitle: r.quizTitle, confSum: 0, confCount: 0, misconceptions: [] as string[], metacognitiveNotes: [] as string[] };
             acc[key].total++;
             acc[key].sum += r.percentage;
             if (r.percentage >= 70) acc[key].passCount++;
-            if (r.studentName) acc[key].students.add(r.studentName);
+            if (r.studentName) {
+                acc[key].students.add(r.studentName);
+                // П-Б: track students who scored <70% (latest attempt wins via Set overwrite)
+                if (r.percentage < 70) acc[key].failedStudents.add(r.studentName);
+            }
             // В2 — confidence accumulation
             if (r.confidence != null) { acc[key].confSum += r.confidence; acc[key].confCount++; }
             // Фаза Г — misconceptions accumulation
@@ -317,17 +356,17 @@ export const TeacherAnalyticsView: React.FC = () => {
                 acc[key].metacognitiveNotes.push(r.metacognitiveNote.trim());
             }
             return acc;
-        }, {} as Record<string, { total: number; sum: number; passCount: number; students: Set<string>; quizTitle: string; confSum: number; confCount: number; misconceptions: string[]; metacognitiveNotes: string[] }>);
+        }, {} as Record<string, { total: number; sum: number; passCount: number; students: Set<string>; failedStudents: Set<string>; quizTitle: string; confSum: number; confCount: number; misconceptions: string[]; metacognitiveNotes: string[] }>);
 
         const allConceptStats: ConceptStat[] = Object.entries(conceptStats).map(([conceptId, s]) => {
             const conceptTitle = getConceptDetails(conceptId).concept?.title || s.quizTitle;
             const masteredCount = masteryRecords.filter(m => m.conceptId === conceptId && m.mastered).length;
-            
+
             // Group and count misconceptions
             const miscMap: Record<string, number> = {};
             s.misconceptions.forEach(m => miscMap[m] = (miscMap[m] || 0) + 1);
             const sortedMisconceptions = Object.entries(miscMap)
-                .sort((a, b) => b[1] - a[1]) // Sort by frequency desc
+                .sort((a, b) => b[1] - a[1])
                 .map(([text, count]) => ({ text, count }));
 
             return {
@@ -341,6 +380,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                 avgConfidence: s.confCount > 0 ? s.confSum / s.confCount : undefined,
                 misconceptions: sortedMisconceptions.length > 0 ? sortedMisconceptions : undefined,
                 metacognitiveNotes: s.metacognitiveNotes.length > 0 ? s.metacognitiveNotes : undefined,
+                strugglingStudents: s.failedStudents.size > 0 ? Array.from(s.failedStudents).sort() : undefined,
             };
         }).sort((a, b) => a.avgPct - b.avgPct);
 
@@ -497,6 +537,7 @@ export const TeacherAnalyticsView: React.FC = () => {
     }
 
     return (
+        <>
         <div className="p-8 animate-fade-in">
             <header className="mb-8 flex items-start justify-between gap-4 flex-wrap">
                 <div>
@@ -751,7 +792,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             {activeTab === 'students' && <StudentsTab perStudentStats={perStudentStats} />}
                             {activeTab === 'grades' && <GradeTab gradeStats={gradeStats} />}
                             {activeTab === 'standards' && <StandardsTab standardsCoverage={standardsCoverage} />}
-                            {activeTab === 'concepts' && <ConceptsTab allConceptStats={allConceptStats} onGenerateRemedial={handleGenerateRemedial} onGenerateMisconceptionRemedial={handleGenerateMisconceptionRemedial} />}
+                            {activeTab === 'concepts' && <ConceptsTab allConceptStats={allConceptStats} onGenerateRemedial={handleGenerateRemedial} onGenerateMisconceptionRemedial={handleGenerateMisconceptionRemedial} onAssignRemedial={handleShowAssignRemedial} />}
                             {activeTab === 'alerts' && (
                                 <AlertsTab
                                     perStudentStats={perStudentStats}
@@ -808,5 +849,24 @@ export const TeacherAnalyticsView: React.FC = () => {
                         </div>
                     )}
         </div>
+
+        {/* П-Б — Assign Remedial Modal */}
+        {assignRemedialState && (
+            <AssignRemedialModal
+                conceptId={assignRemedialState.conceptId}
+                conceptTitle={assignRemedialState.title}
+                misconceptions={assignRemedialState.misconceptions}
+                strugglingStudents={assignRemedialState.students}
+                classes={classes}
+                teacherUid={firebaseUser!.uid}
+                gradeLevel={assignRemedialState.gradeLevel}
+                onClose={() => setAssignRemedialState(null)}
+                onSuccess={(count) => {
+                    addNotification(`✅ Ремедијалниот квиз е доделен на ${count} ученик${count === 1 ? '' : 'и'}!`, 'success');
+                    setAssignRemedialState(null);
+                }}
+            />
+        )}
+        </>
     );
 };

@@ -1267,5 +1267,61 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
     } catch {
       return '';
     }
-  }
+  },
+
+  /** П-Б: Generate a targeted remedial quiz for specific misconceptions.
+   *  Returns an AIGeneratedAssessment-compatible object with 6 MC questions. */
+  async generateTargetedRemedialQuiz(
+    conceptTitle: string,
+    misconceptions: { text: string; count: number }[],
+    gradeLevel: number,
+  ): Promise<{ title: string; type: 'QUIZ'; questions: AssessmentQuestion[] }> {
+    checkDailyQuotaGuard();
+
+    const topMisc = misconceptions.slice(0, 4)
+      .map((m, i) => `${i + 1}. „${m.text}" (${m.count} ученик${m.count === 1 ? '' : 'и'})`)
+      .join('\n');
+
+    const prompt = `Си искусен наставник по математика. Генерирај ремедијален квиз за ${gradeLevel}. одделение за концептот „${conceptTitle}".
+
+Идентификувани концептуални грешки кај учениците:
+${topMisc}
+
+Генерирај точно 6 прашања со повеќекратен избор (4 опции) кои ДИРЕКТНО ги адресираат овие грешки. За секоја грешка направи барем 1 прашање кое ја разоткрива погрешната идеја и го води ученикот кон точното разбирање. Прашањата да бидат јасни, со македонска терминологија и математички точни.`;
+
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING },
+        questions: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.INTEGER },
+              type: { type: Type.STRING },
+              question: { type: Type.STRING },
+              options: { type: Type.ARRAY, items: { type: Type.STRING } },
+              answer: { type: Type.STRING },
+              cognitiveLevel: { type: Type.STRING },
+              difficulty_level: { type: Type.STRING },
+            },
+            required: ['id', 'type', 'question', 'options', 'answer', 'cognitiveLevel'],
+          },
+        },
+      },
+      required: ['title', 'questions'],
+    };
+
+    const result = await generateAndParseJSON<{ title: string; questions: AssessmentQuestion[] }>(
+      [{ text: prompt }],
+      schema,
+      DEFAULT_MODEL,
+      undefined,
+      MAX_RETRIES,
+      false,
+    );
+
+    return { title: result.title || `Ремедијација: ${conceptTitle}`, type: 'QUIZ', questions: result.questions };
+  },
 };

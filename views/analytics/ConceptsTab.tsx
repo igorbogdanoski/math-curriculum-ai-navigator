@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, AlertTriangle, MessageSquare, ChevronDown, ChevronUp, Wand2 } from 'lucide-react';
+import { Trophy, AlertTriangle, MessageSquare, ChevronDown, ChevronUp, Wand2, Users, ClipboardList } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { ScoreBar, type ConceptStat, confidenceEmoji, confidenceColor } from './shared';
@@ -8,6 +8,7 @@ interface ConceptsTabProps {
     allConceptStats: ConceptStat[];
     onGenerateRemedial: (conceptId: string, title: string, avgPct: number) => void;
     onGenerateMisconceptionRemedial: (conceptId: string, title: string, misconceptions: { text: string; count: number }[]) => void;
+    onAssignRemedial: (conceptId: string, title: string, students: string[], misconceptions: { text: string; count: number }[]) => void;
 }
 
 const MetacognitiveNotesRow: React.FC<{ notes: string[]; colSpan: number }> = ({ notes, colSpan }) => {
@@ -43,7 +44,7 @@ const MetacognitiveNotesRow: React.FC<{ notes: string[]; colSpan: number }> = ({
     );
 };
 
-export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGenerateRemedial, onGenerateMisconceptionRemedial }) => (
+export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGenerateRemedial, onGenerateMisconceptionRemedial, onAssignRemedial }) => (
     <SilentErrorBoundary name="ConceptsTab">
         <Card>
             <div className="flex items-center justify-between mb-6">
@@ -138,16 +139,45 @@ export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGen
                                                                     </li>
                                                                 ))}
                                                             </ul>
+                                                            {/* П-Б: Struggling students list */}
+                                                            {c.strugglingStudents && c.strugglingStudents.length > 0 && (
+                                                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                                                    <span className="flex items-center gap-1 text-xs font-bold text-orange-700">
+                                                                        <Users className="w-3 h-3" />
+                                                                        {c.strugglingStudents.length} засегнат{c.strugglingStudents.length === 1 ? '' : 'и'}:
+                                                                    </span>
+                                                                    {c.strugglingStudents.slice(0, 5).map((s, i) => (
+                                                                        <span key={i} className="text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded-full px-2 py-0.5 font-medium">{s}</span>
+                                                                    ))}
+                                                                    {c.strugglingStudents.length > 5 && (
+                                                                        <span className="text-xs text-gray-400">+{c.strugglingStudents.length - 5} уште</span>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <button
-                                                            type="button"
-                                                            title="Генерирај ремедијален квиз насочен кон овие грешки"
-                                                            onClick={() => onGenerateMisconceptionRemedial(c.conceptId, c.title, c.misconceptions!)}
-                                                            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors flex-shrink-0 mt-0.5"
-                                                        >
-                                                            <Wand2 className="w-3.5 h-3.5" />
-                                                            Генерирај ремедијација
-                                                        </button>
+                                                        <div className="flex flex-col gap-1.5 flex-shrink-0 mt-0.5">
+                                                            <button
+                                                                type="button"
+                                                                title="Генерирај ремедијален квиз насочен кон овие грешки"
+                                                                onClick={() => onGenerateMisconceptionRemedial(c.conceptId, c.title, c.misconceptions!)}
+                                                                className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                                                            >
+                                                                <Wand2 className="w-3.5 h-3.5" />
+                                                                Генерирај ремедијација
+                                                            </button>
+                                                            {/* П-Б: Assign directly to struggling students */}
+                                                            {c.strugglingStudents && c.strugglingStudents.length > 0 && (
+                                                                <button
+                                                                    type="button"
+                                                                    title="Генерирај и додели ремедијален квиз директно на засегнатите ученици"
+                                                                    onClick={() => onAssignRemedial(c.conceptId, c.title, c.strugglingStudents!, c.misconceptions ?? [])}
+                                                                    className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                                                                >
+                                                                    <ClipboardList className="w-3.5 h-3.5" />
+                                                                    Додели на засегнати
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>
