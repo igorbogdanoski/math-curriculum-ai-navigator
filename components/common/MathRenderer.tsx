@@ -170,7 +170,7 @@ const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => 
                         console.warn("KaTeX inline rendering error:", e.message, "for content:", math);
                         html = `<span class="text-red-600 font-mono bg-red-100 p-1 rounded" title="${escapeHtml(e.message)}">${escapeHtml(math)}</span>`;
                     }
-                    return <span key={index} dangerouslySetInnerHTML={{ __html: html }} />;
+                    return <span key={index} role="math" aria-label={math} dangerouslySetInnerHTML={{ __html: html }} />;
                 }
                 
                 if (part.startsWith('**') && part.endsWith('**')) {
@@ -265,7 +265,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
                             console.warn("KaTeX block rendering error:", e.message, "for content:", math);
                             html = `<div class="text-red-600 font-mono bg-red-100 p-2 rounded" title="${escapeHtml(e.message)}">${escapeHtml(math)}</div>`;
                         }
-                        return <div key={index} dangerouslySetInnerHTML={{ __html: html }} />;
+                        return <div key={index} role="math" aria-label={math} dangerouslySetInnerHTML={{ __html: html }} />;
                     }
                     
                     const paragraphs = block.split(/\n\s*\n/g).filter(p => p.trim() !== '');

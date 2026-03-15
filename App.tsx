@@ -1,4 +1,5 @@
 ﻿import { GlobalTour } from './components/GlobalTour';
+import { OnboardingGate } from './components/onboarding/OnboardingGate';
 import React, { Suspense, useEffect } from 'react';
 
 // Providers
@@ -339,6 +340,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                         <GeneratorPanelProvider>
                           {children}
                           <GlobalTour />
+                          <OnboardingGate />
                         </GeneratorPanelProvider>
                       </UIProvider>
                     </AcademyProgressProvider>

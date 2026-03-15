@@ -23,6 +23,23 @@ interface CacheEntry {
 const CACHE_KEY = 'daily_brief_cache';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
+/** Concepts that are SM-2 due for review based on last quiz date + avg score */
+export interface DueForReviewConcept {
+  conceptId?: string;
+  title: string;
+  avg: number;
+  lastQuizDate: Date;
+  daysOverdue: number;
+}
+
+/** Simple SM-2-like interval (days) based on avg score */
+function reviewInterval(avg: number): number {
+  if (avg >= 90) return 14;
+  if (avg >= 75) return 7;
+  if (avg >= 60) return 3;
+  return 1;
+}
+
 function aggregateResults(results: Awaited<ReturnType<typeof firestoreService.fetchQuizResults>>) {
   const cutoff = Date.now() - 48 * 60 * 60 * 1000;
   const recent = results.filter(r => {
@@ -59,6 +76,37 @@ function aggregateResults(results: Awaited<ReturnType<typeof firestoreService.fe
   return { totalQuizzes: recent.length, weakConcepts, strugglingCount };
 }
 
+function computeSpacedRepDue(
+  results: Awaited<ReturnType<typeof firestoreService.fetchQuizResults>>,
+): DueForReviewConcept[] {
+  const now = Date.now();
+  // Group ALL results by concept, track latest quiz date + running avg
+  const map: Record<string, { sum: number; count: number; title: string; conceptId?: string; lastMs: number }> = {};
+  results.forEach(r => {
+    const key = r.conceptId ?? r.quizTitle;
+    const ms = (r.playedAt as any)?.toMillis?.() ?? 0;
+    if (!map[key]) map[key] = { sum: 0, count: 0, title: r.quizTitle, conceptId: r.conceptId, lastMs: 0 };
+    map[key].sum += r.percentage;
+    map[key].count++;
+    if (ms > map[key].lastMs) map[key].lastMs = ms;
+  });
+
+  const due: DueForReviewConcept[] = [];
+  for (const d of Object.values(map)) {
+    if (!d.lastMs) continue;
+    const avg = Math.round(d.sum / d.count);
+    const intervalMs = reviewInterval(avg) * 24 * 60 * 60 * 1000;
+    const dueAt = d.lastMs + intervalMs;
+    const daysOverdue = Math.round((now - dueAt) / (1000 * 60 * 60 * 24));
+    if (daysOverdue >= 0) {
+      due.push({ conceptId: d.conceptId, title: d.title, avg, lastQuizDate: new Date(d.lastMs), daysOverdue });
+    }
+  }
+
+  // Most overdue first
+  return due.sort((a, b) => b.daysOverdue - a.daysOverdue).slice(0, 5);
+}
+
 export interface WeakConcept {
   conceptId?: string;
   title: string;
@@ -71,6 +119,7 @@ export function useDailyBrief() {
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [weakConcepts, setWeakConcepts] = useState<WeakConcept[]>([]);
+  const [spacedRepDue, setSpacedRepDue] = useState<DueForReviewConcept[]>([]);
 
   const load = useCallback(async (forceRefresh = false) => {
     if (!firebaseUser) return;
@@ -98,6 +147,9 @@ export function useDailyBrief() {
       // Expose weak concepts for formative loop (no AI credits needed)
       setWeakConcepts(stats.weakConcepts);
 
+      // Compute SM-2 due-for-review from full dataset
+      setSpacedRepDue(computeSpacedRepDue(results));
+
       if (isDailyQuotaKnownExhausted()) return;
 
       const generated = await geminiService.generateDailyBrief(stats);
@@ -120,8 +172,9 @@ export function useDailyBrief() {
     localStorage.removeItem(CACHE_KEY);
     setBrief(null);
     setWeakConcepts([]);
+    setSpacedRepDue([]);
     load(true);
   }, [load]);
 
-  return { brief, isLoading, refresh, weakConcepts };
+  return { brief, isLoading, refresh, weakConcepts, spacedRepDue };
 }

@@ -106,11 +106,13 @@ button:active:not(:disabled) {
   #printable-area, #printable-area *,
   #printable-analysis, #printable-analysis *,
   #printable-flashcards, #printable-flashcards *,
-  .printable-root, .printable-root * {
+  #printable-quiz, #printable-quiz *,
+  .printable-root, .printable-root *,
+  .print-container, .print-container * {
     visibility: visible;
   }
 
-  #printable-area, #printable-analysis, #printable-flashcards {
+  #printable-area, #printable-analysis, #printable-flashcards, #printable-quiz {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
@@ -121,8 +123,13 @@ button:active:not(:disabled) {
     border: none !important;
   }
 
-  .printable-root {
+  .printable-root, .print-container {
     position: static !important;
+  }
+
+  /* Quiz print: hide navigation buttons, show all questions */
+  .print-container .no-print {
+    display: none !important;
   }
 
   body {

@@ -117,51 +117,62 @@ function geminiDevProxy(apiKey: string): Plugin {
         if (req.method === 'OPTIONS') { res.writeHead(200); return res.end(); }
         if (req.method !== 'POST') return next();
 
+        const sendJson = (statusCode: number, body: object) => {
+          res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(body));
+        };
+
         try {
-          const { model, contents } = await readBody(req);
+          const { contents } = await readBody(req);
           const prompt = typeof contents === 'string' ? contents : (contents as any[])[0]?.parts[0]?.text || '';
 
-          // Normalize model — imagen-4 is not on v1beta Gemini Developer API
-          let modelName = model || 'imagen-3.0-generate-001';
-          if (modelName.startsWith('imagen-4') || modelName === 'imagen-3' || modelName === 'imagen-3-fast') {
-            modelName = 'imagen-3.0-generate-001';
+          if (!prompt) { sendJson(400, { error: 'Missing prompt' }); return; }
+
+          // Strategy 1: Imagen 3 via :predict (Vertex-compatible endpoint)
+          let imageResult: { mimeType: string; data: string } | null = null;
+          try {
+            const predictUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
+            const predictRes = await fetch(predictUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                instances: [{ prompt }],
+                parameters: { sampleCount: 1, aspectRatio: '16:9', safetyFilterLevel: 'block_some', personGeneration: 'dont_allow' },
+              }),
+            });
+            if (predictRes.ok) {
+              const d = await predictRes.json();
+              const p = d.predictions?.[0];
+              if (p?.bytesBase64Encoded) imageResult = { mimeType: p.mimeType || 'image/png', data: p.bytesBase64Encoded };
+            }
+          } catch { /* fall through to strategy 2 */ }
+
+          // Strategy 2: Gemini Flash image generation (free-tier compatible)
+          if (!imageResult) {
+            const { GoogleGenerativeAI } = await import('@google/generative-ai');
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel(
+              { model: 'gemini-2.0-flash-preview-image-generation' },
+              { apiVersion: 'v1beta' },
+            );
+            const result = await (model as any).generateContent({
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              generationConfig: { responseModalities: ['IMAGE'] },
+            });
+            const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
+            const imgPart = parts.find((p: any) => p.inlineData?.data);
+            if (imgPart?.inlineData) {
+              imageResult = { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
+            }
           }
 
-          // Imagen uses generateImages endpoint, NOT generateContent
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateImages?key=${apiKey}`;
-          const apiRes = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prompt: { text: prompt },
-              number_of_images: 1,
-              aspect_ratio: '16:9',
-              safety_filter_level: 'BLOCK_SOME',
-              person_generation: 'DONT_ALLOW',
-            }),
-          });
-
-          if (!apiRes.ok) {
-            const errBody = await apiRes.text();
-            throw new Error(`[${apiRes.status}] ${errBody}`);
-          }
-
-          const data = await apiRes.json();
-          const prediction = data.predictions?.[0];
-          if (prediction?.bytesBase64Encoded) {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-              inlineData: {
-                mimeType: prediction.mimeType || 'image/png',
-                data: prediction.bytesBase64Encoded,
-              },
-            }));
+          if (imageResult) {
+            sendJson(200, { inlineData: imageResult });
           } else {
-            throw new Error('AI did not return image data');
+            throw new Error('AI did not return image data from any strategy');
           }
         } catch (error: any) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: error.message }));
+          sendJson(500, { error: error.message });
         }
       });
     }
