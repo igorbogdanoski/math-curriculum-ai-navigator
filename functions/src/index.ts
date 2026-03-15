@@ -3,6 +3,95 @@ import * as admin from 'firebase-admin';
 
 admin.initializeApp();
 
+// ── О1: Push notification when teacher assigns a quiz ─────────────────────
+/**
+ * Triggers on new assignment document.
+ * Sends FCM push to:
+ *  1. All teachers/admins in the same school (collaboration awareness)
+ *  2. School admins (visibility into class activity)
+ *
+ * Students are currently anonymous (no FCM tokens); this function is
+ * forward-compatible — when student Google auth (С1) FCM tokens are
+ * added to user_tokens, add their uids to the `recipients` set below.
+ */
+export const onAssignmentCreated = functions.firestore
+  .document('assignments/{assignmentId}')
+  .onCreate(async (snap) => {
+    try {
+      const assignment = snap.data();
+      if (!assignment) return null;
+
+      const teacherUid: string = assignment.teacherUid ?? '';
+      const title: string = assignment.title ?? 'Нова задача';
+      const cacheId: string = assignment.cacheId ?? '';
+      const className: string = assignment.classId ?? '';
+
+      // 1. Get assigning teacher's schoolId
+      const teacherSnap = await admin.firestore().collection('users').doc(teacherUid).get();
+      const schoolId: string = teacherSnap.data()?.schoolId ?? '';
+
+      // Collect recipient UIDs (exclude the assigning teacher)
+      const recipientUids = new Set<string>();
+
+      if (schoolId) {
+        const schoolSnap = await admin.firestore().collection('schools').doc(schoolId).get();
+        const schoolData = schoolSnap.data();
+        // Add school teachers
+        for (const uid of (schoolData?.teacherUids ?? [])) {
+          if (uid !== teacherUid) recipientUids.add(uid);
+        }
+        // Add school admins
+        for (const uid of (schoolData?.adminUids ?? [])) {
+          if (uid !== teacherUid) recipientUids.add(uid);
+        }
+      }
+
+      if (recipientUids.size === 0) return null;
+
+      // 2. Fetch FCM tokens for recipients
+      const tokens: string[] = [];
+      const tokenFetches = Array.from(recipientUids).map(uid =>
+        admin.firestore().collection('user_tokens').doc(`${uid}_web`).get()
+          .then(doc => { if (doc.exists) { const t = doc.data()?.token; if (t) tokens.push(t); } })
+          .catch(() => { /* token missing — skip */ })
+      );
+      await Promise.all(tokenFetches);
+
+      if (tokens.length === 0) return null;
+
+      // 3. Send FCM multicast
+      const teacherName: string = teacherSnap.data()?.name ?? 'Наставник';
+      await admin.messaging().sendEachForMulticast({
+        tokens,
+        notification: {
+          title: `📋 Нова задача — ${teacherName}`,
+          body: title,
+        },
+        webpush: {
+          notification: {
+            icon: '/icon-192.svg',
+            badge: '/icon-192.svg',
+          },
+          fcmOptions: {
+            link: cacheId ? `/#/play/${cacheId}` : '/#/analytics',
+          },
+          headers: { TTL: '86400' },
+        },
+        data: {
+          type: 'new_assignment',
+          assignmentId: snap.id,
+          cacheId,
+          classId: className,
+        },
+      });
+
+      return null;
+    } catch (err) {
+      console.error('[onAssignmentCreated]', err);
+      return null;
+    }
+  });
+
 /**
  * Cloud Function to aggregate student progress.
  * Triggered whenever a student completes a concept (document written in \student_progress\ collection).
@@ -10,7 +99,7 @@ admin.initializeApp();
  */
 export const aggregateStudentProgress = functions.firestore
   .document('student_progress/{progressId}')
-  .onWrite(async (change, context) => {
+  .onWrite(async (change, _context) => {
     const data = change.after.exists ? change.after.data() : null;
     
     if (!data) return null; // Document was deleted

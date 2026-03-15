@@ -1,9 +1,97 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deductCredits = exports.aggregateStudentProgress = void 0;
+exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 admin.initializeApp();
+// ── О1: Push notification when teacher assigns a quiz ─────────────────────
+/**
+ * Triggers on new assignment document.
+ * Sends FCM push to:
+ *  1. All teachers/admins in the same school (collaboration awareness)
+ *  2. School admins (visibility into class activity)
+ *
+ * Students are currently anonymous (no FCM tokens); this function is
+ * forward-compatible — when student Google auth (С1) FCM tokens are
+ * added to user_tokens, add their uids to the `recipients` set below.
+ */
+exports.onAssignmentCreated = functions.firestore
+    .document('assignments/{assignmentId}')
+    .onCreate(async (snap) => {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+    try {
+        const assignment = snap.data();
+        if (!assignment)
+            return null;
+        const teacherUid = (_a = assignment.teacherUid) !== null && _a !== void 0 ? _a : '';
+        const title = (_b = assignment.title) !== null && _b !== void 0 ? _b : 'Нова задача';
+        const cacheId = (_c = assignment.cacheId) !== null && _c !== void 0 ? _c : '';
+        const className = (_d = assignment.classId) !== null && _d !== void 0 ? _d : '';
+        // 1. Get assigning teacher's schoolId
+        const teacherSnap = await admin.firestore().collection('users').doc(teacherUid).get();
+        const schoolId = (_f = (_e = teacherSnap.data()) === null || _e === void 0 ? void 0 : _e.schoolId) !== null && _f !== void 0 ? _f : '';
+        // Collect recipient UIDs (exclude the assigning teacher)
+        const recipientUids = new Set();
+        if (schoolId) {
+            const schoolSnap = await admin.firestore().collection('schools').doc(schoolId).get();
+            const schoolData = schoolSnap.data();
+            // Add school teachers
+            for (const uid of ((_g = schoolData === null || schoolData === void 0 ? void 0 : schoolData.teacherUids) !== null && _g !== void 0 ? _g : [])) {
+                if (uid !== teacherUid)
+                    recipientUids.add(uid);
+            }
+            // Add school admins
+            for (const uid of ((_h = schoolData === null || schoolData === void 0 ? void 0 : schoolData.adminUids) !== null && _h !== void 0 ? _h : [])) {
+                if (uid !== teacherUid)
+                    recipientUids.add(uid);
+            }
+        }
+        if (recipientUids.size === 0)
+            return null;
+        // 2. Fetch FCM tokens for recipients
+        const tokens = [];
+        const tokenFetches = Array.from(recipientUids).map(uid => admin.firestore().collection('user_tokens').doc(`${uid}_web`).get()
+            .then(doc => { var _a; if (doc.exists) {
+            const t = (_a = doc.data()) === null || _a === void 0 ? void 0 : _a.token;
+            if (t)
+                tokens.push(t);
+        } })
+            .catch(() => { }));
+        await Promise.all(tokenFetches);
+        if (tokens.length === 0)
+            return null;
+        // 3. Send FCM multicast
+        const teacherName = (_k = (_j = teacherSnap.data()) === null || _j === void 0 ? void 0 : _j.name) !== null && _k !== void 0 ? _k : 'Наставник';
+        await admin.messaging().sendEachForMulticast({
+            tokens,
+            notification: {
+                title: `📋 Нова задача — ${teacherName}`,
+                body: title,
+            },
+            webpush: {
+                notification: {
+                    icon: '/icon-192.svg',
+                    badge: '/icon-192.svg',
+                },
+                fcmOptions: {
+                    link: cacheId ? `/#/play/${cacheId}` : '/#/analytics',
+                },
+                headers: { TTL: '86400' },
+            },
+            data: {
+                type: 'new_assignment',
+                assignmentId: snap.id,
+                cacheId,
+                classId: className,
+            },
+        });
+        return null;
+    }
+    catch (err) {
+        console.error('[onAssignmentCreated]', err);
+        return null;
+    }
+});
 /**
  * Cloud Function to aggregate student progress.
  * Triggered whenever a student completes a concept (document written in \student_progress\ collection).
@@ -11,7 +99,7 @@ admin.initializeApp();
  */
 exports.aggregateStudentProgress = functions.firestore
     .document('student_progress/{progressId}')
-    .onWrite(async (change, context) => {
+    .onWrite(async (change, _context) => {
     const data = change.after.exists ? change.after.data() : null;
     if (!data)
         return null; // Document was deleted
