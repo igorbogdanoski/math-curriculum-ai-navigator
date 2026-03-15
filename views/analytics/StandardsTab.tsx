@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { ScoreBar } from './shared';
@@ -27,50 +27,59 @@ interface StandardsTabProps {
     };
 }
 
+// Escapes user-facing strings before injecting into document.write HTML (prevents XSS)
+const escHtml = (s: string): string =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
 export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage }) => {
     const [gradeFilter, setGradeFilter] = useState<number | 'all'>('all');
     const [statusFilter, setStatusFilter] = useState<'all' | 'covered' | 'tested' | 'mastered' | 'not_covered'>('all');
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
-    const allStandards = standardsCoverage.all || [];
-    const grades = Array.from(new Set(allStandards.map(s => s.standard.gradeLevel).filter(Boolean))).sort() as number[];
+    const allStandards = useMemo(() => standardsCoverage.all || [], [standardsCoverage.all]);
 
-    const filtered = allStandards.filter(s => {
+    const grades = useMemo(
+        () => Array.from(new Set(allStandards.map(s => s.standard.gradeLevel).filter((g): g is number => typeof g === 'number'))).sort((a, b) => a - b),
+        [allStandards]
+    );
+
+    const filtered = useMemo(() => allStandards.filter(s => {
         if (gradeFilter !== 'all' && s.standard.gradeLevel !== gradeFilter) return false;
         if (statusFilter === 'covered' && !s.isCovered) return false;
         if (statusFilter === 'tested' && !s.isTested) return false;
         if (statusFilter === 'mastered' && s.masteredCount === 0) return false;
         if (statusFilter === 'not_covered' && s.isCovered) return false;
         return true;
-    });
+    }), [allStandards, gradeFilter, statusFilter]);
 
-    const coveredCount = allStandards.filter(s => s.isCovered).length;
-    const testedCount = allStandards.filter(s => s.isTested).length;
-    const masteredStdCount = allStandards.filter(s => s.masteredCount > 0).length;
+    const { coveredCount, testedCount, masteredStdCount } = useMemo(() => ({
+        coveredCount: allStandards.filter(s => s.isCovered).length,
+        testedCount: allStandards.filter(s => s.isTested).length,
+        masteredStdCount: allStandards.filter(s => s.masteredCount > 0).length,
+    }), [allStandards]);
 
     const handleExportPDF = useCallback(() => {
-        const win = window.open('', '_blank');
-        if (!win) return;
-        const printStandards = gradeFilter !== 'all'
-            ? allStandards.filter(s => s.standard.gradeLevel === gradeFilter)
-            : allStandards;
-        const rows = printStandards.map(s => {
-            const status = s.isTested
-                ? (s.avgScore >= 70 ? '✅ Совладано' : '📊 Тестирано')
-                : s.isCovered ? '📚 Во програма' : '⬜ Не покриено';
-            const score = s.isTested ? `${s.avgScore}%` : '—';
-            return `<tr>
-                <td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;color:#4a5568;white-space:nowrap">${s.standard.code}</td>
-                <td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:11px">${s.standard.description}</td>
+        try {
+            const printStandards = gradeFilter !== 'all'
+                ? allStandards.filter(s => s.standard.gradeLevel === gradeFilter)
+                : allStandards;
+            const rows = printStandards.map(s => {
+                const status = s.isTested
+                    ? (s.avgScore >= 70 ? '&#x2705; Совладано' : '&#x1F4CA; Тестирано')
+                    : s.isCovered ? '&#x1F4DA; Во програма' : '&#x2B1C; Не покриено';
+                const score = s.isTested ? `${s.avgScore}%` : '&mdash;';
+                return `<tr>
+                <td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;color:#4a5568;white-space:nowrap">${escHtml(s.standard.code)}</td>
+                <td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:11px">${escHtml(s.standard.description)}</td>
                 <td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:center;white-space:nowrap">${status}</td>
                 <td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:11px;text-align:center;font-weight:bold">${score}</td>
             </tr>`;
-        }).join('');
-        const gradeName = gradeFilter !== 'all' ? `${gradeFilter}-то Одделение` : 'Сите Одделенија (6–9)';
-        const covPrint = printStandards.filter(s => s.isCovered).length;
-        const testPrint = printStandards.filter(s => s.isTested).length;
-        const mastPrint = printStandards.filter(s => s.masteredCount > 0).length;
-        win.document.write(`<!DOCTYPE html>
+            }).join('');
+            const gradeName = gradeFilter !== 'all' ? `${Number(gradeFilter)}-то Одделение` : 'Сите Одделенија (6&ndash;9)';
+            const covPrint = printStandards.filter(s => s.isCovered).length;
+            const testPrint = printStandards.filter(s => s.isTested).length;
+            const mastPrint = printStandards.filter(s => s.masteredCount > 0).length;
+            const html = `<!DOCTYPE html>
 <html lang="mk">
 <head><meta charset="UTF-8"><title>Потврда за покриеност на МОН стандарди</title>
 <style>
@@ -89,7 +98,7 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
   @media print{.no-print{display:none}}
 </style></head>
 <body>
-<h1>📊 Потврда за покриеност на Национални МОН Стандарди</h1>
+<h1>&#x1F4CA; Потврда за покриеност на Национални МОН Стандарди</h1>
 <p class="subtitle">Одделение: ${gradeName} | Датум: ${new Date().toLocaleDateString('mk-MK', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 <div class="stats">
   <div class="stat"><div class="stat-num">${printStandards.length}</div><div class="stat-label">Вкупно стандарди</div></div>
@@ -102,9 +111,21 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
   <tbody>${rows}</tbody>
 </table>
 <div class="footer">Извештај генериран од Math Curriculum AI Navigator | МОН Национални стандарди за основно образование</div>
-<button class="print-btn no-print" onclick="window.print()">🖨️ Печати / Зачувај PDF</button>
-</body></html>`);
-        win.document.close();
+<button class="print-btn no-print" onclick="window.print()">&#x1F5A8;&#xFE0F; Печати / Зачувај PDF</button>
+</body></html>`;
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const win = window.open(url, '_blank');
+            if (!win) {
+                URL.revokeObjectURL(url);
+                alert('Popup блокиран. Дозволи popup-и за овој сајт за да го генерираш PDF извештајот.');
+                return;
+            }
+            // Revoke after the window has loaded
+            setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        } catch {
+            alert('Грешка при генерирање на PDF извештајот. Обиди се повторно.');
+        }
     }, [allStandards, gradeFilter]);
 
     // Fallback to legacy view if `all` data not yet available
