@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, BellRing } from 'lucide-react';
-import { requestNotificationPermission, sendLocalPushNotification } from '../services/pushService';
+import React, { useState } from 'react';
 import { StudentProgressView } from './StudentProgressView';
-import { BookOpen, Loader2, BarChart2, CheckCircle2, Flame, Star, ExternalLink, AlertTriangle, Home } from 'lucide-react';
-import { firestoreService, type QuizResult, type ConceptMastery } from '../services/firestoreService';
+import { BookOpen, Loader2, BarChart2, CheckCircle2, Flame, Star, ExternalLink, AlertTriangle, Home, Copy, Printer } from 'lucide-react';
+import { firestoreService, type QuizResult } from '../services/firestoreService';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
@@ -44,12 +42,38 @@ export const ParentPortalView: React.FC = () => {
   const [summary, setSummary] = useState<WeeklySummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState('');
+  const [reportCopied, setReportCopied] = useState(false);
 
   if (nameFromUrl) {
     return <StudentProgressView name={decodeURIComponent(nameFromUrl)} />;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCopyReport = () => {
+    if (!summary) return;
+    const date = new Date().toLocaleDateString('mk-MK', { day: 'numeric', month: 'long', year: 'numeric' });
+    const weakLine = summary.weakConcepts.length > 0
+      ? `⚠️ Теми за внимание: ${summary.weakConcepts.map(c => `${c.title} (${c.avgPct}%)`).join(', ')}.`
+      : '✅ Нема слаби теми оваа недела.';
+    const text = [
+      `📊 Неделен извештај — ${summary.studentName}`,
+      `Датум: ${date}`,
+      ``,
+      `📝 Квизови оваа недела: ${summary.quizzesThisWeek}`,
+      `📈 Просечен резултат: ${summary.avgPct}%`,
+      `🏆 Совладани концепти: ${summary.masteredThisWeek}`,
+      `🔥 Серија: ${summary.currentStreak} ${summary.currentStreak === 1 ? 'ден' : 'дена'} по ред`,
+      ``,
+      weakLine,
+      ``,
+      `— Генерирано од Math Curriculum AI Navigator`,
+    ].join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      setReportCopied(true);
+      setTimeout(() => setReportCopied(false), 2500);
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = nameInput.trim();
     if (!trimmed) return;
@@ -295,15 +319,35 @@ export const ParentPortalView: React.FC = () => {
               </div>
             </div>
 
-            {/* Full report link */}
-            <button
-              type="button"
-              onClick={() => { window.location.hash = `/parent?name=${encodeURIComponent(summary.studentName)}`; }}
-              className="w-full py-2.5 border-2 border-indigo-200 text-indigo-600 rounded-xl font-semibold text-sm hover:bg-indigo-50 transition flex items-center justify-center gap-2"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Целосен извештај →
-            </button>
+            {/* Action buttons */}
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                onClick={() => { window.location.hash = `/parent?name=${encodeURIComponent(summary.studentName)}`; }}
+                className="w-full py-2.5 border-2 border-indigo-200 text-indigo-600 rounded-xl font-semibold text-sm hover:bg-indigo-50 transition flex items-center justify-center gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Целосен извештај →
+              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyReport}
+                  className="py-2 border border-gray-200 text-gray-600 rounded-xl font-semibold text-xs hover:bg-gray-50 transition flex items-center justify-center gap-1.5"
+                >
+                  {reportCopied
+                    ? <><CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> Копирано!</>
+                    : <><Copy className="w-3.5 h-3.5" /> Копирај извештај</>}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="py-2 border border-gray-200 text-gray-600 rounded-xl font-semibold text-xs hover:bg-gray-50 transition flex items-center justify-center gap-1.5"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Печати
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -40,7 +40,7 @@ const HomeworkSheet = React.forwardRef<HTMLDivElement, { homework: AdaptiveHomew
           </div>
           <div className="flex gap-8 mt-5">
             <div className="flex-1">
-              <span className="text-xs font-bold uppercase">Ime и Презиме:</span>
+              <span className="text-xs font-bold uppercase">Име и Презиме:</span>
               <div className="border-b border-black mt-5 w-full" />
             </div>
             <div className="w-28">

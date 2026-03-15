@@ -160,6 +160,7 @@ export interface CachedMaterial {
   ratingsByUid?: Record<string, number>; // uid → 1-5, max 1 rating per teacher (updatable)
   publishedByUid?: string;
   publishedByName?: string;
+  publisherIsMentor?: boolean; // П-Д: true when publisher has mentor status
   isForked?: boolean;
   sourceId?: string;
   sourceAuthor?: string;

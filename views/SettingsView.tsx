@@ -90,6 +90,7 @@ export const SettingsView: React.FC = () => {
         localStorage.getItem('auto_ai_suggestions') !== 'false'
     );
     const [mkContextEnabled, setMkContextEnabled] = useState(() => isMacedonianContextEnabled());
+    const [isMentorEnabled, setIsMentorEnabled] = useState(user?.isMentor ?? false);
     // E2.2 — Global accessibility settings
     const [dyslexicFont, setDyslexicFont] = useState(() =>
         localStorage.getItem('accessibility_dyslexic') === 'true'
@@ -111,6 +112,19 @@ export const SettingsView: React.FC = () => {
         const next = !mkContextEnabled;
         setMkContextEnabled(next);
         setMacedonianContextEnabled(next);
+    };
+
+    const toggleMentor = async () => {
+        if (!firebaseUser?.uid) return;
+        const next = !isMentorEnabled;
+        setIsMentorEnabled(next);
+        try {
+            await firestoreService.toggleMentorStatus(firebaseUser.uid, next);
+            addNotification(next ? '🏆 Сте регистрирани како Ментор! Вашите материјали ќе добијат ментор беџ.' : 'Менторскиот статус е исклучен.', 'success');
+        } catch {
+            setIsMentorEnabled(!next); // revert on error
+            addNotification('Грешка при промена на менторски статус.', 'error');
+        }
     };
 
     const toggleDyslexicFont = () => {
@@ -428,6 +442,21 @@ export const SettingsView: React.FC = () => {
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${mkContextEnabled ? 'bg-brand-primary' : 'bg-gray-300'}`}
                         >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${mkContextEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-t">
+                        <div>
+                            <p className="text-sm font-medium text-gray-700">🏆 Ментор статус</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Вашите материјали во Националната библиотека ќе добијат ментор беџ. Колегите можат да учат од вашето искуство.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={toggleMentor}
+                            title={isMentorEnabled ? 'Исклучи ментор статус' : 'Стани ментор'}
+                            aria-label={isMentorEnabled ? 'Исклучи ментор статус' : 'Стани ментор'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isMentorEnabled ? 'bg-amber-500' : 'bg-gray-300'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isMentorEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
                     </div>
                     <div className="flex justify-end pt-4 border-t">

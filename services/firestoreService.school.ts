@@ -155,6 +155,11 @@ export const schoolService = {
     }
   },
 
+  /** П-Д — Teacher Mentorship: volunteer mentor opt-in/out */
+  toggleMentorStatus: async (uid: string, isMentor: boolean): Promise<void> => {
+    await updateDoc(doc(db, 'users', uid), { isMentor });
+  },
+
   updateUserSubscription: async (uid: string, updateData: { aiCreditsBalance?: number, isPremium?: boolean, hasUnlimitedCredits?: boolean, tier?: 'Free' | 'Pro' | 'Unlimited' }): Promise<void> => {
     try {
       await updateDoc(doc(db, 'users', uid), updateData as any);

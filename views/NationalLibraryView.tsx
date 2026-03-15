@@ -26,6 +26,7 @@ interface LibraryEntry {
   conceptTitle?: string;
   publishedByName: string;
   schoolName?: string;
+  publisherIsMentor?: boolean;
   importCount: number;
   publishedAt?: any;
 }
@@ -231,8 +232,11 @@ export const NationalLibraryView: React.FC = () => {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-auto">
-                  <div className="text-xs text-gray-400 truncate max-w-[140px]">
+                  <div className="text-xs text-gray-400 truncate max-w-[160px]">
                     <span className="font-medium text-gray-600">{entry.publishedByName}</span>
+                    {entry.publisherIsMentor && (
+                      <span className="ml-1 inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-amber-700 bg-amber-100 font-semibold text-[10px]" title="Верификуван ментор">🏆 Ментор</span>
+                    )}
                     {entry.schoolName && <span> · {entry.schoolName}</span>}
                   </div>
                   <button

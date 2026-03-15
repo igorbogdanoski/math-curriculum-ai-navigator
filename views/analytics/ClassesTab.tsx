@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { School, Plus, Trash2, UserPlus, X, Edit2, Check, Upload, FileText, Key, RefreshCw, Copy, CheckCircle2, BarChart2, ChevronDown, ChevronUp, Loader2, AlertCircle } from 'lucide-react';
+import { School, Plus, Trash2, UserPlus, X, Edit2, Check, Upload, FileText, Key, RefreshCw, Copy, CheckCircle2, BarChart2, ChevronDown, ChevronUp, Loader2, AlertCircle, Link2 } from 'lucide-react';
+import QRCode from 'react-qr-code';
 import { firestoreService, type SchoolClass } from '../../services/firestoreService';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
@@ -40,6 +41,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     const [generatingCodeId, setGeneratingCodeId] = useState<string | null>(null);
     const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
     const [codeGenError, setCodeGenError] = useState<string | null>(null);
+
+    // П-А — parent link panel per student
+    const [parentLinkKey, setParentLinkKey] = useState<string | null>(null); // "classId:studentName"
+    const [parentLinkCopied, setParentLinkCopied] = useState(false);
 
     // И2 — per-class stats (lazy)
     const [statsOpenId, setStatsOpenId] = useState<string | null>(null);
@@ -455,6 +460,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                             <div className="flex flex-wrap gap-1.5">
                                 {cls.studentNames.sort().map(name => {
                                     const isIEP = cls.iepStudents?.includes(name) ?? false;
+                                    const plKey = `${cls.id}:${name}`;
                                     return (
                                         <span
                                             key={name}
@@ -462,6 +468,15 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                                         >
                                             {isIEP && <span title="Ученик со ИЕП">🧩</span>}
                                             {name}
+                                            <button
+                                                type="button"
+                                                onClick={() => setParentLinkKey(parentLinkKey === plKey ? null : plKey)}
+                                                title="Родителски линк / QR код"
+                                                aria-label={`Родителски линк за ${name}`}
+                                                className="hover:opacity-60 transition text-indigo-400 hover:text-indigo-600"
+                                            >
+                                                <Link2 className="w-3 h-3" />
+                                            </button>
                                             <button
                                                 type="button"
                                                 onClick={() => handleToggleIEP(cls.id, name, cls.iepStudents ?? [])}
@@ -484,6 +499,45 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                                 })}
                             </div>
                         )}
+
+                        {/* П-А: Parent link panel */}
+                        {parentLinkKey && parentLinkKey.startsWith(cls.id + ':') && (() => {
+                            const studentName = parentLinkKey.slice(cls.id.length + 1);
+                            const parentUrl = `${window.location.origin}${window.location.pathname}#/parent?name=${encodeURIComponent(studentName)}&teacher=${teacherUid}`;
+                            return (
+                                <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-bold text-indigo-700">👨‍👩‍👧 Родителски линк — {studentName}</p>
+                                        <button type="button" onClick={() => setParentLinkKey(null)} title="Затвори" aria-label="Затвори родителски линк" className="text-indigo-400 hover:text-indigo-600 transition">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    <div className="flex gap-4 items-start">
+                                        <div className="bg-white p-2 rounded-lg border border-indigo-100 flex-shrink-0">
+                                            <QRCode value={parentUrl} size={96} />
+                                        </div>
+                                        <div className="flex-1 space-y-2 min-w-0">
+                                            <p className="text-[10px] text-indigo-600 break-all font-mono bg-white border border-indigo-100 rounded-lg px-2 py-1.5 select-all">{parentUrl}</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(parentUrl).then(() => {
+                                                        setParentLinkCopied(true);
+                                                        setTimeout(() => setParentLinkCopied(false), 2000);
+                                                    });
+                                                }}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition w-full justify-center"
+                                            >
+                                                {parentLinkCopied
+                                                    ? <><CheckCircle2 className="w-3.5 h-3.5" /> Копирано!</>
+                                                    : <><Copy className="w-3.5 h-3.5" /> Копирај линк</>}
+                                            </button>
+                                            <p className="text-[10px] text-indigo-500">Испрати го линкот или QR кодот до родителот. Родителот го отвора на телефон и го следи напредокот.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                         {/* П-Г: IEP summary */}
                         {(cls.iepStudents?.length ?? 0) > 0 && (
                             <p className="text-xs text-violet-600 mt-1.5 flex items-center gap-1">

@@ -107,7 +107,7 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
     }
     setPublishing(prev => new Set(prev).add(q.id));
     try {
-      await firestoreService.publishToNationalLibrary(q, user?.name ?? t('analytics.qbank.defaultTitle'), user?.schoolName);
+      await firestoreService.publishToNationalLibrary(q, user?.name ?? t('analytics.qbank.defaultTitle'), user?.schoolName, user?.isMentor ?? false);
       setPublished(prev => new Set(prev).add(q.id));
       setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, isPublic: true } : item));
       addNotification(t('analytics.qbank.published'), 'success');

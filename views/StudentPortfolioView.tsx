@@ -359,7 +359,7 @@ export const StudentPortfolioView: React.FC = () => {
             {masteredConcepts.length === 0 ? (
               <p className="text-sm text-gray-400">Сè уште нема совладани концепти. Напред!</p>
             ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1 print:max-h-none print:overflow-visible">
                 {masteredConcepts.map(m => (
                   <div key={m.conceptId} className="flex items-center gap-3">
                     <span className="text-emerald-500 text-base">🏆</span>

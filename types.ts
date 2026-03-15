@@ -253,6 +253,8 @@ export interface TeachingProfile {
   hasUnlimitedCredits?: boolean;
   tier?: 'Free' | 'Pro' | 'Unlimited';
 
+  isMentor?: boolean; // П-Д: voluntary mentor flag — shown as badge on shared materials
+
   style: 'Constructivist' | 'Direct Instruction' | 'Inquiry-Based' | 'Project-Based';
   experienceLevel: 'Beginner' | 'Intermediate' | 'Expert';
   levelDescription?: string;

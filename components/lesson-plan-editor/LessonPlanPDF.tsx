@@ -550,6 +550,24 @@ const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ data }) => {
           </View>
         )}
 
+        {/* Math Tool Embeds (GeoGebra / Desmos) */}
+        {Array.isArray(plan.mathEmbeds) && plan.mathEmbeds.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>МАТЕМАТИЧКИ АЛАТКИ</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {plan.mathEmbeds.map((embed, i) => (
+                <View key={i} style={{ alignItems: 'center' }}>
+                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                  <Image src={embed.dataUrl} style={{ width: 180, height: 120, objectFit: 'contain', border: '1pt solid #E5E7EB', borderRadius: 4 }} />
+                  <Text style={{ fontSize: 8, color: '#6B7280', marginTop: 2 }}>
+                    {embed.tool === 'geogebra' ? 'GeoGebra' : 'Desmos'}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>Math Curriculum AI Navigator</Text>

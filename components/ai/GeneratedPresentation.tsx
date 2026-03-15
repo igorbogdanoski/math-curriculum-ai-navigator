@@ -347,7 +347,10 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
               if (png) {
                 try {
                   const img = new Image();
-                  await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
+                  await Promise.race([
+                    new Promise<void>(res => { img.onload = () => res(); img.onerror = () => res(); img.src = png; }),
+                    new Promise<void>(res => setTimeout(res, 5000)),
+                  ]);
                   const ratio = img.naturalHeight / img.naturalWidth;
                   const imgW = Math.min(boxW - 0.4, 6.5);
                   const imgH = Math.min(imgW * ratio, boxH - 0.2);
@@ -403,7 +406,10 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
               if (png) {
                 try {
                   const img = new Image();
-                  await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
+                  await Promise.race([
+                    new Promise<void>(res => { img.onload = () => res(); img.onerror = () => res(); img.src = png; }),
+                    new Promise<void>(res => setTimeout(res, 5000)),
+                  ]);
                   const ratio = img.naturalHeight / img.naturalWidth;
                   const imgW = Math.min(SLIDE_W - 1.2, 7.5);
                   const imgH = Math.min(imgW * ratio, stepH + 0.1);
@@ -452,7 +458,10 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
               if (png) {
                 try {
                   const img = new Image();
-                  await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
+                  await Promise.race([
+                    new Promise<void>(res => { img.onload = () => res(); img.onerror = () => res(); img.src = png; }),
+                    new Promise<void>(res => setTimeout(res, 5000)),
+                  ]);
                   const ratio   = img.naturalHeight / img.naturalWidth;
                   const imgW    = Math.min(maxImgW, SLIDE_W * 0.7);
                   const imgH    = Math.min(imgW * ratio, 1.2);
@@ -494,7 +503,8 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
         });
       }
 
-      await pptx.writeFile({ fileName: `${data.title.replace(/\s+/g, '_')}.pptx` });
+      const safeTitle = data.title.replace(/[<>:"/\\|?*\x00-\x1f]/g, '').replace(/\s+/g, '_').slice(0, 80) || 'prezentacija';
+      await pptx.writeFile({ fileName: `${safeTitle}.pptx` });
       addNotification('PPTX успешно генериран! ✅', 'success');
     } catch (err) {
       console.error('PPTX export error:', err);

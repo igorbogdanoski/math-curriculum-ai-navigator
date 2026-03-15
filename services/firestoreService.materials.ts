@@ -440,12 +440,14 @@ export const updateMaterialTitle = async (id: string, title: string): Promise<vo
 export const publishMaterialWithAttribution = async (
   id: string,
   publishedByUid: string,
-  publishedByName: string
+  publishedByName: string,
+  publisherIsMentor = false
 ): Promise<void> => {
   await updateDoc(doc(db, 'cached_ai_materials', id), {
     status: 'published',
     publishedByUid,
     publishedByName,
+    publisherIsMentor,
   });
 };
 
@@ -542,6 +544,7 @@ export const publishToNationalLibrary = async (
     q: SavedQuestion,
     teacherName: string,
     schoolName?: string,
+    publisherIsMentor = false,
   ): Promise<string> => {
     const ref = await addDoc(collection(db, 'national_library'), {
       question: q.question,
@@ -556,6 +559,7 @@ export const publishToNationalLibrary = async (
       publishedByUid: q.teacherUid,
       publishedByName: teacherName,
       schoolName: schoolName ?? null,
+      publisherIsMentor,
       importCount: 0,
       publishedAt: serverTimestamp(),
     });
