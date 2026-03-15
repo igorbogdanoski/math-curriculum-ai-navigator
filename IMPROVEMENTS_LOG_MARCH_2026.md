@@ -231,19 +231,19 @@ InfographicPreviewModal → base64 PNG preview + Download копче
 
 | Приоритет | ID | Функција | Педагошки импакт | Напор | Статус |
 | --- | --- | --- | --- | --- | --- |
-| 🔴 P0 | П-Б | **Misconception → Ремедијација** | ⭐⭐⭐⭐⭐ | Низок | ⏳ |
-| 🔴 P0 | П-А | **Formative Assessment Loop** — auto next-step card во HomeView | ⭐⭐⭐⭐⭐ | Среден | ⏳ |
-| 🟠 P1 | П-Г | **AI Илустрација во Word Export** (docx ImageRun) | ⭐⭐⭐⭐ | Низок | ⏳ |
-| 🟠 P1 | П-Ѓ | **Диференцирани нивоа** — 3 таба (Поддршка/Стандардно/Збогатување) | ⭐⭐⭐⭐ | Низок | ⏳ |
-| 🟠 P1 | П-В | **Bloom Objective Builder** — dropdown глаголи + мерлив исход | ⭐⭐⭐⭐ | Среден | ⏳ |
-| 🟡 P2 | П-Д | **Spaced Rep во HomeView** — due concepts + 1-click review quiz | ⭐⭐⭐ | Низок | ⏳ |
-| 🟡 P2 | П-Е | **Teacher Onboarding Wizard** — 4 чекори на прво логирање | ⭐⭐⭐ | Среден | ⏳ |
+| 🔴 P0 | П-Б | **Misconception → Ремедијација** | ⭐⭐⭐⭐⭐ | Низок | ✅ |
+| 🔴 P0 | П-А | **Formative Assessment Loop** — auto next-step card во HomeView | ⭐⭐⭐⭐⭐ | Среден | ✅ |
+| 🟠 P1 | П-Г | **AI Илустрација во Word Export** (docx ImageRun) | ⭐⭐⭐⭐ | Низок | ✅ |
+| 🟠 P1 | П-Ѓ | **Диференцирани нивоа** — 3 таба (Поддршка/Стандардно/Збогатување) | ⭐⭐⭐⭐ | Низок | ✅ |
+| 🟠 P1 | П-В | **Bloom Objective Builder** — dropdown глаголи + мерлив исход | ⭐⭐⭐⭐ | Среден | ✅ |
+| 🟡 P2 | П-Д | **Spaced Rep во HomeView** — due concepts + 1-click review quiz | ⭐⭐⭐ | Низок | ✅ |
+| 🟡 P2 | П-Е | **Teacher Onboarding Wizard** — 4 чекори на прво логирање | ⭐⭐⭐ | Среден | ✅ |
 | 🟡 P2 | П-Ж | **PDF Export** (branded A4, формули + слика) | ⭐⭐⭐ | Висок | ⏳ |
-| 🟡 P2 | П-З | **MathRenderer a11y** — `aria-label` + `role="math"` | ⭐⭐ | Низок | ⏳ |
+| 🟡 P2 | П-З | **MathRenderer a11y** — `aria-label` + `role="math"` | ⭐⭐ | Низок | ✅ |
+| 🟡 P2 | П-Л | **Print Quiz** — `@media print` CSS visibility | ⭐⭐ | Низок | ✅ |
 | 🟢 P3 | М8 | **Live Quiz од слајд** (Premium WOW feature) | ⭐⭐⭐ | Висок | ⏳ |
 | 🟢 P3 | П-И | **Collaborative Share** — share lesson plan со колега | ⭐⭐⭐ | Среден | ⏳ |
 | 🟢 P3 | П-Ј | **Smart Quiz Title** — Gemini Flash генерира наслов при зачувување | ⭐⭐ | Низок | ⏳ |
-| 🟢 P3 | П-Л | **Print Quiz** — хартиена верзија со `@media print` | ⭐⭐ | Низок | ⏳ |
 
 ### 🧠 Дијагностицирани Критични Дефицити
 
