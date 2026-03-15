@@ -7,6 +7,9 @@ import {
     AIRecommendationSchema,
     AIPedagogicalAnalysisSchema,
     AIGeneratedThematicPlanSchema,
+    DailyBriefSchema,
+    WorkedExampleSchema,
+    ReflectionSummarySchema,
 } from './schemas';
 
 // ─── BloomsLevelSchema ────────────────────────────────────────────────────────
@@ -231,5 +234,169 @@ describe('AIGeneratedThematicPlanSchema', () => {
     it('rejects plan without thematicUnit', () => {
         const { thematicUnit: _t, ...noUnit } = validPlan;
         expect(AIGeneratedThematicPlanSchema.safeParse(noUnit).success).toBe(false);
+    });
+});
+
+// ─── DailyBriefSchema ─────────────────────────────────────────────────────────
+
+describe('DailyBriefSchema', () => {
+    const validBrief = {
+        summary: 'Денес имате 3 ученика со слаби резултати на квизот.',
+        priority: 'high' as const,
+    };
+
+    it('parses a valid brief without primaryAction', () => {
+        expect(DailyBriefSchema.safeParse(validBrief).success).toBe(true);
+    });
+
+    it('parses a valid brief with full primaryAction', () => {
+        const withAction = {
+            ...validBrief,
+            primaryAction: { label: 'Провери', conceptId: 'c1', conceptTitle: 'Разломки' },
+        };
+        expect(DailyBriefSchema.safeParse(withAction).success).toBe(true);
+    });
+
+    it('parses a brief with partial primaryAction (only label)', () => {
+        const withPartial = { ...validBrief, primaryAction: { label: 'Провери' } };
+        expect(DailyBriefSchema.safeParse(withPartial).success).toBe(true);
+    });
+
+    it.each(['high', 'medium', 'low'])('accepts priority: %s', (priority) => {
+        expect(DailyBriefSchema.safeParse({ ...validBrief, priority }).success).toBe(true);
+    });
+
+    it('rejects invalid priority value', () => {
+        expect(DailyBriefSchema.safeParse({ ...validBrief, priority: 'critical' }).success).toBe(false);
+    });
+
+    it('rejects brief without summary', () => {
+        const { summary: _s, ...noSummary } = validBrief;
+        expect(DailyBriefSchema.safeParse(noSummary).success).toBe(false);
+    });
+
+    it('rejects brief without priority', () => {
+        const { priority: _p, ...noPriority } = validBrief;
+        expect(DailyBriefSchema.safeParse(noPriority).success).toBe(false);
+    });
+
+    it('rejects primaryAction missing label', () => {
+        const bad = { ...validBrief, primaryAction: { conceptId: 'c1' } };
+        expect(DailyBriefSchema.safeParse(bad).success).toBe(false);
+    });
+});
+
+// ─── WorkedExampleSchema ──────────────────────────────────────────────────────
+
+describe('WorkedExampleSchema', () => {
+    const validExample = {
+        title: 'Питагорова теорема — пример',
+        problem: 'Дадени се катети a=3, b=4. Најди ја хипотенузата c.',
+        steps: [
+            { explanation: 'Примени ја формулата c² = a² + b²', formula: 'c^2 = 3^2 + 4^2' },
+            { explanation: 'Пресметај: c² = 9 + 16 = 25', formula: 'c^2 = 25' },
+            { explanation: 'Извади корен: c = 5' },
+        ],
+    };
+
+    it('parses a minimal worked example (no partialSteps, no quizQuestion)', () => {
+        expect(WorkedExampleSchema.safeParse(validExample).success).toBe(true);
+    });
+
+    it('parses example with partialSteps', () => {
+        const withPartial = {
+            ...validExample,
+            partialSteps: [
+                { explanation: 'Примени ја формулата', formula: 'c^2 = a^2 + b^2', isBlank: false },
+                { explanation: '___', isBlank: true },
+            ],
+        };
+        expect(WorkedExampleSchema.safeParse(withPartial).success).toBe(true);
+    });
+
+    it('parses example with quizQuestion', () => {
+        const withQuiz = {
+            ...validExample,
+            quizQuestion: {
+                question: 'Колку е c ако a=3, b=4?',
+                options: ['3', '4', '5', '6'],
+                correctIndex: 2,
+                explanation: 'c² = 9 + 16 = 25, c = 5',
+            },
+        };
+        expect(WorkedExampleSchema.safeParse(withQuiz).success).toBe(true);
+    });
+
+    it('allows step without formula (optional)', () => {
+        const noFormula = { ...validExample, steps: [{ explanation: 'Објасни' }] };
+        expect(WorkedExampleSchema.safeParse(noFormula).success).toBe(true);
+    });
+
+    it('rejects example without title', () => {
+        const { title: _t, ...noTitle } = validExample;
+        expect(WorkedExampleSchema.safeParse(noTitle).success).toBe(false);
+    });
+
+    it('rejects example without problem', () => {
+        const { problem: _p, ...noProblem } = validExample;
+        expect(WorkedExampleSchema.safeParse(noProblem).success).toBe(false);
+    });
+
+    it('rejects example without steps', () => {
+        const { steps: _s, ...noSteps } = validExample;
+        expect(WorkedExampleSchema.safeParse(noSteps).success).toBe(false);
+    });
+
+    it('rejects quizQuestion missing correctIndex', () => {
+        const bad = {
+            ...validExample,
+            quizQuestion: { question: 'Q?', options: ['A', 'B'], explanation: 'Expl' },
+        };
+        expect(WorkedExampleSchema.safeParse(bad).success).toBe(false);
+    });
+
+    it('rejects quizQuestion with non-number correctIndex', () => {
+        const bad = {
+            ...validExample,
+            quizQuestion: { question: 'Q?', options: ['A', 'B'], correctIndex: 'two', explanation: 'Expl' },
+        };
+        expect(WorkedExampleSchema.safeParse(bad).success).toBe(false);
+    });
+});
+
+// ─── ReflectionSummarySchema ──────────────────────────────────────────────────
+
+describe('ReflectionSummarySchema', () => {
+    const validReflection = {
+        wentWell: 'Учениците беа многу ангажирани во групната работа.',
+        challenges: 'Некои ученици имаа потешкотии со отворен тип прашања.',
+        nextSteps: 'Подготви диференцирани работни листови за следниот час.',
+    };
+
+    it('parses a valid reflection', () => {
+        expect(ReflectionSummarySchema.safeParse(validReflection).success).toBe(true);
+    });
+
+    it('rejects reflection without wentWell', () => {
+        const { wentWell: _w, ...noWentWell } = validReflection;
+        expect(ReflectionSummarySchema.safeParse(noWentWell).success).toBe(false);
+    });
+
+    it('rejects reflection without challenges', () => {
+        const { challenges: _c, ...noChallenges } = validReflection;
+        expect(ReflectionSummarySchema.safeParse(noChallenges).success).toBe(false);
+    });
+
+    it('rejects reflection without nextSteps', () => {
+        const { nextSteps: _n, ...noNextSteps } = validReflection;
+        expect(ReflectionSummarySchema.safeParse(noNextSteps).success).toBe(false);
+    });
+
+    it('rejects empty object', () => {
+        expect(ReflectionSummarySchema.safeParse({}).success).toBe(false);
+    });
+
+    it('rejects reflection with non-string fields', () => {
+        expect(ReflectionSummarySchema.safeParse({ wentWell: 1, challenges: 2, nextSteps: 3 }).success).toBe(false);
     });
 });

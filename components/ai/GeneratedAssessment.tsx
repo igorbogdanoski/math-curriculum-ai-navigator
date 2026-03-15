@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bookmark, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Bookmark, Image as ImageIcon, Loader2, X, RefreshCw } from 'lucide-react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
@@ -39,8 +39,12 @@ const QuestionList: React.FC<{
     handleOptionChange: (qIndex: number, optIndex: number, value: string) => void;
     onSaveQuestion?: (q: AssessmentQuestion) => void;
     onVisualize?: (idx: number, questionText: string) => Promise<void>;
+    onDeleteImage?: (idx: number) => void;
+    onRegenerateImage?: (idx: number, customPrompt: string) => Promise<void>;
     visualizingIdx?: number | null;
-}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion, onVisualize, visualizingIdx }) => {
+}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion, onVisualize, onDeleteImage, onRegenerateImage, visualizingIdx }) => {
+    const [openPromptIdx, setOpenPromptIdx] = useState<number | null>(null);
+    const [promptMap, setPromptMap] = useState<Record<number, string>>({});
     const questionTypeIcons: Record<string, React.ComponentType<{className?: string}>> = {
         MULTIPLE_CHOICE: ICONS.myLessons,
         SHORT_ANSWER: ICONS.edit,
@@ -157,10 +161,55 @@ const QuestionList: React.FC<{
 
                             {q.imageUrl && (
                                 <div className="md:w-64 flex-shrink-0 animate-in fade-in zoom-in duration-500">
-                                    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+                                    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white relative group/img">
                                         <img src={q.imageUrl} alt={`Визуелизација за прашање ${index + 1}`} className="w-full h-auto" />
-                                        <div className="p-1.5 bg-gray-50 text-[10px] text-gray-400 text-center italic border-t">
-                                            AI Илустрација
+                                        {onDeleteImage && (
+                                            <button
+                                                type="button"
+                                                onClick={() => { onDeleteImage(index); setOpenPromptIdx(null); }}
+                                                title="Избриши илустрација"
+                                                className="absolute top-1.5 right-1.5 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity shadow hover:bg-red-600"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        )}
+                                        <div className="p-1.5 bg-gray-50 border-t">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] text-gray-400 italic">AI Илустрација</span>
+                                                {onRegenerateImage && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setOpenPromptIdx(openPromptIdx === index ? null : index)}
+                                                        title="Промени со наоки"
+                                                        className="text-[10px] text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-0.5"
+                                                    >
+                                                        <RefreshCw className="w-2.5 h-2.5" /> Промени
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {openPromptIdx === index && onRegenerateImage && (
+                                                <div className="mt-1.5 flex flex-col gap-1">
+                                                    <textarea
+                                                        value={promptMap[index] ?? ''}
+                                                        onChange={e => setPromptMap(pm => ({ ...pm, [index]: e.target.value }))}
+                                                        placeholder="Опис за нова илустрација..."
+                                                        className="w-full text-xs p-1.5 border rounded resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                                        rows={2}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            onRegenerateImage(index, promptMap[index] || q.question);
+                                                            setOpenPromptIdx(null);
+                                                        }}
+                                                        disabled={visualizingIdx === index}
+                                                        className="text-xs bg-indigo-600 text-white rounded px-2 py-1 hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1 justify-center"
+                                                    >
+                                                        {visualizingIdx === index && <Loader2 className="w-3 h-3 animate-spin" />}
+                                                        Регенерирај
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -221,6 +270,49 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         } catch (error) {
             console.error('Visualization error:', error);
             addNotification('Грешка при генерирање на илустрацијата.', 'error');
+        } finally {
+            setVisualizingIdx(null);
+        }
+    };
+
+    const handleDeleteImage = (idx: number) => {
+        setEditableMaterial(prev => {
+            const clearImage = (qs: AssessmentQuestion[]) => {
+                const next = [...qs];
+                next[idx] = { ...next[idx], imageUrl: undefined };
+                return next;
+            };
+            if (activeTab === 'standard') return { ...prev, questions: clearImage(prev.questions) };
+            return {
+                ...prev,
+                differentiatedVersions: prev.differentiatedVersions?.map(v =>
+                    v.profileName === activeTab ? { ...v, questions: clearImage(v.questions) } : v
+                ) || [],
+            };
+        });
+    };
+
+    const handleRegenerateImage = async (idx: number, customPrompt: string) => {
+        setVisualizingIdx(idx);
+        try {
+            const result = await geminiService.generateIllustration(customPrompt);
+            setEditableMaterial(prev => {
+                const setImage = (qs: AssessmentQuestion[]) => {
+                    const next = [...qs];
+                    next[idx] = { ...next[idx], imageUrl: result.imageUrl };
+                    return next;
+                };
+                if (activeTab === 'standard') return { ...prev, questions: setImage(prev.questions) };
+                return {
+                    ...prev,
+                    differentiatedVersions: prev.differentiatedVersions?.map(v =>
+                        v.profileName === activeTab ? { ...v, questions: setImage(v.questions) } : v
+                    ) || [],
+                };
+            });
+            addNotification('Илустрацијата е успешно регенерирана!', 'success');
+        } catch {
+            addNotification('Грешка при регенерирање на илустрацијата.', 'error');
         } finally {
             setVisualizingIdx(null);
         }
@@ -633,6 +725,8 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                     handleOptionChange={(qIndex: number, optIndex: number, value: string) => handleOptionChangeForVersion(activeTab, qIndex, optIndex, value)}
                     onSaveQuestion={onSaveQuestion}
                     onVisualize={handleVisualize}
+                    onDeleteImage={handleDeleteImage}
+                    onRegenerateImage={handleRegenerateImage}
                     visualizingIdx={visualizingIdx}
                 />
                 {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}

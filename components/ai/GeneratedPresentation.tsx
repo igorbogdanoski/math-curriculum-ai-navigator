@@ -166,6 +166,8 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
   const { user, firebaseUser, updateLocalProfile } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [visuals, setVisuals] = useState<Record<number, { loading: boolean, url?: string }>>({});
+  const [openVisualPrompt, setOpenVisualPrompt] = useState(false);
+  const [visualCustomPrompt, setVisualCustomPrompt] = useState('');
   const [theme, setTheme] = useState<'modern' | 'classic' | 'dark' | 'creative'>('modern');
   const [showCurriculumSide, setShowCurriculumSide] = useState(true);
   const { addNotification } = useNotification();
@@ -615,10 +617,52 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                     {current.type !== 'title' && (
                         <div className="w-[350px] flex-shrink-0 flex flex-col gap-3">
                             {currentVisual?.url ? (
-                                <div className="rounded-2xl overflow-hidden shadow-xl border border-white/20 animate-in zoom-in duration-500">
+                                <div className="rounded-2xl overflow-hidden shadow-xl border border-white/20 animate-in zoom-in duration-500 relative group/img">
                                     <img src={currentVisual.url} alt="Slide Visual" className="w-full h-auto object-cover aspect-square" />
-                                    <div className="p-3 bg-black/5 backdrop-blur-sm text-[10px] uppercase font-black tracking-widest text-center opacity-50">
-                                        AI Generated Visual
+                                    {/* Delete button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => { setVisuals(prev => ({ ...prev, [currentSlide]: { loading: false } })); setOpenVisualPrompt(false); }}
+                                        title="Избриши слика"
+                                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity shadow hover:bg-red-600"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                    <div className="p-2 bg-black/5 backdrop-blur-sm">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] uppercase font-black tracking-widest opacity-50">AI Generated Visual</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setOpenVisualPrompt(o => !o); setVisualCustomPrompt(''); }}
+                                                title="Промени со наоки"
+                                                className="text-[10px] text-indigo-400 hover:text-indigo-200 font-bold flex items-center gap-0.5"
+                                            >
+                                                <Zap className="w-2.5 h-2.5" /> Промени
+                                            </button>
+                                        </div>
+                                        {openVisualPrompt && (
+                                            <div className="mt-1.5 flex flex-col gap-1">
+                                                <textarea
+                                                    value={visualCustomPrompt}
+                                                    onChange={e => setVisualCustomPrompt(e.target.value)}
+                                                    placeholder="Опис за нова илустрација..."
+                                                    className="w-full text-xs p-1.5 border rounded resize-none bg-white/10 text-white placeholder:text-white/40 focus:outline-none"
+                                                    rows={2}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        handleGenerateImage(currentSlide, visualCustomPrompt || current.visualPrompt || current.title);
+                                                        setOpenVisualPrompt(false);
+                                                    }}
+                                                    disabled={currentVisual?.loading}
+                                                    className="text-xs bg-indigo-600 text-white rounded px-2 py-1 hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1 justify-center"
+                                                >
+                                                    {currentVisual?.loading && <Loader2 className="w-3 h-3 animate-spin" />}
+                                                    Регенерирај
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ) : (

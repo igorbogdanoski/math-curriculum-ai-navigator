@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
-import { Image as ImageIcon, Loader2, Sparkles } from 'lucide-react';
+import { Image as ImageIcon, Loader2, Sparkles, X, RefreshCw } from 'lucide-react';
 import type { AIGeneratedIdeas, LessonPlan, Concept } from '../../types';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { useNavigation } from '../../contexts/NavigationContext';
@@ -19,13 +19,19 @@ const convertToStandardLatex = (text: string): string => {
 };
 
 const IdeaSection: React.FC<{
-    icon: React.ComponentType<{className?: string}>, 
-    title: string, 
+    icon: React.ComponentType<{className?: string}>,
+    title: string,
     content: string,
     onVisualize?: () => void,
     isVisualizing?: boolean,
-    imageUrl?: string
-}> = ({icon: Icon, title, content, onVisualize, isVisualizing, imageUrl}) => (
+    imageUrl?: string,
+    onDelete?: () => void,
+    onRegenerate?: (prompt: string) => void,
+}> = ({icon: Icon, title, content, onVisualize, isVisualizing, imageUrl, onDelete, onRegenerate}) => {
+    const [openPrompt, setOpenPrompt] = React.useState(false);
+    const [customPrompt, setCustomPrompt] = React.useState('');
+
+    return (
     <div className="mb-6 group">
         <div className="flex items-center justify-between mb-2">
             <h4 className="text-lg font-bold text-brand-secondary flex items-center">
@@ -47,24 +53,67 @@ const IdeaSection: React.FC<{
                 </button>
             )}
         </div>
-        
+
         <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 text-gray-700 pl-7">
                 <MathRenderer text={content} />
             </div>
             {imageUrl && (
                 <div className="md:w-1/3 flex-shrink-0 animate-in fade-in zoom-in duration-500">
-                    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white">
+                    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-md bg-white relative group/img">
                         <img src={imageUrl} alt={title} className="w-full h-auto object-cover" />
-                        <div className="p-2 bg-gray-50 text-[10px] text-gray-400 italic text-center">
-                            AI Генерирана илустрација
+                        {onDelete && (
+                            <button
+                                type="button"
+                                onClick={() => { onDelete(); setOpenPrompt(false); }}
+                                title="Избриши илустрација"
+                                className="absolute top-1.5 right-1.5 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity shadow hover:bg-red-600"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        )}
+                        <div className="p-2 bg-gray-50 border-t">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] text-gray-400 italic">AI Генерирана илустрација</span>
+                                {onRegenerate && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setOpenPrompt(o => !o); setCustomPrompt(''); }}
+                                        title="Промени со наоки"
+                                        className="text-[10px] text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-0.5"
+                                    >
+                                        <RefreshCw className="w-2.5 h-2.5" /> Промени
+                                    </button>
+                                )}
+                            </div>
+                            {openPrompt && onRegenerate && (
+                                <div className="mt-1.5 flex flex-col gap-1">
+                                    <textarea
+                                        value={customPrompt}
+                                        onChange={e => setCustomPrompt(e.target.value)}
+                                        placeholder="Опис за нова илустрација..."
+                                        className="w-full text-xs p-1.5 border rounded resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                        rows={2}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => { onRegenerate(customPrompt || content); setOpenPrompt(false); }}
+                                        disabled={isVisualizing}
+                                        className="text-xs bg-indigo-600 text-white rounded px-2 py-1 hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1 justify-center"
+                                    >
+                                        {isVisualizing && <Loader2 className="w-3 h-3 animate-spin" />}
+                                        Регенерирај
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             )}
         </div>
     </div>
-);
+    );
+};
 
 export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSaveAsNote }) => {
     const { addLessonPlan } = usePlanner();
@@ -78,15 +127,32 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
         setVisualizations(prev => ({ ...prev, [section]: { loading: true } }));
         try {
             const result = await geminiService.generateIllustration(`Educational math illustration for: ${promptText}. Professional, clean style.`);
-            setVisualizations(prev => ({ 
-                ...prev, 
-                [section]: { loading: false, url: result.imageUrl } 
+            setVisualizations(prev => ({
+                ...prev,
+                [section]: { loading: false, url: result.imageUrl }
             }));
             addNotification('Илустрацијата е успешно генерирана!', 'success');
         } catch (error) {
             console.error('Visualization error:', error);
             setVisualizations(prev => ({ ...prev, [section]: { loading: false } }));
             addNotification('Грешка при генерирање на илустрацијата.', 'error');
+        }
+    };
+
+    const handleDeleteVisualization = (section: string) => {
+        setVisualizations(prev => ({ ...prev, [section]: { loading: false } }));
+    };
+
+    const handleRegenerateVisualization = async (section: string, customPrompt: string) => {
+        setVisualizations(prev => ({ ...prev, [section]: { loading: true } }));
+        try {
+            const result = await geminiService.generateIllustration(customPrompt);
+            setVisualizations(prev => ({ ...prev, [section]: { loading: false, url: result.imageUrl } }));
+            addNotification('Илустрацијата е успешно регенерирана!', 'success');
+        } catch (error) {
+            console.error('Regenerate visualization error:', error);
+            setVisualizations(prev => ({ ...prev, [section]: { loading: false } }));
+            addNotification('Грешка при регенерирање на илустрацијата.', 'error');
         }
     };
 
@@ -292,37 +358,45 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                             </div>
                         </div>
                     )}
-                    <IdeaSection 
-                        icon={ICONS.sparkles} 
-                        title="Воведна активност" 
-                        content={material.openingActivity} 
+                    <IdeaSection
+                        icon={ICONS.sparkles}
+                        title="Воведна активност"
+                        content={material.openingActivity}
                         onVisualize={() => handleVisualize('opening', material.openingActivity)}
                         isVisualizing={visualizations['opening']?.loading}
                         imageUrl={visualizations['opening']?.url}
+                        onDelete={() => handleDeleteVisualization('opening')}
+                        onRegenerate={p => handleRegenerateVisualization('opening', p)}
                     />
-                    <IdeaSection 
-                        icon={ICONS.bookOpen} 
-                        title="Главна активност" 
-                        content={Array.isArray(material.mainActivity) ? material.mainActivity.map(a => '- ' + a.text).join('\n') : String(material.mainActivity)} 
+                    <IdeaSection
+                        icon={ICONS.bookOpen}
+                        title="Главна активност"
+                        content={Array.isArray(material.mainActivity) ? material.mainActivity.map(a => '- ' + a.text).join('\n') : String(material.mainActivity)}
                         onVisualize={() => handleVisualize('main', Array.isArray(material.mainActivity) ? material.mainActivity[0].text : String(material.mainActivity))}
                         isVisualizing={visualizations['main']?.loading}
                         imageUrl={visualizations['main']?.url}
+                        onDelete={() => handleDeleteVisualization('main')}
+                        onRegenerate={p => handleRegenerateVisualization('main', p)}
                     />
-                    <IdeaSection 
-                        icon={ICONS.share} 
-                        title="Диференцијација" 
-                        content={material.differentiation} 
+                    <IdeaSection
+                        icon={ICONS.share}
+                        title="Диференцијација"
+                        content={material.differentiation}
                         onVisualize={() => handleVisualize('differentiation', material.differentiation)}
                         isVisualizing={visualizations['differentiation']?.loading}
                         imageUrl={visualizations['differentiation']?.url}
+                        onDelete={() => handleDeleteVisualization('differentiation')}
+                        onRegenerate={p => handleRegenerateVisualization('differentiation', p)}
                     />
-                    <IdeaSection 
-                        icon={ICONS.check} 
-                        title="Идеја за оценување" 
-                        content={material.assessmentIdea} 
+                    <IdeaSection
+                        icon={ICONS.check}
+                        title="Идеја за оценување"
+                        content={material.assessmentIdea}
                         onVisualize={() => handleVisualize('assessment', material.assessmentIdea)}
                         isVisualizing={visualizations['assessment']?.loading}
                         imageUrl={visualizations['assessment']?.url}
+                        onDelete={() => handleDeleteVisualization('assessment')}
+                        onRegenerate={p => handleRegenerateVisualization('assessment', p)}
                     />
                 </div>
             )}
