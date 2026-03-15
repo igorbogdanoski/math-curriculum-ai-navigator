@@ -228,6 +228,8 @@ export const rateCachedMaterial = async (materialId: string, isHelpful: boolean)
 export const saveQuestion = async (q: Omit<SavedQuestion, 'id'>): Promise<string> => {
     const ref = await addDoc(collection(db, 'saved_questions'), {
       ...q,
+      options: q.options ?? [],      // Firestore rejects undefined
+      solution: q.solution ?? '',
       savedAt: serverTimestamp(),
     });
     return ref.id;

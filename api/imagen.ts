@@ -7,39 +7,43 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  * Returns { mimeType, data } on success, null on failure (logs the error).
  */
 async function tryImagenPredict(apiKey: string, prompt: string): Promise<{ mimeType: string; data: string } | null> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [{ prompt }],
-        parameters: {
-          sampleCount: 1,
-          aspectRatio: '16:9',
-          safetyFilterLevel: 'block_some',
-          personGeneration: 'dont_allow',
-        },
-      }),
-    });
-  } catch (fetchErr) {
-    console.error('[imagen] Strategy 1 fetch error:', fetchErr);
-    return null;
-  }
+  // Try Imagen 4 first, fall back to Imagen 3
+  const models = ['imagen-4.0-generate-001', 'imagen-3.0-generate-001'];
+  for (const modelName of models) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:predict?key=${apiKey}`;
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt }],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: '16:9',
+            safetyFilterLevel: 'block_some',
+            personGeneration: 'dont_allow',
+          },
+        }),
+      });
+    } catch (fetchErr) {
+      console.error(`[imagen] ${modelName} fetch error:`, fetchErr);
+      continue;
+    }
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => '(unreadable)');
-    console.error(`[imagen] Strategy 1 failed [${res.status}]:`, body);
-    return null;
-  }
+    if (!res.ok) {
+      const body = await res.text().catch(() => '(unreadable)');
+      console.error(`[imagen] ${modelName} failed [${res.status}]:`, body);
+      continue;
+    }
 
-  const data = await res.json();
-  const prediction = data.predictions?.[0];
-  if (prediction?.bytesBase64Encoded) {
-    return { mimeType: prediction.mimeType || 'image/png', data: prediction.bytesBase64Encoded };
+    const data = await res.json();
+    const prediction = data.predictions?.[0];
+    if (prediction?.bytesBase64Encoded) {
+      return { mimeType: prediction.mimeType || 'image/png', data: prediction.bytesBase64Encoded };
+    }
+    console.warn(`[imagen] ${modelName}: response ok but no predictions:`, JSON.stringify(data).slice(0, 300));
   }
-  console.warn('[imagen] Strategy 1: response ok but no predictions:', JSON.stringify(data).slice(0, 300));
   return null;
 }
 
@@ -114,10 +118,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   for (let i = 0; i < apiKeys.length; i++) {
     const apiKey = apiKeys[i];
     try {
-      // Strategy 1: Imagen 3 via :predict endpoint
+      // Strategy 1: Imagen 3/4 via :predict endpoint
       const s1result = await tryImagenPredict(apiKey, prompt);
       if (s1result) {
-        console.log('[imagen] Strategy 1 (Imagen 3 :predict) succeeded');
+        console.log('[imagen] Strategy 1 (Imagen :predict) succeeded');
         return res.status(200).json({ inlineData: s1result });
       }
 
@@ -127,7 +131,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ inlineData: s2result });
       }
 
-      throw new Error('AI did not return image data from any strategy (check Vercel logs for details)');
+      // Both strategies returned null for this key — try next key if available
+      lastError = new Error('AI did not return image data from any strategy (check Vercel logs for details)');
+      if (i < apiKeys.length - 1) continue;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       const msg = lastError.message;
