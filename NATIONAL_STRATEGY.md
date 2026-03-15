@@ -3,7 +3,7 @@
 
 > Создадено: 15 Март 2026
 > Последно ажурирање: 15 Март 2026 (Сесија 3)
-> Статус: 🟢 Активна имплементација — Фаза С + И1 ЗАВРШЕНИ
+> Статус: 🟢 Активна имплементација — Фаза С + Фаза И ЗАВРШЕНИ
 > Визија: Најдобра дигитална педагошка платформа за македонскиот образовен систем
 
 ---
@@ -11,9 +11,9 @@
 ## ВРЕМЕНСКА ЛИНИЈА
 
 ```
-ФАЗА С ✅   ФАЗА И 🔵   ФАЗА П      ФАЗА О      ФАЗА Н
+ФАЗА С ✅   ФАЗА И ✅   ФАЗА П      ФАЗА О      ФАЗА Н
 Темели   →  Институц. → Педагог.  → Офлајн   → Национал.
-ЗАВРШЕНА    И1✅ И2→И3   Мес. 3      Мес. 4     Мес. 5+
+ЗАВРШЕНА    И1✅И2✅И3✅  Мес. 3      Мес. 4     Мес. 5+
 ```
 
 ---
@@ -152,13 +152,27 @@
 - `class_memberships/{deviceDoc}` Firestore правила: read/write за authenticated (anon + teacher)
 - `classId` вклучен во секој `quiz_result` за идни class-level analytics
 
-### И3 — Teacher Collaboration (Споделена Библиотека)
-**Статус:** ⬜ Не започнато (National Library постои, треба надградба)
+### И3 — Teacher Collaboration (Споделена Библиотека) ✅ ЗАВРШЕНО
 
-- Rating систем (1-5 ⭐) за споделени материјали
-- Филтри: по одделение, по тема, по тип на материјал, по оценка
-- „Испратено од колега" badge + автор профил
-- Fork функција: земи туѓ материјал → прилагоди → зачувај свој
+**Commit:** `97cab08`
+**Датум:** 15 Март 2026
+
+**Имплементирано:**
+
+- `firestoreService.types.ts` — `CachedMaterial` проширен: `ratingsByUid`, `publishedByUid`, `publishedByName`, `isForked`, `sourceId`, `sourceAuthor`
+- `firestoreService.materials.ts` — три нови функции:
+  - `publishMaterialWithAttribution(id, uid, name)` — publisher attribution при публикување
+  - `rateMaterial(materialId, teacherUid, rating)` — dot-notation update `ratingsByUid.{uid}`
+  - `forkCachedMaterial(sourceId, targetTeacherUid)` — копира материјал со `[Форк]` префикс, `isForked: true`, `sourceAuthor`
+- `ContentLibraryView.tsx` — надградена Национална библиотека:
+  - `StarDisplay` компонента — просечна оценка со пополнети ⭐ (fill-amber-400)
+  - Интерактивни 5-ѕвездички (hover + click) за оценување — по 1 оцена по учитель (updatable)
+  - Сортирање: 📅 Датум / ⭐ Оценка
+  - Минимум рејтинг филтер: Сите / 3⭐ / 4⭐ / 5⭐
+  - „🍴 Форкај" копче со Loader2 spinner за секој материјал
+  - Fork badge: „🍴 Форк од [sourceAuthor]" на форкани материјали
+  - Autor attribution: „од [publishedByName]" во секоја картичка
+- `firestore.rules` — `cached_ai_materials` update за peer rating: `affectedKeys().hasOnly(['ratingsByUid'])`
 
 ---
 
@@ -313,7 +327,7 @@ IndexedDB (sync)
 ```
 С1 ✅  →  С2 ✅  →  С3 ✅  →  С4 ✅  ← ФАЗА С ЗАВРШЕНА
                                           ↓
-                              И1 ✅  →  И2 🔵  →  И3 ⬜
+                              И1 ✅  →  И2 ✅  →  И3 ✅
                                           ↓
                               П-Б ⬜ →  П-А ⬜  →  П-В ⬜  →  П-Г ⬜
                                           ↓
