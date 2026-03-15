@@ -96,8 +96,13 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         !('teacherUid' in resource.data) || resource.data.teacherUid == request.auth.uid || isAdmin()
-        // И3: peer rating — any authenticated user may set their own rating entry
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingsByUid'])
+        // И3: peer rating — any authenticated user may set their own rating entry (1-5 only)
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingsByUid'])
+          && request.resource.data.ratingsByUid[request.auth.uid] is int
+          && request.resource.data.ratingsByUid[request.auth.uid] >= 1
+          && request.resource.data.ratingsByUid[request.auth.uid] <= 5
+        )
       );
       allow delete: if isAuthenticated() && (
         !('teacherUid' in resource.data) || resource.data.teacherUid == request.auth.uid || isAdmin()

@@ -468,6 +468,7 @@ export const forkCachedMaterial = async (
   const snap = await getDoc(doc(db, 'cached_ai_materials', sourceId));
   if (!snap.exists()) throw new Error('Source material not found');
   const src = snap.data();
+  if (src.status !== 'published') throw new Error('Can only fork published materials');
   const ref = await addDoc(collection(db, 'cached_ai_materials'), {
     content: src.content,
     type: src.type,
