@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ClipboardList } from 'lucide-react';
 import { firestoreService, type SchoolClass } from '../services/firestoreService';
+import { precacheQuizContent } from '../services/indexedDBService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import type { AIGeneratedAssessment } from '../types';
@@ -61,6 +62,8 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
         completedBy: [],
       });
 
+      // О1 — Pre-cache quiz content so students can play offline
+      precacheQuizContent(cacheId, material).catch(() => {});
       addNotification(`Задачата е зададена на „${cls.name}"! 📋`, 'success');
       onClose();
     } catch {

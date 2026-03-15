@@ -18,10 +18,18 @@ interface MathNavDB extends DBSchema {
       timestamp: number;
     };
   };
+  quiz_content_cache: {
+    key: string;
+    value: {
+      id: string; // cacheId from Firestore
+      content: any; // full material content
+      timestamp: number;
+    };
+  };
 }
 
 const DB_NAME = 'MathNavOfflineDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<MathNavDB>> | null = null;
 
@@ -34,6 +42,9 @@ export const initDB = () => {
         }
         if (!db.objectStoreNames.contains('ai_cache')) {
           db.createObjectStore('ai_cache', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('quiz_content_cache')) {
+          db.createObjectStore('quiz_content_cache', { keyPath: 'id' });
         }
       },
     });
@@ -87,4 +98,29 @@ export const getAICache = async (id: string): Promise<any | null> => {
     return cached.content;
   }
   return null;
+};
+
+// ── Quiz Content Pre-Cache (О1) ────────────────────────────────────────────
+const QUIZ_CONTENT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+export const precacheQuizContent = async (cacheId: string, content: any): Promise<void> => {
+  try {
+    const db = await initDB();
+    await db.put('quiz_content_cache', { id: cacheId, content, timestamp: Date.now() });
+  } catch {
+    // non-fatal: student still loads from Firestore when online
+  }
+};
+
+export const getCachedQuizContent = async (cacheId: string): Promise<any | null> => {
+  try {
+    const db = await initDB();
+    const cached = await db.get('quiz_content_cache', cacheId);
+    if (cached && Date.now() - cached.timestamp < QUIZ_CONTENT_TTL_MS) {
+      return cached.content;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 };

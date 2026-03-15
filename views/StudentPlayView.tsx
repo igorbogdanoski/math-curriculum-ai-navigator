@@ -22,6 +22,7 @@ import { validateStudentName } from '../utils/validation';
 import { markQuestComplete } from '../utils/dailyQuests';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { getOrCreateDeviceId } from '../utils/studentIdentity';
+import { getCachedQuizContent, precacheQuizContent, saveAICache, getAICache } from '../services/indexedDBService';
 import { SaveProgressModal } from '../components/student/SaveProgressModal';
 import { RestoreProgressModal } from '../components/student/RestoreProgressModal';
 
@@ -150,6 +151,7 @@ export const StudentPlayView: React.FC = () => {
   const [quizData, setQuizData] = useState<QuizPlayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [usingCachedContent, setUsingCachedContent] = useState(false);
   const [session, dispatch] = useReducer(quizSessionReducer, QUIZ_SESSION_INITIAL);
   const { quizResult, masteryUpdate, gamificationUpdate, remediaQuizId, isGeneratingRemedia, quizResultDocId, confidence, aiFeedback, isFeedbackLoading, metacognitivePrompt, metacognitiveNote, metacognitiveSaved, peerSuggestions, homework, isHomeworkLoading, homeworkError } = session;
 
@@ -268,28 +270,49 @@ export const StudentPlayView: React.FC = () => {
       }
       try {
         setLoading(true);
-        const quizDoc = await getDoc(doc(db, 'cached_ai_materials', id));
-        if (cancelled) return;
-        if (quizDoc.exists()) {
-          const data = quizDoc.data();
-          setQuizData({
-            ...(data.content || data),
-            _meta: {
-              conceptId: data.conceptId,
-              topicId: data.topicId,
-              gradeLevel: data.gradeLevel,
-              teacherUid: tid ?? data.teacherUid ?? undefined,
-              differentiationLevel: data.differentiationLevel as DifferentiationLevel | undefined,
-            },
-          });
-        } else {
-          setError(t('play.error.notFound'));
+        let usedCache = false;
+        try {
+          const quizDoc = await getDoc(doc(db, 'cached_ai_materials', id));
+          if (cancelled) return;
+          if (quizDoc.exists()) {
+            const data = quizDoc.data();
+            const content = data.content || data;
+            setQuizData({
+              ...content,
+              _meta: {
+                conceptId: data.conceptId,
+                topicId: data.topicId,
+                gradeLevel: data.gradeLevel,
+                teacherUid: tid ?? data.teacherUid ?? undefined,
+                differentiationLevel: data.differentiationLevel as DifferentiationLevel | undefined,
+              },
+            });
+            // О1 — update local cache with fresh content
+            precacheQuizContent(id, content).catch(() => {});
+          } else {
+            setError(t('play.error.notFound'));
+          }
+        } catch (err) {
+          // О1 — Firestore failed; try offline cache
+          const cached = await getCachedQuizContent(id);
+          if (cached && !cancelled) {
+            setQuizData({
+              ...cached,
+              _meta: {
+                conceptId: undefined,
+                topicId: undefined,
+                gradeLevel: undefined,
+                teacherUid: tid ?? undefined,
+                differentiationLevel: undefined,
+              },
+            });
+            usedCache = true;
+          } else if (!cancelled) {
+            console.error('Грешка при вчитување на квизот:', err);
+            setError(t('play.error.connect'));
+          }
         }
-      } catch (err) {
-        if (!cancelled) {
-          console.error('Грешка при вчитување на квизот:', err);
-          setError(t('play.error.connect'));
-        }
+        if (!cancelled) setUsingCachedContent(usedCache);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -459,6 +482,7 @@ export const StudentPlayView: React.FC = () => {
     // П1 — Генерирај AI повратна информација асинхроно (не блокира)
     if (meta.conceptId) {
       const conceptTitle = conceptTitleForPrompt;
+      const feedbackCacheKey = `fb_${meta.conceptId}_${Math.round(percentage / 10) * 10}`;
       geminiService.generateQuizFeedback(
         studentName || 'Ученик',
         percentage,
@@ -468,8 +492,21 @@ export const StudentPlayView: React.FC = () => {
         misconceptions,
       ).then(feedback => {
         if (isMountedRef.current) dispatch({ type: 'SET_AI_FEEDBACK', feedback });
-      }).catch(() => {
-        if (isMountedRef.current) dispatch({ type: 'SET_FEEDBACK_LOADING', loading: false });
+        // О1 — cache feedback for offline reuse
+        saveAICache(feedbackCacheKey, feedback).catch(() => {});
+      }).catch(async () => {
+        // О1 — try cached feedback first, else show МК offline message
+        const cached = await getAICache(feedbackCacheKey).catch(() => null);
+        if (isMountedRef.current) {
+          if (cached) {
+            dispatch({ type: 'SET_AI_FEEDBACK', feedback: cached });
+          } else {
+            const offlineMsg = navigator.onLine
+              ? 'AI повратната информација е недостапна. Продолжи со вежбање!'
+              : 'Нема интернет врска. Повратната информација ќе се прикаже кога ќе се поврзете.';
+            dispatch({ type: 'SET_AI_FEEDBACK', feedback: offlineMsg });
+          }
+        }
       });
     }
 
@@ -820,6 +857,12 @@ export const StudentPlayView: React.FC = () => {
               </div>
             )}
 
+            {usingCachedContent && (
+              <div className="mx-6 mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                <span className="text-base" aria-hidden="true">📶</span>
+                <p className="text-amber-800 text-xs font-medium">Офлајн режим — квизот се прикажува од локалниот кеш. Резултатите ќе се синхронизираат при повторно поврзување.</p>
+              </div>
+            )}
             <React.Suspense fallback={<div className="p-8 text-center bg-white rounded-3xl m-6 animate-pulse"><div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div><p className="text-slate-500 font-bold">Се вчитува квизот...</p></div>}>
               <div className={isIEP ? 'text-lg [&_.quiz-question-text]:text-xl [&_.quiz-option]:text-base [&_.quiz-option]:py-3' : ''}>
               <InteractiveQuizPlayer
