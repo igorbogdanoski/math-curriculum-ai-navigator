@@ -2,7 +2,8 @@
 ## Математика | Основно образование 1–9 одделение
 
 > Создадено: 15 Март 2026
-> Статус: 🟢 Активна имплементација
+> Последно ажурирање: 15 Март 2026 (Сесија 2)
+> Статус: 🟢 Активна имплементација — Фаза С ЗАВРШЕНА
 > Визија: Најдобра дигитална педагошка платформа за македонскиот образовен систем
 
 ---
@@ -10,80 +11,103 @@
 ## ВРЕМЕНСКА ЛИНИЈА
 
 ```
-ФАЗА С     ФАЗА И     ФАЗА П     ФАЗА О     ФАЗА Н
-Темели  →  Институц. →  Педагог. →  Офлајн  → Национал.
-Мес. 1     Мес. 2       Мес. 3     Мес. 4    Мес. 5+
+ФАЗА С ✅   ФАЗА И      ФАЗА П      ФАЗА О      ФАЗА Н
+Темели   →  Институц. → Педагог.  → Офлајн   → Национал.
+ЗАВРШЕНА    Мес. 2       Мес. 3      Мес. 4     Мес. 5+
 ```
 
 ---
 
-## ФАЗА С — СОЛИДНИ ТЕМЕЛИ
+## ФАЗА С — СОЛИДНИ ТЕМЕЛИ ✅ ЗАВРШЕНА
 
-### С1 — Студентски Persistent Профил 🔴 КРИТИЧНО
-**Статус:** 🟡 Во тек
+### С1 — Студентски Persistent Профил ✅ ЗАВРШЕНО
+**Commit:** `a54ddb8`
+**Датум:** 15 Март 2026
 
-**Проблем:** Ученикот ги губи сите постигања ако го избрише localStorage или смени уред.
-Тековно: `deviceId` (UUID во localStorage) + анонимна Firebase сесија.
-
-**Решение:**
-- Опционален „Сочувај го мојот напредок" копче во StudentPlayView
-- Google Sign-In за ученици (без лозинка — еден клик)
-- `student_accounts/{uid}` колекција во Firestore
-- Линкување на постоечкиот `deviceId` кон новиот uid
-- На нов уред: „Врати го мојот напредок" → Sign-In → сè се враќа
+**Имплементирано:**
+- `types.ts` — нов `StudentAccount` интерфејс (`uid`, `name`, `email`, `photoURL`, `linkedDeviceIds[]`)
+- `services/firestoreService.studentAccount.ts` — `fetchStudentAccount`, `createOrUpdateStudentAccount`, `linkDeviceToStudentAccount`, `fetchLinkedDeviceIds`
+- `components/student/SaveProgressModal.tsx` — Google Sign-In за зачување (collapsible card, `linkWithPopup` за анонимни корисници)
+- `components/student/RestoreProgressModal.tsx` — „Веќе имам акаунт" → Sign-In → врати сè
+- `views/StudentPlayView.tsx` — интеграција: `studentGoogleUid` state, SaveProgressModal (пост-квиз), RestoreProgressModal (wizard Step 1)
+- `firestore.rules` — правила за `student_accounts/{uid}` (owner-only read/write)
 - Анонимните корисници продолжуваат без регистрација (нема форсирање)
-
-**Фајлови:**
-- `types.ts` — нов `StudentAccount` интерфејс
-- `contexts/StudentAuthContext.tsx` — нов контекст за студентска сесија
-- `components/student/StudentLoginModal.tsx` — нов UI
-- `services/firestoreService.student.ts` — CRUD за student_accounts
-- `components/student/StudentPlayView.tsx` — интеграција на копчето
-- `firestore.rules` — правила за новата колекција
+- `auth/credential-already-in-use` → fallback на `signInWithPopup`
 
 ---
 
-### С2 — Firestore Security Rules Ревизија 🔴 КРИТИЧНО
-**Статус:** ⬜ Не започнато
+### С2 — Firestore Security Rules Ревизија ✅ ЗАВРШЕНО
+**Commit:** `0243c1f`
+**Датум:** 15 Март 2026
 
-**Проблем:** Непознато дали ученик може да чита туѓи резултати.
-
-**Решение — нови правила:**
-```
-quiz_results:    read = owner (deviceId/uid) или teacherUid
-concept_mastery: read = owner или teacherUid
-student_gamif.:  read = owner или teacherUid
-cached_materials: read = public, write = auth only
-users/{uid}:     read/write = само сопственикот + admin
-student_accounts: read/write = само сопственикот
-```
-
----
-
-### С3 — Sentry Error Monitoring 🟡 ВАЖНО
-**Статус:** ⬜ Не започнато
-
-**Решение:**
-- `@sentry/react` + Vite plugin
-- Capture: JS грешки, AI failures, Firestore timeouts
-- Performance traces за Gemini повици (p95 латенција)
-- Алерт на email при spike во грешки
+**Имплементирано:**
+- **7 нови колекции со правила:**
+  - `student_accounts/{uid}` — owner-only (Google UID), `isGoogleUser()` guard за create
+  - `academic_annual_plans/{doc}` — auth read (gallery), owner write/delete, likes/forks bump за сите
+  - `live_quizzes/{pin}` — public read (join by PIN), participants subcollection
+  - `chat_sessions/{doc}` — private to owning teacher
+  - `spaced_rep/{doc}` — anonymous student + teacher access
+  - `material_feedback/{doc}` — teacher-scoped read
+  - `user_tokens/{tokenDoc}` — owner-only преку UID prefix match
+- **Поправени безбедносни слабости:**
+  - `concept_mastery` update: сега restricted (isDocOwner | isAnonymousStudent | isAdmin)
+  - `communityLessonPlans` delete: само owner или admin (пред: било кој auth user)
+  - `student_gamification` update: restricted (anonymous student, doc-owner, admin)
+  - `quiz_results` update: експлицитно покрива `metacognitiveNote` field
 
 ---
 
-### С4 — PWA + Offline Quiz Play 🟡 ВАЖНО
-**Статус:** ⬜ Не започнато
+### С3 — Sentry Error Monitoring ✅ ЗАВРШЕНО
+**Статус:** Беше веќе целосно имплементирано (претходна сесија)
+**Commit:** `ade88a6` (bump @sentry/react 10.42→10.43)
 
-**Решение:**
-- `vite-plugin-pwa` + Workbox
-- `manifest.json` (иконки, standalone mode, app name)
-- Cache-first за статични assets
-- Квизови pre-cache кога наставникот ги испрати
-- Offline banner + IndexedDB sync (надградба на постоечкото)
+**Имплементирано:**
+- `@sentry/react` + `@sentry/vite-plugin` + `web-vitals` — инсталирани
+- `services/sentryService.ts` — `initSentry`, `setSentryUser`, `clearSentryUser`, `captureException`, `reportWebVitals`
+- `index.tsx` — `initSentry()` + `reportWebVitals()` пред рендерирање
+- `contexts/AuthContext.tsx` — `setSentryUser` на login, `clearSentryUser` на logout
+- `components/common/ErrorBoundary.tsx` — `captureException` во `componentDidCatch`
+- `vite.config.ts` — `sentryVitePlugin` + source maps кога `SENTRY_AUTH_TOKEN` е поставен
+- `.env.local` — вистинска DSN поставена; `.env.example` — документирана
+- Само во production (`enabled: import.meta.env.PROD`)
+- Ignorelist: ResizeObserver, auth/popup-closed, ChunkLoadError
 
 ---
 
-## ФАЗА И — ИНСТИТУЦИОНАЛНА СТРУКТУРА *(Месец 2)*
+### С4 — PWA + Offline Support ✅ ЗАВРШЕНО
+**Commit:** `da7f03b`
+**Датум:** 15 Март 2026
+
+**Имплементирано:**
+- `public/icon-192.svg` + `public/icon-512.svg` — Math Navigator икони (∑ симбол, синa #0D47A1 + AI badge)
+- `public/offline.html` — branded МК offline fallback страница со auto-retry
+- `vite.config.ts` — `navigateFallback: '/offline.html'`, `maximumFileSizeToCacheInBytes: 5MB`
+- `VitePWA` + Workbox runtime caching (Google Fonts, jsDelivr CDN, gstatic)
+- Firestore `persistentLocalCache({ tabManager: persistentMultipleTabManager() })` — offline читање
+- `services/indexedDBService.ts` — `idb` library, `pending_quizzes` + `ai_cache` stores
+- `services/firestoreService.quiz.ts` — `syncOfflineQuizzes()` — синк при reconnect
+- `contexts/NetworkStatusContext.tsx` — слуша `online`/`offline` events, auto-sync
+- `components/common/OfflineBanner.tsx` — fixed bottom МК банер при офлајн
+- `registerSW` во `index.tsx` — `onNeedRefresh` + `onOfflineReady` hooks
+
+---
+
+## TS/Test статус по Фаза С
+
+**Commit:** `d1db1d2` — TypeScript cleanup (пред почеток на С-фазата)
+
+**Поправени pre-existing TS грешки:**
+- Избришан `correct_text_annual.tsx` (scratch фајл, ~20 грешки)
+- `ModalManager` — `hideModal` prop до `AIThematicPlanGeneratorModal`
+- `AnnualPlanGalleryView` + `AnnualPlanGeneratorView` — `firebaseUser?.uid` наместо `user.uid`
+- `AIAnnualPlanGeneratorModal` — cast `generateAnnualPlan` call (signature mismatch)
+- `OfficialLessonScenarioTable` — cast `introductory/concluding as any` за `.duration`
+- `StudentPlayView` — non-null assert на `quizData`, cast `differentiationLevel`, `|| ''` fallback
+- **Резултат: `tsc --noEmit` чисто, 338/338 тестови**
+
+---
+
+## ФАЗА И — ИНСТИТУЦИОНАЛНА СТРУКТУРА *(Месец 2)* 🔵 СЛЕДНА
 
 ### И1 — School Entity (Прва класа)
 **Статус:** ⬜ Не започнато
@@ -121,43 +145,45 @@ student_accounts: read/write = само сопственикот
 - Read-only view: напредок, постигнувања, надоаѓачки квизови
 - Неделен автоматски email извештај (Cloud Functions)
 - Мобилно-оптимизиран (родителите гледаат на телефон, не на компјутер)
-- PIN код опција (без Google) за родители без Gmail
 
-### П-Б — IEP Поддршка
+### П-Б — Misconception → Ремедијација (TeacherAnalyticsView)
 **Статус:** ⬜ Не започнато
 
-- Флаг „ученик со посебни потреби" на ниво на класот (само наставникот гледа)
-- Автоматски рутирање кон „поддршка" верзија на квизот
-- Поедноставен UI: поголем текст, повеќе визуелни помагала, без тајмер
-- IEP прогрес извештај (PDF) за наставникот, родителот и педагогот
+- „Ремедијација" копче во TeacherAnalyticsView до секоја misconception
+- AI генерира таргетирана мини-лекција со worked example
+- Испраќање директно до засегнатите ученици
 
 ### П-В — Официјален МОН Curriculum Mapping
 **Статус:** ⬜ Не започнато
 
-- Линкување на секој концепт кон официјалните МОН наставни програми (PDF документи)
+- Линкување на секој концепт кон официјалните МОН наставни програми
 - Dashboard „Покриеност на наставната програма" по одделение
-- PDF потврда за покриеност на стандарди (за акредитација и инспекција)
-- Темел за идниот МОН партнерски договор
+- PDF потврда за покриеност на стандарди
 
-### П-Г — Teacher Mentorship
+### П-Г — IEP Поддршка
 **Статус:** ⬜ Не започнато
 
-- Senior наставник може да биде ментор (доброволно)
+- Флаг „ученик со посебни потреби" (само наставникот гледа)
+- Поедноставен UI: поголем текст, визуелни помагала, без тајмер
+- IEP прогрес извештај (PDF)
+
+### П-Д — Teacher Mentorship
+**Статус:** ⬜ Не започнато
+
+- Senior наставник → ментор (доброволно)
 - Споделување на подготовки со структурирани коментари
-- „Набљудување на час" алатка: дигитален feedback образец
-- Mentorat XP за старешините (мотивација за споделување)
+- Mentorat XP за старешините
 
 ---
 
 ## ФАЗА О — OFFLINE + RELIABILITY *(Месец 4)*
 
-### О1 — Full PWA Offline Mode
-**Статус:** ⬜ Не започнато
+### О1 — Full PWA Offline Mode (надградба на С4)
+**Статус:** 🟡 Делумно (С4 го покрива offline sync, потребен pre-cache на квизови)
 
-- Сите генерирани квизови достапни offline (pre-cached)
+- Pre-cache на доделени квизови кога наставникот ги испрати
 - AI функции gracefully деградираат offline
-- Background sync: автоматска синхронизација кога ќе се врати интернет
-- Push нотификации: „Нов квиз од наставникот"
+- Push нотификации: „Нов квиз од наставникот" (firebase-messaging-sw.js постои)
 
 ### О2 — E2E Тестови (Playwright)
 **Статус:** ⬜ Не започнато
@@ -171,10 +197,9 @@ student_accounts: read/write = само сопственикот
 ### О3 — Performance Optimization
 **Статус:** ⬜ Не започнато
 
-- Lazy loading на сите тешки views (веќе делумно)
 - Firestore composite indexes за бавни queries
-- Imagen генерирани слики → Firebase Storage (наместо base64 во state)
-- Bundle size audit + code splitting
+- Imagen генерирани слики → Firebase Storage (наместо base64)
+- Bundle size audit + additional code splitting
 
 ---
 
@@ -182,39 +207,39 @@ student_accounts: read/write = само сопственикот
 
 ### Н1 — GDPR/ЗЗЛП Compliance
 - Cookie consent banner
-- Data deletion request функција (право на бришење)
+- Data deletion request функција
 - Privacy policy за малолетници (посебна родителска согласност)
-- Data retention: 3 години за резултати, потоа автоматско бришење
+- Data retention: 3 години → автоматско бришење
 
 ### Н2 — School Licensing & Billing
 - Месечна/годишна лиценца per училиште (€300–800/год)
-- Stripe интеграција (или локален платежен систем)
+- Stripe интеграција
 - 30-дневен trial за нови училишта
-- МОН/општински попуст (државна лиценца)
 
 ### Н3 — МОН Пилот Проект
-- 2-3 пилот-училишта (Скопје + провинција + ruralna sredina)
+- 2-3 пилот-училишта (Скопје + провинција + рурална средина)
 - Независна педагошка евалуација (3 месеци)
-- Мерливи резултати: % подобрување на тестови, ангажираност на ученици
 - Извештај пред Биро за развој на образованието
 
 ### Н4 — Средно образование (6+ месеци)
-- Нови стандарди: Алгебра, Тригонометрија, Математичка анализа, Статистика
-- Матурска симулација (ДИМ формат со временски ограничувања)
-- LaTeX editor за ученици (средношколците пишуваат математика)
-- Диференцирање: општа гимназија vs стручно образование
+- Алгебра, Тригонометрија, Математичка анализа, Статистика
+- Матурска симулација (ДИМ формат)
+- LaTeX editor за ученици
 
 ---
 
 ## ТЕХНИЧКИ STACK EVOLUTION
 
 ```
-Сега:           Фаза И:          Фаза Н:
-React + Vite    + Workbox PWA    + Edge Functions
-Firebase Auth   + School multi-  + CDN за слики
-Firestore       tenant           + Supabase (backup)
-Gemini AI       + Stripe         + Self-hosted model
-Vercel          + Cloud Tasks    + Kubernetes (ако МОН)
+Сега (✅):      Фаза И:          Фаза Н:
+React + Vite    + School multi-   + Edge Functions
+Firebase Auth   tenant            + CDN за слики
+Firestore       + Stripe          + Supabase (backup)
+Gemini AI       + Cloud Tasks     + Self-hosted model
+Vercel          + Playwright E2E  + Kubernetes (ако МОН)
+PWA (offline)
+Sentry (errors)
+IndexedDB (sync)
 ```
 
 ---
@@ -235,10 +260,13 @@ Vercel          + Cloud Tasks    + Kubernetes (ако МОН)
 ## KPI — МЕРИЛА НА УСПЕХ
 
 ### Технички
-- [ ] 99.5% uptime (Sentry + alerting)
-- [ ] <2s page load на 3G (PWA + caching)
-- [ ] 0 критични безбедносни пробиви (Rules ревизија)
-- [ ] >80% E2E test pass rate (Playwright)
+- [x] Firestore Security Rules — сите колекции покриени (С2)
+- [x] Sentry error monitoring активен во production (С3)
+- [x] PWA offline support + IndexedDB sync (С4)
+- [x] `tsc --noEmit` чисто, 338/338 тестови (ongoing)
+- [ ] 99.5% uptime (Sentry alerting — needs threshold config)
+- [ ] <2s page load на 3G (PWA + caching — мерење потребно)
+- [ ] >80% E2E test pass rate (Playwright — О2)
 
 ### Педагошки
 - [ ] Просечен студент: ≥3 концепти mastered по месец
@@ -257,18 +285,21 @@ Vercel          + Cloud Tasks    + Kubernetes (ако МОН)
 ## РЕДОСЛЕД НА ИМПЛЕМЕНТАЦИЈА
 
 ```
-С1 ✅🟡  →  С2 ⬜  →  С3 ⬜  →  С4 ⬜
-              ↓
-И1 ⬜  →  И2 ⬜  →  И3 ⬜
-              ↓
-П-А ⬜  →  П-Б ⬜  →  П-В ⬜  →  П-Г ⬜
-              ↓
-О1 ⬜  →  О2 ⬜  →  О3 ⬜
-              ↓
-Н1 ⬜  →  Н2 ⬜  →  Н3 ⬜  →  Н4 ⬜
+С1 ✅  →  С2 ✅  →  С3 ✅  →  С4 ✅  ← ФАЗА С ЗАВРШЕНА
+                                          ↓
+                              И1 ⬜  →  И2 ⬜  →  И3 ⬜
+                                          ↓
+                              П-Б ⬜ →  П-А ⬜  →  П-В ⬜  →  П-Г ⬜
+                                          ↓
+                              О1 🟡  →  О2 ⬜  →  О3 ⬜
+                                          ↓
+                              Н1 ⬜  →  Н2 ⬜  →  Н3 ⬜  →  Н4 ⬜
 ```
+
+**Следна: И1 — School Entity**
 
 ---
 
-*Последно ажурирање: 15 Март 2026*
-*Следно ревидирање: 1 Април 2026*
+*Создадено: 15 Март 2026*
+*Последно ажурирање: 15 Март 2026 (по завршување на Фаза С)*
+*Следно ревидирање: По завршување на Фаза И*
