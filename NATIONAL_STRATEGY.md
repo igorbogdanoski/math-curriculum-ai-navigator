@@ -2,8 +2,8 @@
 ## Математика | Основно образование 1–9 одделение
 
 > Создадено: 15 Март 2026
-> Последно ажурирање: 15 Март 2026 (Сесија 5)
-> Статус: 🟢 Активна имплементација — Фаза С + Фаза И ЗАВРШЕНИ, Фаза П во тек
+> Последно ажурирање: 15 Март 2026 (Сесија 6)
+> Статус: 🟢 Активна имплементација — Фаза С + Фаза И ЗАВРШЕНИ, Фаза П речиси завршена
 > Визија: Најдобра дигитална педагошка платформа за македонскиот образовен систем
 
 ---
@@ -178,13 +178,16 @@
 
 ## ФАЗА П — ПЕДАГОШКИ НАДОПОЛНУВАЊА *(Месец 3)*
 
-### П-А — Parent Portal
-**Статус:** ⬜ Не започнато
+### П-А — Parent Portal ✅ ЗАВРШЕНО
 
-- Родителски акаунт (Google Sign-In) линкуван кон еден или повеќе ученици
-- Read-only view: напредок, постигнувања, надоаѓачки квизови
-- Неделен автоматски email извештај (Cloud Functions)
-- Мобилно-оптимизиран (родителите гледаат на телефон, не на компјутер)
+**Commit:** `e7aaf40`
+**Датум:** 15 Март 2026
+
+**Имплементирано:**
+- `ClassesTab.tsx` — QR код + shareable parent link per student (Link2 icon, inline panel)
+- Parent URL формат: `{origin}{pathname}#/parent?name={encoded}&teacher={uid}`
+- Copy button со clipboard feedback flash; accessibility aria-labels
+- `ParentPortalView.tsx` — „Копирај извештај" (plain-text МК weekly report) + „Печати" (`window.print()`)
 
 ### П-Б — Misconception → Ремедијација (TeacherAnalyticsView) ✅ ЗАВРШЕНО
 
@@ -245,12 +248,19 @@
 - `ClassesTab.tsx` — 🧩 виолетов chip за ИЕП ученици, toggle копче, резиме линија
 - `StudentPlayView.tsx` — при вчитување се детектира ИЕП статус преку `fetchClassById`, се прикажува „🧩 Без ограничување на времето" банер и поголем текст за ИЕП ученици
 
-### П-Д — Teacher Mentorship
-**Статус:** ⬜ Не започнато
+### П-Д — Teacher Mentorship ✅ ЗАВРШЕНО
 
-- Senior наставник → ментор (доброволно)
-- Споделување на подготовки со структурирани коментари
-- Mentorat XP за старешините
+**Commit:** `e7aaf40`
+**Датум:** 15 Март 2026
+
+**Имплементирано:**
+
+- `types.ts` — `isMentor?: boolean` на `TeachingProfile`
+- `firestoreService.school.ts` — `toggleMentorStatus(uid, isMentor)` — Firestore update
+- `SettingsView.tsx` — amber 🏆 „Ментор статус" toggle со optimistic update + revert on error
+- `firestoreService.materials.ts` — `publishToNationalLibrary` + `publishMaterialWithAttribution` зачувуваат `publisherIsMentor` на документот
+- `NationalLibraryView.tsx` — `publisherIsMentor?: boolean` на `LibraryEntry`; „🏆 Ментор" amber badge до `publishedByName`
+- `QuestionBankTab.tsx` — `user?.isMentor` се проследува при публикување
 
 ---
 
@@ -367,17 +377,17 @@ IndexedDB (sync)
                                           ↓
                               И1 ✅  →  И2 ✅  →  И3 ✅
                                           ↓
-                              П-Б ✅ →  П-Ѓ ✅  →  П-Г ✅  →  П-В ✅  →  П-А ⬜
+                              П-Б ✅ →  П-Ѓ ✅  →  П-Г ✅  →  П-В ✅  →  П-А ✅  →  П-Д ✅
                                           ↓
                               О1 🟡  →  О2 ⬜  →  О3 ⬜
                                           ↓
                               Н1 ⬜  →  Н2 ⬜  →  Н3 ⬜  →  Н4 ⬜
 ```
 
-### Следна: П-А — Parent Portal
+### Следна: О1/О2 — Offline + E2E тестови (Фаза О)
 
 ---
 
 *Создадено: 15 Март 2026*
-*Последно ажурирање: 15 Март 2026 (Сесија 5 — П-В ✅ МОН Coverage Dashboard завршен)*
-*Следно ревидирање: По завршување на Фаза П*
+*Последно ажурирање: 15 Март 2026 (Сесија 6 — П-А ✅ Parent Portal + П-Д ✅ Teacher Mentorship + PDF audit ✅)*
+*Следно ревидирање: По завршување на Фаза О*
