@@ -805,6 +805,37 @@ export const SAFETY_SETTINGS: SafetySetting[] = [
     { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_ONLY_HIGH' },
 ];
 
+// --- Truncated JSON recovery ---
+// When Gemini hits the token limit, the JSON string is cut mid-value.
+// This function tries to complete the JSON by closing all open structures.
+function recoverTruncatedJson(raw: string): unknown | null {
+  // Strip to last complete key-value pair by walking backwards until JSON.parse succeeds
+  let s = raw.trim();
+  // Remove trailing partial string (unterminated quote)
+  s = s.replace(/"[^"]*$/, '');
+  // Remove trailing incomplete key or comma
+  s = s.replace(/,\s*$/, '').replace(/:\s*$/, '');
+  // Count open brackets/braces and close them
+  const opens: string[] = [];
+  let inString = false;
+  let escape = false;
+  for (const ch of s) {
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') opens.push('}');
+    else if (ch === '[') opens.push(']');
+    else if (ch === '}' || ch === ']') opens.pop();
+  }
+  const closing = opens.reverse().join('');
+  try {
+    return JSON.parse(s + closing);
+  } catch {
+    return null;
+  }
+}
+
 // --- CORE JSON HELPER ---
 export async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false, customSystemInstruction?: string, userTier?: string): Promise<T> {
     const activeModel = useThinking ? 'gemini-3.1-pro' : model;
@@ -814,7 +845,7 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
       const generationConfig: any = {
         temperature: 0.7,
         topP: 0.95,
-        maxOutputTokens: 8192
+        maxOutputTokens: 32768   // 8192 caused truncation on 10+ question assessments
       };
 
       if (useThinking) {
@@ -848,7 +879,19 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
     const jsonString = useThinking ? cleanJsonString(rawText) : rawText.trim();
     if (!jsonString) throw new Error("AI returned empty response");
 
-    const parsedJson = JSON.parse(jsonString);
+    let parsedJson: unknown;
+    try {
+      parsedJson = JSON.parse(jsonString);
+    } catch (parseErr: any) {
+      // Truncated response (token limit hit) — attempt structural recovery
+      const recovered = recoverTruncatedJson(jsonString);
+      if (recovered !== null) {
+        console.warn('[AI] JSON truncated — recovered partial response');
+        parsedJson = recovered;
+      } else {
+        throw parseErr; // Will be caught by outer catch → retry
+      }
+    }
 
     if (zodSchema) {
         const validation = zodSchema.safeParse(parsedJson);
