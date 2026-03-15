@@ -22,6 +22,8 @@ import { validateStudentName } from '../utils/validation';
 import { markQuestComplete } from '../utils/dailyQuests';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { getOrCreateDeviceId } from '../utils/studentIdentity';
+import { SaveProgressModal } from '../components/student/SaveProgressModal';
+import { RestoreProgressModal } from '../components/student/RestoreProgressModal';
 
 type QuizResult = { percentage: number; correctCount: number; totalQuestions: number; misconceptions?: { question: string; studentAnswer: string; misconception: string }[] };
 
@@ -170,6 +172,11 @@ export const StudentPlayView: React.FC = () => {
 
   // Ж1: device-bound identity — created once per device, persists in localStorage
   const deviceId = getOrCreateDeviceId();
+
+  // С1: Google UID ако ученикот веќе се логирал со Google (persistent акаунт)
+  const [studentGoogleUid, setStudentGoogleUid] = useState<string | null>(() => {
+    try { return localStorage.getItem('student_google_uid'); } catch { return null; }
+  });
 
   // Live session: mark in_progress as soon as the quiz loads (once per session join)
   const inProgressMarkedRef = useRef(false);
@@ -631,7 +638,19 @@ export const StudentPlayView: React.FC = () => {
                     {t('play.onboarding.back')}
                   </button>
                 </div>
-                <div className="flex justify-center gap-1.5 mt-2">
+                {/* С1: Врати напредок од Google акаунт */}
+                <RestoreProgressModal
+                  deviceId={deviceId}
+                  onRestored={(restoredName, uid) => {
+                    setStudentName(restoredName);
+                    setNameInput(restoredName);
+                    setNameConfirmed(true);
+                    setIsReturningStudent(true);
+                    setWizardStep(null);
+                    setStudentGoogleUid(uid);
+                  }}
+                />
+                <div className="flex justify-center gap-1.5 mt-4">
                   <span className="w-2 h-2 rounded-full bg-slate-200" />
                   <span className="w-2 h-2 rounded-full bg-indigo-600" />
                   <span className="w-2 h-2 rounded-full bg-slate-200" />
@@ -1022,6 +1041,17 @@ export const StudentPlayView: React.FC = () => {
           </div>
         );
       })()}
+
+      {/* С1: Зачувај напредок со Google — прикажи само ако квизот е завршен и нема Google акаунт */}
+      {quizResult && !studentGoogleUid && (
+        <div className="w-full max-w-lg">
+          <SaveProgressModal
+            studentName={studentName || 'Ученик'}
+            deviceId={deviceId}
+            onSaved={(uid) => setStudentGoogleUid(uid)}
+          />
+        </div>
+      )}
 
       <footer className="mt-8 text-white/50 text-xs font-bold uppercase tracking-widest">
         Powered by Math Curriculum AI Navigator

@@ -215,6 +215,22 @@ export interface StudentProfile {
   description: string;
 }
 
+/**
+ * С1 — Persistent студентски акаунт (Google Sign-In за ученици).
+ * Зачуван во `student_accounts/{googleUid}` во Firestore.
+ * Линкува повеќе deviceIds за cross-device sync на напредокот.
+ */
+export interface StudentAccount {
+  uid: string;           // Google UID (= Firebase Auth UID после Sign-In)
+  name: string;          // Студентско име (од прв quiz или Google профил)
+  email?: string;        // Google email (опционален)
+  photoURL?: string;     // Google аватар
+  grade?: number;        // Одделение (опционално, за подобри препораки)
+  linkedDeviceIds: string[]; // Сите deviceIds на студентот (за cross-device queries)
+  createdAt: any;        // Firestore Timestamp
+  updatedAt?: any;
+}
+
 export interface TeachingProfile {
   name: string;
   photoURL?: string;
