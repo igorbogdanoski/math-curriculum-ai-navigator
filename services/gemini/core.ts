@@ -3,32 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import {
-    Concept,
-    Topic,
-    Grade,
-    ChatMessage,
-    TeachingProfile,
-    StudentProfile,
-    QuestionType,
-    DifferentiationLevel,
-    GenerationContext,
-    AIGeneratedIdeas,
-    AIGeneratedAssessment,
-    AIGeneratedPracticeMaterial,
-    AIGeneratedThematicPlan,
-    AIGeneratedRubric,
-    AIGeneratedIllustration,
-    AIGeneratedLearningPaths,
-    CoverageAnalysisReport,
-    AIRecommendation,
-    AIPedagogicalAnalysis,
-    LessonPlan,
-    PlannerItem,
-    NationalStandard,
-    GeneratedTest,
-    AssessmentQuestion
-} from '../../types';
+import { GenerationContext } from '../../types';
 import { ragService } from '../ragService';
 import { 
     AIGeneratedIdeasSchema,
@@ -47,10 +22,11 @@ import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
-export const DEFAULT_MODEL = 'gemini-1.5-flash';
-export const PRO_MODEL = 'gemini-1.5-pro-002'; // Or gemini-1.5-pro
+export const DEFAULT_MODEL = 'gemini-2.5-flash';
+export const PRO_MODEL = 'gemini-2.5-pro';
 export const ULTIMATE_MODEL = 'gemini-3.1-pro-preview';
-export const IMAGEN_MODEL = 'imagen-3.0-generate-001';
+export const IMAGEN_MODEL = 'imagen-4.0-generate-001';
+export const EMBEDDING_MODEL = 'gemini-embedding-2-preview';
 export const MAX_RETRIES = 2;
 export const GENERATION_TIMEOUT_MS = 60_000; // 60 seconds for 3.1 Pro
 
@@ -531,6 +507,102 @@ export async function* streamGeminiProxy(params: {
         } catch (e) {
           console.error("Error parsing stream chunk:", e);
         }
+      }
+    }
+    // Flush remaining buffer (handles server [DONE] without trailing newline)
+    if (buffer.startsWith('data: ')) {
+      const dataStr = buffer.slice(6).trim();
+      if (dataStr !== '[DONE]') {
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.text) yield data.text;
+        } catch { /* partial final chunk — discard */ }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+// --- RICH STREAMING (thinking tokens) ---
+export type StreamChunk = { kind: 'text'; text: string } | { kind: 'thinking'; text: string };
+
+export async function* streamGeminiProxyRich(params: {
+  model: string;
+  contents: any;
+  generationConfig?: any;
+  systemInstruction?: string;
+  safetySettings?: any;
+  userTier?: string;
+}): AsyncGenerator<StreamChunk, void, unknown> {
+  const token = await getAuthToken();
+
+  let modelToUse = params.model;
+  if (params.userTier === 'Pro' || params.userTier === 'Unlimited') {
+    modelToUse = ULTIMATE_MODEL;
+  } else if (params.userTier === 'Standard') {
+    modelToUse = PRO_MODEL;
+  } else {
+    modelToUse = DEFAULT_MODEL;
+  }
+
+  const response = await fetch('/api/gemini-stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({
+      model: modelToUse,
+      contents: normalizeContents(params.contents),
+      config: {
+        systemInstruction: params.systemInstruction,
+        safetySettings: params.safetySettings,
+        ...params.generationConfig
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Server error: ${response.status}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("No response body");
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const dataStr = line.slice(6).trim();
+        if (dataStr === '[DONE]') return;
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.thinking) yield { kind: 'thinking', text: data.thinking };
+          else if (data.text) yield { kind: 'text', text: data.text };
+          if (data.error) throw new Error(data.error);
+        } catch (e) {
+          console.error("Error parsing rich stream chunk:", e);
+        }
+      }
+    }
+    // Flush any remaining buffer content (handles [DONE] without trailing newline)
+    if (buffer.startsWith('data: ')) {
+      const dataStr = buffer.slice(6).trim();
+      if (dataStr !== '[DONE]') {
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.thinking) yield { kind: 'thinking', text: data.thinking };
+          else if (data.text) yield { kind: 'text', text: data.text };
+        } catch { /* partial/malformed final chunk — discard */ }
       }
     }
   } finally {

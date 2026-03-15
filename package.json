@@ -19,6 +19,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google/generative-ai": "^0.24.1",
     "@react-pdf/renderer": "^4.3.2",
+    "@resvg/resvg-wasm": "^2.6.2",
     "@sentry/react": "^10.42.0",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-query-devtools": "^5.91.3",
@@ -27,6 +28,7 @@
     "docx": "^9.6.0",
     "file-saver": "^2.0.5",
     "firebase": "^11.4.0",
+    "html2canvas": "^1.4.1",
     "idb": "^8.0.3",
     "lucide-react": "^0.563.0",
     "mathjs": "^15.1.1",
@@ -39,6 +41,7 @@
     "react-qr-code": "^2.0.18",
     "react-router-dom": "^7.13.0",
     "react-to-print": "^3.2.0",
+    "satori": "^0.25.0",
     "web-vitals": "^5.1.0",
     "zod": "^3.22.4",
     "zustand": "^5.0.11"

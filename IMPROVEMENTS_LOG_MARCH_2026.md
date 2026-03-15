@@ -51,5 +51,171 @@
 | **1. PPTX Localize** | Инсталација на `pptxgenjs` преку npm и отстранување на CDN за подобра стабилност. | **ЗАВРШЕНО** |
 | **2. Wizard UI за Планови** | Трансформација на `AnnualPlanGeneratorView` во чекор-по-чекор интерфејс. | **ЗАВРШЕНО** |
 | **3. Imagen 3 Stability** | Поправен 404 модел-еррор преку користење на `imagen-3.0-generate-001`. | **ЗАВРШЕНО** |
-| **4. Multi-Image Quizzes** | Генерирање илустрации за поединечни тешки прашања во квизовите. | ПЛАНИРАНО |
-| **5. Semantic Search** | Паметно пребарување низ библиотеката со користење на `gemini-embed-004`. | ПЛАНИРАНО |
+| **4. Multi-Image Quizzes** | Генерирање илустрации за поединечни тешки прашања во квизовите. | **ЗАВРШЕНО** |
+| **5. Semantic Search** | Паметно пребарување низ библиотеката со користење на `gemini-embed-004`. | **ЗАВРШЕНО** |
+| **6. NotebookLM Infrastructure** | Подготвена основа за семантичко поврзување на наставните материјали. | **ЗАВРШЕНО** |
+
+---
+
+## 🏗️ ФАЗА 10: SaaS Perfection & Интеграција (15 Март 2026)
+
+### 🧩 Завршени Технички Модули
+- **Multi-Image Quiz Refactor**: Рефакториран е целиот систем на квизови. Сега секој `AssessmentQuestion` има свој `imageUrl`, што овозможува контекстуална визуелизација за секое прашање поединечно.
+- **Imagen 3.0 Stability Fix**: Решен е проблемот со `404 Not Found` преку стандардизација на `imagen-3.0-generate-001`.
+- **Semantic Library Search**: Имплементирано е семантичко пребарување во `ContentLibraryView` користејќи косинусна сличност (Cosine Similarity) на векторските записи.
+- **Vercel Embedding Proxy**: Креиран е нов безбеден прокси сервер за `text-embedding-004` на `/api/embed`.
+
+### 📅 СЛЕДНИ ЧЕКОРИ (Action Plan)
+
+1. ~~**Semantic Teacher Assistant**~~: RAG чат-бот врз лична библиотека. **ЗАВРШЕНО (15 Март 2026)**
+2. **Teacher Academy Gamification**: Поврзување на успешно генерираните материјали со „Achievements” системот за наставници.
+3. **Advanced PDF Export**: Подобрување на изгледот на PDF извештаите за да вклучуваат генерирани AI илустрации во висока резолуција.
+
+---
+
+## 🧠 ФАЗА 11: Semantic Teacher Assistant / NotebookLM (15 Март 2026)
+
+### ✅ Имплементирани Модули
+
+- **RAG Chat Mode во AssistantView**: Додаден „Библиотечен режим” копче. Кога е активен, AI асистентот:
+  1. Ги вчитува сите наставникови материјали со embeddings од Firestore
+  2. Го embedira прашањето на наставникот преку `/api/embed`
+  3. Пресметува cosine similarity и ги наоѓа топ-3 релевантни материјали (праг 0.35)
+  4. Ги инјектира материјалите ккако RAG контекст во системската инструкција
+  5. Прикажува **source citations** (индиго badge) на секој AI одговор
+
+- **getChatResponseStream** надграден со опционален `ragContext?: string` параметар
+- **Rules of Hooks fix**: Отстранет нелегален `useLanguage()` повик внатре во `handleItemClick` (WeeklySchedule.tsx)
+- **callEmbeddingProxy** додаден во import на geminiService.real.ts (fix за TS2552)
+
+### 🏗️ Архитектура
+
+```text
+Наставник пишува прашање
+    ↓
+callEmbeddingProxy(query) → /api/embed → number[768]
+    ↓
+hybridScore = 0.6·cosineSimilarity + 0.4·bm25Score  ← НАДГРАДЕН (15 Март 2026)
+    ↓
+Топ-3 материјали (score > 0.30) → RAG context string
+    ↓
+getChatResponseStream(..., ragContext) → /api/gemini-stream
+    ↓
+AI одговор + source citations (badge)
+```
+
+---
+
+## 🚀 ФАЗА 12: World-Class Upgrades (15 Март 2026)
+
+### ✅ Имплементирани Подобрувања
+
+| # | Подобрување | Статус |
+| --- | ----------- | ------ |
+| 1 | **Model Upgrade** — Gemini 3.1 Pro Preview + Imagen 4.0 + нов whitelist | ✅ ЗАВРШЕНО |
+| 2 | **Embeddings на saveRemediaQuiz / saveExitTicketQuiz** — целосна RAG покриеност | ✅ ЗАВРШЕНО |
+| 3 | **Persistent Chat History** — Firestore `chat_sessions`, autosave 3s debounce, sidebar со 20 разговори | ✅ ЗАВРШЕНО |
+| 4 | **Hybrid Search (BM25 + cosine)** — `0.6·cosine + 0.4·bm25` во ContentLibraryView и AssistantView | ✅ ЗАВРШЕНО |
+| 5 | **Streaming Thinking Tokens** — `thinkingBudget: 8000`, Brain toggle за Pro/Unlimited, purple collapsible panel | ✅ ЗАВРШЕНО |
+
+### 🏗️ Клучни Технички Детали
+
+#### Hybrid Search
+
+- `bm25Score(query, docText)` — BM25-lite, k1=1.5, b=0.75, avgDocLen=25, нормализиран на ~[0,1]
+- ContentLibraryView: Semantic ON → hybrid (праг 0.15); Semantic OFF → чист BM25 ranking
+- AssistantView RAG: hybrid праг 0.30 (наместо 0.50 чист cosine) — точни совпаѓања ("7. одделение") не се пропуштаат
+
+#### Streaming Thinking Tokens
+
+- `api/gemini-stream.ts`: детектира `part.thought === true` → SSE `{ thinking: "..." }`
+- `services/gemini/core.ts`: нов `streamGeminiProxyRich()` → `StreamChunk = { kind: 'text'|'thinking', text }`
+- `services/geminiService.real.ts`: нов метод `getChatResponseStreamWithThinking()` со `thinkingConfig: { thinkingBudget: 8000 }`
+- `AssistantView.tsx`: Brain копче (само Pro/Unlimited) → лила collapsible панел „Прикажи размислување" по порака
+
+---
+
+## 🗺️ ФАЗА 14: World-Class Math Presentation & Tools (15 Март 2026)
+
+### Акционен план (приоритизиран)
+
+| Приоритет | ID | Функција | Опис | Статус |
+| --- | --- | --- | --- | --- |
+| 🔴 P0 | М1 | **PPTX LaTeX→SVG** | KaTeX рендерира секоја формула → SVG → вметнување во PPTX слајд. Без ова математиката е нечитлива во export. | ⏳ |
+| 🔴 P0 | М2 | **GeoGebra iframe embed** | Вградување на GeoGebra editor во MathToolsPanel. `ggb.getBase64()` → PNG/SVG → зачување во Firestore `material.embeds[]`. Прикажување во слајд/подготовка/инфографик. | ⏳ |
+| 🟠 P1 | М3 | **Desmos граф embed** | Вградување на Desmos Graphing Calculator. `calculator.screenshot()` → PNG → export во материјали. | ⏳ |
+| 🟠 P1 | М4 | **`step-by-step` слајд layout** | Нов тип слајд во GeneratedPresentation: нумерирани чекори со прогрес бар, идеален за докажување теореми. | ⏳ |
+| 🟡 P2 | М5 | **Archive на материјали** | Soft-delete: `archivedAt` поле во Firestore. Таб „Архива" во ContentLibraryView. Копче „Врати" и „Избриши засекогаш". | ⏳ |
+| 🟡 P2 | М6 | **Unit тестови** | `bm25Score` edge cases + `streamGeminiProxyRich` buffer flush + `InfographicPreviewModal` render | ⏳ |
+| 🟢 P3 | М7 | **`formula-centered` слајд layout** | Layout само со голема формула + визуелизација — за клучни дефиниции и теореми. | ⏳ |
+| 🟢 P3 | М8 | **Live quiz од слајд** | Директно стартување на квиз-сесија од презентациски слајд (Premium WOW feature). | ⏳ |
+
+### Архитектура — GeoGebra + Desmos
+
+```text
+MathToolsPanel → таб "GeoGebra" → iframe (GeoGebra API, без API key, образование бесплатно)
+    ↓ наставникот конструира фигура
+window.ggbApplet.getBase64(true) → PNG base64
+    ↓
+firestoreService.saveMathEmbed({ type: 'geogebra', base64, params, teacherUid })
+    ↓
+ContentLibraryView → embed preview
+Presentation слајд → image insert
+Инфографик → вметнување
+
+Desmos: window.Dcalculator.screenshot({ width, height }) → PNG
+```
+
+### Архитектура — PPTX LaTeX fix
+
+```text
+PresentationSlide.content[] → parseFormulaTokens() → [текст, $формула$, текст]
+    ↓
+За секоја $формула$: katex.renderToString() → SVG → Buffer → pptxgen.addImage(svgBase64)
+    ↓
+Текстот и формулите се на различни y-позиции на слајдот (line-by-line layout)
+```
+
+### Кога да се пишуваат тестови
+
+- **Пред merge на P0 (М1, М2)**: unit тест за KaTeX SVG конверзија и GeoGebra mock
+- **По имплементација на М5 (Archive)**: Firestore soft-delete интеграциски тест
+- **По имплементација на М6**: bm25Score unit тест (чиста функција, 20 мин)
+- **НИКОГАШ пред commit/push** — тестовите се пишуваат паралелно или веднаш по функцијата, не во посебна фаза на крајот
+
+---
+
+## 🎨 ФАЗА 13: AI Lesson Infographic Generator (Premium) — 15 Март 2026
+
+### Акционен план
+
+| # | Чекор | Опис | Статус |
+| --- | ----- | ---- | ------ |
+| И1 | `/api/generate-infographic` | Нов Vercel endpoint: Gemini JSON → satori SVG → resvg PNG | ✅ html2canvas@3x (client-side, поверлив) |
+| И2 | `geminiService.generateInfographicLayout()` | Gemini 3.1 Pro генерира структуриран JSON за инфографикот | ✅ ЗАВРШЕНО |
+| И3 | `InfographicPreviewModal` | React компонент: preview + download PNG копче (Premium gate) | ✅ ЗАВРШЕНО |
+| И4 | Интеграција во `LessonPlanView` | Копче „Генерирај инфографик" по генерирање сценарио | ✅ ЗАВРШЕНО |
+| И5 | Premium gate | Само Pro/Unlimited тир (tier check во UI) | ✅ ЗАВРШЕНО |
+
+### Архитектура
+
+```text
+Наставник кликнува „Генерирај инфографик" (LessonPlanView)
+    ↓
+geminiService.generateInfographicLayout(lessonContent)
+    → Gemini 3.1 Pro → JSON { title, keyPoints[], sections[], palette }
+    ↓
+POST /api/generate-infographic  { layout: JSON }
+    → satori(JSX template + layout) → SVG string
+    → @resvg/resvg-wasm SVG → PNG buffer (2480×3508 = A4 @ 300dpi)
+    ↓
+InfographicPreviewModal → base64 PNG preview + Download копче
+```
+
+### Технички избори
+
+- **satori** (`@vercel/og`) — JSX → SVG, zero-browser, serverless-native, пиксел-перфект
+- **@resvg/resvg-wasm** — SVG → PNG @ 300dpi (печатлив квалитет)
+- **Gemini 3.1 Pro** за layout JSON (само Pro/Unlimited тир го повикува)
+- **Premium gate**: само `tier === 'Pro' || 'Unlimited'`, 10 кредити по генерација
+- Резолуција: **A4 @ 300dpi (2480×3508px)** — директно испратлив до принтер

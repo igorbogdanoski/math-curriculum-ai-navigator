@@ -575,3 +575,16 @@ declare global {
 }
 export interface AIGeneratedAnnualPlanTopic { title: string; durationWeeks: number; objectives: string[]; suggestedActivities: string[]; }
 export interface AIGeneratedAnnualPlan { grade: string; subject: string; totalWeeks: number; topics: AIGeneratedAnnualPlanTopic[]; }
+
+export interface InfographicSection { heading: string; icon: string; points: string[]; }
+export interface InfographicVocabTerm { term: string; definition: string; }
+export interface InfographicLayout {
+  title: string;
+  grade: string;
+  subject: string;
+  keyMessage: string;
+  objectives: string[];
+  sections: InfographicSection[];
+  vocabulary: InfographicVocabTerm[];
+  palette: 'blue' | 'green' | 'purple' | 'orange';
+}

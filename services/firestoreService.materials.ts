@@ -148,18 +148,28 @@ export const saveRemediaQuiz = async (content: any, meta: {
     topicId?: string;
     gradeLevel?: number;
     sourceQuizId?: string;
+    title?: string;
   }, teacherUid?: string): Promise<string | null> => {
     try {
+      // Generate embedding for RAG searchability
+      let embedding: number[] | undefined;
+      try {
+        const snippetText = `${meta.title || 'Remedial Quiz'} ${meta.conceptId || ''}\n${JSON.stringify(content).substring(0, 800)}`;
+        embedding = await callEmbeddingProxy(snippetText);
+      } catch { /* non-fatal */ }
+
       const docRef = doc(collection(db, 'cached_ai_materials'));
       setDoc(docRef, {
         content,
         type: 'quiz',
+        title: meta.title || 'Remedijalen kviz',
         isRemedial: true,
         sourceQuizId: meta.sourceQuizId,
         conceptId: meta.conceptId,
         topicId: meta.topicId,
-        gradeLevel: meta.gradeLevel,
+        gradeLevel: meta.gradeLevel ?? 0,
         ...(teacherUid ? { teacherUid } : {}),
+        ...(embedding ? { embedding } : {}),
         createdAt: serverTimestamp(),
       }).catch(err => console.warn('Offline deferred', err));
       return docRef.id;
@@ -176,15 +186,23 @@ export const saveExitTicketQuiz = async (content: any, meta: {
     conceptId?: string;
   }, teacherUid?: string): Promise<string | null> => {
     try {
+      let embedding: number[] | undefined;
+      try {
+        const snippetText = `${meta.lessonTitle} ${meta.conceptId || ''}\n${JSON.stringify(content).substring(0, 800)}`;
+        embedding = await callEmbeddingProxy(snippetText);
+      } catch { /* non-fatal */ }
+
       const docRef = await addDoc(collection(db, 'cached_ai_materials'), {
         content,
         type: 'quiz',
+        title: `Exit Ticket: ${meta.lessonTitle}`,
         isExitTicket: true,
         lessonTitle: meta.lessonTitle,
-        gradeLevel: meta.gradeLevel,
+        gradeLevel: meta.gradeLevel ?? 0,
         topicId: meta.topicId,
         conceptId: meta.conceptId,
         ...(teacherUid ? { teacherUid } : {}),
+        ...(embedding ? { embedding } : {}),
         createdAt: serverTimestamp(),
       });
       return docRef.id;

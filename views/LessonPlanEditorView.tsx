@@ -3,7 +3,8 @@ import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import type { LessonPlan, AIPedagogicalAnalysis, GenerationContext, Grade, Topic, Concept, AIGeneratedIllustration } from '../types';
+import type { LessonPlan, AIPedagogicalAnalysis, GenerationContext, Grade, Topic, Concept, AIGeneratedIllustration, InfographicLayout } from '../types';
+import { InfographicPreviewModal } from '../components/ai/InfographicPreviewModal';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
@@ -70,6 +71,8 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
   const [isGeneratingWord, setIsGeneratingWord] = useState(false);
   const [isGeneratingIllustration, setIsGeneratingIllustration] = useState(false);
   const [generatedIllustration, setGeneratedIllustration] = useState<AIGeneratedIllustration | null>(null);
+  const [isGeneratingInfographic, setIsGeneratingInfographic] = useState(false);
+  const [infographicLayout, setInfographicLayout] = useState<InfographicLayout | null>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
   const [isRegeneratingSection, setIsRegeneratingSection] = useState<'introductory' | 'main' | 'concluding' | null>(null);
@@ -303,6 +306,21 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     }
   }, [addNotification, isOnline]);
 
+  const handleGenerateInfographic = useCallback(async () => {
+    if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
+    if (user?.tier !== 'Pro' && user?.tier !== 'Unlimited') { addNotification('Инфографиците се достапни само за Pro корисници.', 'warning'); return; }
+    if (!plan?.title) { addNotification('Прво генерирајте подготовка пред да направите инфографик.', 'warning'); return; }
+    setIsGeneratingInfographic(true);
+    try {
+        const layout = await geminiService.generateInfographicLayout(plan, user ?? undefined);
+        if (isMounted.current) setInfographicLayout(layout);
+    } catch (error) {
+        if (isMounted.current) addNotification('Грешка при генерирање на инфографикот.', 'error');
+    } finally {
+        if (isMounted.current) setIsGeneratingInfographic(false);
+    }
+  }, [plan, user, addNotification, isOnline]);
+
   const handleAnalyze = useCallback(async () => {
     if (!isOnline) {
         addNotification('Нема интернет конекција. Оваа функција е недостапна.', 'error');
@@ -369,7 +387,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
   
     const arrayToLines = (arr: any[] = []) => arr.map(item => `- ${typeof item === 'string' ? item : item.text}${item.bloomsLevel ? ` [${item.bloomsLevel}]` : ''}`).join('\n');
 
-  const handleExport = async (format: 'md' | 'pdf' | 'doc' | 'clipboard') => {
+  const handleExport = async (format: 'md' | 'pdf' | 'doc' | 'clipboard' | 'ics' | 'google' | 'teams') => {
     if (!plan || !plan.title) {
         addNotification('Насловот е задолжителен за извоз.', 'error');
         return;
@@ -583,7 +601,21 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                         </div>
                     )}
                     
-                    <div className="flex justify-end items-center pt-4 gap-3 border-t mt-6">
+                    <div className="flex justify-end items-center pt-4 gap-3 border-t mt-6 flex-wrap">
+                        {/* Infographic button — Premium only */}
+                        {(user?.tier === 'Pro' || user?.tier === 'Unlimited') && plan?.title && (
+                            <button
+                                type="button"
+                                onClick={handleGenerateInfographic}
+                                disabled={isGeneratingInfographic}
+                                className="flex items-center gap-2 bg-purple-600 text-white px-4 py-3 rounded-lg shadow hover:bg-purple-700 transition-colors font-semibold disabled:bg-purple-300 text-sm"
+                                title="Генерирај инфографик за овој час (Premium)"
+                            >
+                                {isGeneratingInfographic
+                                    ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Генерирам…</>
+                                    : <>🎨 Инфографик</>}
+                            </button>
+                        )}
                         <div className="relative" ref={exportMenuRef}>
                             <button
                                 type="button"
@@ -680,8 +712,16 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
       </div>
     )}
 
+    {/* Infographic Preview Modal */}
+    {infographicLayout && (
+        <InfographicPreviewModal
+            layout={infographicLayout}
+            onClose={() => setInfographicLayout(null)}
+        />
+    )}
+
     {/* Floating Action Button for Math Tools */}
-    <button 
+    <button
       onClick={() => setShowMathTools(true)}
       className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95"
       title="Математички Алатки (GeoGebra, Desmos...)"

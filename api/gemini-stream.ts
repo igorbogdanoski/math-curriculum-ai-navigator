@@ -28,10 +28,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { model, contents, config } = validated;
   let modelName = model;
   
-  // Upgrade logic: absolute latest models available for your Paid Tier API Key
-  if (modelName.includes('pro')) modelName = 'gemini-3.1-pro-preview';
+  // Upgrade logic: route to best available models on paid tier
+  if (modelName.includes('3.1') || modelName.includes('3-pro') || modelName.includes('ultra')) modelName = 'gemini-3.1-pro-preview';
+  else if (modelName.includes('pro')) modelName = 'gemini-2.5-pro';
   else if (modelName.includes('flash')) modelName = 'gemini-2.5-flash';
-  else modelName = 'gemini-2.5-flash'; // Default fallback
+  else modelName = 'gemini-2.5-flash';
 
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
@@ -54,28 +55,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     normalizedContents[0].parts[0].text = instructionText + (normalizedContents[0].parts[0].text || '');
   }
 
-  // Try each API key; on daily quota 429, rotate to next key
+  // Try each API key; on daily quota 429, rotate to next key.
+  // IMPORTANT: SSE headers are set only after the first successful chunk to allow
+  // proper key rotation on failure (once headers are sent the response is committed).
   let lastError: Error | null = null;
   for (let i = 0; i < apiKeys.length; i++) {
     try {
       const genAI = new GoogleGenerativeAI(apiKeys[i]);
       const modelInstance = genAI.getGenerativeModel({ model: modelName, safetySettings: safetySettings as any });
 
-      // Set SSE headers before streaming starts
+      const result = await modelInstance.generateContentStream({
+        contents: normalizedContents,
+        generationConfig: generationConfig as any,
+      });
+
+      // Stream started successfully — now commit SSE headers
       if (!res.headersSent) {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
       }
 
-      const result = await modelInstance.generateContentStream({
-        contents: normalizedContents,
-        generationConfig: generationConfig as any,
-      });
-
       for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
-        if (chunkText) res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+        const parts = (chunk.candidates?.[0]?.content?.parts ?? []) as { text?: string; thought?: boolean }[];
+        if (parts.length > 0) {
+          for (const part of parts) {
+            if (!part.text) continue;
+            if (part.thought) {
+              res.write(`data: ${JSON.stringify({ thinking: part.text })}\n\n`);
+            } else {
+              res.write(`data: ${JSON.stringify({ text: part.text })}\n\n`);
+            }
+          }
+        } else {
+          // Fallback for models that don't expose parts
+          const chunkText = chunk.text();
+          if (chunkText) res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+        }
       }
 
       res.write('data: [DONE]\n\n');
@@ -89,6 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         msg.includes('free_tier') || msg.includes('quota')
       );
       const isInvalidKey = msg.includes('API_KEY_INVALID') || msg.includes('API key expired') || msg.includes('API key not valid');
+      // Only rotate if headers haven't been committed yet (streaming hasn't started)
       if ((isDailyQuota || isInvalidKey) && i < apiKeys.length - 1 && !res.headersSent) {
         console.warn(`[/api/gemini-stream] Key ${i + 1}/${apiKeys.length} ${isInvalidKey ? 'invalid/expired' : 'daily quota exhausted'}, trying next...`);
         continue;

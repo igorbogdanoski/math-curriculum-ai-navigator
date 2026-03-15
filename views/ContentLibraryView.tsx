@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles } from 'lucide-react';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,28 @@ const cosineSimilarity = (a: number[], b: number[]): number => {
     }
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 };
+
+const stripMd = (t: string) => t.replace(/[*_`~[\]#>]/g, ' ');
+
+// Helper: BM25-lite keyword score (no pre-computed IDF, normalized to ~[0,1])
+const bm25Score = (query: string, docText: string): number => {
+    const k1 = 1.5, b = 0.75, avgDocLen = 25;
+    const queryTerms = stripMd(query).toLowerCase().split(/[\s,.\-/]+/).filter(Boolean);
+    const docTokens = stripMd(docText).toLowerCase().split(/[\s,.\-/]+/).filter(Boolean);
+    const docLen = docTokens.length || 1;
+    let score = 0;
+    for (const term of queryTerms) {
+        const tf = docTokens.filter(t => t === term || t.includes(term)).length;
+        if (tf > 0) {
+            score += (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * docLen / avgDocLen));
+        }
+    }
+    return score / Math.max(queryTerms.length, 1);
+};
+
+// Hybrid score: 60% semantic + 40% keyword
+const hybridScore = (cosine: number, bm25: number): number =>
+    0.6 * cosine + 0.4 * Math.min(bm25, 1);
 
 const typeLabel: Record<string, string> = {
     quiz: 'Квиз', assessment: 'Тест', rubric: 'Рубрика',
@@ -44,6 +66,7 @@ export const ContentLibraryView: React.FC = () => {
     const [useSemanticSearch, setUseSemanticSearch] = useState(false);
     const [queryEmbedding, setQueryEmbedding] = useState<number[] | null>(null);
     const [isEmbedding, setIsEmbedding] = useState(false);
+    const embeddingCacheRef = useRef<Map<string, number[]>>(new Map());
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
@@ -72,9 +95,13 @@ export const ContentLibraryView: React.FC = () => {
                 setQueryEmbedding(null);
                 return;
             }
+            // Serve from cache to avoid redundant API calls when toggling mode
+            const cached = embeddingCacheRef.current.get(searchQuery);
+            if (cached) { setQueryEmbedding(cached); return; }
             setIsEmbedding(true);
             try {
                 const emb = await callEmbeddingProxy(searchQuery);
+                embeddingCacheRef.current.set(searchQuery, emb);
                 setQueryEmbedding(emb);
             } catch (err) {
                 console.error('Semantic search error:', err);
@@ -93,24 +120,27 @@ export const ContentLibraryView: React.FC = () => {
 
         // 1. Text or Semantic Filter
         if (searchQuery.trim()) {
-            const sq = searchQuery.toLowerCase();
             if (useSemanticSearch && queryEmbedding) {
-                // Semantic ranking
+                // Hybrid ranking: 60% cosine semantic + 40% BM25 keyword
                 results = results
-                    .map(m => ({ 
-                        ...m, 
-                        score: m.embedding ? cosineSimilarity(queryEmbedding, m.embedding) : 0 
-                    }))
-                    .filter(m => (m as any).score > 0.4) // Threshold
+                    .map(m => {
+                        const docText = `${m.title || ''} ${m.conceptId || ''} ${m.topicId || ''} ${typeLabel[m.type] || m.type || ''}`;
+                        const cosine = m.embedding ? cosineSimilarity(queryEmbedding, m.embedding) : 0;
+                        const bm25 = bm25Score(searchQuery, docText);
+                        const score = hybridScore(cosine, bm25);
+                        return { ...m, score };
+                    })
+                    .filter(m => (m as any).score > 0.15)
                     .sort((a, b) => (b as any).score - (a as any).score);
             } else {
-                // Classic filter
-                results = results.filter(m => {
-                    const matchesTitle = m.title?.toLowerCase().includes(sq);
-                    const matchesConcept = m.conceptId?.toLowerCase().includes(sq);
-                    const matchesTopic = m.topicId?.toLowerCase().includes(sq);
-                    return matchesTitle || matchesConcept || matchesTopic;
-                });
+                // BM25 keyword ranking (exact + partial term matching)
+                results = results
+                    .map(m => {
+                        const docText = `${m.title || ''} ${m.conceptId || ''} ${m.topicId || ''} ${typeLabel[m.type] || m.type || ''}`;
+                        return { ...m, score: bm25Score(searchQuery, docText) };
+                    })
+                    .filter(m => (m as any).score > 0)
+                    .sort((a, b) => (b as any).score - (a as any).score);
             }
         }
 

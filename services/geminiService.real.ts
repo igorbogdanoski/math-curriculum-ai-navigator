@@ -1,9 +1,10 @@
 import { assessmentAPI } from './gemini/assessment';
 import { plansAPI } from './gemini/plans';
-import { 
+import {
     Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, streamGeminiProxy,
     checkDailyQuotaGuard, TEXT_SYSTEM_INSTRUCTION, SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
-    CACHE_COLLECTION, JSON_SYSTEM_INSTRUCTION, minifyContext
+    CACHE_COLLECTION, JSON_SYSTEM_INSTRUCTION, minifyContext, callEmbeddingProxy,
+    streamGeminiProxyRich, type StreamChunk
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -17,19 +18,43 @@ export const realGeminiService = {
   ...assessmentAPI,
   ...plansAPI,
   
-async *getChatResponseStream(history: ChatMessage[], profile?: TeachingProfile, attachment?: { base64: string, mimeType: string }): AsyncGenerator<string, void, unknown> {
+async *getChatResponseStream(history: ChatMessage[], profile?: TeachingProfile, attachment?: { base64: string, mimeType: string }, ragContext?: string): AsyncGenerator<string, void, unknown> {
     checkDailyQuotaGuard(); // П30: block streaming if daily quota is exhausted
-    const systemInstruction = `${TEXT_SYSTEM_INSTRUCTION}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
+    let systemInstruction = `${TEXT_SYSTEM_INSTRUCTION}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
+    if (ragContext) {
+        systemInstruction += `\n\n--- КОНТЕКСТ ОД БИБЛИОТЕКАТА НА НАСТАВНИКОТ ---\nСледните материјали се пронајдени како релевантни за прашањето. Користи ги при одговорот:\n\n${ragContext}\n--- КРАЈ НА БИБЛИОТЕЧЕН КОНТЕКСТ ---\n\nКога ги користиш овие материјали, споменувај ги по наслов и тип (пр. "Во вашиот зачуван квиз...").`;
+    }
     const contents: Content[] = history.map(msg => ({ role: msg.role, parts: [{ text: msg.text }] }));
     if (attachment && contents.length > 0) {
         const lastMessage = contents[contents.length - 1];
         if (lastMessage.role === 'user') lastMessage.parts.push({ inlineData: { mimeType: attachment.mimeType, data: attachment.base64 } });
     }
-    yield* streamGeminiProxy({ 
-        model: DEFAULT_MODEL, 
-        contents, 
-        systemInstruction, 
-        safetySettings: SAFETY_SETTINGS 
+    yield* streamGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents,
+        systemInstruction,
+        safetySettings: SAFETY_SETTINGS
+    });
+  },
+
+async *getChatResponseStreamWithThinking(history: ChatMessage[], profile?: TeachingProfile, attachment?: { base64: string, mimeType: string }, ragContext?: string): AsyncGenerator<StreamChunk, void, unknown> {
+    checkDailyQuotaGuard();
+    let systemInstruction = `${TEXT_SYSTEM_INSTRUCTION}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
+    if (ragContext) {
+        systemInstruction += `\n\n--- КОНТЕКСТ ОД БИБЛИОТЕКАТА НА НАСТАВНИКОТ ---\nСледните материјали се пронајдени како релевантни за прашањето. Користи ги при одговорот:\n\n${ragContext}\n--- КРАЈ НА БИБЛИОТЕЧЕН КОНТЕКСТ ---\n\nКога ги користиш овие материјали, споменувај ги по наслов и тип (пр. "Во вашиот зачуван квиз...").`;
+    }
+    const contents: Content[] = history.map(msg => ({ role: msg.role, parts: [{ text: msg.text }] }));
+    if (attachment && contents.length > 0) {
+        const lastMessage = contents[contents.length - 1];
+        if (lastMessage.role === 'user') lastMessage.parts.push({ inlineData: { mimeType: attachment.mimeType, data: attachment.base64 } });
+    }
+    yield* streamGeminiProxyRich({
+        model: DEFAULT_MODEL,
+        contents,
+        systemInstruction,
+        safetySettings: SAFETY_SETTINGS,
+        generationConfig: { thinkingConfig: { thinkingBudget: 8000 } },
+        userTier: profile?.tier
     });
   },
 
@@ -63,6 +88,59 @@ ${vertProgText}
 ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, paths: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { profileName: { type: Type.STRING }, steps: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { stepNumber: { type: Type.INTEGER }, activity: { type: Type.STRING }, type: { type: Type.STRING } }, required: ["stepNumber", "activity"] } } }, required: ["profileName", "steps"] } } }, required: ["title", "paths"] };
     return generateAndParseJSON<AIGeneratedLearningPaths>([{ text: prompt }, { text: JSON.stringify(minifyContext(context)) }], schema, DEFAULT_MODEL, AIGeneratedLearningPathsSchema, MAX_RETRIES, false, undefined, profile?.tier);
+  },
+
+async generateInfographicLayout(plan: Partial<import('../types').LessonPlan>, profile?: TeachingProfile): Promise<import('../types').InfographicLayout> {
+    const objectivesText = (plan.objectives || []).map(o => o.text).join('\n');
+    const scenarioText = [
+      plan.scenario?.introductory?.text || '',
+      ...(plan.scenario?.main || []).map(s => s.text),
+      plan.scenario?.concluding?.text || '',
+    ].filter(Boolean).join('\n');
+
+    const prompt = `Ти си дизајнер на образовни инфографики. Анализирај го следниов план за час и создај структуриран layout за висококвалитетен инфографик.
+
+ПЛАН ЗА ЧАС:
+Наслов: ${plan.title || ''}
+Одделение: ${plan.grade || ''}
+Тема: ${plan.theme || ''}
+Цели: ${objectivesText}
+Сценарио: ${scenarioText.substring(0, 1200)}
+
+БАРАЊА:
+- title: краток и привлечен наслов на инфографикот (макс 8 зборови)
+- grade: "X. одделение"
+- subject: "Математика"
+- keyMessage: 1 реченица — главната порака/заклучок на часот
+- objectives: 3–4 цели, секоја макс 10 зборови, конкретни и акциски
+- sections: 2–3 содржински блока. Секој со: heading (2–4 збора), icon (1 emoji), points (2–4 кратки точки)
+- vocabulary: 3–5 клучни термини со дефиниции (макс 12 збора секоја)
+- palette: избери "blue" ако е алгебра/броеви, "green" ако е геометрија, "purple" ако е статистика/веројатност, "orange" ако е мерење/применета математика
+
+Врати САМО JSON без markdown.`;
+
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING },
+        grade: { type: Type.STRING },
+        subject: { type: Type.STRING },
+        keyMessage: { type: Type.STRING },
+        objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+        sections: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: {
+          heading: { type: Type.STRING }, icon: { type: Type.STRING },
+          points: { type: Type.ARRAY, items: { type: Type.STRING } }
+        }, required: ['heading', 'icon', 'points'] }},
+        vocabulary: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: {
+          term: { type: Type.STRING }, definition: { type: Type.STRING }
+        }, required: ['term', 'definition'] }},
+        palette: { type: Type.STRING },
+      },
+      required: ['title', 'grade', 'subject', 'keyMessage', 'objectives', 'sections', 'vocabulary', 'palette'],
+    };
+    return generateAndParseJSON<import('../types').InfographicLayout>(
+      [{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier
+    );
   },
 
 async generateAnalogy(concept: Concept, gradeLevel: number, profile?: TeachingProfile): Promise<string> {

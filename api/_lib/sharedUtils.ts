@@ -2,23 +2,47 @@
  * Model whitelist — only these models can be called
  */
 export const ALLOWED_MODELS = new Set([
+  // Gemini 3.x family (paid tier — confirmed available)
   'gemini-3.1-pro-preview',
   'gemini-3.1-pro-preview-customtools',
   'gemini-3.1-flash-lite-preview',
+  'gemini-3.1-flash-image-preview',
+  'gemini-3-pro-preview',
+  'gemini-3-flash-preview',
+  'gemini-3-pro-image-preview',
+  // Gemini 2.5 family
   'gemini-2.5-pro',
   'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash-image',
+  'gemini-2.5-flash-lite-preview-09-2025',
+  'gemini-flash-latest',
+  'gemini-flash-lite-latest',
+  'gemini-pro-latest',
+  // Gemini 2.0 family
+  'gemini-2.0-flash',
   'gemini-2.0-flash-001',
-  'gemini-2.0-flash-lite-preview-02-05',
+  'gemini-2.0-flash-lite',
+  'gemini-2.0-flash-lite-001',
+  // Gemini 1.5 (legacy)
   'gemini-1.5-pro-002',
   'gemini-1.5-flash-002',
   'gemini-1.5-pro',
   'gemini-1.5-flash',
   'gemini-pro',
   'gemini-flash',
+  // Embedding models
   'text-embedding-004',
+  'gemini-embedding-001',
+  'gemini-embedding-2-preview',
+  // Imagen 4 family
+  'imagen-4.0-generate-001',
+  'imagen-4.0-ultra-generate-001',
+  'imagen-4.0-fast-generate-001',
+  // Imagen 3 (legacy fallback)
   'imagen-3.0-generate-001',
   'imagen-3',
-  'imagen-3-fast'
+  'imagen-3-fast',
 ]);
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';

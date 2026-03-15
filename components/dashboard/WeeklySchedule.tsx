@@ -48,8 +48,6 @@ export const WeeklySchedule: React.FC = () => {
     }, [items]);
 
     const handleItemClick = (item: PlannerItem) => {
-  const { t } = useLanguage();
-
         if (item.type === PlannerItemType.LESSON && item.lessonPlanId) {
             showModal(ModalType.LessonQuickView, { lessonPlanId: item.lessonPlanId });
         } else {

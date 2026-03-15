@@ -4,6 +4,7 @@ import * as classroomMethods from './firestoreService.classroom';
 import * as materialsMethods from './firestoreService.materials';
 import * as liveMethods from './firestoreService.live';
 import { spacedRepService } from './firestoreService.spacedRep';
+import * as chatMethods from './firestoreService.chat';
 
 export * from './firestoreService.types';
 export * from './firestoreService.school';
@@ -12,6 +13,7 @@ export * from './firestoreService.classroom';
 export * from './firestoreService.materials';
 export * from './firestoreService.live';
 export * from './firestoreService.spacedRep';
+export * from './firestoreService.chat';
 
 export const firestoreService = {
   ...schoolService,
@@ -20,4 +22,5 @@ export const firestoreService = {
   ...materialsMethods,
   ...liveMethods,
   ...spacedRepService,
+  ...chatMethods,
 };
