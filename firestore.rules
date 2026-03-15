@@ -10,23 +10,22 @@ service cloud.firestore {
     function isOwner(uid) {
       return isAuthenticated() && request.auth.uid == uid;
     }
-    
+
     // Fetch the user's document to check their role/school
     function getUserData() {
-      // Use firestore built-in string template syntax
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-    
+
     // Check if user has specific role
     function isRole(expectedRole) {
       return isAuthenticated() && getUserData().role == expectedRole;
     }
-    
-    // Global admin can do anything, school_admin can manage their school
+
+    // Global admin can do anything
     function isAdmin() {
       return isRole('admin');
     }
-    
+
     function isSchoolAdmin(schoolId) {
       return (isRole('school_admin') || isRole('admin')) && getUserData().schoolId == schoolId;
     }
@@ -36,6 +35,11 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 
+    // Google-authenticated user (not anonymous)
+    function isGoogleUser() {
+      return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
     // Teacher owns the document by teacherUid field
     function isDocOwner() {
       return isAuthenticated() && resource.data.teacherUid == request.auth.uid;
@@ -43,9 +47,8 @@ service cloud.firestore {
 
     // ── Кориснички профили (users) ──
     match /users/{uid} {
-      // Users can read their own profiles. Admins can read all.
       allow read: if isOwner(uid) || isAdmin() || (isAuthenticated() && resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId));
-      
+
       // Prevent client-side manipulation of credits, subscription flags, and role
       allow create: if isOwner(uid) || isAdmin();
       allow update: if isAdmin() || (
@@ -54,18 +57,14 @@ service cloud.firestore {
           'aiCreditsBalance', 'tier', 'isPremium', 'hasUnlimitedCredits', 'role'
         ]))
       );
-      
       allow delete: if isAdmin();
 
-      // Сите суб-колекции кај корисникот (планови, зачувани прашања итн.)
       match /{document=**} {
         allow read, write: if isOwner(uid) || isAdmin();
       }
     }
 
     // ── Квиз резултати (quiz_results) ──
-    // read: teacher sees only their own students; anonymous students can read for StudentProgressView;
-    //       school admins see their school; global admin sees all.
     match /quiz_results/{doc} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
@@ -75,16 +74,22 @@ service cloud.firestore {
       );
       allow create: if isAuthenticated()
                     && request.resource.data.keys().hasAll(['studentName', 'percentage', 'conceptId']);
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confidence'])
-                    && request.resource.data.confidence is int
-                    && request.resource.data.confidence >= 1
-                    && request.resource.data.confidence <= 5;
+      // Allow students to self-assess (confidence 1-5) or save metacognitive notes
+      allow update: if isAuthenticated() && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confidence'])
+          && request.resource.data.confidence is int
+          && request.resource.data.confidence >= 1
+          && request.resource.data.confidence <= 5
+      ) || (
+        isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['metacognitiveNote'])
+          && request.resource.data.metacognitiveNote is string
+      );
       allow delete: if isAdmin();
     }
 
     // ── Кеширани AI материјали (cached_ai_materials) ──
     // read: public — students (anonymous auth) must be able to play assigned quizzes
-    // write: only the owning teacher; if no teacherUid set (legacy docs), any authenticated user
     match /cached_ai_materials/{doc} {
       allow read:   if true;
       allow create: if isAuthenticated();
@@ -97,9 +102,6 @@ service cloud.firestore {
     }
 
     // ── Задачи (assignments) ──
-    // create/read: teacher who owns the assignment, anonymous students see assigned
-    // update: any authenticated user can add themselves to completedBy (student marking done)
-    // delete: only the owning teacher
     match /assignments/{doc} {
       allow read: if isAuthenticated() && (
         isDocOwner() ||
@@ -116,8 +118,6 @@ service cloud.firestore {
     }
 
     // ── Совладување на концепти (concept_mastery) ──
-    // read: same isolation as quiz_results — teacher sees own, anonymous students see all (for progress view),
-    //       school admin sees school, global admin sees all.
     match /concept_mastery/{doc} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
@@ -126,14 +126,23 @@ service cloud.firestore {
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
       allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']);
-      allow update: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName', 'conceptId']);
+      // Only the owning teacher, anonymous students (quiz completion), or admin may update
+      allow update: if isAuthenticated() && (
+        isDocOwner() ||
+        isAnonymousStudent() ||
+        isAdmin()
+      ) && request.resource.data.keys().hasAll(['studentName', 'conceptId']);
       allow delete: if isAdmin();
     }
 
     // ── Заедничка библиотека на планови (communityLessonPlans) ──
     match /communityLessonPlans/{doc} {
-      allow read:  if true;
-      allow write: if isAuthenticated();
+      allow read:   if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        !('teacherUid' in resource.data) || resource.data.teacherUid == request.auth.uid || isAdmin()
+      );
+      allow delete: if (isAuthenticated() && resource.data.teacherUid == request.auth.uid) || isAdmin();
     }
 
     // ── Гамификација (student_gamification) ──
@@ -146,7 +155,10 @@ service cloud.firestore {
         (resource.data.schoolId != null && isSchoolAdmin(resource.data.schoolId))
       );
       allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['studentName']);
-      allow update: if isAuthenticated() && resource.data.studentName == request.resource.data.studentName;
+      // Prevent changing studentName; only the anonymous student or teacher-owner may update
+      allow update: if isAuthenticated() && (
+        isAnonymousStudent() || isDocOwner() || isAdmin()
+      ) && resource.data.studentName == request.resource.data.studentName;
       allow delete: if isAdmin();
     }
 
@@ -159,7 +171,6 @@ service cloud.firestore {
 
     // ── Live сесии (live_sessions) ──
     // read: public — students need to find session by join code before they authenticate
-    // update: active sessions can be updated by authenticated users (students joining)
     match /live_sessions/{doc} {
       allow read:   if true;
       allow create: if isAuthenticated();
@@ -167,8 +178,26 @@ service cloud.firestore {
       allow delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
+    // ── Live квизови (live_quizzes) ──
+    // read: public — students join by PIN before auth
+    // participants subcollection: any authenticated user can add themselves
+    match /live_quizzes/{pin} {
+      allow read:   if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+
+      match /participants/{participantId} {
+        allow read:   if true;
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated() && (
+          resource.data.participantId == participantId || isAdmin()
+        );
+        allow delete: if isAdmin();
+      }
+    }
+
     // ── Класови (classes) ──
-    // Strict isolation: teachers see only their own classes; school admins see school's classes.
     match /classes/{doc} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
@@ -184,7 +213,6 @@ service cloud.firestore {
       allow read:   if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
-      // Allow marking as public (when published to national library)
       allow update: if isAuthenticated() && resource.data.teacherUid == request.auth.uid &&
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic', 'isVerified', 'verifiedAt']);
     }
@@ -202,19 +230,18 @@ service cloud.firestore {
       allow update: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
-    // ── Училишта (schools) - ЗА MULTI-TENANT ──
+    // ── Училишта (schools) ──
     match /schools/{schoolId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
-      
+
       match /{document=**} {
         allow read: if isAuthenticated();
         allow write: if isSchoolAdmin(schoolId) || isAdmin();
       }
     }
 
-    // ── Белешки на наставник по концепт (teacher_notes) — Г3-alt ──
-    // Doc ID = {teacherUid}_{conceptId}. Only the owning teacher can read/write.
+    // ── Белешки на наставник по концепт (teacher_notes) ──
     match /teacher_notes/{docId} {
       allow read:   if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
       allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
@@ -222,8 +249,8 @@ service cloud.firestore {
       allow delete: if (isAuthenticated() && resource.data.teacherUid == request.auth.uid) || isAdmin();
     }
 
-    // ── Идентитет на ученик (student_identity) — А1 ──
-    // Document ID = deviceId. Only the owning anonymous user or device can read/write.
+    // ── Идентитет на ученик (student_identity) ──
+    // Document ID = deviceId. Only the owning anonymous user can read/write.
     match /student_identity/{deviceId} {
       allow read:   if isAuthenticated() && (
         request.auth.uid == resource.data.anonymousUid
@@ -233,11 +260,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ── Национална Библиотека (national_library) — И4 ──
-    // read: any authenticated user (teachers across all schools)
-    // create: any authenticated teacher (publish verified question)
-    // update: only the publisher (importCount bump) or admin
-    // delete: only the publisher or admin
+    // ── Национална Библиотека (national_library) ──
     match /national_library/{doc} {
       allow read:   if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.publishedByUid == request.auth.uid;
@@ -247,6 +270,66 @@ service cloud.firestore {
         isAdmin()
       );
       allow delete: if (isAuthenticated() && resource.data.publishedByUid == request.auth.uid) || isAdmin();
+    }
+
+    // ── Студентски акаунт (student_accounts) — С1 ──
+    // Document ID = Google UID. Cross-device student profile.
+    match /student_accounts/{uid} {
+      // Only the owning Google-authenticated student or admin may read
+      allow read:   if isOwner(uid) || isAdmin();
+      // Only the authenticated user may create their own account doc
+      allow create: if isOwner(uid) && isGoogleUser()
+                    && request.resource.data.keys().hasAll(['name', 'linkedDeviceIds']);
+      // Owner may update (add devices, change name); admin may update
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Годишни планови (academic_annual_plans) ──
+    // Public gallery — all authenticated teachers can browse; owner can edit/delete.
+    match /academic_annual_plans/{doc} {
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        // Allow bumping likes/forks counters by any authenticated user
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'forks']) ||
+        isAdmin()
+      );
+      allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    // ── AI Chat сесии (chat_sessions) ──
+    // Private to the owning teacher.
+    match /chat_sessions/{doc} {
+      allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
+      allow delete: if (isAuthenticated() && resource.data.teacherUid == request.auth.uid) || isAdmin();
+    }
+
+    // ── Интервали за повторување (spaced_rep) ──
+    // Doc ID = {studentId}_{conceptId}. Written by anonymous student or teacher.
+    match /spaced_rep/{doc} {
+      allow read:   if isAuthenticated() && (isAnonymousStudent() || isAdmin() || isDocOwner());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isAnonymousStudent() || isDocOwner() || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ── Повратна информација за материјали (material_feedback) ──
+    match /material_feedback/{doc} {
+      allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.teacherUid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // ── Push нотификациски токени (user_tokens) ──
+    // Doc ID = {uid}_web. Only the owning user may read/write their token.
+    match /user_tokens/{tokenDoc} {
+      allow read:   if isAuthenticated() && tokenDoc.matches(request.auth.uid + '.*');
+      allow write:  if isAuthenticated() && tokenDoc.matches(request.auth.uid + '.*');
     }
 
     // Сè друго: одбиено
