@@ -344,14 +344,14 @@ export const StudentPlayView: React.FC = () => {
 
   const handleQuizComplete = async (score: number, correctCount: number, totalQuestions: number, misconceptions?: { question: string; studentAnswer: string; misconception: string }[]) => {
     const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
-    const meta = quizData._meta || {};
+    const meta = quizData!._meta || {};
 
     // 1. Save quiz result
     let savedDocId = '';
     try {
       savedDocId = await firestoreService.saveQuizResult({
         quizId: id || 'unknown',
-        quizTitle: quizData.title || 'Квиз',
+        quizTitle: quizData!.title || 'Квиз',
         score,
         correctCount,
         totalQuestions,
@@ -362,7 +362,7 @@ export const StudentPlayView: React.FC = () => {
         studentName: studentName || undefined,
         teacherUid: meta.teacherUid,
         deviceId,
-        differentiationLevel: meta.differentiationLevel,
+        differentiationLevel: meta.differentiationLevel as DifferentiationLevel | undefined,
         misconceptions
       });
     } catch (err) {
@@ -379,7 +379,7 @@ export const StudentPlayView: React.FC = () => {
           meta.conceptId,
           percentage,
           {
-            conceptTitle: concept?.title ?? quizData.title,
+            conceptTitle: concept?.title ?? quizData!.title,
             topicId: meta.topicId,
             gradeLevel: meta.gradeLevel,
           },
@@ -714,7 +714,7 @@ export const StudentPlayView: React.FC = () => {
               <InteractiveQuizPlayer
                 title={quizData.title || 'Квиз'}
                 questions={(quizData.items || quizData.questions || []).map((item: QuizItem) => ({
-                  question: item.text || item.question,
+                  question: item.text || item.question || '',
                   options: item.options || [item.answer, 'Грешка 1', 'Грешка 2', 'Грешка 3'].sort(() => Math.random() - 0.5),                                                                                 
                   answer: item.answer,
                   explanation: item.solution || item.explanation,

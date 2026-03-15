@@ -40,7 +40,8 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
         }
         
         try {
-            const generatedItems = await geminiService.generateAnnualPlan(selectedGrade, startDate, endDate, holidays, {start: winterBreakStart, end: winterBreakEnd});
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const generatedItems = await (geminiService as any).generateAnnualPlan(selectedGrade, startDate, endDate, holidays, {start: winterBreakStart, end: winterBreakEnd}) as any[];
             
             setIsLoading(false);
 

@@ -37,7 +37,7 @@ export const ModalManager: React.FC = () => {
           return <AIAnnualPlanGeneratorModal {...props} />;
       
       case ModalType.AIThematicPlanGenerator:
-          return <AIThematicPlanGeneratorModal {...props} />;
+          return <AIThematicPlanGeneratorModal {...props} hideModal={hideModal} />;
       
       case ModalType.LessonReflection:
           return <LessonReflectionModal {...(props as { item: PlannerItem })} />;

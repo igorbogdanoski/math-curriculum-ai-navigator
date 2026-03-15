@@ -92,7 +92,7 @@ export const AnnualPlanGeneratorView: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [plan, setPlan] = useState<AIGeneratedAnnualPlan | null>(null);
 
-    const { user, updateLocalProfile } = useAuth();
+    const { user, firebaseUser, updateLocalProfile } = useAuth();
     const printRef = useRef<HTMLDivElement>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [savedId, setSavedId] = useState<string | null>(null);
@@ -126,7 +126,7 @@ export const AnnualPlanGeneratorView: React.FC = () => {
         setIsSaving(true);
         try {
             const docRef = await addDoc(collection(db, 'academic_annual_plans'), {
-                userId: user.uid,
+                userId: firebaseUser?.uid,
                 createdAt: serverTimestamp(),
                 planData: plan,
                 grade: plan.grade,

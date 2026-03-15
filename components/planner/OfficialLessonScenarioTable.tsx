@@ -85,8 +85,8 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                   <h4 className="font-bold underline mb-2">Воведна активност:</h4>
                   <div className="pl-2 space-y-2">
                     <MathRenderer text={getStepText(plan.scenario?.introductory || (plan as any).scenario?.intro || '')} />
-                    {(plan.scenario?.introductory?.duration || (plan as any).scenario?.intro?.duration) && (
-                       <p className="mt-2 font-bold italic">({plan.scenario?.introductory?.duration || (plan as any).scenario?.intro?.duration})</p>
+                    {((plan.scenario?.introductory as any)?.duration || (plan as any).scenario?.intro?.duration) && (
+                       <p className="mt-2 font-bold italic">({(plan.scenario?.introductory as any)?.duration || (plan as any).scenario?.intro?.duration})</p>
                     )}
                   </div>
                 </section>
@@ -124,8 +124,8 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                       <span className="font-bold">Домашна работа:</span>
                       <p className="italic">Учениците треба да ги завршат задачите од работниот лист.</p>
                     </div>
-                    {(plan.scenario?.concluding?.duration || (plan as any).scenario?.conclusion?.duration) && (
-                       <p className="mt-2 font-bold italic">({plan.scenario?.concluding?.duration || (plan as any).scenario?.conclusion?.duration})</p>
+                    {((plan.scenario?.concluding as any)?.duration || (plan as any).scenario?.conclusion?.duration) && (
+                       <p className="mt-2 font-bold italic">({(plan.scenario?.concluding as any)?.duration || (plan as any).scenario?.conclusion?.duration})</p>
                     )}
                   </div>
                 </section>

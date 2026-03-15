@@ -22,7 +22,7 @@ interface SavedPlan {
 export const AnnualPlanGalleryView: React.FC = () => {
     const [plans, setPlans] = useState<SavedPlan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const { user } = useAuth();
+    const { user, firebaseUser } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
@@ -75,7 +75,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
             
             // 1. Add to user's personalized DB
             await addDoc(collection(db, 'academic_annual_plans'), {
-                userId: user.uid,
+                userId: firebaseUser?.uid,
                 createdAt: serverTimestamp(),
                 planData: newPlanData,
                 grade: plan.grade,
@@ -139,7 +139,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredPlans.map(plan => (
                         <Card key={plan.id} className="relative group overflow-hidden hover:shadow-lg transition-shadow">
-                            {plan.userId === user?.uid && (
+                            {plan.userId === firebaseUser?.uid && (
                                 <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10">
                                     ВАШ ПЛАН
                                 </div>
@@ -187,9 +187,8 @@ export const AnnualPlanGalleryView: React.FC = () => {
                                     </button>
                                 </div>
                                 
-                                <button 
-                                    variant="outline" 
-                                    size="sm"
+                                <button
+                                    className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
                                     onClick={() => alert('Опцијата за детален преглед е во изработка.')}
                                 >
                                     Преглед
