@@ -186,12 +186,32 @@
 - Неделен автоматски email извештај (Cloud Functions)
 - Мобилно-оптимизиран (родителите гледаат на телефон, не на компјутер)
 
-### П-Б — Misconception → Ремедијација (TeacherAnalyticsView)
-**Статус:** ⬜ Не започнато
+### П-Б — Misconception → Ремедијација (TeacherAnalyticsView) ✅ ЗАВРШЕНО
 
-- „Ремедијација" копче во TeacherAnalyticsView до секоја misconception
-- AI генерира таргетирана мини-лекција со worked example
-- Испраќање директно до засегнатите ученици
+**Commit:** `f587e1d`
+**Датум:** 15 Март 2026
+
+**Имплементирано:**
+
+- `shared.tsx` — `ConceptStat.strugglingStudents?: string[]` (ученици со <70%)
+- `TeacherAnalyticsView.tsx` — `failedStudents` Set во агрегација, `classes` fetch, `handleShowAssignRemedial`
+- `ConceptsTab.tsx` — orange chips за засегнати ученици + „Додели на засегнати" копче (портокалово)
+- `AssignRemedialModal.tsx` — нова компонента: misconceptions preview, class picker, checkboxes (pre-checked), due date, 3-чекорен прогрес (generating→saving→assigning)
+- `geminiService.real.ts` — `generateTargetedRemedialQuiz` — 6 MC прашања насочени кон конкретните грешки
+
+### П-Ѓ — Диференцирани нивоа 3 таба ✅ ЗАВРШЕНО
+
+**Commit:** `4ba6781`
+**Датум:** 15 Март 2026
+
+**Имплементирано:**
+
+- `useGeneratorState.ts` — `generateAllLevels: boolean` поле во `GeneratorState`
+- `useGeneratorActions.ts` — кога `generateAllLevels=true` и ASSESSMENT/QUIZ, `Promise.all([standard, support, advanced])` паралелно → merge во `differentiatedVersions[]`
+- `MaterialOptions.tsx` — „🎯 Генерирај сите 3 нивоа" gradient toggle (само за ASSESSMENT/QUIZ), ги крие single-level radio копчиња кога е активен
+- `GeneratedAssessment.tsx` — постоечките табови (Стандардна/Поддршка/Предизвик) се прикажуваат автоматски
+
+---
 
 ### П-В — Официјален МОН Curriculum Mapping
 **Статус:** ⬜ Не започнато
@@ -200,12 +220,17 @@
 - Dashboard „Покриеност на наставната програма" по одделение
 - PDF потврда за покриеност на стандарди
 
-### П-Г — IEP Поддршка
-**Статус:** ⬜ Не започнато
+### П-Г — IEP Поддршка ✅ ЗАВРШЕНО
 
-- Флаг „ученик со посебни потреби" (само наставникот гледа)
-- Поедноставен UI: поголем текст, визуелни помагала, без тајмер
-- IEP прогрес извештај (PDF)
+**Commit:** `b680dbb`
+**Датум:** 15 Март 2026
+
+**Имплементирано:**
+
+- `SchoolClass.iepStudents?: string[]` — листа на ученици со ИЕП (само наставникот гледа)
+- `fetchClassById` + `toggleIEPStudent` — нови service функции во `firestoreService.classroom.ts`
+- `ClassesTab.tsx` — 🧩 виолетов chip за ИЕП ученици, toggle копче, резиме линија
+- `StudentPlayView.tsx` — при вчитување се детектира ИЕП статус преку `fetchClassById`, се прикажува „🧩 Без ограничување на времето" банер и поголем текст за ИЕП ученици
 
 ### П-Д — Teacher Mentorship
 **Статус:** ⬜ Не започнато
@@ -329,7 +354,7 @@ IndexedDB (sync)
                                           ↓
                               И1 ✅  →  И2 ✅  →  И3 ✅
                                           ↓
-                              П-Б ⬜ →  П-А ⬜  →  П-В ⬜  →  П-Г ⬜
+                              П-Б ✅ →  П-Ѓ ✅  →  П-Г ✅  →  П-В ⬜  →  П-А ⬜
                                           ↓
                               О1 🟡  →  О2 ⬜  →  О3 ⬜
                                           ↓
