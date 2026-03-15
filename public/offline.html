@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Офлајн — Math Navigator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #F9FAFB;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #1e293b;
+      padding: 24px;
+      text-align: center;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px 32px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 4px 24px rgba(13,71,161,0.10);
+      border: 1px solid #e2e8f0;
+    }
+    .icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0D47A1;
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 15px;
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .tip {
+      margin-top: 20px;
+      padding: 14px 16px;
+      background: #EFF6FF;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #1d4ed8;
+    }
+    .retry-btn {
+      margin-top: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0D47A1;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .retry-btn:hover { background: #1565C0; }
+    .sigma {
+      display: inline-block;
+      width: 72px;
+      height: 72px;
+      background: #0D47A1;
+      border-radius: 16px;
+      color: white;
+      font-size: 44px;
+      font-family: serif;
+      font-weight: bold;
+      line-height: 72px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="sigma">∑</div>
+    <h1>Нема интернет поврзаност</h1>
+    <p>Изгледа дека сте офлајн. Вашата работа е зачувана локално и ќе се синхронизира автоматски кога ќе се поврзете.</p>
+    <div class="tip">
+      💡 <strong>Совет:</strong> Резултатите од квизовите се зачуваат на уредот и автоматски се испраќаат кога интернетот ќе се врати.
+    </div>
+    <button class="retry-btn" onclick="window.location.reload()">
+      ↻ Обиди се повторно
+    </button>
+  </div>
+</body>
+</html>

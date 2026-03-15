@@ -204,7 +204,7 @@ export default defineConfig(({ mode }) => {
         react(),
         VitePWA({
           registerType: 'autoUpdate',
-          includeAssets: ['vite.svg'],
+          includeAssets: ['icon-192.svg', 'icon-512.svg', 'offline.html'],
           manifest: {
             short_name: "Math Nav",
             name: "Math Curriculum AI Navigator",
@@ -213,9 +213,15 @@ export default defineConfig(({ mode }) => {
             dir: "ltr",
             icons: [
               {
-                src: "/vite.svg",
+                src: "/icon-192.svg",
                 type: "image/svg+xml",
-                sizes: "192x192 512x512",
+                sizes: "192x192",
+                purpose: "any"
+              },
+              {
+                src: "/icon-512.svg",
+                type: "image/svg+xml",
+                sizes: "512x512",
                 purpose: "any maskable"
               }
             ],
@@ -227,8 +233,11 @@ export default defineConfig(({ mode }) => {
             background_color: "#F9FAFB"
           },
           workbox: {
-            maximumFileSizeToCacheInBytes: 4000000, 
+            maximumFileSizeToCacheInBytes: 5000000,
             globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+            // Show offline page when navigation request fails
+            navigateFallback: '/offline.html',
+            navigateFallbackDenylist: [/^\/api\//, /^\/admin\//],
             runtimeCaching: [
               {
                 urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- Background -->
+  <rect width="192" height="192" rx="32" fill="#0D47A1"/>
+  <!-- Sigma symbol (∑) -->
+  <text x="96" y="130" font-family="serif" font-size="110" font-weight="bold" fill="white" text-anchor="middle">∑</text>
+  <!-- Small AI spark accent -->
+  <circle cx="148" cy="44" r="10" fill="#FFD600"/>
+  <text x="148" y="49" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0D47A1" text-anchor="middle">AI</text>
+</svg>
