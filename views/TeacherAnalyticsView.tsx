@@ -58,7 +58,7 @@ export const TeacherAnalyticsView: React.FC = () => {
             setHasMore(analyticsData.lastDoc !== null);
         }
     }, [analyticsData]);
-    const { getConceptDetails, getStandardsByIds, allConcepts } = useCurriculum();
+    const { getConceptDetails, allConcepts, allNationalStandards } = useCurriculum();
     const { openGeneratorPanel } = useGeneratorPanel();
     const [copiedName, setCopiedName] = useState<string | null>(null);
     const [aiRecs, setAiRecs] = useState<any[] | null>(null);
@@ -472,33 +472,46 @@ export const TeacherAnalyticsView: React.FC = () => {
     }, [localResults, masteryRecords]);
 
     const standardsCoverage = useMemo(() => {
-        if (localResults.length === 0) return { tested: [], notTested: [] };
-
+        // Build concept avg map from quiz results
         const testedConceptIds = Array.from(new Set(localResults.filter(r => r.conceptId).map(r => r.conceptId!)));
-        const testedStandardIds = new Set<string>();
         const conceptAvg: Record<string, number> = {};
-
         testedConceptIds.forEach(cid => {
-            const { concept } = getConceptDetails(cid);
-            concept?.nationalStandardIds?.forEach(sid => testedStandardIds.add(sid));
             const conceptResults = localResults.filter(r => r.conceptId === cid);
             if (conceptResults.length > 0) {
                 conceptAvg[cid] = Math.round(conceptResults.reduce((s, r) => s + r.percentage, 0) / conceptResults.length);
             }
         });
 
-        const testedStandards = getStandardsByIds(Array.from(testedStandardIds)).map(s => {
-            const linkedConcepts = testedConceptIds
-                .filter(cid => getConceptDetails(cid).concept?.nationalStandardIds?.includes(s.id))
-                .map(cid => ({ cid, avg: conceptAvg[cid] ?? 0 }));
-            const avgScore = linkedConcepts.length > 0
-                ? Math.round(linkedConcepts.reduce((sum, c) => sum + c.avg, 0) / linkedConcepts.length)
+        // Full coverage: all national standards with 3-tier status
+        const all = (allNationalStandards || []).map(s => {
+            // Concepts covering this standard (bidirectional: relatedConceptIds + Concept.nationalStandardIds)
+            const coveringConceptIds = Array.from(new Set([
+                ...(s.relatedConceptIds || []),
+                ...allConcepts.filter(c => c.nationalStandardIds?.includes(s.id)).map(c => c.id),
+            ]));
+            const isCovered = coveringConceptIds.length > 0;
+            const testedForStd = coveringConceptIds.filter(cid => testedConceptIds.includes(cid));
+            const isTested = testedForStd.length > 0;
+            const avgScore = isTested
+                ? Math.round(testedForStd.reduce((sum, cid) => sum + (conceptAvg[cid] ?? 0), 0) / testedForStd.length)
                 : 0;
-            return { standard: s, avgScore, conceptCount: linkedConcepts.length };
-        }).sort((a, b) => a.avgScore - b.avgScore);
+            const stdMasteredCount = coveringConceptIds.reduce((sum, cid) =>
+                sum + masteryRecords.filter(m => m.conceptId === cid && m.mastered).length, 0);
+            const coveringConcepts = coveringConceptIds.map(cid => {
+                const { concept } = getConceptDetails(cid);
+                return { id: cid, title: concept?.title || cid, avgPct: conceptAvg[cid] };
+            });
+            return { standard: s, isCovered, isTested, avgScore, masteredCount: stdMasteredCount, coveringConcepts };
+        });
 
-        return { tested: testedStandards, notTested: [] };
-    }, [localResults, getConceptDetails, getStandardsByIds]);
+        // Backward-compat tested list
+        const tested = all
+            .filter(s => s.isTested)
+            .map(s => ({ standard: { id: s.standard.id, code: s.standard.code, description: s.standard.description }, avgScore: s.avgScore, conceptCount: s.coveringConcepts.length }))
+            .sort((a, b) => a.avgScore - b.avgScore);
+
+        return { tested, notTested: [], all };
+    }, [localResults, allNationalStandards, allConcepts, getConceptDetails, masteryRecords]);
 
     // ── Render ────────────────────────────────────────────────────────────────
 
