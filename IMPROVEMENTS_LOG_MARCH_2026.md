@@ -222,6 +222,77 @@ InfographicPreviewModal → base64 PNG preview + Download копче
 
 ---
 
+## 🔬 ФАЗА 16: Длабинска Мултидимензионална Ревизија (15 Март 2026)
+
+> **Цел**: Издигнување на апликацијата над светскиот просек преку системски audit и поправки на сите идентификувани технички, UX и архитектурни недостатоци.
+
+### ✅ Завршени Подобрувања
+
+| ID | Компонента | Проблем | Решение |
+|----|------------|---------|---------|
+| A1 | `MathToolsPanel` | GeoGebra/Desmos — нема loading state; корисникот гледа празен прозорец 2-3s | Animate-pulse skeleton за двете алатки додека `ready === false` |
+| A1 | `MathToolsPanel` | Нема error state кога CDN e offline | `ErrorFallback` компонент со WifiOff икона + „Обиди се повторно" копче; retry преку `retryKey` state |
+| A2 | `DigitalScratchpad` | Нацртот исчезнува при затворање на панелот | `localStorage.setItem('math_scratchpad_v1', canvas.toDataURL())` — debounced 800ms по секој потег; restore при mount |
+| A2 | `DigitalScratchpad` | Inline CSS стилови за grid/lines/dots | Извлечени во `app.css` (`.scratchpad-bg-grid`, `.scratchpad-bg-lines`, `.scratchpad-bg-dots`) |
+| A3 | `MathToolsPanel` | GeoGebra/Desmos boolean flag singleton — race condition при concurrent mounts | Заменет со Promise singleton (`ggbLoadPromise`, `desmosLoadPromise`); грешката ја поништува Promise-от за retry |
+| A4 | `DailyBriefCard` | Refresh копче | Веќе постоеше (`useDailyBrief.refresh`) — потврдено ✅ |
+| A5 | `gemini/core.ts` | `callGeminiProxy` — 429 ги фрлаше генеричка грешка | Typed error handling: 429→`RateLimitError`+`markDailyQuotaExhausted()`, 401/403→`AuthError`, 5xx→`ServerError` |
+| A5 | `gemini/core.ts` | Мртов код: `GoogleGenerativeAI` import + `genAI` декларација | Отстранети — целото SDK оди преку server proxy |
+| A5 | `gemini/core.ts` | Неискористени schemas import блок | Отстранет (11 schemas кои не се користеа во `core.ts`) |
+| A6 | `utils/schemas.ts` | Нема Zod schemas за `generateDailyBrief`, `generateWorkedExample`, reflection | Додадени: `DailyBriefSchema`, `WorkedExampleSchema`, `ReflectionSummarySchema` |
+| A6 | `geminiService.real.ts` | 3 клучни AI функции без Zod validation | Поврзани: `generateDailyBrief`→`DailyBriefSchema`, `generateWorkedExample`→`WorkedExampleSchema`, reflection→`ReflectionSummarySchema` |
+| A6 | `geminiService.real.ts` | **🔴 Критичен баг**: `askTutor(message, history)` — `message` параметарот не се додаваше кон `contents`! Студентовото прашање не стигнуваше до AI | Поправено: `message` се додава како последна `user` порака во `contents` |
+| A6 | `geminiService.real.ts` | 10+ unused parameters и variables | Префиксирани со `_` или отстранети |
+| A7 | `MathToolsPanel` | Нема Escape тастер | `useEffect` keydown listener: Escape → прво излез од fullscreen, потоа затвори панелот |
+| A7 | `MathToolsPanel` | `isExpanded` state не се ресетираше при close | `handleClose()` wrapper: `setIsExpanded(false)` + `onClose?.()` |
+| A7 | `MathToolsPanel` | z-index буг: Expand во `LessonPlanEditorView` (z-60 modal) — панелот se криеше зад backdrop | `z-[200]` наместо `z-50` |
+| A7 | `MathToolsPanel` | GeoGebra memory leak при unmount | DOM cleanup: `containerRef.current.innerHTML = ''` + `appletRef.current = null` |
+| A7 | Coverage | `ModalContainer` — WCAG-compliant Escape + focus trap | Потврдено дека сите модали го користат ✅ |
+
+### 🏗️ Архитектурни Детали
+
+#### MathToolsPanel — Нова Архитектура
+
+```text
+Script Loading (Promise singleton, thread-safe):
+  loadGgbScript()    → ggbLoadPromise   (единствен Promise, retry on error)
+  loadDesmosScript() → desmosLoadPromise
+
+State flow per panel:
+  init → loading skeleton → ready (applet injected) → normal UI
+                          ↘ error (CDN down)         → ErrorFallback + Retry button
+
+Cleanup:
+  GeoGebra: containerRef.innerHTML = '' + appletRef = null
+  Desmos:   calcRef.destroy() + calcRef = null
+
+Escape handling:
+  Esc pressed → if isExpanded → setIsExpanded(false)
+              → else          → onClose?.()
+  handleClose: setIsExpanded(false) + onClose?.()  ← resets state before unmount
+```
+
+#### askTutor Bug Fix
+
+```text
+ПРЕД (broken):
+  contents = history.map(...)  ← message параметарот ИГНОРИРАН
+
+ПОСЛЕ (fixed):
+  contents = [...history.map(...), { role: 'user', parts: [{ text: message }] }]
+```
+
+#### Quota Guard — Typed Errors
+
+```text
+Server 429     → RateLimitError + markDailyQuotaExhausted()
+Server 401/403 → AuthError
+Server 5xx     → ServerError
+Catch block    → if (err instanceof ApiError) throw err  // не се логира двапати
+```
+
+---
+
 ## 🎯 ФАЗА 15: World-Class Pedagogy & Polish (15 Март 2026)
 
 > **Визија**: Да станеме најдобрата EdTech апликација за математика во регионот и пошироко.
@@ -248,17 +319,20 @@ InfographicPreviewModal → base64 PNG preview + Download копче
 ### 🧠 Дијагностицирани Критични Дефицити
 
 #### Формативен циклус — Непотполн
-```
+
+```text
 Quiz резултати → DailyBrief (прикажано)
                               ↓ НЕДОСТАСУВА
                     Auto-queue на следен концепт
                     Auto-генерација на ремедијална активност
 ```
+
 **Решение (П-А + П-Б)**: По секој квиз со слаб резултат (<70%) системот
 автоматски нуди „Следен чекор" card + 1-click ремедијален квиз насочен точно
 на грешните прашања (misconceptions[]).
 
 #### Диференцијација — Само слободен текст
+
 ```typescript
 // СЕГАШНА СОСТОЈБА (types.ts):
 differentiation?: string  // ← наставникот не знае штo да пишува
@@ -272,14 +346,16 @@ differentiation?: {
 ```
 
 #### Цели на часот — Педагошки неструктурирани
-```
+
+```text
 СЕГАШНО: "Учениците ќе разберат дропки"  ← неизмерливо
 РЕШЕНИЕ (П-В): Bloom ниво dropdown + глагол-предлози + мерлив исход поле
 → "Учениците ќе АНАЛИЗИРААТ (Bloom 4) еквивалентни дропки преку 3 нумерички примери"
 ```
 
 #### Погрешки — Прикажани но не искористени
-```
+
+```text
 СЕГАШНО: misconceptions[] → само листа во аналитиките
 РЕШЕНИЕ (П-Б): misconceptions[] → "Генерирај ремедијација" копче
 → geminiService.generateRemediaQuiz(misconceptions) → таргетиран квиз

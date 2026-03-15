@@ -1,23 +1,9 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 import { GenerationContext } from '../../types';
 import { ragService } from '../ragService';
-import { 
-    AIGeneratedIdeasSchema,
-    AIGeneratedAssessmentSchema,
-    AIGeneratedPracticeMaterialSchema,
-    AIGeneratedThematicPlanSchema,
-    AIGeneratedRubricSchema,
-    AIGeneratedLearningPathsSchema,
-    CoverageAnalysisSchema,
-    AIRecommendationSchema,
-    AIPedagogicalAnalysisSchema,
-    AnnualPlanSchema,
-    GeneratedTestSchema
-} from '../../utils/schemas';
 import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 
 // --- CONSTANTS ---
@@ -41,11 +27,8 @@ export const AI_COSTS = {
     ANNUAL_PLAN: 10    // Full year curriculum planning
 };
 
-// Initialize the Generative AI with the API Key from environment
-// VITE_ prefix is used for client-side access, but for security, 
-// we'll prefer the proxy/server-side for sensitive operations if possible.
-// For now, we use the key directly as it was in .env.local
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
+// All AI calls go through the server-side proxy (/api/gemini).
+// The client-side SDK is not used directly.
 
 // --- TYPES FOR INTERNAL USE ---
 export enum Type {
@@ -336,12 +319,25 @@ export async function callGeminiProxy(params: {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error: ${response.status}`);
+        if (response.status === 429) {
+          markDailyQuotaExhausted();
+          throw new RateLimitError(
+            'AI квотата е привремено исцрпена. Обидете се повторно по неколку минути или утре.'
+          );
+        }
+        if (response.status === 401 || response.status === 403) {
+          throw new AuthError(errorData.error || 'Проблем со автентикација.');
+        }
+        if (response.status >= 500) {
+          throw new ServerError(errorData.error || `Серверска грешка (${response.status}).`);
+        }
+        throw new ApiError(errorData.error || `Грешка: ${response.status}`);
       }
 
       return await response.json();
     } catch (err: any) {
       if (err.name === 'AbortError') throw err;
+      if (err instanceof ApiError) throw err; // Already typed — propagate as-is
       console.error("Gemini Proxy Error:", err.message || err);
       throw err;
     } finally {

@@ -3,13 +3,13 @@ import { plansAPI } from './gemini/plans';
 import {
     Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, streamGeminiProxy,
     checkDailyQuotaGuard, TEXT_SYSTEM_INSTRUCTION, SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
-    CACHE_COLLECTION, JSON_SYSTEM_INSTRUCTION, minifyContext, callEmbeddingProxy,
+    CACHE_COLLECTION, minifyContext, callEmbeddingProxy,
     streamGeminiProxyRich, type StreamChunk
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, AssessmentQuestion, AIGeneratedWorkedExample, AdaptiveHomework , AIGeneratedAnnualPlan, AIGeneratedPresentation } from '../types';
-import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalAnalysisSchema, CoverageAnalysisSchema, AIRecommendationSchema, GeneratedTestSchema } from '../utils/schemas';
+import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalAnalysisSchema, CoverageAnalysisSchema, AIRecommendationSchema, GeneratedTestSchema, DailyBriefSchema, WorkedExampleSchema, ReflectionSummarySchema } from '../utils/schemas';
 
 // Core exports
 export { scheduleQuotaNotification, isDailyQuotaKnownExhausted, clearDailyQuotaFlag, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, buildDynamicSystemInstruction } from './gemini/core';
@@ -58,7 +58,7 @@ async *getChatResponseStreamWithThinking(history: ChatMessage[], profile?: Teach
     });
   },
 
-async generateIllustration(prompt: string, image?: { base64: string, mimeType: string }, profile?: TeachingProfile): Promise<AIGeneratedIllustration> {
+async generateIllustration(prompt: string, image?: { base64: string, mimeType: string }, _profile?: TeachingProfile): Promise<AIGeneratedIllustration> {
     // Prompt-hash cache — skip re-calling Imagen for identical prompts (no image upload)
     if (!image) {
       const cacheKey = `img_cache_${prompt.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 120)}`;
@@ -344,7 +344,7 @@ async explainSpecificStep(problem: string, stepExplanation: string, stepExpressi
     return response.text || "";
   },
 
-async generateRubric(gradeLevel: number, activityTitle: string, activityType: string, criteriaHints: string, profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedRubric> {
+async generateRubric(gradeLevel: number, activityTitle: string, activityType: string, _criteriaHints: string, _profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedRubric> {
     const prompt = `Креирај рубрика за ${activityTitle} (${activityType}). ${customInstruction || ''}`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, criteria: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { criterion: { type: Type.STRING }, levels: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { levelName: { type: Type.STRING }, description: { type: Type.STRING }, points: { type: Type.STRING } }, required: ["levelName", "description"] } } }, required: ["criterion", "levels"] } } }, required: ["title", "criteria"] };
 
@@ -452,13 +452,13 @@ async analyzeConceptPedagogically(concept: Concept, priorTitles: string[], futur
     return generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, (assessmentAPI as any)._tier);
   },
 
-async analyzeLessonPlan(plan: Partial<LessonPlan>, profile?: TeachingProfile): Promise<AIPedagogicalAnalysis> {
+async analyzeLessonPlan(plan: Partial<LessonPlan>, _profile?: TeachingProfile): Promise<AIPedagogicalAnalysis> {
     const prompt = `Направи педагошка анализа на подготовка за час.`;
     const schema = { type: Type.OBJECT, properties: { pedagogicalAnalysis: { type: Type.OBJECT, properties: { overallImpression: { type: Type.STRING }, alignment: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } }, engagement: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } }, cognitiveLevels: { type: Type.OBJECT, properties: { status: { type: Type.STRING }, details: { type: Type.STRING } } } } } }, required: ["pedagogicalAnalysis"] };
     return generateAndParseJSON<AIPedagogicalAnalysis>([{ text: prompt }, { text: `План: ${JSON.stringify(plan)}` }], schema, DEFAULT_MODEL, AIPedagogicalAnalysisSchema, MAX_RETRIES, false);
   },
 
-async generateProactiveSuggestion(concept: Concept, profile?: TeachingProfile): Promise<string> {
+async generateProactiveSuggestion(concept: Concept, _profile?: TeachingProfile): Promise<string> {
       const prompt = `Генерирај проактивен предлог за "${concept.title}".`;
       const response = await callGeminiProxy({ 
           model: DEFAULT_MODEL, 
@@ -469,7 +469,7 @@ async generateProactiveSuggestion(concept: Concept, profile?: TeachingProfile): 
       return response.text || "";
   },
 
-async analyzeReflection(wentWell: string, challenges: string, profile?: TeachingProfile): Promise<string> {
+async analyzeReflection(wentWell: string, challenges: string, _profile?: TeachingProfile): Promise<string> {
       const prompt = `Анализирај рефлексија: "${wentWell}". Предизвици: "${challenges}".`;
       const response = await callGeminiProxy({ 
           model: DEFAULT_MODEL, 
@@ -486,16 +486,16 @@ async generateReflectionQuestions(lessonTitle: string, grade: number, theme: str
 Секое поле треба да биде 1-2 насочувачки прашања (не одговори).
 Врати JSON: { "wentWell": "Кои активности беа успешни?...", "challenges": "Кај кои концепти учениците имаа потешкотии?...", "nextSteps": "Кои конкретни промени би ги направиле следниот пат?..." }`;
       const schema = { type: Type.OBJECT, properties: { wentWell: { type: Type.STRING }, challenges: { type: Type.STRING }, nextSteps: { type: Type.STRING } }, required: ["wentWell", "challenges", "nextSteps"] };
-      return generateAndParseJSON<{ wentWell: string; challenges: string; nextSteps: string }>([{ text: prompt }], schema, DEFAULT_MODEL);
+      return generateAndParseJSON<{ wentWell: string; challenges: string; nextSteps: string }>([{ text: prompt }], schema, DEFAULT_MODEL, ReflectionSummarySchema);
   },
 
-async analyzeCoverage(lessonPlans: LessonPlan[], allNationalStandards: NationalStandard[]): Promise<CoverageAnalysisReport> {
+async analyzeCoverage(_lessonPlans: LessonPlan[], _allNationalStandards: NationalStandard[]): Promise<CoverageAnalysisReport> {
       const prompt = `Анализирај ја покриеноста на националните стандарди.`;
       const schema = { type: Type.OBJECT, properties: { analysis: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { gradeLevel: { type: Type.INTEGER }, coveredStandardIds: { type: Type.ARRAY, items: { type: Type.STRING } }, summary: { type: Type.STRING } }, required: ["gradeLevel", "coveredStandardIds", "summary"] } } }, required: ["analysis"] };
       return generateAndParseJSON<CoverageAnalysisReport>([{ text: prompt }], schema, DEFAULT_MODEL, CoverageAnalysisSchema);
   },
 
-async getPersonalizedRecommendations(profile: TeachingProfile, lessonPlans: LessonPlan[]): Promise<AIRecommendation[]> {
+async getPersonalizedRecommendations(_profile: TeachingProfile, _lessonPlans: LessonPlan[]): Promise<AIRecommendation[]> {
       const prompt = `Генерирај 3 персонализирани препораки.`;
       const schema = { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { category: { type: Type.STRING }, title: { type: Type.STRING }, recommendationText: { type: Type.STRING } }, required: ["category", "title", "recommendationText"] } };
       return generateAndParseJSON<AIRecommendation[]>([{ text: prompt }], schema, DEFAULT_MODEL, AIRecommendationSchema);
@@ -652,8 +652,7 @@ async generateParallelTest(
     const cached = await getCached<GeneratedTest>(cacheKey);
     if (cached) return cached;
 
-    const diffMap = { easy: "Лесни (за паметење и разбирање)", medium: "Средни (примена)", hard: "Тешки (анализа и евалуација)" };
-    const gradeLevelPrompt = gradeLevel <= 3 
+    const gradeLevelPrompt = gradeLevel <= 3
       ? 'ЗАБЕЛЕШКА: Ова е за рана училишна возраст (1-3 одд). Користи многу едноставни зборови и секојдневни предмети во текстуалните задачи.' 
       : 'Вклучи и текстуални задачи.';
 
@@ -772,10 +771,13 @@ async askTutor(message: string, history: Array<{role: string, content: string}>)
 5. Разложувај ги проблемите на помали, полесни чекори.
 6. Ако изгледа дека ученикот сака само да препише решение, потсети го дека твојата улога е да објаснуваш, а не да решаваш.`;
 
-    const contents = history.map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }));
+    const contents = [
+      ...history.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+      })),
+      { role: 'user' as const, parts: [{ text: message }] },
+    ];
 
     try {
       const response = await callGeminiProxy({
@@ -791,7 +793,7 @@ async askTutor(message: string, history: Array<{role: string, content: string}>)
     }
   },
 
-async refineMaterialJSON(originalMaterial: any, tweakInstruction: string, materialType?: string): Promise<any> {
+async refineMaterialJSON(originalMaterial: any, tweakInstruction: string, _materialType?: string): Promise<any> {
     const prompt = `You are an expert educational AI assistant.
 
 The teacher has already generated the following educational material (in JSON format):
@@ -941,7 +943,7 @@ async generateParentReport(
       required: ['summary', 'priority'],
     };
 
-    return generateAndParseJSON<{ summary: string; priority: 'high' | 'medium' | 'low'; primaryAction?: { label: string; conceptId?: string; conceptTitle?: string } }>(contents, schema, DEFAULT_MODEL);
+    return generateAndParseJSON<{ summary: string; priority: 'high' | 'medium' | 'low'; primaryAction?: { label: string; conceptId?: string; conceptTitle?: string } }>(contents, schema, DEFAULT_MODEL, DailyBriefSchema);
   },
 
   // П1 — AI персонализирана повратна информација по квиз
@@ -1034,7 +1036,7 @@ ${toneHint}
       [{ text: prompt }],
       schema,
       DEFAULT_MODEL,
-      undefined,
+      WorkedExampleSchema,
       MAX_RETRIES,
       false,
     );

@@ -199,3 +199,42 @@ export const AnnualPlanSchema = z.array(z.object({
     title: z.string(),
     description: z.string()
 }));
+
+// ─── DailyBrief schema ───────────────────────────────────────────────────────
+export const DailyBriefSchema = z.object({
+  summary: z.string(),
+  priority: z.enum(['high', 'medium', 'low']),
+  primaryAction: z.object({
+    label: z.string(),
+    conceptId: z.string().optional(),
+    conceptTitle: z.string().optional(),
+  }).optional(),
+});
+
+// ─── WorkedExample schema ─────────────────────────────────────────────────────
+export const WorkedExampleSchema = z.object({
+  title: z.string(),
+  problem: z.string(),
+  steps: z.array(z.object({
+    explanation: z.string(),
+    formula: z.string().optional(),
+  })),
+  partialSteps: z.array(z.object({
+    explanation: z.string(),
+    formula: z.string().optional(),
+    isBlank: z.boolean().optional(),
+  })).optional(),
+  quizQuestion: z.object({
+    question: z.string(),
+    options: z.array(z.string()),
+    correctIndex: z.number(),
+    explanation: z.string(),
+  }).optional(),
+});
+
+// ─── Reflection summary schema ───────────────────────────────────────────────
+export const ReflectionSummarySchema = z.object({
+  wentWell: z.string(),
+  challenges: z.string(),
+  nextSteps: z.string(),
+});

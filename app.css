@@ -19,6 +19,23 @@
 }
 
 /* ═══════════════════════════════════════════════════
+   DigitalScratchpad — background patterns
+   ═══════════════════════════════════════════════════ */
+.scratchpad-bg-grid {
+  background-image: linear-gradient(to right, #ccc 1px, transparent 1px),
+                    linear-gradient(to bottom, #ccc 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.scratchpad-bg-lines {
+  background-image: linear-gradient(to bottom, transparent 19px, #ccc 20px);
+  background-size: 100% 20px;
+}
+.scratchpad-bg-dots {
+  background-image: radial-gradient(#000 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ═══════════════════════════════════════════════════
    vis-network tooltip (used in CurriculumGraphView)
    ═══════════════════════════════════════════════════ */
 .vis-network-tooltip {
