@@ -296,9 +296,16 @@ export async function callGeminiProxy(params: {
   userTier?: string; // Optional user tier
 }, signal?: AbortSignal): Promise<{ text: string; candidates: any[] }> {
   return queueRequest(async () => {
+    // Build a combined abort signal: caller signal OR 60-second timeout
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(new Error('Request timed out after 60s')), GENERATION_TIMEOUT_MS);
+    const effectiveSignal = signal
+      ? anySignalAborted([signal, timeoutController.signal])
+      : timeoutController.signal;
+
     try {
       const token = await getAuthToken();
-      
+
       // Select model based on user tier if tier is provided
       let modelToUse = params.model;
       if (params.userTier === 'Pro' || params.userTier === 'Unlimited') {
@@ -324,7 +331,7 @@ export async function callGeminiProxy(params: {
             ...params.generationConfig
           }
         }),
-        signal
+        signal: effectiveSignal
       });
 
       if (!response.ok) {
@@ -337,8 +344,20 @@ export async function callGeminiProxy(params: {
       if (err.name === 'AbortError') throw err;
       console.error("Gemini Proxy Error:", err.message || err);
       throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
   });
+}
+
+/** Returns an AbortSignal that fires when ANY of the provided signals abort. */
+function anySignalAborted(signals: AbortSignal[]): AbortSignal {
+  const controller = new AbortController();
+  for (const sig of signals) {
+    if (sig.aborted) { controller.abort(sig.reason); break; }
+    sig.addEventListener('abort', () => controller.abort(sig.reason), { once: true });
+  }
+  return controller.signal;
 }
 
 export async function callImagenProxy(params: {
@@ -438,14 +457,21 @@ export async function callGeminiEmbed(params: {
   });
 }
 
-export async function* streamGeminiProxy(params: { 
-  model: string; 
-  contents: any; 
+export async function* streamGeminiProxy(params: {
+  model: string;
+  contents: any;
   generationConfig?: any;
   systemInstruction?: string;
   safetySettings?: any;
   userTier?: string;
-}): AsyncGenerator<string, void, unknown> {
+}, signal?: AbortSignal): AsyncGenerator<string, void, unknown> {
+  // Streaming gets a longer timeout (120s) since it can legitimately take longer
+  const STREAM_TIMEOUT_MS = 120_000;
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(new Error('Stream timed out after 120s')), STREAM_TIMEOUT_MS);
+  const effectiveSignal = signal ? anySignalAborted([signal, timeoutController.signal]) : timeoutController.signal;
+
+  try {
   const token = await getAuthToken();
 
   // Select model based on user tier
@@ -473,6 +499,7 @@ export async function* streamGeminiProxy(params: {
         ...params.generationConfig
       }
     }),
+    signal: effectiveSignal,
   });
 
   if (!response.ok) {
@@ -521,6 +548,9 @@ export async function* streamGeminiProxy(params: {
     }
   } finally {
     reader.releaseLock();
+  }
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -608,6 +638,21 @@ export async function* streamGeminiProxyRich(params: {
   } finally {
     reader.releaseLock();
   }
+}
+
+// --- INPUT SANITIZATION ---
+/**
+ * Sanitizes user-provided strings before injecting them into AI prompts.
+ * Strips control characters, null bytes, and limits length to prevent
+ * prompt injection and token over-runs.
+ */
+export function sanitizePromptInput(text: string | undefined | null, maxLength = 1000): string {
+  if (!text) return '';
+  return text
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // control chars (keep \t \n \r)
+    .replace(/\s+/g, ' ')                                 // collapse whitespace
+    .trim()
+    .slice(0, maxLength);
 }
 
 // --- UTILS ---

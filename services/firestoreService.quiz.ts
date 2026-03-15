@@ -4,6 +4,18 @@ import { type CurriculumModule } from '../data/curriculum';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import type { ConceptMastery, QuizResult, StudentGamification } from './firestoreService.types';
 
+function isValidQuizResult(data: unknown): data is QuizResult {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as Record<string, unknown>;
+  return typeof d.quizId === 'string' && typeof d.percentage === 'number';
+}
+
+function isValidConceptMastery(data: unknown): data is ConceptMastery {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as Record<string, unknown>;
+  return typeof d.conceptId === 'string' && typeof d.studentName === 'string';
+}
+
 export const quizService = {
 
   // -- Curriculum ----------------------------------------------------------------
@@ -65,18 +77,29 @@ export const quizService = {
   // -- Quiz Results --------------------------------------------------------------
 
   saveQuizResult: async (result: QuizResult): Promise<string> => {
-    try {
-      const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-      if (!isOnline) {
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    if (!isOnline) {
+      try {
         const { saveQuizOffline } = await import('./indexedDBService');
         return await saveQuizOffline(result);
+      } catch (err) {
+        console.error('Error saving quiz result offline:', err);
+        return '';
       }
+    }
+    try {
       const docRef = doc(collection(db, 'quiz_results'));
-      setDoc(docRef, { ...result, playedAt: serverTimestamp() }).catch(err => console.warn('Offline deferred', err));
+      await setDoc(docRef, { ...result, playedAt: serverTimestamp() });
       return docRef.id;
     } catch (error) {
-      console.error('Error saving quiz result:', error);
-      return '';
+      console.warn('Firestore write failed, falling back to offline queue:', error);
+      try {
+        const { saveQuizOffline } = await import('./indexedDBService');
+        return await saveQuizOffline(result);
+      } catch (offlineErr) {
+        console.error('Both Firestore and offline save failed:', offlineErr);
+        return '';
+      }
     }
   },
 
@@ -129,7 +152,7 @@ export const quizService = {
         ? query(collection(db, 'quiz_results'), where('teacherUid', '==', teacherUid), orderBy('playedAt', 'desc'), limit(maxCount))
         : query(collection(db, 'quiz_results'), orderBy('playedAt', 'desc'), limit(maxCount));
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as QuizResult);
+      return snap.docs.map(d => d.data()).filter(isValidQuizResult);
     } catch (error) {
       console.error('Error fetching quiz results:', error);
       return [];
@@ -149,7 +172,7 @@ export const quizService = {
         ? query(collection(db, 'quiz_results'), ...baseConstraints, startAfter(startAfterDoc), limit(pageSize))
         : query(collection(db, 'quiz_results'), ...baseConstraints, limit(pageSize));
       const snap = await getDocs(q);
-      const results = snap.docs.map(d => d.data() as QuizResult);
+      const results = snap.docs.map(d => d.data()).filter(isValidQuizResult);
       const lastDoc = snap.docs.length === pageSize ? snap.docs[snap.docs.length - 1] : null;
       return { results, lastDoc };
     } catch (error) {
@@ -164,7 +187,7 @@ export const quizService = {
         ? query(collection(db, 'quiz_results'), where('deviceId', '==', deviceId), orderBy('playedAt', 'desc'), limit(100))
         : query(collection(db, 'quiz_results'), where('studentName', '==', studentName), orderBy('playedAt', 'desc'), limit(100));
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as QuizResult);
+      return snap.docs.map(d => d.data()).filter(isValidQuizResult);
     } catch (error) {
       console.error('Error fetching quiz results by student name:', error);
       return [];
@@ -175,7 +198,7 @@ export const quizService = {
     try {
       const q = query(collection(db, 'quiz_results'), where('quizId', '==', quizId), orderBy('playedAt', 'desc'), limit(200));
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as QuizResult);
+      return snap.docs.map(d => d.data()).filter(isValidQuizResult);
     } catch (error) {
       console.error('Error fetching quiz results by quiz ID:', error);
       return [];
@@ -188,7 +211,7 @@ export const quizService = {
         try {
           const q = query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), where('teacherUid', '==', teacherUid), orderBy('playedAt', 'desc'), limit(maxCount));
           const snap = await getDocs(q);
-          return snap.docs.map(d => d.data() as QuizResult);
+          return snap.docs.map(d => d.data()).filter(isValidQuizResult);
         } catch {
           // Composite index not yet built — fall back to conceptId-only query
         }
@@ -257,7 +280,7 @@ export const quizService = {
         ? query(collection(db, 'concept_mastery'), where('deviceId', '==', deviceId))
         : query(collection(db, 'concept_mastery'), where('studentName', '==', studentName));
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as ConceptMastery);
+      return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
     } catch (error) {
       console.error('Error fetching mastery by student:', error);
       return [];
@@ -270,7 +293,7 @@ export const quizService = {
       if (teacherUid) qConstraints.push(where('teacherUid', '==', teacherUid));
       const q = query(collection(db, 'concept_mastery'), ...qConstraints);
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as ConceptMastery);
+      return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
     } catch (error) {
       console.error('Error fetching mastery by concept:', error);
       return [];
@@ -284,7 +307,7 @@ export const quizService = {
       if (teacherUid) qConstraints.push(where('teacherUid', '==', teacherUid));
       const q = query(collection(db, 'concept_mastery'), ...qConstraints);
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as ConceptMastery);
+      return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
     } catch (error) {
       console.error('Error fetching mastery by concept bulk:', error);
       return [];
@@ -297,7 +320,7 @@ export const quizService = {
         ? query(collection(db, 'concept_mastery'), where('teacherUid', '==', teacherUid), limit(5000))
         : query(collection(db, 'concept_mastery'), limit(5000));
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as ConceptMastery);
+      return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
     } catch (error) {
       console.error('Error fetching all mastery:', error);
       return [];
@@ -336,7 +359,9 @@ export const quizService = {
         where(documentId(), '<=', `${teacherUid}_\uf8ff`),
       );
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as StudentGamification).sort((a, b) => b.totalXP - a.totalXP);
+      return snap.docs.map(d => d.data() as StudentGamification)
+        .filter(d => typeof d?.studentName === 'string' && typeof d?.totalXP === 'number')
+        .sort((a, b) => b.totalXP - a.totalXP);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       return [];

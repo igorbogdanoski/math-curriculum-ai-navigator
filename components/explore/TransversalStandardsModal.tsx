@@ -46,7 +46,7 @@ export const TransversalStandardsModal: React.FC<TransversalStandardsModalProps>
                                 <p className="text-gray-500 font-medium">{gradeTitle}</p>
                             </div>
                         </div>
-                        <button onClick={hideModal} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                        <button onClick={hideModal} className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Затвори">
                             <ICONS.close className="w-6 h-6 text-gray-400" />
                         </button>
                     </div>

@@ -37,19 +37,26 @@ export function useStudentProgress(studentName: string, isReadOnly: boolean = fa
         new Set(quizData.filter((r: QuizResult) => r.percentage < 70 && r.conceptId).map((r: QuizResult) => r.conceptId!))
       );
 
+      // Use individual .catch() so one failure doesn't block the others
       const [gamification, announcementsData, classBoard, nextQuizLookups] = await Promise.all([
-        firestoreService.fetchStudentGamification(studentName.trim(), topTeacherUid, deviceId),
-        topTeacherUid ? firestoreService.fetchAnnouncements(topTeacherUid, 3) : Promise.resolve([] as Announcement[]),
-        topTeacherUid ? firestoreService.fetchClassLeaderboard(topTeacherUid) : Promise.resolve([] as { studentName: string }[]),
+        firestoreService.fetchStudentGamification(studentName.trim(), topTeacherUid, deviceId)
+          .catch(() => null),
+        (topTeacherUid ? firestoreService.fetchAnnouncements(topTeacherUid, 3) : Promise.resolve([] as Announcement[]))
+          .catch(() => [] as Announcement[]),
+        (topTeacherUid ? firestoreService.fetchClassLeaderboard(topTeacherUid) : Promise.resolve([] as { studentName: string }[]))
+          .catch(() => [] as { studentName: string }[]),
+        // Each concept quiz lookup is independent — one failure must not block the rest
         Promise.all(
           failedConceptIds.map((cid: string) =>
-            firestoreService.fetchLatestQuizByConcept(cid).then((q: { id?: string } | null) => ({ cid, id: q?.id }))
+            firestoreService.fetchLatestQuizByConcept(cid)
+              .then((q: { id?: string } | null) => ({ cid, id: q?.id }))
+              .catch(() => ({ cid, id: undefined }))
           )
         ),
       ]);
 
-      const idx = classBoard.findIndex((g: { studentName: string }) => g.studentName === studentName.trim());
-      const classRank = idx >= 0 ? { rank: idx + 1, total: classBoard.length } : null;
+      const idx = classBoard?.findIndex((g: { studentName: string }) => g.studentName === studentName.trim()) ?? -1;
+      const classRank = idx >= 0 ? { rank: idx + 1, total: classBoard?.length ?? 0 } : null;
 
       const nextQuizIds: Record<string, string> = {};
       nextQuizLookups.forEach(({ cid, id }: { cid: string; id?: string }) => { if (id) nextQuizIds[cid] = id; });

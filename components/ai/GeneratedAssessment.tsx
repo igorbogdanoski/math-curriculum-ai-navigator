@@ -101,7 +101,7 @@ const QuestionList: React.FC<{
                                 {q.type === 'MULTIPLE_CHOICE' && q.options && (
                                     <ul className={`list-['A)_'] list-inside space-y-2`}>
                                         {q.options.map((opt: string, i: number) => (
-                                            <li key={i} className="flex items-center text-gray-700">
+                                            <li key={`q${index}-opt${i}`} className="flex items-center text-gray-700">
                                                 {isEditing ? (
                                                     <input
                                                         type="text"
@@ -465,7 +465,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 <h4 className="text-lg font-semibold text-brand-secondary mb-2">Прашања за самооценување</h4>
                 <ul className="list-disc list-inside space-y-2 text-gray-700">
                     {questions.map((sq, i) => (
-                        <li key={i}>
+                        <li key={`selfassess-${i}`}>
                             <MathRenderer text={sq} />
                             <div className="h-12 border-b-2 border-dotted border-gray-400 mt-2"></div>
                         </li>

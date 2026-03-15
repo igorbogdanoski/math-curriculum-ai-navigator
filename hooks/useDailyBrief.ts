@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
@@ -120,9 +120,11 @@ export function useDailyBrief() {
   const [isLoading, setIsLoading] = useState(false);
   const [weakConcepts, setWeakConcepts] = useState<WeakConcept[]>([]);
   const [spacedRepDue, setSpacedRepDue] = useState<DueForReviewConcept[]>([]);
+  const isLoadingRef = useRef(false); // Prevent concurrent executions
 
   const load = useCallback(async (forceRefresh = false) => {
     if (!firebaseUser) return;
+    if (isLoadingRef.current) return; // Already in-flight — skip duplicate call
 
     // Check cache
     if (!forceRefresh) {
@@ -138,6 +140,7 @@ export function useDailyBrief() {
       } catch { /* ignore */ }
     }
 
+    isLoadingRef.current = true;
     setIsLoading(true);
     try {
       const results = await firestoreService.fetchQuizResults(150, firebaseUser.uid);
@@ -156,10 +159,11 @@ export function useDailyBrief() {
       setBrief(generated);
 
       const entry: CacheEntry = { brief: generated, generatedAt: Date.now() };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(entry)); } catch { /* storage full */ }
     } catch {
       // Non-fatal — brief is a nice-to-have feature
     } finally {
+      isLoadingRef.current = false;
       setIsLoading(false);
     }
   }, [firebaseUser]);

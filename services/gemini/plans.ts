@@ -1,4 +1,4 @@
-import { Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext } from './core';
+import { Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
 import { Concept, Topic, Grade, TeachingProfile, LessonPlan, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, GenerationContext } from '../../types';
 import { AIGeneratedIdeasSchema, AnnualPlanSchema, AIGeneratedThematicPlanSchema } from '../../utils/schemas';
 
@@ -50,7 +50,8 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 Генерирај го сценариото СТРИКТНО според официјалниот JSON шаблон.
 `;
 
-    if (customInstruction) prompt += `\nДополнителна инструкција од наставникот: ${customInstruction}`;
+    const safeInstruction = sanitizePromptInput(customInstruction);
+    if (safeInstruction) prompt += `\nДополнителна инструкција од наставникот: ${safeInstruction}`;
 
     const schema = {
         type: Type.OBJECT,
@@ -301,7 +302,7 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
 
 ### БАРАЊЕ
 Креирај НОВА и ПОДОБРА верзизо само за овој дел. Биди креативен и оригинален.
-${customInstruction ? `ДОПОЛНИТЕЛНО БАРАЊЕ: ${customInstruction}` : ''}
+${sanitizePromptInput(customInstruction) ? `ДОПОЛНИТЕЛНО БАРАЊЕ: ${sanitizePromptInput(customInstruction)}` : ''}
 
 ### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА
 1. Анализирај го тековниот план за да обезбедиш конзистентност со останатите делови.
@@ -327,7 +328,7 @@ ${customInstruction ? `ДОПОЛНИТЕЛНО БАРАЊЕ: ${customInstructio
 - Тема: ${topic}
 - Одделение: ${gradeLevel}
 - Клучни поими: ${concepts.join(', ')}
-${customInstruction ? `- Дополнителни барања: ${customInstruction}` : ''}
+${sanitizePromptInput(customInstruction) ? `- Дополнителни барања: ${sanitizePromptInput(customInstruction)}` : ''}
 
 ### СТРУКТУРА НА ПРЕЗЕНТАЦИЈАТА
 1. Насловен слајд

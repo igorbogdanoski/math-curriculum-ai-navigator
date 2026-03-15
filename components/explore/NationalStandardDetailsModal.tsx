@@ -36,7 +36,7 @@ export const NationalStandardDetailsModal: React.FC<NationalStandardDetailsModal
                             <h2 className="text-2xl font-bold text-brand-primary">{standard.code}</h2>
                             <p className="text-gray-600">{standard.description}</p>
                         </div>
-                        <button onClick={hideModal} className="p-2 rounded-full hover:bg-gray-200">
+                        <button onClick={hideModal} className="p-2 rounded-full hover:bg-gray-200" aria-label="Затвори">
                             <ICONS.close className="w-6 h-6" />
                         </button>
                     </div>

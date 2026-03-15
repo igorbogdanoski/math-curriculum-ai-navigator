@@ -113,7 +113,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                
                <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
                  {lesson.theory.map((paragraph, idx) => (
-                    <p key={idx}>{paragraph}</p>
+                    <p key={`${lesson.id}-p-${idx}`}>{paragraph}</p>
                  ))}
                </div>
             </div>

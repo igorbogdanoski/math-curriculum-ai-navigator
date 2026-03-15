@@ -198,10 +198,13 @@ export const StudentPlayView: React.FC = () => {
   // This covers: localStorage cleared, incognito→normal, new browser profile on same device.
   useEffect(() => {
     if (nameConfirmed) return; // already have a name — skip
+    let cancelled = false;
     const restoreIdentity = async () => {
       try {
         await signInAnonymously(auth); // need auth to read the doc
+        if (cancelled) return;
         const identity = await firestoreService.fetchStudentIdentityByDevice(deviceId);
+        if (cancelled) return;
         if (identity?.name) {
           try { localStorage.setItem('studentName', identity.name); } catch { /* incognito */ }
           setNameInput(identity.name);
@@ -213,18 +216,20 @@ export const StudentPlayView: React.FC = () => {
       } catch { /* non-fatal — student just enters their name manually */ }
     };
     restoreIdentity();
+    return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    let cancelled = false;
     const fetchQuiz = async () => {
       if (!id) {
-        setError(t('play.error.invalidLink'));
-        setLoading(false);
+        if (!cancelled) { setError(t('play.error.invalidLink')); setLoading(false); }
         return;
       }
       try {
         setLoading(true);
         const quizDoc = await getDoc(doc(db, 'cached_ai_materials', id));
+        if (cancelled) return;
         if (quizDoc.exists()) {
           const data = quizDoc.data();
           setQuizData({
@@ -241,13 +246,16 @@ export const StudentPlayView: React.FC = () => {
           setError(t('play.error.notFound'));
         }
       } catch (err) {
-        console.error('Грешка при вчитување на квизот:', err);
-        setError(t('play.error.connect'));
+        if (!cancelled) {
+          console.error('Грешка при вчитување на квизот:', err);
+          setError(t('play.error.connect'));
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchQuiz();
+    return () => { cancelled = true; };
   }, [id]);
 
   // Mark student as in_progress in the live session the moment the quiz content is ready
@@ -439,6 +447,7 @@ export const StudentPlayView: React.FC = () => {
       const justMastered = !!(freshMastery?.mastered && freshMastery.consecutiveHighScores === 3);
       // Count ALL mastered concepts (not just the current one) for milestone achievements
       const allMastery = await firestoreService.fetchMasteryByStudent(studentName, deviceId).catch(() => []);
+      if (!isMountedRef.current) return;
       const totalMastered = allMastery.filter(m => m.mastered).length;
       firestoreService.updateStudentGamification(studentName, percentage, justMastered, totalMastered, meta.teacherUid, deviceId)
         .then(({ xpGained, newAchievements, gamification }) => {

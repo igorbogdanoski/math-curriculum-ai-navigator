@@ -50,7 +50,7 @@ export const PrintableEDnevnikReport = React.forwardRef<HTMLDivElement, Printabl
               const grade = calculateGrade(perc);
               
               return (
-                <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
+                <tr key={`${r.quizId}-${r.studentName ?? 'anon'}-${idx}`} className="border-b border-gray-200 hover:bg-gray-50">
                   <td className="border border-gray-300 p-2 text-sm font-medium">{r.studentName || 'Анонимен'}</td>
                   <td className="border border-gray-300 p-2 text-sm">{r.quizTitle}</td>
                   <td className="border border-gray-300 p-2 text-sm">{r.correctCount} / {r.totalQuestions}</td>

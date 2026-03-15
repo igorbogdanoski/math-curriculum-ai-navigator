@@ -298,7 +298,15 @@ export const HomeView: React.FC = () => {
                     <Card><SkeletonLoader type="paragraph"/></Card>
                     <Card><SkeletonLoader type="paragraph"/></Card>
                 </div>
-            ) : recsError || recommendations.length === 0 ? (
+            ) : recsError ? (
+                <Card className="flex items-center justify-center bg-red-50 border-dashed border-2 border-red-200 py-8">
+                    <div className="text-center">
+                        <ICONS.alertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                        <p className="text-red-600 font-medium">Препораките не може да се вчитаат</p>
+                        <p className="text-red-400 text-sm mt-1">Проверете ја врската и обновете ја страницата.</p>
+                    </div>
+                </Card>
+            ) : recommendations.length === 0 ? (
                 <Card className="flex items-center justify-center bg-gray-50 border-dashed border-2 border-gray-200 py-8">
                     <div className="text-center">
                         <ICONS.sparkles className="w-8 h-8 text-brand-accent mx-auto mb-2 opacity-50" />
@@ -309,7 +317,7 @@ export const HomeView: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {recommendations.slice(0, 3).map((rec: AIRecommendation, index: number) => (
-                        <RecommendationCard key={index} recommendation={rec} />
+                        <RecommendationCard key={`${rec.category}-${rec.title}-${index}`} recommendation={rec} />
                     ))}
                 </div>
             )}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
-import { AI_COSTS } from '../services/gemini/core';
+import { AI_COSTS, sanitizePromptInput } from '../services/gemini/core';
 import { RateLimitError } from '../services/apiErrors';
 import { firestoreService } from '../services/firestoreService';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -522,7 +522,7 @@ export function useGeneratorActions({
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context, tempActivityTitle } = built;
     const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
-    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
+    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, sanitizePromptInput(state.customInstruction)].filter(Boolean).join(' ');
 
     setIsGeneratingBulk(true);
     setBulkResults(null);
@@ -599,7 +599,7 @@ export function useGeneratorActions({
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context: finalContext, imageParam, studentProfilesToPass, tempActivityTitle } = built;
     const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
-    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, state.customInstruction].filter(Boolean).join(' ');
+    const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, sanitizePromptInput(state.customInstruction)].filter(Boolean).join(' ');
     const { questionTypes, numQuestions, differentiationLevel, exitTicketQuestions, exitTicketFocus, activityType, criteriaHints, includeSelfAssessment, activityFocus, scenarioTone, learningDesignModel } = state;
 
     setIsLoading(true);
