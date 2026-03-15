@@ -67,11 +67,16 @@ export const deleteClass = async (classId: string): Promise<void> => {
 // ── И2: Class Join Code ─────────────────────────────────────────────────────
 
 /** Generate and persist a cryptographically-secure 6-char join code for a class */
-export const generateClassJoinCode = async (classId: string): Promise<string> => {
-  const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
-    .map(b => b.toString(36).padStart(2, '0')).join('').substring(0, 6).toUpperCase();
-  await updateDoc(doc(db, 'classes', classId), { joinCode: code, joinCodeGeneratedAt: serverTimestamp() });
-  return code;
+export const generateClassJoinCode = async (classId: string): Promise<string | null> => {
+  try {
+    const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+      .map(b => b.toString(36).padStart(2, '0')).join('').substring(0, 6).toUpperCase();
+    await updateDoc(doc(db, 'classes', classId), { joinCode: code, joinCodeGeneratedAt: serverTimestamp() });
+    return code;
+  } catch (error) {
+    console.error('Failed to generate class join code:', error);
+    return null;
+  }
 };
 
 /** Find a class by its 6-char join code (case-insensitive) */

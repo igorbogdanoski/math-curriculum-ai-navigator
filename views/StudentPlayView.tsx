@@ -234,6 +234,17 @@ export const StudentPlayView: React.FC = () => {
     return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // И2: Restore class membership from Firestore on mount (covers localStorage-cleared scenarios)
+  useEffect(() => {
+    let cancelled = false;
+    firestoreService.fetchClassMembership(deviceId).then(membership => {
+      if (cancelled || !membership?.classId) return;
+      setClassId(membership.classId);
+      try { localStorage.setItem('student_class_id', membership.classId); } catch { /* incognito */ }
+    }).catch(() => { /* non-fatal */ });
+    return () => { cancelled = true; };
+  }, [deviceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     let cancelled = false;
     const fetchQuiz = async () => {
@@ -683,7 +694,7 @@ export const StudentPlayView: React.FC = () => {
                     placeholder="Код на одделение (пр. AB12CD)"
                     value={classCodeInput}
                     onChange={e => { setClassCodeInput(e.target.value.trim().toUpperCase()); setClassCodeError(''); }}
-                    maxLength={8}
+                    maxLength={6}
                     className="w-full border-2 border-slate-200 rounded-2xl px-4 py-4 text-slate-800 font-mono font-bold text-center text-lg tracking-widest focus:outline-none focus:border-green-500 transition"
                   />
                   {classCodeError && (
@@ -702,6 +713,10 @@ export const StudentPlayView: React.FC = () => {
                         } else {
                           setClassId(cls.id);
                           try { localStorage.setItem('student_class_id', cls.id); } catch { /* incognito */ }
+                          setClassCodeError('');
+                          // Brief success flash before closing wizard
+                          setClassCodeInput(`✅ ${cls.name}`);
+                          await new Promise(r => setTimeout(r, 900));
                           setWizardStep(null);
                         }
                       } catch {

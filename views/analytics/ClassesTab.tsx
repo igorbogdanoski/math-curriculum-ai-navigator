@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { School, Plus, Trash2, UserPlus, X, Edit2, Check, Upload, FileText, Key, RefreshCw, Copy, CheckCircle2, BarChart2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { School, Plus, Trash2, UserPlus, X, Edit2, Check, Upload, FileText, Key, RefreshCw, Copy, CheckCircle2, BarChart2, ChevronDown, ChevronUp, Loader2, AlertCircle } from 'lucide-react';
 import { firestoreService, type SchoolClass } from '../../services/firestoreService';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
@@ -39,6 +39,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     // И2 — join code per class
     const [generatingCodeId, setGeneratingCodeId] = useState<string | null>(null);
     const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+    const [codeGenError, setCodeGenError] = useState<string | null>(null);
 
     // И2 — per-class stats (lazy)
     const [statsOpenId, setStatsOpenId] = useState<string | null>(null);
@@ -82,8 +83,10 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         const cls = classes.find(c => c.id === csvPreview.classId);
         if (!cls) return;
         setCsvImporting(true);
-        const merged = Array.from(new Set([...cls.studentNames, ...csvPreview.names]));
+        const uniqueImported = [...new Set(csvPreview.names)]; // dedupe within file
+        const merged = Array.from(new Set([...cls.studentNames, ...uniqueImported]));
         await firestoreService.updateClass(csvPreview.classId, { studentNames: merged });
+        setStatsCache(prev => { const n = { ...prev }; delete n[csvPreview.classId]; return n; });
         setCsvPreview(null);
         setCsvTargetClassId(null);
         setCsvImporting(false);
@@ -129,6 +132,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         if (!cls) return;
         const updated = Array.from(new Set([...cls.studentNames, name]));
         await firestoreService.updateClass(classId, { studentNames: updated });
+        setStatsCache(prev => { const n = { ...prev }; delete n[classId]; return n; });
         setStudentInput('');
         setAddStudentClassId(null);
         await loadClasses();
@@ -139,6 +143,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         if (!cls) return;
         const updated = cls.studentNames.filter(n => n !== studentName);
         await firestoreService.updateClass(classId, { studentNames: updated });
+        setStatsCache(prev => { const n = { ...prev }; delete n[classId]; return n; });
         await loadClasses();
     };
 
@@ -152,18 +157,29 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
 
     const handleGenerateCode = async (classId: string) => {
         setGeneratingCodeId(classId);
+        setCodeGenError(null);
         try {
             const code = await firestoreService.generateClassJoinCode(classId);
-            setClasses(prev => prev.map(c => c.id === classId ? { ...c, joinCode: code } : c));
+            if (!code) {
+                setCodeGenError('Неможе да се генерира код. Обиди се повторно.');
+            } else {
+                setClasses(prev => prev.map(c => c.id === classId ? { ...c, joinCode: code } : c));
+            }
+        } catch {
+            setCodeGenError('Грешка при генерирање на код.');
         } finally {
             setGeneratingCodeId(null);
         }
     };
 
     const handleCopyCode = (classId: string, code: string) => {
-        navigator.clipboard.writeText(code);
-        setCopiedCodeId(classId);
-        setTimeout(() => setCopiedCodeId(null), 2000);
+        navigator.clipboard.writeText(code).then(() => {
+            setCopiedCodeId(classId);
+            setTimeout(() => setCopiedCodeId(null), 2000);
+        }).catch(() => {
+            // fallback for insecure contexts
+            window.prompt('Копирај го кодот:', code);
+        });
     };
 
     const handleToggleStats = async (cls: SchoolClass) => {
@@ -313,6 +329,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                                     <div className="flex items-center gap-1">
                                         <input
                                             type="text"
+                                            aria-label="Ново име на одделение"
                                             value={renameValue}
                                             onChange={e => setRenameValue(e.target.value)}
                                             onKeyDown={e => {
@@ -449,6 +466,12 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
 
                         {/* И2: Join Code panel */}
                         <div className="mt-3 pt-3 border-t border-slate-100">
+                            {codeGenError && (
+                                <div className="flex items-center gap-1.5 mb-2 text-xs text-red-600">
+                                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                                    {codeGenError}
+                                </div>
+                            )}
                             <div className="flex items-center justify-between flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
                                     <Key className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
