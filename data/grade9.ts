@@ -20,6 +20,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-1",
           "priorKnowledgeIds": ["g8-concept-1-1"],
+          "nationalStandardIds": [],
           "title": "Релации меѓу множества",
           "description": "Цели за: Релации меѓу множества",
           "assessmentStandards": [
@@ -34,6 +35,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-2",
           "priorKnowledgeIds": ["g8-concept-1-2"],
+          "nationalStandardIds": ["M-9-III-A.2"],
           "title": "Реални броеви",
           "description": "Цели за: Реални броеви",
           "assessmentStandards": [
@@ -59,6 +61,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-3",
           "priorKnowledgeIds": ["g8-concept-1-3"],
+          "nationalStandardIds": ["M-9-III-A.1"],
           "title": "Операции со реални броеви",
           "description": "Цели за: Операции со реални броеви",
           "assessmentStandards": [
@@ -74,6 +77,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-4",
           "priorKnowledgeIds": ["g8-concept-1-4"],
+          "nationalStandardIds": ["M-9-III-A.7"],
           "title": "Степени и корени",
           "description": "Цели за: Степени и корени",
           "assessmentStandards": [
@@ -93,6 +97,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-1-5",
           "priorKnowledgeIds": ["g8-concept-1-5"],
+          "nationalStandardIds": ["M-9-III-A.3", "M-9-III-A.4", "M-9-III-A.5", "M-9-III-A.6"],
           "title": "Проценти размер пропорција",
           "description": "Цели за: Проценти размер пропорција",
           "assessmentStandards": [
@@ -126,6 +131,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-2-1",
           "priorKnowledgeIds": ["g8-concept-2-1"],
+          "nationalStandardIds": ["M-9-III-A.12", "M-9-III-A.14"],
           "title": "2Д форми и многуаголници",
           "description": "Цели за: 2Д форми и многуаголници",
           "assessmentStandards": [
@@ -153,6 +159,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-2-2",
           "priorKnowledgeIds": ["g8-concept-2-2"],
+          "nationalStandardIds": ["M-9-III-A.15", "M-9-III-A.16"],
           "title": "Положба и движење",
           "description": "Цели за: Положба и движење",
           "assessmentStandards": [
@@ -168,6 +175,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-2-3",
           "priorKnowledgeIds": ["g8-concept-2-3"],
+          "nationalStandardIds": ["M-9-III-A.15", "M-9-III-A.6"],
           "title": "Пропорционалност и сличност",
           "description": "Цели за: Пропорционалност и сличност",
           "assessmentStandards": [
@@ -190,6 +198,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-2-4",
           "priorKnowledgeIds": ["g8-concept-2-4"],
+          "nationalStandardIds": ["M-9-III-A.17"],
           "title": "Геометриско место на точки",
           "description": "Цели за: Геометриско место на точки",
           "assessmentStandards": [
@@ -216,6 +225,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-3-1",
           "priorKnowledgeIds": ["g8-concept-3-1"],
+          "nationalStandardIds": ["M-9-III-A.8"],
           "title": "Полиноми",
           "description": "Цели за: Полиноми",
           "assessmentStandards": [
@@ -234,6 +244,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-3-2",
           "priorKnowledgeIds": ["g8-concept-3-2"],
+          "nationalStandardIds": ["M-9-III-A.10", "M-9-III-A.11"],
           "title": "Равенки и функции",
           "description": "Цели за: Равенки и функции",
           "assessmentStandards": [
@@ -260,6 +271,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-3-3",
           "priorKnowledgeIds": ["g8-concept-3-2"],
+          "nationalStandardIds": ["M-9-III-A.10"],
           "title": "Неравенки",
           "description": "Цели за: Неравенки",
           "assessmentStandards": [
@@ -274,6 +286,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-3-4",
           "priorKnowledgeIds": ["g8-concept-3-2"],
+          "nationalStandardIds": ["M-9-III-A.9"],
           "title": "Низи",
           "description": "Цели за: Низи",
           "assessmentStandards": [
@@ -298,6 +311,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-4-1",
           "priorKnowledgeIds": ["g8-concept-4-1"],
+          "nationalStandardIds": ["M-9-III-A.18", "M-9-III-A.19"],
           "title": "Периметар и плоштина",
           "description": "Цели за: Периметар и плоштина",
           "assessmentStandards": [
@@ -314,6 +328,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-4-2",
           "priorKnowledgeIds": ["g8-concept-4-2"],
+          "nationalStandardIds": ["M-9-III-A.13", "M-9-III-A.20"],
           "title": "Плоштина и волумен на 3Д форми",
           "description": "Цели за: Плоштина и волумен на 3Д форми",
           "assessmentStandards": [
@@ -344,6 +359,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-5-1",
           "priorKnowledgeIds": ["g8-concept-5-1"],
+          "nationalStandardIds": ["M-9-III-A.21", "M-9-III-A.22", "M-9-III-A.23"],
           "title": "Обработка на податоци",
           "description": "Цели за: Обработка на податоци",
           "assessmentStandards": [
@@ -370,6 +386,7 @@ export const grade9Data: Grade = {
         {
           "id": "g9-concept-5-2",
           "priorKnowledgeIds": ["g8-concept-5-2"],
+          "nationalStandardIds": ["M-9-III-A.24"],
           "title": "Веројатност",
           "description": "Цели за: Веројатност",
           "assessmentStandards": [

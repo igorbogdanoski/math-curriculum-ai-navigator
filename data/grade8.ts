@@ -20,6 +20,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-1-1",
           "priorKnowledgeIds": ["g7-concept-1-1"],
+          "nationalStandardIds": [],
           "title": "Релации меѓу множества",
           "description": "Цели за: Релации меѓу множества",
           "assessmentStandards": [
@@ -36,6 +37,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-1-2",
           "priorKnowledgeIds": ["g7-concept-1-2"],
+          "nationalStandardIds": ["M-8-III-A.2", "M-8-III-A.3", "M-8-III-A.4"],
           "title": "Рационални броеви и проценти",
           "description": "Цели за: Рационални броеви и проценти",
           "assessmentStandards": [
@@ -63,6 +65,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-1-3",
           "priorKnowledgeIds": ["g7-concept-1-3"],
+          "nationalStandardIds": ["M-8-III-A.5", "M-8-III-A.6", "M-8-III-A.16"],
           "title": "Размер и пропорционалност",
           "description": "Цели за: Размер и пропорционалност",
           "assessmentStandards": [
@@ -76,6 +79,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-1-4",
           "priorKnowledgeIds": ["g7-concept-1-4"],
+          "nationalStandardIds": ["M-8-III-A.1"],
           "title": "Операции со рационални броеви",
           "description": "Цели за: Операции со рационални броеви",
           "assessmentStandards": [
@@ -91,6 +95,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-1-5",
           "priorKnowledgeIds": ["g7-concept-1-5"],
+          "nationalStandardIds": ["M-8-III-A.7"],
           "title": "Степени и корени",
           "description": "Цели за: Степени и корени",
           "assessmentStandards": [
@@ -124,6 +129,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-2-1",
           "priorKnowledgeIds": ["g7-concept-2-1"],
+          "nationalStandardIds": ["M-8-III-A.12"],
           "title": "Агол",
           "description": "Цели за: Агол",
           "assessmentStandards": [
@@ -141,6 +147,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-2-2",
           "priorKnowledgeIds": ["g7-concept-2-2"],
+          "nationalStandardIds": ["M-8-III-A.12", "M-8-III-A.14"],
           "title": "2Д форми и Питагорова теорема",
           "description": "Цели за: 2Д форми и Питагорова теорема",
           "assessmentStandards": [
@@ -165,6 +172,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-2-3",
           "priorKnowledgeIds": ["g7-concept-2-3"],
+          "nationalStandardIds": ["M-8-III-A.13"],
           "title": "3Д форми",
           "description": "Цели за: 3Д форми",
           "assessmentStandards": [
@@ -181,6 +189,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-2-4",
           "priorKnowledgeIds": ["g7-concept-2-4"],
+          "nationalStandardIds": ["M-8-III-A.15"],
           "title": "Положба и движење",
           "description": "Цели за: Положба и движење",
           "assessmentStandards": [
@@ -205,6 +214,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-3-1",
           "priorKnowledgeIds": ["g7-concept-3-1"],
+          "nationalStandardIds": ["M-8-III-A.8", "M-8-III-A.10"],
           "title": "Изрази равенки и формули",
           "description": "Цели за: Изрази равенки и формули",
           "assessmentStandards": [
@@ -224,6 +234,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-3-2",
           "priorKnowledgeIds": ["g7-concept-3-2"],
+          "nationalStandardIds": ["M-8-III-A.9"],
           "title": "Низи функции и графици",
           "description": "Цели за: Низи функции и графици",
           "assessmentStandards": [
@@ -252,6 +263,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-4-1",
           "priorKnowledgeIds": ["g7-concept-4-1"],
+          "nationalStandardIds": ["M-8-III-A.18"],
           "title": "Време",
           "description": "Цели за: Време",
           "assessmentStandards": [
@@ -265,6 +277,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-4-2",
           "priorKnowledgeIds": ["g7-concept-4-2"],
+          "nationalStandardIds": ["M-8-III-A.18"],
           "title": "Должина и периметар",
           "description": "Цели за: Должина и периметар",
           "assessmentStandards": [
@@ -279,6 +292,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-4-3",
           "priorKnowledgeIds": ["g7-concept-4-3"],
+          "nationalStandardIds": ["M-8-III-A.19"],
           "title": "Плоштина",
           "description": "Цели за: Плоштина",
           "assessmentStandards": [
@@ -294,6 +308,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-4-4",
           "priorKnowledgeIds": ["g7-concept-4-3"],
+          "nationalStandardIds": ["M-8-III-A.20"],
           "title": "Волумен",
           "description": "Цели за: Волумен",
           "assessmentStandards": [
@@ -317,6 +332,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-5-1",
           "priorKnowledgeIds": ["g7-concept-5-1"],
+          "nationalStandardIds": ["M-8-III-A.21"],
           "title": "Популација и примерок",
           "description": "Цели за: Популација и примерок",
           "assessmentStandards": [
@@ -333,6 +349,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-5-2",
           "priorKnowledgeIds": ["g7-concept-5-2"],
+          "nationalStandardIds": ["M-8-III-A.22", "M-8-III-A.23"],
           "title": "Обработка и толкување",
           "description": "Цели за: Обработка и толкување",
           "assessmentStandards": [
@@ -349,6 +366,7 @@ export const grade8Data: Grade = {
         {
           "id": "g8-concept-5-3",
           "priorKnowledgeIds": ["g7-concept-5-3"],
+          "nationalStandardIds": ["M-8-III-A.24"],
           "title": "Веројатност",
           "description": "Цели за: Веројатност",
           "assessmentStandards": [

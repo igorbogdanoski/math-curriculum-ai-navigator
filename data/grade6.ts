@@ -19,6 +19,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-1-1",
           "priorKnowledgeIds": ["g5-concept-1-1"],
+          "nationalStandardIds": [],
           "title": "Множества",
           "description": "Цели за: Множества",
           "assessmentStandards": [
@@ -42,6 +43,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-1-2",
           "priorKnowledgeIds": ["g5-concept-1-2"],
+          "nationalStandardIds": ["M-6-III-A.2"],
           "title": "Природни броеви",
           "description": "Цели за: Природни броеви",
           "assessmentStandards": [
@@ -68,6 +70,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-1-3",
           "priorKnowledgeIds": ["g5-concept-1-3"],
+          "nationalStandardIds": [],
           "title": "Римски броеви",
           "description": "Цели за: Римски броеви",
           "assessmentStandards": [
@@ -82,6 +85,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-1-4",
           "priorKnowledgeIds": ["g5-concept-1-4"],
+          "nationalStandardIds": [],
           "title": "Цели броеви",
           "description": "Цели за: Цели броеви",
           "assessmentStandards": [
@@ -99,6 +103,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-1-5",
           "priorKnowledgeIds": ["g5-concept-1-5"],
+          "nationalStandardIds": ["M-6-III-A.3", "M-6-III-A.4", "M-6-III-A.5"],
           "title": "Позитивни рационални броеви",
           "description": "Цели за: Позитивни рационални броеви",
           "assessmentStandards": [
@@ -135,6 +140,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-2-1",
           "priorKnowledgeIds": ["g5-concept-2-1"],
+          "nationalStandardIds": ["M-6-III-A.12"],
           "title": "Отсечка и агол",
           "description": "Цели за: Отсечка и агол",
           "assessmentStandards": [
@@ -158,6 +164,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-2-2",
           "priorKnowledgeIds": ["g5-concept-2-2"],
+          "nationalStandardIds": ["M-6-III-A.12"],
           "title": "Круг",
           "description": "Цели за: Круг",
           "assessmentStandards": [
@@ -176,6 +183,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-2-3",
           "priorKnowledgeIds": ["g5-concept-2-3"],
+          "nationalStandardIds": ["M-6-III-A.12"],
           "title": "Многуаголник",
           "description": "Цели за: Многуаголник",
           "assessmentStandards": [
@@ -196,6 +204,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-2-4",
           "priorKnowledgeIds": ["g5-concept-2-4"],
+          "nationalStandardIds": ["M-6-III-A.13"],
           "title": "Врска меѓу 2Д и 3Д форми",
           "description": "Цели за: Врска меѓу 2Д и 3Д форми",
           "assessmentStandards": [
@@ -212,6 +221,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-2-5",
           "priorKnowledgeIds": ["g5-concept-2-5"],
+          "nationalStandardIds": ["M-6-III-A.15"],
           "title": "Положба насока и движење",
           "description": "Цели за: Положба насока и движење",
           "assessmentStandards": [
@@ -241,6 +251,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-3-1",
           "priorKnowledgeIds": ["g5-concept-1-1"],
+          "nationalStandardIds": ["M-6-III-A.1"],
           "title": "Операции во N0",
           "description": "Цели за: Операции во N0",
           "assessmentStandards": [
@@ -275,6 +286,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-3-2",
           "priorKnowledgeIds": ["g5-concept-1-2"],
+          "nationalStandardIds": [],
           "title": "Деливост",
           "description": "Цели за: Деливост",
           "assessmentStandards": [
@@ -296,6 +308,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-3-3",
           "priorKnowledgeIds": ["g5-concept-1-3"],
+          "nationalStandardIds": ["M-6-III-A.1"],
           "title": "Операции со рационални броеви",
           "description": "Цели за: Операции со рационални броеви",
           "assessmentStandards": [
@@ -328,6 +341,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-4-1",
           "priorKnowledgeIds": ["g5-concept-4-1"],
+          "nationalStandardIds": ["M-6-III-A.18"],
           "title": "Должина маса зафатнина",
           "description": "Цели за: Должина маса зафатнина",
           "assessmentStandards": [
@@ -353,6 +367,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-4-2",
           "priorKnowledgeIds": ["g5-concept-4-2"],
+          "nationalStandardIds": [],
           "title": "Време",
           "description": "Цели за: Време",
           "assessmentStandards": [
@@ -368,6 +383,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-4-3",
           "priorKnowledgeIds": ["g5-concept-4-3"],
+          "nationalStandardIds": [],
           "title": "Пари",
           "description": "Цели за: Пари",
           "assessmentStandards": [
@@ -381,6 +397,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-4-4",
           "priorKnowledgeIds": ["g5-concept-4-3"],
+          "nationalStandardIds": ["M-6-III-A.19"],
           "title": "Плоштина",
           "description": "Цели за: Плоштина",
           "assessmentStandards": [
@@ -409,6 +426,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-5-1",
           "priorKnowledgeIds": ["g5-concept-5-1"],
+          "nationalStandardIds": ["M-6-III-A.22", "M-6-III-A.23"],
           "title": "Статистика",
           "description": "Цели за: Статистика",
           "assessmentStandards": [
@@ -431,6 +449,7 @@ export const grade6Data: Grade = {
         {
           "id": "g6-concept-5-2",
           "priorKnowledgeIds": ["g5-concept-5-2"],
+          "nationalStandardIds": ["M-6-III-A.24"],
           "title": "Веројатност",
           "description": "Цели за: Веројатност",
           "assessmentStandards": [

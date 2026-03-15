@@ -22,6 +22,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-1-1",
           "priorKnowledgeIds": ["g6-concept-1-1"],
+          "nationalStandardIds": [],
           "title": "Операции со множества",
           "description": "Цели за: Операции со множества",
           "assessmentStandards": [
@@ -47,6 +48,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-1-2",
           "priorKnowledgeIds": ["g6-concept-1-2"],
+          "nationalStandardIds": ["M-7-III-A.2"],
           "title": "Цели броеви",
           "description": "Цели за: Цели броеви",
           "assessmentStandards": [
@@ -65,6 +67,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-1-3",
           "priorKnowledgeIds": ["g6-concept-1-3"],
+          "nationalStandardIds": ["M-7-III-A.1"],
           "title": "Операции со цели броеви",
           "description": "Цели за: Операции со цели броеви",
           "assessmentStandards": [
@@ -88,6 +91,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-1-4",
           "priorKnowledgeIds": ["g6-concept-1-4"],
+          "nationalStandardIds": ["M-7-III-A.7"],
           "title": "Степен и корен",
           "description": "Цели за: Степен и корен",
           "assessmentStandards": [
@@ -103,6 +107,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-1-5",
           "priorKnowledgeIds": ["g6-concept-1-5"],
+          "nationalStandardIds": ["M-7-III-A.3", "M-7-III-A.4"],
           "title": "Позитивни рационални броеви и проценти",
           "description": "Цели за: Позитивни рационални броеви и проценти",
           "assessmentStandards": [
@@ -122,6 +127,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-1-6",
           "priorKnowledgeIds": ["g6-concept-3-1"],
+          "nationalStandardIds": ["M-7-III-A.1"],
           "title": "Операции со позитивни рационални броеви",
           "description": "Цели за: Операции со позитивни рационални броеви",
           "assessmentStandards": [
@@ -141,6 +147,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-1-7",
           "priorKnowledgeIds": ["g6-concept-3-2"],
+          "nationalStandardIds": ["M-7-III-A.5", "M-7-III-A.6", "M-7-III-A.16"],
           "title": "Размер и пропорционалност",
           "description": "Цели за: Размер и пропорционалност",
           "assessmentStandards": [
@@ -172,6 +179,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-2-1",
           "priorKnowledgeIds": ["g6-concept-2-1"],
+          "nationalStandardIds": ["M-7-III-A.12"],
           "title": "Кружница",
           "description": "Цели за: Кружница",
           "assessmentStandards": [
@@ -189,6 +197,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-2-2",
           "priorKnowledgeIds": ["g6-concept-2-2"],
+          "nationalStandardIds": ["M-7-III-A.12"],
           "title": "Точка права отсечка",
           "description": "Цели за: Точка права отсечка",
           "assessmentStandards": [
@@ -205,6 +214,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-2-3",
           "priorKnowledgeIds": ["g6-concept-2-3"],
+          "nationalStandardIds": ["M-7-III-A.12"],
           "title": "Агол",
           "description": "Цели за: Агол",
           "assessmentStandards": [
@@ -230,6 +240,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-2-4",
           "priorKnowledgeIds": ["g6-concept-2-4"],
+          "nationalStandardIds": ["M-7-III-A.12"],
           "title": "2Д форми",
           "description": "Цели за: 2Д форми",
           "assessmentStandards": [
@@ -256,6 +267,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-2-5",
           "priorKnowledgeIds": ["g6-concept-2-5"],
+          "nationalStandardIds": ["M-7-III-A.15"],
           "title": "Положба и движење",
           "description": "Цели за: Положба и движење",
           "assessmentStandards": [
@@ -283,6 +295,7 @@ export const grade7Data: Grade = {
       "concepts": [
         {
           "id": "g7-concept-3-1",
+          "nationalStandardIds": ["M-7-III-A.8", "M-7-III-A.10"],
           "title": "Изрази равенки формули",
           "description": "Цели за: Изрази равенки формули",
           "assessmentStandards": [
@@ -306,6 +319,7 @@ export const grade7Data: Grade = {
         },
         {
           "id": "g7-concept-3-2",
+          "nationalStandardIds": ["M-7-III-A.9"],
           "title": "Низи функции графици",
           "description": "Цели за: Низи функции графици",
           "assessmentStandards": [
@@ -338,6 +352,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-4-1",
           "priorKnowledgeIds": ["g6-concept-4-1"],
+          "nationalStandardIds": ["M-7-III-A.18"],
           "title": "Должина маса зафатнина",
           "description": "Цели за: Должина маса зафатнина",
           "assessmentStandards": [
@@ -352,6 +367,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-4-2",
           "priorKnowledgeIds": ["g6-concept-4-2"],
+          "nationalStandardIds": [],
           "title": "Време",
           "description": "Цели за: Време",
           "assessmentStandards": [
@@ -369,6 +385,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-4-3",
           "priorKnowledgeIds": ["g6-concept-4-3"],
+          "nationalStandardIds": ["M-7-III-A.19", "M-7-III-A.20"],
           "title": "Периметар плоштина волумен",
           "description": "Цели за: Периметар плоштина волумен",
           "assessmentStandards": [
@@ -403,6 +420,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-5-1",
           "priorKnowledgeIds": ["g6-concept-5-1"],
+          "nationalStandardIds": [],
           "title": "Планирање и собирање",
           "description": "Цели за: Планирање и собирање",
           "assessmentStandards": [
@@ -418,6 +436,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-5-2",
           "priorKnowledgeIds": ["g6-concept-5-2"],
+          "nationalStandardIds": ["M-7-III-A.22", "M-7-III-A.23"],
           "title": "Обработка и толкување",
           "description": "Цели за: Обработка и толкување",
           "assessmentStandards": [
@@ -437,6 +456,7 @@ export const grade7Data: Grade = {
         {
           "id": "g7-concept-5-3",
           "priorKnowledgeIds": ["g6-concept-5-2"],
+          "nationalStandardIds": ["M-7-III-A.24"],
           "title": "Веројатност",
           "description": "Цели за: Веројатност",
           "assessmentStandards": [
