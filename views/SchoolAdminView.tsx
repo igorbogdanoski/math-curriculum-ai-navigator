@@ -2,14 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { useNavigation } from '../contexts/NavigationContext';
-import { Users, School, TrendingUp, BookOpen, AlertCircle, Printer, BarChart2, FileText } from 'lucide-react';
+import { useNotification } from '../contexts/NotificationContext';
+import { Users, School, TrendingUp, BookOpen, AlertCircle, Printer, BarChart2, FileText, RefreshCw, Copy, UserMinus, Loader2 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
+import type { School as SchoolType } from '../types';
 
 export const SchoolAdminView: React.FC = () => {
     const { user } = useAuth();
     const { navigate } = useNavigation();
+    const { addNotification } = useNotification();
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
+    const [school, setSchool] = useState<SchoolType | null>(null);
+    const [joinCodeLoading, setJoinCodeLoading] = useState(false);
+    const [removingUid, setRemovingUid] = useState<string | null>(null);
 
     useEffect(() => {
         if (!user || (user.role !== 'school_admin' && user.role !== 'admin')) {
@@ -17,11 +23,15 @@ export const SchoolAdminView: React.FC = () => {
             return;
         }
 
-        const fetchStats = async () => {
+        const fetchAll = async () => {
             try {
                 if (user.schoolId) {
-                    const data = await firestoreService.fetchSchoolStats(user.schoolId);
+                    const [data, schoolData] = await Promise.all([
+                        firestoreService.fetchSchoolStats(user.schoolId),
+                        firestoreService.fetchSchool(user.schoolId),
+                    ]);
                     setStats(data);
+                    setSchool(schoolData);
                 }
             } catch (error) {
                 console.error('Error fetching school stats:', error);
@@ -30,8 +40,41 @@ export const SchoolAdminView: React.FC = () => {
             }
         };
 
-        fetchStats();
+        fetchAll();
     }, [user, navigate]);
+
+    const handleRegenerateCode = async () => {
+        if (!user?.schoolId) return;
+        setJoinCodeLoading(true);
+        try {
+            const newCode = await firestoreService.regenerateJoinCode(user.schoolId);
+            setSchool(prev => prev ? { ...prev, joinCode: newCode } : prev);
+            addNotification(`Нов код генериран: ${newCode}`, 'success');
+        } catch {
+            addNotification('Грешка при генерирање на код.', 'error');
+        } finally {
+            setJoinCodeLoading(false);
+        }
+    };
+
+    const handleRemoveTeacher = async (teacherUid: string, teacherName: string) => {
+        if (!user?.schoolId) return;
+        if (!window.confirm(`Дали сте сигурни дека сакате да го отстраните ${teacherName}?`)) return;
+        setRemovingUid(teacherUid);
+        try {
+            await firestoreService.removeTeacherFromSchool(user.schoolId, teacherUid);
+            setStats((prev: any) => prev ? {
+                ...prev,
+                teachers: prev.teachers.filter((t: any) => t.id !== teacherUid),
+                totalTeachers: prev.totalTeachers - 1,
+            } : prev);
+            addNotification(`${teacherName} е отстранет од училиштето.`, 'success');
+        } catch {
+            addNotification('Грешка при отстранување.', 'error');
+        } finally {
+            setRemovingUid(null);
+        }
+    };
 
     if (!user || (user.role !== 'school_admin' && user.role !== 'admin')) {
         return null;
@@ -179,7 +222,42 @@ export const SchoolAdminView: React.FC = () => {
                         </Card>
                     )}
 
-                    {/* Г4: Teachers table — enhanced with materialsGenerated */}
+                    {/* И1 — Join Code panel */}
+                    {school && (
+                        <Card className="mt-6 p-6 border-indigo-200 bg-indigo-50/30">
+                            <h2 className="text-sm font-bold text-indigo-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <School className="w-4 h-4" />
+                                Код за приклучување на наставници
+                            </h2>
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <div className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-indigo-300 rounded-xl font-mono text-2xl font-bold tracking-widest text-indigo-800 select-all">
+                                    {school.joinCode ?? '——'}
+                                </div>
+                                <button
+                                    type="button"
+                                    title="Копирај код"
+                                    onClick={() => { navigator.clipboard.writeText(school.joinCode ?? ''); addNotification('Кодот е копиран!', 'success'); }}
+                                    className="p-2 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 rounded-lg transition-colors"
+                                >
+                                    <Copy className="w-5 h-5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleRegenerateCode}
+                                    disabled={joinCodeLoading}
+                                    className="flex items-center gap-2 px-4 py-2 text-sm border border-indigo-300 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                                >
+                                    {joinCodeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                                    Генерирај нов
+                                </button>
+                            </div>
+                            <p className="text-xs text-indigo-500 mt-2">
+                                Наставниците го внесуваат овој код во Поставки → Приклучи се кон училиште.
+                            </p>
+                        </Card>
+                    )}
+
+                    {/* Г4: Teachers table — enhanced with remove action */}
                     <Card className="mt-6 overflow-hidden">
                         <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -196,6 +274,7 @@ export const SchoolAdminView: React.FC = () => {
                                         <th className="py-3 px-6 font-medium text-center">Материјали</th>
                                         <th className="py-3 px-6 font-medium text-center">Просек</th>
                                         <th className="py-3 px-6 font-medium">Последна активност</th>
+                                        <th className="py-3 px-6 font-medium text-center">Акција</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -225,6 +304,19 @@ export const SchoolAdminView: React.FC = () => {
                                                 {teacher.lastActive && teacher.lastActive !== 'Непознато'
                                                     ? new Date(teacher.lastActive).toLocaleDateString('mk-MK')
                                                     : '—'}
+                                            </td>
+                                            <td className="py-4 px-6 text-center">
+                                                <button
+                                                    type="button"
+                                                    title="Отстрани наставник"
+                                                    onClick={() => handleRemoveTeacher(teacher.id, teacher.name)}
+                                                    disabled={removingUid === teacher.id}
+                                                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
+                                                >
+                                                    {removingUid === teacher.id
+                                                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                                                        : <UserMinus className="w-4 h-4" />}
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}

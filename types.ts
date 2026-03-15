@@ -3,8 +3,15 @@ export interface School {
   id: string;
   name: string;
   city: string;
+  municipality?: string;
+  address?: string;
   teacherUids: string[];
+  /** Legacy single admin; new docs use adminUids[] */
   adminUid: string;
+  adminUids?: string[];
+  /** 6-char uppercase code teachers use to join (И1) */
+  joinCode?: string;
+  joinCodeGeneratedAt?: any;
   createdAt?: any;
 }
 

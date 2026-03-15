@@ -9,6 +9,7 @@ import { InstallApp } from '../components/common/InstallApp';
 import { firestoreService } from '../services/firestoreService';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled } from '../services/geminiService';
+import { School, LogOut, CheckCircle2, Loader2 } from 'lucide-react';
 
 const initialProfile: TeachingProfile = {
     name: '',
@@ -23,6 +24,46 @@ export const SettingsView: React.FC = () => {
     const [studentProfiles, setStudentProfiles] = useState<StudentProfile[]>(user?.studentProfiles || []);
     const [newProfileName, setNewProfileName] = useState('');
     const [newProfileDesc, setNewProfileDesc] = useState('');
+
+    // И1 — School join state
+    const [joinCodeInput, setJoinCodeInput] = useState('');
+    const [joinLoading, setJoinLoading] = useState(false);
+    const [joinedSchoolName, setJoinedSchoolName] = useState<string | null>(user?.schoolName ?? null);
+    const [leaveLoading, setLeaveLoading] = useState(false);
+
+    const handleJoinSchool = async () => {
+        if (!firebaseUser || joinCodeInput.trim().length < 4) return;
+        setJoinLoading(true);
+        try {
+            const school = await firestoreService.joinSchoolByCode(joinCodeInput.trim(), firebaseUser.uid);
+            if (!school) {
+                addNotification('Кодот не е пронајден. Проверете го и обидете се повторно.', 'error');
+            } else {
+                setJoinedSchoolName(school.name);
+                setJoinCodeInput('');
+                addNotification(`Успешно се приклучивте кон ${school.name}! 🎉`, 'success');
+            }
+        } catch {
+            addNotification('Грешка при приклучување. Обидете се повторно.', 'error');
+        } finally {
+            setJoinLoading(false);
+        }
+    };
+
+    const handleLeaveSchool = async () => {
+        if (!firebaseUser || !user?.schoolId) return;
+        if (!window.confirm('Дали сте сигурни дека сакате да го напуштите училиштето?')) return;
+        setLeaveLoading(true);
+        try {
+            await firestoreService.leaveSchool(user.schoolId, firebaseUser.uid);
+            setJoinedSchoolName(null);
+            addNotification('Успешно го напуштивте училиштето.', 'success');
+        } catch {
+            addNotification('Грешка при напуштање. Обидете се повторно.', 'error');
+        } finally {
+            setLeaveLoading(false);
+        }
+    };
 
     // Mock list of schools for Phase D4 (School & Admin Management)
     const MOCK_SCHOOLS = [
@@ -628,6 +669,55 @@ export const SettingsView: React.FC = () => {
                 <p className="text-xs text-gray-400 mt-3">
                     Поставките се зачувуваат локално и се применуваат веднаш низ целата апликација.
                 </p>
+            </Card>
+
+            {/* И1 — School Join Card */}
+            <Card className="max-w-2xl border-blue-200 bg-blue-50/20">
+                <h2 className="text-2xl font-semibold text-blue-800 mb-1 flex items-center gap-2">
+                    <School className="w-6 h-6" />
+                    Приклучи се кон училиште
+                </h2>
+                <p className="text-sm text-blue-600 mb-4">
+                    Добијте код од директорот/администраторот на вашето училиште и внесете го подолу.
+                </p>
+
+                {joinedSchoolName ? (
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
+                        <div className="flex items-center gap-2 text-green-800">
+                            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                            <span className="font-semibold">{joinedSchoolName}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleLeaveSchool}
+                            disabled={leaveLoading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                            {leaveLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
+                            Напушти
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={joinCodeInput}
+                            onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
+                            maxLength={8}
+                            placeholder="пр. AB1234"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                        <button
+                            type="button"
+                            onClick={handleJoinSchool}
+                            disabled={joinLoading || joinCodeInput.trim().length < 4}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                            Приклучи се
+                        </button>
+                    </div>
+                )}
             </Card>
         </div>
     );

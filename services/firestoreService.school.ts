@@ -1,18 +1,122 @@
-import { doc, collection, getDocs, query, where, orderBy, updateDoc, addDoc, getCountFromServer, getAggregateFromServer, average, limit } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, updateDoc, addDoc, getCountFromServer, getAggregateFromServer, average, limit, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import type { School } from '../types';
 
 export const schoolService = {
 
-  createSchool: async (name: string, city: string, adminUid: string = ''): Promise<{id: string, name: string, city: string}> => {
+  createSchool: async (name: string, city: string, adminUid: string = '', opts?: { municipality?: string; address?: string }): Promise<School> => {
     try {
+      const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
       const docRef = await addDoc(collection(db, 'schools'), {
-        name, city, adminUid, teacherUids: [], createdAt: new Date()
+        name,
+        city,
+        municipality: opts?.municipality ?? '',
+        address: opts?.address ?? '',
+        adminUid,
+        adminUids: adminUid ? [adminUid] : [],
+        teacherUids: [],
+        joinCode,
+        joinCodeGeneratedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
       });
-      return { id: docRef.id, name, city };
+      return { id: docRef.id, name, city, municipality: opts?.municipality, adminUid, adminUids: adminUid ? [adminUid] : [], teacherUids: [], joinCode };
     } catch (error) {
       console.error('Error creating school:', error);
       throw error;
     }
+  },
+
+  /** Fetch a single school by ID */
+  fetchSchool: async (schoolId: string): Promise<School | null> => {
+    try {
+      const snap = await getDoc(doc(db, 'schools', schoolId));
+      if (!snap.exists()) return null;
+      return { id: snap.id, ...snap.data() } as School;
+    } catch {
+      return null;
+    }
+  },
+
+  /** Find a school by its 6-char join code (case-insensitive) */
+  fetchSchoolByJoinCode: async (code: string): Promise<School | null> => {
+    try {
+      const q = query(collection(db, 'schools'), where('joinCode', '==', code.toUpperCase()), limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      return { id: snap.docs[0].id, ...snap.docs[0].data() } as School;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Teacher joins a school by code.
+   * Adds teacherUid to school.teacherUids[] and updates the user profile.
+   */
+  joinSchoolByCode: async (code: string, teacherUid: string): Promise<School | null> => {
+    try {
+      const school = await schoolService.fetchSchoolByJoinCode(code);
+      if (!school) return null;
+      await Promise.all([
+        updateDoc(doc(db, 'schools', school.id), {
+          teacherUids: arrayUnion(teacherUid),
+        }),
+        updateDoc(doc(db, 'users', teacherUid), {
+          schoolId: school.id,
+          schoolName: school.name,
+        }),
+      ]);
+      return school;
+    } catch (error) {
+      console.error('Error joining school:', error);
+      throw error;
+    }
+  },
+
+  /** Teacher leaves their current school */
+  leaveSchool: async (schoolId: string, teacherUid: string): Promise<void> => {
+    try {
+      await Promise.all([
+        updateDoc(doc(db, 'schools', schoolId), {
+          teacherUids: arrayRemove(teacherUid),
+        }),
+        updateDoc(doc(db, 'users', teacherUid), {
+          schoolId: null,
+          schoolName: null,
+        }),
+      ]);
+    } catch (error) {
+      console.error('Error leaving school:', error);
+      throw error;
+    }
+  },
+
+  /** School admin removes a teacher from the school */
+  removeTeacherFromSchool: async (schoolId: string, teacherUid: string): Promise<void> => {
+    try {
+      await Promise.all([
+        updateDoc(doc(db, 'schools', schoolId), {
+          teacherUids: arrayRemove(teacherUid),
+        }),
+        updateDoc(doc(db, 'users', teacherUid), {
+          schoolId: null,
+          schoolName: null,
+        }),
+      ]);
+    } catch (error) {
+      console.error('Error removing teacher:', error);
+      throw error;
+    }
+  },
+
+  /** Regenerate the join code for a school (invalidates the old one) */
+  regenerateJoinCode: async (schoolId: string): Promise<string> => {
+    const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    await updateDoc(doc(db, 'schools', schoolId), {
+      joinCode: newCode,
+      joinCodeGeneratedAt: serverTimestamp(),
+    });
+    return newCode;
   },
 
   fetchSchools: async (): Promise<any[]> => {
