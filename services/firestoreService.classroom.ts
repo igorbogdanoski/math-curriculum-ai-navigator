@@ -2,7 +2,7 @@ import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, inc
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
-import { type StudentGroup, type SchoolClass, type Announcement } from './firestoreService.types';
+import { type StudentGroup, type SchoolClass, type ClassMembership, type Announcement } from './firestoreService.types';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 
 export const fetchStudentGroups = async (teacherUid?: string): Promise<StudentGroup[]> => {
@@ -63,6 +63,81 @@ export const updateClass = async (classId: string, updates: Partial<Pick<SchoolC
 export const deleteClass = async (classId: string): Promise<void> => {
     await deleteDoc(doc(db, 'classes', classId));
   };
+
+// ── И2: Class Join Code ─────────────────────────────────────────────────────
+
+/** Generate and persist a cryptographically-secure 6-char join code for a class */
+export const generateClassJoinCode = async (classId: string): Promise<string> => {
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+    .map(b => b.toString(36).padStart(2, '0')).join('').substring(0, 6).toUpperCase();
+  await updateDoc(doc(db, 'classes', classId), { joinCode: code, joinCodeGeneratedAt: serverTimestamp() });
+  return code;
+};
+
+/** Find a class by its 6-char join code (case-insensitive) */
+export const fetchClassByJoinCode = async (code: string): Promise<SchoolClass | null> => {
+  try {
+    const q = query(collection(db, 'classes'), where('joinCode', '==', code.trim().toUpperCase()), limit(1));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    return { id: snap.docs[0].id, ...snap.docs[0].data() } as SchoolClass;
+  } catch { return null; }
+};
+
+/** Student joins a class by code — writes class_memberships/{deviceId} */
+export const joinClassByCode = async (code: string, deviceId: string, studentName: string): Promise<SchoolClass | null> => {
+  if (!code?.trim() || !deviceId?.trim()) return null;
+  const cls = await fetchClassByJoinCode(code);
+  if (!cls) return null;
+  await setDoc(doc(db, 'class_memberships', deviceId), {
+    deviceId,
+    classId: cls.id,
+    className: cls.name,
+    gradeLevel: cls.gradeLevel,
+    teacherUid: cls.teacherUid,
+    studentName: studentName || null,
+    joinedAt: serverTimestamp(),
+  }, { merge: true });
+  return cls;
+};
+
+/** Fetch the class membership for a device (returns null if not joined any class) */
+export const fetchClassMembership = async (deviceId: string): Promise<ClassMembership | null> => {
+  try {
+    const snap = await getDoc(doc(db, 'class_memberships', deviceId));
+    if (!snap.exists()) return null;
+    return snap.data() as ClassMembership;
+  } catch { return null; }
+};
+
+/** Fetch per-student quiz stats for a class (lazy analytics) */
+export const fetchClassStats = async (
+  teacherUid: string,
+  studentNames: string[]
+): Promise<{ name: string; avgPct: number; count: number }[]> => {
+  if (!teacherUid || studentNames.length === 0) return [];
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'quiz_results'),
+      where('teacherUid', '==', teacherUid),
+      limit(500)
+    ));
+    const nameSet = new Set(studentNames);
+    const map: Record<string, { sum: number; count: number }> = {};
+    snap.forEach(d => {
+      const r = d.data();
+      const n: string | undefined = r.studentName;
+      if (n && nameSet.has(n)) {
+        if (!map[n]) map[n] = { sum: 0, count: 0 };
+        map[n].sum += r.percentage ?? 0;
+        map[n].count++;
+      }
+    });
+    return Object.entries(map)
+      .map(([name, v]) => ({ name, avgPct: Math.round(v.sum / v.count), count: v.count }))
+      .sort((a, b) => b.avgPct - a.avgPct);
+  } catch { return []; }
+};
 
 export const addAnnouncement = async (teacherUid: string, message: string, gradeLevel?: number): Promise<void> => {
     await addDoc(collection(db, 'announcements'), {

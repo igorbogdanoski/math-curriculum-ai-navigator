@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { School, Plus, Trash2, UserPlus, X, Edit2, Check, Upload, FileText } from 'lucide-react';
+import { School, Plus, Trash2, UserPlus, X, Edit2, Check, Upload, FileText, Key, RefreshCw, Copy, CheckCircle2, BarChart2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { firestoreService, type SchoolClass } from '../../services/firestoreService';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
@@ -35,6 +35,15 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     const [csvTargetClassId, setCsvTargetClassId] = useState<string | null>(null);
     const [csvPreview, setCsvPreview] = useState<{ classId: string; names: string[] } | null>(null);
     const [csvImporting, setCsvImporting] = useState(false);
+
+    // И2 — join code per class
+    const [generatingCodeId, setGeneratingCodeId] = useState<string | null>(null);
+    const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+
+    // И2 — per-class stats (lazy)
+    const [statsOpenId, setStatsOpenId] = useState<string | null>(null);
+    const [statsCache, setStatsCache] = useState<Record<string, { name: string; avgPct: number; count: number }[]>>({});
+    const [statsLoading, setStatsLoading] = useState(false);
 
     const handleCsvButtonClick = (classId: string) => {
         setCsvTargetClassId(classId);
@@ -139,6 +148,32 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         await firestoreService.updateClass(classId, { name });
         setRenameId(null);
         await loadClasses();
+    };
+
+    const handleGenerateCode = async (classId: string) => {
+        setGeneratingCodeId(classId);
+        try {
+            const code = await firestoreService.generateClassJoinCode(classId);
+            setClasses(prev => prev.map(c => c.id === classId ? { ...c, joinCode: code } : c));
+        } finally {
+            setGeneratingCodeId(null);
+        }
+    };
+
+    const handleCopyCode = (classId: string, code: string) => {
+        navigator.clipboard.writeText(code);
+        setCopiedCodeId(classId);
+        setTimeout(() => setCopiedCodeId(null), 2000);
+    };
+
+    const handleToggleStats = async (cls: SchoolClass) => {
+        if (statsOpenId === cls.id) { setStatsOpenId(null); return; }
+        setStatsOpenId(cls.id);
+        if (statsCache[cls.id]) return; // already loaded
+        setStatsLoading(true);
+        const data = await firestoreService.fetchClassStats(teacherUid, cls.studentNames);
+        setStatsCache(prev => ({ ...prev, [cls.id]: data }));
+        setStatsLoading(false);
     };
 
     if (loading) {
@@ -409,6 +444,100 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                                         </button>
                                     </span>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* И2: Join Code panel */}
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div className="flex items-center gap-2">
+                                    <Key className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Код за приклучување</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {cls.joinCode ? (
+                                        <>
+                                            <span className="font-mono font-black text-base tracking-widest text-indigo-800 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-lg select-all">
+                                                {cls.joinCode}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                title="Копирај код"
+                                                onClick={() => handleCopyCode(cls.id, cls.joinCode!)}
+                                                className="p-1.5 text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition"
+                                            >
+                                                {copiedCodeId === cls.id
+                                                    ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                                    : <Copy className="w-4 h-4" />}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <span className="text-xs text-slate-400 italic">Нема активен код</span>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleGenerateCode(cls.id)}
+                                        disabled={generatingCodeId === cls.id}
+                                        title={cls.joinCode ? 'Генерирај нов код' : 'Генерирај код'}
+                                        className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition disabled:opacity-50"
+                                    >
+                                        {generatingCodeId === cls.id
+                                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            : <RefreshCw className="w-3.5 h-3.5" />}
+                                        {cls.joinCode ? 'Нов' : 'Генерирај'}
+                                    </button>
+                                </div>
+                            </div>
+                            {cls.joinCode && (
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                    Ученикот го внесува овој код при прв квиз за да се приклучи кон одделението.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* И2: Class stats (lazy) */}
+                        {cls.studentNames.length > 0 && (
+                            <div className="mt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => handleToggleStats(cls)}
+                                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-indigo-600 transition"
+                                >
+                                    <BarChart2 className="w-3.5 h-3.5" />
+                                    Статистики
+                                    {statsOpenId === cls.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                </button>
+
+                                {statsOpenId === cls.id && (
+                                    <div className="mt-2 border border-slate-100 rounded-xl p-3 bg-slate-50">
+                                        {statsLoading && !statsCache[cls.id] ? (
+                                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Се вчитуваат статистики...
+                                            </div>
+                                        ) : (statsCache[cls.id] ?? []).length === 0 ? (
+                                            <p className="text-xs text-slate-400 italic">Нема квизови за овие ученици.</p>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                {(statsCache[cls.id] ?? []).map(s => (
+                                                    <div key={s.name} className="flex items-center gap-2">
+                                                        <span className="text-xs text-slate-600 font-semibold w-36 truncate">{s.name}</span>
+                                                        <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                            <div
+                                                                className={`h-full rounded-full ${s.avgPct >= 75 ? 'bg-green-500' : s.avgPct >= 50 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                                                                style={{ width: `${s.avgPct}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-xs font-bold text-slate-700 w-10 text-right">{s.avgPct}%</span>
+                                                        <span className="text-[10px] text-slate-400 w-10">({s.count})</span>
+                                                    </div>
+                                                ))}
+                                                <p className="text-[10px] text-slate-400 pt-1">
+                                                    Просек одд.: <strong>{Math.round((statsCache[cls.id] ?? []).reduce((a, s) => a + s.avgPct, 0) / ((statsCache[cls.id] ?? []).length || 1))}%</strong>
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </Card>

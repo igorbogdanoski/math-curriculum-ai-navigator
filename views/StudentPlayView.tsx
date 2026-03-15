@@ -166,9 +166,17 @@ export const StudentPlayView: React.FC = () => {
   });
   const [isReturningStudent, setIsReturningStudent] = useState(false);
   // А3: Onboarding wizard — shown only on very first visit (no saved name)
-  const [wizardStep, setWizardStep] = useState<0 | 1 | null>(() => {
+  const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | null>(() => {
     try { return localStorage.getItem('studentName') ? null : 0; } catch { return null; }
   });
+
+  // И2: Class membership — loaded from localStorage, synced to Firestore via join code
+  const [classId, setClassId] = useState<string | null>(() => {
+    try { return localStorage.getItem('student_class_id'); } catch { return null; }
+  });
+  const [classCodeInput, setClassCodeInput] = useState('');
+  const [classCodeLoading, setClassCodeLoading] = useState(false);
+  const [classCodeError, setClassCodeError] = useState('');
 
   // Ж1: device-bound identity — created once per device, persists in localStorage
   const deviceId = getOrCreateDeviceId();
@@ -363,7 +371,8 @@ export const StudentPlayView: React.FC = () => {
         teacherUid: meta.teacherUid,
         deviceId,
         differentiationLevel: meta.differentiationLevel as DifferentiationLevel | undefined,
-        misconceptions
+        misconceptions,
+        classId: classId || undefined,
       });
     } catch (err) {
       console.error('[Quiz] saveQuizResult failed:', err);
@@ -619,12 +628,12 @@ export const StudentPlayView: React.FC = () => {
                     placeholder={t('play.onboarding.name_placeholder')}
                     value={nameInput}
                     onChange={e => setNameInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && nameInput.trim()) { setWizardStep(null); handleConfirmName(); } }}
+                    onKeyDown={e => { if (e.key === 'Enter' && nameInput.trim()) { handleConfirmName(); setWizardStep(2); } }}
                     className="w-full border-2 border-slate-200 rounded-2xl px-4 py-4 md:py-3 text-slate-800 font-semibold text-center text-lg focus:outline-none focus:border-indigo-500 transition mb-4 min-h-[56px] md:min-h-[auto]"
                   />
                   <button
                     type="button"
-                    onClick={() => { setWizardStep(null); handleConfirmName(); }}
+                    onClick={() => { handleConfirmName(); setWizardStep(2); }}
                     disabled={!nameInput.trim()}
                     className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-4 md:py-3 px-6 rounded-2xl font-black text-lg hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed min-h-[56px] md:min-h-[auto]"
                   >
@@ -654,6 +663,70 @@ export const StudentPlayView: React.FC = () => {
                   <span className="w-2 h-2 rounded-full bg-slate-200" />
                   <span className="w-2 h-2 rounded-full bg-indigo-600" />
                   <span className="w-2 h-2 rounded-full bg-slate-200" />
+                </div>
+              </div>
+            )}
+
+            {/* И2: Step 2 — Optional class join code */}
+            {wizardStep === 2 && (
+              <div className="animate-fade-in max-w-sm w-full px-2">
+                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6 mx-auto">
+                  <span className="text-4xl">🏫</span>
+                </div>
+                <h2 className="text-2xl font-black text-slate-800 mb-2 text-center">Во кое одделение си?</h2>
+                <p className="text-slate-500 mb-6 text-sm text-center px-2">
+                  Ако наставникот ти дал код на одделение, внеси го тука. Можеш и да прескокнеш.
+                </p>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Код на одделение (пр. AB12CD)"
+                    value={classCodeInput}
+                    onChange={e => { setClassCodeInput(e.target.value.trim().toUpperCase()); setClassCodeError(''); }}
+                    maxLength={8}
+                    className="w-full border-2 border-slate-200 rounded-2xl px-4 py-4 text-slate-800 font-mono font-bold text-center text-lg tracking-widest focus:outline-none focus:border-green-500 transition"
+                  />
+                  {classCodeError && (
+                    <p className="text-xs text-red-500 text-center">{classCodeError}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!classCodeInput.trim()) { setWizardStep(null); return; }
+                      setClassCodeLoading(true);
+                      setClassCodeError('');
+                      try {
+                        const cls = await firestoreService.joinClassByCode(classCodeInput.trim(), deviceId, studentName);
+                        if (!cls) {
+                          setClassCodeError('Кодот не е пронајден. Провери го кодот или прескокни.');
+                        } else {
+                          setClassId(cls.id);
+                          try { localStorage.setItem('student_class_id', cls.id); } catch { /* incognito */ }
+                          setWizardStep(null);
+                        }
+                      } catch {
+                        setClassCodeError('Грешка при поврзување. Обиди се повторно.');
+                      } finally {
+                        setClassCodeLoading(false);
+                      }
+                    }}
+                    disabled={classCodeLoading}
+                    className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-4 px-6 rounded-2xl font-black text-lg hover:bg-green-700 transition disabled:opacity-40"
+                  >
+                    {classCodeLoading ? '⏳ Се поврзувам...' : 'Приклучи се кон одделението'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWizardStep(null)}
+                    className="w-full py-3 text-sm text-slate-400 hover:text-slate-600 transition"
+                  >
+                    Прескокни — продолжи без код
+                  </button>
+                </div>
+                <div className="flex justify-center gap-1.5 mt-6">
+                  <span className="w-2 h-2 rounded-full bg-slate-200" />
+                  <span className="w-2 h-2 rounded-full bg-slate-200" />
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
                 </div>
               </div>
             )}

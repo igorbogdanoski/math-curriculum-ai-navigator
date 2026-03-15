@@ -208,6 +208,15 @@ service cloud.firestore {
       allow update, delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
+    // ── Членство во класа (class_memberships) — И2 ──
+    // Документ ID = deviceId на ученикот.
+    // Ученикот (anonymous auth) може сам да ги чита/пишува своите.
+    // Наставникот може да чита (за analytics).
+    match /class_memberships/{deviceDoc} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
     // ── Зачувани прашања (saved_questions) ──
     match /saved_questions/{doc} {
       allow read:   if isAuthenticated() && resource.data.teacherUid == request.auth.uid;

@@ -55,7 +55,19 @@ export interface SchoolClass {
   gradeLevel: number;
   teacherUid: string;
   studentNames: string[];
+  joinCode?: string;
+  joinCodeGeneratedAt?: any;
   createdAt?: Timestamp;
+}
+
+export interface ClassMembership {
+  deviceId: string;
+  classId: string;
+  className: string;
+  gradeLevel: number;
+  teacherUid: string;
+  studentName?: string;
+  joinedAt?: Timestamp;
 }
 
 export interface Assignment {
@@ -116,6 +128,7 @@ export interface QuizResult {
   confidence?: number;
   misconceptions?: { question: string; studentAnswer: string; misconception: string }[];
   metacognitiveNote?: string; // П4 — рефлексивна белешка на ученикот по квизот
+  classId?: string;           // И2 — одделение на ученикот (доколку се приклучил)
 }
 
 export interface Announcement {
