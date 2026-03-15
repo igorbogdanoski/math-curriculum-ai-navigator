@@ -4,27 +4,34 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
  * Try Imagen 3 via the `:predict` REST endpoint (Vertex-compatible path on Gemini Developer API).
- * Returns { mimeType, data } on success, null on failure.
+ * Returns { mimeType, data } on success, null on failure (logs the error).
  */
 async function tryImagenPredict(apiKey: string, prompt: string): Promise<{ mimeType: string; data: string } | null> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      instances: [{ prompt }],
-      parameters: {
-        sampleCount: 1,
-        aspectRatio: '16:9',
-        safetyFilterLevel: 'block_some',
-        personGeneration: 'dont_allow',
-      },
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{ prompt }],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: '16:9',
+          safetyFilterLevel: 'block_some',
+          personGeneration: 'dont_allow',
+        },
+      }),
+    });
+  } catch (fetchErr) {
+    console.error('[imagen] Strategy 1 fetch error:', fetchErr);
+    return null;
+  }
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`[${res.status}] ${body}`);
+    const body = await res.text().catch(() => '(unreadable)');
+    console.error(`[imagen] Strategy 1 failed [${res.status}]:`, body);
+    return null;
   }
 
   const data = await res.json();
@@ -32,30 +39,44 @@ async function tryImagenPredict(apiKey: string, prompt: string): Promise<{ mimeT
   if (prediction?.bytesBase64Encoded) {
     return { mimeType: prediction.mimeType || 'image/png', data: prediction.bytesBase64Encoded };
   }
+  console.warn('[imagen] Strategy 1: response ok but no predictions:', JSON.stringify(data).slice(0, 300));
   return null;
 }
 
 /**
- * Fallback: use gemini-2.0-flash-preview-image-generation via standard generateContent
- * with responseModalities: ["IMAGE"].
+ * Fallback: use Gemini Flash image generation via generateContent + responseModalities: ["IMAGE"].
+ * Tries multiple model aliases in order.
  * Returns { mimeType, data } on success, null on failure.
  */
 async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<{ mimeType: string; data: string } | null> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel(
-    { model: 'gemini-2.0-flash-preview-image-generation' },
-    { apiVersion: 'v1beta' },
-  );
+  const candidates = [
+    'gemini-2.0-flash-preview-image-generation',
+    'gemini-2.0-flash-exp',
+  ];
 
-  const result = await (model as any).generateContent({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { responseModalities: ['IMAGE'] },
-  });
+  for (const modelName of candidates) {
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel(
+        { model: modelName },
+        { apiVersion: 'v1beta' },
+      );
 
-  const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
-  const imgPart = parts.find((p: any) => p.inlineData?.data);
-  if (imgPart?.inlineData) {
-    return { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
+      const result = await (model as any).generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ['IMAGE'] },
+      });
+
+      const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
+      const imgPart = parts.find((p: any) => p.inlineData?.data);
+      if (imgPart?.inlineData) {
+        console.log(`[imagen] Strategy 2 succeeded with model: ${modelName}`);
+        return { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
+      }
+      console.warn(`[imagen] Strategy 2 model ${modelName}: no image parts in response`);
+    } catch (err: any) {
+      console.error(`[imagen] Strategy 2 model ${modelName} error:`, err?.message || err);
+    }
   }
   return null;
 }
@@ -94,18 +115,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const apiKey = apiKeys[i];
     try {
       // Strategy 1: Imagen 3 via :predict endpoint
-      let result = await tryImagenPredict(apiKey, prompt).catch(() => null);
-
-      // Strategy 2: Gemini Flash image generation (free-tier compatible fallback)
-      if (!result) {
-        result = await tryGeminiImageGen(apiKey, prompt);
+      const s1result = await tryImagenPredict(apiKey, prompt);
+      if (s1result) {
+        console.log('[imagen] Strategy 1 (Imagen 3 :predict) succeeded');
+        return res.status(200).json({ inlineData: s1result });
       }
 
-      if (result) {
-        return res.status(200).json({ inlineData: result });
+      // Strategy 2: Gemini Flash image generation fallback
+      const s2result = await tryGeminiImageGen(apiKey, prompt);
+      if (s2result) {
+        return res.status(200).json({ inlineData: s2result });
       }
 
-      throw new Error('AI did not return image data from any strategy');
+      throw new Error('AI did not return image data from any strategy (check Vercel logs for details)');
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       const msg = lastError.message;

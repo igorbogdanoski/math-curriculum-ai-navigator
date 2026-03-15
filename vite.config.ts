@@ -128,8 +128,9 @@ function geminiDevProxy(apiKey: string): Plugin {
 
           if (!prompt) { sendJson(400, { error: 'Missing prompt' }); return; }
 
-          // Strategy 1: Imagen 3 via :predict (Vertex-compatible endpoint)
           let imageResult: { mimeType: string; data: string } | null = null;
+
+          // Strategy 1: Imagen 3 via :predict (Vertex-compatible endpoint)
           try {
             const predictUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
             const predictRes = await fetch(predictUrl, {
@@ -144,32 +145,38 @@ function geminiDevProxy(apiKey: string): Plugin {
               const d = await predictRes.json();
               const p = d.predictions?.[0];
               if (p?.bytesBase64Encoded) imageResult = { mimeType: p.mimeType || 'image/png', data: p.bytesBase64Encoded };
+            } else {
+              const errBody = await predictRes.text().catch(() => '');
+              console.error(`[dev-imagen] Strategy 1 failed [${predictRes.status}]:`, errBody);
             }
-          } catch { /* fall through to strategy 2 */ }
+          } catch (e: any) { console.error('[dev-imagen] Strategy 1 error:', e.message); }
 
-          // Strategy 2: Gemini Flash image generation (free-tier compatible)
+          // Strategy 2: Gemini Flash image generation (tries two model aliases)
           if (!imageResult) {
             const { GoogleGenerativeAI } = await import('@google/generative-ai');
             const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel(
-              { model: 'gemini-2.0-flash-preview-image-generation' },
-              { apiVersion: 'v1beta' },
-            );
-            const result = await (model as any).generateContent({
-              contents: [{ role: 'user', parts: [{ text: prompt }] }],
-              generationConfig: { responseModalities: ['IMAGE'] },
-            });
-            const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
-            const imgPart = parts.find((p: any) => p.inlineData?.data);
-            if (imgPart?.inlineData) {
-              imageResult = { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
+            for (const modelName of ['gemini-2.0-flash-preview-image-generation', 'gemini-2.0-flash-exp']) {
+              try {
+                const model = genAI.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' });
+                const result = await (model as any).generateContent({
+                  contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                  generationConfig: { responseModalities: ['IMAGE'] },
+                });
+                const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
+                const imgPart = parts.find((p: any) => p.inlineData?.data);
+                if (imgPart?.inlineData) {
+                  imageResult = { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
+                  console.log(`[dev-imagen] Strategy 2 succeeded with: ${modelName}`);
+                  break;
+                }
+              } catch (e: any) { console.error(`[dev-imagen] Strategy 2 (${modelName}) error:`, e.message); }
             }
           }
 
           if (imageResult) {
             sendJson(200, { inlineData: imageResult });
           } else {
-            throw new Error('AI did not return image data from any strategy');
+            sendJson(500, { error: 'AI did not return image data from any strategy (see dev server logs)' });
           }
         } catch (error: any) {
           sendJson(500, { error: error.message });
