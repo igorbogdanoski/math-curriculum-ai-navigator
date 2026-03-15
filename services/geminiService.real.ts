@@ -59,11 +59,32 @@ async *getChatResponseStreamWithThinking(history: ChatMessage[], profile?: Teach
   },
 
 async generateIllustration(prompt: string, image?: { base64: string, mimeType: string }, profile?: TeachingProfile): Promise<AIGeneratedIllustration> {
-    const response = await callImagenProxy({ 
-        model: IMAGEN_MODEL, 
-        prompt: prompt
-    });
-    
+    // Prompt-hash cache — skip re-calling Imagen for identical prompts (no image upload)
+    if (!image) {
+      const cacheKey = `img_cache_${prompt.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 120)}`;
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached) as { imageUrl: string; ts: number };
+          // Cache TTL: 7 days
+          if (Date.now() - parsed.ts < 7 * 24 * 60 * 60 * 1000) {
+            return { imageUrl: parsed.imageUrl, prompt };
+          }
+          localStorage.removeItem(cacheKey);
+        }
+      } catch { /* ignore storage errors */ }
+
+      const response = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
+      if (response.inlineData) {
+        const data = response.inlineData;
+        const imageUrl = `data:${data.mimeType};base64,${data.data}`;
+        try { localStorage.setItem(cacheKey, JSON.stringify({ imageUrl, ts: Date.now() })); } catch { /* quota exceeded — skip */ }
+        return { imageUrl, prompt };
+      }
+      throw new Error("AI did not return image");
+    }
+
+    const response = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
     if (response.inlineData) {
         const data = response.inlineData;
         return { imageUrl: `data:${data.mimeType};base64,${data.data}`, prompt };

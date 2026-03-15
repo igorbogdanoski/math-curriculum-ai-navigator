@@ -364,6 +364,12 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                             <span className={`flex items-center gap-0.5 font-semibold ${isPublished ? 'text-green-600' : 'text-amber-600'}`}>
                                                 {isPublished ? <><Globe className="w-3 h-3" />Публикуван</> : <><Lock className="w-3 h-3" />Нацрт</>}
                                             </span>
+                                            {useSemanticSearch && typeof (m as any).score === 'number' && (
+                                                <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 font-bold rounded-full border border-indigo-100" title="Семантичка сличност">
+                                                    <Sparkles className="w-2.5 h-2.5" />
+                                                    {Math.round((m as any).score * 100)}%
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Document,
   Page,
@@ -6,17 +6,31 @@ import {
   View,
   Image,
   StyleSheet,
-  PDFDownloadLink,
-  Font,
+  pdf,
 } from '@react-pdf/renderer';
 import { Loader2, FileDown } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import type { LessonPlan } from '../../types';
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Math detection & PDF geometry
 // ---------------------------------------------------------------------------
 
-/** Strip common LaTeX math delimiters so text renders cleanly in the PDF. */
+const HAS_MATH = /\$[\s\S]+?\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]/;
+
+/** A4 content width: 595pt - 2×36pt padding */
+const PDF_FULL_W_PT = 523;
+/** Diff cell: ~⅓ content minus 2 gaps of 6pt */
+const PDF_DIFF_W_PT = Math.floor((PDF_FULL_W_PT - 12) / 3);
+
+function ptToPx(pt: number): number {
+  return Math.round(pt * (96 / 72));
+}
+
+// ---------------------------------------------------------------------------
+// stripLatex — plain-text fallback when math rendering not needed
+// ---------------------------------------------------------------------------
+
 function stripLatex(text: string): string {
   return text
     .replace(/\$\$([^$]+)\$\$/g, '$1')
@@ -34,6 +48,154 @@ function getText(item: any): string {
   if (typeof item === 'string') return stripLatex(item);
   if (item?.text) return stripLatex(item.text);
   return '';
+}
+
+// ---------------------------------------------------------------------------
+// renderMathToPng — KaTeX + html2canvas → PNG data URI
+// ---------------------------------------------------------------------------
+
+async function renderMathToPng(
+  text: string,
+  opts: { fontSize?: number; color?: string; widthPt?: number } = {}
+): Promise<{ src: string; pngH: number }> {
+  const { fontSize = 18, color = '#111827', widthPt = PDF_FULL_W_PT } = opts;
+  const widthPx = ptToPx(widthPt);
+
+  const container = document.createElement('div');
+  container.style.cssText = [
+    'position:fixed', 'top:-9999px', 'left:-9999px',
+    'background:#ffffff', 'padding:3px 0',
+    `font-size:${fontSize}px`, 'font-family:Arial,Helvetica,sans-serif',
+    `color:${color}`, `width:${widthPx}px`,
+    'line-height:1.5', 'word-wrap:break-word',
+  ].join(';');
+
+  const katex = (window as any).katex;
+  const toHtml = (src: string): string => {
+    if (!katex) return src.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return src
+      .replace(/\$\$([\s\S]+?)\$\$/g, (_, f) =>
+        katex.renderToString(f, { throwOnError: false, displayMode: true }))
+      .replace(/\$([^$\n]+?)\$/g, (_, f) =>
+        katex.renderToString(f, { throwOnError: false, displayMode: false }))
+      .replace(/\\\(([\s\S]+?)\\\)/g, (_, f) =>
+        katex.renderToString(f, { throwOnError: false, displayMode: false }))
+      .replace(/\\\[([\s\S]+?)\\\]/g, (_, f) =>
+        katex.renderToString(f, { throwOnError: false, displayMode: true }));
+  };
+
+  container.innerHTML = toHtml(text);
+  document.body.appendChild(container);
+  try {
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      logging: false,
+    });
+    // height in PDF points proportional to width
+    const pngH = widthPt * canvas.height / canvas.width;
+    return { src: canvas.toDataURL('image/png', 0.85), pngH };
+  } finally {
+    document.body.removeChild(container);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// MathField & ProcessedLessonPlan types
+// ---------------------------------------------------------------------------
+
+interface MathField {
+  plain: string;
+  png?: string;
+  pngH?: number; // height in PDF points; width = container width (known from context)
+}
+
+interface ProcessedLessonPlan {
+  raw: LessonPlan;
+  title: MathField;
+  objectives: Array<MathField & { bloomsLevel?: string }>;
+  intro: MathField;
+  mainActivities: Array<MathField & { bloomsLevel?: string }>;
+  concluding: MathField;
+  diffSupport: MathField;
+  diffStandard: MathField;
+  diffAdvanced: MathField;
+  materials: MathField[];
+  assessmentStandards: MathField[];
+  progressMonitoring: MathField[];
+}
+
+async function buildField(
+  raw: any,
+  opts: { fontSize?: number; color?: string; widthPt?: number } = {}
+): Promise<MathField> {
+  const text = typeof raw === 'string' ? raw : (raw?.text ?? '');
+  if (!text) return { plain: '' };
+  const plain = stripLatex(text);
+  if (!HAS_MATH.test(text)) return { plain };
+  try {
+    const { src, pngH } = await renderMathToPng(text, opts);
+    return { plain, png: src, pngH };
+  } catch {
+    return { plain };
+  }
+}
+
+async function preprocessPlanForPDF(plan: LessonPlan): Promise<ProcessedLessonPlan> {
+  const objectives = plan.objectives ?? [];
+  const mainActs = plan.scenario?.main ?? [];
+  const mats = plan.materials ?? [];
+  const stds = plan.assessmentStandards ?? [];
+  const prog = plan.progressMonitoring ?? [];
+
+  const tabs = plan.differentiationTabs ?? (
+    plan.differentiation
+      ? { support: '', standard: plan.differentiation, advanced: '' }
+      : { support: '', standard: '', advanced: '' }
+  );
+
+  const bodyOpts = { fontSize: 18 };
+  const diffOpts = { fontSize: 16, widthPt: PDF_DIFF_W_PT };
+
+  // Run all fields in parallel
+  const results = await Promise.all([
+    buildField(plan.title, { fontSize: 20, color: '#0D47A1' }),          // 0
+    buildField(plan.scenario?.introductory, bodyOpts),                   // 1
+    buildField(plan.scenario?.concluding, bodyOpts),                     // 2
+    buildField(tabs.support ?? '', diffOpts),                            // 3
+    buildField(tabs.standard ?? '', diffOpts),                           // 4
+    buildField(tabs.advanced ?? '', diffOpts),                           // 5
+    ...objectives.map(o => buildField(o, bodyOpts)),                     // 6..6+n
+    ...mainActs.map(a => buildField(a, bodyOpts)),
+    ...mats.map(m => buildField(m, bodyOpts)),
+    ...stds.map(s => buildField(s, bodyOpts)),
+    ...prog.map(p => buildField(p, bodyOpts)),
+  ]);
+
+  const base = 6;
+  const oEnd  = base + objectives.length;
+  const mEnd  = oEnd + mainActs.length;
+  const matEnd = mEnd + mats.length;
+  const stdEnd = matEnd + stds.length;
+
+  return {
+    raw: plan,
+    title: results[0],
+    intro: results[1],
+    concluding: results[2],
+    diffSupport: results[3],
+    diffStandard: results[4],
+    diffAdvanced: results[5],
+    objectives: results.slice(base, oEnd).map((f, i) => ({
+      ...f, bloomsLevel: (objectives[i] as any)?.bloomsLevel,
+    })),
+    mainActivities: results.slice(oEnd, mEnd).map((f, i) => ({
+      ...f, bloomsLevel: (mainActs[i] as any)?.bloomsLevel,
+    })),
+    materials: results.slice(mEnd, matEnd),
+    assessmentStandards: results.slice(matEnd, stdEnd),
+    progressMonitoring: results.slice(stdEnd),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -56,7 +218,6 @@ const styles = StyleSheet.create({
     color: '#111827',
     backgroundColor: '#FFFFFF',
   },
-  // Header bar
   headerBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -71,12 +232,15 @@ const styles = StyleSheet.create({
     color: BRAND,
     maxWidth: 320,
   },
+  headerTitleImg: {
+    maxWidth: 320,
+    marginBottom: 2,
+  },
   headerMeta: {
     fontSize: 8,
     color: GRAY,
     textAlign: 'right',
   },
-  // Illustration
   illustration: {
     width: '100%',
     height: 130,
@@ -84,7 +248,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginBottom: 10,
   },
-  // Sections
   section: {
     marginBottom: 10,
   },
@@ -98,7 +261,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     borderLeft: `3 solid ${ACCENT}`,
   },
-  // Objective row
   objectiveRow: {
     flexDirection: 'row',
     marginBottom: 2,
@@ -123,7 +285,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     marginLeft: 4,
   },
-  // Scenario
   scenarioLabel: {
     fontSize: 8,
     fontFamily: 'Helvetica-Bold',
@@ -136,7 +297,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     paddingLeft: 8,
   },
-  // Differentiation tabs
   diffRow: {
     flexDirection: 'row',
     gap: 6,
@@ -159,14 +319,12 @@ const styles = StyleSheet.create({
     lineHeight: 1.3,
     color: '#374151',
   },
-  // Materials list
   materialItem: {
     fontSize: 9,
     lineHeight: 1.4,
     paddingLeft: 8,
     marginBottom: 1,
   },
-  // Two-column layout for bottom sections
   twoCol: {
     flexDirection: 'row',
     gap: 12,
@@ -174,7 +332,6 @@ const styles = StyleSheet.create({
   col: {
     flex: 1,
   },
-  // Footer
   footer: {
     position: 'absolute',
     bottom: 20,
@@ -192,38 +349,63 @@ const styles = StyleSheet.create({
 });
 
 // ---------------------------------------------------------------------------
+// Helpers for rendering MathField in PDF
+// ---------------------------------------------------------------------------
+
+/** Renders a MathField as an Image (if PNG was pre-rendered) or Text. */
+function MF({
+  field,
+  textStyle,
+  widthPt = PDF_FULL_W_PT,
+}: {
+  field: MathField;
+  textStyle: any;
+  widthPt?: number;
+}) {
+  if (field.png && field.pngH) {
+    return <Image src={field.png} style={{ width: widthPt, height: field.pngH }} />;
+  }
+  return <Text style={textStyle}>{field.plain}</Text>;
+}
+
+// ---------------------------------------------------------------------------
 // PDF Document
 // ---------------------------------------------------------------------------
 
 interface LessonPlanDocProps {
-  plan: LessonPlan;
+  data: ProcessedLessonPlan;
 }
 
-const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ plan }) => {
-  const intro = getText(plan.scenario?.introductory);
-  const concluding = getText(plan.scenario?.concluding);
-  const mainActivities = plan.scenario?.main ?? [];
-
-  const tabs = plan.differentiationTabs ?? (
-    plan.differentiation
-      ? { support: '', standard: plan.differentiation, advanced: '' }
-      : null
-  );
-
-  const today = new Date().toLocaleDateString('mk-MK', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ data }) => {
+  const { raw: plan } = data;
+  const today = new Date().toLocaleDateString('mk-MK', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
 
   return (
     <Document
-      title={plan.title}
+      title={stripLatex(plan.title)}
       author="Math Curriculum AI Navigator"
-      subject={`${plan.grade}. одделение — ${plan.theme}`}
+      subject={`${plan.grade}. одделение — ${stripLatex(plan.theme || '')}`}
     >
       <Page size="A4" style={styles.page}>
+
         {/* Header */}
         <View style={styles.headerBar}>
-          <Text style={styles.headerTitle}>{stripLatex(plan.title)}</Text>
+          <View style={{ maxWidth: 320 }}>
+            {data.title.png && data.title.pngH ? (
+              <Image
+                src={data.title.png}
+                style={[styles.headerTitleImg, { height: data.title.pngH }]}
+              />
+            ) : (
+              <Text style={styles.headerTitle}>{data.title.plain}</Text>
+            )}
+          </View>
           <View>
-            <Text style={styles.headerMeta}>{plan.grade}. одделение  |  {stripLatex(plan.subject || 'Математика')}</Text>
+            <Text style={styles.headerMeta}>
+              {plan.grade}. одделение  |  {stripLatex(plan.subject || 'Математика')}
+            </Text>
             <Text style={styles.headerMeta}>Тема: {stripLatex(plan.theme || '')}</Text>
             {plan.lessonNumber && (
               <Text style={styles.headerMeta}>Час бр. {plan.lessonNumber}</Text>
@@ -237,18 +419,22 @@ const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ plan }) => {
         )}
 
         {/* Objectives */}
-        {(plan.objectives?.length ?? 0) > 0 && (
+        {data.objectives.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>ЦЕЛИ НА ЧАСОТ</Text>
-            {(plan.objectives ?? []).map((obj, i) => (
+            {data.objectives.map((obj, i) => (
               <View key={i} style={styles.objectiveRow}>
                 <Text style={styles.bullet}>•</Text>
-                <Text style={styles.objectiveText}>
-                  {getText(obj)}
+                <View style={{ flex: 1 }}>
+                  <MF
+                    field={obj}
+                    textStyle={styles.objectiveText}
+                    widthPt={PDF_FULL_W_PT - 20}
+                  />
                   {obj.bloomsLevel ? (
-                    <Text style={styles.bloomBadge}>  [{obj.bloomsLevel}]</Text>
+                    <Text style={styles.bloomBadge}>[{obj.bloomsLevel}]</Text>
                   ) : null}
-                </Text>
+                </View>
               </View>
             ))}
           </View>
@@ -257,89 +443,109 @@ const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ plan }) => {
         {/* Scenario */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>СЦЕНАРИО НА ЧАСОТ</Text>
-          {intro ? (
+
+          {data.intro.plain ? (
             <>
               <Text style={styles.scenarioLabel}>Воведна активност</Text>
-              <Text style={styles.scenarioText}>{intro}</Text>
+              <View style={{ paddingLeft: 8, marginBottom: 6 }}>
+                <MF field={data.intro} textStyle={styles.scenarioText} widthPt={PDF_FULL_W_PT - 8} />
+              </View>
             </>
           ) : null}
-          {mainActivities.length > 0 && (
+
+          {data.mainActivities.length > 0 && (
             <>
               <Text style={styles.scenarioLabel}>Главни активности</Text>
-              {mainActivities.map((act, i) => (
+              {data.mainActivities.map((act, i) => (
                 <View key={i} style={styles.objectiveRow}>
                   <Text style={styles.bullet}>{i + 1}.</Text>
-                  <Text style={styles.objectiveText}>
-                    {getText(act)}
-                    {(act as any).bloomsLevel ? (
-                      <Text style={styles.bloomBadge}>  [{(act as any).bloomsLevel}]</Text>
+                  <View style={{ flex: 1 }}>
+                    <MF
+                      field={act}
+                      textStyle={styles.objectiveText}
+                      widthPt={PDF_FULL_W_PT - 20}
+                    />
+                    {act.bloomsLevel ? (
+                      <Text style={styles.bloomBadge}>[{act.bloomsLevel}]</Text>
                     ) : null}
-                  </Text>
+                  </View>
                 </View>
               ))}
             </>
           )}
-          {concluding ? (
+
+          {data.concluding.plain ? (
             <>
               <Text style={[styles.scenarioLabel, { marginTop: 4 }]}>Завршна активност</Text>
-              <Text style={styles.scenarioText}>{concluding}</Text>
+              <View style={{ paddingLeft: 8, marginBottom: 6 }}>
+                <MF field={data.concluding} textStyle={styles.scenarioText} widthPt={PDF_FULL_W_PT - 8} />
+              </View>
             </>
           ) : null}
         </View>
 
-        {/* Differentiation Tabs */}
-        {tabs && (tabs.support || tabs.standard || tabs.advanced) && (
+        {/* Differentiation */}
+        {(data.diffSupport.plain || data.diffStandard.plain || data.diffAdvanced.plain) && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>ДИФЕРЕНЦИРАНА НАСТАВА</Text>
             <View style={styles.diffRow}>
-              {tabs.support && (
+              {data.diffSupport.plain ? (
                 <View style={styles.diffCell}>
                   <Text style={[styles.diffCellLabel, { color: '#16A34A' }]}>Поддршка</Text>
-                  <Text style={styles.diffCellText}>{stripLatex(tabs.support)}</Text>
+                  <MF field={data.diffSupport} textStyle={styles.diffCellText} widthPt={PDF_DIFF_W_PT - 10} />
                 </View>
-              )}
-              {tabs.standard && (
+              ) : null}
+              {data.diffStandard.plain ? (
                 <View style={styles.diffCell}>
                   <Text style={[styles.diffCellLabel, { color: BRAND }]}>Стандардно</Text>
-                  <Text style={styles.diffCellText}>{stripLatex(tabs.standard)}</Text>
+                  <MF field={data.diffStandard} textStyle={styles.diffCellText} widthPt={PDF_DIFF_W_PT - 10} />
                 </View>
-              )}
-              {tabs.advanced && (
+              ) : null}
+              {data.diffAdvanced.plain ? (
                 <View style={styles.diffCell}>
                   <Text style={[styles.diffCellLabel, { color: '#7C3AED' }]}>Збогатување</Text>
-                  <Text style={styles.diffCellText}>{stripLatex(tabs.advanced)}</Text>
+                  <MF field={data.diffAdvanced} textStyle={styles.diffCellText} widthPt={PDF_DIFF_W_PT - 10} />
                 </View>
-              )}
+              ) : null}
             </View>
           </View>
         )}
 
-        {/* Bottom two-column: Materials + Assessment Standards */}
+        {/* Materials + Assessment Standards (two-column) */}
         <View style={styles.twoCol}>
-          {(plan.materials?.length ?? 0) > 0 && (
+          {data.materials.length > 0 && (
             <View style={[styles.col, styles.section]}>
               <Text style={styles.sectionTitle}>МАТЕРИЈАЛИ</Text>
-              {(plan.materials ?? []).map((m, i) => (
-                <Text key={i} style={styles.materialItem}>• {stripLatex(m)}</Text>
+              {data.materials.map((m, i) => (
+                <View key={i} style={{ flexDirection: 'row', paddingLeft: 8, marginBottom: 1 }}>
+                  <Text style={styles.bullet}>•</Text>
+                  <MF field={m} textStyle={styles.materialItem} widthPt={(PDF_FULL_W_PT - 12) / 2 - 12} />
+                </View>
               ))}
             </View>
           )}
-          {(plan.assessmentStandards?.length ?? 0) > 0 && (
+          {data.assessmentStandards.length > 0 && (
             <View style={[styles.col, styles.section]}>
               <Text style={styles.sectionTitle}>СТАНДАРДИ ЗА ОЦЕНУВАЊЕ</Text>
-              {(plan.assessmentStandards ?? []).map((s, i) => (
-                <Text key={i} style={styles.materialItem}>• {stripLatex(s)}</Text>
+              {data.assessmentStandards.map((s, i) => (
+                <View key={i} style={{ flexDirection: 'row', paddingLeft: 8, marginBottom: 1 }}>
+                  <Text style={styles.bullet}>•</Text>
+                  <MF field={s} textStyle={styles.materialItem} widthPt={(PDF_FULL_W_PT - 12) / 2 - 12} />
+                </View>
               ))}
             </View>
           )}
         </View>
 
         {/* Progress Monitoring */}
-        {(plan.progressMonitoring?.length ?? 0) > 0 && (
+        {data.progressMonitoring.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>СЛЕДЕЊЕ НА НАПРЕДОКОТ</Text>
-            {(plan.progressMonitoring ?? []).map((p, i) => (
-              <Text key={i} style={styles.materialItem}>• {stripLatex(p)}</Text>
+            {data.progressMonitoring.map((p, i) => (
+              <View key={i} style={{ flexDirection: 'row', paddingLeft: 8, marginBottom: 1 }}>
+                <Text style={styles.bullet}>•</Text>
+                <MF field={p} textStyle={styles.materialItem} widthPt={PDF_FULL_W_PT - 12} />
+              </View>
             ))}
           </View>
         )}
@@ -347,10 +553,13 @@ const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ plan }) => {
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>Math Curriculum AI Navigator</Text>
-          <Text style={styles.footerText}>{stripLatex(plan.title)} — {today}</Text>
-          <Text style={styles.footerText} render={({ pageNumber, totalPages }) =>
-            `${pageNumber} / ${totalPages}`
-          } />
+          <Text style={styles.footerText}>
+            {stripLatex(plan.title)} — {today}
+          </Text>
+          <Text
+            style={styles.footerText}
+            render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
+          />
         </View>
       </Page>
     </Document>
@@ -358,7 +567,7 @@ const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ plan }) => {
 };
 
 // ---------------------------------------------------------------------------
-// Public: Download Button
+// Public: Download Button — async preprocessing → programmatic PDF
 // ---------------------------------------------------------------------------
 
 interface LessonPlanPDFButtonProps {
@@ -366,32 +575,57 @@ interface LessonPlanPDFButtonProps {
 }
 
 export const LessonPlanPDFButton: React.FC<LessonPlanPDFButtonProps> = ({ plan }) => {
-  const safeFilename = `${(plan.title || 'plan').replace(/[^a-z0-9а-шѓѕјљњќџч\s]/gi, '').trim().replace(/\s+/g, '_')}.pdf`;
+  const [status, setStatus] = useState<'idle' | 'processing' | 'error'>('idle');
+
+  const safeFilename = `${(plan.title || 'plan')
+    .replace(/[^a-z0-9а-шѓѕјљњќџч\s]/gi, '')
+    .trim()
+    .replace(/\s+/g, '_')}.pdf`;
+
+  const handleDownload = async () => {
+    setStatus('processing');
+    try {
+      const processed = await preprocessPlanForPDF(plan);
+      const blob = await pdf(<LessonPlanDoc data={processed} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = safeFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      setStatus('idle');
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
+    }
+  };
 
   return (
-    <PDFDownloadLink
-      document={<LessonPlanDoc plan={plan} />}
-      fileName={safeFilename}
-      className="w-full text-left flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+    <button
+      type="button"
+      onClick={handleDownload}
+      disabled={status === 'processing'}
+      className="w-full text-left flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-60 disabled:cursor-wait"
     >
-      {({ loading, error }) =>
-        loading ? (
-          <>
-            <Loader2 className="w-5 h-5 mr-3 animate-spin text-brand-primary" />
-            Подготвувам PDF...
-          </>
-        ) : error ? (
-          <>
-            <FileDown className="w-5 h-5 mr-3 text-red-500" />
-            Грешка при PDF генерирање
-          </>
-        ) : (
-          <>
-            <FileDown className="w-5 h-5 mr-3 text-brand-primary" />
-            Сними Брендиран PDF (A4)
-          </>
-        )
-      }
-    </PDFDownloadLink>
+      {status === 'processing' ? (
+        <>
+          <Loader2 className="w-5 h-5 mr-3 animate-spin text-brand-primary" />
+          Рендерирам формули…
+        </>
+      ) : status === 'error' ? (
+        <>
+          <FileDown className="w-5 h-5 mr-3 text-red-500" />
+          Грешка при PDF генерирање
+        </>
+      ) : (
+        <>
+          <FileDown className="w-5 h-5 mr-3 text-brand-primary" />
+          Сними Брендиран PDF (A4)
+        </>
+      )}
+    </button>
   );
 };

@@ -226,36 +226,46 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         }
     };
 
-    const handleBatchVisualize = async () => {
-        const questions = activeTab === 'standard' 
-            ? editableMaterial.questions 
+    const handleBatchVisualize = async (indicesOverride?: number[]) => {
+        const questions = activeTab === 'standard'
+            ? editableMaterial.questions
             : (editableMaterial.differentiatedVersions?.find(v => v.profileName === activeTab)?.questions || []);
-        
-        const indicesToGen = questions
+
+        const indicesToGen = indicesOverride ?? questions
             .map((q, i) => (!q.imageUrl ? i : -1))
             .filter(i => i !== -1);
-        
+
         if (indicesToGen.length === 0) {
-            addNotification('Сите прашања веќе имаат илустрации.', 'info');
+            if (!indicesOverride) addNotification('Сите прашања веќе имаат илустрации.', 'info');
             return;
         }
 
         setIsBatchVisualizing(true);
         setIsActionsMenuOpen(false);
-        addNotification(`Започнува сериско генерирање на ${indicesToGen.length} илустрации...`, 'info');
+        if (!indicesOverride) addNotification(`Започнува паралелно генерирање на ${indicesToGen.length} илустрации...`, 'info');
 
         try {
-            for (const idx of indicesToGen) {
-                const q = questions[idx];
-                await handleVisualize(idx, q.question);
-            }
-            addNotification('Сите илустрации се успешно генерирани!', 'success');
-        } catch (error) {
+            await Promise.all(indicesToGen.map(idx => handleVisualize(idx, questions[idx].question)));
+            if (!indicesOverride) addNotification('Сите илустрации се успешно генерирани!', 'success');
+        } catch {
             addNotification('Дел од илустрациите не беа генерирани.', 'warning');
         } finally {
             setIsBatchVisualizing(false);
         }
     };
+
+    // Auto-generate images for questions that contain math formulas (non-blocking)
+    const HAS_MATH = /\$[\s\S]+?\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]/;
+    useEffect(() => {
+        const mathIndices = editableMaterial.questions
+            .map((q, i) => (!q.imageUrl && HAS_MATH.test(q.question) ? i : -1))
+            .filter(i => i !== -1);
+        if (mathIndices.length > 0) {
+            handleBatchVisualize(mathIndices);
+        }
+    // Run once when material first loads — intentional dep on material.questions identity
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [material]);
 
 
     useEffect(() => {
@@ -530,7 +540,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                                         </button>
                                         <button 
                                             type="button" 
-                                            onClick={handleBatchVisualize} 
+                                            onClick={() => handleBatchVisualize()}
                                             disabled={isBatchVisualizing}
                                             className="w-full text-left flex items-center px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 font-bold disabled:opacity-50"
                                         >

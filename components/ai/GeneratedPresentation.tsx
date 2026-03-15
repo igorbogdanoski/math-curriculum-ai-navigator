@@ -276,6 +276,33 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
       };
       const colors = THEMES[theme];
 
+      // ── Pre-render ALL math strings in parallel ─────────────────────────────
+      type MathKey = string; // `${text}::${hexColor}`
+      const mathJobs = new Map<MathKey, { text: string; color: string }>();
+      for (const slide of data.slides) {
+        if (slide.type === 'formula-centered' && slide.content[0] && HAS_MATH.test(slide.content[0])) {
+          const k = `${slide.content[0]}::${colors.title}`;
+          if (!mathJobs.has(k)) mathJobs.set(k, { text: slide.content[0], color: colors.title });
+        }
+        if (slide.type === 'step-by-step') {
+          for (const s of slide.content) {
+            if (HAS_MATH.test(s)) { const k = `${s}::${colors.body}`; if (!mathJobs.has(k)) mathJobs.set(k, { text: s, color: colors.body }); }
+          }
+        }
+        if (slide.type !== 'title' && slide.type !== 'formula-centered' && slide.type !== 'step-by-step') {
+          for (const b of slide.content) {
+            if (HAS_MATH.test(b)) { const k = `• ${b}::${colors.body}`; if (!mathJobs.has(k)) mathJobs.set(k, { text: `• ${b}`, color: colors.body }); }
+          }
+        }
+      }
+      const mathPngMap = new Map<MathKey, string>();
+      await Promise.all(
+        Array.from(mathJobs.entries()).map(async ([k, { text, color }]) => {
+          try { mathPngMap.set(k, await renderBulletToPng(text, color)); } catch { /* key absent = fallback to text */ }
+        })
+      );
+      // ────────────────────────────────────────────────────────────────────────
+
       for (let idx = 0; idx < data.slides.length; idx++) {
         const slide: PresentationSlide = data.slides[idx];
         const slideVisual = visuals[idx];
@@ -313,15 +340,20 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
               line: { color: colors.line, width: 2 },
             });
             if (HAS_MATH.test(mainFormula)) {
-              try {
-                const png = await renderBulletToPng(mainFormula, colors.title);
-                const img = new Image();
-                await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
-                const ratio = img.naturalHeight / img.naturalWidth;
-                const imgW = Math.min(boxW - 0.4, 6.5);
-                const imgH = Math.min(imgW * ratio, boxH - 0.2);
-                pptSlide.addImage({ data: png, x: boxX + (boxW - imgW) / 2, y: boxY + (boxH - imgH) / 2, w: imgW, h: imgH });
-              } catch {
+              const png = mathPngMap.get(`${mainFormula}::${colors.title}`);
+              let formulaAdded = false;
+              if (png) {
+                try {
+                  const img = new Image();
+                  await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
+                  const ratio = img.naturalHeight / img.naturalWidth;
+                  const imgW = Math.min(boxW - 0.4, 6.5);
+                  const imgH = Math.min(imgW * ratio, boxH - 0.2);
+                  pptSlide.addImage({ data: png, x: boxX + (boxW - imgW) / 2, y: boxY + (boxH - imgH) / 2, w: imgW, h: imgH });
+                  formulaAdded = true;
+                } catch { /* fall through to plain text */ }
+              }
+              if (!formulaAdded) {
                 pptSlide.addText(mainFormula, { x: boxX, y: boxY + 0.4, w: boxW, h: boxH - 0.8, fontSize: 22, bold: true, color: colors.title, align: 'center', fontFace: 'Arial' });
               }
             } else {
@@ -364,16 +396,21 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             });
             // Step text (with math rendering if needed)
             if (HAS_MATH.test(stepText)) {
-              try {
-                const png = await renderBulletToPng(stepText, colors.body);
-                const img = new Image();
-                await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
-                const ratio = img.naturalHeight / img.naturalWidth;
-                const imgW = Math.min(SLIDE_W - 1.2, 7.5);
-                const imgH = Math.min(imgW * ratio, stepH + 0.1);
-                pptSlide.addImage({ data: png, x: 0.9, y: stepY, w: imgW, h: imgH });
-                stepY += imgH + 0.1;
-              } catch {
+              const png = mathPngMap.get(`${stepText}::${colors.body}`);
+              let stepAdded = false;
+              if (png) {
+                try {
+                  const img = new Image();
+                  await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
+                  const ratio = img.naturalHeight / img.naturalWidth;
+                  const imgW = Math.min(SLIDE_W - 1.2, 7.5);
+                  const imgH = Math.min(imgW * ratio, stepH + 0.1);
+                  pptSlide.addImage({ data: png, x: 0.9, y: stepY, w: imgW, h: imgH });
+                  stepY += imgH + 0.1;
+                  stepAdded = true;
+                } catch { /* fall through */ }
+              }
+              if (!stepAdded) {
                 pptSlide.addText(stepText, { x: 0.9, y: stepY, w: SLIDE_W - 1.3, h: stepH, fontSize: 15, color: colors.body, fontFace: 'Arial' });
                 stepY += stepH;
               }
@@ -408,19 +445,21 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
 
           for (const bullet of slide.content) {
             if (HAS_MATH.test(bullet)) {
-              // Render math bullet as PNG image
-              try {
-                const png = await renderBulletToPng(`• ${bullet}`, colors.body);
-                // Calculate proportional height (canvas is 2× scale → divide by 2)
-                const img = new Image();
-                await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
-                const ratio   = img.naturalHeight / img.naturalWidth;
-                const imgW    = Math.min(maxImgW, SLIDE_W * 0.7);
-                const imgH    = Math.min(imgW * ratio, 1.2);
-                pptSlide.addImage({ data: png, x: contentX, y: curY, w: imgW, h: imgH });
-                curY += imgH + 0.08;
-              } catch {
-                // Fallback: plain text if rendering fails
+              const png = mathPngMap.get(`• ${bullet}::${colors.body}`);
+              let bulletAdded = false;
+              if (png) {
+                try {
+                  const img = new Image();
+                  await new Promise<void>(res => { img.onload = () => res(); img.src = png; });
+                  const ratio   = img.naturalHeight / img.naturalWidth;
+                  const imgW    = Math.min(maxImgW, SLIDE_W * 0.7);
+                  const imgH    = Math.min(imgW * ratio, 1.2);
+                  pptSlide.addImage({ data: png, x: contentX, y: curY, w: imgW, h: imgH });
+                  curY += imgH + 0.08;
+                  bulletAdded = true;
+                } catch { /* fall through */ }
+              }
+              if (!bulletAdded) {
                 pptSlide.addText(`• ${bullet}`, {
                   x: contentX, y: curY, w: contentW, h: lineH,
                   fontSize: 16, color: colors.body,

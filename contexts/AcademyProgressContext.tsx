@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebaseConfig';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
@@ -9,7 +9,43 @@ export const ACADEMY_XP = {
   SAVE_REFLECTION: 30,
   MENTOR_CHAT: 10,
   QUIZ_COMPLETE: 50,
+  MATERIAL_SAVED: 15,
 } as const;
+
+// ── Material Stats & Achievements ─────────────────────────────────────────────
+
+export interface MaterialStats {
+  totalSaved: number;
+  quizzesSaved: number;
+  assessmentsSaved: number;
+  ideasSaved: number;
+  rubricsSaved: number;
+}
+
+export interface MaterialAchievement {
+  id: string;
+  label: string;
+  emoji: string;
+  xp: number;
+  condition: (stats: MaterialStats) => boolean;
+}
+
+export const MATERIAL_ACHIEVEMENTS: MaterialAchievement[] = [
+  { id: 'mat_first',   label: 'Прв материјал',              emoji: '🎯', xp: 50,   condition: s => s.totalSaved >= 1 },
+  { id: 'mat_variety', label: 'Разновидност',                emoji: '🎨', xp: 80,   condition: s => s.quizzesSaved >= 1 && s.assessmentsSaved >= 1 && s.ideasSaved >= 1 },
+  { id: 'mat_quiz5',   label: '5 Квизови',                   emoji: '📝', xp: 100,  condition: s => s.quizzesSaved >= 5 },
+  { id: 'mat_asmt5',   label: '5 Проценети листови',         emoji: '📊', xp: 100,  condition: s => s.assessmentsSaved >= 5 },
+  { id: 'mat_10',      label: '10 Зачувани материјали',      emoji: '⭐', xp: 150,  condition: s => s.totalSaved >= 10 },
+  { id: 'mat_quiz25',  label: '25 Квизови',                  emoji: '🏆', xp: 250,  condition: s => s.quizzesSaved >= 25 },
+  { id: 'mat_50',      label: '50 Зачувани материјали',      emoji: '🌟', xp: 500,  condition: s => s.totalSaved >= 50 },
+  { id: 'mat_100',     label: '100 Материјали — Мајстор!',   emoji: '💎', xp: 1000, condition: s => s.totalSaved >= 100 },
+];
+
+const DEFAULT_STATS: MaterialStats = {
+  totalSaved: 0, quizzesSaved: 0, assessmentsSaved: 0, ideasSaved: 0, rubricsSaved: 0,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface AcademyProgress {
   readLessons: string[];
@@ -17,6 +53,8 @@ export interface AcademyProgress {
   completedQuizzes: string[]; // lessonId
   reflections: Record<string, string>; // lessonId → reflection note
   xp: number;
+  materialStats?: MaterialStats;
+  unlockedMaterialAchievements?: string[]; // achievement ids
 }
 
 export interface AcademyProgressContextType {
@@ -27,6 +65,8 @@ export interface AcademyProgressContextType {
   saveReflection: (lessonId: string, note: string) => void;
   addXp: (amount: number, reason?: string) => void;
   getCompletionPercentage: (totalLessons: number) => number;
+  /** Call after saving a material to the library. Returns newly unlocked achievement labels. */
+  trackMaterialSaved: (type: string) => string[];
 }
 
 const defaultProgress: AcademyProgress = {
@@ -35,6 +75,8 @@ const defaultProgress: AcademyProgress = {
   completedQuizzes: [],
   reflections: {},
   xp: 0,
+  materialStats: undefined,
+  unlockedMaterialAchievements: [],
 };
 
 const STORAGE_KEY = 'math-navigator-academy-progress';
@@ -45,6 +87,8 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
   const [progress, setProgress] = useState<AcademyProgress>(defaultProgress);
   const [isLoaded, setIsLoaded] = useState(false);
   const { firebaseUser } = useAuth();
+  const progressRef = useRef(progress);
+  useEffect(() => { progressRef.current = progress; }, [progress]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -77,12 +121,29 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
           const mergedReflections = { ...(data.reflections || {}), ...prev.reflections };
           const mergedXp = Math.max(prev.xp, data.xp || 0);
 
+          // Merge material stats — take max of each counter
+          const localStats = prev.materialStats || DEFAULT_STATS;
+          const remoteStats = (data.materialStats as MaterialStats | undefined) || DEFAULT_STATS;
+          const mergedStats: MaterialStats = {
+            totalSaved: Math.max(localStats.totalSaved, remoteStats.totalSaved),
+            quizzesSaved: Math.max(localStats.quizzesSaved, remoteStats.quizzesSaved),
+            assessmentsSaved: Math.max(localStats.assessmentsSaved, remoteStats.assessmentsSaved),
+            ideasSaved: Math.max(localStats.ideasSaved, remoteStats.ideasSaved),
+            rubricsSaved: Math.max(localStats.rubricsSaved, remoteStats.rubricsSaved),
+          };
+          const mergedUnlocked = Array.from(new Set([
+            ...(prev.unlockedMaterialAchievements || []),
+            ...((data.unlockedMaterialAchievements as string[] | undefined) || []),
+          ]));
+
           const merged: AcademyProgress = {
             readLessons: mergedRead,
             appliedLessons: mergedApplied,
             completedQuizzes: mergedQuizzes,
             reflections: mergedReflections,
             xp: mergedXp,
+            materialStats: mergedStats,
+            unlockedMaterialAchievements: mergedUnlocked,
           };
 
           const remoteReadLen = data.readLessons?.length || 0;
@@ -194,6 +255,43 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
     return Math.round((progress.readLessons.length / totalLessons) * 100);
   }, [progress.readLessons.length]);
 
+  const trackMaterialSaved = useCallback((type: string): string[] => {
+    const prev = progressRef.current;
+    const stats = prev.materialStats || { ...DEFAULT_STATS };
+
+    const newStats: MaterialStats = {
+      totalSaved: stats.totalSaved + 1,
+      quizzesSaved: stats.quizzesSaved + (type === 'quiz' ? 1 : 0),
+      assessmentsSaved: stats.assessmentsSaved + (type === 'assessment' ? 1 : 0),
+      ideasSaved: stats.ideasSaved + (type === 'idea' ? 1 : 0),
+      rubricsSaved: stats.rubricsSaved + (type === 'rubric' ? 1 : 0),
+    };
+
+    const alreadyUnlocked = prev.unlockedMaterialAchievements || [];
+    const newlyUnlocked = MATERIAL_ACHIEVEMENTS.filter(
+      a => !alreadyUnlocked.includes(a.id) && a.condition(newStats),
+    );
+    const newUnlocked = [...alreadyUnlocked, ...newlyUnlocked.map(a => a.id)];
+    const bonusXp = newlyUnlocked.reduce((sum, a) => sum + a.xp, 0);
+    const newXp = prev.xp + ACADEMY_XP.MATERIAL_SAVED + bonusXp;
+
+    const next: AcademyProgress = {
+      ...prev,
+      xp: newXp,
+      materialStats: newStats,
+      unlockedMaterialAchievements: newUnlocked,
+    };
+
+    setProgress(next);
+
+    if (firebaseUser) {
+      const ref = doc(db, 'users', firebaseUser.uid, 'academy', 'progress');
+      setDoc(ref, { xp: newXp, materialStats: newStats, unlockedMaterialAchievements: newUnlocked }, { merge: true }).catch(console.error);
+    }
+
+    return newlyUnlocked.map(a => `${a.emoji} ${a.label} (+${a.xp} XP)`);
+  }, [firebaseUser]);
+
   return (
     <AcademyProgressContext.Provider value={{
       progress,
@@ -203,6 +301,7 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
       saveReflection,
       addXp,
       getCompletionPercentage,
+      trackMaterialSaved,
     }}>
       {children}
     </AcademyProgressContext.Provider>

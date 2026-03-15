@@ -3,7 +3,7 @@ import React from 'react';
 import { Card } from '../components/common/Card';
 import { Target, Shapes, Wand2, Play, GraduationCap, CheckCircle2, Trophy, Star, Cpu, BookOpenCheck, FlaskConical, Brain } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
-import { useAcademyProgress } from '../contexts/AcademyProgressContext';
+import { useAcademyProgress, MATERIAL_ACHIEVEMENTS } from '../contexts/AcademyProgressContext';
 import { slugify } from '../utils/slugify';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { ACADEMY_CONTENT } from '../data/academy/content';
@@ -264,6 +264,48 @@ export const AcademyView: React.FC = () => {
             })}
         </div>
       </div>
+
+      {/* Material Achievements */}
+      {(() => {
+        const stats = progress.materialStats;
+        const unlocked = progress.unlockedMaterialAchievements || [];
+        const total = stats?.totalSaved ?? 0;
+        if (total === 0 && unlocked.length === 0) return null;
+        return (
+          <div className="mb-8 rounded-2xl border-2 border-gray-100 bg-white p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Trophy className="w-5 h-5 text-amber-500" />
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">Достигнувања — Библиотека материјали</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Зачувај материјали во библиотеката за да ги отклучиш беџите</p>
+              </div>
+              <span className="ml-auto text-sm font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                {total} зачувани
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {MATERIAL_ACHIEVEMENTS.map(a => {
+                const earned = unlocked.includes(a.id);
+                return (
+                  <div
+                    key={a.id}
+                    title={`${a.label} — ${a.xp} XP`}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
+                      earned
+                        ? 'border-amber-300 bg-amber-50 text-amber-800 shadow-sm'
+                        : 'border-gray-100 bg-gray-50 text-gray-300'
+                    }`}
+                  >
+                    <span className={earned ? '' : 'grayscale opacity-40'}>{a.emoji}</span>
+                    <span>{a.label}</span>
+                    {earned && <span className="text-xs text-amber-500 font-bold">+{a.xp}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Сите достапни модули</h2>

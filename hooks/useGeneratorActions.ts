@@ -15,6 +15,7 @@ import { ModalType, PlannerItemType, QuestionType } from '../types';
 import type { GeneratorState, GeneratorAction } from './useGeneratorState';
 import { getInitialState } from './useGeneratorState';
 import { useVerifiedQuestions, useTeacherNoteQuery, useDifficultyRecommendation, useSaveTeacherNote } from './useGeneratorQueries';
+import { useAcademyProgress } from '../contexts/AcademyProgressContext';
 import { useQuotaManager } from './useQuotaManager';
 import { useVariantGenerate } from './useVariantGenerate';
 
@@ -97,6 +98,7 @@ export function useGeneratorActions({
   openUpgradeModal,
 }: UseGeneratorActionsParams) {
   const { t } = useLanguage();
+  const { trackMaterialSaved } = useAcademyProgress();
 
   // Derived lists from curriculum + state
   const filteredTopics = useMemo(
@@ -427,7 +429,11 @@ export function useGeneratorActions({
         gradeLevel,
       });
       setSavedToLibrary(prev => new Set(prev).add(keyHint));
-      addNotification('Зачувано во библиотека! Прегледај и публикувај во „Библиотека". 📚', 'success');
+      const newAchievements = trackMaterialSaved(libType);
+      const achievementMsg = newAchievements.length
+        ? ` Ново достигнување: ${newAchievements.join(', ')}`
+        : '';
+      addNotification(`Зачувано во библиотека! Прегледај и публикувај во „Библиотека". 📚${achievementMsg}`, 'success');
     } catch {
       addNotification('Грешка при зачувување.', 'error');
     }
