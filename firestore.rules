@@ -90,11 +90,14 @@ service cloud.firestore {
 
     // ── Кеширани AI материјали (cached_ai_materials) ──
     // read: public — students (anonymous auth) must be able to play assigned quizzes
+    // И3: any authenticated teacher may update ratingsByUid (dot-notation field)
     match /cached_ai_materials/{doc} {
       allow read:   if true;
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         !('teacherUid' in resource.data) || resource.data.teacherUid == request.auth.uid || isAdmin()
+        // И3: peer rating — any authenticated user may set their own rating entry
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingsByUid'])
       );
       allow delete: if isAuthenticated() && (
         !('teacherUid' in resource.data) || resource.data.teacherUid == request.auth.uid || isAdmin()

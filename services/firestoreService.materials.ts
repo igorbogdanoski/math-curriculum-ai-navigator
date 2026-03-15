@@ -434,6 +434,57 @@ export const updateMaterialTitle = async (id: string, title: string): Promise<vo
     await updateDoc(doc(db, 'cached_ai_materials', id), { title });
   };
 
+// ── И3: Teacher Collaboration ───────────────────────────────────────────────
+
+/** Publish material and store author attribution (И3) */
+export const publishMaterialWithAttribution = async (
+  id: string,
+  publishedByUid: string,
+  publishedByName: string
+): Promise<void> => {
+  await updateDoc(doc(db, 'cached_ai_materials', id), {
+    status: 'published',
+    publishedByUid,
+    publishedByName,
+  });
+};
+
+/** Rate a published material (1–5 stars). One rating per teacher UID — overwritable. */
+export const rateMaterial = async (
+  materialId: string,
+  teacherUid: string,
+  rating: number
+): Promise<void> => {
+  await updateDoc(doc(db, 'cached_ai_materials', materialId), {
+    [`ratingsByUid.${teacherUid}`]: rating,
+  });
+};
+
+/** Fork a published material into the target teacher's library (status: draft) */
+export const forkCachedMaterial = async (
+  sourceId: string,
+  targetTeacherUid: string
+): Promise<string> => {
+  const snap = await getDoc(doc(db, 'cached_ai_materials', sourceId));
+  if (!snap.exists()) throw new Error('Source material not found');
+  const src = snap.data();
+  const ref = await addDoc(collection(db, 'cached_ai_materials'), {
+    content: src.content,
+    type: src.type,
+    title: `[Форк] ${src.title || 'Материјал'}`,
+    conceptId: src.conceptId ?? null,
+    topicId: src.topicId ?? null,
+    gradeLevel: src.gradeLevel ?? 0,
+    teacherUid: targetTeacherUid,
+    status: 'draft',
+    isForked: true,
+    sourceId,
+    sourceAuthor: src.publishedByName || 'Непознат наставник',
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
 export const saveAssignment = async (a: Omit<Assignment, 'id' | 'createdAt'>): Promise<string> => {
     const ref = await addDoc(collection(db, 'assignments'), { ...a, createdAt: serverTimestamp() });
     return ref.id;

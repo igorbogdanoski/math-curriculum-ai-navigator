@@ -1,11 +1,30 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore } from 'lucide-react';
+import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore, Star, Loader2 } from 'lucide-react';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
 import { callEmbeddingProxy } from '../services/gemini/core';
 import { bm25Score, cosineSimilarity, hybridScore } from '../utils/search';
+
+// И3 helpers
+const getAvgRating = (m: CachedMaterial): number | null => {
+    const vals = m.ratingsByUid ? Object.values(m.ratingsByUid) : [];
+    if (vals.length === 0) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+};
+
+const StarDisplay: React.FC<{ avg: number | null; count: number }> = ({ avg, count }) => {
+    if (avg === null) return <span className="text-xs text-gray-400 italic">Без оценки</span>;
+    return (
+        <span className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map(s => (
+                <Star key={s} className={`w-3 h-3 ${s <= Math.round(avg) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'}`} />
+            ))}
+            <span className="text-xs text-gray-500 ml-0.5">{avg.toFixed(1)} ({count})</span>
+        </span>
+    );
+};
 
 const typeLabel: Record<string, string> = {
     quiz: 'Квиз', assessment: 'Тест', rubric: 'Рубрика',
@@ -36,6 +55,13 @@ export const ContentLibraryView: React.FC = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
 
+    // И3 — rating + sort + fork
+    const [sortBy, setSortBy] = useState<'date' | 'rating'>('date');
+    const [minRating, setMinRating] = useState(0);
+    const [ratingState, setRatingState] = useState<Record<string, number>>({});
+    const [ratingHover, setRatingHover] = useState<Record<string, number>>({});
+    const [forkingId, setForkingId] = useState<string | null>(null);
+
     const load = async () => {
         if (!firebaseUser?.uid) return;
         setLoading(true);
@@ -50,6 +76,15 @@ export const ContentLibraryView: React.FC = () => {
                     .filter(m => !m.archivedAt);
             }
             setMaterials(data);
+            // И3: seed rating state from loaded materials
+            if (firebaseUser.uid) {
+                const seeds: Record<string, number> = {};
+                data.forEach(m => {
+                    const r = m.ratingsByUid?.[firebaseUser.uid];
+                    if (r) seeds[m.id] = r;
+                });
+                setRatingState(prev => ({ ...prev, ...seeds }));
+            }
         } catch {
             addNotification('Грешка при вчитување на библиотеката.', 'error');
         } finally {
@@ -121,15 +156,55 @@ export const ContentLibraryView: React.FC = () => {
             if (filter === 'published') results = results.filter(m => m.status === 'published');
         }
 
+        // 3. И3: Min rating filter (national view)
+        if (viewMode === 'national' && minRating > 0) {
+            results = results.filter(m => {
+                const avg = getAvgRating(m);
+                return avg !== null && avg >= minRating;
+            });
+        }
+
+        // 4. И3: Sort (national view — if no search active)
+        if (viewMode === 'national' && !searchQuery.trim()) {
+            if (sortBy === 'rating') {
+                results = [...results].sort((a, b) => (getAvgRating(b) ?? 0) - (getAvgRating(a) ?? 0));
+            }
+        }
+
         return results;
-    }, [materials, searchQuery, filter, viewMode, useSemanticSearch, queryEmbedding]);
+    }, [materials, searchQuery, filter, viewMode, useSemanticSearch, queryEmbedding, sortBy, minRating]);
 
     const handlePublish = async (m: CachedMaterial) => {
         try {
-            await firestoreService.publishMaterial(m.id);
-            setMaterials(prev => prev.map(x => x.id === m.id ? { ...x, status: 'published' } : x));
+            const name = (firebaseUser as any)?.displayName || 'Наставник';
+            await firestoreService.publishMaterialWithAttribution(m.id, firebaseUser!.uid, name);
+            setMaterials(prev => prev.map(x => x.id === m.id ? { ...x, status: 'published', publishedByName: name } : x));
             addNotification(`„${m.title || 'Материјал'}" е публикуван! Достапен за ученици. ✅`, 'success');
         } catch { addNotification('Грешка при публикување.', 'error'); }
+    };
+
+    const handleRate = async (materialId: string, rating: number) => {
+        if (!firebaseUser?.uid) return;
+        try {
+            await firestoreService.rateMaterial(materialId, firebaseUser.uid, rating);
+            setRatingState(prev => ({ ...prev, [materialId]: rating }));
+            setMaterials(prev => prev.map(m => {
+                if (m.id !== materialId) return m;
+                const updated = { ...(m.ratingsByUid ?? {}), [firebaseUser.uid]: rating };
+                return { ...m, ratingsByUid: updated };
+            }));
+        } catch { addNotification('Грешка при оценување.', 'error'); }
+    };
+
+    const handleFork = async (m: CachedMaterial) => {
+        if (!firebaseUser?.uid) return;
+        if (!confirm(`Форкај „${m.title || 'Материјал'}" во твоја библиотека (нацрт)?`)) return;
+        setForkingId(m.id);
+        try {
+            await firestoreService.forkCachedMaterial(m.id, firebaseUser.uid);
+            addNotification(`„${m.title || 'Материјал'}" е форкан во твоите материјали! 🍴`, 'success');
+        } catch { addNotification('Грешка при форкање.', 'error'); }
+        finally { setForkingId(null); }
     };
 
 const handleUnpublish = async (m: CachedMaterial) => {
@@ -277,10 +352,32 @@ const handleUnpublish = async (m: CachedMaterial) => {
                     <p className="text-sm text-gray-500">
                         Истражете материјали креирани од заедницата и ресурси официјално одобрени од МОН.
                     </p>
-                    <button type="button" onClick={load}
-                        className="ml-auto flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100">
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />Освежи
-                    </button>
+                    {/* И3: Sort + Rating filter */}
+                    <div className="flex items-center gap-2 ml-auto flex-wrap">
+                        <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg p-1">
+                            <button type="button" onClick={() => setSortBy('date')}
+                                className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition ${sortBy === 'date' ? 'bg-white shadow text-gray-800' : 'text-gray-500'}`}>
+                                📅 Датум
+                            </button>
+                            <button type="button" onClick={() => setSortBy('rating')}
+                                className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition ${sortBy === 'rating' ? 'bg-white shadow text-amber-700' : 'text-gray-500'}`}>
+                                ⭐ Оценка
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500">Мин:</span>
+                            {[0, 3, 4, 5].map(v => (
+                                <button key={v} type="button" onClick={() => setMinRating(v)}
+                                    className={`px-2 py-1 text-xs font-bold rounded-lg transition ${minRating === v ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                                    {v === 0 ? 'Сите' : `${v}⭐`}
+                                </button>
+                            ))}
+                        </div>
+                        <button type="button" onClick={load}
+                            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100">
+                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />Освежи
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -364,6 +461,11 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                             <span className={`flex items-center gap-0.5 font-semibold ${isPublished ? 'text-green-600' : 'text-amber-600'}`}>
                                                 {isPublished ? <><Globe className="w-3 h-3" />Публикуван</> : <><Lock className="w-3 h-3" />Нацрт</>}
                                             </span>
+                                            {m.isForked && m.sourceAuthor && (
+                                                <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-50 text-violet-600 font-semibold rounded-full border border-violet-100">
+                                                    🍴 Форк од {m.sourceAuthor}
+                                                </span>
+                                            )}
                                             {useSemanticSearch && typeof (m as any).score === 'number' && (
                                                 <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 font-bold rounded-full border border-indigo-100" title="Семантичка сличност">
                                                     <Sparkles className="w-2.5 h-2.5" />
@@ -371,18 +473,63 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                                 </span>
                                             )}
                                         </div>
+                                        {/* И3: Rating row (national view) */}
+                                        {viewMode === 'national' && (() => {
+                                            const avg = getAvgRating(m);
+                                            const cnt = m.ratingsByUid ? Object.keys(m.ratingsByUid).length : 0;
+                                            const myR = ratingState[m.id] ?? 0;
+                                            const hover = ratingHover[m.id] ?? 0;
+                                            return (
+                                                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                                    <StarDisplay avg={avg} count={cnt} />
+                                                    <div className="flex items-center gap-0.5">
+                                                        <span className="text-xs text-gray-400 mr-1">Твоја:</span>
+                                                        {[1, 2, 3, 4, 5].map(s => (
+                                                            <button
+                                                                key={s}
+                                                                type="button"
+                                                                title={`Оцени ${s} ⭐`}
+                                                                onClick={() => handleRate(m.id, s)}
+                                                                onMouseEnter={() => setRatingHover(p => ({ ...p, [m.id]: s }))}
+                                                                onMouseLeave={() => setRatingHover(p => ({ ...p, [m.id]: 0 }))}
+                                                                className="p-0.5 transition"
+                                                            >
+                                                                <Star className={`w-3.5 h-3.5 ${s <= (hover || myR) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'}`} />
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    {m.publishedByName && (
+                                                        <span className="text-xs text-gray-400">од <span className="font-semibold text-gray-600">{m.publishedByName}</span></span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
 
                                         {/* Actions */}
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
                                         {viewMode === 'national' ? (
-                                            m.isApproved ? (
-                                                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">Одобрено</span>
-                                            ) : (
-                                                <span className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-200" title="Креирано од друг наставник">
-                                                    <Users className="w-3.5 h-3.5" /> Од заедницата
-                                                </span>
-                                            )
+                                            <div className="flex items-center gap-1.5">
+                                                {m.isApproved ? (
+                                                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">✅ МОН</span>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+                                                        <Users className="w-3.5 h-3.5" /> Заедница
+                                                    </span>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    title="Форкај — копирај во твоја библиотека"
+                                                    onClick={() => handleFork(m)}
+                                                    disabled={forkingId === m.id}
+                                                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 transition"
+                                                >
+                                                    {forkingId === m.id
+                                                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                        : '🍴'}
+                                                    Форкај
+                                                </button>
+                                            </div>
                                         ) : viewMode === 'archive' ? (
                                             <>
                                                 <button type="button" onClick={() => handleRestore(m)}

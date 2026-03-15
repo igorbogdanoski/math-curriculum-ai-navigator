@@ -155,4 +155,11 @@ export interface CachedMaterial {
   notHelpfulCount?: number;
   isApproved?: boolean;
   archivedAt?: Timestamp | null;
+  // И3 — Teacher Collaboration
+  ratingsByUid?: Record<string, number>; // uid → 1-5, max 1 rating per teacher (updatable)
+  publishedByUid?: string;
+  publishedByName?: string;
+  isForked?: boolean;
+  sourceId?: string;
+  sourceAuthor?: string;
 }
