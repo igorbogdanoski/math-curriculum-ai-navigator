@@ -91,6 +91,7 @@ export const SettingsView: React.FC = () => {
     );
     const [mkContextEnabled, setMkContextEnabled] = useState(() => isMacedonianContextEnabled());
     const [isMentorEnabled, setIsMentorEnabled] = useState(user?.isMentor ?? false);
+    useEffect(() => { setIsMentorEnabled(user?.isMentor ?? false); }, [user?.isMentor]);
     // E2.2 — Global accessibility settings
     const [dyslexicFont, setDyslexicFont] = useState(() =>
         localStorage.getItem('accessibility_dyslexic') === 'true'
@@ -678,7 +679,7 @@ export const SettingsView: React.FC = () => {
                             type="button"
                             onClick={toggleDyslexicFont}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${dyslexicFont ? 'bg-teal-500' : 'bg-gray-200'}`}
-                            aria-label="Вклучи OpenDyslexic фонт"
+                            aria-label={dyslexicFont ? 'Исклучи OpenDyslexic фонт' : 'Вклучи OpenDyslexic фонт'}
                         >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${dyslexicFont ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
@@ -693,7 +694,7 @@ export const SettingsView: React.FC = () => {
                             type="button"
                             onClick={toggleHighContrast}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${highContrast ? 'bg-teal-500' : 'bg-gray-200'}`}
-                            aria-label="Вклучи зголемен контраст"
+                            aria-label={highContrast ? 'Исклучи зголемен контраст' : 'Вклучи зголемен контраст'}
                         >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${highContrast ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>

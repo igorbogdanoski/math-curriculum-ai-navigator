@@ -554,11 +554,11 @@ const LessonPlanDoc: React.FC<LessonPlanDocProps> = ({ data }) => {
         {Array.isArray(plan.mathEmbeds) && plan.mathEmbeds.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>МАТЕМАТИЧКИ АЛАТКИ</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {plan.mathEmbeds.map((embed, i) => (
-                <View key={i} style={{ alignItems: 'center' }}>
+                <View key={i} style={{ alignItems: 'center', marginRight: 8, marginBottom: 8 }}>
                   {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                  <Image src={embed.dataUrl} style={{ width: 180, height: 120, objectFit: 'contain', border: '1pt solid #E5E7EB', borderRadius: 4 }} />
+                  <Image src={embed.dataUrl} style={{ width: 180, height: 120 }} />
                   <Text style={{ fontSize: 8, color: '#6B7280', marginTop: 2 }}>
                     {embed.tool === 'geogebra' ? 'GeoGebra' : 'Desmos'}
                   </Text>

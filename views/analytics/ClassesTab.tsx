@@ -524,6 +524,8 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                                                     navigator.clipboard.writeText(parentUrl).then(() => {
                                                         setParentLinkCopied(true);
                                                         setTimeout(() => setParentLinkCopied(false), 2000);
+                                                    }).catch(() => {
+                                                        window.prompt('Копирај го линкот:', parentUrl);
                                                     });
                                                 }}
                                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition w-full justify-center"
