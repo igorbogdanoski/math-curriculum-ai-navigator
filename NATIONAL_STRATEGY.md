@@ -129,14 +129,28 @@
   - Паралелен fetch: `Promise.all([fetchSchoolStats, fetchSchool])`
 - **Security hardening:** double-click race guard (`isProcessingRef`), name fallback, конфликт-проверка, crypto кодови
 
-### И2 — Class Management Upgrade
-**Статус:** ⬜ Не започнато (основата постои: `classes` колекција)
+---
 
-- Наставникот генерира **код за приклучување** (6 знаци)
+### И2 — Class Management Upgrade ✅ ЗАВРШЕНО
 
-- Ученикот внесува код при прв квиз → автоматски линкуван кон класот
-- Class-level analytics: просек по поглавје, споредба меѓу класови
-- Assignments per class со deadline + нотификации
+**Commits:** `262382d` (имплементација) + `3f14e49` (quality hardening)
+**Датум:** 15 Март 2026
+
+**Имплементирано:**
+
+- `SchoolClass` тип: `+joinCode`, `+joinCodeGeneratedAt`; `ClassMembership` нов интерфејс; `QuizResult +classId`
+- `generateClassJoinCode(classId)` — crypto.getRandomValues, try/catch, returns `string|null`
+- `fetchClassByJoinCode(code)` — case-insensitive query со `limit(1)`
+- `joinClassByCode(code, deviceId, studentName)` — пишува `class_memberships/{deviceId}`, input validation
+- `fetchClassMembership(deviceId)` — враќа `ClassMembership | null`
+- `fetchClassStats(teacherUid, studentNames)` — lazy per-student quiz stats со color-coded bars
+- **ClassesTab** — join code панел (прикажи/копирај/генерирај нов), error banner, clipboard fallback
+- **ClassesTab** — статистики по ученик: collapsible, lazy fetch, progress bars (зелено/жолто/црвено)
+- **ClassesTab** — stats cache invalidated при промена на roster (add/remove/csv)
+- **StudentPlayView** — Wizard Step 2: опционален class code, `maxLength=6`, success flash 900ms
+- **StudentPlayView** — mount-time `fetchClassMembership` за рестаурација по localStorage-clear
+- `class_memberships/{deviceDoc}` Firestore правила: read/write за authenticated (anon + teacher)
+- `classId` вклучен во секој `quiz_result` за идни class-level analytics
 
 ### И3 — Teacher Collaboration (Споделена Библиотека)
 **Статус:** ⬜ Не започнато (National Library постои, треба надградба)
