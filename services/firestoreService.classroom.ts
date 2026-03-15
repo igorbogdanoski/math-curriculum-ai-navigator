@@ -64,6 +64,22 @@ export const deleteClass = async (classId: string): Promise<void> => {
     await deleteDoc(doc(db, 'classes', classId));
   };
 
+/** П-Г: Fetch a single class by ID (used by StudentPlayView to detect IEP mode) */
+export const fetchClassById = async (classId: string): Promise<SchoolClass | null> => {
+    const snap = await getDoc(doc(db, 'classes', classId));
+    if (!snap.exists()) return null;
+    return { id: snap.id, ...snap.data() } as SchoolClass;
+};
+
+/** П-Г: Toggle IEP flag for a student within a class */
+export const toggleIEPStudent = async (classId: string, studentName: string, iepStudents: string[]): Promise<void> => {
+    const isIEP = iepStudents.includes(studentName);
+    const updated = isIEP
+        ? iepStudents.filter(n => n !== studentName)
+        : [...iepStudents, studentName];
+    await updateDoc(doc(db, 'classes', classId), { iepStudents: updated });
+};
+
 // ── И2: Class Join Code ─────────────────────────────────────────────────────
 
 /** Generate and persist a cryptographically-secure 6-char join code for a class */

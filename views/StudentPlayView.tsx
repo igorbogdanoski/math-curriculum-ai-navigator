@@ -178,6 +178,9 @@ export const StudentPlayView: React.FC = () => {
   const [classCodeLoading, setClassCodeLoading] = useState(false);
   const [classCodeError, setClassCodeError] = useState('');
 
+  // П-Г: IEP mode — detected from class membership (teacher marks student as IEP)
+  const [isIEP, setIsIEP] = useState(false);
+
   // Ж1: device-bound identity — created once per device, persists in localStorage
   const deviceId = getOrCreateDeviceId();
 
@@ -233,6 +236,17 @@ export const StudentPlayView: React.FC = () => {
     restoreIdentity();
     return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // П-Г: Detect IEP mode — when classId + studentName are resolved, check iepStudents list
+  useEffect(() => {
+    if (!classId || !studentName) return;
+    let cancelled = false;
+    firestoreService.fetchClassById(classId).then(cls => {
+      if (cancelled || !cls) return;
+      setIsIEP(cls.iepStudents?.includes(studentName) ?? false);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [classId, studentName]);
 
   // И2: Restore class membership from Firestore on mount (covers localStorage-cleared scenarios)
   useEffect(() => {
@@ -798,7 +812,16 @@ export const StudentPlayView: React.FC = () => {
                 {t('play.onboarding.change')}
               </button>
             </div>
+            {/* П-Г: IEP accessibility banner */}
+            {isIEP && (
+              <div className="mx-6 mt-4 flex items-center gap-2 bg-violet-50 border border-violet-200 rounded-2xl px-4 py-2.5">
+                <span className="text-lg" aria-hidden="true">🧩</span>
+                <p className="text-violet-800 font-bold text-sm">Без ограничување на времето — можеш да работиш со свое темпо.</p>
+              </div>
+            )}
+
             <React.Suspense fallback={<div className="p-8 text-center bg-white rounded-3xl m-6 animate-pulse"><div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div><p className="text-slate-500 font-bold">Се вчитува квизот...</p></div>}>
+              <div className={isIEP ? 'text-lg [&_.quiz-question-text]:text-xl [&_.quiz-option]:text-base [&_.quiz-option]:py-3' : ''}>
               <InteractiveQuizPlayer
                 title={quizData.title || 'Квиз'}
                 questions={(quizData.items || quizData.questions || []).map((item: QuizItem) => ({
@@ -812,6 +835,7 @@ export const StudentPlayView: React.FC = () => {
                 }}
                 onClose={() => { window.location.hash = '/'; }}
               />
+              </div>
             </React.Suspense>
           </>
         )}

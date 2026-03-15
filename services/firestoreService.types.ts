@@ -57,6 +57,7 @@ export interface SchoolClass {
   studentNames: string[];
   joinCode?: string;
   joinCodeGeneratedAt?: any;
+  iepStudents?: string[]; // П-Г: names of students with IEP (teacher-only flag)
   createdAt?: Timestamp;
 }
 

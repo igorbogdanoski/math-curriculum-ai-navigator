@@ -155,6 +155,14 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         await loadClasses();
     };
 
+    // П-Г: IEP toggle
+    const handleToggleIEP = async (classId: string, studentName: string, currentIepStudents: string[]) => {
+        try {
+            await firestoreService.toggleIEPStudent(classId, studentName, currentIepStudents);
+            await loadClasses();
+        } catch { /* non-critical */ }
+    };
+
     const handleGenerateCode = async (classId: string) => {
         setGeneratingCodeId(classId);
         setCodeGenError(null);
@@ -445,23 +453,42 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                             </p>
                         ) : (
                             <div className="flex flex-wrap gap-1.5">
-                                {cls.studentNames.sort().map(name => (
-                                    <span
-                                        key={name}
-                                        className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700"
-                                    >
-                                        {name}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveStudent(cls.id, name)}
-                                            aria-label={`Отстрани ${name} од класата`}
-                                            className="hover:opacity-60 transition"
+                                {cls.studentNames.sort().map(name => {
+                                    const isIEP = cls.iepStudents?.includes(name) ?? false;
+                                    return (
+                                        <span
+                                            key={name}
+                                            className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition ${isIEP ? 'bg-violet-100 text-violet-800 border border-violet-300' : 'bg-slate-100 text-slate-700'}`}
                                         >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </span>
-                                ))}
+                                            {isIEP && <span title="Ученик со ИЕП">🧩</span>}
+                                            {name}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleToggleIEP(cls.id, name, cls.iepStudents ?? [])}
+                                                aria-label={isIEP ? `Отстрани ИЕП за ${name}` : `Означи ${name} со ИЕП`}
+                                                title={isIEP ? 'Отстрани ИЕП флаг' : 'Означи ученик со ИЕП (поддршка)'}
+                                                className="hover:opacity-60 transition text-violet-400 hover:text-violet-600"
+                                            >
+                                                🧩
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveStudent(cls.id, name)}
+                                                aria-label={`Отстрани ${name} од класата`}
+                                                className="hover:opacity-60 transition"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </span>
+                                    );
+                                })}
                             </div>
+                        )}
+                        {/* П-Г: IEP summary */}
+                        {(cls.iepStudents?.length ?? 0) > 0 && (
+                            <p className="text-xs text-violet-600 mt-1.5 flex items-center gap-1">
+                                🧩 <span className="font-semibold">{cls.iepStudents!.length}</span> ученик{cls.iepStudents!.length === 1 ? '' : 'и'} со ИЕП — добиваат поедноставен интерфејс при играње квизови
+                            </p>
                         )}
 
                         {/* И2: Join Code panel */}
