@@ -1217,5 +1217,32 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
 
   async generateEmbedding(text: string): Promise<number[]> {
     return callEmbeddingProxy(text);
+  },
+
+  // П-Ј — Smart Quiz Title: generate a concise, descriptive title from quiz content
+  async generateSmartQuizTitle(material: any): Promise<string> {
+    try {
+      checkDailyQuotaGuard();
+      const questions: string[] = [];
+      const content = material?.questions ?? material?.items ?? material?.content?.questions ?? [];
+      for (const q of Array.isArray(content) ? content.slice(0, 5) : []) {
+        const text = q?.question || q?.text || '';
+        if (text) questions.push(text);
+      }
+      if (questions.length === 0) return '';
+
+      const snippet = questions.slice(0, 3).join(' | ');
+      const prompt = `Дадени се прашања од квиз за математика:\n${snippet}\n\nНапиши само кус наслов (максимум 8 зборови) на македонски, кој го опишува темата на квизот. НЕ пишувај ништо друго — само насловот.`;
+
+      const response = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 30 },
+      });
+      const title = response.text.trim().replace(/^["'„]|["'"]$/g, '').trim();
+      return title.length > 3 ? title : '';
+    } catch {
+      return '';
+    }
   }
 };

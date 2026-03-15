@@ -79,6 +79,8 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
   const { user } = useAuth();
   
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -111,13 +113,8 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
     if (!plan) return;
     const shareData = shareService.generateShareData(plan);
     const url = `${window.location.origin}${window.location.pathname}#/share/${shareData}`;
-    navigator.clipboard.writeText(url)
-      .then(() => {
-        addNotification('Линкот за споделување е копиран!', 'success');
-      })
-      .catch(() => {
-        addNotification('Грешка при копирање на линкот.', 'error');
-      });
+    setShareUrl(url);
+    setIsShareDialogOpen(true);
   };
 
   const handleRemix = async () => {
@@ -460,6 +457,62 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
                   )}
               </div>
           </div>
+      )}
+
+      {/* П-И: Share Dialog */}
+      {isShareDialogOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setIsShareDialogOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-brand-primary">Сподели со колега</h3>
+              <button type="button" aria-label="Затвори" onClick={() => setIsShareDialogOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                <ICONS.close className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Испрати ја оваа подготовка на колега — тие можат да ја прегледаат и да направат своја копија.
+            </p>
+            {/* Link field */}
+            <div className="flex gap-2 mb-5">
+              <input
+                type="text"
+                readOnly
+                aria-label="Линк за споделување"
+                value={shareUrl}
+                className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2.5 bg-gray-50 text-gray-700 select-all focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                onFocus={e => e.target.select()}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(shareUrl)
+                    .then(() => addNotification('Линкот е копиран!', 'success'))
+                    .catch(() => addNotification('Грешка при копирање.', 'error'));
+                }}
+                className="flex items-center gap-1.5 bg-brand-primary text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-brand-secondary transition-colors whitespace-nowrap"
+              >
+                <ICONS.copy className="w-4 h-4" /> Копирај
+              </button>
+            </div>
+            {/* Share channels */}
+            <div className="grid grid-cols-2 gap-3">
+              <a
+                href={`mailto:?subject=${encodeURIComponent('Подготовка: ' + plan.title)}&body=${encodeURIComponent('Поздрав,\n\nТе споделувам оваа наставна подготовка по математика:\n\n' + plan.title + '\n\n' + shareUrl + '\n\nСо почит')}`}
+                className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors"
+              >
+                <ICONS.email className="w-4 h-4" /> Испрати Email
+              </a>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent('Подготовка: ' + plan.title + '\n' + shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm font-medium hover:bg-green-100 transition-colors"
+              >
+                <ICONS.share className="w-4 h-4" /> WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

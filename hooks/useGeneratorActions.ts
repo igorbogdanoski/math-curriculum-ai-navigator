@@ -410,8 +410,16 @@ export function useGeneratorActions({
         QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric', SCENARIO: 'ideas',
       };
       const libType = materialTypeToLibType[state.materialType ?? ''] ?? 'quiz';
+
+      // П-Ј: generate smart title for quiz/assessment materials
+      let title = material.title || '';
+      if (!title && (libType === 'quiz' || libType === 'assessment')) {
+        title = await geminiService.generateSmartQuizTitle(material).catch(() => '');
+      }
+      if (!title) title = 'Генериран материјал';
+
       await firestoreService.saveToLibrary(material, {
-        title: material.title || 'Генериран материјал',
+        title,
         type: libType,
         teacherUid: firebaseUser.uid,
         conceptId,
