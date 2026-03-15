@@ -606,7 +606,7 @@ export function useGeneratorActions({
     const { context: finalContext, imageParam, studentProfilesToPass, tempActivityTitle } = built;
     const teacherNoteInstruction = teacherNote.trim() ? `БЕЛЕШКИ НА НАСТАВНИКОТ: ${teacherNote.trim()}` : '';
     const effectiveInstruction = [state.useMacedonianContext ? MACEDONIAN_CONTEXT_HINT : '', buildAiPersonalizationSnippet(state), teacherNoteInstruction, sanitizePromptInput(state.customInstruction)].filter(Boolean).join(' ');
-    const { questionTypes, numQuestions, differentiationLevel, exitTicketQuestions, exitTicketFocus, activityType, criteriaHints, includeSelfAssessment, activityFocus, scenarioTone, learningDesignModel } = state;
+    const { questionTypes, numQuestions, differentiationLevel, generateAllLevels, exitTicketQuestions, exitTicketFocus, activityType, criteriaHints, includeSelfAssessment, activityFocus, scenarioTone, learningDesignModel } = state;
 
     setIsLoading(true);
     setGeneratedMaterial(null);
@@ -643,10 +643,26 @@ export function useGeneratorActions({
           case 'ASSESSMENT':
           case 'FLASHCARDS':
           case 'QUIZ':
-            result = await geminiService.generateAssessment(
-              materialType, questionTypes, numQuestions, finalContext,
-              user ?? undefined, differentiationLevel, studentProfilesToPass, imageParam, effectiveInstruction, state.includeSelfAssessment, state.includeWorkedExamples
-            );
+            if (generateAllLevels && (materialType === 'ASSESSMENT' || materialType === 'QUIZ') && !studentProfilesToPass?.length) {
+              // П-Ѓ: Generate all 3 differentiation levels in parallel
+              const [standard, support, advanced] = await Promise.all([
+                geminiService.generateAssessment(materialType, questionTypes, numQuestions, finalContext, user ?? undefined, 'standard', undefined, imageParam, effectiveInstruction, state.includeSelfAssessment, state.includeWorkedExamples),
+                geminiService.generateAssessment(materialType, questionTypes, numQuestions, finalContext, user ?? undefined, 'support', undefined, imageParam, effectiveInstruction, false, false),
+                geminiService.generateAssessment(materialType, questionTypes, numQuestions, finalContext, user ?? undefined, 'advanced', undefined, imageParam, effectiveInstruction, false, false),
+              ]);
+              result = {
+                ...standard,
+                differentiatedVersions: [
+                  { profileName: 'Поддршка', questions: support.questions },
+                  { profileName: 'Предизвик', questions: advanced.questions },
+                ],
+              };
+            } else {
+              result = await geminiService.generateAssessment(
+                materialType, questionTypes, numQuestions, finalContext,
+                user ?? undefined, differentiationLevel, studentProfilesToPass, imageParam, effectiveInstruction, state.includeSelfAssessment, state.includeWorkedExamples
+              );
+            }
             break;
           case 'WORKED_EXAMPLE': {
             const conceptObj = finalContext.concepts?.[0];

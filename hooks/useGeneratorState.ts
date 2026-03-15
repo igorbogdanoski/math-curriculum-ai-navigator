@@ -26,6 +26,7 @@ export interface GeneratorState {
     useStudentProfiles: boolean;
     selectedStudentProfileIds: string[];
     differentiationLevel: DifferentiationLevel;
+    generateAllLevels: boolean; // П-Ѓ: generate Поддршка + Стандард + Предизвик simultaneously
     exitTicketQuestions: number;
     exitTicketFocus: string;
     activityTitle: string;
@@ -76,6 +77,7 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         useStudentProfiles: false,
         selectedStudentProfileIds: [],
         differentiationLevel: 'standard',
+        generateAllLevels: false,
         exitTicketQuestions: 2,
         exitTicketFocus: 'Проверка на разбирање',
         activityTitle: '',

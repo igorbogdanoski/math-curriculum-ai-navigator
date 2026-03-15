@@ -298,16 +298,35 @@ const AssessmentOptions: React.FC<MaterialOptionsProps> = ({ state, dispatch, us
                                     <p className="text-xs text-blue-700 mt-3 font-medium flex items-center gap-1">ℹ️ Држете Ctrl (или Cmd) за да изберете повеќе профили.</p>
                                 </div>
                             ) : (
-                                <div className="animate-fade-in flex flex-wrap gap-3">
-                                    {(['standard', 'support', 'advanced'] as DifferentiationLevel[]).map(level => { 
-                                        const labels: Record<DifferentiationLevel, string> = { standard: '⚪ Стандардно', support: '🔵 Поддршка (поедноставено)', advanced: '🔴 За напредни ученици', }; 
-                                        return (
-                                            <label key={level} htmlFor={`diff-level-${level}`} className={`cursor-pointer px-5 py-3 rounded-xl border-2 text-sm font-bold transition-all ${state.differentiationLevel === level ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
-                                                <input id={`diff-level-${level}`} name="differentiationLevel" type="radio" value={level} checked={state.differentiationLevel === level} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: level }})} className="sr-only" />
-                                                {labels[level]}
-                                            </label>
-                                        )
-                                    })}
+                                <div className="animate-fade-in flex flex-col gap-3">
+                                    {/* П-Ѓ: Generate all 3 levels toggle (only for ASSESSMENT/QUIZ) */}
+                                    {(state.materialType === 'ASSESSMENT' || state.materialType === 'QUIZ') && (
+                                        <label className={`cursor-pointer flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm font-bold transition-all w-fit ${state.generateAllLevels ? 'bg-gradient-to-r from-indigo-500 to-violet-500 border-indigo-400 text-white shadow-sm' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+                                            <input
+                                                type="checkbox"
+                                                checked={!!state.generateAllLevels}
+                                                onChange={e => dispatch({ type: 'SET_FIELD', payload: { field: 'generateAllLevels', value: e.target.checked } })}
+                                                className="sr-only"
+                                            />
+                                            <span className="text-base">🎯</span>
+                                            Генерирај сите 3 нивоа истовремено
+                                            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${state.generateAllLevels ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'}`}>Поддршка · Стандард · Предизвик</span>
+                                        </label>
+                                    )}
+                                    {/* Single level radios — hidden when generateAllLevels is active */}
+                                    {!state.generateAllLevels && (
+                                        <div className="flex flex-wrap gap-3">
+                                            {(['standard', 'support', 'advanced'] as DifferentiationLevel[]).map(level => {
+                                                const labels: Record<DifferentiationLevel, string> = { standard: '⚪ Стандардно', support: '🔵 Поддршка (поедноставено)', advanced: '🔴 За напредни ученици' };
+                                                return (
+                                                    <label key={level} htmlFor={`diff-level-${level}`} className={`cursor-pointer px-5 py-3 rounded-xl border-2 text-sm font-bold transition-all ${state.differentiationLevel === level ? 'bg-brand-primary border-brand-primary text-white shadow-sm' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+                                                        <input id={`diff-level-${level}`} name="differentiationLevel" type="radio" value={level} checked={state.differentiationLevel === level} onChange={() => dispatch({ type: 'SET_FIELD', payload: { field: 'differentiationLevel', value: level } })} className="sr-only" />
+                                                        {labels[level]}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
