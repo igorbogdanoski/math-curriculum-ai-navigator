@@ -155,6 +155,7 @@ export interface LessonPlan {
   progressMonitoring: string[];
   levelDescription?: string;
   differentiation?: string;
+  differentiationTabs?: { support: string; standard: string; advanced: string };
   reflectionPrompt?: string;
   selfAssessmentPrompt?: string;
   tags?: string[];

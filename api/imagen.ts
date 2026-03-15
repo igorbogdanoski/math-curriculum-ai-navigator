@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -22,15 +21,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const { model, contents } = validated;
+
+  // Normalize model — imagen-4 is not available on Gemini Developer API v1beta
   let modelName = model || 'imagen-3.0-generate-001';
-  
-  // Normalize model name (some older clients might send 'imagen-3')
-  if (modelName === 'imagen-3' || modelName === 'imagen-3-fast') {
-      modelName = 'imagen-3.0-generate-001';
+  if (modelName.startsWith('imagen-4') || modelName === 'imagen-3' || modelName === 'imagen-3-fast') {
+    modelName = 'imagen-3.0-generate-001';
   }
 
-  const prompt = typeof contents === 'string' 
-    ? contents 
+  const prompt = typeof contents === 'string'
+    ? contents
     : (contents as any[])[0]?.parts[0]?.text || '';
 
   if (!prompt) {
@@ -41,30 +40,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   for (let i = 0; i < apiKeys.length; i++) {
     const apiKey = apiKeys[i];
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const modelInstance = genAI.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' });
-      
-      const result = await modelInstance.generateContent(prompt);
-      const response = await result.response;
-      
-      // Imagen returns image data in the parts
-      const part = response.candidates?.[0]?.content?.parts?.[0];
-      if (part?.inlineData) {
-        return res.status(200).json({ 
+      // Imagen models use the generateImages endpoint, NOT generateContent
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateImages?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: { text: prompt },
+          number_of_images: 1,
+          aspect_ratio: '16:9',
+          safety_filter_level: 'BLOCK_SOME',
+          person_generation: 'DONT_ALLOW',
+        }),
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`[${response.status}] ${errBody}`);
+      }
+
+      const data = await response.json();
+      const prediction = data.predictions?.[0];
+      if (prediction?.bytesBase64Encoded) {
+        return res.status(200).json({
           inlineData: {
-            mimeType: part.inlineData.mimeType,
-            data: part.inlineData.data
-          }
+            mimeType: prediction.mimeType || 'image/png',
+            data: prediction.bytesBase64Encoded,
+          },
         });
       }
-      
-      throw new Error("AI did not return image data");
+
+      throw new Error('AI did not return image data');
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       const msg = lastError.message;
       const isQuota = msg.includes('429');
       const isInvalidKey = msg.includes('API_KEY_INVALID') || msg.includes('API key expired');
-      
+
       if ((isQuota || isInvalidKey) && i < apiKeys.length - 1) {
         continue;
       }

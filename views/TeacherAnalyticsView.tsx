@@ -112,6 +112,27 @@ export const TeacherAnalyticsView: React.FC = () => {
         });
     };
 
+    const handleGenerateMisconceptionRemedial = (
+        conceptId: string,
+        conceptTitle: string,
+        misconceptions: { text: string; count: number }[],
+    ) => {
+        const { grade, topic } = getConceptDetails(conceptId);
+        const topMisconceptions = misconceptions
+            .slice(0, 5)
+            .map((m, i) => `${i + 1}. "${m.text}" (${m.count} ${m.count === 1 ? 'ученик' : 'ученици'})`)
+            .join('\n');
+        openGeneratorPanel({
+            selectedGrade: grade?.id || '',
+            selectedTopic: topic?.id || '',
+            selectedConcepts: [conceptId],
+            contextType: 'CONCEPT',
+            materialType: 'ASSESSMENT',
+            differentiationLevel: 'support',
+            customInstruction: `РЕМЕДИЈАЦИЈА НА КОНЦЕПТУАЛНИ ГРЕШКИ за "${conceptTitle}".\n\nИдентификувани грешки кај учениците:\n${topMisconceptions}\n\nГенерирај квиз со прашања кои ДИРЕКТНО ги адресираат овие погрешни сфаќања. За секоја грешка вклучи барем едно прашање кое ја разоткрива и коригира. Додај кратки образложенија зошто одговорот е точен.`,
+        });
+    };
+
     // loadResults replaced by React Query refetch
 
     const loadMore = async () => {
@@ -730,7 +751,7 @@ export const TeacherAnalyticsView: React.FC = () => {
                             {activeTab === 'students' && <StudentsTab perStudentStats={perStudentStats} />}
                             {activeTab === 'grades' && <GradeTab gradeStats={gradeStats} />}
                             {activeTab === 'standards' && <StandardsTab standardsCoverage={standardsCoverage} />}
-                            {activeTab === 'concepts' && <ConceptsTab allConceptStats={allConceptStats} onGenerateRemedial={handleGenerateRemedial} />}
+                            {activeTab === 'concepts' && <ConceptsTab allConceptStats={allConceptStats} onGenerateRemedial={handleGenerateRemedial} onGenerateMisconceptionRemedial={handleGenerateMisconceptionRemedial} />}
                             {activeTab === 'alerts' && (
                                 <AlertsTab
                                     perStudentStats={perStudentStats}

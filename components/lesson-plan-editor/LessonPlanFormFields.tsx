@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
-import type { LessonPlan, Grade, Topic, Concept } from '../../types';
+import type { LessonPlan, Grade, Topic, Concept, BloomsLevel } from '../../types';
 import { ICONS } from '../../constants';
 
 interface LessonPlanFormFieldsProps {
@@ -112,6 +112,217 @@ const EnhancedTextArea: React.FC<EnhancedTextAreaProps> = ({ fieldName, label, v
                 </div>
             </div>
              {props.placeholder && <p className="mt-1 text-xs text-gray-500">{props.placeholder}</p>}
+        </div>
+    );
+};
+
+// ── Bloom Objective Builder ───────────────────────────────────────────────────
+
+const BLOOM_LEVELS: { level: BloomsLevel; mk: string; num: number; verbs: string[]; color: string }[] = [
+    { num: 1, level: 'Remembering',   mk: 'Помнење',      color: 'bg-gray-100 text-gray-700',    verbs: ['Набројува', 'Именува', 'Препознава', 'Дефинира', 'Посочува', 'Наведува'] },
+    { num: 2, level: 'Understanding', mk: 'Разбирање',    color: 'bg-blue-100 text-blue-700',    verbs: ['Објаснува', 'Споредува', 'Класифицира', 'Интерпретира', 'Сумаризира'] },
+    { num: 3, level: 'Applying',      mk: 'Примена',      color: 'bg-green-100 text-green-700',  verbs: ['Применува', 'Решава', 'Пресметува', 'Демонстрира', 'Конструира'] },
+    { num: 4, level: 'Analyzing',     mk: 'Анализа',      color: 'bg-yellow-100 text-yellow-700', verbs: ['Анализира', 'Разликува', 'Испитува', 'Расчленува', 'Компарира'] },
+    { num: 5, level: 'Evaluating',    mk: 'Евалуација',   color: 'bg-orange-100 text-orange-700', verbs: ['Оценува', 'Проценува', 'Критикува', 'Бранува', 'Препорачува'] },
+    { num: 6, level: 'Creating',      mk: 'Создавање',    color: 'bg-purple-100 text-purple-700', verbs: ['Создава', 'Дизајнира', 'Планира', 'Формулира', 'Генерира'] },
+];
+
+const BloomObjectiveBuilder: React.FC<{
+    onAdd: (objective: { text: string; bloomsLevel: BloomsLevel }) => void;
+}> = ({ onAdd }) => {
+    const [open, setOpen] = useState(false);
+    const [selectedLevel, setSelectedLevel] = useState<BloomsLevel>('Understanding');
+    const [selectedVerb, setSelectedVerb] = useState('');
+    const [content, setContent] = useState('');
+    const [evidence, setEvidence] = useState('');
+
+    const bloom = BLOOM_LEVELS.find(b => b.level === selectedLevel)!;
+
+    const preview = selectedVerb && content
+        ? `Учениците ќе ${selectedVerb.toUpperCase()} ${content}${evidence ? ` (${evidence})` : ''}.`
+        : '';
+
+    const handleAdd = () => {
+        if (!preview) return;
+        onAdd({ text: preview, bloomsLevel: selectedLevel });
+        setContent('');
+        setEvidence('');
+        setSelectedVerb('');
+    };
+
+    if (!open) {
+        return (
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="flex items-center gap-1.5 text-xs text-purple-600 hover:text-purple-800 font-semibold mt-2"
+            >
+                <ICONS.sparkles className="w-3.5 h-3.5" />
+                Bloom помошник за цели
+            </button>
+        );
+    }
+
+    return (
+        <div className="mt-3 p-4 border border-purple-200 rounded-lg bg-purple-50/40 space-y-3">
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-purple-700 uppercase tracking-wide">Bloom помошник за наставни цели</span>
+                <button type="button" onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600 text-xs">Затвори ✕</button>
+            </div>
+
+            {/* Level selector */}
+            <div className="flex flex-wrap gap-1.5">
+                {BLOOM_LEVELS.map(b => (
+                    <button
+                        key={b.level}
+                        type="button"
+                        onClick={() => { setSelectedLevel(b.level); setSelectedVerb(''); }}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
+                            selectedLevel === b.level ? b.color + ' ring-2 ring-offset-1 ring-current' : 'bg-white text-gray-500 border hover:bg-gray-50'
+                        }`}
+                    >
+                        {b.num}. {b.mk}
+                    </button>
+                ))}
+            </div>
+
+            {/* Verb picker */}
+            <div>
+                <p className="text-xs text-gray-500 mb-1.5">Избери глагол:</p>
+                <div className="flex flex-wrap gap-1.5">
+                    {bloom.verbs.map(v => (
+                        <button
+                            key={v}
+                            type="button"
+                            onClick={() => setSelectedVerb(v)}
+                            className={`px-2.5 py-1 rounded border text-xs font-medium transition-colors ${
+                                selectedVerb === v ? `${bloom.color} border-current font-bold` : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                        >
+                            {v}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* What + Evidence inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Содржина (Што?)*</label>
+                    <input
+                        type="text"
+                        value={content}
+                        onChange={e => setContent(e.target.value)}
+                        placeholder="пр. еквивалентни дропки преку 3 примери"
+                        className="w-full p-2 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-purple-400 focus:border-purple-400"
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Доказ / Мерење (Како?)</label>
+                    <input
+                        type="text"
+                        value={evidence}
+                        onChange={e => setEvidence(e.target.value)}
+                        placeholder="пр. со 80% точност"
+                        className="w-full p-2 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-purple-400 focus:border-purple-400"
+                    />
+                </div>
+            </div>
+
+            {/* Preview + Add */}
+            {preview && (
+                <div className="flex items-start gap-3 bg-white border border-purple-200 rounded-lg p-3">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0 ${bloom.color}`}>Bloom {bloom.num}</span>
+                    <p className="text-sm text-slate-700 flex-1 italic">{preview}</p>
+                    <button
+                        type="button"
+                        onClick={handleAdd}
+                        className="px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 flex-shrink-0"
+                    >
+                        + Додади
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ── Differentiation Tabs ──────────────────────────────────────────────────────
+
+type DiffTab = 'support' | 'standard' | 'advanced';
+const DIFF_TABS: { key: DiffTab; label: string; color: string; placeholder: string }[] = [
+    { key: 'support',  label: 'Поддршка',    color: 'text-blue-700 border-blue-500',   placeholder: 'Поедноставени активности, чекор-по-чекор упатства, визуелни помагала за ученици со потешкотии...' },
+    { key: 'standard', label: 'Стандардно',  color: 'text-gray-700 border-gray-400',   placeholder: 'Стандардни активности соодветни за просечното ниво на одделението...' },
+    { key: 'advanced', label: 'Збогатување', color: 'text-purple-700 border-purple-500', placeholder: 'Предизвикувачки задачи, истражувачки прашања, проекти за напредни ученици...' },
+];
+
+const DifferentiationTabs: React.FC<{
+    plan: Partial<LessonPlan>;
+    setPlan: React.Dispatch<React.SetStateAction<Partial<LessonPlan>>>;
+    onEnhanceField: (fieldName: string, currentText: string, action?: string) => void;
+    enhancingField: string | null;
+}> = ({ plan, setPlan, onEnhanceField, enhancingField }) => {
+    const [activeTab, setActiveTab] = useState<DiffTab>('standard');
+
+    // Migrate old free-text differentiation into tabs on first render
+    const tabs = plan.differentiationTabs ?? (
+        plan.differentiation
+            ? { support: '', standard: plan.differentiation, advanced: '' }
+            : { support: '', standard: '', advanced: '' }
+    );
+
+    const handleTabChange = (key: DiffTab, value: string) => {
+        const updated = { ...tabs, [key]: value };
+        setPlan(p => ({ ...p, differentiationTabs: updated, differentiation: undefined }));
+    };
+
+    return (
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Диференцијација</label>
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="flex border-b border-gray-200 bg-gray-50">
+                    {DIFF_TABS.map(tab => (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`flex-1 py-2 text-xs font-semibold transition-colors border-b-2 ${
+                                activeTab === tab.key
+                                    ? `bg-white ${tab.color}`
+                                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                            }`}
+                        >
+                            {tab.label}
+                            {tabs[tab.key] && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-current inline-block align-middle" />}
+                        </button>
+                    ))}
+                </div>
+                {DIFF_TABS.map(tab => (
+                    <div key={tab.key} className={activeTab === tab.key ? 'block' : 'hidden'}>
+                        <div className="relative">
+                            <textarea
+                                value={tabs[tab.key]}
+                                onChange={e => handleTabChange(tab.key, e.target.value)}
+                                rows={4}
+                                placeholder={tab.placeholder}
+                                className="block w-full p-3 border-0 resize-none focus:ring-0 text-sm text-gray-700"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => onEnhanceField(`differentiationTabs.${tab.key}`, tabs[tab.key], 'auto')}
+                                disabled={enhancingField === `differentiationTabs.${tab.key}`}
+                                title="Подобри со AI"
+                                className="absolute top-2 right-2 p-1 text-gray-400 rounded-full hover:bg-blue-100 hover:text-brand-secondary disabled:cursor-not-allowed transition-transform hover:scale-110"
+                            >
+                                {enhancingField === `differentiationTabs.${tab.key}`
+                                    ? <ICONS.spinner className="w-4 h-4 animate-spin" />
+                                    : <ICONS.sparkles className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <p className="mt-1 text-xs text-gray-400">Три нивоа: ученици со потешкотии · просечно ниво · напредни ученици</p>
         </div>
     );
 };
@@ -256,17 +467,25 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <EnhancedTextArea
-                    id="objectives"
-                    fieldName="objectives"
-                    label="Наставни цели"
-                    value={arrayToString(plan.objectives || [])}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPlan((p: Partial<LessonPlan>) => ({...p, objectives: stringToObjectives(e.target.value)}))}
-                    onEnhance={onEnhanceField}
-                    isEnhancing={enhancingField === 'objectives'}
-                    rows={5}
-                    placeholder="Внесете секоја цел во нов ред..."
-                />
+                <div>
+                    <EnhancedTextArea
+                        id="objectives"
+                        fieldName="objectives"
+                        label="Наставни цели"
+                        value={arrayToString(plan.objectives || [])}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPlan((p: Partial<LessonPlan>) => ({...p, objectives: stringToObjectives(e.target.value)}))}
+                        onEnhance={onEnhanceField}
+                        isEnhancing={enhancingField === 'objectives'}
+                        rows={5}
+                        placeholder="Внесете секоја цел во нов ред..."
+                    />
+                    <BloomObjectiveBuilder
+                        onAdd={obj => setPlan(p => ({
+                            ...p,
+                            objectives: [...(p.objectives || []), obj],
+                        }))}
+                    />
+                </div>
                 <EnhancedTextArea
                     id="assessmentStandards"
                     fieldName="assessmentStandards"
@@ -388,18 +607,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     placeholder="Внесете секој начин на следење во нов ред..."
                 />
             </div>
-             <EnhancedTextArea
-                id="differentiation"
-                fieldName="differentiation"
-                label="Диференцијација"
-                value={plan.differentiation || ''}
-                onChange={handleChange}
-                onEnhance={onEnhanceField}
-                isEnhancing={enhancingField === 'differentiation'}
-                name="differentiation"
-                rows={3}
-                placeholder="Идеи за поддршка на ученици со потешкотии и предизвици за напредните ученици..."
-            />
+             <DifferentiationTabs plan={plan} setPlan={setPlan} onEnhanceField={onEnhanceField} enhancingField={enhancingField} />
             <fieldset className="border p-4 rounded-md bg-gray-50/50">
                 <legend className="text-lg font-medium text-gray-900 px-2 bg-brand-bg rounded">Рефлексија и Оценување</legend>
                 <div className="space-y-4 mt-2">

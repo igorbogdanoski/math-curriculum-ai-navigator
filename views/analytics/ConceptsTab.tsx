@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, AlertTriangle, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, AlertTriangle, MessageSquare, ChevronDown, ChevronUp, Wand2 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { ScoreBar, type ConceptStat, confidenceEmoji, confidenceColor } from './shared';
@@ -7,6 +7,7 @@ import { ScoreBar, type ConceptStat, confidenceEmoji, confidenceColor } from './
 interface ConceptsTabProps {
     allConceptStats: ConceptStat[];
     onGenerateRemedial: (conceptId: string, title: string, avgPct: number) => void;
+    onGenerateMisconceptionRemedial: (conceptId: string, title: string, misconceptions: { text: string; count: number }[]) => void;
 }
 
 const MetacognitiveNotesRow: React.FC<{ notes: string[]; colSpan: number }> = ({ notes, colSpan }) => {
@@ -42,7 +43,7 @@ const MetacognitiveNotesRow: React.FC<{ notes: string[]; colSpan: number }> = ({
     );
 };
 
-export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGenerateRemedial }) => (
+export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGenerateRemedial, onGenerateMisconceptionRemedial }) => (
     <SilentErrorBoundary name="ConceptsTab">
         <Card>
             <div className="flex items-center justify-between mb-6">
@@ -123,19 +124,30 @@ export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGen
                                         {hasMisconceptions && (
                                             <tr className="bg-red-50/20 border-b border-gray-100">
                                                 <td colSpan={8} className="py-2 px-4">
-                                                    <div className="flex flex-col gap-1.5 pl-6">
-                                                        <span className="text-xs font-bold tracking-tight text-red-700 uppercase flex items-center gap-1">
-                                                            <AlertTriangle className="w-3 h-3" />
-                                                            Најчести концептуални грешки:
-                                                        </span>
-                                                        <ul className="list-disc list-inside text-xs text-slate-600 marker:text-red-400">
-                                                            {c.misconceptions?.slice(0, 3).map((m, idx) => (
-                                                                <li key={idx}>
-                                                                    <span className="font-semibold text-slate-800">{m.text}</span>
-                                                                    <span className="text-gray-400 ml-1">({m.count} {m.count === 1 ? 'грешка' : 'грешки'})</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
+                                                    <div className="flex items-start justify-between gap-3 pl-6">
+                                                        <div className="flex flex-col gap-1.5 flex-1">
+                                                            <span className="text-xs font-bold tracking-tight text-red-700 uppercase flex items-center gap-1">
+                                                                <AlertTriangle className="w-3 h-3" />
+                                                                Најчести концептуални грешки:
+                                                            </span>
+                                                            <ul className="list-disc list-inside text-xs text-slate-600 marker:text-red-400">
+                                                                {c.misconceptions?.slice(0, 3).map((m, idx) => (
+                                                                    <li key={idx}>
+                                                                        <span className="font-semibold text-slate-800">{m.text}</span>
+                                                                        <span className="text-gray-400 ml-1">({m.count} {m.count === 1 ? 'грешка' : 'грешки'})</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            title="Генерирај ремедијален квиз насочен кон овие грешки"
+                                                            onClick={() => onGenerateMisconceptionRemedial(c.conceptId, c.title, c.misconceptions!)}
+                                                            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors flex-shrink-0 mt-0.5"
+                                                        >
+                                                            <Wand2 className="w-3.5 h-3.5" />
+                                                            Генерирај ремедијација
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>

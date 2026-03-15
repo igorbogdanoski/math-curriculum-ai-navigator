@@ -118,26 +118,46 @@ function geminiDevProxy(apiKey: string): Plugin {
         if (req.method !== 'POST') return next();
 
         try {
-          const { GoogleGenerativeAI } = await import('@google/generative-ai');
-          const genAI = new GoogleGenerativeAI(apiKey);
           const { model, contents } = await readBody(req);
           const prompt = typeof contents === 'string' ? contents : (contents as any[])[0]?.parts[0]?.text || '';
 
-          const modelInstance = genAI.getGenerativeModel({ model: model || 'imagen-3.0-generate-001' });
-          const result = await modelInstance.generateContent(prompt);
-          const response = await result.response;
-          const part = response.candidates?.[0]?.content?.parts?.[0];
+          // Normalize model — imagen-4 is not on v1beta Gemini Developer API
+          let modelName = model || 'imagen-3.0-generate-001';
+          if (modelName.startsWith('imagen-4') || modelName === 'imagen-3' || modelName === 'imagen-3-fast') {
+            modelName = 'imagen-3.0-generate-001';
+          }
 
-          if (part?.inlineData) {
+          // Imagen uses generateImages endpoint, NOT generateContent
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateImages?key=${apiKey}`;
+          const apiRes = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: { text: prompt },
+              number_of_images: 1,
+              aspect_ratio: '16:9',
+              safety_filter_level: 'BLOCK_SOME',
+              person_generation: 'DONT_ALLOW',
+            }),
+          });
+
+          if (!apiRes.ok) {
+            const errBody = await apiRes.text();
+            throw new Error(`[${apiRes.status}] ${errBody}`);
+          }
+
+          const data = await apiRes.json();
+          const prediction = data.predictions?.[0];
+          if (prediction?.bytesBase64Encoded) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ 
+            res.end(JSON.stringify({
               inlineData: {
-                mimeType: part.inlineData.mimeType,
-                data: part.inlineData.data
-              }
+                mimeType: prediction.mimeType || 'image/png',
+                data: prediction.bytesBase64Encoded,
+              },
             }));
           } else {
-            throw new Error("AI did not return image data");
+            throw new Error('AI did not return image data');
           }
         } catch (error: any) {
           res.writeHead(500, { 'Content-Type': 'application/json' });

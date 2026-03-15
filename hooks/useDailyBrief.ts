@@ -59,10 +59,18 @@ function aggregateResults(results: Awaited<ReturnType<typeof firestoreService.fe
   return { totalQuizzes: recent.length, weakConcepts, strugglingCount };
 }
 
+export interface WeakConcept {
+  conceptId?: string;
+  title: string;
+  avg: number;
+  count: number;
+}
+
 export function useDailyBrief() {
   const { firebaseUser } = useAuth();
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [weakConcepts, setWeakConcepts] = useState<WeakConcept[]>([]);
 
   const load = useCallback(async (forceRefresh = false) => {
     if (!firebaseUser) return;
@@ -81,13 +89,16 @@ export function useDailyBrief() {
       } catch { /* ignore */ }
     }
 
-    if (isDailyQuotaKnownExhausted()) return;
-
     setIsLoading(true);
     try {
       const results = await firestoreService.fetchQuizResults(150, firebaseUser.uid);
       const stats = aggregateResults(results);
       if (!stats) return; // No recent data — skip brief
+
+      // Expose weak concepts for formative loop (no AI credits needed)
+      setWeakConcepts(stats.weakConcepts);
+
+      if (isDailyQuotaKnownExhausted()) return;
 
       const generated = await geminiService.generateDailyBrief(stats);
       setBrief(generated);
@@ -108,8 +119,9 @@ export function useDailyBrief() {
   const refresh = useCallback(() => {
     localStorage.removeItem(CACHE_KEY);
     setBrief(null);
+    setWeakConcepts([]);
     load(true);
   }, [load]);
 
-  return { brief, isLoading, refresh };
+  return { brief, isLoading, refresh, weakConcepts };
 }

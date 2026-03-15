@@ -1,8 +1,19 @@
-import { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, Table, TableRow, TableCell, BorderStyle, WidthType } from 'docx';
+import { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, Table, TableRow, TableCell, BorderStyle, WidthType, ImageRun } from 'docx';
 import { saveAs } from 'file-saver';
 import { LessonPlan, TeachingProfile } from '../types';
 
+const fetchImageBuffer = async (url: string): Promise<ArrayBuffer | null> => {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.arrayBuffer();
+    } catch {
+        return null;
+    }
+};
+
 export const exportLessonPlanToWord = async (plan: LessonPlan, profile?: TeachingProfile | null) => {
+    const illustrationBuffer = plan.illustrationUrl ? await fetchImageBuffer(plan.illustrationUrl) : null;
     
     // Helper to add spacing
     const spacing = { after: 200 };
@@ -107,6 +118,26 @@ export const exportLessonPlanToWord = async (plan: LessonPlan, profile?: Teachin
 
                 new Paragraph({ text: "", spacing: { after: 200 } }), // add space
 
+                // AI Illustration (if present)
+                ...(illustrationBuffer ? [
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 },
+                        children: [
+                            new ImageRun({
+                                data: illustrationBuffer,
+                                transformation: { width: 400, height: 280 },
+                                type: 'png',
+                            }),
+                        ],
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 300 },
+                        children: [new TextRun({ text: 'AI генерирана илустрација', italics: true, size: 18, color: '888888' })],
+                    }),
+                ] : []),
+
                 // 3. Objectives
                 createHeader("Наставни цели (Очекувани резултати)"),
                 ...createBulletList(plan.objectives),
@@ -136,9 +167,23 @@ export const exportLessonPlanToWord = async (plan: LessonPlan, profile?: Teachin
                 ...createBulletList(plan.progressMonitoring),
 
                 // 8. Differentiation (if any)
-                ...(plan.differentiation ? [
+                ...(plan.differentiationTabs ? [
                     createHeader("Диференцијација"),
-                    new Paragraph({ text: plan.differentiation, spacing: { after: 200 } })
+                    ...(plan.differentiationTabs.support ? [
+                        new Paragraph({ children: [new TextRun({ text: 'Поддршка:', bold: true })], spacing: { before: 100, after: 60 } }),
+                        new Paragraph({ text: plan.differentiationTabs.support, spacing: { after: 160 } }),
+                    ] : []),
+                    ...(plan.differentiationTabs.standard ? [
+                        new Paragraph({ children: [new TextRun({ text: 'Стандардно:', bold: true })], spacing: { before: 100, after: 60 } }),
+                        new Paragraph({ text: plan.differentiationTabs.standard, spacing: { after: 160 } }),
+                    ] : []),
+                    ...(plan.differentiationTabs.advanced ? [
+                        new Paragraph({ children: [new TextRun({ text: 'Збогатување:', bold: true })], spacing: { before: 100, after: 60 } }),
+                        new Paragraph({ text: plan.differentiationTabs.advanced, spacing: { after: 200 } }),
+                    ] : []),
+                ] : plan.differentiation ? [
+                    createHeader("Диференцијација"),
+                    new Paragraph({ text: plan.differentiation, spacing: { after: 200 } }),
                 ] : []),
 
                 // 9. Reflection (if any)
