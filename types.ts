@@ -49,6 +49,20 @@ export interface Topic {
   levelDescription?: string;
 }
 
+/**
+ * Secondary education track (Н4 — Средно образование).
+ * - gymnasium:   Гимназиско, grades 10–12
+ * - vocational4: Стручно 4-годишно, grades 10–12
+ * - vocational3: Стручно 3-годишно, grades 10–11
+ */
+export type SecondaryTrack = 'gymnasium' | 'vocational4' | 'vocational3';
+
+export const SECONDARY_TRACK_LABELS: Record<SecondaryTrack, string> = {
+  gymnasium:   'Гимназиско (X–XII)',
+  vocational4: 'Стручно 4-год (X–XII)',
+  vocational3: 'Стручно 3-год (X–XI)',
+};
+
 export interface Grade {
   id: string;
   level: number;
@@ -56,10 +70,19 @@ export interface Grade {
   topics: Topic[];
   transversalStandards?: NationalStandard[];
   levelDescription?: string;
+  /** Set on secondary grades — identifies the track they belong to */
+  secondaryTrack?: SecondaryTrack;
 }
 
 export interface Curriculum {
   grades: Grade[];
+}
+
+/** Secondary curriculum: one Curriculum per track */
+export interface SecondaryCurriculumModule {
+  track: SecondaryTrack;
+  label: string;
+  curriculum: Curriculum;
 }
 
 export interface ConceptProgression {
@@ -257,6 +280,9 @@ export interface TeachingProfile {
   tier?: 'Free' | 'Pro' | 'Unlimited';
 
   isMentor?: boolean; // П-Д: voluntary mentor flag — shown as badge on shared materials
+
+  /** Н4 — if set, teacher works in secondary education (not primary grades 1–9) */
+  secondaryTrack?: SecondaryTrack;
 
   style: 'Constructivist' | 'Direct Instruction' | 'Inquiry-Based' | 'Project-Based';
   experienceLevel: 'Beginner' | 'Intermediate' | 'Expert';

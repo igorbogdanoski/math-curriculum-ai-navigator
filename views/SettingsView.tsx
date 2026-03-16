@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import { Card } from '../components/common/Card';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
-import type { TeachingProfile, StudentProfile } from '../types';
+import type { TeachingProfile, StudentProfile, SecondaryTrack } from '../types';
+import { SECONDARY_TRACK_LABELS } from '../types';
 import { ICONS } from '../constants';
 import { InstallApp } from '../components/common/InstallApp';
 import { firestoreService } from '../services/firestoreService';
@@ -479,6 +480,34 @@ export const SettingsView: React.FC = () => {
                             <option value="Beginner">Почетник</option>
                             <option value="Intermediate">Средно искуство</option>
                             <option value="Expert">Експерт</option>
+                        </select>
+                    </div>
+                    {/* Н4 — Secondary track selector */}
+                    <div>
+                        <label htmlFor="secondaryTrack" className="block text-sm font-medium text-gray-700">
+                            Тип на образование
+                        </label>
+                        <p className="text-xs text-gray-500 mb-1">
+                            Изберете средно образование ако предавате во гимназија или стручно училиште (одд. X–XII).
+                        </p>
+                        <select
+                            id="secondaryTrack"
+                            value={profile.secondaryTrack ?? ''}
+                            onChange={(e) => {
+                                const val = e.target.value as SecondaryTrack | '';
+                                setProfile((prev: TeachingProfile) => ({
+                                    ...prev,
+                                    secondaryTrack: val === '' ? undefined : val,
+                                }));
+                            }}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                        >
+                            <option value="">Основно (одд. I–IX)</option>
+                            {(Object.entries(SECONDARY_TRACK_LABELS) as [SecondaryTrack, string][]).map(
+                                ([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                )
+                            )}
                         </select>
                     </div>
                     <div className="flex items-center justify-between py-3 border-t">
