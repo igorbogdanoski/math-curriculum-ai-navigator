@@ -8,6 +8,21 @@ import { useReactToPrint } from 'react-to-print';
 import { PrintableTest } from '../components/ai/PrintableTest';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { useRef } from 'react';
+import { CheckCircle, AlertCircle, Eye } from 'lucide-react';
+
+type Step = 'params' | 'preview' | 'result';
+
+const DIFFICULTY_LABELS: Record<string, string> = {
+    easy: 'Лесно (Ниво на паметење)',
+    medium: 'Средно (Ниво на примена)',
+    hard: 'Тешко (Ниво на анализа)',
+};
+
+const QTYPE_ESTIMATE: Record<string, string> = {
+    easy:   '1–2 избор + дополнување',
+    medium: '2 избор + 2 пресметување + 1 проблем',
+    hard:   '1 избор + 2 пресметување + 2 проблеми',
+};
 
 export const TestGeneratorView: React.FC = () => {
     const { curriculum } = useCurriculum();
@@ -15,6 +30,7 @@ export const TestGeneratorView: React.FC = () => {
     const [topic, setTopic] = useState('');
     const [qCount, setQCount] = useState(5);
     const [difficulty, setDifficulty] = useState<'easy'|'medium'|'hard'>('medium');
+    const [step, setStep] = useState<Step>('params');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedTest, setGeneratedTest] = useState<GeneratedTest | null>(null);
 
@@ -29,14 +45,20 @@ export const TestGeneratorView: React.FC = () => {
     const topicsForGrade = selectedGradeObj?.topics || [];
     const selectedGradeNum = selectedGradeObj?.level || 6;
 
-    const handleGenerate = async () => {
+    // Step 1: show preview/confirmation before spending AI quota
+    const handlePreview = () => { setStep('preview'); };
+
+    // Step 2: actually generate after teacher confirms
+    const handleConfirmGenerate = async () => {
         setIsGenerating(true);
         try {
             const result = await geminiService.generateParallelTest(topic, selectedGradeNum, qCount, difficulty);
             setGeneratedTest(result);
+            setStep('result');
         } catch (e) {
             console.error(e);
             alert("Настана грешка при генерирањето.");
+            setStep('params');
         } finally {
             setIsGenerating(false);
         }
@@ -122,16 +144,28 @@ export const TestGeneratorView: React.FC = () => {
                     </div>
 
                     <button
-                        onClick={handleGenerate}
-                        disabled={isGenerating || !topic}
+                        type="button"
+                        onClick={handlePreview}
+                        disabled={!topic || step === 'preview'}
                         className={`w-full py-3 rounded-lg text-white font-semibold shadow-md transition-all ${
-                            isGenerating || !topic
+                            !topic || step === 'preview'
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-brand-primary to-brand-secondary hover:shadow-lg'
                         }`}
                     >
-                        {isGenerating ? 'Се генерира...' : 'Генерирај Тест'}
+                        <span className="flex items-center justify-center gap-2">
+                            <Eye className="w-4 h-4" /> Прегледај и Потврди
+                        </span>
                     </button>
+                    {step !== 'params' && (
+                        <button
+                            type="button"
+                            onClick={() => { setStep('params'); setGeneratedTest(null); }}
+                            className="w-full py-2 text-sm text-gray-500 hover:text-brand-primary underline"
+                        >
+                            ← Назад кон параметри
+                        </button>
+                    )}
                 </Card>
 
                 <div className="md:col-span-2">
@@ -146,6 +180,51 @@ export const TestGeneratorView: React.FC = () => {
                                 <div className="w-3 h-3 bg-brand-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                             </div>
                         </div>
+                    ) : step === 'preview' && !generatedTest ? (
+                        /* ── Preview / confirmation step ── */
+                        <Card className="border-2 border-brand-primary/30 bg-indigo-50/30 min-h-[400px]">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Eye className="w-5 h-5 text-brand-primary" />
+                                <h2 className="text-xl font-bold text-brand-primary">Преглед на тестот пред генерирање</h2>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-5">Проверете ги параметрите пред да го употребите AI кредитот:</p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                                    <p className="text-xs text-gray-500 mb-1">Одделение</p>
+                                    <p className="font-semibold text-gray-800">{selectedGradeObj?.title ?? '—'}</p>
+                                </div>
+                                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                                    <p className="text-xs text-gray-500 mb-1">Тема</p>
+                                    <p className="font-semibold text-gray-800">{topic}</p>
+                                </div>
+                                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                                    <p className="text-xs text-gray-500 mb-1">Број на прашања (по група)</p>
+                                    <p className="font-semibold text-gray-800">{qCount} × 2 групи = <span className="text-brand-primary">{qCount * 2} вкупно</span></p>
+                                </div>
+                                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                                    <p className="text-xs text-gray-500 mb-1">Тежина</p>
+                                    <p className="font-semibold text-gray-800">{DIFFICULTY_LABELS[difficulty]}</p>
+                                </div>
+                                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm sm:col-span-2">
+                                    <p className="text-xs text-gray-500 mb-1">Очекувани типови прашања (проценка)</p>
+                                    <p className="text-sm text-gray-700">{QTYPE_ESTIMATE[difficulty]}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+                                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-amber-700">Генерирањето ќе потроши <strong>1 AI кредит</strong>. Тестот ќе содржи решенија за наставникот.</p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={handleConfirmGenerate}
+                                className="w-full py-3 rounded-lg text-white font-semibold bg-gradient-to-r from-brand-primary to-brand-secondary hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                            >
+                                <CheckCircle className="w-5 h-5" /> Потврди и Генерирај Тест
+                            </button>
+                        </Card>
                     ) : generatedTest ? (
                         <div className="space-y-6">
                             <Card className="bg-green-50 border-green-200">
@@ -207,7 +286,7 @@ export const TestGeneratorView: React.FC = () => {
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400 bg-white rounded-2xl border-2 border-dashed border-gray-200 min-h-[400px]">
                             <ICONS.document className="w-16 h-16 mb-4 opacity-20" />
-                            <p className="text-lg">Внесете параметри и кликнете "Генерирај"</p>
+                            <p className="text-lg">Внесете параметри и кликнете "Прегледај и Потврди"</p>
                         </div>
                     )}
                 </div>
