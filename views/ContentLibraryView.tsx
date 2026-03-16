@@ -7,6 +7,8 @@ import { Card } from '../components/common/Card';
 import { callEmbeddingProxy } from '../services/gemini/core';
 import { bm25Score, cosineSimilarity, hybridScore } from '../utils/search';
 
+type ScoredMaterial = CachedMaterial & { score: number };
+
 // И3 helpers
 const getAvgRating = (m: CachedMaterial): number | null => {
     const vals = m.ratingsByUid ? Object.values(m.ratingsByUid) : [];
@@ -128,25 +130,25 @@ export const ContentLibraryView: React.FC = () => {
         if (searchQuery.trim()) {
             if (useSemanticSearch && queryEmbedding) {
                 // Hybrid ranking: 60% cosine semantic + 40% BM25 keyword
-                results = results
+                results = (results
                     .map(m => {
                         const docText = `${m.title || ''} ${m.conceptId || ''} ${m.topicId || ''} ${typeLabel[m.type] || m.type || ''}`;
                         const cosine = m.embedding ? cosineSimilarity(queryEmbedding, m.embedding) : 0;
                         const bm25 = bm25Score(searchQuery, docText);
                         const score = hybridScore(cosine, bm25);
-                        return { ...m, score };
+                        return { ...m, score } as ScoredMaterial;
                     })
-                    .filter(m => (m as any).score > 0.15)
-                    .sort((a, b) => (b as any).score - (a as any).score);
+                    .filter((m: ScoredMaterial) => m.score > 0.15)
+                    .sort((a: ScoredMaterial, b: ScoredMaterial) => b.score - a.score)) as CachedMaterial[];
             } else {
                 // BM25 keyword ranking (exact + partial term matching)
-                results = results
+                results = (results
                     .map(m => {
                         const docText = `${m.title || ''} ${m.conceptId || ''} ${m.topicId || ''} ${typeLabel[m.type] || m.type || ''}`;
-                        return { ...m, score: bm25Score(searchQuery, docText) };
+                        return { ...m, score: bm25Score(searchQuery, docText) } as ScoredMaterial;
                     })
-                    .filter(m => (m as any).score > 0)
-                    .sort((a, b) => (b as any).score - (a as any).score);
+                    .filter((m: ScoredMaterial) => m.score > 0)
+                    .sort((a: ScoredMaterial, b: ScoredMaterial) => b.score - a.score)) as CachedMaterial[];
             }
         }
 
@@ -176,7 +178,7 @@ export const ContentLibraryView: React.FC = () => {
 
     const handlePublish = async (m: CachedMaterial) => {
         try {
-            const name = (firebaseUser as any)?.displayName || 'Наставник';
+            const name = firebaseUser?.displayName || 'Наставник';
             await firestoreService.publishMaterialWithAttribution(m.id, firebaseUser!.uid, name);
             setMaterials(prev => prev.map(x => x.id === m.id ? { ...x, status: 'published', publishedByName: name } : x));
             addNotification(`„${m.title || 'Материјал'}" е публикуван! Достапен за ученици. ✅`, 'success');
@@ -466,10 +468,10 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                                     🍴 Форк од {m.sourceAuthor}
                                                 </span>
                                             )}
-                                            {useSemanticSearch && typeof (m as any).score === 'number' && (
+                                            {useSemanticSearch && typeof (m as ScoredMaterial).score === 'number' && (
                                                 <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 font-bold rounded-full border border-indigo-100" title="Семантичка сличност">
                                                     <Sparkles className="w-2.5 h-2.5" />
-                                                    {Math.round((m as any).score * 100)}%
+                                                    {Math.round((m as ScoredMaterial).score * 100)}%
                                                 </span>
                                             )}
                                         </div>

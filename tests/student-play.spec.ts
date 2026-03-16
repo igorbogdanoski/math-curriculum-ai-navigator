@@ -166,6 +166,7 @@ test.describe('Патека 2 — Ученик: play → резултат → XP
 
     // Confidence prompt should appear after quiz completes and overlay is closed
     await expect(page.getByTestId('e2e-confidence-prompt')).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('e2e-confidence-prompt').scrollIntoViewIfNeeded();
     await expect(page.getByText('😟')).toBeVisible({ timeout: 10_000 });
   });
 

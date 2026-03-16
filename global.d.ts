@@ -15,4 +15,12 @@ interface Window {
   __E2E_USE_CACHE_ONLY__?: boolean;
   /** Mock quiz content injected by Playwright */
   __E2E_MOCK_QUIZ_CONTENT__?: Record<string, unknown>;
+
+  // Third-party libraries loaded via CDN script tags
+  /** GeoGebra applet constructor — loaded from deployggb.js */
+  GGBApplet?: new (params: Record<string, unknown>, html5codebase: boolean) => { inject(id: string): void };
+  /** GeoGebra applet instance exposed globally after inject */
+  ggbApplet?: { getBase64?(anim: boolean): string };
+  /** Desmos graphing calculator API */
+  Desmos?: { GraphingCalculator(el: HTMLElement, opts?: Record<string, unknown>): { screenshot(opts?: Record<string, unknown>): string; destroy(): void } };
 }

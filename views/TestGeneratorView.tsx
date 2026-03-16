@@ -113,7 +113,7 @@ export const TestGeneratorView: React.FC = () => {
                         <select 
                             className="w-full p-2 border rounded-md"
                             value={difficulty}
-                            onChange={(e) => setDifficulty(e.target.value as any)}
+                            onChange={(e) => setDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
                         >
                             <option value="easy">Лесно (Ниво на паметење)</option>
                             <option value="medium">Средно (Ниво на примена)</option>

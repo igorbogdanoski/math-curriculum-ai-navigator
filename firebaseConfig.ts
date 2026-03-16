@@ -18,13 +18,11 @@ const firebaseConfig = {
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Firebase App Check — reCAPTCHA Enterprise (Р3-Б)
-// Only activates when VITE_RECAPTCHA_SITE_KEY is set (production env).
-if (typeof window !== 'undefined') {
+// Only activates in production with VITE_RECAPTCHA_SITE_KEY set.
+// Skipped in dev mode to avoid blocking E2E tests and local development.
+if (typeof window !== 'undefined' && !import.meta.env.DEV) {
   const reCaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   if (reCaptchaKey) {
-    if (import.meta.env.DEV) {
-      (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-    }
     initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(reCaptchaKey),
       isTokenAutoRefreshEnabled: true,

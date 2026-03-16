@@ -175,7 +175,7 @@ export const quizService = {
       const batch = mockResults.slice(startIdx, startIdx + pageSize);
       return {
         results: batch,
-        lastDoc: mockResults.length > startIdx + pageSize ? { id: 'mock-last-doc' } as any : null
+        lastDoc: mockResults.length > startIdx + pageSize ? ({ id: 'mock-last-doc' } as unknown as DocumentSnapshot) : null
       };
     }
 

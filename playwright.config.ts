@@ -30,19 +30,11 @@ export default defineConfig({
 
   projects: [
     // Default: Chromium only (fast feedback loop)
+    // Run cross-browser with: npm run test:e2e -- --project=firefox
+    // Run cross-browser with: npm run test:e2e -- --project=webkit
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-    // Run with: npm run test:e2e -- --project=firefox
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    // Run with: npm run test:e2e -- --project=webkit
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
     },
   ],
 

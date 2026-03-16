@@ -6,7 +6,7 @@ import { TeacherOnboardingWizard } from './TeacherOnboardingWizard';
 const ONBOARDING_KEY = 'onboarding_wizard';
 
 export const OnboardingGate: React.FC = () => {
-    const { isAuthenticated } = useAuth() as any;
+    const { isAuthenticated } = useAuth();
     const { toursSeen, isPreferencesLoaded, markTourAsSeen } = useUserPreferences();
 
     if (!isAuthenticated || !isPreferencesLoaded) return null;

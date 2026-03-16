@@ -2,17 +2,34 @@ import React from 'react';
 import type { LessonPlan } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 
+// Legacy/alternative field names that may appear in AI-generated plans
+interface LessonPlanLegacy {
+  concepts?: Array<{ title?: string }>;
+  mainDuration?: string;
+  scenario?: {
+    intro?: { text?: string; duration?: string };
+    activities?: Array<{ text?: string } | string>;
+    conclusion?: { text?: string; duration?: string };
+  };
+}
+
 interface OfficialLessonScenarioTableProps {
   plan: LessonPlan | Omit<LessonPlan, 'id'>;
 }
 
 export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTableProps> = ({ plan }) => {
+  const legacy = plan as unknown as LessonPlanLegacy;
+
   // Helper to safely get text from scenario steps
-  const getStepText = (step: any) => {
+  const getStepText = (step: { text?: string } | string | null | undefined): string => {
     if (!step) return '';
     if (typeof step === 'string') return step;
     return step.text || '';
   };
+
+  const mainSteps = plan.scenario?.main ?? legacy.scenario?.activities ?? [];
+  const introDuration = plan.scenario?.introductory?.duration ?? legacy.scenario?.intro?.duration;
+  const concludingDuration = plan.scenario?.concluding?.duration ?? legacy.scenario?.conclusion?.duration;
 
   return (
     <div className="official-lesson-scenario bg-white p-4 print:p-0 print:m-0 text-black font-serif leading-tight">
@@ -31,7 +48,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                {plan.lessonNumber || 1} / {new Date().toLocaleDateString('mk-MK')}
              </div>
           </div>
-          
+
           <div className="p-2 border-t-2 border-r-2 border-black flex items-center col-span-2">
             <span className="font-bold mr-2">Тема:</span>
             <span className="uppercase font-bold underline italic tracking-tight">{plan.theme || 'Операции со броеви'}</span>
@@ -40,7 +57,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
             <span className="font-bold mr-2">Време за реализација:</span>
             <span>40 мин</span>
           </div>
-          
+
           <div className="p-2 border-t-2 border-r-2 border-black">
              <span className="font-bold mr-2">Изготвил/-а:</span>
              <span className="border-b border-black border-dotted flex-grow inline-block min-w-[200px]">
@@ -70,7 +87,7 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
         <tbody>
           <tr>
             <td className="border border-black p-2 align-top text-center font-medium">
-              <MathRenderer text={Array.isArray((plan as any).concepts) ? (plan as any).concepts.map((c: any) => c?.title || '').join(', ') : (plan.title || '')} />
+              <MathRenderer text={Array.isArray(legacy.concepts) ? legacy.concepts.map(c => c?.title || '').join(', ') : (plan.title || '')} />
             </td>
             <td className="border border-black p-2 align-top text-left italic">
               <ul className="list-none space-y-2">
@@ -84,35 +101,35 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                 <section>
                   <h4 className="font-bold underline mb-2">Воведна активност:</h4>
                   <div className="pl-2 space-y-2">
-                    <MathRenderer text={getStepText(plan.scenario?.introductory || (plan as any).scenario?.intro || '')} />
-                    {((plan.scenario?.introductory as any)?.duration || (plan as any).scenario?.intro?.duration) && (
-                       <p className="mt-2 font-bold italic">({(plan.scenario?.introductory as any)?.duration || (plan as any).scenario?.intro?.duration})</p>
+                    <MathRenderer text={getStepText(plan.scenario?.introductory ?? legacy.scenario?.intro ?? '')} />
+                    {introDuration && (
+                       <p className="mt-2 font-bold italic">({introDuration})</p>
                     )}
                   </div>
                 </section>
-                
+
                 <section>
                   <h4 className="font-bold underline mb-2 uppercase">Главна активност:</h4>
                   <div className="pl-2 space-y-4">
-                    {Array.isArray(plan.scenario?.main || (plan as any).scenario?.activities) ? (plan.scenario?.main || (plan as any).scenario?.activities || []).map((step: any, i: number) => (
+                    {Array.isArray(mainSteps) ? mainSteps.map((step, i) => (
                       <div key={i} className="flex">
                         <span className="font-bold mr-2">{i + 1}.</span>
                         <div><MathRenderer text={getStepText(step)} /></div>
                       </div>
                     )) : (
-                      <div><MathRenderer text={getStepText(plan.scenario?.main || (plan as any).scenario?.activities)} /></div>
+                      <div><MathRenderer text={getStepText(plan.scenario?.main?.[0])} /></div>
                     )}
-                    {(plan as any).mainDuration && (
-                       <p className="mt-2 font-bold italic">({(plan as any).mainDuration})</p>
+                    {legacy.mainDuration && (
+                       <p className="mt-2 font-bold italic">({legacy.mainDuration})</p>
                     )}
                   </div>
                 </section>
-                
+
                 <section>
                   <h4 className="font-bold underline mb-2 uppercase">Завршна активност:</h4>
                   <div className="pl-2 space-y-4">
-                    <MathRenderer text={getStepText(plan.scenario?.concluding || (plan as any).scenario?.conclusion || '')} />
-                    
+                    <MathRenderer text={getStepText(plan.scenario?.concluding ?? legacy.scenario?.conclusion ?? '')} />
+
                     {/* Reflection questions often included in concluding step or separately */}
                     {plan.selfAssessmentPrompt && (
                       <div className="mt-4 border-t border-black pt-2">
@@ -124,8 +141,8 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                       <span className="font-bold">Домашна работа:</span>
                       <p className="italic">Учениците треба да ги завршат задачите од работниот лист.</p>
                     </div>
-                    {((plan.scenario?.concluding as any)?.duration || (plan as any).scenario?.conclusion?.duration) && (
-                       <p className="mt-2 font-bold italic">({(plan.scenario?.concluding as any)?.duration || (plan as any).scenario?.conclusion?.duration})</p>
+                    {concludingDuration && (
+                       <p className="mt-2 font-bold italic">({concludingDuration})</p>
                     )}
                   </div>
                 </section>
@@ -134,9 +151,9 @@ export const OfficialLessonScenarioTable: React.FC<OfficialLessonScenarioTablePr
                   <section className="mt-4 pt-4 border-t border-black">
                     <h4 className="font-bold underline mb-2 uppercase">Визуелна илустрација / Приказ:</h4>
                     <div className="flex justify-center">
-                      <img 
-                        src={plan.illustrationUrl} 
-                        alt="Илустрација за часот" 
+                      <img
+                        src={plan.illustrationUrl}
+                        alt="Илустрација за часот"
                         className="max-w-[300px] border border-black shadow-sm"
                       />
                     </div>

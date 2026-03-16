@@ -441,8 +441,8 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-700 truncate">{m.conceptTitle || m.conceptId}</p>
                       <p className="text-xs text-slate-400">
-                        {(m as any).sm2Label
-                          ? <span className="font-medium text-blue-600">{(m as any).sm2Label}</span>
+                        {'sm2Label' in m && m.sm2Label
+                          ? <span className="font-medium text-blue-600">{String(m.sm2Label)}</span>
                           : m.mastered ? t('progress.masteredLongAgo') : `${m.consecutiveHighScores}/3 ${t('progress.moreToGo')} 85%`}
                       </p>
                     </div>
@@ -582,7 +582,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
                     : m.lastScore < 85  ? { label: t('progress.levelInProgress'), cls: 'text-slate-600 bg-slate-100 border-slate-200' }
                     :                    { label: t('progress.levelMastered'),    cls: 'text-red-700 bg-red-50 border-red-100' };
                   const { grade } = getConceptDetails(m.conceptId);
-                  const conceptGrade = (grade as any)?.level ?? m.gradeLevel;
+                  const conceptGrade = grade?.level ?? m.gradeLevel;
                   const conceptTitle = m.conceptTitle || m.conceptId;
                   return (
                   <div key={m.conceptId} className="bg-slate-50 rounded-xl px-3 py-2.5">

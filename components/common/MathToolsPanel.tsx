@@ -26,13 +26,13 @@ const loadScript = (src: string): Promise<void> =>
   });
 
 const loadGgbScript = (): Promise<void> => {
-  if ((window as any).GGBApplet) return Promise.resolve();
+  if (window.GGBApplet) return Promise.resolve();
   if (!ggbLoadPromise) ggbLoadPromise = loadScript(GGBAPPLET_SCRIPT).catch(e => { ggbLoadPromise = null; throw e; });
   return ggbLoadPromise;
 };
 
 const loadDesmosScript = (): Promise<void> => {
-  if ((window as any).Desmos) return Promise.resolve();
+  if (window.Desmos) return Promise.resolve();
   if (!desmosLoadPromise) desmosLoadPromise = loadScript(DESMOS_SCRIPT).catch(e => { desmosLoadPromise = null; throw e; });
   return desmosLoadPromise;
 };
@@ -89,7 +89,7 @@ const GeoGebraPanel: React.FC<{ onExport?: (dataUrl: string) => void }> = ({ onE
       try {
         await loadGgbScript();
         if (cancelled || !containerRef.current) return;
-        const GGBApplet = (window as any).GGBApplet;
+        const GGBApplet = window.GGBApplet;
         if (!GGBApplet) throw new Error('GGBApplet не е достапен.');
 
         const params = {
@@ -133,7 +133,7 @@ const GeoGebraPanel: React.FC<{ onExport?: (dataUrl: string) => void }> = ({ onE
     if (!appletRef.current) return;
     setExporting(true);
     try {
-      const ggbApp = (window as any).ggbApplet ?? appletRef.current;
+      const ggbApp = window.ggbApplet ?? appletRef.current;
       const base64: string = ggbApp?.getBase64?.(true);
       if (base64) {
         const dataUrl = `data:image/png;base64,${base64}`;
@@ -195,7 +195,7 @@ const DesmosPanel: React.FC<{ onExport?: (dataUrl: string) => void }> = ({ onExp
       try {
         await loadDesmosScript();
         if (cancelled || !containerRef.current) return;
-        const Desmos = (window as any).Desmos;
+        const Desmos = window.Desmos;
         if (!Desmos?.GraphingCalculator) throw new Error('Desmos API не е достапен.');
         calcRef.current = Desmos.GraphingCalculator(containerRef.current, {
           keypad: true, expressions: true, settingsMenu: true,

@@ -70,7 +70,7 @@ async function renderMathToPng(
     'line-height:1.5', 'word-wrap:break-word',
   ].join(';');
 
-  const katex = (window as any).katex;
+  const katex = window.katex;
   const toHtml = (src: string): string => {
     if (!katex) return src.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return src
@@ -187,10 +187,10 @@ async function preprocessPlanForPDF(plan: LessonPlan): Promise<ProcessedLessonPl
     diffStandard: results[4],
     diffAdvanced: results[5],
     objectives: results.slice(base, oEnd).map((f, i) => ({
-      ...f, bloomsLevel: (objectives[i] as any)?.bloomsLevel,
+      ...f, bloomsLevel: objectives[i]?.bloomsLevel,
     })),
     mainActivities: results.slice(oEnd, mEnd).map((f, i) => ({
-      ...f, bloomsLevel: (mainActs[i] as any)?.bloomsLevel,
+      ...f, bloomsLevel: mainActs[i]?.bloomsLevel,
     })),
     materials: results.slice(mEnd, matEnd),
     assessmentStandards: results.slice(matEnd, stdEnd),

@@ -140,7 +140,7 @@ export const schoolService = {
   fetchAllUsers: async (): Promise<{ uid: string; name: string; email?: string; role?: string; schoolId?: string }[]> => {
     try {
       const snap = await getDocs(collection(db, 'users'));
-      return snap.docs.map(d => ({ uid: d.id, ...(d.data() as any) }));
+      return snap.docs.map(d => ({ uid: d.id, ...d.data() as Record<string, unknown> })) as { uid: string; name: string; email?: string; role?: string; schoolId?: string }[];
     } catch (error) {
       console.error('Error fetching all users:', error);
       return [];
@@ -165,7 +165,7 @@ export const schoolService = {
 
   updateUserSubscription: async (uid: string, updateData: { aiCreditsBalance?: number, isPremium?: boolean, hasUnlimitedCredits?: boolean, tier?: 'Free' | 'Pro' | 'Unlimited' }): Promise<void> => {
     try {
-      await updateDoc(doc(db, 'users', uid), updateData as any);
+      await updateDoc(doc(db, 'users', uid), updateData);
     } catch (error) {
       console.error('Error updating user subscription:', error);
       throw error;

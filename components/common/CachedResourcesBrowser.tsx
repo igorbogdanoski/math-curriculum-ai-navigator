@@ -129,7 +129,7 @@ export const CachedResourcesBrowser: React.FC<CachedResourcesBrowserProps> = ({ 
                 {typeof material.content === 'string' ? (
                   <MathRenderer text={material.content} />
                 ) : (
-                  <span>[Интерактивен Материјал: {(material.content as any)?.title || 'Квиз/Задача'}]</span>
+                  <span>[Интерактивен Материјал: {((material.content as Record<string, unknown>)?.title as string | undefined) || 'Квиз/Задача'}]</span>
                 )}
               </div>
 

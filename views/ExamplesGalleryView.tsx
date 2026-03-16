@@ -120,8 +120,12 @@ const renderMaterialContent = (material: CachedMaterial) => {
     }
     if (c && typeof c === 'object') {
         // Structured content — show title + item count summary
-        const title = (c as any).title || (c as any).thematicUnit || '';
-        const count = (c as any).questions?.length ?? (c as any).items?.length ?? (c as any).lessons?.length ?? null;
+        const obj = c as Record<string, unknown>;
+        const title = (obj.title as string | undefined) || (obj.thematicUnit as string | undefined) || '';
+        const count = (obj.questions as unknown[] | undefined)?.length
+          ?? (obj.items as unknown[] | undefined)?.length
+          ?? (obj.lessons as unknown[] | undefined)?.length
+          ?? null;
         return (
             <div>
                 {title && <p className="font-semibold text-gray-800">{title}</p>}

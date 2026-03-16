@@ -152,7 +152,7 @@ export const LogicMap: React.FC<LogicMapProps> = ({ masteryRecords, nextQuizIds 
             {/* Concepts */}
             <div className="flex flex-col items-center gap-5 relative">
               {topic.concepts.map((concept, cIdx) => {
-                const state = getConceptState(concept as any);
+                const state = getConceptState(concept);
                 const cfg = STATE_STYLES[state];
                 const mastery = masteryMap[concept.id];
                 const isClickable = state !== 'locked' && !!nextQuizIds[concept.id];
@@ -200,7 +200,7 @@ export const LogicMap: React.FC<LogicMapProps> = ({ masteryRecords, nextQuizIds 
                       {state === 'locked' && tooltip === concept.id && (
                         <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-semibold px-2 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-30 pointer-events-none">
                           <AlertCircle className="w-3 h-3 inline mr-1 text-amber-400" />
-                          Прво: {getLockedByNames(concept as any)}
+                          Прво: {getLockedByNames(concept)}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
                         </div>
                       )}

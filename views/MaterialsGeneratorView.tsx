@@ -484,7 +484,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                         ) : (
                             <div className="flex flex-wrap items-center gap-3">
                                 {/* Delete old reset button from footer, keep only powerful generate buttons */}
-                                {(['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as const).includes(state.materialType as any) && (
+                                {state.materialType !== null && (['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as MaterialType[]).includes(state.materialType) && (
                                     <button type="button" onClick={() => requirePremiumOrCredits(() => handleGenerateVariants(), 3, false, '3x Варијанти')} disabled={isGenerateDisabled || isGeneratingVariants || isGenerating} title="3 варијанти: Поддршка, Основно и Збогатување" className="flex items-center gap-2 border-2 border-brand-primary text-brand-primary px-4 py-2.5 rounded-xl hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold">
                                         {isGeneratingVariants ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пресметувам...{showMathTools && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
@@ -696,12 +696,12 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                         </div>
                     )}
                     {'criteria' in generatedMaterial && <GeneratedRubric material={generatedMaterial} />}
-                    {'slides' in generatedMaterial && <GeneratedPresentation data={generatedMaterial as any} conceptId={state.selectedConcepts[0]} />}
+                    {'slides' in generatedMaterial && <GeneratedPresentation data={generatedMaterial as import('../types').AIGeneratedPresentation} conceptId={state.selectedConcepts[0]} />}
                     {'paths' in generatedMaterial && <GeneratedLearningPaths material={generatedMaterial} />}
                     {'steps' in generatedMaterial && <WorkedExample example={generatedMaterial as AIGeneratedWorkedExample} />}
                     
                     <AIFeedbackBar
-                        materialKey={('title' in generatedMaterial ? (generatedMaterial as any).title : '') + String(state.materialType)}
+                        materialKey={('title' in generatedMaterial ? (generatedMaterial as { title?: string }).title ?? '' : '') + String(state.materialType)}
                         onRate={handleMaterialRate}
                     />
                     <RefineGenerationChat

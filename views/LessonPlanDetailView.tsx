@@ -255,7 +255,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
         case 'doc': {
             setIsGeneratingWord(true);
             try {
-                await exportLessonPlanToWord(plan as LessonPlan, user as any);
+                await exportLessonPlanToWord(plan as LessonPlan, user);
                 addNotification('Документот е успешно зачуван како Word (.docx).', 'success');
             } catch (error) {
                 console.error('Word export failed:', error);

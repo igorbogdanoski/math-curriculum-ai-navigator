@@ -83,7 +83,7 @@ const UserAdminRow = ({ u, isMe, schools, updatingUid, handleChangeRole, handleU
                             aria-label={`Улога за ${u.name ?? u.uid}`}
                             disabled={updatingUid === u.uid}
                             value={role}
-                            onChange={e => handleChangeRole(u.uid, e.target.value as any, u.schoolId)}
+                            onChange={e => handleChangeRole(u.uid, e.target.value as 'teacher' | 'school_admin' | 'admin', u.schoolId)}
                             className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:ring-2 focus:ring-red-400 outline-none cursor-pointer disabled:opacity-50"
                         >
                             <option value="teacher">Наставник</option>

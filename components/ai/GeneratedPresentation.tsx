@@ -26,7 +26,7 @@ const renderBulletToPng = async (text: string, hexColor: string): Promise<string
     'line-height:1.65', 'white-space:pre-wrap',
   ].join(';');
 
-  const katex = (window as any).katex;
+  const katex = window.katex;
   const toHtml = (src: string): string => {
     if (!katex) return src;
     return src
@@ -326,7 +326,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             x: 0.4, y: 0.25, w: SLIDE_W - 0.8, h: 0.75,
             fontSize: 28, bold: true, color: colors.title, fontFace: 'Arial',
           });
-          pptSlide.addShape((pptxgen as any).ShapeType?.line ?? 'line', {
+          pptSlide.addShape('line', {
             x: 0.4, y: 1.05, w: SLIDE_W - 0.8, h: 0,
             line: { color: colors.line, width: 1.5 },
           });
@@ -380,7 +380,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             x: 0.4, y: 0.25, w: SLIDE_W - 0.8, h: 0.75,
             fontSize: 28, bold: true, color: colors.title, fontFace: 'Arial',
           });
-          pptSlide.addShape((pptxgen as any).ShapeType?.line ?? 'line', {
+          pptSlide.addShape('line', {
             x: 0.4, y: 1.05, w: SLIDE_W - 0.8, h: 0,
             line: { color: colors.line, width: 1.5 },
           });
@@ -440,7 +440,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             x: 0.4, y: 0.25, w: SLIDE_W - 0.8, h: 0.75,
             fontSize: 28, bold: true, color: colors.title, fontFace: 'Arial',
           });
-          pptSlide.addShape((pptxgen as any).ShapeType?.line ?? 'line', {
+          pptSlide.addShape('line', {
             x: 0.4, y: 1.05, w: SLIDE_W - 0.8, h: 0,
             line: { color: colors.line, width: 1.5 },
           });

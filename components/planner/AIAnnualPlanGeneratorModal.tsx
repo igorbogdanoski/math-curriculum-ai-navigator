@@ -3,7 +3,7 @@ import { useModal } from '../../contexts/ModalContext';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { useNotification } from '../../contexts/NotificationContext';
-import { geminiService } from '../../services/geminiService';
+import { plansAPI } from '../../services/gemini/plans';
 import { ICONS } from '../../constants';
 import { PlannerItemType, ModalType } from '../../types';
 import type { Grade } from '../../types';
@@ -41,7 +41,7 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
         
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const generatedItems = await (geminiService as any).generateAnnualPlan(selectedGrade, startDate, endDate, holidays, {start: winterBreakStart, end: winterBreakEnd}) as any[];
+            const generatedItems = await plansAPI.generateAnnualPlan(selectedGrade, startDate, endDate, holidays, {start: winterBreakStart, end: winterBreakEnd});
             
             setIsLoading(false);
 

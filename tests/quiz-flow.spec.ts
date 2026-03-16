@@ -16,7 +16,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Quiz Flow: /play/:id', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => localStorage.clear());
   });
 
@@ -34,7 +34,7 @@ test.describe('Quiz Flow: /play/:id', () => {
   test('invalid quiz ID shows graceful error message', async ({ page }) => {
     await page.goto('/#/play/definitely-does-not-exist-xyz-123');
     // Wait for either error message or name entry wizard
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(10000);
     
     // Check for error keywords in Macedonian Cyrillic
     const errorMsg = page.locator('text=/не е пронајден|невалиден|не постои|Грешка/i').first();

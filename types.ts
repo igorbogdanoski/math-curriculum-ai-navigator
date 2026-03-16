@@ -36,6 +36,7 @@ export interface Concept {
   activities?: string[];
   levelDescription?: string;
   localContextExamples?: string[]; // Macedonian local context (MKD denars, cities, etc.)
+  gradeLevel?: number; // Enriched at runtime from parent Grade.level
 }
 
 export interface Topic {
@@ -128,6 +129,7 @@ export interface LessonScenario {
   introductory: {
     text: string;
     activityType?: string;
+    duration?: string;
   };
   main: Array<{
     text: string;
@@ -137,6 +139,7 @@ export interface LessonScenario {
   concluding: {
     text: string;
     activityType?: string;
+    duration?: string;
   };
 }
 
@@ -598,7 +601,7 @@ export interface LiveQuizParticipant {
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'math-field': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { onInput?: (e: Event) => void; };
+      'math-field': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { onInput?: (e: Event) => void; 'virtual-keyboard-mode'?: string; placeholder?: string; };
     }
   }
 }

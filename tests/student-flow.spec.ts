@@ -9,7 +9,7 @@ test.describe('Student Flow: Public Routes', () => {
 
   test.beforeEach(async ({ page }) => {
     // Clear localStorage to ensure fresh state (no saved studentName)
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => localStorage.clear());
   });
 
@@ -38,16 +38,16 @@ test.describe('Student Flow: Public Routes', () => {
     test('invalid quiz ID shows "back to home" button', async ({ page }) => {
       await page.goto('/#/play/test-quiz-id');
 
-      // Error screen has a "Назад кон почетна" button
+      // Error screen has a "Назад кон почетна" button (needs time for Firestore to return not-found)
       const backBtn = page.locator('button', { hasText: 'Назад кон почетна' });
-      await expect(backBtn).toBeVisible({ timeout: 6000 });
+      await expect(backBtn).toBeVisible({ timeout: 15000 });
     });
 
     test('"back to home" button navigates away from play route', async ({ page }) => {
       await page.goto('/#/play/test-quiz-id');
 
       const backBtn = page.locator('button', { hasText: 'Назад кон почетна' });
-      await expect(backBtn).toBeVisible({ timeout: 6000 });
+      await expect(backBtn).toBeVisible({ timeout: 15000 });
       await backBtn.click();
 
       // After clicking, should no longer be on /play route

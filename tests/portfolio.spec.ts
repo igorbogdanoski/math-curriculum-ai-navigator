@@ -13,16 +13,20 @@ import { test, expect } from '@playwright/test';
 test.describe('StudentPortfolioView', () => {
 
   test.beforeEach(async ({ page }) => {
-    // Start with a clean state on a neutral page
-    await page.goto('/#/privacy'); 
-    await page.evaluate(() => localStorage.clear());
+    // Only clear student-specific keys — clearing all localStorage breaks Firebase auth state
+    await page.goto('/#/portfolio', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => {
+      localStorage.removeItem('studentName');
+      localStorage.removeItem('deviceId');
+    });
   });
 
   // ── Route accessibility ────────────────────────────────────────────────────
 
   test('route is public — no login form shown', async ({ page }) => {
     await page.goto('/#/portfolio');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
     const emailInput = page.locator('input[type="email"]');
     await expect(emailInput).not.toBeVisible();
   });
@@ -111,8 +115,9 @@ test.describe('StudentPortfolioView', () => {
   test('portfolio link exists in sidebar nav under Ученици section', async ({ page }) => {
     // Force a desktop viewport to ensure sidebar is visible
     await page.setViewportSize({ width: 1280, height: 720 });
-    await page.goto('/#/portfolio'); 
-    await page.waitForLoadState('networkidle');
+    await page.goto('/#/portfolio');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
     
     // Check if the "Повеќе алатки" section needs to be opened
     const moreBtn = page.locator('button:has-text("Повеќе алатки")');

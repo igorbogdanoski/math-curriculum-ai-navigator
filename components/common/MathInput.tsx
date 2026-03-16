@@ -14,9 +14,9 @@ export const MathInput: React.FC<MathInputProps> = ({
   placeholder = 'Внеси математички израз...',
   className = '' 
 }) => {
+  // MathLive's MathFieldElement extends HTMLElement with .value and .setValue()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mfRef = useRef<any>(null);
-
-  const MathFieldEl = 'math-field' as any;
 
   useEffect(() => {
     const mf = mfRef.current;
@@ -36,18 +36,19 @@ export const MathInput: React.FC<MathInputProps> = ({
 
   return (
     <div className={`p-3 border-2 border-indigo-100 rounded-xl focus-within:border-indigo-500 bg-white shadow-sm transition-all duration-200 min-h-[60px] flex items-center ${className}`}>
-      <MathFieldEl
-        ref={mfRef}
-        virtual-keyboard-mode="onfocus"
-        placeholder={placeholder}
-        style={{
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      {React.createElement('math-field' as any, {
+        ref: mfRef,
+        'virtual-keyboard-mode': 'onfocus',
+        placeholder,
+        style: {
           width: '100%',
           fontSize: '1.25rem',
           outline: 'none',
           border: 'none',
-          backgroundColor: 'transparent'
-        }}
-      ></MathFieldEl>
+          backgroundColor: 'transparent',
+        },
+      })}
     </div>
   );
 };

@@ -582,6 +582,7 @@ export const fetchNationalLibrary = async (filters?: {
       constraints.push(limit(200));
       const q = query(collection(db, 'national_library'), ...constraints);
       const snap = await getDocs(q);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
     } catch (error) {
       console.error('Error fetching national library:', error);

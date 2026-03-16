@@ -11,7 +11,7 @@ export const GlobalTour: React.FC = () => {
         const { status, type } = data;
         
         // When tour is finished or skipped
-        if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
+        if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
             if (tourName) {
                 markTourAsSeen(tourName);
             }

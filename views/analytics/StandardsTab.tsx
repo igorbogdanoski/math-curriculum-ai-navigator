@@ -233,11 +233,11 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
                         {/* Status filter + PDF export */}
                         <div className="flex gap-1 flex-wrap items-center">
                             <Filter className="w-3.5 h-3.5 text-gray-400 mr-0.5" />
-                            {([['all', 'Сите'], ['covered', 'Покриени'], ['tested', 'Тестирани'], ['mastered', 'Совладани'], ['not_covered', 'Не покриени']] as [string, string][]).map(([v, label]) => (
+                            {([['all', 'Сите'], ['covered', 'Покриени'], ['tested', 'Тестирани'], ['mastered', 'Совладани'], ['not_covered', 'Не покриени']] as const).map(([v, label]) => (
                                 <button
                                     key={v}
                                     type="button"
-                                    onClick={() => setStatusFilter(v as any)}
+                                    onClick={() => setStatusFilter(v)}
                                     className={`px-3 py-1 rounded-lg text-xs font-bold transition ${statusFilter === v ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                                 >
                                     {label}

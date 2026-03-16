@@ -21,10 +21,10 @@ export const QuizCoverageTab: React.FC<QuizCoverageTabProps> = ({
   const allGrades = useMemo(() => {
     const grades = new Set(
       allConcepts
-        .map(c => (c as any).gradeLevel as number | undefined)
-        .filter(Boolean)
+        .map(c => c.gradeLevel)
+        .filter((g): g is number => g !== undefined)
     );
-    return Array.from(grades as Set<number>).sort((a, b) => a - b);
+    return Array.from(grades).sort((a, b) => a - b);
   }, [allConcepts]);
 
   const quizzedIds = useMemo(
@@ -37,7 +37,7 @@ export const QuizCoverageTab: React.FC<QuizCoverageTabProps> = ({
 
     const never = allConcepts.filter(c => {
       if (quizzedIds.has(c.id)) return false;
-      if (gradeFilter !== null && (c as any).gradeLevel !== gradeFilter) return false;
+      if (gradeFilter !== null && c.gradeLevel !== gradeFilter) return false;
       return true;
     });
 
@@ -45,7 +45,7 @@ export const QuizCoverageTab: React.FC<QuizCoverageTabProps> = ({
       if (c.avgPct >= 60) return false;
       if (gradeFilter !== null) {
         const concept = allConcepts.find(ac => ac.id === c.conceptId);
-        if (!concept || (concept as any).gradeLevel !== gradeFilter) return false;
+        if (!concept || concept.gradeLevel !== gradeFilter) return false;
       }
       return true;
     });
@@ -54,7 +54,7 @@ export const QuizCoverageTab: React.FC<QuizCoverageTabProps> = ({
       if (c.avgPct < 60) return false;
       if (gradeFilter !== null) {
         const concept = allConcepts.find(ac => ac.id === c.conceptId);
-        if (!concept || (concept as any).gradeLevel !== gradeFilter) return false;
+        if (!concept || concept.gradeLevel !== gradeFilter) return false;
       }
       return true;
     });
@@ -115,9 +115,9 @@ export const QuizCoverageTab: React.FC<QuizCoverageTabProps> = ({
               <div key={c.id} className="flex items-center justify-between bg-red-50 border border-red-100 rounded-xl px-4 py-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-sm font-medium text-gray-800 truncate">{c.title}</span>
-                  {(c as any).gradeLevel && (
+                  {c.gradeLevel && (
                     <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-600 flex-shrink-0">
-                      {(c as any).gradeLevel}. одд.
+                      {c.gradeLevel}. одд.
                     </span>
                   )}
                 </div>
@@ -149,9 +149,9 @@ export const QuizCoverageTab: React.FC<QuizCoverageTabProps> = ({
                 <div key={c.conceptId} className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-sm font-medium text-gray-800 truncate">{c.title}</span>
-                    {concept && (concept as any).gradeLevel && (
+                    {concept?.gradeLevel && (
                       <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-600 flex-shrink-0">
-                        {(concept as any).gradeLevel}. одд.
+                        {concept.gradeLevel}. одд.
                       </span>
                     )}
                     <span className="text-xs font-bold text-amber-700 flex-shrink-0">avg {c.avgPct}%</span>
@@ -185,9 +185,9 @@ export const QuizCoverageTab: React.FC<QuizCoverageTabProps> = ({
                 <div key={c.conceptId} className="flex items-center justify-between bg-green-50 border border-green-100 rounded-xl px-4 py-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-sm font-medium text-gray-800 truncate">{c.title}</span>
-                    {concept && (concept as any).gradeLevel && (
+                    {concept?.gradeLevel && (
                       <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-600 flex-shrink-0">
-                        {(concept as any).gradeLevel}. одд.
+                        {concept.gradeLevel}. одд.
                       </span>
                     )}
                     <span className="text-xs font-bold text-green-700 flex-shrink-0">avg {c.avgPct}%</span>

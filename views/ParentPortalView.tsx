@@ -95,17 +95,13 @@ export const ParentPortalView: React.FC = () => {
 
       const weekResults = results.filter(r => {
         if (!r.playedAt) return false;
-        const d = ('toDate' in (r.playedAt as any))
-          ? (r.playedAt as any).toDate()
-          : new Date(r.playedAt as any);
+        const d = r.playedAt.toDate?.() ?? new Date(r.playedAt as unknown as string);
         return d >= weekStart;
       });
 
       const masteredThisWeek = masteryData.filter(m => {
         if (!m.mastered || !m.masteredAt) return false;
-        const d = ('toDate' in (m.masteredAt as any))
-          ? (m.masteredAt as any).toDate()
-          : new Date(m.masteredAt as any);
+        const d = m.masteredAt.toDate?.() ?? new Date(m.masteredAt as unknown as string);
         return d >= weekStart;
       }).length;
 
@@ -264,9 +260,9 @@ export const ParentPortalView: React.FC = () => {
                 <p className="text-xs font-bold text-gray-500 mb-2">Последни квизови</p>
                 <div className="space-y-1.5">
                   {summary.recentResults.map((r, i) => {
-                    const d = r.playedAt && ('toDate' in (r.playedAt as any))
-                      ? (r.playedAt as any).toDate()
-                      : r.playedAt ? new Date(r.playedAt as any) : null;
+                    const d = r.playedAt
+                      ? (r.playedAt.toDate?.() ?? new Date(r.playedAt as unknown as string))
+                      : null;
                     return (
                       <div key={i} className="flex items-center justify-between text-xs">
                         <span className="text-gray-600 truncate max-w-[180px]">{r.quizTitle}</span>
