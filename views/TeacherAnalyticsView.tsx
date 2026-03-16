@@ -37,6 +37,7 @@ import { AssignRemedialModal } from '../components/analytics/AssignRemedialModal
 export const TeacherAnalyticsView: React.FC = () => {
   const { t } = useLanguage();
     const { firebaseUser } = useAuth();
+    console.log('[DEBUG] TeacherAnalyticsView: firebaseUser.uid =', firebaseUser?.uid);
     const { addNotification } = useNotification();
     const { data: analyticsData, isLoading, error, refetch: loadResults } = useTeacherAnalytics(firebaseUser?.uid);
 

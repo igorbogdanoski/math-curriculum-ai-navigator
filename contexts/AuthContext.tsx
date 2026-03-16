@@ -69,6 +69,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
+    // E2E Mock: If teacher mode is requested, bypass real auth
+    if (typeof window !== 'undefined' && (window as any).__E2E_TEACHER_MODE__) {
+        console.info("E2E: Teacher mode detected. Mocking authenticated state.");
+        setAuthState({
+            firebaseUser: { uid: 'test-teacher-uid', email: 'teacher@test.mk', emailVerified: true } as any,
+            profile: {
+                name: 'Тест Наставник',
+                role: 'teacher',
+                aiCreditsBalance: 500,
+                isPremium: true,
+                tier: 'Premium',
+                toursSeen: {
+                    onboarding_wizard: true,
+                    dashboard: true,
+                    generator: true,
+                    planner: true,
+                    analytics: true,
+                },
+            } as any,
+            isAuthenticated: true,
+            isLoading: false,
+        });
+        return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
             try {

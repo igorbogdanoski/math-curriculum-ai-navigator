@@ -300,15 +300,36 @@ export default defineConfig(({ mode }) => {
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
           output: {
-            manualChunks: {
-              'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-              'vendor-firebase-app': ['firebase/app'],
-              'vendor-firebase-auth': ['firebase/auth'],
-              'vendor-firebase-firestore': ['firebase/firestore'],
-              'vendor-firebase-storage': ['firebase/storage'],
-              'vendor-zod': ['zod'],
-              'vendor-pdf': ['@react-pdf/renderer'],
-              'vendor-docx': ['docx']
+            manualChunks: (id) => {
+              if (id.includes('node_modules')) {
+                if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+                  return 'vendor-react';
+                }
+                if (id.includes('firebase/app')) return 'vendor-firebase-app';
+                if (id.includes('firebase/auth')) return 'vendor-firebase-auth';
+                if (id.includes('firebase/firestore')) return 'vendor-firebase-firestore';
+                if (id.includes('firebase/storage')) return 'vendor-firebase-storage';
+                if (id.includes('zod')) return 'vendor-zod';
+                if (id.includes('@react-pdf')) return 'vendor-pdf';
+                if (id.includes('docx')) return 'vendor-docx';
+                if (id.includes('lucide-react')) return 'vendor-icons';
+                return 'vendor';
+              }
+              if (id.includes('views/')) {
+                if (id.includes('StudentPlayView') || id.includes('StudentProgressView') || id.includes('StudentLiveView') || id.includes('StudentTutorView') || id.includes('StudentPortfolioView')) {
+                  return 'view-student-core';
+                }
+                if (id.includes('MaterialsGeneratorView') || id.includes('AnnualPlanGeneratorView') || id.includes('LessonPlanEditorView')) {
+                  return 'view-teacher-generator';
+                }
+                if (id.includes('TeacherAnalyticsView') || id.includes('CurriculumGraphView')) {
+                  return 'view-teacher-insights';
+                }
+                if (id.includes('SystemAdminView') || id.includes('SchoolAdminView') || id.includes('CurriculumEditorView')) {
+                  return 'view-admin';
+                }
+                return 'view-other';
+              }
             }
           }
         }

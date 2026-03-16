@@ -92,7 +92,7 @@ test.describe('Student Flow: Public Routes', () => {
       await page.goto('/#/live');
 
       // Live view has a name input
-      const nameInput = page.locator('input[placeholder*="ime"]').first();
+      const nameInput = page.locator('input[placeholder*="име"]').first();
       await expect(nameInput).toBeVisible({ timeout: 5000 });
     });
 

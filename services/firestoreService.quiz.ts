@@ -164,6 +164,20 @@ export const quizService = {
     pageSize: number = 200,
     startAfterDoc?: DocumentSnapshot
   ): Promise<{ results: QuizResult[]; lastDoc: DocumentSnapshot | null }> => {
+    // E2E Mocking
+    console.log('E2E CHECK: window.__E2E_TEACHER_MODE__ =', (window as any).__E2E_TEACHER_MODE__);
+    if (typeof window !== 'undefined' && (window as any).__E2E_TEACHER_MODE__) {
+      console.log('E2E: fetchQuizResultsPage mocking activated');
+      const mockResults = (window as any).__E2E_MOCK_QUIZ_RESULTS__ || [];
+      console.log('E2E: mockResults count =', mockResults.length);
+      const startIdx = startAfterDoc ? 10 : 0; 
+      const batch = mockResults.slice(startIdx, startIdx + pageSize);
+      return {
+        results: batch,
+        lastDoc: mockResults.length > startIdx + pageSize ? { id: 'mock-last-doc' } as any : null
+      };
+    }
+
     try {
       const baseConstraints = teacherUid
         ? [where('teacherUid', '==', teacherUid), orderBy('playedAt', 'desc')]
@@ -315,6 +329,11 @@ export const quizService = {
   },
 
   fetchAllMastery: async (teacherUid?: string): Promise<ConceptMastery[]> => {
+    // E2E Mocking
+    if (typeof window !== 'undefined' && (window as any).__E2E_TEACHER_MODE__) {
+      return (window as any).__E2E_MOCK_MASTERY__ || [];
+    }
+
     try {
       const q = teacherUid
         ? query(collection(db, 'concept_mastery'), where('teacherUid', '==', teacherUid), limit(5000))

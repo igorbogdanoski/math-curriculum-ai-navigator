@@ -44,7 +44,7 @@ test.describe('StudentPortfolioView', () => {
   test('name entry screen shown when localStorage is empty', async ({ page }) => {
     await page.goto('/#/portfolio');
     // Wait for the specific name entry element instead of just timeout
-    const input = page.locator('input[placeholder*="ime"]');
+    const input = page.locator('input[placeholder*="име"]');
     await expect(input).toBeVisible({ timeout: 10000 });
     
     // Submit button disabled until name ≥ 2 chars
@@ -54,7 +54,7 @@ test.describe('StudentPortfolioView', () => {
 
   test('submit button enabled after entering a valid name', async ({ page }) => {
     await page.goto('/#/portfolio');
-    const input = page.locator('input[placeholder*="ime"]');
+    const input = page.locator('input[placeholder*="име"]');
     await input.waitFor({ state: 'visible' });
     await input.fill('Јована Петровска');
     const submitBtn = page.locator('button:has-text("Прикажи портфолио")');
@@ -63,7 +63,7 @@ test.describe('StudentPortfolioView', () => {
 
   test('Enter key submits name and navigates to portfolio', async ({ page }) => {
     await page.goto('/#/portfolio');
-    const input = page.locator('input[placeholder*="ime"]');
+    const input = page.locator('input[placeholder*="име"]');
     await input.waitFor({ state: 'visible' });
     await input.fill('Јована Петровска');
     await input.press('Enter');
@@ -81,7 +81,7 @@ test.describe('StudentPortfolioView', () => {
     await page.goto('/#/portfolio');
     await page.waitForTimeout(2000);
     // Name entry screen should NOT be shown
-    const input = page.locator('input[placeholder*="ime"]');
+    const input = page.locator('input[placeholder*="име"]');
     await expect(input).not.toBeVisible();
   });
 

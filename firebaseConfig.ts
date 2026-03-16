@@ -34,16 +34,17 @@ if (typeof window !== 'undefined') {
 }
 */
 
-// Иницијализација на Firestore со едноставен getFirestore прво
-export const db = getFirestore(app);
+// Firestore Initialization
+const isE2E = typeof window !== 'undefined' && ((window as any).__E2E_TEACHER_MODE__ || (window as any).__E2E_MODE__);
 
-// Овозможуваме кеширање во позадина за да не ја кочиме почетната иницијализација
-if (typeof window !== 'undefined') {
-  initializeFirestore(app, {
-    ignoreUndefinedProperties: true,
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-  }, "default"); // Специфицираме име на база за да избегнеме конфликти
-}
+const firestoreSettings = {
+  ignoreUndefinedProperties: true,
+  experimentalForceLongPolling: true,
+  useFetchStreams: false,
+};
+
+// Ensure we only initialize once and with the correct settings
+export const db = initializeFirestore(app, firestoreSettings);
 
 export const auth = getAuth(app);
 export const storage = getStorage(app);

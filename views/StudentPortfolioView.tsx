@@ -181,11 +181,11 @@ export const StudentPortfolioView: React.FC = () => {
         <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md text-center">
           <User className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Портфолио</h1>
-          <p className="text-gray-500 text-sm mb-6">Внеси го своето ime за да го видиш своето портфолио.</p>
+          <p className="text-gray-500 text-sm mb-6">Внеси го своето име за да го видиш своето портфолио.</p>
           <input
             type="text"
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            placeholder="Твоето ime..."
+            placeholder="Твоето име..."
             value={nameInput}
             onChange={e => setNameInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && nameInput.trim().length >= 2) setStudentName(nameInput.trim()); }}

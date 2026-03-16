@@ -28,7 +28,7 @@ export const StudentLiveView: React.FC = () => {
     const handleJoin = async () => {
         const name = nameInput.trim();
         const code = codeInput.trim().toUpperCase();
-        if (!name) { setError('Внеси го своето ime.'); return; }
+        if (!name) { setError('Внеси го своето име.'); return; }
         if (code.length !== 4) { setError('Кодот мора да има точно 4 карактери.'); return; }
 
         setLoading(true);
@@ -90,11 +90,11 @@ export const StudentLiveView: React.FC = () => {
                 {/* Name */}
                 <div>
                     <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                        <User className="w-3.5 h-3.5" /> Ime и презиме
+                        <User className="w-3.5 h-3.5" /> Име и презиме
                     </label>
                     <input
                         type="text"
-                        placeholder="Твоето полно ime..."
+                        placeholder="Твоето полно име..."
                         value={nameInput}
                         onChange={e => setNameInput(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleJoin(); }}

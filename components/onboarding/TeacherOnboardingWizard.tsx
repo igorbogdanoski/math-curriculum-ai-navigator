@@ -59,7 +59,7 @@ export const TeacherOnboardingWizard: React.FC<Props> = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div id="e2e-onboarding-wizard" className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
                 {/* Progress bar */}
                 <div className="h-1.5 bg-gray-100">

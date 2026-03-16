@@ -81,7 +81,7 @@ test.describe('Quiz Flow: /play/:id', () => {
     await page.goto('/#/play/some-quiz-id');
     await page.waitForTimeout(2000);
     // Find name input if visible and fill it
-    const nameInput = page.locator('input[placeholder*="ime"], input[placeholder*="Твоето"]').first();
+    const nameInput = page.locator('input[placeholder*="име"], input[placeholder*="Твоето"]').first();
     const isVisible = await nameInput.isVisible().catch(() => false);
     if (isVisible) {
       await nameInput.fill('Тест Ученик Авто');

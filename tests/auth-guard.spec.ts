@@ -31,16 +31,13 @@ test.describe('Auth Guard: Protected Routes Show Login', () => {
 
   test('login form has "E-poshta" label', async ({ page }) => {
     await page.goto('/');
-    await page.waitForTimeout(2000);
-
-    await expect(page.locator('text=Е-пошта')).toBeVisible();
+    // Use exact text match to avoid matching "или со е-пошта"
+    await expect(page.getByText(/^Е-пошта$/)).toBeVisible({ timeout: 10000 });
   });
 
   test('login form has "Lozinka" label', async ({ page }) => {
     await page.goto('/');
-    await page.waitForTimeout(2000);
-
-    await expect(page.locator('label[for="password"]')).toBeVisible();
+    await expect(page.getByText(/^Лозинка$/)).toBeVisible({ timeout: 10000 });
   });
 
   test('submit button exists on login form', async ({ page }) => {

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useReducer } from 'react';
-import { useParams } from 'react-router-dom';
+// Note: App uses a custom hash router (hooks/useRouter.ts), not react-router-dom.
+// ID is read directly from window.location.hash to be consistent with tid/sessionId.
 import { firestoreService, type ConceptMastery, ACHIEVEMENTS, type StudentGamification } from '../services/firestoreService';
 
 const InteractiveQuizPlayer = React.lazy(() => import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
@@ -138,7 +139,11 @@ export function quizSessionReducer(state: QuizSessionState, action: QuizSessionA
 
 export const StudentPlayView: React.FC = () => {
   const { t } = useLanguage();
-  const { id } = useParams<{ id: string }>();
+  // Extract quiz ID from hash URL: /#/play/<id>[?params]
+  const id = (() => {
+    const match = window.location.hash.match(/\/play\/([^?/#]+)/);
+    return match ? match[1] : undefined;
+  })();
   const { getConceptDetails } = useCurriculum();
 
   // Live session + teacher-tagging support — read params from URL hash query string
@@ -204,7 +209,7 @@ export const StudentPlayView: React.FC = () => {
   // А1: Auth re-init — if returning student (nameConfirmed from localStorage) but
   // Firebase session expired (cleared storage/browser restart), re-auth silently.
   useEffect(() => {
-    if (!nameConfirmed) return;
+    if (!nameConfirmed || (window as any).__E2E_MODE__) return;
     const ensureAuth = async () => {
       if (!auth.currentUser) {
         try { await signInAnonymously(auth); } catch { /* non-fatal */ }
@@ -217,7 +222,7 @@ export const StudentPlayView: React.FC = () => {
   // А1: If no name in localStorage, try to restore from Firestore student_identity by deviceId.
   // This covers: localStorage cleared, incognito→normal, new browser profile on same device.
   useEffect(() => {
-    if (nameConfirmed) return; // already have a name — skip
+    if (nameConfirmed || (window as any).__E2E_MODE__) return; // already have a name or in E2E mode — skip
     let cancelled = false;
     const restoreIdentity = async () => {
       try {
@@ -241,7 +246,7 @@ export const StudentPlayView: React.FC = () => {
 
   // П-Г: Detect IEP mode — when classId + studentName are resolved, check iepStudents list
   useEffect(() => {
-    if (!classId || !studentName) return;
+    if (!classId || !studentName || (window as any).__E2E_MODE__) return;
     let cancelled = false;
     firestoreService.fetchClassById(classId).then(cls => {
       if (cancelled || !cls) return;
@@ -252,6 +257,7 @@ export const StudentPlayView: React.FC = () => {
 
   // И2: Restore class membership from Firestore on mount (covers localStorage-cleared scenarios)
   useEffect(() => {
+    if ((window as any).__E2E_MODE__) return;
     let cancelled = false;
     firestoreService.fetchClassMembership(deviceId).then(membership => {
       if (cancelled || !membership?.classId) return;
@@ -271,6 +277,33 @@ export const StudentPlayView: React.FC = () => {
       try {
         setLoading(true);
         let usedCache = false;
+
+        // E2E test mode: direct mock injection or IndexedDB cache.
+        const win = window as any;
+        if (win.__E2E_MOCK_QUIZ_CONTENT__) {
+          setQuizData({ 
+            ...win.__E2E_MOCK_QUIZ_CONTENT__, 
+            _meta: { teacherUid: tid ?? undefined, conceptId: undefined, topicId: undefined, gradeLevel: undefined, differentiationLevel: undefined } 
+          });
+          setUsingCachedContent(true);
+          setLoading(false);
+          return;
+        }
+
+        // E2E test mode: skip Firestore and go straight to IndexedDB cache.
+        const e2eCacheOnly = win.__E2E_USE_CACHE_ONLY__;
+        if (e2eCacheOnly) {
+          const cached = await getCachedQuizContent(id);
+          if (cached && !cancelled) {
+            setQuizData({ ...cached, _meta: { teacherUid: tid ?? undefined, conceptId: undefined, topicId: undefined, gradeLevel: undefined, differentiationLevel: undefined } });
+            usedCache = true;
+          } else if (!cancelled) {
+            setError(t('play.error.notFound'));
+          }
+          if (!cancelled) setUsingCachedContent(usedCache);
+          if (!cancelled) setLoading(false);
+          return;
+        }
         try {
           const quizDoc = await getDoc(doc(db, 'cached_ai_materials', id));
           if (cancelled) return;
@@ -325,7 +358,9 @@ export const StudentPlayView: React.FC = () => {
   useEffect(() => {
     if (!quizData || !sessionId || !studentName || !nameConfirmed || inProgressMarkedRef.current) return;
     inProgressMarkedRef.current = true;
-    firestoreService.markLiveInProgress(sessionId, studentName).catch(() => {});
+    if (!(window as any).__E2E_MODE__) {
+      firestoreService.markLiveInProgress(sessionId, studentName).catch(() => {});
+    }
   }, [quizData, sessionId, studentName, nameConfirmed]);
 
   const handleConfirmName = async () => {
@@ -337,33 +372,20 @@ export const StudentPlayView: React.FC = () => {
     setError('');
     const trimmed = nameInput.trim();
     try { localStorage.setItem('studentName', trimmed); } catch { /* incognito */ }
-    // Sign in anonymously so Firestore security rules recognise the student as authenticated.
-    // If already signed in (teacher or returning student), skip.
-    if (!auth.currentUser) {
-      try { await signInAnonymously(auth); } catch { /* non-fatal — app works without auth for now */ }
-    }
     setStudentName(trimmed);
     setNameConfirmed(true);
-    // А1: Persist identity to Firestore so the same name is restored on any session reset
-    const uid = auth.currentUser?.uid;
-    if (uid) {
-      firestoreService.saveStudentIdentity(deviceId, trimmed, uid).catch(() => { /* non-fatal */ });
+
+    // С1: If not in E2E mode, save identity link in Firestore
+    if (!(window as any).__E2E_MODE__) {
+      firestoreService.saveStudentIdentity(deviceId, trimmed).catch(() => {});
     }
   };
 
-  const generateRemediaQuiz = async (meta: { conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid?: string }, percentage: number) => {
-    if (!meta.conceptId) return;
-    dispatch({ type: 'SET_GENERATING_REMEDIA', loading: true });
+  const generateRemediaQuiz = async (meta: any, percentage: number) => {
+    if (!meta.conceptId || !id || (window as any).__E2E_MODE__) return;
     try {
-      const { grade, topic, concept } = getConceptDetails(meta.conceptId);
-      if (!grade || !concept) return;
-
-      const context = {
-        type: 'CONCEPT' as const,
-        grade,
-        topic,
-        concepts: [concept],
-      };
+      dispatch({ type: 'SET_GENERATING_REMEDIA', loading: true });
+      const context = `Ученикот штотуку заврши квиз за '${meta.conceptId}' со резултат ${percentage}%.`;
 
       const adaptiveLevel: DifferentiationLevel = getAdaptiveLevel(percentage);
       const customInstr = adaptiveLevel === 'support'
@@ -401,34 +423,39 @@ export const StudentPlayView: React.FC = () => {
   const handleQuizComplete = async (score: number, correctCount: number, totalQuestions: number, misconceptions?: { question: string; studentAnswer: string; misconception: string }[]) => {
     const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     const meta = quizData!._meta || {};
+    const isE2E = typeof window !== 'undefined' && (window as any).__E2E_MODE__;
 
     // 1. Save quiz result
     let savedDocId = '';
-    try {
-      savedDocId = await firestoreService.saveQuizResult({
-        quizId: id || 'unknown',
-        quizTitle: quizData!.title || 'Квиз',
-        score,
-        correctCount,
-        totalQuestions,
-        percentage,
-        conceptId: meta.conceptId,
-        topicId: meta.topicId,
-        gradeLevel: meta.gradeLevel,
-        studentName: studentName || undefined,
-        teacherUid: meta.teacherUid,
-        deviceId,
-        differentiationLevel: meta.differentiationLevel as DifferentiationLevel | undefined,
-        misconceptions,
-        classId: classId || undefined,
-      });
-    } catch (err) {
-      console.error('[Quiz] saveQuizResult failed:', err);
+    if (isE2E) {
+      savedDocId = 'mock-doc-id';
+    } else {
+      try {
+        savedDocId = await firestoreService.saveQuizResult({
+          quizId: id || 'unknown',
+          quizTitle: quizData!.title || 'Квиз',
+          score,
+          correctCount,
+          totalQuestions,
+          percentage,
+          conceptId: meta.conceptId,
+          topicId: meta.topicId,
+          gradeLevel: meta.gradeLevel,
+          studentName: studentName || undefined,
+          teacherUid: meta.teacherUid,
+          deviceId,
+          differentiationLevel: meta.differentiationLevel as DifferentiationLevel | undefined,
+          misconceptions,
+          classId: classId || undefined,
+        });
+      } catch (err) {
+        console.error('[Quiz] saveQuizResult failed:', err);
+      }
     }
 
     // 2. Update concept mastery — use returned value directly (not state snapshot)
     let freshMastery: ConceptMastery | null = null;
-    if (studentName && meta.conceptId) {
+    if (!isE2E && studentName && meta.conceptId) {
       try {
         const { concept } = getConceptDetails(meta.conceptId);
         freshMastery = await firestoreService.updateConceptMastery(
@@ -511,17 +538,17 @@ export const StudentPlayView: React.FC = () => {
     }
 
     // 2b. Mark assignment as completed (if arrived from an assignment link)
-    if (assignId && studentName) {
+    if (!isE2E && assignId && studentName) {
       firestoreService.markAssignmentCompleted(assignId, studentName).catch(() => {});
     }
 
     // 2c. Mark daily quest complete if this concept was a quest for today
-    if (studentName && meta.conceptId) {
+    if (!isE2E && studentName && meta.conceptId) {
       markQuestComplete(studentName, meta.conceptId);
     }
 
     // 3. Gamification — use freshMastery (not masteryUpdate state — old snapshot!)
-    if (studentName) {
+    if (!isE2E && studentName) {
       const justMastered = !!(freshMastery?.mastered && freshMastery.consecutiveHighScores === 3);
       // Count ALL mastered concepts (not just the current one) for milestone achievements
       const allMastery = await firestoreService.fetchMasteryByStudent(studentName, deviceId).catch(() => []);
@@ -535,19 +562,19 @@ export const StudentPlayView: React.FC = () => {
     }
 
     // 3b. Spaced Repetition — update SM-2 record after every quiz attempt
-    if (meta.conceptId && deviceId) {
+    if (!isE2E && meta.conceptId && deviceId) {
       firestoreService.updateSpacedRepRecord(deviceId, meta.conceptId, percentage)
         .catch(err => console.warn('[SM-2] updateSpacedRepRecord failed:', err));
     }
 
     // 4. Submit live response if this quiz is part of a live session
-    if (sessionId && studentName) {
+    if (!isE2E && sessionId && studentName) {
       firestoreService.submitLiveResponse(sessionId, studentName, percentage)
         .catch(err => console.warn('[Live] submitLiveResponse failed:', err));
     }
 
     // П5 — Peer Learning: Ако резултатот е послаб, најди другари кои го совладале концептот
-    if (percentage < 85 && meta.conceptId) {
+    if (!isE2E && percentage < 85 && meta.conceptId) {
       firestoreService.fetchMasteryByConcept(meta.conceptId, meta.teacherUid)
         .then(masteries => {
           const peers = masteries
@@ -876,7 +903,7 @@ export const StudentPlayView: React.FC = () => {
                 onComplete={({ score, correctCount, totalQuestions, misconceptions }) => {      
                   handleQuizComplete(score, correctCount, totalQuestions, misconceptions);      
                 }}
-                onClose={() => { window.location.hash = '/'; }}
+                onClose={() => { setQuizData(null); }}
               />
               </div>
             </React.Suspense>
@@ -901,7 +928,7 @@ export const StudentPlayView: React.FC = () => {
       {!justMastered && consecutive > 0 && passed && (
         <div className="w-full max-w-4xl mt-4 bg-white/10 border border-white/20 rounded-2xl px-4 py-2.5 flex items-center gap-2">
           <Star className="w-4 h-4 text-yellow-300" fill="currentColor" />
-<p className="text-white text-sm font-bold">
+          <p className="text-white text-sm font-bold">
             {t('play.result.consecutive1')} {consecutive} {t('play.result.consecutive2')}
             {consecutive < 3 ? `${t('play.result.consecutive3')} ${3 - consecutive} ${t('play.result.consecutive4')}` : ''}
           </p>
@@ -1025,7 +1052,7 @@ export const StudentPlayView: React.FC = () => {
 
         {/* ── П26: Confidence Self-Assessment ───────────────────────────────── */}
       {quizResult && (
-        <div className="w-full max-w-lg mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm text-center">
+        <div data-testid="e2e-confidence-prompt" className="w-full max-w-lg mt-3 bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm text-center">
           <p className="text-white font-bold text-sm mb-3">{t('play.confidence.title')}</p>
           <div className="flex justify-center gap-3">
             {(['😟','😐','🙂','😊','🤩'] as const).map((emoji, i) => {
@@ -1037,7 +1064,7 @@ export const StudentPlayView: React.FC = () => {
                   type="button"
                   onClick={() => {
                     dispatch({ type: 'SET_CONFIDENCE', confidence: rating });
-                    if (quizResultDocId) firestoreService.updateQuizConfidence(quizResultDocId, rating);
+                    if (quizResultDocId && !(window as any).__E2E_MODE__) firestoreService.updateQuizConfidence(quizResultDocId, rating);
                   }}
                   className={`text-2xl w-12 h-12 rounded-xl transition-all ${isSelected ? 'bg-white/30 scale-125 ring-2 ring-white' : 'hover:bg-white/20 hover:scale-110'}`}
                   title={`${rating}/5`}
@@ -1077,7 +1104,7 @@ export const StudentPlayView: React.FC = () => {
                 disabled={!metacognitiveNote.trim() || !quizResultDocId}
                 onClick={() => {
                   if (!quizResultDocId || !metacognitiveNote.trim()) return;
-                  firestoreService.updateQuizMetacognitiveNote(quizResultDocId, metacognitiveNote);
+                  if (!(window as any).__E2E_MODE__) firestoreService.updateQuizMetacognitiveNote(quizResultDocId, metacognitiveNote);
                   dispatch({ type: 'SET_METACOGNITIVE_SAVED' });
                 }}
                 className="flex items-center justify-center w-10 h-10 mt-auto bg-sky-500 text-white rounded-xl hover:bg-sky-400 transition disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"

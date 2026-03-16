@@ -7,7 +7,8 @@ import {
     streamGeminiProxyRich, type StreamChunk
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { db, auth, storage } from '../firebaseConfig';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, AssessmentQuestion, AIGeneratedWorkedExample, AdaptiveHomework , AIGeneratedAnnualPlan, AIGeneratedPresentation } from '../types';
 import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalAnalysisSchema, CoverageAnalysisSchema, AIRecommendationSchema, GeneratedTestSchema, DailyBriefSchema, WorkedExampleSchema, ReflectionSummarySchema } from '../utils/schemas';
 
@@ -77,7 +78,16 @@ async generateIllustration(prompt: string, image?: { base64: string, mimeType: s
       const response = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
       if (response.inlineData) {
         const data = response.inlineData;
-        const imageUrl = `data:${data.mimeType};base64,${data.data}`;
+        const base64Data = data.data;
+        const mimeType = data.mimeType;
+        
+        // О3 — Миграција на AI слики кон Firebase Storage (наместо base64)
+        const storagePath = `ai_illustrations/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.png`;
+        const storageRef = ref(storage, storagePath);
+        
+        await uploadString(storageRef, base64Data, 'base64', { contentType: mimeType });
+        const imageUrl = await getDownloadURL(storageRef);
+
         try { localStorage.setItem(cacheKey, JSON.stringify({ imageUrl, ts: Date.now() })); } catch { /* quota exceeded — skip */ }
         return { imageUrl, prompt };
       }
@@ -87,7 +97,11 @@ async generateIllustration(prompt: string, image?: { base64: string, mimeType: s
     const response = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
     if (response.inlineData) {
         const data = response.inlineData;
-        return { imageUrl: `data:${data.mimeType};base64,${data.data}`, prompt };
+        const storagePath = `ai_illustrations/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.png`;
+        const storageRef = ref(storage, storagePath);
+        await uploadString(storageRef, data.data, 'base64', { contentType: data.mimeType });
+        const imageUrl = await getDownloadURL(storageRef);
+        return { imageUrl, prompt };
     }
     throw new Error("AI did not return image");
   },
