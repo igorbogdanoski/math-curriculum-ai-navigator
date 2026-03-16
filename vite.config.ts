@@ -309,23 +309,24 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: (id) => {
               if (id.includes('node_modules')) {
-                // ORDERING IS CRITICAL:
-                // 1. Explicit non-React exceptions FIRST (these contain "react" in their name
-                //    but must NOT go into vendor-react — heavy, independent bundles)
-                if (id.includes('@react-pdf')) return 'vendor-pdf';
-                if (id.includes('lucide-react')) return 'vendor-icons';
+                // Strategy: only split truly INDEPENDENT heavy packages that have
+                // zero React imports. Every package that imports from 'react' — even
+                // transitively — must share the same chunk execution context as React
+                // itself, otherwise chunk load-order races produce:
+                //   "Cannot read properties of undefined (reading 'useLayoutEffect')"
+                // Fine-grained splitting of the React ecosystem is fragile; a single
+                // vendor chunk for React + all its consumers is the reliable solution.
+
+                // 1. Truly independent heavy bundles (no React peer-deps)
+                if (id.includes('@react-pdf')) return 'vendor-pdf';   // heavy, own React copy
                 if (id.includes('docx')) return 'vendor-docx';
-                if (id.includes('zod')) return 'vendor-zod';
-                // 2. Firebase modules
-                if (id.includes('firebase/app')) return 'vendor-firebase-app';
-                if (id.includes('firebase/auth')) return 'vendor-firebase-auth';
-                if (id.includes('firebase/firestore')) return 'vendor-firebase-firestore';
-                if (id.includes('firebase/storage')) return 'vendor-firebase-storage';
-                // 3. BROAD React check — catches react, react-dom, react-router-dom AND
-                //    all React-ecosystem packages (@tanstack/react-query, react-hot-toast,
-                //    react-dnd, etc.) that call React.createContext at init time.
-                //    Must be AFTER the explicit exceptions above.
-                if (id.includes('react')) return 'vendor-react';
+                if (id.includes('pptxgenjs')) return 'vendor-pptx';
+                if (id.includes('mathjs') || id.includes('mathlive')) return 'vendor-math';
+                if (id.includes('firebase')) return 'vendor-firebase';
+
+                // 2. Everything else — React core, React-ecosystem (react-query, zustand,
+                //    @dnd-kit, lucide-react, sentry/react, react-router-dom, etc.) and
+                //    all remaining node_modules — ONE chunk, no ordering issues possible.
                 return 'vendor';
               }
               if (id.includes('views/')) {
