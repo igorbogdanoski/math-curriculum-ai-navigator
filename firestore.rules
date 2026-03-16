@@ -248,8 +248,9 @@ service cloud.firestore {
     }
 
     // ── Училишта (schools) ──
+    // Public read allowed — school list is needed for the registration form (unauthenticated)
     match /schools/{schoolId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
 
       match /{document=**} {

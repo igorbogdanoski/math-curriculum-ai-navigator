@@ -128,8 +128,11 @@ export const schoolService = {
       const snapshot = await getDocs(q);
       if (snapshot.empty) return [];
       return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (error) {
-      console.error('Error fetching schools:', error);
+    } catch (error: any) {
+      // permission-denied is expected when called from the login screen before auth resolves
+      if (error?.code !== 'permission-denied') {
+        console.error('Error fetching schools:', error);
+      }
       return [];
     }
   },
