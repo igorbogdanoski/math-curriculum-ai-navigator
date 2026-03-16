@@ -3,6 +3,7 @@ import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
 import { type StudentGroup, type SchoolClass, type ClassMembership, type Announcement } from './firestoreService.types';
+import { parseFirestoreDoc, SchoolClassSchema, ClassMembershipSchema } from '../schemas/firestoreSchemas';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 
 export const fetchStudentGroups = async (teacherUid?: string): Promise<StudentGroup[]> => {
@@ -41,7 +42,7 @@ export const fetchClasses = async (teacherUid: string): Promise<SchoolClass[]> =
     try {
       const q = query(collection(db, 'classes'), where('teacherUid', '==', teacherUid), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as SchoolClass));
+      return snap.docs.map(d => parseFirestoreDoc(SchoolClassSchema, { id: d.id, ...d.data() }, `classes/${d.id}`) as SchoolClass);
     } catch (error) {
       console.error('Error fetching classes:', error);
       return [];
@@ -68,7 +69,7 @@ export const deleteClass = async (classId: string): Promise<void> => {
 export const fetchClassById = async (classId: string): Promise<SchoolClass | null> => {
     const snap = await getDoc(doc(db, 'classes', classId));
     if (!snap.exists()) return null;
-    return { id: snap.id, ...snap.data() } as SchoolClass;
+    return parseFirestoreDoc(SchoolClassSchema, { id: snap.id, ...snap.data() }, `classes/${classId}`) as SchoolClass;
 };
 
 /** П-Г: Toggle IEP flag for a student within a class */
@@ -101,7 +102,7 @@ export const fetchClassByJoinCode = async (code: string): Promise<SchoolClass | 
     const q = query(collection(db, 'classes'), where('joinCode', '==', code.trim().toUpperCase()), limit(1));
     const snap = await getDocs(q);
     if (snap.empty) return null;
-    return { id: snap.docs[0].id, ...snap.docs[0].data() } as SchoolClass;
+    return parseFirestoreDoc(SchoolClassSchema, { id: snap.docs[0].id, ...snap.docs[0].data() }, `classes/${snap.docs[0].id}`) as SchoolClass;
   } catch { return null; }
 };
 
@@ -127,7 +128,7 @@ export const fetchClassMembership = async (deviceId: string): Promise<ClassMembe
   try {
     const snap = await getDoc(doc(db, 'class_memberships', deviceId));
     if (!snap.exists()) return null;
-    return snap.data() as ClassMembership;
+    return parseFirestoreDoc(ClassMembershipSchema, snap.data(), `class_memberships/${deviceId}`) as ClassMembership;
   } catch { return null; }
 };
 

@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { app, db, storage, googleProvider } from '../firebaseConfig';
 import { setSentryUser, clearSentryUser } from '../services/sentryService';
+import { parseFirestoreDoc, TeachingProfileSchema } from '../schemas/firestoreSchemas';
 
 interface AuthState {
     firebaseUser: User | null;
@@ -52,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return docSnap.data() as TeachingProfile;
+            return parseFirestoreDoc(TeachingProfileSchema, docSnap.data(), `users/${uid}`) as TeachingProfile;
         } else {
             console.warn(`User profile document not found for UID: ${uid}. Using fallback defaults.`);
         }

@@ -3,6 +3,7 @@ import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import type { ConceptMastery, QuizResult, StudentGamification } from './firestoreService.types';
+import { parseFirestoreDoc, QuizResultSchema, ConceptMasterySchema, StudentGamificationSchema } from '../schemas/firestoreSchemas';
 
 function isValidQuizResult(data: unknown): data is QuizResult {
   if (!data || typeof data !== 'object') return false;
@@ -232,7 +233,7 @@ export const quizService = {
       }
       const q = query(collection(db, 'quiz_results'), where('conceptId', '==', conceptId), orderBy('playedAt', 'desc'), limit(maxCount));
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as QuizResult);
+      return snap.docs.map(d => parseFirestoreDoc(QuizResultSchema, d.data(), `quiz_results/${d.id}`) as QuizResult);
     } catch (error) {
       console.warn('fetchQuizResultsByConcept failed (non-critical):', error);
       return [];
@@ -256,7 +257,7 @@ export const quizService = {
     const ref = doc(db, 'concept_mastery', docId);
     try {
       const snap = await getDoc(ref);
-      const existing = snap.exists() ? (snap.data() as ConceptMastery) : null;
+      const existing = snap.exists() ? parseFirestoreDoc(ConceptMasterySchema, snap.data(), `concept_mastery/${docId}`) as ConceptMastery : null;
       const prevConsecutive = existing?.consecutiveHighScores ?? 0;
       const newConsecutive = score >= 85 ? prevConsecutive + 1 : 0;
       const mastered = newConsecutive >= 3;
@@ -352,18 +353,18 @@ export const quizService = {
     try {
       if (deviceId && teacherUid) {
         const s = await getDoc(doc(db, 'student_gamification', `${teacherUid}_${deviceId}`));
-        if (s.exists()) return s.data() as StudentGamification;
+        if (s.exists()) return parseFirestoreDoc(StudentGamificationSchema, s.data(), `student_gamification/${teacherUid}_${deviceId}`) as StudentGamification;
       }
       if (deviceId && !teacherUid) {
         const s = await getDoc(doc(db, 'student_gamification', deviceId));
-        if (s.exists()) return s.data() as StudentGamification;
+        if (s.exists()) return parseFirestoreDoc(StudentGamificationSchema, s.data(), `student_gamification/${deviceId}`) as StudentGamification;
       }
       if (teacherUid) {
         const s = await getDoc(doc(db, 'student_gamification', `${teacherUid}_${studentName}`));
-        if (s.exists()) return s.data() as StudentGamification;
+        if (s.exists()) return parseFirestoreDoc(StudentGamificationSchema, s.data(), `student_gamification/${teacherUid}_${studentName}`) as StudentGamification;
       }
       const s = await getDoc(doc(db, 'student_gamification', studentName));
-      return s.exists() ? (s.data() as StudentGamification) : null;
+      return s.exists() ? parseFirestoreDoc(StudentGamificationSchema, s.data(), `student_gamification/${studentName}`) as StudentGamification : null;
     } catch (error) {
       console.error('Error fetching gamification:', error);
       return null;
