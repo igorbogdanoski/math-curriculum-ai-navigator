@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { GenerationContext } from '../../types';
 import { ragService } from '../ragService';
 import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
+import { PermissionError, AIServiceError, AppError, ErrorCode } from '../../utils/errors';
 
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
@@ -241,7 +242,7 @@ export async function getAuthToken(): Promise<string> {
   const auth = getAuth();
   const user = auth.currentUser;
   if (!user) {
-    throw new Error('Не сте најавени. Ве молиме најавете се повторно.');
+    throw new PermissionError('getAuthToken', 'Не сте најавени. Ве молиме најавете се повторно.');
   }
   return user.getIdToken();
 }
@@ -656,6 +657,11 @@ export function sanitizePromptInput(text: string | undefined | null, maxLength =
   if (!text) return '';
   return text
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // control chars (keep \t \n \r)
+    // Р3-Б: strip prompt-injection patterns before embedding in AI prompts
+    .replace(/ignore\s+(previous|above|instructions?)/gi, '[filtered]')
+    .replace(/system\s*:/gi, '[filtered]')
+    .replace(/<\|im_start\|>|<\|im_end\|>|<\|endoftext\|>/gi, '[filtered]')
+    .replace(/\[\s*INST\s*\]|\[\s*\/INST\s*\]/gi, '[filtered]')
     .replace(/\s+/g, ' ')                                 // collapse whitespace
     .trim()
     .slice(0, maxLength);
@@ -882,7 +888,7 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
     // For the thinking model (no responseMimeType support), cleanJsonString strips any markdown.
     const rawText = response.text || "";
     const jsonString = useThinking ? cleanJsonString(rawText) : rawText.trim();
-    if (!jsonString) throw new Error("AI returned empty response");
+    if (!jsonString) throw new AIServiceError("AI returned empty response");
 
     let parsedJson: unknown;
     try {
@@ -900,14 +906,14 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
 
     if (zodSchema) {
         const validation = zodSchema.safeParse(parsedJson);
-        if (!validation.success) throw new Error(`Validation failed: ${validation.error.message}`);
+        if (!validation.success) throw new AIServiceError(`Validation failed: ${validation.error.message}`);
         return validation.data as T;
     }
     return parsedJson as T;
   } catch (error: any) {
     // Timeout: AbortController fired after GENERATION_TIMEOUT_MS — not retryable
     if (error?.name === 'AbortError') {
-      throw new Error('Генерирањето траеше предолго. Обидете се повторно.');
+      throw new AppError('Generation timed out', ErrorCode.TIMEOUT, 'Генерирањето траеше предолго. Обидете се повторно.', true);
     }
     const errorMessage = error.message?.toLowerCase() || "";
 

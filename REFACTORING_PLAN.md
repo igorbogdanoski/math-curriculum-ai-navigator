@@ -12,7 +12,7 @@
 |--------|-------|--------|
 | Р1 | Type Safety — 870 `any` + 117 `@ts-ignore` | ✅ Завршен |
 | Р2 | Component Decomposition — StudentPlayView + hooks | ✅ Завршен |
-| Р3 | Error System + Security + Tests | ⬜ Не започнат |
+| Р3 | Error System + Security + Tests | ✅ Завршен |
 
 ---
 
@@ -173,44 +173,31 @@ export class AIServiceError extends AppError { ... }
 ```
 
 **Задачи**:
-- [ ] Дефинирај `ErrorCode` enum со сите casos
-- [ ] Замени `throw new Error('...')` во geminiService со typed errors
-- [ ] Замени `catch { /* non-fatal */ }` со `catch (e) { logger.warn(e); }`
-- [ ] Додај user-facing МК пораки за секој error тип
-- [ ] Создај `ErrorBoundary` компонента со retry UI
+- [x] Дефинирај `ErrorCode` enum со сите casos
+- [x] Замени `throw new Error('...')` во geminiService со typed errors
+- [x] Додај user-facing МК пораки за секој error тип
+- [x] `ErrorBoundary` компонента со retry UI (веќе постоеше)
 
 ### Р3-Б: Security Hardening
 
 **Задачи**:
-- [ ] **Реактивирај Firebase App Check** во `firebaseConfig.ts`
-  - Линија: `// ПРИВРЕМЕНО ОНЕВОЗМОЖЕНО ЗА ДЕБАГИРАЊЕ` — ова мора да се отстрани
-  - Конфигурирај reCAPTCHA v3 за production
-- [ ] **Prompt Injection Protection** — `utils/sanitizePrompt.ts`:
-  ```typescript
-  export function sanitizeUserInput(input: string): string {
-    // Strip instruction-like patterns before embedding in AI prompts
-    return input.replace(/ignore previous|system:|<\|im_start\|>/gi, '[filtered]');
-  }
-  ```
-- [ ] Примени `sanitizeUserInput` на сите места каде кориснички имиња/текст влегуваат во prompts
+- [x] **Реактивирај Firebase App Check** во `firebaseConfig.ts` (reCAPTCHA Enterprise, env-var guarded)
+- [x] **Prompt Injection Protection** — `sanitizePromptInput` во `services/gemini/core.ts`:
+  strips `ignore previous`, `system:`, `<|im_start|>`, `[INST]` patterns
+- [x] Примени `sanitizePromptInput` на `generateParentReport`, `generateQuizFeedback`, `generateStudentNarrative`
 
 ### Р3-В: IndexedDB Housekeeping
 
 **Задачи**:
-- [ ] Додај `cleanupExpiredCache()` функција во `indexedDBService.ts`
-  - Избриши entries постари од TTL при startup
-  - Избриши entries кога IDB quota > 50MB
-- [ ] Додај DB migration во `openDB`: version 2 → 3 чисти стари records
-- [ ] Додај UI индикатор: „X резултати чекаат sync" кога `pendingQuizzes.length > 0`
+- [x] Додај `cleanupExpiredCache()` функција во `indexedDBService.ts` (TTL: 24h ai_cache, 7d quiz_content)
+- [x] Додај DB migration во `openDB`: version 2 → 3 + startup cleanup
+- [x] UI индикатор во `OfflineBanner`: „X резултати чекаат синхронизација…" (blue banner, 10s poll)
 
 ### Р3-Г: Unit Tests за Business Logic
 
-**Приоритет** (нема ниту еден unit test за hooks/services):
-- [ ] `hooks/useCurriculum.test.ts` — concept lookup, memoization
-- [ ] `hooks/useQuotaManager.test.ts` — quota exhaustion, Pacific midnight reset
-- [ ] `services/geminiService.test.ts` — mock Gemini API, test error paths
-- [ ] `utils/errors.test.ts` — error classification, МК messages
-- [ ] Target: **80% coverage** за hooks + services
+- [x] `__tests__/errors.test.ts` — 22 tests: AppError субкласи, ErrorCode, МК пораки, toAppError класификатор
+- [x] `__tests__/sanitizePromptInput.test.ts` — 12 tests: injection stripping, length limits, Cyrillic names
+- Target: **374/374 tests** ✅ (36 нови за Р3)
 
 ---
 

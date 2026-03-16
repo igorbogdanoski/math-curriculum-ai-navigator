@@ -29,14 +29,48 @@ interface MathNavDB extends DBSchema {
 }
 
 const DB_NAME = 'MathNavOfflineDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
+
+const AI_CACHE_TTL_MS = 24 * 60 * 60 * 1000;   // 24 h
+const QUIZ_CACHE_TTL_MS_CLEANUP = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+/** Р3-В: Remove expired ai_cache + quiz_content_cache entries. Called at startup. */
+export async function cleanupExpiredCache(): Promise<void> {
+  try {
+    const db = await getDbPromise();
+    const now = Date.now();
+
+    const aiKeys = await db.getAllKeys('ai_cache');
+    for (const key of aiKeys) {
+      const entry = await db.get('ai_cache', key);
+      if (entry && now - entry.timestamp > AI_CACHE_TTL_MS) {
+        await db.delete('ai_cache', key);
+      }
+    }
+
+    const quizKeys = await db.getAllKeys('quiz_content_cache');
+    for (const key of quizKeys) {
+      const entry = await db.get('quiz_content_cache', key);
+      if (entry && now - entry.timestamp > QUIZ_CACHE_TTL_MS_CLEANUP) {
+        await db.delete('quiz_content_cache', key);
+      }
+    }
+  } catch {
+    // non-fatal — cleanup is best-effort
+  }
+}
 
 let dbPromise: Promise<IDBPDatabase<MathNavDB>> | null = null;
+
+// Internal getter used by cleanupExpiredCache (avoids circular ref with initDB)
+function getDbPromise(): Promise<IDBPDatabase<MathNavDB>> {
+  return initDB();
+}
 
 export const initDB = () => {
   if (!dbPromise) {
     dbPromise = openDB<MathNavDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion) {
         if (!db.objectStoreNames.contains('pending_quizzes')) {
           db.createObjectStore('pending_quizzes', { keyPath: 'id' });
         }
@@ -45,6 +79,10 @@ export const initDB = () => {
         }
         if (!db.objectStoreNames.contains('quiz_content_cache')) {
           db.createObjectStore('quiz_content_cache', { keyPath: 'id' });
+        }
+        // v3 migration: schedule stale-entry cleanup on next tick
+        if (oldVersion < 3) {
+          setTimeout(() => cleanupExpiredCache().catch(() => {}), 0);
         }
       },
     });

@@ -3,7 +3,7 @@ import { plansAPI } from './gemini/plans';
 import {
     Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, streamGeminiProxy,
     checkDailyQuotaGuard, TEXT_SYSTEM_INSTRUCTION, SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
-    CACHE_COLLECTION, minifyContext, callEmbeddingProxy,
+    CACHE_COLLECTION, minifyContext, callEmbeddingProxy, sanitizePromptInput,
     streamGeminiProxyRich, type StreamChunk, type ImagenProxyResponse
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -885,7 +885,8 @@ async generateParentReport(
       : 0;
     const passed = results.filter(r => r.percentage >= 70).length;
 
-    const prompt = `Ти си педагошки советник. Напиши кратко (5-7 параграфи), топло и охрабрувачко родителско писмо на македонски јазик за ученикот „${studentName}".
+    const safeStudentName = sanitizePromptInput(studentName, 80);
+    const prompt = `Ти си педагошки советник. Напиши кратко (5-7 параграфи), топло и охрабрувачко родителско писмо на македонски јазик за ученикот „${safeStudentName}".
 
 Податоци за учениковите перформанси:
 - Вкупно одиграни квизови: ${totalQuizzes}
@@ -971,8 +972,9 @@ async generateParentReport(
     misconceptions?: { question: string; studentAnswer: string; misconception: string }[],
   ): Promise<string> {
     checkDailyQuotaGuard();
+    const safeStudentName = sanitizePromptInput(studentName, 80);
     const wrongParts = misconceptions?.slice(0, 2).map(m =>
-      `- Прашање: "${m.question}" → Одговорено: "${m.studentAnswer}"`
+      `- Прашање: "${sanitizePromptInput(m.question, 200)}" → Одговорено: "${sanitizePromptInput(m.studentAnswer, 100)}"`
     ).join('\n') ?? '';
 
     const toneHint = percentage >= 80
@@ -981,7 +983,7 @@ async generateParentReport(
       ? 'Тонот е поддржувачки — ученикот е на добар пат, но треба уште вежбање.'
       : 'Тонот е топол и поддржувачки — ученикот треба помош, не критика.';
 
-    const prompt = `Ученикот ${studentName} завршил квиз за концептот „${conceptTitle}".
+    const prompt = `Ученикот ${safeStudentName} завршил квиз за концептот „${conceptTitle}".
 Резултат: ${correctCount}/${totalQuestions} (${percentage}%).
 ${wrongParts ? `Грешни прашања:\n${wrongParts}\n` : ''}
 ${toneHint}
@@ -1068,12 +1070,15 @@ ${toneHint}
     metacognitiveNotes: string[],
   ): Promise<string> {
     checkDailyQuotaGuard();
+    const safeStudentName = sanitizePromptInput(studentName, 80);
     const topStr = topConcepts.slice(0, 3).join(', ') || 'нема';
     const weakStr = weakConcepts.slice(0, 2).join(', ') || 'нема';
-    const notesSample = metacognitiveNotes.slice(0, 3).map(n => `"${n}"`).join('; ');
+    const notesSample = metacognitiveNotes.slice(0, 3)
+      .map(n => `"${sanitizePromptInput(n, 200)}"`)
+      .join('; ');
     const prompt = `Напиши кратка (3–4 параграфи) персонализирана нарација за учениковото портфолио на македонски јазик.
 
-Ученик: ${studentName}
+Ученик: ${safeStudentName}
 Совладани концепти: ${masteredCount}
 Просечен резултат: ${Math.round(avgPercentage)}%
 Вкупно квизови: ${totalQuizzes}

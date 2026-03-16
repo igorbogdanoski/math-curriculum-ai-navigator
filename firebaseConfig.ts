@@ -17,22 +17,20 @@ const firebaseConfig = {
 // Иницијализација на апликацијата (Спречување на дупликати)
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Иницијализација на App Check - ПРИВРЕМЕНО ОНЕВОЗМОЖЕНО ЗА ДЕБАГИРАЊЕ
-/*
+// Firebase App Check — reCAPTCHA Enterprise (Р3-Б)
+// Only activates when VITE_RECAPTCHA_SITE_KEY is set (production env).
 if (typeof window !== 'undefined') {
-  if (import.meta.env.DEV) {
-    (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  }
-  
   const reCaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   if (reCaptchaKey) {
+    if (import.meta.env.DEV) {
+      (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    }
     initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(reCaptchaKey),
-      isTokenAutoRefreshEnabled: true
+      isTokenAutoRefreshEnabled: true,
     });
   }
 }
-*/
 
 // Firestore Initialization
 const isE2E = typeof window !== 'undefined' && (window.__E2E_TEACHER_MODE__ || window.__E2E_MODE__);
