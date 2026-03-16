@@ -11,7 +11,7 @@
 | Спринт | Фокус | Статус |
 |--------|-------|--------|
 | Р1 | Type Safety — 870 `any` + 117 `@ts-ignore` | ✅ Завршен |
-| Р2 | Component Decomposition — StudentPlayView + hooks | 🔄 Во тек |
+| Р2 | Component Decomposition — StudentPlayView + hooks | ✅ Завршен |
 | Р3 | Error System + Security + Tests | ⬜ Не започнат |
 
 ---
@@ -110,28 +110,44 @@ hooks/
 - [x] Re-exports за backward compat на постоечките тестови
 - [x] 338/338 тестови ✅, TSC чист
 
-### Р2-Б: Разложи `useGeneratorActions.ts` (785 линии → 3 hooks)
+### Р2-Б: Разложи `useGeneratorActions.ts` (785 линии → 3 sub-hooks) ✅ `2baa01c`
 
-**Нова структура**:
+**Реализирана структура**:
 ```
 hooks/generator/
-  useGeneratorAssessment.ts    (quiz, rubric, remedial генерација)
-  useGeneratorVisuals.ts       (illustrations, presentations, PPTX)
-  useGeneratorPlanning.ts      (learning paths, lesson plans, annual plans)
+  useGeneratorContext.ts      (filteredTopics/Concepts, buildContext, isGenerateDisabled)
+  useGeneratorTeacherNote.ts  (teacherNote state, diffRec, handleSaveTeacherNote)
+  useGeneratorSave.ts         (savedToLibrary, save/library/rate handlers)
+  index.ts                    (re-exports за backward compatibility)
 ```
 
-**Задачи**:
-- [ ] Идентификувај 15 генератори и групирај ги по домен
-- [ ] Екстрактирај `buildAiPersonalizationSnippet` → `utils/aiPromptUtils.ts`
-- [ ] Создај `hooks/generator/index.ts` re-export за backward compatibility
-- [ ] Провери дека GeneratorPanelContext сè уште работи
+**Завршени задачи**:
 
-### Р2-В: `TeacherAnalyticsView.tsx` (886 линии → tab components)
+- [x] Екстрактирај `useGeneratorContext` (buildContext + isGenerateDisabled)
+- [x] Екстрактирај `useGeneratorTeacherNote` (note state + diffRec)
+- [x] Екстрактирај `useGeneratorSave` (сите save/library handlers)
+- [x] Создај `hooks/generator/index.ts` re-export
+- [x] `useGeneratorActions` редуциран 786 → ~380 линии, TSC чист
 
-**Задачи**:
-- [ ] Провери колку tab components веќе постојат во `components/analytics/`
-- [ ] Екстрактирај останатите inline табови во посебни компоненти
-- [ ] Главниот view треба само: data fetching + tab routing + pagination
+### Р2-В: `TeacherAnalyticsView.tsx` (886 линии → hook + 2 компоненти) ✅ `2d40c04`
+
+**Реализирана структура**:
+
+```text
+hooks/useAnalyticsAggregations.ts        (7 useMemo → 1 hook, ~180 линии)
+components/analytics/AnnouncementBoard.tsx  (огласна табла UI)
+components/analytics/AnalyticsTabNav.tsx    (tab навигација + dropdown)
+```
+
+**Завршени задачи**:
+
+- [x] Сите 15 tab components беа веќе екстрактирани во `views/analytics/`
+- [x] Екстрактирај `useAnalyticsAggregations` hook (7 useMemo)
+- [x] Екстрактирај `AnnouncementBoard` компонента
+- [x] Екстрактирај `AnalyticsTabNav` компонента
+- [x] `TeacherAnalyticsView` редуциран 886 → ~400 линии
+- [x] exportCsv дедупликација — заеднички helper
+- [x] 338/338 тестови ✅, TSC чист
 
 ---
 
