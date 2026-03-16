@@ -268,16 +268,23 @@ export default defineConfig(({ mode }) => {
                 }
               },
               {
+                // CacheFirst for versioned CDN assets (KaTeX, MathJax, etc.)
+                // fetchOptions.mode:'cors' prevents opaque responses — the SW was
+                // caching status-0 (opaque) responses and then returning them for
+                // non-no-cors requests, causing "opaque response" network errors.
                 urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
-                handler: 'StaleWhileRevalidate',
+                handler: 'CacheFirst',
                 options: {
                   cacheName: 'jsdelivr-cdn-cache',
+                  fetchOptions: {
+                    mode: 'cors',
+                  },
                   expiration: {
-                    maxEntries: 20,
+                    maxEntries: 30,
                     maxAgeSeconds: 60 * 60 * 24 * 365
                   },
                   cacheableResponse: {
-                    statuses: [0, 200]
+                    statuses: [200]
                   }
                 }
               }
@@ -302,17 +309,22 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: (id) => {
               if (id.includes('node_modules')) {
-                if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-                  return 'vendor-react';
-                }
+                // Specific packages FIRST — before the broad 'react' check,
+                // because '@react-pdf' and 'lucide-react' contain "react" in their path
+                // and would otherwise land in vendor-react, corrupting React's init order.
+                if (id.includes('@react-pdf')) return 'vendor-pdf';
+                if (id.includes('lucide-react')) return 'vendor-icons';
+                if (id.includes('docx')) return 'vendor-docx';
+                if (id.includes('zod')) return 'vendor-zod';
+                // Firebase modules
                 if (id.includes('firebase/app')) return 'vendor-firebase-app';
                 if (id.includes('firebase/auth')) return 'vendor-firebase-auth';
                 if (id.includes('firebase/firestore')) return 'vendor-firebase-firestore';
                 if (id.includes('firebase/storage')) return 'vendor-firebase-storage';
-                if (id.includes('zod')) return 'vendor-zod';
-                if (id.includes('@react-pdf')) return 'vendor-pdf';
-                if (id.includes('docx')) return 'vendor-docx';
-                if (id.includes('lucide-react')) return 'vendor-icons';
+                // React (broad check is safe now that specific packages are handled above)
+                if (id.includes('react-dom') || id.includes('react-router-dom') || /[/\\]react[/\\]/.test(id)) {
+                  return 'vendor-react';
+                }
                 return 'vendor';
               }
               if (id.includes('views/')) {
