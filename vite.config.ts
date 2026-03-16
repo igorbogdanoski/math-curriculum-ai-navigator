@@ -307,43 +307,26 @@ export default defineConfig(({ mode }) => {
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
           output: {
+            // manualChunks — vendor-only splitting for truly independent heavy packages.
+            //
+            // View-based splitting is intentionally removed: manually grouping views
+            // creates Rollup TDZ (Temporal Dead Zone) errors when circular imports exist
+            // between shared components and view modules ("Cannot access 'x' before
+            // initialization"). Vite's automatic code-splitting handles views correctly
+            // via React.lazy() dynamic imports in the router.
+            //
+            // Node-module splitting is limited to packages with ZERO React peer-deps.
+            // All React-ecosystem packages (react, react-dom, zustand, @dnd-kit, etc.)
+            // share one vendor chunk to prevent chunk-load-order races that produce
+            // "Cannot read properties of undefined (reading 'useLayoutEffect/createContext')".
             manualChunks: (id) => {
-              if (id.includes('node_modules')) {
-                // Strategy: only split truly INDEPENDENT heavy packages that have
-                // zero React imports. Every package that imports from 'react' — even
-                // transitively — must share the same chunk execution context as React
-                // itself, otherwise chunk load-order races produce:
-                //   "Cannot read properties of undefined (reading 'useLayoutEffect')"
-                // Fine-grained splitting of the React ecosystem is fragile; a single
-                // vendor chunk for React + all its consumers is the reliable solution.
-
-                // 1. Truly independent heavy bundles (no React peer-deps)
-                if (id.includes('@react-pdf')) return 'vendor-pdf';   // heavy, own React copy
-                if (id.includes('docx')) return 'vendor-docx';
-                if (id.includes('pptxgenjs')) return 'vendor-pptx';
-                if (id.includes('mathjs') || id.includes('mathlive')) return 'vendor-math';
-                if (id.includes('firebase')) return 'vendor-firebase';
-
-                // 2. Everything else — React core, React-ecosystem (react-query, zustand,
-                //    @dnd-kit, lucide-react, sentry/react, react-router-dom, etc.) and
-                //    all remaining node_modules — ONE chunk, no ordering issues possible.
-                return 'vendor';
-              }
-              if (id.includes('views/')) {
-                if (id.includes('StudentPlayView') || id.includes('StudentProgressView') || id.includes('StudentLiveView') || id.includes('StudentTutorView') || id.includes('StudentPortfolioView')) {
-                  return 'view-student-core';
-                }
-                if (id.includes('MaterialsGeneratorView') || id.includes('AnnualPlanGeneratorView') || id.includes('LessonPlanEditorView')) {
-                  return 'view-teacher-generator';
-                }
-                if (id.includes('TeacherAnalyticsView') || id.includes('CurriculumGraphView')) {
-                  return 'view-teacher-insights';
-                }
-                if (id.includes('SystemAdminView') || id.includes('SchoolAdminView') || id.includes('CurriculumEditorView')) {
-                  return 'view-admin';
-                }
-                return 'view-other';
-              }
+              if (!id.includes('node_modules')) return undefined;
+              if (id.includes('@react-pdf')) return 'vendor-pdf';     // has its own React copy
+              if (id.includes('firebase')) return 'vendor-firebase';
+              if (id.includes('pptxgenjs')) return 'vendor-pptx';
+              if (id.includes('mathjs') || id.includes('mathlive')) return 'vendor-math';
+              if (id.includes('docx')) return 'vendor-docx';
+              return 'vendor'; // React + entire React ecosystem + all other deps
             }
           }
         }
