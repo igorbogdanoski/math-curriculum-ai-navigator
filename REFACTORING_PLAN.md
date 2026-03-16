@@ -11,7 +11,7 @@
 | Спринт | Фокус | Статус |
 |--------|-------|--------|
 | Р1 | Type Safety — 870 `any` + 117 `@ts-ignore` | ✅ Завршен |
-| Р2 | Component Decomposition — StudentPlayView + hooks | ⬜ Не започнат |
+| Р2 | Component Decomposition — StudentPlayView + hooks | 🔄 Во тек |
 | Р3 | Error System + Security + Tests | ⬜ Не започнат |
 
 ---
@@ -83,27 +83,32 @@ interface UseGeneratorActionsParams {
 
 ## СПРИНТ Р2 — COMPONENT DECOMPOSITION *(Приоритет: ВИСОК)*
 
-### Р2-А: Разложи `StudentPlayView.tsx` (1,243 линии → 4 компоненти)
+### Р2-А: Разложи `StudentPlayView.tsx` (1,253 линии → 7 файлови) ✅ `f7c22be`
 
-**Нова структура**:
+**Реализирана структура**:
 ```
-views/StudentPlayView.tsx          (~200 линии — само оркестрација)
+views/StudentPlayView.tsx                   (~170 линии — тенок orchestrator)
 components/student/
-  StudentOnboardingWizard.tsx      (~150 линии — wizard чекори 0-2)
-  QuizContentLoader.tsx            (~100 линии — hook за loading + cache)
-  QuizSessionManager.tsx           (~300 линии — reducer + session логика)
-  AdaptiveHomeworkPanel.tsx        (~150 линии — homework рендерирање)
+  quizSessionReducer.ts                     (pure TS — reducer + типови, без React/Firebase)
+  StudentOnboardingWizard.tsx               (~235 линии — wizard чекори 0/1/2/null)
+  QuizResultPanel.tsx                       (~280 линии — сите post-quiz панели)
 hooks/
-  useStudentQuiz.ts                (~200 линии — business логика)
-  useStudentIdentity.ts            (~80 линии — deviceId + onboarding state)
+  useStudentIdentity.ts                     (deviceId, name wizard, class membership, IEP)
+  useStudentQuiz.ts                         (loading, Firestore/IndexedDB/E2E кеш)
+  useQuizSession.ts                         (reducer, handleQuizComplete, generateRemediaQuiz)
 ```
 
-**Задачи**:
-- [ ] Екстрактирај `useStudentIdentity` hook (deviceId, name wizard, class membership)
-- [ ] Екстрактирај `useStudentQuiz` hook (loading, caching, offline fallback)
-- [ ] Екстрактирај `StudentOnboardingWizard` компонента (линии 175-239)
-- [ ] Екстрактирај `AdaptiveHomeworkPanel` компонента (линии 430-500)
-- [ ] `StudentPlayView` станува тенок orchestrator — само поврзување
+**Завршени задачи**:
+
+- [x] Екстрактирај `useStudentIdentity` hook
+- [x] Екстрактирај `useStudentQuiz` hook
+- [x] Екстрактирај `useQuizSession` hook (со целата `handleQuizComplete` логика)
+- [x] Екстрактирај `quizSessionReducer` (pure TS, тестирабилен без mocks)
+- [x] Екстрактирај `StudentOnboardingWizard` компонента
+- [x] Екстрактирај `QuizResultPanel` компонента
+- [x] `StudentPlayView` станува тенок orchestrator
+- [x] Re-exports за backward compat на постоечките тестови
+- [x] 338/338 тестови ✅, TSC чист
 
 ### Р2-Б: Разложи `useGeneratorActions.ts` (785 линии → 3 hooks)
 
