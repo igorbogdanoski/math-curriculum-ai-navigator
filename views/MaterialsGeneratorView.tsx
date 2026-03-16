@@ -182,7 +182,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     } = useGeneratorActions({
         state,
         dispatch,
-        curriculum,
+        curriculum: curriculum!,
         allConcepts,
         allNationalStandards,
         user,

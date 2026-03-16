@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import type { User } from 'firebase/auth';
 import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../services/geminiService';
 import { AI_COSTS, sanitizePromptInput } from '../services/gemini/core';
 import { RateLimitError } from '../services/apiErrors';
@@ -9,7 +10,7 @@ import type {
   GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile,
   AIGeneratedIllustration, AIGeneratedLearningPaths, DifferentiationLevel,
   AssessmentQuestion, TeachingProfile, SavedQuestion, AIGeneratedWorkedExample,
-  AIGeneratedPresentation
+  AIGeneratedPresentation, Curriculum, ConceptProgression, PlannerItem,
 } from '../types';
 import { ModalType, PlannerItemType, QuestionType } from '../types';
 import type { GeneratorState, GeneratorAction } from './useGeneratorState';
@@ -63,18 +64,18 @@ type GeneratedMaterial =
 interface UseGeneratorActionsParams {
   state: GeneratorState;
   dispatch: React.Dispatch<GeneratorAction>;
-  curriculum: any;
+  curriculum: Curriculum;
   allConcepts: Concept[];
   allNationalStandards: NationalStandard[] | undefined;
   user: TeachingProfile | null;
-  firebaseUser: any; // Firebase User
+  firebaseUser: User | null;
   isOnline: boolean;
   addNotification: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
-  addItem: (item: any) => Promise<void>;
-  showModal: (type: ModalType, payload: any) => void;
+  addItem: (item: Omit<PlannerItem, 'id'>) => Promise<void>;
+  showModal: (type: ModalType, props?: Record<string, unknown>) => void;
   hideModal: () => void;
-  getConceptDetails: (id: string) => any;
-  findConceptAcrossGrades: (id: string) => any;
+  getConceptDetails: (id: string) => { grade?: Grade; topic?: Topic; concept?: Concept };
+  findConceptAcrossGrades: (id: string) => ConceptProgression | undefined;
   deductCredits?: (amount?: number) => Promise<void>;
   openUpgradeModal?: (reason: string) => void;
 }

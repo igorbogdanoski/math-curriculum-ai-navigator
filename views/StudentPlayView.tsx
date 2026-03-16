@@ -377,28 +377,38 @@ export const StudentPlayView: React.FC = () => {
 
     // С1: If not in E2E mode, save identity link in Firestore
     if (!(window as any).__E2E_MODE__) {
-      firestoreService.saveStudentIdentity(deviceId, trimmed).catch(() => {});
+      firestoreService.saveStudentIdentity(deviceId, trimmed, auth.currentUser?.uid ?? '').catch(() => {});
     }
   };
 
-  const generateRemediaQuiz = async (meta: any, percentage: number) => {
+  const generateRemediaQuiz = async (meta: { conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid?: string }, percentage: number) => {
     if (!meta.conceptId || !id || (window as any).__E2E_MODE__) return;
+    const conceptId = meta.conceptId; // narrowed to string by guard above
     try {
       dispatch({ type: 'SET_GENERATING_REMEDIA', loading: true });
-      const context = `Ученикот штотуку заврши квиз за '${meta.conceptId}' со резултат ${percentage}%.`;
 
       const adaptiveLevel: DifferentiationLevel = getAdaptiveLevel(percentage);
-      const customInstr = adaptiveLevel === 'support'
+      const statusNote = `Ученикот штотуку заврши квиз за '${conceptId}' со резултат ${percentage}%.`;
+      const customInstr = (adaptiveLevel === 'support'
         ? 'РЕМЕДИЈАЛНА ВЕЖБА: Поедноставени прашања, чекор-по-чекор упатства, помал вокабулар. Ученикот не ги положи стандардните прашања.'
         : adaptiveLevel === 'advanced'
         ? 'ЗБОГАТУВАЊЕ: Предизвикувачки прашања со критичко размислување, реален контекст и повеќекорачни решенија.'
-        : 'ВЕЖБА: Стандардни прашања за дополнително вежбање на концептот.';
+        : 'ВЕЖБА: Стандардни прашања за дополнително вежбање на концептот.')
+        + ' ' + statusNote;
+
+      const { grade, topic, concept } = getConceptDetails(conceptId);
+      const generationContext: import('../types').GenerationContext = {
+        type: 'CONCEPT',
+        grade: grade ?? { id: 'unknown', level: meta.gradeLevel ?? 6, title: '', topics: [] },
+        topic,
+        concepts: concept ? [concept] : [],
+      };
 
       const result = await geminiService.generateAssessment(
         'QUIZ',
         [QuestionType.MULTIPLE_CHOICE],
         6,
-        context,
+        generationContext,
         undefined,
         adaptiveLevel,
         undefined,
