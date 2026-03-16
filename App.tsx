@@ -123,6 +123,7 @@ const SystemAdminView = safeLazy(() => import('./views/SystemAdminView').then(mo
 const TestGeneratorView = safeLazy(() => import('./views/TestGeneratorView').then(module => ({ default: module.TestGeneratorView })));
 const SchoolAdminView = safeLazy(() => import('./views/SchoolAdminView').then(module => ({ default: module.SchoolAdminView })));
 const CurriculumEditorView = safeLazy(() => import('./views/CurriculumEditorView').then(module => ({ default: module.CurriculumEditorView })));
+const SchoolOnboardingView = safeLazy(() => import('./views/SchoolOnboardingView').then(module => ({ default: module.SchoolOnboardingView })));
 
 const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     const { openGeneratorPanel } = useGeneratorPanel();
@@ -146,6 +147,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/parent', component: ParentPortalView }, // Parent Portal â€” public
     { path: '/portfolio', component: StudentPortfolioView }, // Ж7.5 Student Portfolio
     { path: '/pricing', component: PricingView }, // Н2 Pricing page — public
+    { path: '/school/register', component: SchoolOnboardingView }, // Н3 School self-registration — public
     { path: '/academy/lesson/:id', component: AcademyLessonView },
     { path: '/academy', component: AcademyView },
     { path: '/', component: HomeView },
@@ -314,6 +316,15 @@ const AppCore: React.FC = () => {
       window.location.hash.startsWith('#/portfolio') ||
       window.location.hash.startsWith('#/parent') ||
       window.location.hash.startsWith('#/pricing');
+
+    // School self-registration is always standalone (no sidebar/auth required)
+    if (window.location.hash.startsWith('#/school/register')) {
+        return (
+            <Suspense fallback={<AppSkeleton />}>
+                <SchoolOnboardingView />
+            </Suspense>
+        );
+    }
 
     if (!isAuthenticated && !isPublicRoute) {
         return (

@@ -70,6 +70,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ email, setEmail, password, setPas
             </button>
         </div>
         </form>
+        <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+            <p className="text-xs text-gray-500 mb-2">Сте директор на училиште?</p>
+            <a
+                href="#/school/register"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary hover:text-brand-secondary transition-colors"
+            >
+                Регистрирај училиште →
+            </a>
+        </div>
     </div>
 );
 
