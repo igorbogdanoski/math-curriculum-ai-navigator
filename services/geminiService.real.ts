@@ -4,7 +4,7 @@ import {
     Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, streamGeminiProxy,
     checkDailyQuotaGuard, TEXT_SYSTEM_INSTRUCTION, SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
     CACHE_COLLECTION, minifyContext, callEmbeddingProxy,
-    streamGeminiProxyRich, type StreamChunk
+    streamGeminiProxyRich, type StreamChunk, type ImagenProxyResponse
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth, storage } from '../firebaseConfig';
@@ -75,26 +75,24 @@ async generateIllustration(prompt: string, image?: { base64: string, mimeType: s
         }
       } catch { /* ignore storage errors */ }
 
-      const response = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
+      const response: ImagenProxyResponse = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
       if (response.inlineData) {
-        const data = response.inlineData;
-        const base64Data = data.data;
-        const mimeType = data.mimeType;
-        
+        const { data: base64Data, mimeType } = response.inlineData;
+
         // О3 — Миграција на AI слики кон Firebase Storage (наместо base64)
         const storagePath = `ai_illustrations/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.png`;
         const storageRef = ref(storage, storagePath);
-        
+
         await uploadString(storageRef, base64Data, 'base64', { contentType: mimeType });
         const imageUrl = await getDownloadURL(storageRef);
 
         try { localStorage.setItem(cacheKey, JSON.stringify({ imageUrl, ts: Date.now() })); } catch { /* quota exceeded — skip */ }
         return { imageUrl, prompt };
       }
-      throw new Error("AI did not return image");
+      throw new Error("AI did not return image data");
     }
 
-    const response = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
+    const response: ImagenProxyResponse = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
     if (response.inlineData) {
         const data = response.inlineData;
         const storagePath = `ai_illustrations/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.png`;
@@ -198,7 +196,7 @@ async generateAnalogy(concept: Concept, gradeLevel: number, profile?: TeachingPr
     return text;
   },
 
-async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, customInstruction?: string): Promise<{ problem: string, strategy?: string, steps: any[] }> {
+async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, customInstruction?: string): Promise<{ problem: string; strategy?: string; steps: Array<{ explanation: string; expression: string }> }> {
     // Cache is skipped when customInstruction is provided (user wants specific problem)
     const cacheKey = `solver_thinking_${conceptTitle.replace(/\s+/g, '_')}_g${gradeLevel}`;
     if (!customInstruction) {
@@ -258,7 +256,7 @@ async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, custo
     return result;
   },
 
-async solveSpecificProblemStepByStep(problemText: string): Promise<{ problem: string, strategy?: string, steps: any[] }> {
+async solveSpecificProblemStepByStep(problemText: string): Promise<{ problem: string; strategy?: string; steps: Array<{ explanation: string; expression: string }> }> {
     const prompt = `
       Ти си експерт за математичка педагогија. Ученикот не успеа да ја реши следнава задача:
       ЗАДАЧА: "${problemText}"
@@ -441,7 +439,7 @@ async analyzeConceptPedagogically(concept: Concept, priorTitles: string[], futur
 
 КОНЦЕПТ: "${concept.title}"
 ОПИС: "${concept.description || 'нема опис'}"
-ОДДЕЛЕНИЕ: ${(concept as any).gradeLevel || '?'}
+ОДДЕЛЕНИЕ: ${'gradeLevel' in concept ? (concept as Concept & { gradeLevel: number }).gradeLevel : '?'}
 ПРЕДЗНАЕЊЕ (мора да се знае пред): ${priorStr}
 СЛЕДНИ ТЕМИ (се гради врз ова): ${futureStr}
 
@@ -463,7 +461,10 @@ async analyzeConceptPedagogically(concept: Concept, priorTitles: string[], futur
       },
       required: ['bloomLevel', 'bloomDetails', 'misconceptions', 'pedagogicalBridge', 'diagnosticQuestion'],
     };
-    return generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, (assessmentAPI as any)._tier);
+    return generateAndParseJSON<{ bloomLevel: string; bloomDetails: string; misconceptions: string[]; pedagogicalBridge: string; diagnosticQuestion: string }>(
+      [{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined,
+      (assessmentAPI as { _tier?: string })._tier
+    );
   },
 
 async analyzeLessonPlan(plan: Partial<LessonPlan>, _profile?: TeachingProfile): Promise<AIPedagogicalAnalysis> {
@@ -518,7 +519,7 @@ async getPersonalizedRecommendations(_profile: TeachingProfile, _lessonPlans: Le
 async parsePlannerInput(input: string): Promise<{ title: string; date: string; type: string; description: string }> {
     const prompt = `Extract details: "${input}".`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, date: { type: Type.STRING }, type: { type: Type.STRING }, description: { type: Type.STRING } }, required: ["title", "date", "type"] };
-    return generateAndParseJSON<any>([{ text: prompt }], schema);
+    return generateAndParseJSON<{ title: string; date: string; type: string; description: string }>([{ text: prompt }], schema);
   },
 
 async generateClassRecommendations(analyticsData: {
@@ -723,17 +724,17 @@ async generateParallelTest(
         required: ["title", "groups"]
     };
 
-    const result = await generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, GeneratedTestSchema);
-    
+    const result = await generateAndParseJSON<GeneratedTest>([{ text: prompt }], schema, DEFAULT_MODEL, GeneratedTestSchema);
+
     // Enrich with metadata not returned by AI
     const enrichedResult: GeneratedTest = {
         ...result,
         topic,
         gradeLevel,
         createdAt: new Date().toISOString(),
-        groups: result.groups.map((g: any) => ({
+        groups: result.groups.map((g: GeneratedTest['groups'][number]) => ({
             ...g,
-            questions: g.questions.map((q: any) => ({
+            questions: g.questions.map((q: GeneratedTest['groups'][number]['questions'][number]) => ({
                 ...q,
                 difficulty: difficulty, // Assign the requested difficulty to all questions
                 type: q.type === 'multiple-choice' ? 'multiple-choice' : 'open-ended' // Normalize types
@@ -807,7 +808,7 @@ async askTutor(message: string, history: Array<{role: string, content: string}>)
     }
   },
 
-async refineMaterialJSON(originalMaterial: any, tweakInstruction: string, _materialType?: string): Promise<any> {
+async refineMaterialJSON(originalMaterial: Record<string, unknown>, tweakInstruction: string, _materialType?: string): Promise<Record<string, unknown>> {
     const prompt = `You are an expert educational AI assistant.
 
 The teacher has already generated the following educational material (in JSON format):
@@ -1257,11 +1258,14 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
   },
 
   // П-Ј — Smart Quiz Title: generate a concise, descriptive title from quiz content
-  async generateSmartQuizTitle(material: any): Promise<string> {
+  async generateSmartQuizTitle(material: Record<string, unknown>): Promise<string> {
     try {
       checkDailyQuotaGuard();
       const questions: string[] = [];
-      const content = material?.questions ?? material?.items ?? material?.content?.questions ?? [];
+      const nestedContent = typeof material?.content === 'object' && material.content !== null
+        ? (material.content as Record<string, unknown>).questions
+        : undefined;
+      const content = material?.questions ?? material?.items ?? nestedContent ?? [];
       for (const q of Array.isArray(content) ? content.slice(0, 5) : []) {
         const text = q?.question || q?.text || '';
         if (text) questions.push(text);

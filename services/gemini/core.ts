@@ -58,6 +58,15 @@ export interface SafetySetting {
     threshold: string;
 }
 
+/** Shape returned by /api/imagen proxy for both Imagen 3 and Gemini Flash image generation */
+export interface ImagenProxyResponse {
+    inlineData?: {
+        mimeType: string;
+        data: string;
+    };
+    error?: string;
+}
+
 // --- DAILY QUOTA GUARD ---
 // Once the daily free-tier quota is exhausted, all calls fail immediately until the next
 // Pacific midnight (= actual Gemini reset time = 09:00 MK time).
@@ -359,7 +368,7 @@ function anySignalAborted(signals: AbortSignal[]): AbortSignal {
 export async function callImagenProxy(params: {
   model?: string;
   prompt: string;
-}, signal?: AbortSignal): Promise<any> {
+}, signal?: AbortSignal): Promise<ImagenProxyResponse> {
   return queueRequest(async () => {
     try {
       const token = await getAuthToken();
