@@ -85,6 +85,7 @@ const LiveDisplayView = safeLazy(() => import('./views/LiveDisplayView').then(mo
 const StudentTutorView = safeLazy(() => import('./views/StudentTutorView').then(module => ({ default: module.StudentTutorView })));
 const ParentPortalView = safeLazy(() => import('./views/ParentPortalView').then(module => ({ default: module.ParentPortalView })));
 const StudentPortfolioView = safeLazy(() => import('./views/StudentPortfolioView').then(module => ({ default: module.StudentPortfolioView })));
+const PricingView = safeLazy(() => import('./views/PricingView').then(module => ({ default: module.PricingView })));
 
 const LoginView = safeLazy(() => import('./views/LoginView').then(module => ({ default: module.LoginView })));
 const AcademyLessonView = safeLazy(() => import('./views/AcademyLessonView').then(module => ({ default: module.AcademyLessonView })));
@@ -144,6 +145,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/tutor', component: StudentTutorView }, // AI Tutor for Students
     { path: '/parent', component: ParentPortalView }, // Parent Portal â€” public
     { path: '/portfolio', component: StudentPortfolioView }, // Ж7.5 Student Portfolio
+    { path: '/pricing', component: PricingView }, // Н2 Pricing page — public
     { path: '/academy/lesson/:id', component: AcademyLessonView },
     { path: '/academy', component: AcademyView },
     { path: '/', component: HomeView },
@@ -310,7 +312,8 @@ const AppCore: React.FC = () => {
       window.location.hash.startsWith('#/live') ||
       window.location.hash.startsWith('#/tutor') ||
       window.location.hash.startsWith('#/portfolio') ||
-      window.location.hash.startsWith('#/parent');
+      window.location.hash.startsWith('#/parent') ||
+      window.location.hash.startsWith('#/pricing');
 
     if (!isAuthenticated && !isPublicRoute) {
         return (

@@ -11,7 +11,7 @@ import { firestoreService } from '../services/firestoreService';
 import { exportUserData, downloadUserDataAsJson } from '../services/firestoreService.gdpr';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled } from '../services/geminiService';
-import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle, Crown, CreditCard, ExternalLink } from 'lucide-react';
 
 const initialProfile: TeachingProfile = {
     name: '',
@@ -104,6 +104,31 @@ export const SettingsView: React.FC = () => {
     const { addNotification } = useNotification();
   const { resetAllTours } = useUserPreferences();
   const { deleteAccount } = useAuth();
+
+  // Billing state
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'Unlimited';
+
+  const handleStripeCheckout = async () => {
+    if (!firebaseUser) return;
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Грешка.');
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Непозната грешка.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   // GDPR state
   const [isExporting, setIsExporting] = useState(false);
@@ -744,6 +769,65 @@ export const SettingsView: React.FC = () => {
                 <p className="text-xs text-gray-400 mt-3">
                     Поставките се зачувуваат локално и се применуваат веднаш низ целата апликација.
                 </p>
+            </Card>
+
+            {/* Н2 — Billing / Претплата */}
+            <Card className={`max-w-2xl ${isPro ? 'border-indigo-200 bg-indigo-50/20' : 'border-slate-200'}`}>
+                <h2 className="text-2xl font-semibold mb-1 flex items-center gap-2 text-indigo-800">
+                    <Crown className="w-6 h-6" />
+                    Претплата
+                </h2>
+                <p className="text-sm text-slate-500 mb-5">
+                    Тековен план и управување со претплата.{' '}
+                    <Link to="/pricing" className="text-indigo-600 hover:underline font-medium">
+                        Погледни ги сите планови
+                    </Link>
+                </p>
+
+                <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4 flex items-center justify-between gap-4">
+                    <div>
+                        <p className="text-sm font-medium text-slate-600">Тековен план</p>
+                        <div className="flex items-center gap-2 mt-1">
+                            {isPro ? (
+                                <>
+                                    <Crown className="w-5 h-5 text-indigo-600" />
+                                    <span className="font-bold text-indigo-700 text-lg">Pro Наставник</span>
+                                </>
+                            ) : (
+                                <span className="font-semibold text-slate-700 text-lg">Бесплатно</span>
+                            )}
+                        </div>
+                        {!isPro && (
+                            <p className="text-xs text-slate-400 mt-1">
+                                Останато кредити: <strong>{user?.aiCreditsBalance ?? 0}</strong>
+                            </p>
+                        )}
+                    </div>
+                    {isPro ? (
+                        <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">✅ Активно</span>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={handleStripeCheckout}
+                            disabled={checkoutLoading}
+                            className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                            {checkoutLoading ? 'Се подготвува...' : 'Надгради на Pro'}
+                        </button>
+                    )}
+                </div>
+
+                {checkoutError && (
+                    <p className="text-red-500 text-xs mb-3">{checkoutError}</p>
+                )}
+
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <ExternalLink className="w-4 h-4" />
+                    <Link to="/pricing" className="text-indigo-600 hover:underline">
+                        Целосна споредба на планови →
+                    </Link>
+                </div>
             </Card>
 
             {/* Н1 — GDPR / Приватност */}
