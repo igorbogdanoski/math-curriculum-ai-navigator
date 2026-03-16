@@ -153,25 +153,51 @@ export function setCorsHeaders(res: VercelResponse): void {
 }
 
 // ---------------------------------------------------------------------------
-// Rate Limiting (In-memory — best-effort in serverless)
-// KNOWN LIMITATION: Vercel serverless functions are stateless. rlMap resets on
-// every cold start, so this only protects within a single warm function instance.
-// For production-grade rate limiting, replace with Vercel KV or Upstash Redis.
+// Rate Limiting — Upstash Redis (distributed, survives cold starts)
+// Falls back to in-memory if env vars are not configured.
 // ---------------------------------------------------------------------------
-const rlMap = new Map<string, number[]>();
-const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 20; // 20 requests per minute per user/ip
+import { Redis } from '@upstash/redis';
+import { Ratelimit } from '@upstash/ratelimit';
 
-function checkRateLimit(identifier: string): boolean {
+let upstashRatelimit: Ratelimit | null = null;
+
+function getUpstashRatelimit(): Ratelimit | null {
+  if (upstashRatelimit) return upstashRatelimit;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const redis = new Redis({ url, token });
+    upstashRatelimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(20, '1 m'), // 20 req/min per user
+      prefix: 'rl:math',
+    });
+    return upstashRatelimit;
+  } catch {
+    return null;
+  }
+}
+
+// In-memory fallback (best-effort, resets on cold start)
+const rlMap = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60000;
+const MAX_REQUESTS_PER_WINDOW = 20;
+
+async function checkRateLimit(identifier: string): Promise<boolean> {
+  const limiter = getUpstashRatelimit();
+  if (limiter) {
+    const { success } = await limiter.limit(identifier);
+    return success;
+  }
+  // Fallback: in-memory
   const now = Date.now();
   let timestamps = rlMap.get(identifier) || [];
   timestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-  
   if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
     rlMap.set(identifier, timestamps);
-    return false; // rate limited
+    return false;
   }
-  
   timestamps.push(now);
   rlMap.set(identifier, timestamps);
   return true;
@@ -226,7 +252,7 @@ export async function authenticateAndValidate(
   }
 
   // 2.5 Apply Rate Limit
-  if (!checkRateLimit(rlIdentifier)) {
+  if (!(await checkRateLimit(rlIdentifier))) {
     console.warn(`[rate-limit] Blocked request from ${rlIdentifier}. Too many requests.`);
     res.status(429).json({ error: 'Rate limit exceeded. Please wait a minute before requesting again.', quotaType: 'rate' });
     return null;
