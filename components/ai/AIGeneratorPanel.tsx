@@ -9,12 +9,25 @@ const MaterialsGeneratorView = React.lazy(() =>
 export const AIGeneratorPanel: React.FC = () => {
     const { isOpen, props, closeGeneratorPanel } = useGeneratorPanel();
     const [isRendered, setIsRendered] = React.useState(isOpen);
+    const openedAtRef = React.useRef<number | null>(null);
 
     React.useEffect(() => {
         if (isOpen) {
             setIsRendered(true);
+            openedAtRef.current = Date.now();
+        } else {
+            openedAtRef.current = null;
         }
     }, [isOpen]);
+
+    const handleClose = React.useCallback(() => {
+        const openMs = openedAtRef.current ? Date.now() - openedAtRef.current : 0;
+        // Warn only if panel was open for more than 15 seconds (user likely generated content)
+        if (openMs > 15_000) {
+            if (!window.confirm('Дали сте сигурни? Незачуваните генерирани материјали ќе се изгубат.')) return;
+        }
+        closeGeneratorPanel();
+    }, [closeGeneratorPanel]);
 
     const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
         // Only handle the dialog's OWN animation end, not child animations that bubble up
@@ -35,7 +48,7 @@ export const AIGeneratorPanel: React.FC = () => {
         <>
             <div
                 className={`fixed inset-0 bg-gray-900/40 z-40 transition-opacity duration-300 ${backdropAnimationClass} no-print backdrop-blur-sm`}
-                onClick={closeGeneratorPanel}
+                onClick={handleClose}
                 aria-hidden="true"
             ></div>
             <div
@@ -50,7 +63,7 @@ export const AIGeneratorPanel: React.FC = () => {
                         <h2 id="ai-generator-panel-title" className="text-2xl font-bold text-brand-primary flex items-center gap-2">
                            <ICONS.generator className="w-7 h-7" /> AI Генератор
                         </h2>
-                        <button type="button" onClick={closeGeneratorPanel} className="p-2.5 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors" aria-label="Затвори го генераторот">
+                        <button type="button" onClick={handleClose} className="p-2.5 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors" aria-label="Затвори го генераторот">
                             <ICONS.close className="w-6 h-6" />
                         </button>
                     </header>

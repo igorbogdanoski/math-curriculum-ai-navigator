@@ -3,12 +3,14 @@ import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTeacherAnalytics } from '../../hooks/useTeacherAnalytics';
-import { AlertTriangle, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Sparkles } from 'lucide-react';
 import { useNavigation } from '../../contexts/NavigationContext';
+import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 
 export const WeakConceptsWidget: React.FC = () => {
     const { firebaseUser } = useAuth();
     const { navigate } = useNavigation();
+    const { openGeneratorPanel } = useGeneratorPanel();
     const { data: analyticsData, isLoading } = useTeacherAnalytics(firebaseUser?.uid);
     const [criticalConcepts, setCriticalConcepts] = useState<any[]>([]);
 
@@ -52,11 +54,25 @@ export const WeakConceptsWidget: React.FC = () => {
                 {criticalConcepts.map((c, idx) => (
                     <div key={idx} className="flex justify-between items-center bg-white p-3 rounded shadow-sm border border-red-100">
                         <span className="font-medium text-sm text-gray-800">{c.title}</span>
-                        <span className="font-black text-red-600 bg-red-100 px-2 py-0.5 rounded-full text-xs">{c.pct}%</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-black text-red-600 bg-red-100 px-2 py-0.5 rounded-full text-xs">{c.pct}%</span>
+                            <button
+                                type="button"
+                                onClick={() => openGeneratorPanel({
+                                    materialType: 'LEARNING_PATH',
+                                    customInstruction: `Генерирај ремедијациска патека за концептот: "${c.title}". Фокус на основни грешки и поддршка.`,
+                                })}
+                                className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-2 py-1 rounded-full hover:bg-indigo-700 transition-colors"
+                                title="Генерирај ремедијациска патека"
+                            >
+                                <Sparkles className="w-3 h-3" /> Ремедијација
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
-            <button 
+            <button
+                type="button"
                 onClick={() => navigate('/analytics')}
                 className="text-sm text-brand-primary font-bold hover:underline flex items-center"
             >

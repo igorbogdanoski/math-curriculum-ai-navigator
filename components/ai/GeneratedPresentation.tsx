@@ -260,9 +260,11 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
   };
 
   const [isExportingPptx, setIsExportingPptx] = useState(false);
+  const [pptxProgress, setPptxProgress] = useState(0);
 
   const downloadPPTX = async () => {
     setIsExportingPptx(true);
+    setPptxProgress(0);
     addNotification('Генерирам PPTX — формулите се рендерираат…', 'info');
     try {
       const pptx = new pptxgen();
@@ -310,6 +312,9 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
         const slideVisual = visuals[idx];
         const pptSlide = pptx.addSlide();
         pptSlide.background = { color: colors.bg };
+
+        // Progress tracking
+        setPptxProgress(Math.round(((idx + 1) / data.slides.length) * 100));
 
         if (slide.type === 'title') {
           pptSlide.addText(slide.title, {
@@ -504,6 +509,13 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
           x: 0.4, y: 5.25, w: SLIDE_W - 0.8, h: 0.28,
           fontSize: 9, color: 'AAAAAA', align: 'right',
         });
+
+        // Speaker notes
+        const notesLines = [
+          `Слајд ${idx + 1}/${data.slides.length}: ${slide.title}`,
+          `Тема: ${data.topic} | Генерирано со Math Navigator AI`,
+        ].join('\n');
+        pptSlide.addNotes(notesLines);
       }
 
       const safeTitle = data.title.replace(/\s+/g, '_').replace(/[<>:"/\\|?*\x00-\x1f]/g, '').slice(0, 80) || 'prezentacija';
@@ -567,7 +579,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                 title="Преземи PPTX (формулите се рендерираат во слики)"
             >
                 {isExportingPptx
-                    ? <><Loader2 className="w-5 h-5 animate-spin" /> Рендерирам…</>
+                    ? <><Loader2 className="w-5 h-5 animate-spin" /> {pptxProgress > 0 ? `${pptxProgress}%` : 'Рендерирам…'}</>
                     : <><FileDown className="w-5 h-5" /> PPTX</>}
             </button>
         </div>
@@ -797,10 +809,10 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                         <div>
                             <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest block mb-2">Дигитални Алатки</span>
                             <div className="grid grid-cols-2 gap-2">
-                                <button className="p-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-2 hover:bg-white/10 transition-colors">
+                                <button type="button" className="p-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-2 hover:bg-white/10 transition-colors">
                                     <MousePointer2 className="w-3 h-3" /> GeoGebra
                                 </button>
-                                <button className="p-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-2 hover:bg-white/10 transition-colors">
+                                <button type="button" className="p-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-2 hover:bg-white/10 transition-colors">
                                     <MousePointer2 className="w-3 h-3" /> Desmos
                                 </button>
                             </div>
@@ -810,7 +822,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
 
                 {/* Quick Actions */}
                 <Card className="p-4 bg-white border-gray-100 flex flex-col gap-2">
-                    <button onClick={() => window.print()} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                    <button type="button" onClick={() => window.print()} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group">
                         <div className="flex items-center gap-3">
                             <ImageIcon className="w-4 h-4 text-gray-400 group-hover:text-brand-primary" />
                             <span className="text-xs font-bold text-gray-600">Печати kako PDF</span>

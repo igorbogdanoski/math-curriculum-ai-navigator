@@ -75,7 +75,8 @@ async generateIllustration(prompt: string, image?: { base64: string, mimeType: s
         }
       } catch { /* ignore storage errors */ }
 
-      const response: ImagenProxyResponse = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
+      const safePrompt = sanitizePromptInput(prompt, 500);
+      const response: ImagenProxyResponse = await callImagenProxy({ model: IMAGEN_MODEL, prompt: safePrompt });
       if (response.inlineData) {
         const { data: base64Data, mimeType } = response.inlineData;
 

@@ -5,7 +5,7 @@ import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiSer
 import { RateLimitError } from '../services/apiErrors';
 import type { AIRecommendation } from '../types';
 
-export function usePersonalizedRecommendations() {
+export function usePersonalizedRecommendations(enabled = true) {
     const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -76,12 +76,14 @@ export function usePersonalizedRecommendations() {
             }
         };
 
+        if (!enabled) { setIsLoading(false); return; }
+
         // Increase delay significantly to allow other startup tasks to finish
         const timerId = setTimeout(fetchRecommendations, 3000);
 
         return () => clearTimeout(timerId);
 
-    }, [firebaseUser?.uid]); // Only depend on UID to prevent re-fetch loops
+    }, [firebaseUser?.uid, enabled]); // Only depend on UID to prevent re-fetch loops
 
     return { recommendations, isLoading, error };
 }

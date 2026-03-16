@@ -6,6 +6,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  * Try Imagen 3 via the `:predict` REST endpoint (Vertex-compatible path on Gemini Developer API).
  * Returns { mimeType, data } on success, null on failure (logs the error).
  */
+const IMAGEN_TIMEOUT_MS = 30_000;
+
 async function tryImagenPredict(apiKey: string, prompt: string): Promise<{ mimeType: string; data: string } | null> {
   // Try Imagen 4 first, fall back to Imagen 3
   const models = ['imagen-4.0-generate-001', 'imagen-3.0-generate-001'];
@@ -13,9 +15,12 @@ async function tryImagenPredict(apiKey: string, prompt: string): Promise<{ mimeT
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:predict?key=${apiKey}`;
     let res: Response;
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), IMAGEN_TIMEOUT_MS);
       res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           instances: [{ prompt }],
           parameters: {
@@ -26,6 +31,7 @@ async function tryImagenPredict(apiKey: string, prompt: string): Promise<{ mimeT
           },
         }),
       });
+      clearTimeout(timeoutId);
     } catch (fetchErr) {
       console.error(`[imagen] ${modelName} fetch error:`, fetchErr);
       continue;

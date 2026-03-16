@@ -1,12 +1,13 @@
 import { useTour } from '../hooks/useTour';
 import React, { useEffect, useState } from 'react';
-import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library, Camera } from 'lucide-react';
+import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library, Camera, Zap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import type { AIRecommendation } from '../types';
 import { RecommendationCard } from '../components/ai/RecommendationCard';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { usePersonalizedRecommendations } from '../hooks/usePersonalizedRecommendations';
+import { isDailyQuotaKnownExhausted } from '../services/geminiService';
 
 import { QuickAIStart } from '../components/home/QuickAIStart';
 import { ContinueBrowsing } from '../components/home/ContinueBrowsing';
@@ -101,8 +102,12 @@ export const HomeView: React.FC = () => {
   const { getLessonPlan, todaysLesson, tomorrowsLesson } = usePlanner();
   const { lastVisited } = useLastVisited();
   const { monthlyActivity, topicCoverage, overallStats, isLoading: isStatsLoading } = useDashboardStats();
-  const { recommendations, isLoading: isRecsLoading, error: recsError } = usePersonalizedRecommendations();
-  useTour('dashboard', dashboardTourSteps, !isStatsLoading && !isRecsLoading);
+  // Lazy-load recommendations — not critical path, fetch after first render
+  const [recsEnabled, setRecsEnabled] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setRecsEnabled(true), 800); return () => clearTimeout(t); }, []);
+  const { recommendations, isLoading: isRecsLoading, error: recsError } = usePersonalizedRecommendations(recsEnabled);
+  const isQuotaExhausted = isDailyQuotaKnownExhausted();
+  useTour('dashboard', dashboardTourSteps, !isStatsLoading);
   const { toursSeen, markTourAsSeen } = useUserPreferences();
   const { suggestion, isLoading: isSuggestionLoading, dismissSuggestion } = useProactiveSuggestions();
   const { openGeneratorPanel } = useGeneratorPanel();
@@ -190,6 +195,14 @@ export const HomeView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ── AI QUOTA BANNER ──────────────────────────────────────────── */}
+      {isQuotaExhausted && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-800 text-sm">
+          <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          <span><strong>Дневниот AI лимит е достигнат.</strong> Генерирањето ќе се обнови во <strong>09:00 часот</strong> (МКВ). Во меѓувреме можеш да ги прегледуваш зачуваните материјали.</span>
+        </div>
+      )}
 
       {/* ── П2: TEACHER DAILY BRIEF ──────────────────────────────────── */}
       {(isBriefLoading || brief) && (
