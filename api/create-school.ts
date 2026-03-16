@@ -24,7 +24,8 @@ function setCors(res: VercelResponse): void {
 
 function getFirebaseAdmin() {
   if (getApps().length === 0) {
-    const sa = process.env.FIREBASE_SERVICE_ACCOUNT;
+    // Support both naming conventions (FIREBASE_SERVICE_ACCOUNT new, GOOGLE_APPLICATION_CREDENTIALS_BASE64 legacy)
+    const sa = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
     if (!sa) return null;
     try {
       const decoded = sa.trim().startsWith('{') ? sa : Buffer.from(sa, 'base64').toString('utf8');

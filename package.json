@@ -12,7 +12,9 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
-    "prepare": "husky"
+    "prepare": "husky",
+    "vercel:env:push": "node scripts/vercel-env-push.mjs",
+    "vercel:env:dry": "node scripts/vercel-env-push.mjs --dry-run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
