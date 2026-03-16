@@ -3,6 +3,7 @@ import { Card } from '../common/Card';
 import type { AIGeneratedRubric, RubricCriterion, RubricLevel } from '../../types';
 import { ICONS } from '../../constants';
 import { useNotification } from '../../contexts/NotificationContext';
+import { downloadAsPdf } from '../../utils/pdfDownload';
 
 interface GeneratedRubricProps {
   material: AIGeneratedRubric;
@@ -10,7 +11,9 @@ interface GeneratedRubricProps {
 
 export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) => {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [isPdfLoading, setIsPdfLoading] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
     const { addNotification } = useNotification();
 
     useEffect(() => {
@@ -25,11 +28,16 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
         };
     }, []);
 
-    const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
+    const handleExport = async (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
         setIsExportMenuOpen(false);
         if (format === 'pdf') {
-            addNotification("Се отвора дијалогот за печатење. Изберете 'Save as PDF' за да го зачувате фајлот.", 'info');
-            window.print();
+            if (!contentRef.current) return;
+            setIsPdfLoading(true);
+            try {
+                await downloadAsPdf(contentRef.current, material.title || 'рубрика');
+            } finally {
+                setIsPdfLoading(false);
+            }
             return;
         }
 
@@ -143,7 +151,7 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
     }
 
     return (
-        <Card id="printable-area" className="border-l-4 border-purple-500">
+        <Card id="printable-area" className="border-l-4 border-purple-500" ref={contentRef}>
              <div className="flex justify-between items-start mb-4">
                 <h3 className="text-2xl font-bold">{material.title}</h3>
                 <div className="flex space-x-2 no-print">

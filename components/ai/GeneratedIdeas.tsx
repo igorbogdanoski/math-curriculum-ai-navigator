@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../common/Card';
+import { downloadAsPdf } from '../../utils/pdfDownload';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
 import { Image as ImageIcon, Loader2, Sparkles, X, RefreshCw } from 'lucide-react';
@@ -120,8 +121,10 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
     const { navigate } = useNavigation();
     const { addNotification } = useNotification();
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [visualizations, setVisualizations] = useState<Record<string, { loading: boolean, url?: string }>>({});
     const exportMenuRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
 
     const handleVisualize = async (section: string, promptText: string) => {
         setVisualizations(prev => ({ ...prev, [section]: { loading: true } }));
@@ -201,11 +204,16 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
         }
     };
     
-    const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
+    const handleExport = async (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
         setIsExportMenuOpen(false);
         if (format === 'pdf') {
-            addNotification("Се отвора дијалогот за печатење. Изберете 'Save as PDF' за да го зачувате фајлот.", 'info');
-            window.print();
+            if (!contentRef.current) return;
+            setIsPdfLoading(true);
+            try {
+                await downloadAsPdf(contentRef.current, material.title || 'идеи-за-час');
+            } finally {
+                setIsPdfLoading(false);
+            }
             return;
         }
         
@@ -306,7 +314,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
     };
 
     return (
-        <Card id="printable-area" className="mt-6 border-l-4 border-yellow-500">
+        <Card id="printable-area" className="mt-6 border-l-4 border-yellow-500" ref={contentRef}>
              <div className="flex justify-between items-start mb-4">
                 <h3 className="text-2xl font-bold">{material.title}</h3>
                 <div className="flex space-x-2 no-print">

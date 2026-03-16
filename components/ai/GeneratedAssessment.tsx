@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bookmark, Image as ImageIcon, Loader2, X, RefreshCw } from 'lucide-react';
 import { Card } from '../common/Card';
+import { downloadAsPdf } from '../../utils/pdfDownload';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
 import type { AIGeneratedAssessment, AssessmentQuestion, DifferentiationLevel } from '../../types';
@@ -242,6 +243,8 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
     const [visualizingIdx, setVisualizingIdx] = useState<number | null>(null);
     const [isBatchVisualizing, setIsBatchVisualizing] = useState(false);
     const actionsMenuRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [isPdfLoading, setIsPdfLoading] = useState(false);
     const { addNotification } = useNotification();
 
     const handleVisualize = async (idx: number, questionText: string) => {
@@ -431,11 +434,17 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         setIsEditing(false);
     };
 
-    const handleExport = (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
+    const handleExport = async (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
         setIsActionsMenuOpen(false);
         if (format === 'pdf') {
-            addNotification("Се отвора дијалогот за печатење. Изберете 'Save as PDF' за да го зачувате фајлот.", 'info');
-            window.print();
+            if (!contentRef.current) return;
+            setIsPdfLoading(true);
+            try {
+                const filename = editableMaterial.title.replace(/[^a-z0-9а-шѓѕјљњќџч]/gi, '_').toLowerCase() || 'тест';
+                await downloadAsPdf(contentRef.current, filename);
+            } finally {
+                setIsPdfLoading(false);
+            }
             return;
         }
 
@@ -579,7 +588,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
 
     return (
         <>
-        <Card id="printable-area" className="mt-6 border-l-4 border-brand-accent">
+        <Card id="printable-area" className="mt-6 border-l-4 border-brand-accent" ref={contentRef}>
             <div className="flex justify-between items-start mb-4">
                 <div className='flex-1 pr-4'>
                     {isEditing ? (
@@ -671,8 +680,8 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                                         <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.copy className="w-5 h-5 mr-3" /> Копирај за Word (форматирано)
                                         </button>
-                                        <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
+                                        <button type="button" onClick={() => handleExport('pdf')} disabled={isPdfLoading} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50">
+                                            {isPdfLoading ? <Loader2 className="w-5 h-5 mr-3 animate-spin" /> : <ICONS.printer className="w-5 h-5 mr-3" />} {isPdfLoading ? 'Генерирање PDF…' : 'Преземи PDF'}
                                         </button>
                                          <button type="button" onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст

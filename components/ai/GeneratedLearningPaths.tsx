@@ -4,6 +4,7 @@ import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
 import type { AIGeneratedLearningPaths, LearningPath, LearningPathStep } from '../../types';
 import { useNotification } from '../../contexts/NotificationContext';
+import { downloadAsPdf } from '../../utils/pdfDownload';
 
 interface GeneratedLearningPathsProps {
   material: AIGeneratedLearningPaths;
@@ -20,7 +21,9 @@ const stepIcons: Record<string, React.ComponentType<{className?: string}>> = {
 export const GeneratedLearningPaths: React.FC<GeneratedLearningPathsProps> = ({ material }) => {
     const { addNotification } = useNotification();
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [isPdfLoading, setIsPdfLoading] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -32,12 +35,17 @@ export const GeneratedLearningPaths: React.FC<GeneratedLearningPathsProps> = ({ 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleExport = (format: 'md' | 'clipboard' | 'pdf') => {
+    const handleExport = async (format: 'md' | 'clipboard' | 'pdf') => {
         setIsExportMenuOpen(false);
 
         if (format === 'pdf') {
-            addNotification("Се отвора дијалогот за печатење. Изберете 'Save as PDF' за да го зачувате фајлот.", 'info');
-            window.print();
+            if (!contentRef.current) return;
+            setIsPdfLoading(true);
+            try {
+                await downloadAsPdf(contentRef.current, material.title || 'патеки-на-учење');
+            } finally {
+                setIsPdfLoading(false);
+            }
             return;
         }
 
@@ -77,7 +85,7 @@ export const GeneratedLearningPaths: React.FC<GeneratedLearningPathsProps> = ({ 
     }
 
     return (
-        <Card id="printable-area" className="mt-6 border-l-4 border-indigo-500">
+        <Card id="printable-area" className="mt-6 border-l-4 border-indigo-500" ref={contentRef}>
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-2xl font-bold">{material.title}</h3>

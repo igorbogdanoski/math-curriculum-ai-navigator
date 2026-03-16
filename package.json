@@ -35,6 +35,7 @@
     "firebase": "^11.4.0",
     "html2canvas": "^1.4.1",
     "idb": "^8.0.3",
+    "jspdf": "^4.2.0",
     "lucide-react": "^0.563.0",
     "mathjs": "^15.1.1",
     "mathlive": "^0.108.3",
