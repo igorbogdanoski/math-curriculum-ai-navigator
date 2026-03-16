@@ -309,22 +309,23 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: (id) => {
               if (id.includes('node_modules')) {
-                // Specific packages FIRST — before the broad 'react' check,
-                // because '@react-pdf' and 'lucide-react' contain "react" in their path
-                // and would otherwise land in vendor-react, corrupting React's init order.
+                // ORDERING IS CRITICAL:
+                // 1. Explicit non-React exceptions FIRST (these contain "react" in their name
+                //    but must NOT go into vendor-react — heavy, independent bundles)
                 if (id.includes('@react-pdf')) return 'vendor-pdf';
                 if (id.includes('lucide-react')) return 'vendor-icons';
                 if (id.includes('docx')) return 'vendor-docx';
                 if (id.includes('zod')) return 'vendor-zod';
-                // Firebase modules
+                // 2. Firebase modules
                 if (id.includes('firebase/app')) return 'vendor-firebase-app';
                 if (id.includes('firebase/auth')) return 'vendor-firebase-auth';
                 if (id.includes('firebase/firestore')) return 'vendor-firebase-firestore';
                 if (id.includes('firebase/storage')) return 'vendor-firebase-storage';
-                // React (broad check is safe now that specific packages are handled above)
-                if (id.includes('react-dom') || id.includes('react-router-dom') || /[/\\]react[/\\]/.test(id)) {
-                  return 'vendor-react';
-                }
+                // 3. BROAD React check — catches react, react-dom, react-router-dom AND
+                //    all React-ecosystem packages (@tanstack/react-query, react-hot-toast,
+                //    react-dnd, etc.) that call React.createContext at init time.
+                //    Must be AFTER the explicit exceptions above.
+                if (id.includes('react')) return 'vendor-react';
                 return 'vendor';
               }
               if (id.includes('views/')) {
