@@ -1,5 +1,5 @@
 import { Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
-import { Concept, Topic, Grade, TeachingProfile, LessonPlan, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, GenerationContext } from '../../types';
+import { Concept, Topic, Grade, TeachingProfile, LessonPlan, LessonScenario, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, AIGeneratedPresentation, GenerationContext } from '../../types';
 import { AIGeneratedIdeasSchema, AnnualPlanSchema, AIGeneratedThematicPlanSchema } from '../../utils/schemas';
 
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -283,7 +283,7 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
     }
   },
 
-  async regenerateLessonPlanSection(section: 'introductory' | 'main' | 'concluding', currentPlan: Partial<LessonPlan>, customInstruction?: string, profile?: TeachingProfile): Promise<any> {
+  async regenerateLessonPlanSection(section: 'introductory' | 'main' | 'concluding', currentPlan: Partial<LessonPlan>, customInstruction?: string, profile?: TeachingProfile): Promise<LessonScenario['main'] | LessonScenario['introductory']> {
     const sectionNames = {
         introductory: 'Воведна активност',
         main: 'Главни активности',
@@ -316,10 +316,10 @@ ${sanitizePromptInput(customInstruction) ? `ДОПОЛНИТЕЛНО БАРАЊ�
     const contents: Part[] = [{ text: prompt }];
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, currentPlan.grade);
     
-    return generateAndParseJSON<any>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
+    return generateAndParseJSON<LessonScenario['main'] | LessonScenario['introductory']>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   },
 
-  async generatePresentation(topic: string, gradeLevel: number, concepts: string[], customInstruction?: string, profile?: TeachingProfile): Promise<any> {
+  async generatePresentation(topic: string, gradeLevel: number, concepts: string[], customInstruction?: string, profile?: TeachingProfile): Promise<AIGeneratedPresentation> {
     const prompt = `
 ### УЛОГА
 Ти си експерт за дизајн на едукативни презентации по математика. Твоја задача е да креираш преглед на слајдови за наставен час.
@@ -376,6 +376,6 @@ ${sanitizePromptInput(customInstruction) ? `- Дополнителни бара�
       required: ["title", "topic", "gradeLevel", "slides"]
     };
 
-    return generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, undefined, profile?.tier);
+    return generateAndParseJSON<AIGeneratedPresentation>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, undefined, profile?.tier);
   }
 };

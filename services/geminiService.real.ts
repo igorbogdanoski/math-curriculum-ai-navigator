@@ -242,7 +242,7 @@ async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, custo
     };
 
     // Standard model is sufficient and 3-5x cheaper on quota than thinking model
-    const result = await generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false);
+    const result = await generateAndParseJSON<{ problem: string; strategy?: string; steps: Array<{ explanation: string; expression: string }> }>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false);
     // Only cache non-custom results for community reuse
     if (!customInstruction && result) {
       await setDoc(doc(db, CACHE_COLLECTION, cacheKey), {
@@ -295,7 +295,7 @@ async solveSpecificProblemStepByStep(problemText: string): Promise<{ problem: st
         required: ["problem", "steps"]
     };
 
-    const result = await generateAndParseJSON<any>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false);
+    const result = await generateAndParseJSON<{ problem: string; strategy?: string; steps: Array<{ explanation: string; expression: string }> }>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false);
     return result;
   },
 
@@ -584,7 +584,7 @@ async generateClassRecommendations(analyticsData: {
       },
     };
 
-    return generateAndParseJSON<any[]>([{ text: prompt }], schema, DEFAULT_MODEL);
+    return generateAndParseJSON<Array<{ priority: number; icon: string; title: string; explanation: string; actionLabel: string; differentiationLevel: 'support' | 'standard' | 'advanced'; conceptId?: string; conceptTitle?: string }>>([{ text: prompt }], schema, DEFAULT_MODEL);
   },
 
 async suggestNextLessons(

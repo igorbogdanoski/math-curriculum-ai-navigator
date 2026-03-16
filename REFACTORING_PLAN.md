@@ -10,7 +10,7 @@
 
 | Спринт | Фокус | Статус |
 |--------|-------|--------|
-| Р1 | Type Safety — 870 `any` + 117 `@ts-ignore` | 🟡 Во тек |
+| Р1 | Type Safety — 870 `any` + 117 `@ts-ignore` | ✅ Завршен |
 | Р2 | Component Decomposition — StudentPlayView + hooks | ⬜ Не започнат |
 | Р3 | Error System + Security + Tests | ⬜ Не започнат |
 
@@ -55,11 +55,17 @@ interface UseGeneratorActionsParams {
 ### Р1-Б: Типизирај ги AI одговорите во `geminiService.real.ts`
 **Проблем**: `data.data`, `p.bytesBase64Encoded` — пристап без type guards
 **Задачи**:
-- [ ] Дефинирај `ImagenPrediction` интерфејс: `{ bytesBase64Encoded: string; mimeType: string }`
-- [ ] Дефинирај `GeminiImagePart` интерфејс: `{ inlineData: { data: string; mimeType: string } }`
-- [ ] Дефинирај `GeminiCandidate` интерфејс за candidates array
-- [ ] Замени сите `as any` кај image generation (линии 145-168)
-- [ ] Додај type guard: `function isImagenPrediction(p: unknown): p is ImagenPrediction`
+- [x] `ImagenProxyResponse` интерфејс во `gemini/core.ts` — `callImagenProxy` типизиран
+- [x] `generateStepByStepSolution` / `solveSpecificProblemStepByStep` — `generateAndParseJSON<any>` → конкретен тип
+- [x] `generatePedagogicalRecommendations` — `generateAndParseJSON<any[]>` → inline return тип
+- [x] `regenerateLessonPlanSection` — `Promise<any>` → `Promise<LessonScenario['main'] | LessonScenario['introductory']>`
+- [x] `generatePresentation` — `Promise<any>` → `Promise<AIGeneratedPresentation>`
+- [x] `generateParallelTest` → `generateAndParseJSON<GeneratedTest>` (претходно)
+- [x] `refineMaterialJSON` → `Record<string, unknown>` (претходно)
+- [x] `generateSmartQuizTitle` → `Record<string, unknown>` param (претходно)
+- [x] `assessment.ts` — отстранет `(assessmentAPI as any)._tier` хак
+- [x] `useDailyBrief.ts` — `(r.playedAt as any)?.toMillis?.()` → `r.playedAt?.toMillis()`
+- [x] `useCurriculum.ts` — `as any` → `as unknown as Concept/Topic`
 
 ### Р1-В: Firestore reads — runtime validation со Zod
 **Проблем**: `docSnap.data() as TeachingProfile` без runtime проверка

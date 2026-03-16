@@ -3,7 +3,7 @@ import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import type { LessonPlan, AIPedagogicalAnalysis, GenerationContext, Grade, Topic, Concept, AIGeneratedIllustration, InfographicLayout } from '../types';
+import type { LessonPlan, LessonScenario, AIPedagogicalAnalysis, GenerationContext, Grade, Topic, Concept, AIGeneratedIllustration, InfographicLayout } from '../types';
 import { InfographicPreviewModal } from '../components/ai/InfographicPreviewModal';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
@@ -257,9 +257,9 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                 const scenario = { ...(newPlan.scenario || { introductory: { text: '' }, main: [], concluding: { text: '' } }) };
                 
                 if (section === 'main') {
-                    scenario.main = newData;
+                    scenario.main = newData as LessonScenario['main'];
                 } else {
-                    scenario[section] = newData;
+                    scenario[section] = newData as LessonScenario['introductory'];
                 }
                 
                 newPlan.scenario = scenario;

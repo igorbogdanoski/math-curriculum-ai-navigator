@@ -43,7 +43,7 @@ function reviewInterval(avg: number): number {
 function aggregateResults(results: Awaited<ReturnType<typeof firestoreService.fetchQuizResults>>) {
   const cutoff = Date.now() - 48 * 60 * 60 * 1000;
   const recent = results.filter(r => {
-    const ms = (r.playedAt as any)?.toMillis?.() ?? 0;
+    const ms = r.playedAt?.toMillis() ?? 0;
     return ms > cutoff;
   });
 
@@ -84,7 +84,7 @@ function computeSpacedRepDue(
   const map: Record<string, { sum: number; count: number; title: string; conceptId?: string; lastMs: number }> = {};
   results.forEach(r => {
     const key = r.conceptId ?? r.quizTitle;
-    const ms = (r.playedAt as any)?.toMillis?.() ?? 0;
+    const ms = r.playedAt?.toMillis() ?? 0;
     if (!map[key]) map[key] = { sum: 0, count: 0, title: r.quizTitle, conceptId: r.conceptId, lastMs: 0 };
     map[key].sum += r.percentage;
     map[key].count++;

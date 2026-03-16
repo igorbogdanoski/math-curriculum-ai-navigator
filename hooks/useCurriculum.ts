@@ -80,7 +80,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             if (!topic) continue;
             // Avoid duplicates on hot-reload
             if (!topic.concepts.find(c => c.id === addition.concept.id)) {
-                topic.concepts.push(addition.concept as any);
+                topic.concepts.push(addition.concept as unknown as Concept);
             }
         }
         // Inject custom topics into their target grades
@@ -88,7 +88,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             const grade = grades.find(g => g.id === topicAdd.gradeId);
             if (!grade) continue;
             if (!grade.topics.find(t => t.id === topicAdd.topic.id)) {
-                grade.topics.push(topicAdd.topic as any);
+                grade.topics.push(topicAdd.topic as unknown as Topic);
             }
         }
         return { grades };
