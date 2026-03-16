@@ -9,29 +9,26 @@ interface TeacherAnalyticsData {
 }
 
 export function useTeacherAnalytics(uid: string | undefined) {
-  console.log('useTeacherAnalytics: Hook called with uid:', uid);
   return useQuery<TeacherAnalyticsData, Error>({
     queryKey: ['teacher-analytics', uid ?? 'anon'],
     queryFn: async () => {
-      console.log('useTeacherAnalytics: queryFn EXECUTION started for uid:', uid);
       // Use smaller page size in E2E to test pagination without massive mocks
       const isE2E = typeof window !== 'undefined' && window.__E2E_TEACHER_MODE__;
       const pageSize = isE2E ? 10 : 500;
 
-      console.log('useTeacherAnalytics: fetching page...');
       const [page, mastery] = await Promise.all([
          firestoreService.fetchQuizResultsPage(uid, pageSize),
          firestoreService.fetchAllMastery(uid),
       ]);
-      console.log('useTeacherAnalytics: fetch complete. results:', page.results.length);
-      
+
       return {
         results: page.results,
         mastery: mastery,
         lastDoc: page.lastDoc
       };
     },
-    // Temporarily disabled check to force execution during E2E debugging
-    enabled: true, 
+    enabled: !!uid,
+    staleTime: 5 * 60 * 1000,   // 5 min — navigating away+back won't re-fetch
+    gcTime:   15 * 60 * 1000,   // 15 min — keep in memory after unmount
   });
 }

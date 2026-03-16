@@ -73,6 +73,7 @@ export function useStudentProgress(studentName: string, isReadOnly: boolean = fa
       };
     },
     enabled: !!studentName.trim() && studentName.trim().length >= 2,
-    staleTime: 2 * 60 * 1000, // 2 minutes cache for student side
+    staleTime: 2 * 60 * 1000,  // 2 min — navigating back won't re-fetch
+    gcTime:   10 * 60 * 1000,  // 10 min — keep in memory after unmount
   });
 }
