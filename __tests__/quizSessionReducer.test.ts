@@ -42,23 +42,16 @@ vi.mock('../components/materials/PrintableHomework', () => ({ PrintableHomework:
 // ---------------------------------------------------------------------------
 // Imports (after mocks are declared)
 // ---------------------------------------------------------------------------
-import { quizSessionReducer, QUIZ_SESSION_INITIAL } from '../views/StudentPlayView';
-import type { QuizResult } from '../services/firestoreService.types';
+import { quizSessionReducer, QUIZ_SESSION_INITIAL } from '../components/student/quizSessionReducer';
+import type { QuizResult } from '../components/student/quizSessionReducer';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 const makeQuizResult = (overrides: Partial<QuizResult> = {}): QuizResult => ({
-  teacherUid: 'teacher-1',
-  studentName: 'Марија',
-  quizId: 'q1',
-  quizTitle: 'Делење',
-  grade: '6',
   percentage: 80,
   correctCount: 8,
   totalQuestions: 10,
-  answers: [],
-  playedAt: null as any,
   ...overrides,
 });
 
@@ -182,7 +175,7 @@ describe('quizSessionReducer', () => {
     });
 
     it('sets homework on HOMEWORK_SUCCESS and clears loading', () => {
-      const hw = { title: 'Домашна', exercises: [], level: 'standard' as any, conceptTitle: 'A' };
+      const hw = { conceptTitle: 'A', gradeLevel: 6, level: 'standard' as const, levelLabel: 'Стандардно', encouragement: 'Одлично!', exercises: [] };
       const loading = { ...QUIZ_SESSION_INITIAL, isHomeworkLoading: true };
       const next = quizSessionReducer(loading, { type: 'HOMEWORK_SUCCESS', homework: hw });
       expect(next.homework).toEqual(hw);
@@ -197,7 +190,7 @@ describe('quizSessionReducer', () => {
     });
 
     it('clears homework on CLOSE_HOMEWORK', () => {
-      const hw = { title: 'Домашна', exercises: [], level: 'standard' as any, conceptTitle: 'A' };
+      const hw = { conceptTitle: 'A', gradeLevel: 6, level: 'standard' as const, levelLabel: 'Стандардно', encouragement: 'Одлично!', exercises: [] };
       const withHw = { ...QUIZ_SESSION_INITIAL, homework: hw };
       const next = quizSessionReducer(withHw, { type: 'CLOSE_HOMEWORK' });
       expect(next.homework).toBeNull();
