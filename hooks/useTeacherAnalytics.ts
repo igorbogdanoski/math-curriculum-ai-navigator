@@ -15,7 +15,7 @@ export function useTeacherAnalytics(uid: string | undefined) {
     queryFn: async () => {
       console.log('useTeacherAnalytics: queryFn EXECUTION started for uid:', uid);
       // Use smaller page size in E2E to test pagination without massive mocks
-      const isE2E = typeof window !== 'undefined' && (window as any).__E2E_TEACHER_MODE__;
+      const isE2E = typeof window !== 'undefined' && window.__E2E_TEACHER_MODE__;
       const pageSize = isE2E ? 10 : 500;
 
       console.log('useTeacherAnalytics: fetching page...');

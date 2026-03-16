@@ -10,7 +10,7 @@ export const OnboardingGate: React.FC = () => {
     const { toursSeen, isPreferencesLoaded, markTourAsSeen } = useUserPreferences();
 
     if (!isAuthenticated || !isPreferencesLoaded) return null;
-    if (toursSeen[ONBOARDING_KEY] || (window as any).__E2E_TEACHER_MODE__) return null;
+    if (toursSeen[ONBOARDING_KEY] || window.__E2E_TEACHER_MODE__) return null;
 
     const handleClose = () => markTourAsSeen(ONBOARDING_KEY);
 

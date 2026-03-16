@@ -35,7 +35,7 @@ if (typeof window !== 'undefined') {
 */
 
 // Firestore Initialization
-const isE2E = typeof window !== 'undefined' && ((window as any).__E2E_TEACHER_MODE__ || (window as any).__E2E_MODE__);
+const isE2E = typeof window !== 'undefined' && (window.__E2E_TEACHER_MODE__ || window.__E2E_MODE__);
 
 const firestoreSettings = {
   ignoreUndefinedProperties: true,

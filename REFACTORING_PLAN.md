@@ -10,7 +10,7 @@
 
 | Спринт | Фокус | Статус |
 |--------|-------|--------|
-| Р1 | Type Safety — 870 `any` + 117 `@ts-ignore` | ⬜ Не започнат |
+| Р1 | Type Safety — 870 `any` + 117 `@ts-ignore` | 🟡 Во тек |
 | Р2 | Component Decomposition — StudentPlayView + hooks | ⬜ Не започнат |
 | Р3 | Error System + Security + Tests | ⬜ Не започнат |
 
@@ -44,11 +44,13 @@ interface UseGeneratorActionsParams {
 }
 ```
 **Задачи**:
-- [ ] Дефинирај `ConceptDetails` тип во `types.ts`
-- [ ] Замени `curriculum: any` → `curriculum: Curriculum`
-- [ ] Замени `firebaseUser: any` → `User | null` (firebase/auth)
-- [ ] Замени `addItem: (item: any)` → union тип
-- [ ] Замени `getConceptDetails` return тип
+- [x] Замени `curriculum: any` → `curriculum: Curriculum`
+- [x] Замени `firebaseUser: any` → `User | null` (firebase/auth)
+- [x] Замени `addItem: (item: any)` → `Omit<PlannerItem, 'id'>`
+- [x] Замени `showModal payload: any` → `Record<string, unknown>`
+- [x] Замени `getConceptDetails` return тип → `{ grade?, topic?, concept? }`
+- [x] Замени `findConceptAcrossGrades` return тип → `ConceptProgression | undefined`
+- [x] Бонус: 3 скриени bugs fixed (saveStudentIdentity arity, generateAssessment context, Grade.label→title)
 
 ### Р1-Б: Типизирај ги AI одговорите во `geminiService.real.ts`
 **Проблем**: `data.data`, `p.bytesBase64Encoded` — пристап без type guards
@@ -62,12 +64,8 @@ interface UseGeneratorActionsParams {
 ### Р1-В: Firestore reads — runtime validation со Zod
 **Проблем**: `docSnap.data() as TeachingProfile` без runtime проверка
 **Задачи**:
-- [ ] Создај `schemas/firestoreSchemas.ts` со Zod schemas за главните колекции:
-  - `TeachingProfileSchema`
-  - `QuizResultSchema`
-  - `SchoolClassSchema`
-- [ ] Создај helper: `parseFirestoreDoc<T>(schema: ZodSchema<T>, data: unknown): T`
-- [ ] Примени во `firestoreService.school.ts` и `firestoreService.quiz.ts`
+- [x] Создај `schemas/firestoreSchemas.ts` — 6 schemas + `parseFirestoreDoc` helper
+- [x] Примени во `AuthContext.tsx` (TeachingProfile), `firestoreService.quiz.ts` (QuizResult, ConceptMastery, StudentGamification), `firestoreService.classroom.ts` (SchoolClass, ClassMembership)
 
 ### Р1-Г: Исклучи `@ts-ignore` — fix underlying issues
 **Задачи**:

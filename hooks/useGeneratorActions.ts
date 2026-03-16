@@ -394,7 +394,7 @@ export function useGeneratorActions({
 
   const handleMaterialRate = (rating: 'up' | 'down', reportText?: string) => {
     if (!firebaseUser?.uid || !generatedMaterial) return;
-    const title = ('title' in generatedMaterial ? (generatedMaterial as any).title : '') ?? '';
+    const title = ('title' in generatedMaterial ? (generatedMaterial as { title?: string }).title : '') ?? '';
     const type = state.materialType ?? 'UNKNOWN';
     firestoreService.saveMaterialFeedback(
       rating, title, type, firebaseUser.uid, reportText,
@@ -475,13 +475,13 @@ export function useGeneratorActions({
       title: `📚 ${conceptTitle} — од верификувана банка`,
       type: 'QUIZ',
       questions: verifiedQs.map(q => ({
-        type: q.type as any,
+        type: (q.type ?? QuestionType.MULTIPLE_CHOICE) as QuestionType,
         question: q.question,
         options: q.options ?? [],
         answer: q.answer,
         solution: q.solution ?? '',
-        cognitiveLevel: (q.cognitiveLevel ?? 'Remembering') as any,
-        difficulty_level: (q.difficulty_level ?? 'Medium') as any,
+        cognitiveLevel: (q.cognitiveLevel ?? 'Remembering') as AssessmentQuestion['cognitiveLevel'],
+        difficulty_level: (q.difficulty_level ?? 'Medium') as AssessmentQuestion['difficulty_level'],
       })),
     };
     setGeneratedMaterial(result);
@@ -639,7 +639,7 @@ export function useGeneratorActions({
               finalContext.concepts || [], finalContext.topic, finalContext.grade.level,
               user ?? undefined, { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel }, effectiveInstruction
             );
-            (result as any).generationContext = finalContext;
+            (result as AIGeneratedIdeas).generationContext = finalContext;
             break;
           case 'ASSESSMENT':
           case 'FLASHCARDS':
@@ -713,7 +713,7 @@ export function useGeneratorActions({
 
               const illRes = await geminiService.generateIllustration(illustrationPrompt, undefined, user ?? undefined);
               if (illRes && illRes.imageUrl) {
-                  (result as any).illustrationUrl = illRes.imageUrl;
+                  (result as { illustrationUrl?: string }).illustrationUrl = illRes.imageUrl;
               }
           } catch (illErr) {
               console.warn("Failed to generate contextual illustration:", illErr);

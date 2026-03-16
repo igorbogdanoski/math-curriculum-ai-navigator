@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // E2E Mock: If teacher mode is requested, bypass real auth
-    if (typeof window !== 'undefined' && (window as any).__E2E_TEACHER_MODE__) {
+    if (typeof window !== 'undefined' && window.__E2E_TEACHER_MODE__) {
         console.info("E2E: Teacher mode detected. Mocking authenticated state.");
         setAuthState({
             firebaseUser: { uid: 'test-teacher-uid', email: 'teacher@test.mk', emailVerified: true } as any,

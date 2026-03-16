@@ -209,7 +209,7 @@ export const StudentPlayView: React.FC = () => {
   // А1: Auth re-init — if returning student (nameConfirmed from localStorage) but
   // Firebase session expired (cleared storage/browser restart), re-auth silently.
   useEffect(() => {
-    if (!nameConfirmed || (window as any).__E2E_MODE__) return;
+    if (!nameConfirmed || window.__E2E_MODE__) return;
     const ensureAuth = async () => {
       if (!auth.currentUser) {
         try { await signInAnonymously(auth); } catch { /* non-fatal */ }
@@ -222,7 +222,7 @@ export const StudentPlayView: React.FC = () => {
   // А1: If no name in localStorage, try to restore from Firestore student_identity by deviceId.
   // This covers: localStorage cleared, incognito→normal, new browser profile on same device.
   useEffect(() => {
-    if (nameConfirmed || (window as any).__E2E_MODE__) return; // already have a name or in E2E mode — skip
+    if (nameConfirmed || window.__E2E_MODE__) return; // already have a name or in E2E mode — skip
     let cancelled = false;
     const restoreIdentity = async () => {
       try {
@@ -246,7 +246,7 @@ export const StudentPlayView: React.FC = () => {
 
   // П-Г: Detect IEP mode — when classId + studentName are resolved, check iepStudents list
   useEffect(() => {
-    if (!classId || !studentName || (window as any).__E2E_MODE__) return;
+    if (!classId || !studentName || window.__E2E_MODE__) return;
     let cancelled = false;
     firestoreService.fetchClassById(classId).then(cls => {
       if (cancelled || !cls) return;
@@ -257,7 +257,7 @@ export const StudentPlayView: React.FC = () => {
 
   // И2: Restore class membership from Firestore on mount (covers localStorage-cleared scenarios)
   useEffect(() => {
-    if ((window as any).__E2E_MODE__) return;
+    if (window.__E2E_MODE__) return;
     let cancelled = false;
     firestoreService.fetchClassMembership(deviceId).then(membership => {
       if (cancelled || !membership?.classId) return;
@@ -358,7 +358,7 @@ export const StudentPlayView: React.FC = () => {
   useEffect(() => {
     if (!quizData || !sessionId || !studentName || !nameConfirmed || inProgressMarkedRef.current) return;
     inProgressMarkedRef.current = true;
-    if (!(window as any).__E2E_MODE__) {
+    if (!window.__E2E_MODE__) {
       firestoreService.markLiveInProgress(sessionId, studentName).catch(() => {});
     }
   }, [quizData, sessionId, studentName, nameConfirmed]);
@@ -376,13 +376,13 @@ export const StudentPlayView: React.FC = () => {
     setNameConfirmed(true);
 
     // С1: If not in E2E mode, save identity link in Firestore
-    if (!(window as any).__E2E_MODE__) {
+    if (!window.__E2E_MODE__) {
       firestoreService.saveStudentIdentity(deviceId, trimmed, auth.currentUser?.uid ?? '').catch(() => {});
     }
   };
 
   const generateRemediaQuiz = async (meta: { conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid?: string }, percentage: number) => {
-    if (!meta.conceptId || !id || (window as any).__E2E_MODE__) return;
+    if (!meta.conceptId || !id || window.__E2E_MODE__) return;
     const conceptId = meta.conceptId; // narrowed to string by guard above
     try {
       dispatch({ type: 'SET_GENERATING_REMEDIA', loading: true });
@@ -433,7 +433,7 @@ export const StudentPlayView: React.FC = () => {
   const handleQuizComplete = async (score: number, correctCount: number, totalQuestions: number, misconceptions?: { question: string; studentAnswer: string; misconception: string }[]) => {
     const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     const meta = quizData!._meta || {};
-    const isE2E = typeof window !== 'undefined' && (window as any).__E2E_MODE__;
+    const isE2E = typeof window !== 'undefined' && window.__E2E_MODE__;
 
     // 1. Save quiz result
     let savedDocId = '';
@@ -1074,7 +1074,7 @@ export const StudentPlayView: React.FC = () => {
                   type="button"
                   onClick={() => {
                     dispatch({ type: 'SET_CONFIDENCE', confidence: rating });
-                    if (quizResultDocId && !(window as any).__E2E_MODE__) firestoreService.updateQuizConfidence(quizResultDocId, rating);
+                    if (quizResultDocId && !window.__E2E_MODE__) firestoreService.updateQuizConfidence(quizResultDocId, rating);
                   }}
                   className={`text-2xl w-12 h-12 rounded-xl transition-all ${isSelected ? 'bg-white/30 scale-125 ring-2 ring-white' : 'hover:bg-white/20 hover:scale-110'}`}
                   title={`${rating}/5`}
@@ -1114,7 +1114,7 @@ export const StudentPlayView: React.FC = () => {
                 disabled={!metacognitiveNote.trim() || !quizResultDocId}
                 onClick={() => {
                   if (!quizResultDocId || !metacognitiveNote.trim()) return;
-                  if (!(window as any).__E2E_MODE__) firestoreService.updateQuizMetacognitiveNote(quizResultDocId, metacognitiveNote);
+                  if (!window.__E2E_MODE__) firestoreService.updateQuizMetacognitiveNote(quizResultDocId, metacognitiveNote);
                   dispatch({ type: 'SET_METACOGNITIVE_SAVED' });
                 }}
                 className="flex items-center justify-center w-10 h-10 mt-auto bg-sky-500 text-white rounded-xl hover:bg-sky-400 transition disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
