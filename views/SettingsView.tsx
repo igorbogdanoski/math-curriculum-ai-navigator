@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card } from '../components/common/Card';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,9 +8,10 @@ import type { TeachingProfile, StudentProfile } from '../types';
 import { ICONS } from '../constants';
 import { InstallApp } from '../components/common/InstallApp';
 import { firestoreService } from '../services/firestoreService';
+import { exportUserData, downloadUserDataAsJson } from '../services/firestoreService.gdpr';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled } from '../services/geminiService';
-import { School, LogOut, CheckCircle2, Loader2 } from 'lucide-react';
+import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle } from 'lucide-react';
 
 const initialProfile: TeachingProfile = {
     name: '',
@@ -101,6 +103,13 @@ export const SettingsView: React.FC = () => {
     );
     const { addNotification } = useNotification();
   const { resetAllTours } = useUserPreferences();
+  const { deleteAccount } = useAuth();
+
+  // GDPR state
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const DELETE_CONFIRM_PHRASE = 'ИЗБРИШИ';
 
 
     const toggleAutoAi = () => {
@@ -277,6 +286,38 @@ export const SettingsView: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setProfile((prev: TeachingProfile) => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleExportData = async () => {
+        if (!firebaseUser?.uid) return;
+        setIsExporting(true);
+        try {
+            const data = await exportUserData(firebaseUser.uid);
+            downloadUserDataAsJson(data, firebaseUser.uid);
+            addNotification('Вашите податоци се преземени успешно.', 'success');
+        } catch {
+            addNotification('Грешка при извоз на податоците. Обидете се повторно.', 'error');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (deleteConfirmText !== DELETE_CONFIRM_PHRASE) return;
+        setIsDeletingAccount(true);
+        try {
+            await deleteAccount();
+            // onAuthStateChanged will handle redirect to login
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Непозната грешка.';
+            // Firebase requires recent login for deleteUser
+            if (msg.includes('requires-recent-login') || msg.includes('recent')) {
+                addNotification('За безбедност, прво одјавете се и повторно најавете се, па обидете се повторно.', 'warning');
+            } else {
+                addNotification(`Грешка при бришење: ${msg}`, 'error');
+            }
+            setIsDeletingAccount(false);
+        }
     };
 
     const handleMigrateCurriculum = async () => {
@@ -703,6 +744,74 @@ export const SettingsView: React.FC = () => {
                 <p className="text-xs text-gray-400 mt-3">
                     Поставките се зачувуваат локално и се применуваат веднаш низ целата апликација.
                 </p>
+            </Card>
+
+            {/* Н1 — GDPR / Приватност */}
+            <Card className="max-w-2xl border-slate-200">
+                <h2 className="text-2xl font-semibold text-slate-800 mb-1 flex items-center gap-2">
+                    <Shield className="w-6 h-6 text-slate-600" />
+                    Приватност и ГДПР (ЗЗЛП)
+                </h2>
+                <p className="text-sm text-slate-500 mb-5">
+                    Во согласност со Законот за заштита на личните податоци, имате право да ги преземете или избришете сите ваши податоци.{' '}
+                    <Link to="/privacy" className="text-indigo-600 hover:underline font-medium">Политика за приватност</Link>
+                </p>
+
+                {/* Export */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <h3 className="font-semibold text-slate-800 flex items-center gap-1.5">
+                                <Download className="w-4 h-4" />
+                                Преземи ги моите податоци
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Квизови, материјали, планови, чет сесии — сè во JSON формат.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleExportData}
+                            disabled={isExporting}
+                            className="px-4 py-2 bg-slate-700 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center gap-2 flex-shrink-0"
+                        >
+                            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            {isExporting ? 'Извезувам...' : 'Преземи'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Delete Account */}
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <h3 className="font-semibold text-red-800 flex items-center gap-1.5 mb-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        Избриши акаунт
+                    </h3>
+                    <p className="text-xs text-red-700 mb-3">
+                        Ова е <strong>неповратна акција</strong>. Сите ваши податоци, материјали, квизови и резултати ќе бидат трајно избришани.
+                    </p>
+                    <p className="text-xs text-slate-600 mb-2">
+                        За потврда напишете <strong className="font-mono">{DELETE_CONFIRM_PHRASE}</strong> подолу:
+                    </p>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={deleteConfirmText}
+                            onChange={e => setDeleteConfirmText(e.target.value.toUpperCase())}
+                            placeholder={DELETE_CONFIRM_PHRASE}
+                            className="flex-1 px-3 py-2 border border-red-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-400"
+                        />
+                        <button
+                            type="button"
+                            onClick={handleDeleteAccount}
+                            disabled={isDeletingAccount || deleteConfirmText !== DELETE_CONFIRM_PHRASE}
+                            className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-40 flex items-center gap-2 flex-shrink-0"
+                        >
+                            {isDeletingAccount ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            {isDeletingAccount ? 'Бришам...' : 'Избриши акаунт'}
+                        </button>
+                    </div>
+                </div>
             </Card>
 
             {/* И1 — School Join Card */}

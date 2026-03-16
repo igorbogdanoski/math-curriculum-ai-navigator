@@ -36,6 +36,7 @@ import { ContextualFAB } from './components/common/ContextualFAB';
 import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
 import { AIChatPanel } from './components/ai/AIChatPanel';
 import { UpgradeModal } from './components/common/UpgradeModal';
+import { CookieConsent } from './components/common/CookieConsent';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -341,6 +342,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                           {children}
                           <GlobalTour />
                           <OnboardingGate />
+                          <CookieConsent />
                         </GeneratorPanelProvider>
                       </UIProvider>
                     </AcademyProgressProvider>

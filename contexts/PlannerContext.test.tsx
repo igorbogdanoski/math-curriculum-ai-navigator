@@ -54,6 +54,7 @@ const mockAuthValue = {
     updateLocalProfile: vi.fn(),
     resendVerificationEmail: vi.fn(),
     resetPassword: vi.fn(),
+    deleteAccount: vi.fn(),
 };
 
 const wrapper: React.FC<{children: React.ReactNode}> = ({ children }) => (

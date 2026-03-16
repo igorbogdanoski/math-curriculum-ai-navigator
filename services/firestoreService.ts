@@ -6,6 +6,7 @@ import * as liveMethods from './firestoreService.live';
 import { spacedRepService } from './firestoreService.spacedRep';
 import * as chatMethods from './firestoreService.chat';
 import { studentAccountService } from './firestoreService.studentAccount';
+import * as gdprMethods from './firestoreService.gdpr';
 
 export * from './firestoreService.types';
 export * from './firestoreService.school';
@@ -16,6 +17,7 @@ export * from './firestoreService.live';
 export * from './firestoreService.spacedRep';
 export * from './firestoreService.chat';
 export * from './firestoreService.studentAccount';
+export * from './firestoreService.gdpr';
 
 export const firestoreService = {
   ...schoolService,
@@ -26,4 +28,5 @@ export const firestoreService = {
   ...spacedRepService,
   ...chatMethods,
   ...studentAccountService,
+  ...gdprMethods,
 };

@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react';
 import type { TeachingProfile } from '../types';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile as firebaseUpdateProfile, type User, sendEmailVerification, sendPasswordResetEmail, signInWithPopup } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile as firebaseUpdateProfile, type User, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, deleteUser } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { app, db, storage, googleProvider } from '../firebaseConfig';
 import { setSentryUser, clearSentryUser } from '../services/sentryService';
 import { parseFirestoreDoc, TeachingProfileSchema } from '../schemas/firestoreSchemas';
+import { deleteAllUserData } from '../services/firestoreService.gdpr';
 
 interface AuthState {
     firebaseUser: User | null;
@@ -25,6 +26,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (profile: TeachingProfile) => Promise<void>;    updateLocalProfile: (profileUpdate: Partial<TeachingProfile>) => void;  resendVerificationEmail: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -271,6 +273,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signOut(auth);
   }, [auth]);
 
+  const deleteAccount = useCallback(async () => {
+    const fbUser = authState.firebaseUser;
+    if (!fbUser) throw new Error('Корисникот не е автентициран.');
+    // 1. Delete all Firestore data first
+    await deleteAllUserData(fbUser.uid);
+    // 2. Delete Firebase Auth account
+    await deleteUser(fbUser);
+    // onAuthStateChanged will fire and clear the local auth state
+  }, [authState.firebaseUser]);
+
   const resendVerificationEmail = useCallback(async () => {
       if (authState.firebaseUser && !authState.firebaseUser.emailVerified) {
           await sendEmailVerification(authState.firebaseUser);
@@ -323,7 +335,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateLocalProfile,
       resendVerificationEmail,
       resetPassword,
-    }), [authState.profile, authState.firebaseUser, authState.isAuthenticated, authState.isLoading, login, loginWithGoogle, register, logout, updateProfile, updateLocalProfile, resendVerificationEmail, resetPassword]);
+      deleteAccount,
+    }), [authState.profile, authState.firebaseUser, authState.isAuthenticated, authState.isLoading, login, loginWithGoogle, register, logout, updateProfile, updateLocalProfile, resendVerificationEmail, resetPassword, deleteAccount]);
 
   return (
     <AuthContext.Provider value={value}>
