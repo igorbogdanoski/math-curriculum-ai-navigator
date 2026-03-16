@@ -295,28 +295,48 @@
 
 ---
 
-## ФАЗА Н — НАЦИОНАЛНА ПЛАТФОРМА *(Месец 5+)*
+## ФАЗА Н — НАЦИОНАЛНА ПЛАТФОРМА *(Месец 5+)* — ВО ТЕК
 
-### Н1 — GDPR/ЗЗЛП Compliance
-- Cookie consent banner
-- Data deletion request функција
-- Privacy policy за малолетници (посебна родителска согласност)
-- Data retention: 3 години → автоматско бришење
+### Н1 — GDPR/ЗЗЛП Compliance ✅ ЗАВРШЕНО
+**Commits:** `6b4dcaf`
+- [x] Cookie consent banner (`CookieConsent.tsx`, localStorage `cookie_consent`)
+- [x] Право на бришење: `deleteAllUserData()` — каскадно брише 15 Firestore колекции + Storage
+- [x] Право на извоз: `exportUserData()` → JSON download
+- [x] Privacy Policy ажурирана — §6 Колачиња, §7 Малолетници, §8 Задржување
+- [x] GDPR card во SettingsView (Export + Delete со потврда "ИЗБРИШИ")
 
-### Н2 — School Licensing & Billing
-- Месечна/годишна лиценца per училиште (€300–800/год)
-- Stripe интеграција
-- 30-дневен trial за нови училишта
+### Н2 — School Licensing & Billing ✅ ЗАВРШЕНО
+**Commits:** `b9f122d`
+- [x] `api/stripe-checkout.ts` — Vercel serverless → Stripe Checkout Session
+- [x] `api/stripe-webhook.ts` — fulfillment: `isPremium: true, tier: 'Pro'` по плаќање
+- [x] `views/PricingView.tsx` — 3 плана (Free/Pro 1200 МКД/School), feature table, FAQ
+- [x] `UpgradeModal.tsx` — Stripe Checkout + bank fallback
+- [ ] **Потребно:** Конфигурирај во Vercel Dashboard (види .env.example)
+  - `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`
 
-### Н3 — МОН Пилот Проект
-- 2-3 пилот-училишта (Скопје + провинција + рурална средина)
-- Независна педагошка евалуација (3 месеци)
-- Извештај пред Биро за развој на образованието
+### Н3 — МОН Пилот Проект ✅ ЗАВРШЕНО (инфраструктура)
+**Commits:** `0988e5e`, `ab824de`
+- [x] `api/create-school.ts` — Firebase Admin SDK: create school + promote to school_admin
+- [x] `views/SchoolOnboardingView.tsx` — 3-чекорен wizard за директори (`/school/register`)
+- [x] `views/LoginView.tsx` — "Регистрирај училиште →" CTA
+- [x] `components/common/DemoBanner.tsx` — amber banner кога `VITE_DEMO_MODE=true`
+- [x] `views/SchoolAdminView.tsx` — Директорски портал (KPIs, charts, join code, teacher table) — MON-ready
+- [ ] **Потребно:** `FIREBASE_SERVICE_ACCOUNT` (base64) во Vercel + `VITE_DEMO_MODE=true` за demo env
+- [x] 130+ активни корисници од повеќе училишта — официјализација, не пилот
 
-### Н4 — Средно образование (6+ месеци)
-- Алгебра, Тригонометрија, Математичка анализа, Статистика
-- Матурска симулација (ДИМ формат)
-- LaTeX editor за ученици
+### Н4 — Средно образование ✅ ОСНОВИ ЗАВРШЕНИ (чека наставни програми)
+**Commits:** `1499ce4`
+- [x] `SecondaryTrack` тип + `SECONDARY_TRACK_LABELS` + `SecondaryCurriculumModule` интерфејс
+- [x] `TeachingProfile.secondaryTrack` — наставниците избираат свој тип
+- [x] Curriculum stubs (реални теми, МОН-усогласени, без детални концепти):
+  - `data/secondary/gymnasium.ts` — Гимназиско X–XII (Логика→Функции→Логаритми→Тригонометрија→Анал.Геом.→Низи→Комбинаторика→Комплексни→Граници→Деривати→Интеграли→Статистика)
+  - `data/secondary/vocational4.ts` — Стручно 4-год X–XII (применет пристап)
+  - `data/secondary/vocational3.ts` — Стручно 3-год X–XI (практично/занаетски)
+- [x] `hooks/useSecondaryCurriculum.ts` — статичен hook (без loading)
+- [x] SettingsView — dropdown за избор на тип (Основно I–IX / Гимназиско / Стручно 4-год / Стручно 3-год)
+- [ ] **Чека:** Официјални наставни програми од МОН → JSON шаблон: `docs/CURRICULUM_DATA_TEMPLATE.json`
+- [ ] **Чека:** Мaturski тестови (ДИМ) → водич: `docs/MATURA_PDF_GUIDE.md`
+- [ ] **Следно по добивање податоци:** PopulateConceptsForSecondaryCurriculum + AI контекст за secondary
 
 ---
 
@@ -385,13 +405,34 @@ IndexedDB (sync)
                                           ↓
                               О1 ✅  →  О2 ✅  →  О3 ✅  ← ФАЗА О ЗАВРШЕНА
                                           ↓
-                              Н1 ⬜  →  Н2 ⬜  →  Н3 ⬜  →  Н4 ⬜
+                              Н1 ✅  →  Н2 ✅  →  Н3 ✅  →  Н4 (основи) ✅
+                                                              ↓
+                                                     Чека: МОН програми PDF
+                                                     Чека: ДИМ мaturski PDF
 ```
 
-### Следна: ФАЗА Н — Национална Платформа (Месец 5+)
+### Тековна: ФАЗА Н — Во тек (Сесија 8)
+
+#### Конфигурациски чекори (Vercel Dashboard)
+
+| Var | Вредност | Потребно за |
+|-----|----------|-------------|
+| `FIREBASE_SERVICE_ACCOUNT` | base64(service-account.json) | api/create-school |
+| `ALLOWED_ORIGIN` | `https://math-curriculum-ai-navigator.vercel.app` | CORS |
+| `STRIPE_SECRET_KEY` | `sk_live_...` | Stripe Checkout |
+| `STRIPE_PRO_PRICE_ID` | `price_...` | Stripe Pro план |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_...` | Stripe Webhook |
+| `VITE_DEMO_MODE` | `true` (САМО на demo deployment) | MON презентации |
+
+#### Следно по добивање PDF материјали
+
+1. Испратете PDF на МОН наставни програми за средно → автоматска екстракција со Gemini
+2. Испратете ДИМ матурски тестови → `MaturaSimulationView`
+3. Шаблон за рачен внес: `docs/CURRICULUM_DATA_TEMPLATE.json`
+4. Водич за PDF: `docs/MATURA_PDF_GUIDE.md`
 
 ---
 
 *Создадено: 15 Март 2026*
-*Последно ажурирање: 16 Март 2026 (Сесија 7 — О1/О2/О3 ✅ Offline + E2E + Performance Audit)*
-*Следно ревидирање: По завршување на Фаза Н1 (GDPR)*
+*Последно ажурирање: 16 Март 2026 (Сесија 8 — Фаза Н ✅ Н1–Н4 инфраструктура завршена)*
+*Следно ревидирање: По добивање на МОН програми и ДИМ тестови*

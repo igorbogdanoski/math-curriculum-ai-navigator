@@ -1,0 +1,116 @@
+{
+  "_comment": "Шаблон за наставна програма — Math Curriculum AI Navigator (Н4 Средно образование)",
+  "_instructions": [
+    "Пополнете го овој JSON за секое одделение (X, XI, XII) и за секој тип (gymnasium / vocational4 / vocational3).",
+    "Зачувајте го фајлот и испратете го — ќе биде автоматски конвертиран во TypeScript.",
+    "Задолжителни полиња: id, level, title, secondaryTrack, topics[].id, topics[].title, topics[].concepts[].id, topics[].concepts[].title",
+    "Незадолжителни: suggestedHours, topicLearningOutcomes, description, assessmentStandards, priorKnowledgeIds"
+  ],
+
+  "grade": {
+    "id": "gym-grade-10",
+    "_id_convention": "gym=гимназиско | voc4=стручно4год | voc3=стручно3год, потоа -grade-10/11/12",
+
+    "level": 10,
+    "_level_note": "10, 11, или 12",
+
+    "title": "X (десетто) — Гимназиско",
+    "_title_examples": [
+      "X (десетто) — Гимназиско",
+      "XI (единаесетто) — Стручно 4-год",
+      "XI (единаесетто) — Стручно 3-год"
+    ],
+
+    "secondaryTrack": "gymnasium",
+    "_secondaryTrack_values": ["gymnasium", "vocational4", "vocational3"],
+
+    "levelDescription": "Кратко опишете го одделението (1 реченица)",
+
+    "topics": [
+      {
+        "id": "gym10-t1",
+        "_id_convention": "{track}{level}-t{бр} — пр. gym10-t1, voc4-11-t2",
+
+        "title": "МНОЖЕСТВА И ЛОГИКА",
+        "_title_note": "ГОЛЕМА КИРИЛИЦА, идентично со наставната програма на МОН",
+
+        "suggestedHours": 16,
+        "_suggestedHours_note": "Вкупен број часови за темата (стандарден фонд)",
+
+        "topicLearningOutcomes": [
+          "Исход 1 — опишувачки, глагол на Блум (знае, применува, анализира...)",
+          "Исход 2",
+          "Исход 3"
+        ],
+
+        "concepts": [
+          {
+            "id": "gym10-c1-1",
+            "_id_convention": "{track}{level}-c{тема}-{бр} — пр. gym10-c1-1",
+
+            "title": "Операции со множества",
+            "_title_note": "Краток назив на концептот/наставната единица",
+
+            "description": "Унија, пресек, разлика, комплемент; Ven-дијаграми; примери.",
+            "_description_note": "1-2 реченици: клучни поими и методи",
+
+            "assessmentStandards": [
+              "Го применува ученикот... (конкретна мерлива компетенција)",
+              "Ги решава задачи со... (друга компетенција)"
+            ],
+            "_assessmentStandards_note": "Директно од МОН програмата ако постои, или напишете свои",
+
+            "priorKnowledgeIds": [],
+            "_priorKnowledgeIds_note": "IDs на концепти од претходни одделенија (може да остане [])",
+
+            "nationalStandardIds": [],
+            "_nationalStandardIds_note": "Оставете [] — ќе се поврзат подоцна со МОН стандардите"
+          },
+          {
+            "id": "gym10-c1-2",
+            "title": "Втор концепт од истата тема",
+            "description": "Опис...",
+            "assessmentStandards": ["Стандард 1"],
+            "priorKnowledgeIds": [],
+            "nationalStandardIds": []
+          }
+        ]
+      },
+      {
+        "id": "gym10-t2",
+        "title": "ВТОРА ТЕМА",
+        "suggestedHours": 20,
+        "topicLearningOutcomes": ["Исход 1"],
+        "concepts": [
+          {
+            "id": "gym10-c2-1",
+            "title": "Прв концепт",
+            "description": "Опис...",
+            "assessmentStandards": ["Стандард"],
+            "priorKnowledgeIds": [],
+            "nationalStandardIds": []
+          }
+        ]
+      }
+    ]
+  },
+
+  "_delivery_checklist": {
+    "files_needed": [
+      "gymnasium_grade10.json  — Гимназиско X одделение",
+      "gymnasium_grade11.json  — Гимназиско XI одделение",
+      "gymnasium_grade12.json  — Гимназиско XII одделение",
+      "vocational4_grade10.json",
+      "vocational4_grade11.json",
+      "vocational4_grade12.json",
+      "vocational3_grade10.json",
+      "vocational3_grade11.json"
+    ],
+    "minimum_viable": [
+      "Задолжително: id, level, title, secondaryTrack",
+      "За секоја тема: id, title, concepts[]",
+      "За секој концепт: id, title — останатото може да се додаде подоцна"
+    ],
+    "tip": "Ако имате PDF на наставната програма — испратете го директно. Ќе го парсираме со Gemini автоматски (види MATURA_PDF_GUIDE.md)."
+  }
+}
