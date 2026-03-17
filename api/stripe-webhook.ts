@@ -13,9 +13,6 @@
  * IMPORTANT: This endpoint must receive the raw request body (bodyParser disabled via exported config below).
  */
 
-// Disable Vercel's automatic body parsing so Stripe can verify the raw signature
-export const config = { api: { bodyParser: false } };
-
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
