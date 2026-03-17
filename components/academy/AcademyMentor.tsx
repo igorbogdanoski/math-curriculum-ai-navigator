@@ -59,7 +59,7 @@ export const AcademyMentor: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) =
       }));
 
       const response = await callGeminiProxy({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-pro',
         contents,
         systemInstruction: systemPrompt,
         userTier: user?.tier

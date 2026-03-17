@@ -42,7 +42,7 @@ export const AcademyQuiz: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => 
 Одговорите да бидат на македонски јазик.`;
 
       const response = await callGeminiProxy({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-pro',
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { responseMimeType: "application/json" }
       });

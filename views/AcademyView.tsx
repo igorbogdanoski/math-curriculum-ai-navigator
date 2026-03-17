@@ -56,6 +56,20 @@ export const AcademyView: React.FC = () => {
         title: key,
         id: slugify('focus ' + key)
       }))
+    },
+    {
+      id: 'assessment',
+      title: 'Наука за оценување',
+      description: 'Три научно докажани модели за сумативно оценување: Мастери, SBG и CBE. Со директна врска кон МОН стандардите.',
+      icon: Brain,
+      color: 'bg-green-50 text-green-700',
+      borderColor: 'border-green-200',
+      topics: [
+        { title: 'Мастери учење — Bloom 1968', id: 'assessment-mastery-learning' },
+        { title: 'Оценување по стандарди (SBG)', id: 'assessment-sbg' },
+        { title: 'Компетентносно образование (CBE)', id: 'assessment-cbe' },
+      ],
+      badge: 'НОВО',
     }
   ];
 
@@ -326,8 +340,11 @@ export const AcademyView: React.FC = () => {
                 </div>
               </div>
               
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
                 {module.title}
+                {'badge' in module && module.badge && (
+                  <span className="px-2 py-0.5 bg-green-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider">{module.badge as string}</span>
+                )}
               </h3>
               
               <p className="text-gray-600 mb-6 text-sm flex-1">
