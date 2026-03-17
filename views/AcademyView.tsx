@@ -10,6 +10,7 @@ import { ACADEMY_CONTENT } from '../data/academy/content';
 import { SPECIALIZATIONS } from '../data/academy/specializations';
 
 import { AcademyCertificateButton } from '../components/academy/AcademyCertificate';
+import { AcademyDailyHub } from '../components/academy/AcademyDailyHub';
 import { useAuth } from '../contexts/AuthContext';
 
 export const AcademyView: React.FC = () => {
@@ -172,6 +173,14 @@ export const AcademyView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Daily Hub: Streak + AI Challenge + Competency Radar */}
+      <AcademyDailyHub
+        modules={MODULES}
+        readLessons={readLessons}
+        appliedLessons={appliedLessons}
+        completedQuizzes={completedQuizzes}
+      />
 
       {/* TPACK Section */}
       <div className={`mb-8 rounded-2xl border-2 p-6 ${tpackMaster ? 'border-yellow-300 bg-yellow-50' : 'border-gray-100 bg-white'}`}>
