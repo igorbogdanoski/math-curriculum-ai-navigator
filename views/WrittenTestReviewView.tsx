@@ -1,6 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, Camera, FileText, Loader2, CheckCircle2, XCircle, AlertTriangle, Brain, Sparkles, ChevronDown, ChevronUp, Trash2, Plus, Eye } from 'lucide-react';
+import {
+  Upload, Camera, FileText, Loader2, CheckCircle2, XCircle, AlertTriangle,
+  Brain, Sparkles, ChevronDown, ChevronUp, Trash2, Plus, Eye,
+  Users, BarChart3, Flame, User
+} from 'lucide-react';
 import { geminiService } from '../services/geminiService';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface TestQuestion {
   id: string;
@@ -17,113 +23,216 @@ interface GradeResult {
   misconception?: string;
 }
 
+interface StudentSubmission {
+  id: string;
+  name: string;
+  file: File;
+  preview: string;
+  status: 'pending' | 'processing' | 'done' | 'error';
+  results?: GradeResult[];
+}
+
+interface HeatmapEntry {
+  questionId: string;
+  questionText: string;
+  maxPoints: number;
+  avgEarned: number;
+  successRate: number;  // 0–1
+  misconceptions: string[];
+}
+
+type Mode = 'single' | 'batch';
+
 const DEFAULT_QUESTIONS: TestQuestion[] = [
   { id: '1', text: '', points: 10, correctAnswer: '' },
   { id: '2', text: '', points: 10, correctAnswer: '' },
   { id: '3', text: '', points: 10, correctAnswer: '' },
 ];
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function heatColor(rate: number): string {
+  if (rate >= 0.8) return 'bg-green-500';
+  if (rate >= 0.6) return 'bg-lime-400';
+  if (rate >= 0.4) return 'bg-amber-400';
+  if (rate >= 0.2) return 'bg-orange-500';
+  return 'bg-red-500';
+}
+
+function mkGrade(pct: number) {
+  if (pct >= 90) return { grade: '5', label: 'Одличен', color: 'text-green-600' };
+  if (pct >= 75) return { grade: '4', label: 'Мн. добар', color: 'text-blue-600' };
+  if (pct >= 60) return { grade: '3', label: 'Добар', color: 'text-yellow-600' };
+  if (pct >= 50) return { grade: '2', label: 'Доволен', color: 'text-orange-600' };
+  return { grade: '1', label: 'Незад.', color: 'text-red-600' };
+}
+
+function readFileAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target?.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export const WrittenTestReviewView: React.FC = () => {
+  const [mode, setMode] = useState<Mode>('single');
+
+  // Shared state
+  const [questions, setQuestions] = useState<TestQuestion[]>(DEFAULT_QUESTIONS);
+  const [expandedSetup, setExpandedSetup] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Single mode
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [questions, setQuestions] = useState<TestQuestion[]>(DEFAULT_QUESTIONS);
-  const [results, setResults] = useState<GradeResult[]>([]);
+  const [singleResults, setSingleResults] = useState<GradeResult[]>([]);
   const [isGrading, setIsGrading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [expandedSetup, setExpandedSetup] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragRef = useRef<HTMLDivElement>(null);
 
-  const handleFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setError('Ве молиме прикачете слика (JPG, PNG, WebP).');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Сликата е преголема (максимум 10MB).');
-      return;
-    }
+  // Batch mode
+  const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
+  const [batchProgress, setBatchProgress] = useState(0);
+  const [isBatchGrading, setIsBatchGrading] = useState(false);
+  const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
+
+  const singleInputRef = useRef<HTMLInputElement>(null);
+  const batchInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Question helpers ──
+  const addQuestion = () => {
+    const newId = String(questions.length + 1);
+    setQuestions(prev => [...prev, { id: newId, text: '', points: 10, correctAnswer: '' }]);
+  };
+  const removeQuestion = (id: string) => {
+    if (questions.length <= 1) return;
+    setQuestions(prev => prev.filter(q => q.id !== id));
+  };
+  const updateQuestion = (id: string, field: keyof TestQuestion, value: string | number) => {
+    setQuestions(prev => prev.map(q => q.id === id ? { ...q, [field]: value } : q));
+  };
+  const validQuestions = questions.filter(q => q.text.trim() && q.correctAnswer.trim());
+
+  // ── Single mode ──
+  const handleSingleFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) { setError('Само слики (JPG, PNG, WebP).'); return; }
+    if (file.size > 10 * 1024 * 1024) { setError('Максимум 10MB.'); return; }
     setImageFile(file);
     setError(null);
-    setResults([]);
-    const reader = new FileReader();
-    reader.onload = (e) => setImagePreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+    setSingleResults([]);
+    const preview = await readFileAsDataURL(file);
+    setImagePreview(preview);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
-
-  const handleGrade = async () => {
+  const handleSingleGrade = async () => {
     if (!imageFile || !imagePreview) return;
-    const validQuestions = questions.filter(q => q.text.trim() && q.correctAnswer.trim());
-    if (validQuestions.length === 0) {
-      setError('Внесете барем едно прашање со точен одговор.');
-      return;
-    }
-
+    if (validQuestions.length === 0) { setError('Внесете барем едно прашање со точен одговор.'); return; }
     setIsGrading(true);
     setError(null);
-
     try {
-      // Extract base64 from data URL
       const base64 = imagePreview.split(',')[1];
-      const mimeType = imageFile.type;
-
-      const gradeResults = await geminiService.gradeTestWithVision(
-        base64,
-        mimeType,
-        validQuestions.map(q => ({
-          id: q.id,
-          text: q.text,
-          points: q.points,
-          correctAnswer: q.correctAnswer
-        }))
+      const results = await geminiService.gradeTestWithVision(
+        base64, imageFile.type,
+        validQuestions.map(q => ({ id: q.id, text: q.text, points: q.points, correctAnswer: q.correctAnswer }))
       );
-
-      setResults(gradeResults);
+      setSingleResults(results);
       setExpandedSetup(false);
-    } catch (err) {
-      console.error('Vision grading error:', err);
-      setError('Настана грешка при прегледувањето. Обидете се повторно.');
+    } catch {
+      setError('Грешка при прегледувањето. Обидете се повторно.');
     } finally {
       setIsGrading(false);
     }
   };
 
-  const addQuestion = () => {
-    const newId = String(questions.length + 1);
-    setQuestions(prev => [...prev, { id: newId, text: '', points: 10, correctAnswer: '' }]);
+  // ── Batch mode ──
+  const handleBatchFiles = useCallback(async (files: FileList) => {
+    const arr = Array.from(files).filter(f => f.type.startsWith('image/')).slice(0, 30);
+    if (arr.length === 0) { setError('Изберете слики (JPG, PNG, WebP).'); return; }
+    setError(null);
+    const newSubs: StudentSubmission[] = await Promise.all(
+      arr.map(async (file, i) => ({
+        id: crypto.randomUUID(),
+        name: `Ученик ${i + 1}`,
+        file,
+        preview: await readFileAsDataURL(file),
+        status: 'pending' as const,
+      }))
+    );
+    setSubmissions(prev => [...prev, ...newSubs]);
+  }, []);
+
+  const handleBatchGrade = async () => {
+    if (submissions.length === 0 || validQuestions.length === 0) {
+      setError('Додајте слики и пополнете ги прашањата.');
+      return;
+    }
+    setIsBatchGrading(true);
+    setBatchProgress(0);
+    setError(null);
+
+    const qList = validQuestions.map(q => ({ id: q.id, text: q.text, points: q.points, correctAnswer: q.correctAnswer }));
+
+    for (let i = 0; i < submissions.length; i++) {
+      const sub = submissions[i];
+      setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'processing' } : s));
+      try {
+        const base64 = sub.preview.split(',')[1];
+        const results = await geminiService.gradeTestWithVision(base64, sub.file.type, qList);
+        setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'done', results } : s));
+      } catch {
+        setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'error' } : s));
+      }
+      setBatchProgress(i + 1);
+      // Small delay to respect rate limits
+      if (i < submissions.length - 1) await new Promise(r => setTimeout(r, 600));
+    }
+    setIsBatchGrading(false);
+    setExpandedSetup(false);
   };
 
-  const removeQuestion = (id: string) => {
-    if (questions.length <= 1) return;
-    setQuestions(prev => prev.filter(q => q.id !== id));
-  };
+  // ── Computed class stats ──
+  const doneSubmissions = submissions.filter(s => s.status === 'done' && s.results);
+  const heatmap: HeatmapEntry[] = validQuestions.map(q => {
+    const resultsForQ = doneSubmissions
+      .map(s => s.results?.find(r => r.questionId === q.id))
+      .filter(Boolean) as GradeResult[];
+    const avgEarned = resultsForQ.length
+      ? resultsForQ.reduce((sum, r) => sum + r.earnedPoints, 0) / resultsForQ.length
+      : 0;
+    const maxP = resultsForQ[0]?.maxPoints ?? q.points;
+    const misconceptions = resultsForQ.map(r => r.misconception).filter(Boolean) as string[];
+    return {
+      questionId: q.id,
+      questionText: q.text,
+      maxPoints: maxP,
+      avgEarned,
+      successRate: maxP > 0 ? avgEarned / maxP : 0,
+      misconceptions,
+    };
+  });
 
-  const updateQuestion = (id: string, field: keyof TestQuestion, value: string | number) => {
-    setQuestions(prev => prev.map(q => q.id === id ? { ...q, [field]: value } : q));
-  };
+  const classAvg = doneSubmissions.length
+    ? Math.round(doneSubmissions.map(s => {
+        const total = s.results!.reduce((sum, r) => sum + r.earnedPoints, 0);
+        const max = s.results!.reduce((sum, r) => sum + r.maxPoints, 0);
+        return max > 0 ? (total / max) * 100 : 0;
+      }).reduce((a, b) => a + b, 0) / doneSubmissions.length)
+    : 0;
 
-  const totalEarned = results.reduce((sum, r) => sum + r.earnedPoints, 0);
-  const totalMax = results.reduce((sum, r) => sum + r.maxPoints, 0);
-  const percentage = totalMax > 0 ? Math.round((totalEarned / totalMax) * 100) : 0;
+  const allMisconceptions = heatmap.flatMap(h => h.misconceptions);
+  const miscCounts: Record<string, number> = {};
+  allMisconceptions.forEach(m => { miscCounts[m] = (miscCounts[m] || 0) + 1; });
+  const topMisconceptions = Object.entries(miscCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
 
-  const getMkGrade = (pct: number) => {
-    if (pct >= 90) return { grade: '5', label: 'Одличен', color: 'text-green-600' };
-    if (pct >= 75) return { grade: '4', label: 'Многу добар', color: 'text-blue-600' };
-    if (pct >= 60) return { grade: '3', label: 'Добар', color: 'text-yellow-600' };
-    if (pct >= 50) return { grade: '2', label: 'Доволен', color: 'text-orange-600' };
-    return { grade: '1', label: 'Незадоволителен', color: 'text-red-600' };
-  };
-
-  const gradeInfo = getMkGrade(percentage);
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 p-4 sm:p-6">
+
       {/* Header */}
       <div className="flex items-start gap-4">
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
@@ -131,26 +240,45 @@ export const WrittenTestReviewView: React.FC = () => {
         </div>
         <div>
           <h1 className="text-2xl font-black text-gray-900">AI Прегледувач на писмени работи</h1>
-          <p className="text-gray-500 mt-1">
-            Прикачи слика од рачно напишан тест — Gemini 2.5 Pro Vision ги чита одговорите, ги оценува и ги идентификува типичните грешки.
-          </p>
-          <div className="mt-2 inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 text-xs font-bold px-3 py-1 rounded-full">
-            <Sparkles className="w-3 h-3" />
-            Gemini 2.5 Pro Vision
+          <p className="text-gray-500 mt-1">Gemini 2.5 Pro Vision ги чита рачно напишаните одговори и ги оценува по прашање.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <div className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 text-xs font-bold px-3 py-1 rounded-full">
+              <Sparkles className="w-3 h-3" /> Gemini 2.5 Pro Vision
+            </div>
+            <div className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">
+              <Users className="w-3 h-3" /> До 30 ученика одеднаш
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Mode Switcher */}
+      <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl w-fit">
+        {(['single', 'batch'] as Mode[]).map(m => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => { setMode(m); setError(null); }}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-sm transition-all ${
+              mode === m ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {m === 'single' ? <><User className="w-4 h-4" /> Поединечно</> : <><Users className="w-4 h-4" /> Класа (до 30)</>}
+          </button>
+        ))}
       </div>
 
       {/* Setup Panel */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <button
+          type="button"
           onClick={() => setExpandedSetup(s => !s)}
           className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors"
         >
           <div className="flex items-center gap-3">
             <FileText className="w-5 h-5 text-violet-600" />
             <span className="font-bold text-gray-900">Поставки за прегледување</span>
-            {results.length > 0 && (
+            {(singleResults.length > 0 || doneSubmissions.length > 0) && (
               <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">Завршено</span>
             )}
           </div>
@@ -159,272 +287,457 @@ export const WrittenTestReviewView: React.FC = () => {
 
         {expandedSetup && (
           <div className="p-5 pt-0 space-y-6 border-t border-gray-50">
-            {/* Upload Zone */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-3">Слика од тестот</label>
-              <div
-                ref={dragRef}
-                onDrop={handleDrop}
-                onDragOver={(e) => e.preventDefault()}
-                onClick={() => fileInputRef.current?.click()}
-                className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
-                  imagePreview
-                    ? 'border-violet-300 bg-violet-50/30'
-                    : 'border-gray-200 bg-gray-50 hover:border-violet-300 hover:bg-violet-50/20'
-                }`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-                />
-                {imagePreview ? (
-                  <div className="space-y-3">
-                    <img
-                      src={imagePreview}
-                      alt="Тест"
-                      className="max-h-48 mx-auto rounded-xl shadow-md object-contain"
-                    />
-                    <p className="text-sm text-violet-700 font-medium">{imageFile?.name}</p>
-                    <p className="text-xs text-gray-400">Кликни за промена</p>
+
+            {/* ── SINGLE upload ── */}
+            {mode === 'single' && (
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-3">Слика од тестот</label>
+                <div
+                  onClick={() => singleInputRef.current?.click()}
+                  onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleSingleFile(f); }}
+                  onDragOver={e => e.preventDefault()}
+                  className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+                    imagePreview ? 'border-violet-300 bg-violet-50/30' : 'border-gray-200 bg-gray-50 hover:border-violet-300 hover:bg-violet-50/20'
+                  }`}
+                >
+                  <input ref={singleInputRef} type="file" accept="image/*" className="hidden"
+                    aria-label="Прикачи слика од тест"
+                    onChange={e => e.target.files?.[0] && handleSingleFile(e.target.files[0])} />
+                  {imagePreview ? (
+                    <div className="space-y-3">
+                      <img src={imagePreview} alt="Тест" className="max-h-48 mx-auto rounded-xl shadow-md object-contain" />
+                      <p className="text-sm text-violet-700 font-medium">{imageFile?.name}</p>
+                      <p className="text-xs text-gray-400">Кликни за промена</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="w-16 h-16 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto">
+                        <Camera className="w-8 h-8 text-violet-500" />
+                      </div>
+                      <p className="font-bold text-gray-700">Повлечи или кликни за прикачување</p>
+                      <p className="text-sm text-gray-400">JPG, PNG, WebP · Максимум 10MB</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── BATCH upload ── */}
+            {mode === 'batch' && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-bold text-gray-700">Слики од тестовите ({submissions.length}/30)</label>
+                  <button
+                    type="button"
+                    onClick={() => batchInputRef.current?.click()}
+                    className="flex items-center gap-1.5 text-sm text-violet-600 font-bold hover:text-violet-700"
+                  >
+                    <Upload className="w-4 h-4" /> Додај слики
+                  </button>
+                  <input ref={batchInputRef} type="file" accept="image/*" multiple className="hidden"
+                    aria-label="Прикачи слики за одделението"
+                    onChange={e => e.target.files && handleBatchFiles(e.target.files)} />
+                </div>
+
+                {submissions.length === 0 ? (
+                  <div
+                    onClick={() => batchInputRef.current?.click()}
+                    onDrop={e => { e.preventDefault(); e.dataTransfer.files && handleBatchFiles(e.dataTransfer.files); }}
+                    onDragOver={e => e.preventDefault()}
+                    className="border-2 border-dashed border-gray-200 bg-gray-50 hover:border-violet-300 hover:bg-violet-50/20 rounded-2xl p-10 text-center cursor-pointer transition-all"
+                  >
+                    <div className="w-16 h-16 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                      <Users className="w-8 h-8 text-violet-500" />
+                    </div>
+                    <p className="font-bold text-gray-700">Избери до 30 слики одеднаш</p>
+                    <p className="text-sm text-gray-400 mt-1">Секоја слика = еден ученик</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="w-16 h-16 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto">
-                      <Camera className="w-8 h-8 text-violet-500" />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto pr-1">
+                    {submissions.map((sub, i) => (
+                      <div key={sub.id} className="relative group">
+                        <img src={sub.preview} alt={sub.name}
+                          className={`w-full h-24 object-cover rounded-xl border-2 ${
+                            sub.status === 'done' ? 'border-green-400' :
+                            sub.status === 'error' ? 'border-red-400' :
+                            sub.status === 'processing' ? 'border-violet-400 animate-pulse' :
+                            'border-gray-200'
+                          }`} />
+                        <div className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                          sub.status === 'done' ? 'bg-green-500 text-white' :
+                          sub.status === 'error' ? 'bg-red-500 text-white' :
+                          sub.status === 'processing' ? 'bg-violet-500 text-white' :
+                          'bg-gray-300 text-gray-600'
+                        }`}>
+                          {sub.status === 'done' ? '✓' : sub.status === 'error' ? '!' : sub.status === 'processing' ? '…' : i + 1}
+                        </div>
+                        <input
+                          type="text"
+                          value={sub.name}
+                          onChange={e => setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, name: e.target.value } : s))}
+                          className="mt-1 w-full text-xs border border-gray-200 rounded-lg px-2 py-1 text-center focus:outline-none focus:border-violet-400"
+                          placeholder="Назив"
+                        />
+                        <button
+                          type="button"
+                          title="Избриши ученик"
+                          onClick={() => setSubmissions(prev => prev.filter(s => s.id !== sub.id))}
+                          className="absolute top-1 left-1 w-5 h-5 bg-white/80 rounded-full hidden group-hover:flex items-center justify-center text-red-400 hover:text-red-600"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Batch progress */}
+                {isBatchGrading && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-sm font-bold text-violet-700 mb-2">
+                      <span>Прегледувам {batchProgress}/{submissions.length}...</span>
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div className="bg-violet-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${(batchProgress / submissions.length) * 100}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Questions ── */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-bold text-gray-700">Прашања и точни одговори</label>
+                <button type="button" onClick={addQuestion}
+                  className="flex items-center gap-1.5 text-sm text-violet-600 font-bold hover:text-violet-700">
+                  <Plus className="w-4 h-4" /> Додај
+                </button>
+              </div>
+              <div className="space-y-2">
+                {questions.map((q, i) => (
+                  <div key={q.id} className="grid grid-cols-12 gap-2 items-center bg-gray-50 rounded-xl px-3 py-2">
+                    <span className="col-span-1 text-xs font-bold text-gray-400 text-center">{i + 1}.</span>
+                    <input type="text" value={q.text} onChange={e => updateQuestion(q.id, 'text', e.target.value)}
+                      placeholder="Текст на прашањето"
+                      className="col-span-5 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-300 outline-none" />
+                    <input type="text" value={q.correctAnswer} onChange={e => updateQuestion(q.id, 'correctAnswer', e.target.value)}
+                      placeholder="Точен одговор"
+                      className="col-span-4 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-300 outline-none" />
+                    <input type="number" value={q.points} onChange={e => updateQuestion(q.id, 'points', Number(e.target.value))}
+                      min={1} max={100} title="Поени"
+                      className="col-span-1 px-1 py-1.5 text-sm bg-white border border-gray-200 rounded-lg text-center focus:ring-2 focus:ring-violet-300 outline-none" />
+                    <button type="button" title="Избриши прашање" onClick={() => removeQuestion(q.id)} disabled={questions.length <= 1}
+                      className="col-span-1 p-1 text-gray-300 hover:text-red-400 disabled:opacity-30 flex justify-center">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {error}
+              </div>
+            )}
+
+            {/* Grade button */}
+            {mode === 'single' ? (
+              <button type="button" onClick={handleSingleGrade} disabled={!imageFile || isGrading}
+                className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold hover:from-violet-700 hover:to-purple-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-md shadow-violet-200">
+                {isGrading ? <><Loader2 className="w-5 h-5 animate-spin" /> AI ги прегледува одговорите...</> : <><Brain className="w-5 h-5" /> Прегледај со AI Vision</>}
+              </button>
+            ) : (
+              <button type="button" onClick={handleBatchGrade} disabled={submissions.length === 0 || isBatchGrading}
+                className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold hover:from-violet-700 hover:to-purple-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-md shadow-violet-200">
+                {isBatchGrading
+                  ? <><Loader2 className="w-5 h-5 animate-spin" /> Прегледувам {batchProgress}/{submissions.length}...</>
+                  : <><Users className="w-5 h-5" /> Прегледај ги сите {submissions.length} ученици</>}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ═══════════════ SINGLE RESULTS ═══════════════ */}
+      {mode === 'single' && singleResults.length > 0 && (
+        <SingleResults results={singleResults} questions={validQuestions} />
+      )}
+
+      {/* ═══════════════ BATCH RESULTS ═══════════════ */}
+      {mode === 'batch' && doneSubmissions.length > 0 && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+          {/* Class Summary */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-indigo-600" /> Резиме на класата
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-indigo-50 rounded-xl">
+                <p className="text-3xl font-black text-indigo-600">{doneSubmissions.length}</p>
+                <p className="text-xs font-bold text-indigo-500 mt-1">Прегледани</p>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-xl">
+                <p className={`text-3xl font-black ${classAvg >= 70 ? 'text-green-600' : classAvg >= 50 ? 'text-amber-600' : 'text-red-600'}`}>{classAvg}%</p>
+                <p className="text-xs font-bold text-gray-500 mt-1">Просек на класата</p>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-xl">
+                <p className="text-3xl font-black text-green-600">
+                  {doneSubmissions.filter(s => {
+                    const total = s.results!.reduce((sum, r) => sum + r.earnedPoints, 0);
+                    const max = s.results!.reduce((sum, r) => sum + r.maxPoints, 0);
+                    return max > 0 && (total / max) >= 0.8;
+                  }).length}
+                </p>
+                <p className="text-xs font-bold text-green-600 mt-1">Над 80%</p>
+              </div>
+              <div className="text-center p-3 bg-red-50 rounded-xl">
+                <p className="text-3xl font-black text-red-600">
+                  {doneSubmissions.filter(s => {
+                    const total = s.results!.reduce((sum, r) => sum + r.earnedPoints, 0);
+                    const max = s.results!.reduce((sum, r) => sum + r.maxPoints, 0);
+                    return max > 0 && (total / max) < 0.5;
+                  }).length}
+                </p>
+                <p className="text-xs font-bold text-red-600 mt-1">Под 50%</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Misconception Heatmap */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
+              <Flame className="w-5 h-5 text-orange-500" /> Heatmap на успешност по прашање
+            </h2>
+            <p className="text-xs text-gray-400 mb-4">Процент на точни одговори — темно-зелено = добро, темно-црвено = проблематично</p>
+            <div className="space-y-3">
+              {heatmap.map((h, i) => (
+                <div key={h.questionId} className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-gray-400 w-6 flex-shrink-0">П{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-gray-700 truncate mb-1">{h.questionText || `Прашање ${i + 1}`}</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                        <div className={`h-4 rounded-full transition-all duration-700 ${heatColor(h.successRate)}`}
+                          style={{ width: `${Math.round(h.successRate * 100)}%` }} />
+                      </div>
+                      <span className="text-xs font-black text-gray-700 w-10 text-right flex-shrink-0">
+                        {Math.round(h.successRate * 100)}%
+                      </span>
+                    </div>
+                    {h.misconceptions.length > 0 && (
+                      <p className="text-[10px] text-orange-600 mt-0.5 truncate">
+                        ⚠ {h.misconceptions[0]}{h.misconceptions.length > 1 ? ` +${h.misconceptions.length - 1}` : ''}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center gap-2 mt-4 flex-wrap">
+              <span className="text-[10px] text-gray-400 font-bold">ЛЕГЕНДА:</span>
+              {[['bg-green-500', '80–100%'], ['bg-lime-400', '60–80%'], ['bg-amber-400', '40–60%'], ['bg-orange-500', '20–40%'], ['bg-red-500', '0–20%']].map(([cls, lbl]) => (
+                <div key={lbl} className="flex items-center gap-1">
+                  <div className={`w-3 h-3 rounded-sm ${cls}`} />
+                  <span className="text-[10px] text-gray-500">{lbl}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top Misconceptions */}
+          {topMisconceptions.length > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5">
+              <h3 className="font-bold text-orange-900 flex items-center gap-2 mb-3">
+                <Brain className="w-5 h-5" /> Најчести misconceptions во класата — за следниот час
+              </h3>
+              <ol className="space-y-2">
+                {topMisconceptions.map(([m, count], i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-orange-800">
+                    <span className="font-black text-orange-500 flex-shrink-0">{i + 1}.</span>
+                    <span className="flex-1">{m}</span>
+                    <span className="text-xs bg-orange-200 text-orange-800 font-bold px-2 py-0.5 rounded-full flex-shrink-0">{count}x</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {/* Individual results */}
+          <div>
+            <h2 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
+              <Users className="w-5 h-5 text-indigo-600" /> Резултати по ученик
+            </h2>
+            <div className="space-y-2">
+              {doneSubmissions.map(sub => {
+                const total = sub.results!.reduce((sum, r) => sum + r.earnedPoints, 0);
+                const max = sub.results!.reduce((sum, r) => sum + r.maxPoints, 0);
+                const pct = max > 0 ? Math.round((total / max) * 100) : 0;
+                const gi = mkGrade(pct);
+                const isExpanded = expandedStudent === sub.id;
+                return (
+                  <div key={sub.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedStudent(isExpanded ? null : sub.id)}
+                      className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <img src={sub.preview} alt={sub.name} className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="font-bold text-gray-900 truncate">{sub.name}</p>
+                        <p className="text-xs text-gray-400">{total}/{max} поени</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className={`text-xl font-black ${gi.color}`}>{gi.grade}</span>
+                        <span className="text-gray-400 text-sm ml-1">{pct}%</span>
+                      </div>
+                      {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+                    </button>
+                    {isExpanded && (
+                      <div className="border-t border-gray-50 p-4 space-y-2 bg-gray-50/50">
+                        {sub.results!.map((r, ri) => (
+                          <div key={r.questionId} className={`p-3 rounded-xl border ${r.earnedPoints === r.maxPoints ? 'border-green-100 bg-green-50/50' : r.earnedPoints === 0 ? 'border-red-100 bg-red-50/50' : 'border-amber-100 bg-amber-50/50'}`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-gray-500">П{ri + 1}</span>
+                              <span className="text-sm font-black text-gray-700">{r.earnedPoints}/{r.maxPoints}</span>
+                            </div>
+                            <p className="text-xs text-gray-600">{r.feedback}</p>
+                            {r.misconception && (
+                              <p className="text-[10px] text-orange-600 mt-1">⚠ {r.misconception}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Reset */}
+          <button
+            type="button"
+            onClick={() => { setSubmissions([]); setSingleResults([]); setExpandedSetup(true); setError(null); setBatchProgress(0); }}
+            className="w-full py-3 border-2 border-dashed border-gray-200 text-gray-500 font-bold rounded-2xl hover:border-violet-300 hover:text-violet-600 transition-all"
+          >
+            + Прегледај нов тест
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Single Results (extracted for clarity) ────────────────────────────────────
+
+const SingleResults: React.FC<{ results: GradeResult[]; questions: TestQuestion[] }> = ({ results, questions }) => {
+  const totalEarned = results.reduce((sum, r) => sum + r.earnedPoints, 0);
+  const totalMax = results.reduce((sum, r) => sum + r.maxPoints, 0);
+  const percentage = totalMax > 0 ? Math.round((totalEarned / totalMax) * 100) : 0;
+
+  const getMkGrade = (pct: number) => {
+    if (pct >= 90) return { grade: '5', label: 'Одличен', color: 'text-green-600', stroke: '#10b981' };
+    if (pct >= 75) return { grade: '4', label: 'Многу добар', color: 'text-blue-600', stroke: '#3b82f6' };
+    if (pct >= 60) return { grade: '3', label: 'Добар', color: 'text-yellow-600', stroke: '#eab308' };
+    if (pct >= 50) return { grade: '2', label: 'Доволен', color: 'text-orange-600', stroke: '#f97316' };
+    return { grade: '1', label: 'Незадоволителен', color: 'text-red-600', stroke: '#ef4444' };
+  };
+  const gi = getMkGrade(percentage);
+
+  return (
+    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          <div className="relative w-32 h-32 flex-shrink-0">
+            <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#f3f4f6" strokeWidth="12" />
+              <circle cx="60" cy="60" r="50" fill="none" stroke={gi.stroke} strokeWidth="12"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 50}`}
+                strokeDashoffset={`${2 * Math.PI * 50 * (1 - percentage / 100)}`}
+                className="transition-all duration-1000" />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-3xl font-black text-gray-900">{percentage}%</span>
+              <span className="text-xs text-gray-400 font-medium">Точност</span>
+            </div>
+          </div>
+          <div className="flex-1 text-center sm:text-left">
+            <div className={`text-5xl font-black mb-1 ${gi.color}`}>{gi.grade}</div>
+            <div className="text-xl font-bold text-gray-800">{gi.label}</div>
+            <div className="text-gray-500 mt-1">{totalEarned} / {totalMax} поени</div>
+            <div className="mt-3 flex flex-wrap gap-2 justify-center sm:justify-start">
+              <span className="text-xs bg-green-50 text-green-700 font-bold px-3 py-1 rounded-full">
+                {results.filter(r => r.earnedPoints === r.maxPoints).length} целосни
+              </span>
+              <span className="text-xs bg-amber-50 text-amber-700 font-bold px-3 py-1 rounded-full">
+                {results.filter(r => r.earnedPoints > 0 && r.earnedPoints < r.maxPoints).length} делумни
+              </span>
+              <span className="text-xs bg-red-50 text-red-700 font-bold px-3 py-1 rounded-full">
+                {results.filter(r => r.earnedPoints === 0).length} без поени
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {results.map((r, i) => {
+          const qText = questions.find(q => q.id === r.questionId)?.text || `Прашање ${i + 1}`;
+          const isOk = r.earnedPoints === r.maxPoints;
+          const isZero = r.earnedPoints === 0;
+          return (
+            <div key={r.questionId} className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${isOk ? 'border-green-200' : isZero ? 'border-red-100' : 'border-amber-100'}`}>
+              <div className={`flex items-center gap-4 p-4 ${isOk ? 'bg-green-50/60' : isZero ? 'bg-red-50/60' : 'bg-amber-50/60'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isOk ? 'bg-green-100 text-green-600' : isZero ? 'bg-red-100 text-red-500' : 'bg-amber-100 text-amber-600'}`}>
+                  {isOk ? <CheckCircle2 className="w-5 h-5" /> : isZero ? <XCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Прашање {i + 1}</p>
+                  <p className="font-bold text-gray-900 truncate">{qText}</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className={`text-2xl font-black ${isOk ? 'text-green-600' : isZero ? 'text-red-500' : 'text-amber-600'}`}>{r.earnedPoints}</span>
+                  <span className="text-gray-400 font-medium">/{r.maxPoints}</span>
+                </div>
+              </div>
+              <div className="p-4 space-y-2">
+                <p className="text-sm text-gray-700 leading-relaxed">{r.feedback}</p>
+                {r.misconception && (
+                  <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-100 rounded-xl">
+                    <Brain className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-bold text-gray-700">Повлечи или кликни за прикачување</p>
-                      <p className="text-sm text-gray-400 mt-1">JPG, PNG, WebP · Максимум 10MB</p>
-                    </div>
-                    <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
-                      <span className="flex items-center gap-1"><Upload className="w-3 h-3" /> Скениран тест</span>
-                      <span className="flex items-center gap-1"><Camera className="w-3 h-3" /> Фотографиран тест</span>
+                      <span className="text-xs font-bold text-orange-700 uppercase tracking-wider block mb-0.5">Misconception</span>
+                      <span className="text-sm text-orange-800">{r.misconception}</span>
                     </div>
                   </div>
                 )}
               </div>
             </div>
-
-            {/* Questions */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-sm font-bold text-gray-700">Прашања и точни одговори</label>
-                <button
-                  onClick={addQuestion}
-                  className="flex items-center gap-1.5 text-sm text-violet-600 font-bold hover:text-violet-700"
-                >
-                  <Plus className="w-4 h-4" />
-                  Додај прашање
-                </button>
-              </div>
-              <div className="space-y-3">
-                {questions.map((q, i) => (
-                  <div key={q.id} className="grid grid-cols-12 gap-3 items-start bg-gray-50 rounded-xl p-3">
-                    <div className="col-span-1 flex items-center justify-center h-10">
-                      <span className="text-sm font-bold text-gray-400">{i + 1}.</span>
-                    </div>
-                    <div className="col-span-5">
-                      <input
-                        type="text"
-                        value={q.text}
-                        onChange={(e) => updateQuestion(q.id, 'text', e.target.value)}
-                        placeholder="Текст на прашањето"
-                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-300 focus:border-violet-400 outline-none"
-                      />
-                    </div>
-                    <div className="col-span-4">
-                      <input
-                        type="text"
-                        value={q.correctAnswer}
-                        onChange={(e) => updateQuestion(q.id, 'correctAnswer', e.target.value)}
-                        placeholder="Точен одговор"
-                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-300 focus:border-violet-400 outline-none"
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <input
-                        type="number"
-                        value={q.points}
-                        onChange={(e) => updateQuestion(q.id, 'points', Number(e.target.value))}
-                        min={1}
-                        max={100}
-                        title="Поени"
-                        className="w-full px-2 py-2 text-sm bg-white border border-gray-200 rounded-lg text-center focus:ring-2 focus:ring-violet-300 outline-none"
-                      />
-                    </div>
-                    <div className="col-span-1 flex items-center justify-center h-10">
-                      <button
-                        onClick={() => removeQuestion(q.id)}
-                        disabled={questions.length <= 1}
-                        className="p-1.5 text-gray-300 hover:text-red-400 disabled:opacity-30 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-gray-400 mt-2">
-                Прашања без текст или точен одговор ќе бидат прескокнати.
-              </p>
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                {error}
-              </div>
-            )}
-
-            <button
-              onClick={handleGrade}
-              disabled={!imageFile || isGrading}
-              className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold hover:from-violet-700 hover:to-purple-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-md shadow-violet-200"
-            >
-              {isGrading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  AI ги прегледува одговорите...
-                </>
-              ) : (
-                <>
-                  <Brain className="w-5 h-5" />
-                  Прегледај со AI Vision
-                </>
-              )}
-            </button>
-          </div>
-        )}
+          );
+        })}
       </div>
 
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {/* Summary Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="relative w-32 h-32 flex-shrink-0">
-                <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="#f3f4f6" strokeWidth="12" />
-                  <circle
-                    cx="60" cy="60" r="50" fill="none"
-                    stroke={percentage >= 60 ? '#8b5cf6' : '#f59e0b'}
-                    strokeWidth="12"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 50}`}
-                    strokeDashoffset={`${2 * Math.PI * 50 * (1 - percentage / 100)}`}
-                    className="transition-all duration-1000"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-black text-gray-900">{percentage}%</span>
-                  <span className="text-xs text-gray-400 font-medium">Точност</span>
-                </div>
-              </div>
-              <div className="flex-1 text-center sm:text-left">
-                <div className={`text-5xl font-black mb-1 ${gradeInfo.color}`}>{gradeInfo.grade}</div>
-                <div className="text-xl font-bold text-gray-800">{gradeInfo.label}</div>
-                <div className="text-gray-500 mt-1">{totalEarned} / {totalMax} поени</div>
-                <div className="mt-3 flex flex-wrap gap-2 justify-center sm:justify-start">
-                  <span className="text-xs bg-green-50 text-green-700 font-bold px-3 py-1 rounded-full">
-                    {results.filter(r => r.earnedPoints === r.maxPoints).length} целосни
-                  </span>
-                  <span className="text-xs bg-amber-50 text-amber-700 font-bold px-3 py-1 rounded-full">
-                    {results.filter(r => r.earnedPoints > 0 && r.earnedPoints < r.maxPoints).length} делумни
-                  </span>
-                  <span className="text-xs bg-red-50 text-red-700 font-bold px-3 py-1 rounded-full">
-                    {results.filter(r => r.earnedPoints === 0).length} без поени
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Per-Question Results */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-black text-gray-900 px-1">Резултати по прашање</h2>
-            {results.map((r, i) => {
-              const qText = questions.find(q => q.id === r.questionId)?.text || `Прашање ${i + 1}`;
-              const isFullCredit = r.earnedPoints === r.maxPoints;
-              const isZero = r.earnedPoints === 0;
-              return (
-                <div
-                  key={r.questionId}
-                  className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${
-                    isFullCredit ? 'border-green-200' : isZero ? 'border-red-100' : 'border-amber-100'
-                  }`}
-                >
-                  <div className={`flex items-center gap-4 p-4 ${
-                    isFullCredit ? 'bg-green-50/60' : isZero ? 'bg-red-50/60' : 'bg-amber-50/60'
-                  }`}>
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isFullCredit ? 'bg-green-100 text-green-600' : isZero ? 'bg-red-100 text-red-500' : 'bg-amber-100 text-amber-600'
-                    }`}>
-                      {isFullCredit ? <CheckCircle2 className="w-5 h-5" /> : isZero ? <XCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Прашање {i + 1}</p>
-                      <p className="font-bold text-gray-900 truncate">{qText}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <span className={`text-2xl font-black ${isFullCredit ? 'text-green-600' : isZero ? 'text-red-500' : 'text-amber-600'}`}>
-                        {r.earnedPoints}
-                      </span>
-                      <span className="text-gray-400 font-medium">/{r.maxPoints}</span>
-                      <p className="text-xs text-gray-400">поени</p>
-                    </div>
-                  </div>
-                  <div className="p-4 space-y-2">
-                    <p className="text-sm text-gray-700 leading-relaxed">{r.feedback}</p>
-                    {r.misconception && (
-                      <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-100 rounded-xl">
-                        <Brain className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <span className="text-xs font-bold text-orange-700 uppercase tracking-wider block mb-0.5">Типична грешка (Misconception)</span>
-                          <span className="text-sm text-orange-800">{r.misconception}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Misconception Summary */}
-          {results.some(r => r.misconception) && (
-            <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5">
-              <h3 className="font-bold text-orange-900 flex items-center gap-2 mb-3">
-                <Brain className="w-5 h-5" />
-                Резиме на типични грешки — за следниот час
-              </h3>
-              <ul className="space-y-2">
-                {results.filter(r => r.misconception).map((r, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-orange-800">
-                    <span className="font-bold flex-shrink-0">П{results.indexOf(r) + 1}:</span>
-                    {r.misconception}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* New review button */}
-          <button
-            onClick={() => {
-              setImageFile(null);
-              setImagePreview(null);
-              setResults([]);
-              setExpandedSetup(true);
-              setError(null);
-            }}
-            className="w-full py-3 border-2 border-dashed border-gray-200 text-gray-500 font-bold rounded-2xl hover:border-violet-300 hover:text-violet-600 transition-all"
-          >
-            + Прегледај нов тест
-          </button>
+      {results.some(r => r.misconception) && (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5">
+          <h3 className="font-bold text-orange-900 flex items-center gap-2 mb-3">
+            <Brain className="w-5 h-5" /> Misconceptions — за следниот час
+          </h3>
+          <ul className="space-y-2">
+            {results.filter(r => r.misconception).map((r, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-orange-800">
+                <span className="font-bold flex-shrink-0">П{results.indexOf(r) + 1}:</span>
+                {r.misconception}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

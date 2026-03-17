@@ -11,6 +11,7 @@ import { SPECIALIZATIONS } from '../data/academy/specializations';
 
 import { AcademyCertificateButton } from '../components/academy/AcademyCertificate';
 import { AcademyDailyHub } from '../components/academy/AcademyDailyHub';
+import AcademySpacedRep from '../components/academy/AcademySpacedRep';
 import { useAuth } from '../contexts/AuthContext';
 
 export const AcademyView: React.FC = () => {
@@ -181,6 +182,17 @@ export const AcademyView: React.FC = () => {
         appliedLessons={appliedLessons}
         completedQuizzes={completedQuizzes}
       />
+
+      {/* SM-2 Spaced Repetition */}
+      {completedQuizzes.length > 0 && (
+        <AcademySpacedRep
+          allLessonIds={MODULES.flatMap(m => m.topics.map(t => t.id))}
+          lessonTitles={Object.fromEntries(
+            Object.entries(ACADEMY_CONTENT).map(([id, l]) => [id, l.title])
+          )}
+          completedQuizzes={completedQuizzes}
+        />
+      )}
 
       {/* TPACK Section */}
       <div className={`mb-8 rounded-2xl border-2 p-6 ${tpackMaster ? 'border-yellow-300 bg-yellow-50' : 'border-gray-100 bg-white'}`}>
