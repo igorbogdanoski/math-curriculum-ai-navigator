@@ -6,7 +6,8 @@ import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download, FileSpreadsheet } from 'lucide-react';
+import { exportAnalyticsXlsx } from '../utils/exportExcel';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useTeacherAnalytics } from '../hooks/useTeacherAnalytics';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
@@ -271,6 +272,11 @@ const { addNotification } = useNotification();
     exportCsv(rows, `quiz-results-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
+  const handleExportXlsx = async () => {
+    await exportAnalyticsXlsx(localResults, masteryRecords, 'math-navigator-analitika');
+    addNotification('Excel датотеката е подготвена (3 листови: резултати, по ученик, по концепт)', 'success');
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (isLoading) {
@@ -323,6 +329,16 @@ const { addNotification } = useNotification();
             >
               <Download className="w-4 h-4" />
               {t('analytics.exportCsv')}
+            </button>
+            <button
+              type="button"
+              onClick={handleExportXlsx}
+              disabled={localResults.length === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-green-200 text-green-700 hover:bg-green-50 text-sm font-medium transition active:scale-95 disabled:opacity-40"
+              title="Извези во Excel со 3 листови (резултати, по ученик, по концепт)"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Excel (.xlsx)
             </button>
             <button
               type="button"

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Trophy, QrCode } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Trophy, QrCode, Search } from 'lucide-react';
+
+const PAGE_SIZE = 25;
 import { QRCodeSVG } from 'qrcode.react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
@@ -12,18 +14,53 @@ interface StudentsTabProps {
 
 export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => {
     const [qrStudent, setQrStudent] = useState<string | null>(null);
+    const [search, setSearch]       = useState('');
+    const [page, setPage]           = useState(1);
+
     const qrUrl = qrStudent
         ? `${window.location.origin}/#/my-progress?name=${encodeURIComponent(qrStudent)}`
         : '';
 
+    const filtered = useMemo(() =>
+        search.trim()
+            ? perStudentStats.filter(s => s.name.toLowerCase().includes(search.toLowerCase()))
+            : perStudentStats,
+        [perStudentStats, search],
+    );
+    const visible   = filtered.slice(0, page * PAGE_SIZE);
+    const hasMore   = visible.length < filtered.length;
+
     return (
         <SilentErrorBoundary name="StudentsTab">
             <Card>
-                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Индивидуален преглед по ученик</h2>
+                <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+                    <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                        Индивидуален преглед по ученик
+                        {perStudentStats.length > 0 && (
+                            <span className="ml-2 text-gray-400 font-normal normal-case">
+                                ({filtered.length}{search ? ` / ${perStudentStats.length}` : ''})
+                            </span>
+                        )}
+                    </h2>
+                    {perStudentStats.length > 5 && (
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder="Пребарај ученик…"
+                                value={search}
+                                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                                className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary/30 w-48"
+                            />
+                        </div>
+                    )}
+                </div>
                 {perStudentStats.length === 0 ? (
                     <p className="text-sm text-gray-400 text-center py-8">
                         Нема ученици со внесено ime. Учениците треба да го внесат своето ime при играње квиз.
                     </p>
+                ) : filtered.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-8">Нема ученик со тоа ime.</p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -40,7 +77,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => 
                                 </tr>
                             </thead>
                             <tbody>
-                                {perStudentStats.map(s => {
+                                {visible.map(s => {
                                     return (
                                         <tr key={s.name} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                                             <td className="py-2.5 px-3 font-semibold text-slate-700">{s.name}</td>
@@ -92,6 +129,17 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => 
                                 })}
                             </tbody>
                         </table>
+                        {hasMore && (
+                            <div className="mt-3 text-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setPage(p => p + 1)}
+                                    className="px-4 py-1.5 text-sm text-brand-primary border border-brand-primary/30 rounded-lg hover:bg-brand-primary/5 transition-colors"
+                                >
+                                    Прикажи повеќе ({filtered.length - visible.length} останати)
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </Card>

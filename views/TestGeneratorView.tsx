@@ -8,7 +8,7 @@ import { useReactToPrint } from 'react-to-print';
 import { PrintableTest } from '../components/ai/PrintableTest';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { useRef } from 'react';
-import { CheckCircle, AlertCircle, Eye } from 'lucide-react';
+import { CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 type Step = 'params' | 'preview' | 'result';
 
@@ -33,11 +33,17 @@ export const TestGeneratorView: React.FC = () => {
     const [step, setStep] = useState<Step>('params');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedTest, setGeneratedTest] = useState<GeneratedTest | null>(null);
+    const [showAnswers, setShowAnswers] = useState(true);
 
   const printRef = useRef<HTMLDivElement>(null);
+  const printNoAnswersRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: `Test_${topic.replace(/\s/g,'_')}`,
+  });
+  const handlePrintNoAnswers = useReactToPrint({
+    contentRef: printNoAnswersRef,
+    documentTitle: `Test_${topic.replace(/\s/g,'_')}_ucenik`,
   });
 
 
@@ -228,7 +234,7 @@ export const TestGeneratorView: React.FC = () => {
                     ) : generatedTest ? (
                         <div className="space-y-6">
                             <Card className="bg-green-50 border-green-200">
-                                <div className="flex justify-between items-center">
+                                <div className="flex flex-wrap justify-between items-center gap-3">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-green-100 p-2 rounded-full">
                                             <ICONS.check className="w-6 h-6 text-green-600" />
@@ -238,18 +244,44 @@ export const TestGeneratorView: React.FC = () => {
                                             <p className="text-sm text-green-700">Успешно генерирани Група А и Група Б.</p>
                                         </div>
                                     </div>
-                                    <button
-  onClick={() => handlePrint()}
-  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 shadow"
->
-  <ICONS.download className="w-5 h-5" />
-  Зачувај PDF
-</button>
-<div style={{ display: 'none' }}>
-  <PrintableTest ref={printRef} test={generatedTest} />
-</div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {/* Toggle answers */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAnswers(v => !v)}
+                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${showAnswers ? 'border-green-400 bg-white text-green-700 hover:bg-green-50' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'}`}
+                                        >
+                                            {showAnswers ? <><Eye className="w-4 h-4" /> Скриј одговори</> : <><EyeOff className="w-4 h-4" /> Прикажи одговори</>}
+                                        </button>
+                                        {/* PDF со одговори — за наставник */}
+                                        <button
+                                            type="button"
+                                            onClick={() => handlePrint()}
+                                            className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 flex items-center gap-1.5 shadow text-sm font-medium"
+                                            title="PDF со одговори (за наставник)"
+                                        >
+                                            <ICONS.download className="w-4 h-4" /> PDF наставник
+                                        </button>
+                                        {/* PDF без одговори — за ученик */}
+                                        <button
+                                            type="button"
+                                            onClick={() => handlePrintNoAnswers()}
+                                            className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-1.5 shadow text-sm font-medium"
+                                            title="PDF без одговори (за печатење на ученици)"
+                                        >
+                                            <ICONS.download className="w-4 h-4" /> PDF ученик
+                                        </button>
+                                    </div>
                                 </div>
                             </Card>
+
+                            {/* Hidden print targets */}
+                            <div className="hidden">
+                                <PrintableTest ref={printRef} test={generatedTest} showKeys={true} />
+                            </div>
+                            <div className="hidden">
+                                <PrintableTest ref={printNoAnswersRef} test={generatedTest} showKeys={false} />
+                            </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {generatedTest.groups.map((group, idx) => (
@@ -273,9 +305,11 @@ export const TestGeneratorView: React.FC = () => {
                                                             ))}
                                                         </ul>
                                                     )}
-                                                     <div className="mt-2 pt-2 border-t border-dashed border-gray-200 text-xs text-green-700 font-medium">
-                                                        Одговор: <MathRenderer text={q.correctAnswer} />
-                                                    </div>
+                                                    {showAnswers && (
+                                                        <div className="mt-2 pt-2 border-t border-dashed border-gray-200 text-xs text-green-700 font-medium">
+                                                            Одговор: <MathRenderer text={q.correctAnswer} />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
