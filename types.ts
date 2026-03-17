@@ -615,6 +615,63 @@ export interface GeneratedTest {
     createdAt: string;
 }
 
+// ── Pro Assessment Models ─────────────────────────────────────────────────────
+
+/** The 4 summative assessment models supported by the Pro Test Generator */
+export type AssessmentModel = 'standard' | 'differentiated' | 'mastery' | 'cbe';
+
+/** One Bloom's-taxonomy level within a differentiated test */
+export interface DifferentiatedLevel {
+  level: 1 | 2 | 3;
+  /** Bloom label, e.g. "Паметење/Разбирање", "Примена", "Анализа/Синтеза" */
+  bloomLabel: string;
+  pointsPerTask: number;
+  taskCount: number;
+}
+
+/** Extended test — supports all 4 models + multi-topic + rubric */
+export interface ProGeneratedTest extends GeneratedTest {
+  id?: string;
+  model: AssessmentModel;
+  topics: string[];
+  levels?: DifferentiatedLevel[];   // for 'differentiated'
+  rubric?: string;                  // AI-generated scoring rubric
+  masteryThreshold?: number;        // for 'mastery', e.g. 80
+  nationalStandardIds?: string[];   // for 'cbe'
+  savedAt?: string;
+}
+
+// ── Grade Book ────────────────────────────────────────────────────────────────
+
+export type GradeModel = 'traditional' | 'mastery' | 'sbg';
+
+export interface GradeEntry {
+  studentId: string;
+  studentName: string;
+  testId: string;
+  testTitle: string;
+  rawScore: number;
+  maxScore: number;
+  percentage: number;
+  /** Mastery model: 'mastered' | 'approaching' | 'not_yet' */
+  masteryStatus?: 'mastered' | 'approaching' | 'not_yet';
+  /** SBG: proficiency per standard id → 1-4 */
+  standardScores?: Record<string, 1 | 2 | 3 | 4>;
+  gradedAt: string;
+  notes?: string;
+}
+
+export interface GradeBookClass {
+  id?: string;
+  teacherUid: string;
+  className: string;
+  gradeLevel: number;
+  model: GradeModel;
+  entries: GradeEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 export interface LiveQuizSession {
     pin: string;

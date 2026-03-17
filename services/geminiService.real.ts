@@ -10,7 +10,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { AIServiceError } from '../utils/errors';
 import { db, auth, storage } from '../firebaseConfig';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, AssessmentQuestion, AIGeneratedWorkedExample, AdaptiveHomework , AIGeneratedAnnualPlan, AIGeneratedPresentation } from '../types';
+import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, ProGeneratedTest, DifferentiatedLevel, AssessmentQuestion, AIGeneratedWorkedExample, AdaptiveHomework , AIGeneratedAnnualPlan, AIGeneratedPresentation } from '../types';
 import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalAnalysisSchema, CoverageAnalysisSchema, AIRecommendationSchema, GeneratedTestSchema, DailyBriefSchema, WorkedExampleSchema, ReflectionSummarySchema } from '../utils/schemas';
 
 // Core exports
@@ -1348,5 +1348,227 @@ ${topMisc}
     );
 
     return { title: result.title || `Ремедијација: ${conceptTitle}`, type: 'QUIZ', questions: result.questions };
+  },
+
+  // ── PRO: Differentiated / Mastery / CBE test generation ────────────────────
+
+  /**
+   * Generates a differentiated summative test (3 Bloom levels, A+B groups).
+   * Uses gemini-2.5-pro for highest pedagogical quality.
+   */
+  async generateDifferentiatedTest(
+    topics: string[],
+    gradeLevel: number,
+    levels: DifferentiatedLevel[],
+  ): Promise<ProGeneratedTest> {
+    const { PRO_MODEL } = await import('./gemini/core');
+    const topicStr = topics.join(', ');
+    const levelDesc = levels.map(l =>
+      `Ниво ${l.level} (${l.bloomLabel}, ${l.pointsPerTask}п): ${l.taskCount} задачи`
+    ).join('\n');
+
+    const prompt = `Генерирај диференцирана ПИСМЕНА РАБОТА по математика за одделение ${gradeLevel}.
+Теми: ${topicStr}
+
+СТРУКТУРА (3 нивоа по Bloom):
+${levelDesc}
+
+Правила:
+- ДВЕ ГРУПИ (А и Б): паралелни задачи, различни бројки
+- LaTeX за сите математички изрази: $...$, \\frac{}{}, \\cdot, \\sqrt{}
+- Секоја задача носи точниот број поени наведен за нивото
+- Ниво 1 = паметење/разбирање, Ниво 2 = примена, Ниво 3 = анализа/синтеза/проблем
+- Вклучи kratki решенија (correctAnswer) за секоја задача
+
+Врати JSON со структура:
+{
+  "title": "Писмена работа: [теми]",
+  "rubric": "Кратко упатство за оценување (2-3 реченици)",
+  "groups": [
+    { "groupName": "Група А", "questions": [ { "id":"1", "text":"...", "type":"word-problem", "correctAnswer":"...", "points": X, "cognitiveLevel":"Ниво 1/2/3" } ] },
+    { "groupName": "Група Б", "questions": [...] }
+  ]
+}`;
+
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING },
+        rubric: { type: Type.STRING },
+        groups: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              groupName: { type: Type.STRING },
+              questions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    text: { type: Type.STRING },
+                    type: { type: Type.STRING },
+                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    correctAnswer: { type: Type.STRING },
+                    points: { type: Type.NUMBER },
+                    cognitiveLevel: { type: Type.STRING },
+                  },
+                  required: ['id', 'text', 'correctAnswer', 'points'],
+                },
+              },
+            },
+            required: ['groupName', 'questions'],
+          },
+        },
+      },
+      required: ['title', 'groups'],
+    };
+
+    const result = await generateAndParseJSON<{ title: string; rubric?: string; groups: GeneratedTest['groups'] }>(
+      [{ text: prompt }], schema, PRO_MODEL,
+    );
+
+    return {
+      ...result,
+      model: 'differentiated',
+      topics,
+      gradeLevel,
+      topic: topicStr,
+      levels,
+      rubric: result.rubric,
+      createdAt: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Generates a mastery-focused summative test (Bloom 1968 model).
+   * 80% mastery threshold, includes formative self-check items.
+   * Uses gemini-2.5-pro.
+   */
+  async generateMasteryTest(
+    topics: string[],
+    gradeLevel: number,
+    questionCount: number,
+    masteryThreshold = 80,
+  ): Promise<ProGeneratedTest> {
+    const { PRO_MODEL } = await import('./gemini/core');
+    const topicStr = topics.join(', ');
+
+    const prompt = `Генерирај тест по МОДЕЛ НА МАСТЕРИ (Bloom, 1968) за математика, одделение ${gradeLevel}.
+Теми: ${topicStr}
+Број прашања: ${questionCount} (по група А и Б)
+Праг на мастери: ${masteryThreshold}%
+
+Педагошки принципи:
+- Прашањата покриваат ВСИ клучни концепти (целосна покриеност)
+- 60% прашања = базично владеење (мора за мастери)
+- 30% прашања = примена во нов контекст
+- 10% прашања = трансфер/проблем (бонус)
+- ДВЕ ГРУПИ (А и Б): паралелни задачи, различни бројки
+- LaTeX за сите математички изрази: $...$
+
+Врати JSON:
+{
+  "title": "Тест по мастери: [теми]",
+  "rubric": "Ученик го совладал градивото ако освои >=${masteryThreshold}% поени. Ниво: Совладано/Во напредок/Не совладано",
+  "groups": [
+    { "groupName": "Група А", "questions": [ { "id":"1", "text":"...", "type":"short-answer|multiple-choice|word-problem", "correctAnswer":"...", "points": X, "cognitiveLevel":"Базично|Примена|Трансфер" } ] },
+    { "groupName": "Група Б", "questions": [...] }
+  ]
+}`;
+
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING },
+        rubric: { type: Type.STRING },
+        groups: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              groupName: { type: Type.STRING },
+              questions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    text: { type: Type.STRING },
+                    type: { type: Type.STRING },
+                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    correctAnswer: { type: Type.STRING },
+                    points: { type: Type.NUMBER },
+                    cognitiveLevel: { type: Type.STRING },
+                  },
+                  required: ['id', 'text', 'correctAnswer', 'points'],
+                },
+              },
+            },
+            required: ['groupName', 'questions'],
+          },
+        },
+      },
+      required: ['title', 'groups'],
+    };
+
+    const result = await generateAndParseJSON<{ title: string; rubric?: string; groups: GeneratedTest['groups'] }>(
+      [{ text: prompt }], schema, PRO_MODEL,
+    );
+
+    return {
+      ...result,
+      model: 'mastery',
+      topics,
+      gradeLevel,
+      topic: topicStr,
+      masteryThreshold,
+      rubric: result.rubric,
+      createdAt: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Grades a student's handwritten test from a photo using Gemini Vision.
+   * Returns per-question score suggestions + misconceptions.
+   */
+  async gradeTestWithVision(
+    imageBase64: string,
+    mimeType: string,
+    testQuestions: Array<{ id: string; text: string; points: number; correctAnswer: string }>,
+  ): Promise<{ questionId: string; earnedPoints: number; maxPoints: number; feedback: string; misconception?: string }[]> {
+    const { PRO_MODEL } = await import('./gemini/core');
+
+    const questionsStr = testQuestions.map((q, i) =>
+      `${i + 1}. [${q.points}п] ${q.text} → Точен одговор: ${q.correctAnswer}`
+    ).join('\n');
+
+    const prompt = `Си наставник по математика. Прегледај ја сликата на пишаниот тест на ученикот.
+
+Прашања и точни одговори:
+${questionsStr}
+
+За секое прашање:
+1. Прочитај го одговорот на ученикот од сликата
+2. Спореди го со точниот одговор
+3. Дај поени (0 до max) и кратка повратна информација на македонски
+4. Ако постои типична грешка (misconception), наведи ја
+
+Врати JSON:
+{ "grades": [ { "questionId": "1", "earnedPoints": X, "maxPoints": Y, "feedback": "...", "misconception": "..." } ] }`;
+
+    const result = await callGeminiProxy({
+      model: PRO_MODEL,
+      contents: [{ role: 'user', parts: [{ inlineData: { mimeType, data: imageBase64 } }, { text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    try {
+      const parsed = JSON.parse(result.text || '{}');
+      return parsed.grades ?? [];
+    } catch {
+      return [];
+    }
   },
 };

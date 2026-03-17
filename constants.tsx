@@ -60,7 +60,8 @@ import { Zap,
   Minimize,
   Eye,
   ExternalLink,
-  Image as ImageIcon
+  Image as ImageIcon,
+  BookMarked,
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -91,6 +92,7 @@ export const ICONS: Record<string, any> = {
   assistant: HelpCircle,
   generator: CreditCard,
   assessment: ClipboardCheck,
+  gradeBook: BookMarked,
   myLessons: Menu,
   gallery: Layout,
   chart: BarChart3,

@@ -65,7 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     // Progressive disclosure â€” secondary nav collapsed by default
     const [showMore, setShowMore] = useState(() => {
       const secondaryPaths = ['/explore', '/graph', '/roadmap', '/assistant', '/vision-assessment',
-        '/test-generator', '/reports/coverage', '/favorites', '/gallery'];
+        '/test-generator', '/grade-book', '/reports/coverage', '/favorites', '/gallery'];
       return secondaryPaths.some(p => currentPath === p || currentPath.startsWith(p));
     });
 
@@ -131,6 +131,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/assistant" currentPath={currentPath} icon={ICONS.assistant} label={t("nav.assistant")} onClick={onClose} />
               <NavItem path="/vision-assessment" currentPath={currentPath} icon={ICONS.camera} label={t("nav.visionAssessment")} onClick={onClose} badge="NEW" />
               <NavItem path="/test-generator" currentPath={currentPath} icon={ICONS.assessment} label={t("nav.testgenerator")} onClick={onClose} />
+              <NavItem path="/grade-book" currentPath={currentPath} icon={ICONS.gradeBook} label="Тетратка за оценки" onClick={onClose} badge="NEW" />
               <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label={t("nav.coverage")} onClick={onClose} />
               <hr className="my-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Ученици</p>
