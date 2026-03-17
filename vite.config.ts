@@ -278,6 +278,7 @@ export default defineConfig(({ mode }) => {
                   cacheName: 'jsdelivr-cdn-cache',
                   fetchOptions: {
                     mode: 'cors',
+                    credentials: 'omit',
                   },
                   expiration: {
                     maxEntries: 30,
