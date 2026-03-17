@@ -5,9 +5,9 @@ import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai'
 // Vercel Hobby plan: 10s max — use Gemini Flash image generation only (Imagen 3/4 require Vertex AI and are too slow)
 async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<{ mimeType: string; data: string } | null> {
   const candidates = [
-    'gemini-2.0-flash-image-generation',          // promoted stable name (post-preview)
-    'gemini-2.5-flash-preview-image-generation',  // possible 2.5 successor
-    'gemini-2.0-flash-preview-image-generation',  // legacy fallback
+    'gemini-2.5-flash-image',              // confirmed available (Tier 1)
+    'gemini-3.1-flash-image-preview',      // newer fallback
+    'gemini-3-pro-image-preview',          // pro fallback
   ];
 
   for (const modelName of candidates) {
