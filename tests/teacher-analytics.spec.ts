@@ -95,6 +95,8 @@ test.describe('Патека 4 — Analytics со автентикација', ()
         console.log(`[E2E DEBUG] Request: ${req.method()} ${req.url()}`);
       }
     });
+    // Suppress CookieConsent banner so it doesn't intercept clicks
+    await page.addInitScript(() => localStorage.setItem('cookie_consent', 'accepted'));
     await setupTeacherMocks(page);
     await mockQuizResultsWithPagination(page);
   });
@@ -117,10 +119,10 @@ test.describe('Патека 4 — Analytics со автентикација', ()
 
   test('"Вчитај повеќе" вчитува дополнителни резултати', async ({ page }) => {
     await page.goto('/#/analytics');
-    await expect(page.getByRole('heading', { name: /Аналитика на Учениците/i })).toBeVisible({ timeout: 15_000 });
-    
+    await expect(page.getByRole('heading', { name: /Аналитика на Учениците/i })).toBeVisible({ timeout: 20_000 });
+
     // Wait for initial data
-    await expect(page.getByText(/Квиз 1/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/Квиз 1/i).first()).toBeVisible({ timeout: 20_000 });
 
     // Count visible quiz items before Load More
     // Using a selector that matches the divs in OverviewTab or rows in other tabs

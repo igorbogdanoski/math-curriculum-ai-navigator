@@ -9,9 +9,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Webinar: Critical Flows Stability', () => {
 
   test.beforeEach(async ({ page }) => {
-    // Reset state before each test
+    // Reset state before each test; suppress cookie banner
+    await page.addInitScript(() => {
+      localStorage.clear();
+      localStorage.setItem('cookie_consent', 'accepted');
+    });
     await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
   });
 
   // ── 1. Student: Quiz Completion Flow (Happy Path UI) ──────────────────────
@@ -21,19 +24,21 @@ test.describe('Webinar: Critical Flows Stability', () => {
     await page.waitForTimeout(2000);
 
     // Onboarding wizard check (Macedonian localized)
-    const onboardingTitle = page.locator('text=/Добредојде|име|Внеси го твоте име/i').first();
-    const nameInput = page.locator('input[placeholder*="име"], input[placeholder*="Твоето"]').first();
-    
-    // If onboarding is visible, verify elements
-    if (await onboardingTitle.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(onboardingTitle).toBeVisible();
-      await expect(nameInput).toBeVisible();
-      
-      // Fill name and continue
+    // Step 0: Welcome screen with "Да почнеме!" button
+    const welcomeBtn = page.locator('button:has-text("Да почнеме")').first();
+
+    if (await welcomeBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await welcomeBtn.click();
+
+      // Step 1: Name input should now be visible
+      const nameInput = page.locator('input[placeholder*="Твоето"], input[placeholder*="ime"], input[placeholder*="Adın"]').first();
+      await expect(nameInput).toBeVisible({ timeout: 5000 });
+
+      // Fill name and confirm
       await nameInput.fill('Ученик Вебинар');
-      const confirmBtn = page.locator('button:has-text("Потврди"), button:has-text("Продолжи"), button:has-text("Започни")').first();
+      const confirmBtn = page.locator('button:has-text("Потврди"), button:has-text("Продолжи"), button:has-text("Confirm")').first();
       await confirmBtn.click();
-      
+
       // Should move to loading or "not found" state without crashing
       await page.waitForTimeout(2000);
       await expect(page.locator('body')).toBeVisible();

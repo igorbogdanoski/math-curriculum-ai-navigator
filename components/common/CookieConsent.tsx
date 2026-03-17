@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+
 import { Cookie, X } from 'lucide-react';
 
 const CONSENT_KEY = 'cookie_consent';
@@ -39,9 +39,9 @@ export const CookieConsent: React.FC = () => {
           <p className="text-sm text-slate-700 leading-relaxed">
             Ние користиме колачиња (cookies) за автентикација, аналитика и подобрување на искуството.
             Со продолжување на употреба на платформата се согласувате со нашата{' '}
-            <Link to="/privacy" className="text-indigo-600 font-medium hover:underline">
+            <a href="#/privacy" className="text-indigo-600 font-medium hover:underline">
               Политика за приватност
-            </Link>
+            </a>
             .
           </p>
         </div>

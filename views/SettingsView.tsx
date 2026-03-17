@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+
 import { Card } from '../components/common/Card';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -809,9 +809,9 @@ export const SettingsView: React.FC = () => {
                 </h2>
                 <p className="text-sm text-slate-500 mb-5">
                     Тековен план и управување со претплата.{' '}
-                    <Link to="/pricing" className="text-indigo-600 hover:underline font-medium">
+                    <a href="#/pricing" className="text-indigo-600 hover:underline font-medium">
                         Погледни ги сите планови
-                    </Link>
+                    </a>
                 </p>
 
                 <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4 flex items-center justify-between gap-4">
@@ -854,9 +854,9 @@ export const SettingsView: React.FC = () => {
 
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                     <ExternalLink className="w-4 h-4" />
-                    <Link to="/pricing" className="text-indigo-600 hover:underline">
+                    <a href="#/pricing" className="text-indigo-600 hover:underline">
                         Целосна споредба на планови →
-                    </Link>
+                    </a>
                 </div>
             </Card>
 
@@ -868,7 +868,7 @@ export const SettingsView: React.FC = () => {
                 </h2>
                 <p className="text-sm text-slate-500 mb-5">
                     Во согласност со Законот за заштита на личните податоци, имате право да ги преземете или избришете сите ваши податоци.{' '}
-                    <Link to="/privacy" className="text-indigo-600 hover:underline font-medium">Политика за приватност</Link>
+                    <a href="#/privacy" className="text-indigo-600 hover:underline font-medium">Политика за приватност</a>
                 </p>
 
                 {/* Export */}

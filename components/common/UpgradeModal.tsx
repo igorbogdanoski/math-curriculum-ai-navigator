@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+
 import { X, Sparkles, Check, Crown, Users, Loader2, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AppError, ErrorCode } from '../../utils/errors';
@@ -129,13 +129,13 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, rea
               </details>
 
               <div className="mt-3">
-                <Link
-                  to="/pricing"
+                <a
+                  href="#/pricing"
                   onClick={onClose}
                   className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 justify-center"
                 >
                   Целосна споредба на планови <ExternalLink className="w-3 h-3" />
-                </Link>
+                </a>
               </div>
             </div>
 

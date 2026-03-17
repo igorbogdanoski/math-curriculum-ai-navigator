@@ -48,7 +48,9 @@
       "Bash(awk 'NR>=1 && NR<=20 || NR>=60 && NR<=110' views/StudentProgressView.tsx)",
       "Bash(python -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(''Version:'', p.get\\(''version'',''?''\\)\\); print\\(''Build script:'', p.get\\(''scripts'',{}\\).get\\(''build'',''?''\\)\\)\")",
       "Bash(wc -l views/*.tsx components/**/*.tsx)",
-      "Bash(ls views/*.tsx)"
+      "Bash(ls views/*.tsx)",
+      "Bash(npx playwright:*)",
+      "Bash(grep -rn 'as any' c:/Users/pc4all/Downloads/math-curriculum-ai-navigator/src --include=*.tsx --include=*.ts -l)"
     ],
     "additionalDirectories": [
       "c:\\Users\\pc4all\\.claude\\plans",

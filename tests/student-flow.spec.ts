@@ -8,9 +8,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Student Flow: Public Routes', () => {
 
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage to ensure fresh state (no saved studentName)
+    // Clear localStorage; suppress cookie banner so it doesn't intercept clicks
+    await page.addInitScript(() => {
+      localStorage.clear();
+      localStorage.setItem('cookie_consent', 'accepted');
+    });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.evaluate(() => localStorage.clear());
   });
 
   // ---------------------------------------------------------------------------

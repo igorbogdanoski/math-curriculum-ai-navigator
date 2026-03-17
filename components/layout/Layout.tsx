@@ -1,11 +1,10 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useRouter } from '../../hooks/useRouter';
 import { 
   LayoutDashboard, 
   Settings, 
   Calendar, 
-  BookOpen, 
-  Menu, 
+  Menu,
   X,
   LogOut 
 } from 'lucide-react';
@@ -14,7 +13,7 @@ import { SilentErrorBoundary } from '../common/SilentErrorBoundary'; // ОВА �
 
 export const Layout = () => {
   const { user, firebaseUser, logout } = useAuth();
-  const location = useLocation();
+  const { path, navigate } = useRouter([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const navigation = [
@@ -24,9 +23,9 @@ export const Layout = () => {
     { name: 'Подесувања', href: '/settings', icon: Settings },
   ];
 
-  const isActive = (path: string) => {
-    if (path === '/' && location.pathname !== '/') return false;
-    return location.pathname.startsWith(path);
+  const isActive = (href: string) => {
+    if (href === '/' && path !== '/') return false;
+    return path.startsWith(href);
   };
 
   return (
@@ -44,9 +43,9 @@ export const Layout = () => {
           {navigation.map((item) => {
             const Icon = item.icon;
             return (
-              <Link
+              <a
                 key={item.name}
-                to={item.href}
+                href={`#${item.href}`}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   isActive(item.href)
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20'
@@ -55,7 +54,7 @@ export const Layout = () => {
               >
                 <Icon className="w-5 h-5" />
                 <span className="font-medium">{item.name}</span>
-              </Link>
+              </a>
             );
           })}
         </nav>
@@ -89,23 +88,23 @@ export const Layout = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-slate-800 text-white p-4 absolute top-16 w-full z-20 shadow-xl">
             {navigation.map((item) => (
-              <Link
+              <a
                 key={item.name}
-                to={item.href}
+                href={`#${item.href}`}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 p-3 border-b border-slate-700 last:border-0"
               >
                 <item.icon className="w-5 h-5" />
                 {item.name}
-              </Link>
+              </a>
             ))}
           </div>
         )}
 
-        {/* Содржина (Outlet) завиткана во ErrorBoundary */}
+        {/* Содржина завиткана во ErrorBoundary */}
         <main className="flex-1">
             <SilentErrorBoundary>
-                <Outlet />
+                {null}
             </SilentErrorBoundary>
         </main>
       </div>

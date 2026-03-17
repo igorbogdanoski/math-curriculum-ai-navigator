@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+
 import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { AppError, ErrorCode } from '../utils/errors';
@@ -177,9 +177,9 @@ export const PricingView: React.FC = () => {
             {isAuthenticated ? (
               <div className="text-center text-sm text-slate-400 py-2">Тековен план</div>
             ) : (
-              <Link to="/" className="w-full text-center py-2.5 border border-slate-300 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
+              <a href="#/" className="w-full text-center py-2.5 border border-slate-300 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 transition-colors text-sm">
                 Започни бесплатно
-              </Link>
+              </a>
             )}
           </div>
 
@@ -233,7 +233,7 @@ export const PricingView: React.FC = () => {
                 </button>
                 {!isAuthenticated && (
                   <p className="text-purple-200 text-xs text-center">
-                    <Link to="/" className="underline">Најавете се</Link> пред плаќање
+                    <a href="#/" className="underline">Најавете се</a> пред плаќање
                   </p>
                 )}
                 {error && <p className="text-red-300 text-xs text-center">{error}</p>}
@@ -351,12 +351,12 @@ export const PricingView: React.FC = () => {
               {loading ? 'Се подготвува...' : '💳 Надгради на Pro — 1200 МКД/год.'}
             </button>
           )}
-          <Link
-            to="/"
+          <a
+            href="#/"
             className="px-8 py-3.5 border-2 border-white/40 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors"
           >
             Продолжи бесплатно
-          </Link>
+          </a>
         </div>
         {error && <p className="text-red-300 text-sm mt-4">{error}</p>}
       </div>

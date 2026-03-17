@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+
 
 export function PrivacyPolicy() {
   return (
@@ -89,9 +89,9 @@ export function PrivacyPolicy() {
         </div>
         
         <div className="mt-12 pt-6 border-t border-slate-100 flex justify-center">
-          <Link to="/" className="text-brand-primary font-medium hover:underline">
+          <a href="#/" className="text-brand-primary font-medium hover:underline">
             &larr; Назад кон почетна
-          </Link>
+          </a>
         </div>
       </div>
     </div>
