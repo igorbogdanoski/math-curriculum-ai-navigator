@@ -104,6 +104,18 @@ export class NotFoundError extends AppError {
   }
 }
 
+export class ValidationError extends AppError {
+  constructor(field: string, detail?: string) {
+    super(
+      `Validation failed: ${field}${detail ? ` — ${detail}` : ''}`,
+      ErrorCode.VALIDATION_FAILED,
+      `Недостасува потребна информација: ${field}. Пополнете ги сите задолжителни полиња.`,
+      false,
+    );
+    this.name = 'ValidationError';
+  }
+}
+
 export class FirestoreError extends AppError {
   constructor(operation: 'read' | 'write', detail?: string) {
     super(

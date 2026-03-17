@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Sparkles, Check, Crown, Users, Loader2, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { AppError, ErrorCode } from '../../utils/errors';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, rea
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Грешка при плаќање.');
+      if (!res.ok) { const msg = data.error || 'Грешка при плаќање.'; throw new AppError(msg, ErrorCode.UNKNOWN, msg, false); }
       if (data.url) window.location.href = data.url;
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : 'Непозната грешка.');

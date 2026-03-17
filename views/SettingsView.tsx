@@ -13,6 +13,7 @@ import { exportUserData, downloadUserDataAsJson } from '../services/firestoreSer
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled } from '../services/geminiService';
 import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle, Crown, CreditCard, ExternalLink } from 'lucide-react';
+import { AppError, ErrorCode } from '../utils/errors';
 
 const initialProfile: TeachingProfile = {
     name: '',
@@ -122,7 +123,7 @@ export const SettingsView: React.FC = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Грешка.');
+      if (!res.ok) { const msg = data.error || 'Грешка.'; throw new AppError(msg, ErrorCode.UNKNOWN, msg, false); }
       if (data.url) window.location.href = data.url;
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : 'Непозната грешка.');

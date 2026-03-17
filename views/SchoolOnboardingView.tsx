@@ -15,6 +15,7 @@ import {
 } from 'firebase/auth';
 import { Building2, User, CheckCircle2, Copy, Check, ChevronRight, School } from 'lucide-react';
 import { APP_NAME } from '../constants';
+import { AppError, ErrorCode } from '../utils/errors';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ async function callCreateSchool(
     body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Грешка при создавање на училиштето.');
+  if (!res.ok) { const msg = data.error || 'Грешка при создавање на училиштето.'; throw new AppError(msg, ErrorCode.UNKNOWN, msg, false); }
   return data;
 }
 

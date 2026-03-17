@@ -4,6 +4,7 @@ import { type CurriculumModule } from '../data/curriculum';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import type { ConceptMastery, QuizResult, StudentGamification } from './firestoreService.types';
 import { parseFirestoreDoc, QuizResultSchema, ConceptMasterySchema, StudentGamificationSchema } from '../schemas/firestoreSchemas';
+import { NotFoundError, OfflineError, FirestoreError } from '../utils/errors';
 
 function isValidQuizResult(data: unknown): data is QuizResult {
   if (!data || typeof data !== 'object') return false;
@@ -31,15 +32,16 @@ export const quizService = {
         return docSnap.data() as CurriculumModule;
       } else {
         console.error("...Firestore fetch failed: Document 'v1' does not exist in 'curriculum' collection.");
-        throw new Error('Документот не постои во колекцијата за курикулум.');
+        throw new NotFoundError('curriculum/v1');
       }
     } catch (error: any) {
+      if (error?.code && error?.userMessage) throw error;
       if (error.code === 'unavailable' || (error.message && error.message.includes('offline'))) {
         console.info('...Could not fetch from Firestore: client is offline and data is not cached. Using local data.');
-        throw new Error('Офлајн — не може да се вчита курикулумот.');
+        throw new OfflineError('Офлајн — не може да се вчита курикулумот.');
       }
       console.error('...Error fetching document from Firestore:', error);
-      throw new Error(`Грешка при вчитување на документот: ${error.message || 'Unknown error'}`);
+      throw new FirestoreError('read', error.message);
     }
   },
 

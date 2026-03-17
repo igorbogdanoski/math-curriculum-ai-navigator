@@ -23,4 +23,6 @@ interface Window {
   ggbApplet?: { getBase64?(anim: boolean): string };
   /** Desmos graphing calculator API */
   Desmos?: { GraphingCalculator(el: HTMLElement, opts?: Record<string, unknown>): { screenshot(opts?: Record<string, unknown>): string; destroy(): void } };
+  /** KaTeX math typesetting library — loaded via CDN script tag */
+  katex?: { renderToString(latex: string, options?: { output?: string; throwOnError?: boolean; displayMode?: boolean; strict?: boolean | string; trust?: boolean }): string };
 }

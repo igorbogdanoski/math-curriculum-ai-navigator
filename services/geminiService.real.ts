@@ -7,6 +7,7 @@ import {
     streamGeminiProxyRich, type StreamChunk, type ImagenProxyResponse
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { AIServiceError } from '../utils/errors';
 import { db, auth, storage } from '../firebaseConfig';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, AssessmentQuestion, AIGeneratedWorkedExample, AdaptiveHomework , AIGeneratedAnnualPlan, AIGeneratedPresentation } from '../types';
@@ -90,7 +91,7 @@ async generateIllustration(prompt: string, image?: { base64: string, mimeType: s
         try { localStorage.setItem(cacheKey, JSON.stringify({ imageUrl, ts: Date.now() })); } catch { /* quota exceeded — skip */ }
         return { imageUrl, prompt };
       }
-      throw new Error("AI did not return image data");
+      throw new AIServiceError("AI did not return image data (Gemini Flash path)");
     }
 
     const response: ImagenProxyResponse = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
@@ -102,7 +103,7 @@ async generateIllustration(prompt: string, image?: { base64: string, mimeType: s
         const imageUrl = await getDownloadURL(storageRef);
         return { imageUrl, prompt };
     }
-    throw new Error("AI did not return image");
+    throw new AIServiceError("AI did not return image (Imagen path)");
   },
 
 async generateLearningPaths(context: GenerationContext, studentProfiles: StudentProfile[], profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedLearningPaths> {

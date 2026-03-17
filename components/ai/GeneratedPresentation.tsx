@@ -23,8 +23,7 @@ const isPureMathExpr = (text: string): boolean => {
 /** Renders a pure-math expression to an SVG data-URI (KaTeX, no html2canvas).
  *  Returns { uri, ratio: height/width } or null on failure. */
 const renderPureMathToSvg = (text: string): { uri: string; ratio: number } | null => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const katex = (window as any).katex;
+  const katex = window.katex;
   if (!katex) return null;
   try {
     const t = text.trim();
@@ -63,8 +62,7 @@ const renderBulletToImg = async (
     `color:#${hexColor}`, 'max-width:640px',
     'line-height:1.65', 'white-space:pre-wrap',
   ].join(';');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const katex = (window as any).katex;
+  const katex = window.katex;
   const toHtml = (src: string): string => {
     if (!katex) return src;
     return src

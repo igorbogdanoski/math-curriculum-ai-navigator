@@ -3,6 +3,7 @@ import type { User } from 'firebase/auth';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
 import { AI_COSTS, sanitizePromptInput } from '../services/gemini/core';
 import { RateLimitError } from '../services/apiErrors';
+import { ValidationError } from '../utils/errors';
 import { useLanguage } from '../i18n/LanguageContext';
 import type {
   AIGeneratedAssessment, AIGeneratedRubric,
@@ -326,8 +327,8 @@ export function useGeneratorActions({
       } else if (materialType) {
         switch (materialType) {
           case 'SCENARIO':
-            if (!finalContext.grade) throw new Error('Недостасува информација за одделение.');
-            if (!finalContext.topic) throw new Error('Недостасува информација за тема.');
+            if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за генерирање на сценарио');
+            if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за генерирање на сценарио');
             result = await geminiService.generateLessonPlanIdeas(
               finalContext.concepts || [], finalContext.topic, finalContext.grade.level,
               user ?? undefined, { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel }, effectiveInstruction,
@@ -368,11 +369,11 @@ export function useGeneratorActions({
             result = await geminiService.generateExitTicket(exitTicketQuestions, exitTicketFocus, finalContext, user ?? undefined, effectiveInstruction);
             break;
           case 'RUBRIC':
-            if (!finalContext.grade) throw new Error('Недостасува информација за одделение.');
+            if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за генерирање на рубрика');
             result = await geminiService.generateRubric(finalContext.grade.level, tempActivityTitle, activityType, criteriaHints, user ?? undefined, effectiveInstruction);
             break;
           case 'PRESENTATION':
-            if (!finalContext.topic) throw new Error('Недостасува информација за тема.');
+            if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за генерирање на презентација');
             result = await geminiService.generatePresentation(
               finalContext.topic.title,
               finalContext.grade?.level ?? 1,

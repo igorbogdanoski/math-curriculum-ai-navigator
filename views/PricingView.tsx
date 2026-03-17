@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { AppError, ErrorCode } from '../utils/errors';
 
 // ── Pricing constants ──────────────────────────────────────────────────────
 const PRO_PRICE_MKD = 1200;
@@ -69,7 +70,7 @@ function useStripeCheckout() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Грешка при создавање на плаќање.');
+      if (!res.ok) { const msg = data.error || 'Грешка при создавање на плаќање.'; throw new AppError(msg, ErrorCode.UNKNOWN, msg, false); }
       if (data.url) window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Непозната грешка.');

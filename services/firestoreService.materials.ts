@@ -5,6 +5,7 @@ import { type DifferentiationLevel, type SavedQuestion } from '../types';
 import { type CachedMaterial, type Assignment } from './firestoreService.types';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import { callEmbeddingProxy } from './gemini/core';
+import { NotFoundError, OfflineError, FirestoreError } from '../utils/errors';
 
 export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
     console.log("Attempting to fetch data from Firestore...");
@@ -22,20 +23,18 @@ export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
         return docSnap.data() as CurriculumModule;
       } else {
         console.error("...Firestore fetch failed: Document 'v1' does not exist in 'curriculum' collection.");
-        throw new Error("Податоците од програмата не се пронајдени во базата на податоци.");
+        throw new NotFoundError('curriculum/v1');
       }
     } catch (error: any) {
-      // Gracefully handle offline errors, as the app has a local data fallback.
+      // Re-throw AppErrors directly (NotFoundError, etc.)
+      if (error?.code && error?.userMessage) throw error;
+      // Gracefully handle offline errors — the app has a local data fallback.
       if (error.code === 'unavailable' || (error.message && error.message.includes('offline'))) {
           console.info("...Could not fetch from Firestore: client is offline and data is not cached. Using local data.");
-          // Корисникот е офлајн, фрламе грешка за да се користи локалниот fallback.
-          throw new Error("Клиентот не е поврзан на мрежа за да ги синхронизира податоците.");
+          throw new OfflineError('Клиентот е офлајн — Firestore не е достапен.');
       }
-
-      // For any other type of error, log it as a critical error.
       console.error("...Error fetching document from Firestore:", error);
-      const errorMessage = error.message || "An unknown network error occurred.";
-      throw new Error(`Грешка при вчитување на податоците од базата: ${errorMessage}`);
+      throw new FirestoreError('read', error.message);
     }
   };
 
@@ -468,9 +467,9 @@ export const forkCachedMaterial = async (
   targetTeacherUid: string
 ): Promise<string> => {
   const snap = await getDoc(doc(db, 'cached_ai_materials', sourceId));
-  if (!snap.exists()) throw new Error('Source material not found');
+  if (!snap.exists()) throw new NotFoundError('cached_ai_material');
   const src = snap.data();
-  if (src.status !== 'published') throw new Error('Can only fork published materials');
+  if (src.status !== 'published') throw new FirestoreError('read', 'Can only fork published materials');
   const ref = await addDoc(collection(db, 'cached_ai_materials'), {
     content: src.content,
     type: src.type,

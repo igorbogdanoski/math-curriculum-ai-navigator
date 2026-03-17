@@ -9,14 +9,6 @@ import { MathRenderer } from '../MathRenderer';
 // Mock KaTeX globally
 const mockRenderToString = vi.fn((latex: string) => `<span class="katex-mock">${latex}</span>`);
 
-declare global {
-  interface Window {
-    katex: {
-      renderToString: (latex: string, options?: any) => string;
-    };
-  }
-}
-
 describe('MathRenderer', () => {
     beforeEach(() => {
         vi.clearAllMocks();

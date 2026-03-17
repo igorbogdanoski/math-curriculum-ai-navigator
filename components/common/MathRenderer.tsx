@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-declare global {
-    interface Window {
-        katex: {
-            renderToString: (latex: string, options?: any) => string;
-        };
-    }
-}
-
 interface MathRendererProps {
   text: string | null | undefined;
 }
@@ -260,7 +252,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
                     if (isDisplayMath && math !== undefined) {
                         let html;
                         try {
-                            html = window.katex.renderToString(math, { ...katexOptions, displayMode: true });
+                            html = window.katex!.renderToString(math, { ...katexOptions, displayMode: true });
                         } catch (e: any) {
                             console.warn("KaTeX block rendering error:", e.message, "for content:", math);
                             html = `<div class="text-red-600 font-mono bg-red-100 p-2 rounded" title="${escapeHtml(e.message)}">${escapeHtml(math)}</div>`;
