@@ -30,9 +30,14 @@ async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<{ mime
         console.log(`[imagen] Strategy 2 succeeded with model: ${modelName}`);
         return { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
       }
-      console.warn(`[imagen] Strategy 2 model ${modelName}: no image parts in response`);
+      console.warn(`[imagen] ${modelName}: no image parts in response`);
     } catch (err: any) {
-      console.error(`[imagen] Strategy 2 model ${modelName} error:`, err?.message || err);
+      const msg: string = err?.message || String(err);
+      const isExpired = msg.includes('API key expired') || msg.includes('API_KEY_INVALID');
+      const is404 = msg.includes('404');
+      console.error(`[imagen] ${modelName} error [expired=${isExpired} 404=${is404}]:`, msg.slice(0, 150));
+      // If key is expired/invalid, no point trying other models with same key
+      if (isExpired) throw err;
     }
   }
   return null;
@@ -70,13 +75,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   for (let i = 0; i < apiKeys.length; i++) {
     const apiKey = apiKeys[i];
+    const keyHint = `key[${i}]=...${apiKey.slice(-6)}`;
     try {
       const s2result = await tryGeminiImageGen(apiKey, prompt);
       if (s2result) {
+        console.log(`[imagen] Success with ${keyHint}`);
         return res.status(200).json({ inlineData: s2result });
       }
 
-      // Both strategies returned null for this key — try next key if available
       lastError = new Error('AI did not return image data from any strategy (check Vercel logs for details)');
       if (i < apiKeys.length - 1) continue;
     } catch (error) {
@@ -84,6 +90,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const msg = lastError.message;
       const isQuota = msg.includes('429');
       const isInvalidKey = msg.includes('API_KEY_INVALID') || msg.includes('API key expired');
+
+      console.error(`[imagen] ${keyHint} failed — quota=${isQuota} invalidKey=${isInvalidKey}: ${msg.slice(0, 120)}`);
 
       if ((isQuota || isInvalidKey) && i < apiKeys.length - 1) {
         continue;
