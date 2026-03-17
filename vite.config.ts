@@ -326,6 +326,7 @@ export default defineConfig(({ mode }) => {
               if (id.includes('pptxgenjs')) return 'vendor-pptx';
               if (id.includes('mathjs') || id.includes('mathlive')) return 'vendor-math';
               if (id.includes('docx')) return 'vendor-docx';
+              if (id.includes('/xlsx/') || id.includes('\\xlsx\\')) return 'vendor-xlsx';
               return 'vendor'; // React + entire React ecosystem + all other deps
             }
           }
