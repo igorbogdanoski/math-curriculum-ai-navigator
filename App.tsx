@@ -123,6 +123,7 @@ const TeacherAnalyticsView = safeLazy(() => import('./views/TeacherAnalyticsView
 const SystemAdminView = safeLazy(() => import('./views/SystemAdminView').then(module => ({ default: module.SystemAdminView })));
 const TestGeneratorView = safeLazy(() => import('./views/TestGeneratorView').then(module => ({ default: module.TestGeneratorView })));
 const GradeBookView = safeLazy(() => import('./views/GradeBookView').then(module => ({ default: module.GradeBookView })));
+const WrittenTestReviewView = safeLazy(() => import('./views/WrittenTestReviewView').then(module => ({ default: module.WrittenTestReviewView })));
 const SchoolAdminView = safeLazy(() => import('./views/SchoolAdminView').then(module => ({ default: module.SchoolAdminView })));
 const CurriculumEditorView = safeLazy(() => import('./views/CurriculumEditorView').then(module => ({ default: module.CurriculumEditorView })));
 const SchoolOnboardingView = safeLazy(() => import('./views/SchoolOnboardingView').then(module => ({ default: module.SchoolOnboardingView })));
@@ -178,6 +179,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/analytics', component: TeacherAnalyticsView },
     { path: '/test-generator', component: TestGeneratorView },
     { path: '/grade-book', component: GradeBookView },
+    { path: '/test-review', component: WrittenTestReviewView },
     { path: '/share/:data', component: SharedPlanView },
     { path: '/share/annual/:data', component: SharedAnnualPlanView },
     { path: '/quiz/:data', component: SharedQuizView },
