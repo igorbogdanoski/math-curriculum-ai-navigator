@@ -355,8 +355,8 @@ export async function setupStudentPlayMocks(page: Page, quizId = E2E_QUIZ_ID) {
   // Use direct global injection for quiz content — most reliable for E2E.
   const quizContentJson = JSON.stringify(MOCK_QUIZ_CONTENT);
   await page.addInitScript((json: string) => {
-    (window as any).__E2E_MOCK_QUIZ_CONTENT__ = JSON.parse(json);
-    (window as any).__E2E_MODE__ = true;
+    window.__E2E_MOCK_QUIZ_CONTENT__ = JSON.parse(json);
+    window.__E2E_MODE__ = true;
   }, quizContentJson);
 
   // Mock Gemini AI responses (used for quiz feedback after completion)
@@ -450,9 +450,9 @@ export async function setupTeacherMocks(page: Page, teacherUid = 'test-teacher-u
     
     console.log('E2E: Set authData in localStorage for key:', key);
     // Set a flag for our mocks to know we are in teacher mode
-    (window as any).__E2E_TEACHER_MODE__ = true;
-    (window as any).__E2E_MOCK_QUIZ_RESULTS__ = results;
-    (window as any).__E2E_MOCK_MASTERY__ = [];
+    window.__E2E_TEACHER_MODE__ = true;
+    window.__E2E_MOCK_QUIZ_RESULTS__ = results;
+    window.__E2E_MOCK_MASTERY__ = [];
   }, { uid: teacherUid, key: apiKey, results: MOCK_QUIZ_RESULTS });
 
   // Mock the teacher profile document in Firestore

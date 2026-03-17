@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai';
 
 /**
  * Try Imagen 3 via the `:predict` REST endpoint (Vertex-compatible path on Gemini Developer API).
@@ -72,10 +72,11 @@ async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<{ mime
         { apiVersion: 'v1beta' },
       );
 
-      const result = await (model as any).generateContent({
+      type ImageGenRequest = Parameters<GenerativeModel['generateContent']>[0] & { generationConfig?: { responseModalities?: string[] } };
+      const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { responseModalities: ['IMAGE'] },
-      });
+      } as ImageGenRequest);
 
       const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
       const imgPart = parts.find((p: any) => p.inlineData?.data);
@@ -113,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { contents } = validated;
   const prompt = typeof contents === 'string'
     ? contents
-    : (contents as any[])[0]?.parts[0]?.text || '';
+    : (contents as Array<{ parts: Array<{ text?: string }> }>)[0]?.parts[0]?.text || '';
 
   if (!prompt) {
     return res.status(400).json({ error: 'Missing prompt for image generation' });

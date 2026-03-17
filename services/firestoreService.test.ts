@@ -37,7 +37,7 @@ describe('firestoreService tests with mocked firestore layer', () => {
 
     describe('saveStudentIdentity', () => {
         it('calls setDoc with correct path and payload', async () => {
-            (doc as any).mockReturnValue('mock-doc-ref');
+            (doc as ReturnType<typeof vi.fn>).mockReturnValue('mock-doc-ref');
             
             await firestoreService.saveStudentIdentity('dev123', 'John Doe', 'anon-uid');
             
@@ -53,7 +53,7 @@ describe('firestoreService tests with mocked firestore layer', () => {
 
     describe('updateLiveSessionStatus', () => {
         it('calls updateDoc with the chosen status', async () => {
-             (doc as any).mockReturnValue('session-doc-ref');
+             (doc as ReturnType<typeof vi.fn>).mockReturnValue('session-doc-ref');
              
              await firestoreService.updateLiveSessionStatus('sess_999', 'ended');
              
@@ -66,7 +66,7 @@ describe('firestoreService tests with mocked firestore layer', () => {
 
     describe('deleteStudentGroup', () => {
         it('calls deleteDoc for the specific group ID', async () => {
-             (doc as any).mockReturnValue('group-delete-ref');
+             (doc as ReturnType<typeof vi.fn>).mockReturnValue('group-delete-ref');
              // Needs the deleteDoc import to be mocked
              const { deleteDoc } = await import('firebase/firestore');
              
@@ -80,8 +80,8 @@ describe('firestoreService tests with mocked firestore layer', () => {
     describe('saveQuizResult', () => {
         it('calls setDoc on a new doc within quiz_results collection', async () => {
              const { doc, setDoc, collection } = await import('firebase/firestore');
-             (collection as any).mockReturnValue('quiz-results-collection');
-             (doc as any).mockReturnValue({ id: 'new_result_id' });
+             (collection as ReturnType<typeof vi.fn>).mockReturnValue('quiz-results-collection');
+             (doc as ReturnType<typeof vi.fn>).mockReturnValue({ id: 'new_result_id' });
              
              const result = await firestoreService.saveQuizResult({
                  quizId: 'q1', quizTitle: 'T', score: 10, correctCount: 1, totalQuestions: 1, percentage: 100

@@ -22,9 +22,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const { contents } = validated;
-  const text = typeof contents === 'string' 
-    ? contents 
-    : (contents as any[])[0]?.parts[0]?.text || '';
+  const text = typeof contents === 'string'
+    ? contents
+    : (contents as Array<{ parts: Array<{ text?: string }> }>)[0]?.parts[0]?.text || '';
 
   if (!text) {
     return res.status(400).json({ error: 'Missing text for embedding' });

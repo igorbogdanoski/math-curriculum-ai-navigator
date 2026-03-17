@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenerativeAI, Content } from "@google/generative-ai";
+import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -36,19 +36,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 
-  const normalizedContents: Content[] = (typeof contents === 'string'
+  type RawPart = { text?: string; inlineData?: { mimeType?: string; data?: string }; inline_data?: { mime_type?: string; data?: string } };
+  type RawContent = { role?: string; parts: RawPart[] };
+  const rawContents: RawContent[] = typeof contents === 'string'
     ? [{ role: 'user', parts: [{ text: contents }] }]
-    : contents as any[]).map(c => ({
+    : (contents as RawContent[]);
+  const normalizedContents: Content[] = rawContents.map(c => ({
       role: (c.role === 'assistant' || c.role === 'model') ? 'model' : 'user',
-      parts: c.parts.map((p: any) => {
-        if (p.text) return { text: p.text };
+      parts: c.parts.map((p): { text: string } | { inlineData: { mimeType: string; data: string } } => {
         if (p.inlineData || p.inline_data) {
-          const data = p.inlineData || p.inline_data;
-          return { inlineData: { mimeType: data.mimeType || data.mime_type, data: data.data } };
+          const d = p.inlineData ?? p.inline_data!;
+          const mimeType = (d as { mimeType?: string }).mimeType ?? (d as { mime_type?: string }).mime_type ?? '';
+          return { inlineData: { mimeType, data: d.data ?? '' } };
         }
-        return p;
-      })
-    }));
+        return { text: p.text ?? '' };
+      }),
+    })) as Content[];
 
   if (systemInstruction && typeof systemInstruction === 'string' && normalizedContents.length > 0) {
     const instructionText = `[SYSTEM INSTRUCTIONS]\n${systemInstruction}\n\n[USER REQUEST]\n`;
@@ -62,11 +65,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   for (let i = 0; i < apiKeys.length; i++) {
     try {
       const genAI = new GoogleGenerativeAI(apiKeys[i]);
-      const modelInstance = genAI.getGenerativeModel({ model: modelName, safetySettings: safetySettings as any });
+      const modelInstance = genAI.getGenerativeModel({ model: modelName, safetySettings: safetySettings as SafetySetting[] });
 
       const result = await modelInstance.generateContentStream({
         contents: normalizedContents,
-        generationConfig: generationConfig as any,
+        generationConfig: generationConfig as GenerationConfig,
       });
 
       // Stream started successfully — now commit SSE headers

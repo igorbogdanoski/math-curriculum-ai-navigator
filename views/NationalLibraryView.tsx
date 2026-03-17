@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { firestoreService } from '../services/firestoreService';
+import type { NationalLibraryEntry } from '../services/firestoreService.materials';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
@@ -14,22 +15,7 @@ const TYPE_LABELS: Record<string, string> = {
   FILL_IN_THE_BLANK: 'Пополни',
 };
 
-interface LibraryEntry {
-  id: string;
-  question: string;
-  type: string;
-  options?: string[];
-  answer: string;
-  solution?: string;
-  gradeLevel?: number;
-  conceptId?: string;
-  conceptTitle?: string;
-  publishedByName: string;
-  schoolName?: string;
-  publisherIsMentor?: boolean;
-  importCount: number;
-  publishedAt?: any;
-}
+type LibraryEntry = NationalLibraryEntry;
 
 export const NationalLibraryView: React.FC = () => {
   const { firebaseUser, user } = useAuth();

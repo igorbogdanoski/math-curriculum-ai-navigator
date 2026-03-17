@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window !== 'undefined' && window.__E2E_TEACHER_MODE__) {
         console.info("E2E: Teacher mode detected. Mocking authenticated state.");
         setAuthState({
-            firebaseUser: { uid: 'test-teacher-uid', email: 'teacher@test.mk', emailVerified: true } as any,
+            firebaseUser: { uid: 'test-teacher-uid', email: 'teacher@test.mk', emailVerified: true } as unknown as User,
             profile: {
                 name: 'Тест Наставник',
                 role: 'teacher',
@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     planner: true,
                     analytics: true,
                 },
-            } as any,
+            } as unknown as TeachingProfile,
             isAuthenticated: true,
             isLoading: false,
         });

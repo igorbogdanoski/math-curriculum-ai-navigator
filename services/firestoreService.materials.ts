@@ -567,11 +567,30 @@ export const publishToNationalLibrary = async (
     return ref.id;
   };
 
+export interface NationalLibraryEntry {
+  id: string;
+  question: string;
+  type: string;
+  options: string[];
+  answer: string;
+  solution: string;
+  gradeLevel: number | null;
+  conceptId: string | null;
+  conceptTitle: string | null;
+  topicId: string | null;
+  publishedByUid: string;
+  publishedByName: string;
+  schoolName: string | null;
+  publisherIsMentor: boolean;
+  importCount: number;
+  publishedAt: Timestamp | null;
+}
+
 export const fetchNationalLibrary = async (filters?: {
     gradeLevel?: number;
     conceptId?: string;
     type?: string;
-  }) => {
+  }): Promise<NationalLibraryEntry[]> => {
     try {
       const constraints: any[] = [];
       if (filters?.gradeLevel) constraints.push(where('gradeLevel', '==', filters.gradeLevel));
@@ -581,8 +600,7 @@ export const fetchNationalLibrary = async (filters?: {
       constraints.push(limit(200));
       const q = query(collection(db, 'national_library'), ...constraints);
       const snap = await getDocs(q);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })) as NationalLibraryEntry[];
     } catch (error) {
       console.error('Error fetching national library:', error);
       return [];

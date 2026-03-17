@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // Google AI Studio SDK: embedContent accepts the parts directly
     const result = await modelInstance.embedContent({
-      content: { role: 'user', parts: contents as any[] }
+      content: { role: 'user', parts: contents as Part[] }
     });
     
     return res.status(200).json({ embeddings: result.embedding });

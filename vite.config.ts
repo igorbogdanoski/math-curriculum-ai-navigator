@@ -74,9 +74,8 @@ function geminiDevProxy(apiKey: string): Plugin {
           const { model, contents } = await readBody(req);
 
           const modelInstance = genAI.getGenerativeModel({ model: model || 'gemini-embedding-2-preview' });
-          const result = await modelInstance.embedContent({
-            content: { role: 'user', parts: contents as any[] }
-          });
+          const embedText = typeof contents === 'string' ? contents : (contents as Array<{ parts: Array<{ text?: string }> }>)[0]?.parts[0]?.text ?? '';
+          const result = await modelInstance.embedContent(embedText);
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ embeddings: result.embedding }));
@@ -124,7 +123,7 @@ function geminiDevProxy(apiKey: string): Plugin {
 
         try {
           const { contents } = await readBody(req);
-          const prompt = typeof contents === 'string' ? contents : (contents as any[])[0]?.parts[0]?.text || '';
+          const prompt = typeof contents === 'string' ? contents : (contents as Array<{ parts: Array<{ text?: string }> }>)[0]?.parts[0]?.text || '';
 
           if (!prompt) { sendJson(400, { error: 'Missing prompt' }); return; }
 
@@ -158,10 +157,11 @@ function geminiDevProxy(apiKey: string): Plugin {
             for (const modelName of ['gemini-2.0-flash-preview-image-generation', 'gemini-2.0-flash-exp']) {
               try {
                 const model = genAI.getGenerativeModel({ model: modelName }, { apiVersion: 'v1beta' });
-                const result = await (model as any).generateContent({
+                type ImageGenRequest = Parameters<typeof model.generateContent>[0] & { generationConfig?: { responseModalities?: string[] } };
+                const result = await model.generateContent({
                   contents: [{ role: 'user', parts: [{ text: prompt }] }],
                   generationConfig: { responseModalities: ['IMAGE'] },
-                });
+                } as ImageGenRequest);
                 const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
                 const imgPart = parts.find((p: any) => p.inlineData?.data);
                 if (imgPart?.inlineData) {

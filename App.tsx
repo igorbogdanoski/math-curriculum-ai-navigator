@@ -302,7 +302,7 @@ const AIGeneratorPanelFallback: React.FC = () => {
 };
 
 const AppCore: React.FC = () => {
-    const { isAuthenticated, isLoading, path } = useAuth() as any; // Adding path from useAuth or useRouter
+    const { isAuthenticated, isLoading } = useAuth();
     
     if (isLoading) {
         return <AppSkeleton />;

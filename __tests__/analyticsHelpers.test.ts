@@ -21,7 +21,7 @@ describe('groupBy', () => {
   });
 
   it('returns empty object for empty array', () => {
-    expect(groupBy([], i => (i as any).k)).toEqual({});
+    expect(groupBy([], (_i: Record<string, unknown>) => String(_i['k']))).toEqual({});
   });
 
   it('groups all items under same key when key function is constant', () => {
