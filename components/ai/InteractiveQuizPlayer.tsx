@@ -4,6 +4,8 @@ import confetti from 'canvas-confetti';
 import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X, Lightbulb, Loader2, PenTool, Calculator, Eye } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 import { MathInput } from '../common/MathInput';
+import { GeometryDiagramRenderer } from '../common/GeometryDiagramRenderer';
+import { StatisticsWorkspace } from '../data/StatisticsWorkspace';
 import { checkMathEquivalence } from '../../utils/mathEvaluator';
 import { GradeBadge } from '../common/GradeBadge';
 import { MathToolsPanel } from '../common/MathToolsPanel';
@@ -20,6 +22,10 @@ export interface Question {
   options?: string[];
   answer: string;
   imageUrl?: string;
+  /** Inline SVG diagram for geometry questions */
+  svgDiagram?: string;
+  /** Structured data table for statistics questions */
+  tableData?: import('../../types').QuestionTableData;
   explanation?: string;
   type?: QuestionType | string;
   isWorkedExample?: boolean;
@@ -445,7 +451,24 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                 </div>
               </div>
             )}
+            {currentQ.svgDiagram && (
+              <div className="w-full md:w-72 flex-shrink-0 animate-in fade-in duration-300">
+                <GeometryDiagramRenderer svg={currentQ.svgDiagram} caption="Геометриски дијаграм" />
+              </div>
+            )}
           </div>
+
+          {/* Statistics data table */}
+          {currentQ.tableData && (
+            <div className="mb-6">
+              <StatisticsWorkspace
+                initialData={currentQ.tableData}
+                readOnly
+                compact
+                title={currentQ.tableData.caption}
+              />
+            </div>
+          )}
 
           {/* Options */}
           {currentQ?.isWorkedExample ? (

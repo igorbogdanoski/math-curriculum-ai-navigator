@@ -332,6 +332,13 @@ export enum QuestionType {
 
 export type DifferentiationLevel = 'standard' | 'support' | 'advanced';
 
+/** Structured data table for statistics/data-work questions */
+export interface QuestionTableData {
+  headers: string[];
+  rows: (string | number)[][];
+  caption?: string;
+}
+
 export interface AssessmentQuestion {
   id?: number;
   type: QuestionType | string;
@@ -339,6 +346,10 @@ export interface AssessmentQuestion {
   options?: string[];
   answer: string;
   imageUrl?: string;
+  /** AI-generated inline SVG diagram (geometry questions) */
+  svgDiagram?: string;
+  /** Structured data table (statistics questions) */
+  tableData?: QuestionTableData;
   levelDescription?: string;
 
   solution?: string;

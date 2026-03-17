@@ -48,6 +48,7 @@ import { GeneratedLearningPaths } from '../components/ai/GeneratedLearningPaths'
 import { GeneratedPresentation } from '../components/ai/GeneratedPresentation';
 import { WorkedExample } from '../components/materials/WorkedExample';
 import { BloomSliders, BloomDonutChart } from '../components/generator/BloomSliders';
+import { StatisticsWorkspace } from '../components/data/StatisticsWorkspace';
 import { RefineGenerationChat } from '../components/generator/RefineGenerationChat';
 import { AIFeedbackBar } from '../components/ai/AIFeedbackBar';
 import { AssignDialog } from '../components/AssignDialog';
@@ -677,6 +678,15 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                     {'openingActivity' in generatedMaterial && <GeneratedIdeas material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />}
                     {'questions' in generatedMaterial && (state.materialType === 'QUIZ' || state.materialType === 'ASSESSMENT') && (
                       <BloomDonutChart questions={(generatedMaterial as AIGeneratedAssessment).questions} />
+                    )}
+                    {'questions' in generatedMaterial && (generatedMaterial as AIGeneratedAssessment).questions?.some(q => q.tableData) && (
+                      <div className="flex flex-col gap-3">
+                        {(generatedMaterial as AIGeneratedAssessment).questions
+                          .filter(q => q.tableData)
+                          .map((q, i) => (
+                            <StatisticsWorkspace key={i} initialData={q.tableData} title={q.tableData?.caption} />
+                          ))}
+                      </div>
                     )}
                     {'questions' in generatedMaterial && (
                         <div className="flex flex-col gap-2">

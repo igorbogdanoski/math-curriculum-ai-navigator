@@ -44,10 +44,24 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
       ? ' ЗАБЕЛЕШКА ЗА ВОЗРАСТА: Ова е за рана училишна возраст (1-3 одд). Користи МНОГУ ЕДНОСТАВЕН јазик, кратки реченици и примери со конкретни предмети (на пр. јаболка, играчки). Бројките да соодветствуваат на нивото.' 
       : '';
     const safeCustomInstruction = sanitizePromptInput(customInstruction);
-    const prompt = `Генерирај ${type} со ${numQuestions} прашања на македонски. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart}${workedExamplePart}${gradeLevelPrompt} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (лесно/средно/тешко).${safeCustomInstruction ? ` ${safeCustomInstruction}` : ''}`;
-    const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, alignment_goal: { type: Type.STRING }, selfAssessmentQuestions: { type: Type.ARRAY, items: { type: Type.STRING } }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, isWorkedExample: { type: Type.BOOLEAN }, workedExampleType: { type: Type.STRING }, cognitiveLevel: { type: Type.STRING }, difficulty_level: { type: Type.STRING }, concept_evaluated: { type: Type.STRING } }, required: ["type", "question", "answer", "cognitiveLevel"] } } }, required: ["title", "questions"] };
 
-    const canCache = !customInstruction && !studentProfiles?.length && differentiationLevel === 'standard' && !image;
+    // Detect domain from topic/concept for visual enrichment
+    const topicId = (context.topic?.id || '').toLowerCase();
+    const conceptTitles = (context.concepts || []).map(c => (c.title || '').toLowerCase()).join(' ');
+    const isGeometry = topicId.includes('geom') || conceptTitles.includes('геометрија') || conceptTitles.includes('триаголник') || conceptTitles.includes('агол') || conceptTitles.includes('правоаголник') || conceptTitles.includes('кружница') || conceptTitles.includes('трансформац') || conceptTitles.includes('координат');
+    const isStatistics = topicId.includes('stat') || conceptTitles.includes('статистик') || conceptTitles.includes('средна вредност') || conceptTitles.includes('медијана') || conceptTitles.includes('мод') || conceptTitles.includes('честота') || conceptTitles.includes('дијаграм') || conceptTitles.includes('податоц');
+
+    const geometryPart = isGeometry
+      ? ' ГЕОМЕТРИЈА — ВИЗУЕЛНИ ДИЈАГРАМИ: За секое прашање поврзано со геометриска фигура, агол, координати или трансформација, генерирај SVG дијаграм во полето "svgDiagram". SVG правила: viewBox="0 0 220 180", width="220" height="180", само безбедни елементи (line, circle, polygon, polyline, rect, path, text, g), без скрипти, без надворешни ресурси. Користи stroke="#4f46e5" за линии, fill="none" за фигури, fill="#1e1b4b" за текст (font-size 12), fill="#e0e7ff" за попребоени површини. Означи темиња со букви (A, B, C...) и димензии каде е релевантно.'
+      : '';
+    const statisticsPart = isStatistics
+      ? ' СТАТИСТИКА — ТАБЕЛА СО ПОДАТОЦИ: За прашања со статистички податоци, генерирај структурирана табела во полето "tableData" со формат: {"headers": ["Вредност", "Честота"], "rows": [[...], [...]], "caption": "..."}. Корисни реалистични броеви соодветни за нивото. Прашањето нека бара конкретна пресметка (средна вредност, медијана, мод, опсег) врз основа на табелата.'
+      : '';
+
+    const prompt = `Генерирај ${type} со ${numQuestions} прашања на македонски. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart}${workedExamplePart}${gradeLevelPrompt}${geometryPart}${statisticsPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (лесно/средно/тешко).${safeCustomInstruction ? ` ${safeCustomInstruction}` : ''}`;
+    const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, alignment_goal: { type: Type.STRING }, selfAssessmentQuestions: { type: Type.ARRAY, items: { type: Type.STRING } }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, svgDiagram: { type: Type.STRING }, tableData: { type: Type.OBJECT, properties: { headers: { type: Type.ARRAY, items: { type: Type.STRING } }, rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: {} } }, caption: { type: Type.STRING } } }, isWorkedExample: { type: Type.BOOLEAN }, workedExampleType: { type: Type.STRING }, cognitiveLevel: { type: Type.STRING }, difficulty_level: { type: Type.STRING }, concept_evaluated: { type: Type.STRING } }, required: ["type", "question", "answer", "cognitiveLevel"] } } }, required: ["title", "questions"] };
+
+    const canCache = !customInstruction && !studentProfiles?.length && differentiationLevel === 'standard' && !image && !isGeometry && !isStatistics;
     const conceptCacheId = context.concepts?.[0]?.id || 'gen';
     const cacheKey = canCache ? `assessment_${type}_${conceptCacheId}_g${context.grade.level}_${[...questionTypes].sort().join('_')}_n${numQuestions}` : '';
     
