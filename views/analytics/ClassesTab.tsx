@@ -5,6 +5,7 @@ import { firestoreService, type SchoolClass } from '../../services/firestoreServ
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { SkeletonList } from '../../components/common/Skeleton';
 
 interface ClassesTabProps {
     teacherUid: string;
@@ -206,11 +207,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center py-16 text-gray-400 text-sm font-semibold">
-                Вчитување класи...
-            </div>
-        );
+        return <SkeletonList count={3} rows={4} />;
     }
 
     return (

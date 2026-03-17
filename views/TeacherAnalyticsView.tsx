@@ -34,6 +34,7 @@ import { useReactToPrint } from 'react-to-print';
 import { PrintableEDnevnikReport } from '../components/analytics/PrintableEDnevnikReport';
 import type { SchoolClass } from '../services/firestoreService';
 import { AssignRemedialModal } from '../components/analytics/AssignRemedialModal';
+import { TabErrorBoundary } from '../components/common/TabErrorBoundary';
 
 
 export const TeacherAnalyticsView: React.FC = () => {
@@ -425,6 +426,7 @@ const { addNotification } = useNotification();
           </div>
         )}
 
+        <TabErrorBoundary key={activeTab} tabName={activeTab}>
         {localResults.length === 0 && ['overview', 'trend', 'students', 'standards', 'concepts', 'grades', 'alerts', 'groups', 'coverage', 'league', 'cohort'].includes(activeTab) ? (
           <Card className="text-center py-16">
             <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -491,6 +493,7 @@ const { addNotification } = useNotification();
             {activeTab === 'cohort' && <CohortTab results={localResults} />}
           </>
         )}
+        </TabErrorBoundary>
 
         {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments', 'league', 'cohort'].includes(activeTab) && localResults.length > 0 && (
           <div className="mt-6 flex flex-col items-center gap-1">

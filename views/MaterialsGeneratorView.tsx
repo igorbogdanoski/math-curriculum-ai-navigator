@@ -51,6 +51,7 @@ import { BloomSliders, BloomDonutChart } from '../components/generator/BloomSlid
 import { RefineGenerationChat } from '../components/generator/RefineGenerationChat';
 import { AIFeedbackBar } from '../components/ai/AIFeedbackBar';
 import { AssignDialog } from '../components/AssignDialog';
+import { QuizShareButton } from '../components/common/QuizShareButton';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { generatorTourSteps } from '../tours/tour-steps';
 import { useModal } from '../contexts/ModalContext';
@@ -680,7 +681,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                     {'questions' in generatedMaterial && (
                         <div className="flex flex-col gap-2">
                             <GeneratedAssessment material={generatedMaterial} onSaveQuestion={handleSaveQuestion} />
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end gap-2 flex-wrap">
                                 <button type="button"
                                     onClick={() => handleSaveToLibrary(generatedMaterial, 'main')}
                                     disabled={savedToLibrary.has('main')}
@@ -688,6 +689,12 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                     {savedToLibrary.has('main') ? <CheckCircle className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
                                     {savedToLibrary.has('main') ? 'Зачувано' : 'Зачувај'}
                                 </button>
+                                <QuizShareButton
+                                    material={generatedMaterial as AIGeneratedAssessment}
+                                    materialType={(state.materialType === 'QUIZ' || state.materialType === 'ASSESSMENT') ? state.materialType : 'QUIZ'}
+                                    conceptId={state.selectedConcepts[0]}
+                                    gradeLevel={curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level}
+                                />
                                 <button type="button" onClick={() => setAssignTarget(generatedMaterial as AIGeneratedAssessment)}
                                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
                                     <ClipboardList className="w-4 h-4" />Задај на одделение
@@ -742,7 +749,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                     {variants[activeVariantTab] && (
                         <div className="flex flex-col gap-2">
                             <GeneratedAssessment material={variants[activeVariantTab]} onSaveQuestion={handleSaveQuestion} />
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end gap-2 flex-wrap">
                                 <button type="button"
                                     onClick={() => handleSaveToLibrary(variants[activeVariantTab], `variant-${activeVariantTab}`)}
                                     disabled={savedToLibrary.has(`variant-${activeVariantTab}`)}
@@ -750,6 +757,12 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                     {savedToLibrary.has(`variant-${activeVariantTab}`) ? <CheckCircle className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
                                     {savedToLibrary.has(`variant-${activeVariantTab}`) ? 'Зачувано' : 'Зачувај'}
                                 </button>
+                                <QuizShareButton
+                                    material={variants[activeVariantTab]}
+                                    materialType={(state.materialType === 'QUIZ' || state.materialType === 'ASSESSMENT') ? state.materialType : 'QUIZ'}
+                                    conceptId={state.selectedConcepts[0]}
+                                    gradeLevel={curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level}
+                                />
                                 <button type="button" onClick={() => setAssignTarget(variants[activeVariantTab])}
                                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
                                     <ClipboardList className="w-4 h-4" />Задај на одделение

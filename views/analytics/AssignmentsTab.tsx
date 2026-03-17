@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, ChevronDown, ChevronUp, Trash2, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { Card } from '../../components/common/Card';
+import { SkeletonList } from '../../components/common/Skeleton';
 import { firestoreService, type Assignment } from '../../services/firestoreService';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useLanguage } from '../../i18n/LanguageContext';
@@ -47,7 +48,7 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
     };
 
     if (loading) {
-        return <div className="p-8 text-center text-gray-400">{t('analytics.assignments.loading')}</div>;
+        return <SkeletonList count={3} rows={3} />;
     }
 
     if (assignments.length === 0) {

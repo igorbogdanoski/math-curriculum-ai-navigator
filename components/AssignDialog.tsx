@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ClipboardList, CheckSquare, Square, Loader2 } from 'lucide-react';
+import { X, ClipboardList, CheckSquare, Square, Loader2, Copy, Check, Link } from 'lucide-react';
 import { firestoreService, type SchoolClass } from '../services/firestoreService';
 import { precacheQuizContent } from '../services/indexedDBService';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +25,9 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
     return d.toLocaleDateString('sv-SE');
   });
   const [saving, setSaving] = useState(false);
+  // After successful save: store cacheId so we can show the share link
+  const [savedCacheId, setSavedCacheId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!firebaseUser?.uid) return;
@@ -47,6 +50,21 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
     }
   };
 
+  const shareUrl = savedCacheId
+    ? `${window.location.origin}${window.location.pathname}#/play/${savedCacheId}`
+    : null;
+
+  const handleCopyLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      addNotification('Не можев да копирам — копирајте рачно.', 'warning');
+    }
+  };
+
   const handleSave = async () => {
     if (!firebaseUser?.uid) return;
     if (selectedIds.size === 0) {
@@ -56,7 +74,6 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
 
     setSaving(true);
     try {
-      // Save material content once, reuse cacheId for all assignments
       const cacheId = await firestoreService.saveAssignmentMaterial(material, {
         title: material.title,
         type: materialType,
@@ -73,7 +90,7 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
             title: material.title,
             materialType,
             cacheId,
-            teacherUid: firebaseUser.uid,
+            teacherUid: firebaseUser.uid!,
             classId: cls.id,
             classStudentNames: cls.studentNames,
             dueDate,
@@ -82,12 +99,12 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
         ),
       );
 
-      // Pre-cache quiz content so students can play offline
       precacheQuizContent(cacheId, material).catch(() => {});
 
       const names = selectedClasses.map(c => `„${c.name}"`).join(', ');
       addNotification(`Задачата е зададена на ${names}! 📋`, 'success');
-      onClose();
+      // Show share link panel instead of closing immediately
+      setSavedCacheId(cacheId);
     } catch {
       addNotification('Грешка при задавање. Обидете се повторно.', 'error');
     } finally {
@@ -95,6 +112,71 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
     }
   };
 
+  // ── Success / share panel ──────────────────────────────────────────────────
+  if (savedCacheId) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="flex items-center justify-between p-5 border-b">
+            <div className="flex items-center gap-2">
+              <Check className="w-5 h-5 text-emerald-600" />
+              <h2 className="text-lg font-bold text-gray-800">Задачата е зададена!</h2>
+            </div>
+            <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100" aria-label="Затвори">
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+
+          <div className="p-5 space-y-4">
+            <p className="text-sm text-gray-600">
+              Материјалот е зачуван. Споделете го линкот директно со учениците — без регистрација, веднаш ги носи на квизот.
+            </p>
+
+            {/* Share link */}
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
+              <p className="text-xs font-bold text-indigo-700 flex items-center gap-1 mb-2">
+                <Link className="w-3.5 h-3.5" />
+                Линк за директен пристап
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={shareUrl ?? ''}
+                  aria-label="Линк за споделување на квизот"
+                  className="flex-1 text-xs font-mono bg-white border border-indigo-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none"
+                  onFocus={e => e.target.select()}
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex-shrink-0"
+                >
+                  {copied
+                    ? <><Check className="w-3.5 h-3.5" />Копирано</>
+                    : <><Copy className="w-3.5 h-3.5" />Копирај</>}
+                </button>
+              </div>
+              <p className="text-xs text-indigo-500 mt-1.5">
+                Пратете го преку Viber, Teams или е-пошта.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-5 border-t flex justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 text-sm font-semibold rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              Затвори
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Assign form ───────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">

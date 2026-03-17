@@ -5,6 +5,7 @@ import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import type { PerStudentStat } from './shared';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { SkeletonList } from '../../components/common/Skeleton';
 
 interface GroupsTabProps {
     perStudentStats: PerStudentStat[];
@@ -119,11 +120,7 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center py-16 text-gray-400 text-sm font-semibold">
-                Вчитување групи...
-            </div>
-        );
+        return <SkeletonList count={3} rows={3} />;
     }
 
     return (
