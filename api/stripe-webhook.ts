@@ -10,9 +10,11 @@
  *   STRIPE_WEBHOOK_SECRET    — whsec_...  (from Stripe Webhook dashboard)
  *   FIREBASE_SERVICE_ACCOUNT — base64-encoded service account JSON
  *
- * IMPORTANT: This endpoint must receive the raw request body.
- * Add to vercel.json: "functions": { "api/stripe-webhook.ts": { "bodyParser": false } }
+ * IMPORTANT: This endpoint must receive the raw request body (bodyParser disabled via exported config below).
  */
+
+// Disable Vercel's automatic body parsing so Stripe can verify the raw signature
+export const config = { api: { bodyParser: false } };
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
