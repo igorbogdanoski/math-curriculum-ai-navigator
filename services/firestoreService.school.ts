@@ -2,6 +2,26 @@ import { doc, getDoc, collection, getDocs, query, where, orderBy, updateDoc, add
 import { db } from '../firebaseConfig';
 import type { School } from '../types';
 
+export interface SchoolTeacherStat {
+  id: string;
+  name: string;
+  quizzesGiven: number;
+  avgScore: number;
+  materialsGenerated: number;
+  /** ISO date string or null when unknown */
+  lastActive: string | null;
+  aiCreditsBalance: number;
+}
+
+export interface SchoolStatsData {
+  totalTeachers: number;
+  totalQuizzes: number;
+  averageScore: number;
+  teachers: SchoolTeacherStat[];
+  gradeStats: { grade: string; avgPct: number; attempts: number }[];
+  weeklyTrend: { avg: number; label: string }[];
+}
+
 export const schoolService = {
 
   createSchool: async (name: string, city: string, adminUid: string = '', opts?: { municipality?: string; address?: string }): Promise<School> => {
@@ -239,13 +259,13 @@ export const schoolService = {
     }
   },
 
-  fetchSchoolStats: async (schoolId: string): Promise<any> => {
+  fetchSchoolStats: async (schoolId: string): Promise<SchoolStatsData | null> => {
     try {
       const usersRef = collection(db, 'users');
       const qTeachers = query(usersRef, where('schoolId', '==', schoolId));
       const teachersSnap = await getDocs(qTeachers);
 
-      const teachersData: any[] = [];
+      const teachersData: SchoolTeacherStat[] = [];
       let totalSchoolQuizzes = 0;
       let globalScoreSum = 0;
       let teachersWithQuizzes = 0;
@@ -275,10 +295,12 @@ export const schoolService = {
         totalSchoolQuizzes += quizzesGiven;
         teachersData.push({
           id: tDoc.id,
-          name: tData.name || 'Непознат наставник',
+          name: tData.name as string || 'Непознат наставник',
           quizzesGiven,
           avgScore,
-          lastActive: tData.lastActive ? new Date(tData.lastActive).toISOString() : 'Непознато',
+          materialsGenerated: 0,
+          lastActive: tData.lastActive ? new Date(tData.lastActive as string).toISOString() : null,
+          aiCreditsBalance: (tData.aiCreditsBalance as number) ?? 0,
         });
       }
 
