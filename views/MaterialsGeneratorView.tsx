@@ -60,26 +60,65 @@ import { useGeneratorState, type GeneratorState, getInitialState } from '../hook
 import { GenerationContextForm } from '../components/generator/GenerationContextForm';
 import { MaterialOptions } from '../components/generator/MaterialOptions';
 import { useNetworkStatus } from '../contexts/NetworkStatusContext';
+import { SmartStart } from '../components/generator/SmartStart';
 
 
 
 
 
 
+
+// ── Material metadata: descriptions, tags, time estimates ───────────────────
+const MATERIAL_META: Record<string, {
+  emoji: string;
+  description: string;
+  timeEst: string;
+  tags: string[];
+  badge?: string;
+  badgeColor?: string;
+}> = {
+  SCENARIO:      { emoji: '🎭', description: 'Целосен план за наставен час со активности, прашања и диференцијација по Блум', timeEst: '45 мин', tags: ['Подготовка', 'Целосен час'] },
+  LEARNING_PATH: { emoji: '🗺️', description: 'Персонализирана патека низ концепти прилагодена на нивото на ученикот', timeEst: '1 недела', tags: ['Диференцирано', 'Патека'] },
+  PRESENTATION:  { emoji: '📽️', description: 'Структурирани слајдови со содржина, активности и AI генерирани елементи', timeEst: '~10 мин', tags: ['Слајдови', 'Визуелно'], badge: 'PRO', badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' },
+  ASSESSMENT:    { emoji: '📄', description: 'Формален тест или писмена работа за печатење или дигитална употреба', timeEst: '20–45 мин', tags: ['Формален', 'Печатење'] },
+  RUBRIC:        { emoji: '📊', description: 'Критериуми за оценување со нивоа и дескриптори усогласени со МОН', timeEst: '~5 мин', tags: ['Оценување', 'МОН'] },
+  FLASHCARDS:    { emoji: '🃏', description: 'Картички за меморирање — прашање на едната, одговор на другата страна', timeEst: '~15 мин', tags: ['Повторување', 'Домашно'] },
+  QUIZ:          { emoji: '❓', description: 'Интерактивен квиз — учениците играат на нивните уреди во реално време', timeEst: '~10 мин', tags: ['Интерактивно', '📱 Ученици'], badge: 'ПОПУЛАРНО', badgeColor: 'bg-green-100 text-green-700 border-green-200' },
+  EXIT_TICKET:   { emoji: '🎟️', description: '2–3 брзи прашања за проверка на разбирањето пред крај на часот', timeEst: '~3 мин', tags: ['⚡ Брзо', 'Крај на час'], badge: 'БРЗО', badgeColor: 'bg-blue-100 text-blue-700 border-blue-200' },
+  ILLUSTRATION:  { emoji: '🖼️', description: 'AI генерирана слика или дијаграм за визуелно претставување на концепт', timeEst: '~2 мин', tags: ['Визуелно', 'Презентација'] },
+  WORKED_EXAMPLE:{ emoji: '✍️', description: 'Детален чекор-по-чекор решен пример со образложение за секој чекор', timeEst: '~5 мин', tags: ['Пример', 'Моделирање'], badge: 'НОВО', badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' },
+};
+
+const RECENT_TYPES_KEY = 'generator_recent_types';
+
+function loadRecentTypes(): MaterialType[] {
+  try {
+    const raw = localStorage.getItem(RECENT_TYPES_KEY);
+    return raw ? (JSON.parse(raw) as MaterialType[]) : [];
+  } catch { return []; }
+}
+
+function saveRecentType(type: MaterialType): void {
+  try {
+    const existing = loadRecentTypes().filter(t => t !== type);
+    localStorage.setItem(RECENT_TYPES_KEY, JSON.stringify([type, ...existing].slice(0, 5)));
+  } catch { /* ignore */ }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props: Partial<GeneratorState>) => {
   const { t } = useLanguage();
-  const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICONS }[] = [ 
-    { id: 'SCENARIO', label: t('generator.types.scenario'), icon: 'lightbulb' }, 
-    { id: 'LEARNING_PATH', label: t('generator.types.path'), icon: 'mindmap' }, 
+  const materialOptions: { id: MaterialType; label: string; icon: keyof typeof ICONS }[] = [
+    { id: 'SCENARIO', label: t('generator.types.scenario'), icon: 'lightbulb' },
+    { id: 'LEARNING_PATH', label: t('generator.types.path'), icon: 'mindmap' },
     { id: 'PRESENTATION', label: 'Презентација (PRO)', icon: 'gallery' },
-    { id: 'ASSESSMENT', label: t('generator.types.assessment'), icon: 'generator' }, 
-    { id: 'RUBRIC', label: t('generator.types.rubric'), icon: 'edit' }, 
-    { id: 'FLASHCARDS', label: t('generator.types.flashcards'), icon: 'flashcards' }, 
-    { id: 'QUIZ', label: t('generator.types.quiz'), icon: 'quiz' }, 
-    { id: 'EXIT_TICKET', label: t('generator.types.exitTicket'), icon: 'quiz' }, 
-    { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' }, 
-    { id: 'WORKED_EXAMPLE', label: 'Работен Пример', icon: 'lightbulb' } 
+    { id: 'ASSESSMENT', label: t('generator.types.assessment'), icon: 'generator' },
+    { id: 'RUBRIC', label: t('generator.types.rubric'), icon: 'edit' },
+    { id: 'FLASHCARDS', label: t('generator.types.flashcards'), icon: 'flashcards' },
+    { id: 'QUIZ', label: t('generator.types.quiz'), icon: 'quiz' },
+    { id: 'EXIT_TICKET', label: t('generator.types.exitTicket'), icon: 'quiz' },
+    { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' },
+    { id: 'WORKED_EXAMPLE', label: 'Работен Пример', icon: 'lightbulb' }
   ];
 
     const { curriculum, allConcepts, allNationalStandards, isLoading: isCurriculumLoading, getConceptDetails, findConceptAcrossGrades } = useCurriculum();
@@ -140,6 +179,18 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     // Wizard step state
     const [currentStep, setCurrentStep] = useState(1);
     const [showMathTools, setShowMathTools] = useState(false);
+    const [recentTypes, setRecentTypes] = useState<MaterialType[]>(() => loadRecentTypes());
+
+    const handleSelectMaterialType = React.useCallback((type: MaterialType) => {
+      dispatch({ type: 'SET_FIELD', payload: { field: 'materialType', value: type } });
+      saveRecentType(type);
+      setRecentTypes(loadRecentTypes());
+      setTimeout(() => setCurrentStep(2), 200);
+    }, [dispatch]);
+
+    const handleSmartStart = React.useCallback((result: { materialType: MaterialType; grade: number | null; topicHint: string | null }) => {
+      handleSelectMaterialType(result.materialType);
+    }, [handleSelectMaterialType]);
 
     const {
         filteredTopics,
@@ -307,31 +358,83 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                         
                         {/* STEP 1: Material Type */}
                         <div data-tour="generator-step-1" className={`transition-opacity duration-300 ${currentStep === 1 ? 'block animate-fade-in' : 'hidden'}`}>
-                            <div className="py-2 border-b border-gray-100 mb-6 flex items-center gap-3">
+                            <div className="py-2 border-b border-gray-100 mb-4 flex items-center gap-3">
                                 <span className="bg-brand-primary text-white text-xl w-8 h-8 rounded-full flex items-center justify-center font-bold">1</span>
                                 <h2 className="text-xl font-bold text-gray-800">Изберете тип на материјал</h2>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                {materialOptions.map(({ id, label }) => (
-                                    <button
+
+                            {/* SmartStart — AI intent detection */}
+                            <SmartStart onAccept={handleSmartStart} />
+
+                            {/* Recently used — quick shortcuts */}
+                            {recentTypes.length > 0 && (
+                              <div className="mb-4">
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Последно користено</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {recentTypes.slice(0, 3).map(typeId => {
+                                    const meta = MATERIAL_META[typeId];
+                                    const opt = materialOptions.find(o => o.id === typeId);
+                                    if (!meta || !opt) return null;
+                                    return (
+                                      <button
                                         type="button"
-                                        key={id}
-                                        onClick={() => {
-                                            dispatch({ type: 'SET_FIELD', payload: { field: 'materialType', value: id } });
-                                            setTimeout(() => setCurrentStep(2), 200); // Auto-advance
-                                        }}
-                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 font-medium text-sm transition-all focus:outline-none
-                                            ${materialType === id
-                                                ? 'bg-blue-50 border-brand-primary text-brand-primary shadow-sm scale-[1.02]'
-                                                : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-gray-50'
-                                        }`}
-                                    >
-                                        <span className="text-2xl mb-2">
-                                            {id === 'ASSESSMENT' ? '📄' : id === 'QUIZ' ? '❓' : id === 'RUBRIC' ? '📊' : id === 'SCENARIO' ? '🎭' : id === 'LEARNING_PATH' ? '🗺️' : id === 'EXIT_TICKET' ? '🎟️' : '🖼️'}
-                                        </span>
-                                        {label}
-                                    </button>
-                                ))}
+                                        key={typeId}
+                                        onClick={() => handleSelectMaterialType(typeId)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-xs font-semibold text-gray-600 hover:border-brand-primary hover:text-brand-primary hover:bg-blue-50 transition-all shadow-sm"
+                                      >
+                                        <span>{meta.emoji}</span>
+                                        <span>{opt.label}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Rich material type cards */}
+                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Сите типови</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {materialOptions.map(({ id, label }) => {
+                                    const meta = MATERIAL_META[id];
+                                    const isActive = materialType === id;
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={id}
+                                            onClick={() => handleSelectMaterialType(id)}
+                                            className={`relative text-left p-3.5 rounded-xl border-2 transition-all focus:outline-none group
+                                                ${isActive
+                                                    ? 'bg-blue-50 border-brand-primary shadow-md scale-[1.01]'
+                                                    : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50 hover:shadow-sm'
+                                                }`}
+                                        >
+                                            {/* Badge */}
+                                            {meta?.badge && (
+                                              <span className={`absolute top-2.5 right-2.5 text-[9px] font-black px-1.5 py-0.5 rounded-full border ${meta.badgeColor ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                                {meta.badge}
+                                              </span>
+                                            )}
+                                            <div className="flex items-start gap-3">
+                                                <span className="text-2xl flex-shrink-0 mt-0.5">{meta?.emoji ?? '📄'}</span>
+                                                <div className="flex-1 min-w-0 pr-6">
+                                                    <p className={`font-bold text-sm leading-tight ${isActive ? 'text-brand-primary' : 'text-gray-800'}`}>{label}</p>
+                                                    {meta?.description && (
+                                                      <p className="text-xs text-gray-500 mt-0.5 leading-snug line-clamp-2">{meta.description}</p>
+                                                    )}
+                                                    {/* Tags + time */}
+                                                    <div className="flex flex-wrap items-center gap-1 mt-2">
+                                                      {meta?.timeEst && (
+                                                        <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">⏱ {meta.timeEst}</span>
+                                                      )}
+                                                      {meta?.tags.slice(0, 2).map(tag => (
+                                                        <span key={tag} className="text-[10px] font-semibold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-full">{tag}</span>
+                                                      ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 
