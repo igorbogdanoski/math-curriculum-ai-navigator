@@ -3,10 +3,10 @@ import { Zap,
   Star,
   Coins,
   BookOpen,
-  Layout, 
-  Settings, 
-  Calendar, 
-  Brain, 
+  Layout,
+  Settings,
+  Calendar,
+  Brain,
   Calculator,
   Shapes,
   GraduationCap,
@@ -62,6 +62,8 @@ import { Zap,
   ExternalLink,
   Image as ImageIcon,
   BookMarked,
+  Radio,
+  UserCircle2,
 } from 'lucide-react';
 
 export const ICONS: Record<string, any> = {
@@ -141,6 +143,8 @@ export const ICONS: Record<string, any> = {
   externalLink: ExternalLink,
   image: ImageIcon,
   refresh: RefreshIcon,
+  live: Radio,
+  profile: UserCircle2,
 };
 
 export const SUBJECTS = [

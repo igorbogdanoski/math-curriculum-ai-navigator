@@ -114,6 +114,17 @@ interface CertificateProps {
   date: string;
 }
 
+// Deterministic ID — same props always produce the same cert ID
+function certId(userName: string, specTitle: string, date: string): string {
+  const str = `${userName}|${specTitle}|${date}`;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36).toUpperCase().padStart(8, '0').slice(0, 8);
+}
+
 const CertificateDocument = ({ userName, specializationTitle, date }: CertificateProps) => (
   <Document>
     <Page size="A4" orientation="landscape" style={styles.page}>
@@ -146,7 +157,7 @@ const CertificateDocument = ({ userName, specializationTitle, date }: Certificat
 
         <View style={styles.signatureBox}>
           <Text style={{ fontSize: 14, color: '#1e1b4b', marginBottom: 4 }}>Дигитален Печат</Text>
-          <Text style={styles.signatureText}>ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</Text>
+          <Text style={styles.signatureText}>ID: {certId(userName, specializationTitle, date)}</Text>
         </View>
       </View>
 

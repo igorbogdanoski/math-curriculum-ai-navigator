@@ -65,7 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     // Progressive disclosure â€” secondary nav collapsed by default
     const [showMore, setShowMore] = useState(() => {
       const secondaryPaths = ['/explore', '/graph', '/roadmap', '/assistant', '/vision-assessment',
-        '/test-generator', '/grade-book', '/test-review', '/reports/coverage', '/favorites', '/gallery'];
+        '/test-generator', '/grade-book', '/test-review', '/live', '/my-profile', '/reports/coverage', '/favorites', '/gallery'];
       return secondaryPaths.some(p => currentPath === p || currentPath.startsWith(p));
     });
 
@@ -133,7 +133,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/test-generator" currentPath={currentPath} icon={ICONS.assessment} label={t("nav.testgenerator")} onClick={onClose} />
               <NavItem path="/grade-book" currentPath={currentPath} icon={ICONS.gradeBook} label="Тетратка за оценки" onClick={onClose} badge="NEW" />
               <NavItem path="/test-review" currentPath={currentPath} icon={ICONS.camera} label="AI Прегледувач на тестови" onClick={onClose} badge="NEW" />
+              <NavItem path="/live/host" currentPath={currentPath} icon={ICONS.live} label="Час во живо" onClick={onClose} badge="LIVE" />
               <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label={t("nav.coverage")} onClick={onClose} />
+              <hr className="my-2 border-gray-100" />
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Наставник</p>
+              <NavItem path="/my-profile" currentPath={currentPath} icon={ICONS.profile} label="Мој Профил (CPD)" onClick={onClose} badge="НОВО" />
               <hr className="my-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Ученици</p>
               <NavItem path="/my-progress" currentPath={currentPath} icon={ICONS.analytics} label="Мој Напредок" onClick={onClose} />

@@ -127,6 +127,7 @@ const WrittenTestReviewView = safeLazy(() => import('./views/WrittenTestReviewVi
 const SchoolAdminView = safeLazy(() => import('./views/SchoolAdminView').then(module => ({ default: module.SchoolAdminView })));
 const CurriculumEditorView = safeLazy(() => import('./views/CurriculumEditorView').then(module => ({ default: module.CurriculumEditorView })));
 const SchoolOnboardingView = safeLazy(() => import('./views/SchoolOnboardingView').then(module => ({ default: module.SchoolOnboardingView })));
+const TeacherProfileView = safeLazy(() => import('./views/TeacherProfileView').then(module => ({ default: module.TeacherProfileView })));
 
 const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     const { openGeneratorPanel } = useGeneratorPanel();
@@ -180,6 +181,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/test-generator', component: TestGeneratorView },
     { path: '/grade-book', component: GradeBookView },
     { path: '/test-review', component: WrittenTestReviewView },
+    { path: '/my-profile', component: TeacherProfileView },
     { path: '/share/:data', component: SharedPlanView },
     { path: '/share/annual/:data', component: SharedAnnualPlanView },
     { path: '/quiz/:data', component: SharedQuizView },
