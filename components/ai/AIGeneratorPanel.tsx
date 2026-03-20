@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 import { ICONS } from '../../constants';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 const MaterialsGeneratorView = React.lazy(() =>
   import('../../views/MaterialsGeneratorView').then(m => ({ default: m.MaterialsGeneratorView }))
@@ -9,6 +10,7 @@ const MaterialsGeneratorView = React.lazy(() =>
 export const AIGeneratorPanel: React.FC = () => {
     const { isOpen, props, closeGeneratorPanel } = useGeneratorPanel();
     const [isRendered, setIsRendered] = React.useState(isOpen);
+    const [showCloseConfirm, setShowCloseConfirm] = React.useState(false);
     const openedAtRef = React.useRef<number | null>(null);
 
     React.useEffect(() => {
@@ -22,9 +24,9 @@ export const AIGeneratorPanel: React.FC = () => {
 
     const handleClose = React.useCallback(() => {
         const openMs = openedAtRef.current ? Date.now() - openedAtRef.current : 0;
-        // Warn only if panel was open for more than 15 seconds (user likely generated content)
         if (openMs > 15_000) {
-            if (!window.confirm('Дали сте сигурни? Незачуваните генерирани материјали ќе се изгубат.')) return;
+            setShowCloseConfirm(true);
+            return;
         }
         closeGeneratorPanel();
     }, [closeGeneratorPanel]);
@@ -79,6 +81,16 @@ export const AIGeneratorPanel: React.FC = () => {
                     </div>
                 </div>
             </div>
+            {showCloseConfirm && (
+                <ConfirmDialog
+                    title="Затвори генератор?"
+                    message="Дали сте сигурни? Незачуваните генерирани материјали ќе се изгубат."
+                    variant="warning"
+                    confirmLabel="Да, затвори"
+                    onConfirm={() => { setShowCloseConfirm(false); closeGeneratorPanel(); }}
+                    onCancel={() => setShowCloseConfirm(false)}
+                />
+            )}
         </>
     );
 };

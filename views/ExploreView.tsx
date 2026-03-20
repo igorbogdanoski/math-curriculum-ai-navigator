@@ -64,7 +64,13 @@ export const ExploreView: React.FC = () => {
     useTour('explore', exploreTourSteps, !isLoading);
     const { toursSeen, markTourAsSeen } = useUserPreferences();
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [selectedGradeId, setSelectedGradeId] = useState<string>('');
+
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedQuery(searchQuery), 200);
+        return () => clearTimeout(t);
+    }, [searchQuery]);
 
 
     useEffect(() => {
@@ -88,7 +94,7 @@ export const ExploreView: React.FC = () => {
 
     const filteredTopics = useMemo(() => {
         if (!selectedGrade) return [];
-        const lowercasedQuery = searchQuery.toLowerCase().trim();
+        const lowercasedQuery = debouncedQuery.toLowerCase().trim();
         if (!lowercasedQuery) return selectedGrade.topics;
         
         // Return topics if the topic title matches OR if any of its concepts match

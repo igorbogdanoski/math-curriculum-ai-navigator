@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { X, Download, Loader2 } from 'lucide-react';
 import type { InfographicLayout } from '../../types';
+import { useNotification } from '../../contexts/NotificationContext';
 
 // ─── Palette definitions ─────────────────────────────────────────────────────
 const PALETTES = {
@@ -127,6 +128,7 @@ interface Props {
 export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const { addNotification } = useNotification();
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -148,7 +150,7 @@ export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) =>
       canvas.height = 0;
     } catch (err) {
       console.error('Infographic export failed:', err);
-      alert('Грешка при извоз. Обидете се повторно.');
+      addNotification('Грешка при извоз. Обидете се повторно.', 'error');
     } finally {
       setIsExporting(false);
     }

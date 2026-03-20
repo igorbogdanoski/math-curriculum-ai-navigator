@@ -6,6 +6,7 @@ import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary
 import type { PerStudentStat } from './shared';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { SkeletonList } from '../../components/common/Skeleton';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 
 interface GroupsTabProps {
     perStudentStats: PerStudentStat[];
@@ -28,6 +29,7 @@ const COLOR_DOT: Record<string, string> = {
 
 export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUid }) => {
     const { t } = useLanguage();
+    const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
     const [groups, setGroups] = useState<StudentGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -113,10 +115,16 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
         await loadGroups();
     };
 
-    const handleDeleteGroup = async (groupId: string, groupName: string) => {
-        if (!window.confirm(`Избриши ја групата „${groupName}"?`)) return;
-        await firestoreService.deleteStudentGroup(groupId);
-        await loadGroups();
+    const handleDeleteGroup = (groupId: string, groupName: string) => {
+        setConfirmDialog({
+            message: `Избриши ја групата „${groupName}"?`,
+            variant: 'danger',
+            onConfirm: async () => {
+                setConfirmDialog(null);
+                await firestoreService.deleteStudentGroup(groupId);
+                await loadGroups();
+            }
+        });
     };
 
     if (loading) {
@@ -124,6 +132,7 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
     }
 
     return (
+        <>
         <SilentErrorBoundary name="GroupsTab">
             <div className="flex flex-col lg:flex-row gap-6">
 
@@ -320,5 +329,15 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
                 </div>
             </div>
         </SilentErrorBoundary>
+        {confirmDialog && (
+            <ConfirmDialog
+                message={confirmDialog.message}
+                title={confirmDialog.title}
+                variant={confirmDialog.variant ?? 'warning'}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog(null)}
+            />
+        )}
+        </>
     );
 };

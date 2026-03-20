@@ -5,6 +5,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
 import type { LessonPlan, LessonScenario, AIPedagogicalAnalysis, GenerationContext, Grade, Topic, Concept, AIGeneratedIllustration, InfographicLayout } from '../types';
 import { InfographicPreviewModal } from '../components/ai/InfographicPreviewModal';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
@@ -76,6 +77,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const [enhancingField, setEnhancingField] = useState<string | null>(null);
   const [isRegeneratingSection, setIsRegeneratingSection] = useState<'introductory' | 'main' | 'concluding' | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
   
   // Ref to track mounted status for async operations
   const isMounted = useRef(true);
@@ -533,11 +535,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
                     <ICONS.check className="w-4 h-4 text-green-500" />
                     <span>Автоматски зачувано во {new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
-                <button 
+                <button
                     onClick={() => {
-                        if (window.confirm('Дали сте сигурни дека сакате да го отфрлите нацртот? Сите промени ќе бидат изгубени.')) {
-                            clearDraft();
-                        }
+                        setConfirmDialog({
+                            message: 'Дали сте сигурни дека сакате да го отфрлите нацртот? Сите промени ќе бидат изгубени.',
+                            variant: 'danger',
+                            onConfirm: () => { setConfirmDialog(null); clearDraft(); }
+                        });
                     }}
                     className="text-red-600 hover:text-red-700 hover:underline transition-colors flex items-center gap-1"
                 >
@@ -742,6 +746,15 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
       <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
       <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки за креирање</span>
     </button>
+    {confirmDialog && (
+      <ConfirmDialog
+        message={confirmDialog.message}
+        title={confirmDialog.title}
+        variant={confirmDialog.variant ?? 'warning'}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(null)}
+      />
+    )}
     </div>
   );
 };

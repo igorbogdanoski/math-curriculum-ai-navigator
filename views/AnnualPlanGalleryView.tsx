@@ -6,6 +6,8 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import { AIGeneratedAnnualPlan } from '../types';
+import { useNotification } from '../contexts/NotificationContext';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 interface SavedPlan {
     id: string;
@@ -24,6 +26,8 @@ export const AnnualPlanGalleryView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const { user, firebaseUser } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const { addNotification } = useNotification();
+    const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
     useEffect(() => {
         fetchPlans();
@@ -50,7 +54,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
     };
 
     const handleLike = async (planId: string) => {
-        if (!user) return alert("Мора да сте најавени за да лајкнете.");
+        if (!user) { addNotification("Мора да сте најавени за да лајкнете.", 'warning'); return; }
         try {
             const planRef = doc(db, 'academic_annual_plans', planId);
             await updateDoc(planRef, {
@@ -64,39 +68,43 @@ export const AnnualPlanGalleryView: React.FC = () => {
     };
 
     const handleFork = async (plan: SavedPlan) => {
-        if (!user) return alert("Мора да сте најавени за да клонирате план.");
-        
-        const confirmFork = window.confirm(`Дали сакате да го копирате планот за ${plan.subject} (${plan.grade}) во вашиот работен простор?`);
-        if (!confirmFork) return;
+        if (!user) { addNotification("Мора да сте најавени за да клонирате план.", 'warning'); return; }
 
-        try {
-            // Unlink original IDs and set as clone
-            const newPlanData = { ...plan.planData };
-            
-            // 1. Add to user's personalized DB
-            await addDoc(collection(db, 'academic_annual_plans'), {
-                userId: firebaseUser?.uid,
-                createdAt: serverTimestamp(),
-                planData: newPlanData,
-                grade: plan.grade,
-                subject: plan.subject,
-                isForked: true,
-                originalPlanId: plan.id
-            });
+        setConfirmDialog({
+            message: `Дали сакате да го копирате планот за ${plan.subject} (${plan.grade}) во вашиот работен простор?`,
+            variant: 'info',
+            onConfirm: async () => {
+                setConfirmDialog(null);
+                try {
+                    // Unlink original IDs and set as clone
+                    const newPlanData = { ...plan.planData };
 
-            // 2. Increment fork count on original
-            const planRef = doc(db, 'academic_annual_plans', plan.id);
-            await updateDoc(planRef, {
-                forks: increment(1)
-            });
+                    // 1. Add to user's personalized DB
+                    await addDoc(collection(db, 'academic_annual_plans'), {
+                        userId: firebaseUser?.uid,
+                        createdAt: serverTimestamp(),
+                        planData: newPlanData,
+                        grade: plan.grade,
+                        subject: plan.subject,
+                        isForked: true,
+                        originalPlanId: plan.id
+                    });
 
-            alert("Планот е успешно клониран! Сега можете да го најдете во вашите планови и да го уредувате.");
-            fetchPlans(); // Refresh to show updated fork count
+                    // 2. Increment fork count on original
+                    const planRef = doc(db, 'academic_annual_plans', plan.id);
+                    await updateDoc(planRef, {
+                        forks: increment(1)
+                    });
 
-        } catch (error) {
-            console.error("Failed to fork:", error);
-            alert("Настана грешка при клонирањето.");
-        }
+                    addNotification("Планот е успешно клониран! Сега можете да го најдете во вашите планови и да го уредувате.", 'success');
+                    fetchPlans(); // Refresh to show updated fork count
+
+                } catch (error) {
+                    console.error("Failed to fork:", error);
+                    addNotification("Настана грешка при клонирањето.", 'error');
+                }
+            }
+        });
     };
 
     const filteredPlans = plans.filter(p => 
@@ -105,6 +113,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
     );
 
     return (
+        <>
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
@@ -189,7 +198,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
                                 
                                 <button
                                     className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
-                                    onClick={() => alert('Опцијата за детален преглед е во изработка.')}
+                                    onClick={() => addNotification('Опцијата за детален преглед е во изработка.', 'info')}
                                 >
                                     Преглед
                                 </button>
@@ -205,5 +214,15 @@ export const AnnualPlanGalleryView: React.FC = () => {
                 </div>
             )}
         </div>
+        {confirmDialog && (
+            <ConfirmDialog
+                message={confirmDialog.message}
+                title={confirmDialog.title}
+                variant={confirmDialog.variant ?? 'warning'}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog(null)}
+            />
+        )}
+        </>
     );
 };

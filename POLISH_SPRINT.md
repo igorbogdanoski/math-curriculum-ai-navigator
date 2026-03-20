@@ -1,0 +1,131 @@
+# Polish Sprint — Math Curriculum AI Navigator
+## Цел: Светско ниво. Најдобра EdTech математичка платформа во регионот.
+> Создаден: 18 Март 2026 | Сесија 8
+
+---
+
+## Оценка пред Sprint: **8.1 / 10**
+## Цел по Sprint: **9.2 / 10**
+
+---
+
+## 🔴 КРИТИЧНО — Веднаш (Ден 1–2)
+
+### P1 — Замена на `alert()` / `window.confirm()` → ConfirmDialog + useNotification
+**Статус:** ✅ ЗАВРШЕНО (Сесија 8)
+
+Засегнати фајлови (25 инстанци, 13 фајлови):
+- [x] `components/ai/AIGeneratorPanel.tsx` — window.confirm → ConfirmDialog
+- [x] `components/ai/InfographicPreviewModal.tsx` — alert → addNotification
+- [x] `components/common/MathScratchpad.tsx` — window.confirm → ConfirmDialog
+- [x] `views/analytics/ClassesTab.tsx` — alert + window.confirm → notification + dialog
+- [x] `views/analytics/GroupsTab.tsx` — window.confirm → ConfirmDialog
+- [x] `views/analytics/QuestionBankTab.tsx` — window.confirm → ConfirmDialog
+- [x] `views/analytics/StandardsTab.tsx` — alert × 2 → addNotification
+- [x] `views/AnnualPlanGalleryView.tsx` — alert × 4 + window.confirm → notification + dialog
+- [x] `views/AnnualPlanGeneratorView.tsx` — alert × 2 → addNotification
+- [x] `views/CurriculumEditorView.tsx` — window.confirm → ConfirmDialog
+- [x] `views/LessonPlanEditorView.tsx` — window.confirm → ConfirmDialog
+- [x] `views/SchoolAdminView.tsx` — window.confirm → ConfirmDialog
+- [x] `views/SettingsView.tsx` — window.confirm × 2 → ConfirmDialog
+
+### P2 — Debounce на Search Inputs
+**Статус:** ✅ ЗАВРШЕНО (Сесија 8)
+
+- [x] `views/ExploreView.tsx` — useMemo/filter debounced
+- [x] `components/common/GlobalSearchBar.tsx` — debounce on keystroke
+
+### P3 — Отстранување console.log од production сервиси
+**Статус:** ✅ ЗАВРШЕНО (Сесија 8)
+
+- [x] `services/firestoreService.materials.ts` — 4 console.log
+- [x] `services/firestoreService.quiz.ts` — 4 console.log (не E2E)
+
+---
+
+## 🟠 ВИСОК ПРИОРИТЕТ — Следна недела (Ден 3–7)
+
+### P4 — aria-labels на icon-only копчиња
+**Статус:** ✅ ЗАВРШЕНО (Сесија 8)
+
+### P5 — Form валидација со инлајн грешки
+**Статус:** ⬜ Следно
+
+Засегнати форми:
+- [ ] `views/GradeBookView.tsx` — валидација при додавање запис
+- [ ] `views/AnnualPlanGeneratorView.tsx` — задолжителни полиња
+- [ ] `views/SchoolAdminView.tsx` — join code validation
+- [ ] `views/SettingsView.tsx` — профил update валидација
+
+### P6 — i18n за нови компоненти
+**Статус:** ⬜ Следно
+
+- [ ] `components/generator/SmartStart.tsx` — хардкодирани МК стрингови
+- [ ] `views/WrittenTestReviewView.tsx` — хардкодирани МК стрингови
+- [ ] `components/academy/AcademyDailyHub.tsx` — хардкодирани МК стрингови
+
+---
+
+## 🟡 СРЕДЕН ПРИОРИТЕТ — Следен месец
+
+### P7 — Canvas Colors → Константи
+- [ ] `views/CurriculumGraphView.tsx` — hex бои → семантички константи
+
+### P8 — Optimistic UI Updates
+- [ ] `views/AnnualPlanGalleryView.tsx` — like/fork со optimistic update
+- [ ] `views/TeacherAnalyticsView.tsx` — announcements optimistic
+
+### P9 — Keyboard Shortcuts
+- [ ] Cmd+K → GlobalSearchBar focus
+- [ ] Cmd+S → Save во editors
+- [ ] Cmd+G → Отвори Generator
+- [ ] Escape → Затвори panels/modals
+
+### P10 — Performance
+- [ ] `views/TeacherAnalyticsView.tsx` — виртуелизација на долги листи
+- [ ] `views/NationalLibraryView.tsx` — infinite scroll наместо load all
+
+---
+
+## 🟢 BACKLOG — По МОН Презентација
+
+### P11 — Undo/Redo во Editors
+- [ ] `views/LessonPlanEditorView.tsx`
+- [ ] `views/AnnualPlanGeneratorView.tsx`
+
+### P12 — Real-time Presence Indicators
+- [ ] SharedPlanView — "X го уредува"
+- [ ] Live Sessions — participant count live
+
+### P13 — Bulk Operations во Analytics
+- [ ] Мулти-избор ученици → bulk remedial assign
+- [ ] Bulk export (повеќе date ranges)
+
+### P14 — Search History
+- [ ] `components/common/GlobalSearchBar.tsx` — recent searches (localStorage)
+- [ ] `views/ExploreView.tsx` — saved searches
+
+### P15 — Средно образование (чека МОН PDFs)
+- [ ] Gymnasium curriculum — полни концепти по PDF
+- [ ] ДИМ Матура симулации
+
+---
+
+## Метрики за успех
+
+| Метрика | Пред Sprint | По Sprint |
+|---------|-------------|-----------|
+| `alert()` инстанци | 14 | 0 |
+| `window.confirm()` инстанци | 11 | 0 |
+| console.log во сервиси | 8 | 0 |
+| Оценка UX Consistency | 6.5/10 | 8.5/10 |
+| Вкупна оценка | 8.1/10 | 9.2/10 |
+
+---
+
+## Визија
+
+> „Апликацијата треба да биде толку добра што кога МОН инспектор ја види,
+> веднаш ќе праша 'Зошто ова не го имаме во секое училиште?'"
+
+*Последно ажурирање: 18 Март 2026 (Сесија 8 — Sprint P1–P4 во тек)*

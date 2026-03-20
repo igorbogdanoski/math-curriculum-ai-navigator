@@ -23,12 +23,10 @@ export const quizService = {
   // -- Curriculum ----------------------------------------------------------------
 
   fetchFullCurriculum: async (): Promise<CurriculumModule> => {
-    console.log('Attempting to fetch data from Firestore...');
     const docRef = doc(db, 'curriculum', 'v1');
     try {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        console.log('...Data received successfully from Firestore.');
         return docSnap.data() as CurriculumModule;
       } else {
         console.error("...Firestore fetch failed: Document 'v1' does not exist in 'curriculum' collection.");
@@ -46,11 +44,9 @@ export const quizService = {
   },
 
   saveFullCurriculum: async (data: CurriculumModule): Promise<void> => {
-    console.log('Attempting to save curriculum data to Firestore...');
     const docRef = doc(db, 'curriculum', 'v1');
     try {
       await setDoc(docRef, data);
-      console.log('Curriculum data successfully saved to Firestore.');
     } catch (error) {
       console.error('Error saving curriculum data to Firestore:', error);
       throw error;

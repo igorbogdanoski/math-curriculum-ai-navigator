@@ -3,6 +3,7 @@ import { useReactToPrint } from 'react-to-print';
 import { db } from '../firebaseConfig';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -93,6 +94,7 @@ export const AnnualPlanGeneratorView: React.FC = () => {
     const [plan, setPlan] = useState<AIGeneratedAnnualPlan | null>(null);
 
     const { user, firebaseUser, updateLocalProfile } = useAuth();
+    const { addNotification } = useNotification();
     const printRef = useRef<HTMLDivElement>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [savedId, setSavedId] = useState<string | null>(null);
@@ -133,10 +135,10 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                 subject: plan.subject
             });
             setSavedId(docRef.id);
-            alert("Програмата е успешно зачувана во облак!");
+            addNotification("Програмата е успешно зачувана во облак!", 'success');
         } catch (error) {
             console.error("Грешка при зачувување:", error);
-            alert("Грешка при зачувување на програмата.");
+            addNotification("Грешка при зачувување на програмата.", 'error');
         } finally {
             setIsSaving(false);
         }

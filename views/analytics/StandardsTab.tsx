@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
+import { useNotification } from '../../contexts/NotificationContext';
 import { ScoreBar } from './shared';
 import { CheckCircle2, BookOpen, GraduationCap, AlertCircle, Download, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 
@@ -32,6 +33,7 @@ const escHtml = (s: string): string =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage }) => {
+    const { addNotification } = useNotification();
     const [gradeFilter, setGradeFilter] = useState<number | 'all'>('all');
     const [statusFilter, setStatusFilter] = useState<'all' | 'covered' | 'tested' | 'mastered' | 'not_covered'>('all');
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -118,13 +120,13 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
             const win = window.open(url, '_blank');
             if (!win) {
                 URL.revokeObjectURL(url);
-                alert('Popup блокиран. Дозволи popup-и за овој сајт за да го генерираш PDF извештајот.');
+                addNotification('Popup блокиран. Дозволи popup-и за овој сајт за да го генерираш PDF извештајот.', 'warning');
                 return;
             }
             // Revoke after the window has loaded
             setTimeout(() => URL.revokeObjectURL(url), 60_000);
         } catch {
-            alert('Грешка при генерирање на PDF извештајот. Обиди се повторно.');
+            addNotification('Грешка при генерирање на PDF извештајот. Обиди се повторно.', 'error');
         }
     }, [allStandards, gradeFilter]);
 

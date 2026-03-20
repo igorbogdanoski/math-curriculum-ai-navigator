@@ -10,24 +10,26 @@ import {
     type CustomTopic 
 } from '../services/firestoreService.curriculumOverrides';
 import { Card } from '../components/common/Card';
-import { 
-    BookOpen, 
-    Plus, 
-    Trash2, 
-    Edit2, 
-    ChevronRight, 
-    ChevronDown, 
-    Save, 
+import {
+    BookOpen,
+    Plus,
+    Trash2,
+    Edit2,
+    ChevronRight,
+    ChevronDown,
+    Save,
     X,
     AlertCircle,
     Info
 } from 'lucide-react';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 export const CurriculumEditorView: React.FC = () => {
     const { user } = useAuth();
     const { navigate } = useNavigation();
     const { curriculum, getGrade, getTopic } = useCurriculum();
     const { addNotification } = useNotification();
+    const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
     const [overrides, setOverrides] = useState<CurriculumOverridesDoc | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -133,22 +135,28 @@ export const CurriculumEditorView: React.FC = () => {
         }
     };
 
-    const handleDeleteConcept = async (conceptId: string) => {
-        if (!window.confirm('Дали сте сигурни дека сакате да го избришете овој концепт?')) return;
-        
-        try {
-            await curriculumOverridesService.deleteConceptOverride('school_overrides', conceptId);
-            const data = await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
-            setOverrides(data);
-            addNotification('Избришано.', 'success');
-        } catch (error) {
-            addNotification('Грешка при бришење.', 'error');
-        }
+    const handleDeleteConcept = (conceptId: string) => {
+        setConfirmDialog({
+            message: 'Дали сте сигурни дека сакате да го избришете овој концепт?',
+            variant: 'danger',
+            onConfirm: async () => {
+                setConfirmDialog(null);
+                try {
+                    await curriculumOverridesService.deleteConceptOverride('school_overrides', conceptId);
+                    const data = await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
+                    setOverrides(data);
+                    addNotification('Избришано.', 'success');
+                } catch (error) {
+                    addNotification('Грешка при бришење.', 'error');
+                }
+            }
+        });
     };
 
     if (isLoading) return <div className="p-8 text-center">Вчитување...</div>;
 
     return (
+        <>
         <div className="max-w-5xl mx-auto p-6 space-y-6">
             <header className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div>
@@ -309,5 +317,15 @@ export const CurriculumEditorView: React.FC = () => {
                 ))}
             </div>
         </div>
+        {confirmDialog && (
+            <ConfirmDialog
+                message={confirmDialog.message}
+                title={confirmDialog.title}
+                variant={confirmDialog.variant ?? 'warning'}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog(null)}
+            />
+        )}
+        </>
     );
 };

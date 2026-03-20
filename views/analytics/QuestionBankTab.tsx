@@ -4,6 +4,7 @@ import { firestoreService } from '../../services/firestoreService';
 import type { SavedQuestion } from '../../types';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { db } from '../../firebaseConfig';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useLanguage } from '../../i18n/LanguageContext';
@@ -25,6 +26,7 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
   const { addNotification } = useNotification();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
   const [questions, setQuestions] = useState<SavedQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState<Set<string>>(new Set());
@@ -118,16 +120,22 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
     }
   };
 
-  const handleDelete = async (questionId: string) => {
-    if (!window.confirm(t('analytics.qbank.confirmDelete'))) return;
-    try {
-      await firestoreService.deleteQuestion(questionId);
-      setQuestions(prev => prev.filter(q => q.id !== questionId));
-      setSelected(prev => { const n = new Set(prev); n.delete(questionId); return n; });
-      addNotification(t('analytics.qbank.deleted'), 'success');
-    } catch {
-      addNotification(t('analytics.qbank.errDelete'), 'error');
-    }
+  const handleDelete = (questionId: string) => {
+    setConfirmDialog({
+      message: t('analytics.qbank.confirmDelete'),
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await firestoreService.deleteQuestion(questionId);
+          setQuestions(prev => prev.filter(q => q.id !== questionId));
+          setSelected(prev => { const n = new Set(prev); n.delete(questionId); return n; });
+          addNotification(t('analytics.qbank.deleted'), 'success');
+        } catch {
+          addNotification(t('analytics.qbank.errDelete'), 'error');
+        }
+      }
+    });
   };
 
   const handleCreateQuiz = async () => {
@@ -380,6 +388,15 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
             {creatingQuiz ? t('analytics.qbank.creating') : t('analytics.qbank.createQuizBtn')}
           </button>
         </div>
+      )}
+      {confirmDialog && (
+        <ConfirmDialog
+          message={confirmDialog.message}
+          title={confirmDialog.title}
+          variant={confirmDialog.variant ?? 'warning'}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
     </div>
   );

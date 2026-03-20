@@ -14,6 +14,7 @@ import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled } from '../services/geminiService';
 import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle, Crown, CreditCard, ExternalLink } from 'lucide-react';
 import { AppError, ErrorCode } from '../utils/errors';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 const initialProfile: TeachingProfile = {
     name: '',
@@ -24,6 +25,7 @@ const initialProfile: TeachingProfile = {
 
 export const SettingsView: React.FC = () => {
     const { user, updateProfile, firebaseUser } = useAuth();
+    const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
     const [profile, setProfile] = useState<TeachingProfile>(user || initialProfile);
     const [studentProfiles, setStudentProfiles] = useState<StudentProfile[]>(user?.studentProfiles || []);
     const [newProfileName, setNewProfileName] = useState('');
@@ -58,19 +60,25 @@ export const SettingsView: React.FC = () => {
         }
     };
 
-    const handleLeaveSchool = async () => {
+    const handleLeaveSchool = () => {
         if (!firebaseUser || !user?.schoolId) return;
-        if (!window.confirm('Дали сте сигурни дека сакате да го напуштите училиштето?')) return;
-        setLeaveLoading(true);
-        try {
-            await firestoreService.leaveSchool(user.schoolId, firebaseUser.uid);
-            setJoinedSchoolName(null);
-            addNotification('Успешно го напуштивте училиштето.', 'success');
-        } catch {
-            addNotification('Грешка при напуштање. Обидете се повторно.', 'error');
-        } finally {
-            setLeaveLoading(false);
-        }
+        setConfirmDialog({
+            message: 'Дали сте сигурни дека сакате да го напуштите училиштето?',
+            variant: 'warning',
+            onConfirm: async () => {
+                setConfirmDialog(null);
+                setLeaveLoading(true);
+                try {
+                    await firestoreService.leaveSchool(user.schoolId!, firebaseUser.uid);
+                    setJoinedSchoolName(null);
+                    addNotification('Успешно го напуштивте училиштето.', 'success');
+                } catch {
+                    addNotification('Грешка при напуштање. Обидете се повторно.', 'error');
+                } finally {
+                    setLeaveLoading(false);
+                }
+            }
+        });
     };
 
     // Mock list of schools for Phase D4 (School & Admin Management)
@@ -347,22 +355,25 @@ export const SettingsView: React.FC = () => {
         }
     };
 
-    const handleMigrateCurriculum = async () => {
-        if (!window.confirm("Дали сте сигурни дека сакате да ја пополните Firestore базата со локалната наставна програма? Ова ќе ги пребрише постоечките податоци во 'curriculum/v1'.")) {
-            return;
-        }
-
-        setIsMigrating(true);
-        try {
-            const { fullCurriculumData } = await import('../data/curriculum');
-            await firestoreService.saveFullCurriculum(fullCurriculumData);
-            addNotification('Наставната програма е успешно префрлена во Firestore!', 'success');
-        } catch (error) {
-            addNotification('Грешка при миграција на податоците.', 'error');
-            console.error("Migration failed:", error);
-        } finally {
-            setIsMigrating(false);
-        }
+    const handleMigrateCurriculum = () => {
+        setConfirmDialog({
+            message: "Дали сте сигурни дека сакате да ја пополните Firestore базата со локалната наставна програма? Ова ќе ги пребрише постоечките податоци во 'curriculum/v1'.",
+            variant: 'warning',
+            onConfirm: async () => {
+                setConfirmDialog(null);
+                setIsMigrating(true);
+                try {
+                    const { fullCurriculumData } = await import('../data/curriculum');
+                    await firestoreService.saveFullCurriculum(fullCurriculumData);
+                    addNotification('Наставната програма е успешно префрлена во Firestore!', 'success');
+                } catch (error) {
+                    addNotification('Грешка при миграција на податоците.', 'error');
+                    console.error("Migration failed:", error);
+                } finally {
+                    setIsMigrating(false);
+                }
+            }
+        });
     };
 
     if (!user) {
@@ -370,6 +381,7 @@ export const SettingsView: React.FC = () => {
     }
 
     return (
+        <>
         <div className="p-8 animate-fade-in space-y-8">
             <header className="mb-6">
                 <h1 className="text-4xl font-bold text-brand-primary">Поставки</h1>
@@ -977,6 +989,16 @@ export const SettingsView: React.FC = () => {
                 )}
             </Card>
         </div>
+        {confirmDialog && (
+            <ConfirmDialog
+                message={confirmDialog.message}
+                title={confirmDialog.title}
+                variant={confirmDialog.variant ?? 'warning'}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog(null)}
+            />
+        )}
+        </>
     );
 };
 

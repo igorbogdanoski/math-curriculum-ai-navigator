@@ -8,8 +8,6 @@ import { callEmbeddingProxy } from './gemini/core';
 import { NotFoundError, OfflineError, FirestoreError } from '../utils/errors';
 
 export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
-    console.log("Attempting to fetch data from Firestore...");
-    
     // Проверка на конекцијата пред да се вчита новиот курикулум.
     // Податоците од 'v1' се дел од официјалниот национален курикулум.
     const docRef = doc(db, "curriculum", "v1");
@@ -18,7 +16,6 @@ export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        console.log("...Data received successfully from Firestore.");
         // Се враќаат сите податоци мапирани по објект CurriculumModule.
         return docSnap.data() as CurriculumModule;
       } else {
@@ -39,11 +36,9 @@ export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
   };
 
 export const saveFullCurriculum = async (data: CurriculumModule): Promise<void> => {
-    console.log("Attempting to save curriculum data to Firestore...");
     const docRef = doc(db, "curriculum", "v1");
     try {
       await setDoc(docRef, data);
-      console.log("Curriculum data successfully saved to Firestore.");
     } catch (error) {
       console.error("Error saving curriculum data to Firestore:", error);
       throw error;

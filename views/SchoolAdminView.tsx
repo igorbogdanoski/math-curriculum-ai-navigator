@@ -11,6 +11,7 @@ import {
 import { firestoreService } from '../services/firestoreService';
 import type { SchoolStatsData, SchoolTeacherStat } from '../services/firestoreService.school';
 import type { School as SchoolType } from '../types';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 // ── Activity badge ──────────────────────────────────────────────────────────
 function ActivityBadge({ lastActive }: { lastActive: string | null }) {
@@ -37,6 +38,7 @@ export const SchoolAdminView: React.FC = () => {
   const { addNotification } = useNotification();
 
   const [isLoading, setIsLoading] = useState(true);
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
   const [stats, setStats] = useState<SchoolStatsData | null>(null);
   const [school, setSchool] = useState<SchoolType | null>(null);
   const [joinCodeLoading, setJoinCodeLoading] = useState(false);
@@ -91,28 +93,35 @@ export const SchoolAdminView: React.FC = () => {
     setTimeout(() => setLinkCopied(false), 2500);
   };
 
-  const handleRemoveTeacher = async (teacherUid: string, teacherName: string) => {
+  const handleRemoveTeacher = (teacherUid: string, teacherName: string) => {
     if (!user?.schoolId) return;
-    if (!window.confirm(`Дали сте сигурни дека сакате да го отстраните ${teacherName}?`)) return;
-    setRemovingUid(teacherUid);
-    try {
-      await firestoreService.removeTeacherFromSchool(user.schoolId, teacherUid);
-      setStats(prev => prev ? {
-        ...prev,
-        teachers: prev.teachers.filter((t: SchoolTeacherStat) => t.id !== teacherUid),
-        totalTeachers: prev.totalTeachers - 1,
-      } : prev);
-      addNotification(`${teacherName} е отстранет од училиштето.`, 'success');
-    } catch {
-      addNotification('Грешка при отстранување.', 'error');
-    } finally {
-      setRemovingUid(null);
-    }
+    setConfirmDialog({
+      message: `Дали сте сигурни дека сакате да го отстраните ${teacherName}?`,
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setRemovingUid(teacherUid);
+        try {
+          await firestoreService.removeTeacherFromSchool(user.schoolId!, teacherUid);
+          setStats(prev => prev ? {
+            ...prev,
+            teachers: prev.teachers.filter((t: SchoolTeacherStat) => t.id !== teacherUid),
+            totalTeachers: prev.totalTeachers - 1,
+          } : prev);
+          addNotification(`${teacherName} е отстранет од училиштето.`, 'success');
+        } catch {
+          addNotification('Грешка при отстранување.', 'error');
+        } finally {
+          setRemovingUid(null);
+        }
+      }
+    });
   };
 
   if (!user || (user.role !== 'school_admin' && user.role !== 'admin')) return null;
 
   return (
+    <>
     <div className="max-w-7xl mx-auto space-y-6 printable-root" id="printable-area">
 
       {/* ── Header ── */}
@@ -375,5 +384,15 @@ export const SchoolAdminView: React.FC = () => {
         </>
       )}
     </div>
+    {confirmDialog && (
+      <ConfirmDialog
+        message={confirmDialog.message}
+        title={confirmDialog.title}
+        variant={confirmDialog.variant ?? 'warning'}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(null)}
+      />
+    )}
+    </>
   );
 };

@@ -351,6 +351,7 @@ export const GradeBookView: React.FC = () => {
                       <button
                         type="button"
                         title="Отфрли предупредување"
+                        aria-label="Отфрли предупредување за ученик"
                         onClick={() => setDismissedWarnings(prev => [...prev, student.name])}
                         className="p-1.5 text-gray-300 hover:text-gray-500 transition-colors"
                       >
@@ -496,7 +497,7 @@ export const GradeBookView: React.FC = () => {
                         </td>
                       )}
                       <td className="px-2 py-3">
-                        <button type="button" onClick={() => removeEntry(e.studentId)} title="Избриши"
+                        <button type="button" onClick={() => removeEntry(e.studentId)} title="Избриши" aria-label="Избриши запис"
                           className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Undo2, Redo2, Eraser, PenTool, Trash2, Grid3X3, X, Download, LayoutList, Square } from 'lucide-react';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface Point {
     x: number;
@@ -47,6 +48,7 @@ export const MathScratchpad: React.FC<MathScratchpadProps> = ({ isOpen, onClose 
     const [strokes, setStrokes] = useState<Stroke[]>([]);
     const [redoStack, setRedoStack] = useState<Stroke[]>([]);
     const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null);
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     // Dynamic resize handler to keep quality crisp
     const resizeCanvas = useCallback(() => {
@@ -232,10 +234,7 @@ export const MathScratchpad: React.FC<MathScratchpadProps> = ({ isOpen, onClose 
     };
 
     const clearCanvas = () => {
-        if (window.confirm('Дали сте сигурни дека сакате да ја избришете целата табла?')) {
-            setStrokes([]);
-            setRedoStack([]);
-        }
+        setShowClearConfirm(true);
     };
 
     const downloadCanvas = () => {
@@ -378,6 +377,17 @@ export const MathScratchpad: React.FC<MathScratchpadProps> = ({ isOpen, onClose 
                 <span>Touch, Stylus & Mouse Supported</span>
                 <span>History: {strokes.length} strokes</span>
             </div>
+
+            {showClearConfirm && (
+                <ConfirmDialog
+                    title="Избриши ја таблата?"
+                    message="Дали сте сигурни дека сакате да ја избришете целата табла? Сите цртежи ќе се изгубат."
+                    variant="danger"
+                    confirmLabel="Да, избриши"
+                    onConfirm={() => { setShowClearConfirm(false); setStrokes([]); setRedoStack([]); }}
+                    onCancel={() => setShowClearConfirm(false)}
+                />
+            )}
         </div>
     );
 };

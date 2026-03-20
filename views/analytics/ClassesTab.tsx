@@ -6,6 +6,8 @@ import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { SkeletonList } from '../../components/common/Skeleton';
+import { useNotification } from '../../contexts/NotificationContext';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 
 interface ClassesTabProps {
     teacherUid: string;
@@ -15,6 +17,8 @@ const GRADE_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     const { t } = useLanguage();
+    const { addNotification } = useNotification();
+    const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -76,7 +80,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                 if (cell.length >= 2) names.push(cell);
             });
             if (names.length === 0) {
-                alert('Фајлот не содржи валидни имиња. Очекуван формат: едно ime по ред (или CSV со колона "name").');
+                addNotification('Фајлот не содржи валидни имиња. Очекуван формат: едно ime по ред (или CSV со колона "name").', 'error');
                 return;
             }
             setCsvPreview({ classId: csvTargetClassId, names });
@@ -125,10 +129,16 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
         await loadClasses();
     };
 
-    const handleDelete = async (classId: string, name: string) => {
-        if (!window.confirm(`Избриши го одделението „${name}"?`)) return;
-        await firestoreService.deleteClass(classId);
-        await loadClasses();
+    const handleDelete = (classId: string, name: string) => {
+        setConfirmDialog({
+            message: `Избриши го одделението „${name}"?`,
+            variant: 'danger',
+            onConfirm: async () => {
+                setConfirmDialog(null);
+                await firestoreService.deleteClass(classId);
+                await loadClasses();
+            }
+        });
     };
 
     const handleAddStudent = async (classId: string) => {
@@ -211,6 +221,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     }
 
     return (
+        <>
         <SilentErrorBoundary name="ClassesTab">
             {/* Hidden CSV file input */}
             <input
@@ -647,5 +658,15 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                 ))}
             </div>
         </SilentErrorBoundary>
+        {confirmDialog && (
+            <ConfirmDialog
+                message={confirmDialog.message}
+                title={confirmDialog.title}
+                variant={confirmDialog.variant ?? 'warning'}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog(null)}
+            />
+        )}
+        </>
     );
 };
