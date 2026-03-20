@@ -646,3 +646,53 @@ export const fetchTeacherNote = async (teacherUid: string, conceptId: string): P
     return snap.exists() ? (snap.data().note ?? '') : '';
   };
 
+// ─── Annual Plan CRUD ─────────────────────────────────────────────────────────
+
+export interface AnnualPlanDoc {
+  id: string;
+  userId: string;
+  authorName?: string;
+  createdAt: Timestamp | null;
+  grade: string;
+  subject: string;
+  planData: import('../types').AIGeneratedAnnualPlan;
+  likes?: number;
+  forks?: number;
+  isForked?: boolean;
+  originalPlanId?: string;
+}
+
+export const fetchAnnualPlanById = async (planId: string): Promise<AnnualPlanDoc | null> => {
+  const snap = await getDoc(doc(db, 'academic_annual_plans', planId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as AnnualPlanDoc;
+};
+
+export const updateAnnualPlan = async (
+  planId: string,
+  planData: import('../types').AIGeneratedAnnualPlan
+): Promise<void> => {
+  await updateDoc(doc(db, 'academic_annual_plans', planId), {
+    planData,
+    grade: planData.grade,
+    subject: planData.subject,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const createAnnualPlan = async (
+  userId: string,
+  planData: import('../types').AIGeneratedAnnualPlan,
+  extra?: Partial<Omit<AnnualPlanDoc, 'id' | 'userId' | 'planData'>>
+): Promise<string> => {
+  const ref = await addDoc(collection(db, 'academic_annual_plans'), {
+    userId,
+    createdAt: serverTimestamp(),
+    planData,
+    grade: planData.grade,
+    subject: planData.subject,
+    ...extra,
+  });
+  return ref.id;
+};
+

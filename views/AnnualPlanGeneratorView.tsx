@@ -1,9 +1,8 @@
-﻿import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { useReactToPrint } from 'react-to-print';
-import { db } from '../firebaseConfig';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { fetchAnnualPlanById, updateAnnualPlan, createAnnualPlan } from '../services/firestoreService.materials';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -83,8 +82,11 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx }) => {
     );
 };
 
-export const AnnualPlanGeneratorView: React.FC = () => {
-    const { t } = useLanguage();
+interface AnnualPlanGeneratorViewProps {
+    planId?: string; // when set → edit mode (load + update)
+}
+
+export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = ({ planId }) => {
     const { curriculum } = useCurriculum();
     const [selectedGradeId, setSelectedGradeId] = useState<string>('grade-6');
     const [subject, setSubject] = useState<string>('Математика');
@@ -92,12 +94,32 @@ export const AnnualPlanGeneratorView: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(1);
     const [isGenerating, setIsGenerating] = useState(false);
     const [plan, setPlan] = useState<AIGeneratedAnnualPlan | null>(null);
+    const [isLoadingExisting, setIsLoadingExisting] = useState(false);
 
     const { user, firebaseUser, updateLocalProfile } = useAuth();
     const { addNotification } = useNotification();
     const printRef = useRef<HTMLDivElement>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [savedId, setSavedId] = useState<string | null>(null);
+
+    // Edit mode — load existing plan by planId
+    useEffect(() => {
+        if (!planId) return;
+        setIsLoadingExisting(true);
+        fetchAnnualPlanById(planId).then(doc => {
+            if (doc) {
+                setPlan(doc.planData);
+                setSubject(doc.planData.subject);
+                setWeeks(doc.planData.totalWeeks);
+                setSavedId(planId); // already saved
+                setCurrentStep(3); // jump straight to preview/edit
+            } else {
+                addNotification('Планот не е пронајден.', 'error');
+            }
+        }).catch(() => addNotification('Грешка при вчитување на планот.', 'error'))
+          .finally(() => setIsLoadingExisting(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [planId]);
 
     
     const sensors = useSensors(
@@ -124,18 +146,20 @@ export const AnnualPlanGeneratorView: React.FC = () => {
     });
 
     const handleSave = async () => {
-        if (!user || !plan) return;
+        if (!user || !plan || !firebaseUser?.uid) return;
         setIsSaving(true);
         try {
-            const docRef = await addDoc(collection(db, 'academic_annual_plans'), {
-                userId: firebaseUser?.uid,
-                createdAt: serverTimestamp(),
-                planData: plan,
-                grade: plan.grade,
-                subject: plan.subject
-            });
-            setSavedId(docRef.id);
-            addNotification("Програмата е успешно зачувана во облак!", 'success');
+            if (planId) {
+                // Edit mode — update existing document
+                await updateAnnualPlan(planId, plan);
+                setSavedId(planId);
+                addNotification("Промените се успешно зачувани!", 'success');
+            } else {
+                // Create mode — new document
+                const newId = await createAnnualPlan(firebaseUser.uid, plan);
+                setSavedId(newId);
+                addNotification("Програмата е успешно зачувана во облак!", 'success');
+            }
         } catch (error) {
             console.error("Грешка при зачувување:", error);
             addNotification("Грешка при зачувување на програмата.", 'error');
@@ -227,13 +251,24 @@ export const AnnualPlanGeneratorView: React.FC = () => {
 
     return (
         <div className="p-6 max-w-6xl mx-auto space-y-6">
+            {isLoadingExisting && (
+                <div className="flex items-center justify-center py-20">
+                    <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mr-4" />
+                    <span className="text-gray-500 font-medium">Вчитување на планот...</span>
+                </div>
+            )}
+            {!isLoadingExisting && (
+            <>
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <ICONS.planner className="w-8 h-8" /> AI Годишна Програма
+                        <ICONS.planner className="w-8 h-8" />
+                        {planId ? 'Уреди Годишна Програма' : 'AI Годишна Програма'}
                     </h1>
                     <p className="text-gray-500 mt-2">
-                        Автоматско генерирање на структуриран годишен план (Annual Curriculum Planner)
+                        {planId
+                            ? 'Уредувате постоечка програма — промените ќе се зачуваат на истото место.'
+                            : 'Автоматско генерирање на структуриран годишен план (Annual Curriculum Planner)'}
                     </p>
                 </div>
             </div>
@@ -293,8 +328,10 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Предмет</label>
-                                <input 
+                                <input
                                     type="text"
+                                    title="Предмет"
+                                    placeholder="пр. Математика"
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
                                     className="w-full p-3 border-2 border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium"
@@ -324,8 +361,9 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                                     <span>Вкупно недели во учебната година</span>
                                     <span className="text-blue-600">{weeks} недели</span>
                                 </label>
-                                <input 
+                                <input
                                     type="range"
+                                    title="Број на недели"
                                     min="20"
                                     max="40"
                                     value={weeks}
@@ -384,7 +422,7 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                                                 disabled={isSaving}
                                                 className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:opacity-60 transition shadow-sm"
                                             >
-                                                {isSaving ? '...' : savedId ? '✓ Зачувано' : 'Зачувај'}
+                                                {isSaving ? '...' : savedId && !planId ? '✓ Зачувано' : planId ? 'Ажурирај' : 'Зачувај'}
                                             </button>
                                         )}
                                         <button
@@ -444,6 +482,8 @@ export const AnnualPlanGeneratorView: React.FC = () => {
                     </div>
                 )}
             </div>
+            </>
+            )}
         </div>
     );
 };

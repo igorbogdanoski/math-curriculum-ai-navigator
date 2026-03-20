@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, orderBy, updateDoc, doc, increment, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, updateDoc, doc, increment } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { Card } from '../components/common/Card';
-
 import { ICONS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import { AIGeneratedAnnualPlan } from '../types';
 import { useNotification } from '../contexts/NotificationContext';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { useNavigation } from '../contexts/NavigationContext';
+import { createAnnualPlan } from '../services/firestoreService.materials';
 
 interface SavedPlan {
     id: string;
@@ -27,6 +28,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
     const { user, firebaseUser } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const { addNotification } = useNotification();
+    const { navigate } = useNavigation();
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
     useEffect(() => {
@@ -76,28 +78,21 @@ export const AnnualPlanGalleryView: React.FC = () => {
             onConfirm: async () => {
                 setConfirmDialog(null);
                 try {
-                    // Unlink original IDs and set as clone
-                    const newPlanData = { ...plan.planData };
-
-                    // 1. Add to user's personalized DB
-                    await addDoc(collection(db, 'academic_annual_plans'), {
-                        userId: firebaseUser?.uid,
-                        createdAt: serverTimestamp(),
-                        planData: newPlanData,
-                        grade: plan.grade,
-                        subject: plan.subject,
-                        isForked: true,
-                        originalPlanId: plan.id
-                    });
+                    // 1. Create forked copy in user's workspace
+                    const newId = await createAnnualPlan(
+                        firebaseUser!.uid,
+                        { ...plan.planData },
+                        { isForked: true, originalPlanId: plan.id }
+                    );
 
                     // 2. Increment fork count on original
-                    const planRef = doc(db, 'academic_annual_plans', plan.id);
-                    await updateDoc(planRef, {
+                    await updateDoc(doc(db, 'academic_annual_plans', plan.id), {
                         forks: increment(1)
                     });
 
-                    addNotification("Планот е успешно клониран! Сега можете да го најдете во вашите планови и да го уредувате.", 'success');
-                    fetchPlans(); // Refresh to show updated fork count
+                    addNotification("Планот е клониран! Отвора уредувач...", 'success');
+                    // Navigate directly to editor with the new copy
+                    navigate(`/annual-planner/${newId}`);
 
                 } catch (error) {
                     console.error("Failed to fork:", error);
@@ -196,12 +191,27 @@ export const AnnualPlanGalleryView: React.FC = () => {
                                     </button>
                                 </div>
                                 
-                                <button
-                                    className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
-                                    onClick={() => addNotification('Опцијата за детален преглед е во изработка.', 'info')}
-                                >
-                                    Преглед
-                                </button>
+                                {plan.userId === firebaseUser?.uid ? (
+                                    <button
+                                        type="button"
+                                        title="Уреди го овој план"
+                                        aria-label="Уреди план"
+                                        className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                                        onClick={() => navigate(`/annual-planner/${plan.id}`)}
+                                    >
+                                        <ICONS.edit className="w-3.5 h-3.5" /> Уреди
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        title="Клонирај и уреди"
+                                        aria-label="Клонирај план"
+                                        className="px-3 py-1.5 text-xs font-semibold border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1"
+                                        onClick={() => handleFork(plan)}
+                                    >
+                                        <ICONS.gitBranch className="w-3.5 h-3.5" /> Ремикс
+                                    </button>
+                                )}
                             </div>
                         </Card>
                     ))}

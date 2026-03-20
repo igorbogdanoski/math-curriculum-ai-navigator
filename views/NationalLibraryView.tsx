@@ -4,7 +4,7 @@ import type { NationalLibraryEntry } from '../services/firestoreService.material
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import { Library, Search, Download, Globe, Filter, Loader2, BookOpen, ChevronDown } from 'lucide-react';
+import { Library, Search, Download, Globe, Filter, Loader2, BookOpen, ChevronDown, Wand2, X, Save } from 'lucide-react';
 
 const GRADE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const TYPE_LABELS: Record<string, string> = {
@@ -29,6 +29,13 @@ export const NationalLibraryView: React.FC = () => {
   const [importing, setImporting] = useState<Set<string>>(new Set());
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
   const [imported, setImported] = useState<Set<string>>(new Set());
+
+  // Remix state — inline editor per card
+  const [remixingId, setRemixingId] = useState<string | null>(null);
+  const [remixQuestion, setRemixQuestion] = useState('');
+  const [remixOptions, setRemixOptions] = useState<string[]>([]);
+  const [remixCorrect, setRemixCorrect] = useState('');
+  const [remixSaving, setRemixSaving] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -74,6 +81,35 @@ export const NationalLibraryView: React.FC = () => {
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });
+  };
+
+  const openRemix = (entry: LibraryEntry) => {
+    setRemixingId(entry.id);
+    setRemixQuestion(entry.question);
+    setRemixOptions(entry.options ? [...entry.options] : []);
+    setRemixCorrect(entry.answer ?? '');
+  };
+
+  const handleSaveRemix = async (entry: LibraryEntry) => {
+    if (!firebaseUser?.uid) { addNotification('Треба да сте најавени.', 'error'); return; }
+    setRemixSaving(true);
+    try {
+      // Build the remixed entry — fork original with user modifications
+      const remixed: NationalLibraryEntry = {
+        ...entry,
+        question: remixQuestion,
+        options: remixOptions.length > 0 ? remixOptions : entry.options,
+        answer: remixCorrect || entry.answer,
+      };
+      await firestoreService.importFromNationalLibrary(remixed, firebaseUser.uid);
+      setImported(prev => new Set(prev).add(entry.id));
+      addNotification('Ремиксираното прашање е зачувано во вашата Банка на прашања!', 'success');
+      setRemixingId(null);
+    } catch {
+      addNotification('Грешка при зачувување на ремиксот.', 'error');
+    } finally {
+      setRemixSaving(false);
+    }
   };
 
   return (
@@ -216,6 +252,62 @@ export const NationalLibraryView: React.FC = () => {
                   </div>
                 )}
 
+                {/* Remix inline editor */}
+                {remixingId === entry.id && (
+                  <div className="mt-3 pt-3 border-t border-violet-200 bg-violet-50 rounded-xl p-3 space-y-2 animate-fade-in">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-violet-700 flex items-center gap-1"><Wand2 className="w-3.5 h-3.5" /> Ремиксирај прашање</span>
+                      <button type="button" aria-label="Затвори ремикс" onClick={() => setRemixingId(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+                    </div>
+                    <textarea
+                      title="Прашање"
+                      rows={2}
+                      value={remixQuestion}
+                      onChange={e => setRemixQuestion(e.target.value)}
+                      className="w-full text-xs border border-violet-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+                      placeholder="Уреди го текстот на прашањето..."
+                    />
+                    {remixOptions.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase">Опции</p>
+                        {remixOptions.map((opt, i) => (
+                          <input
+                            key={i}
+                            type="text"
+                            title={`Опција ${i + 1}`}
+                            value={opt}
+                            onChange={e => {
+                              const updated = [...remixOptions];
+                              updated[i] = e.target.value;
+                              setRemixOptions(updated);
+                            }}
+                            className="w-full text-xs border border-violet-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-violet-400"
+                          />
+                        ))}
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-500 uppercase mb-1">Точен одговор</p>
+                          <input
+                            type="text"
+                            title="Точен одговор"
+                            value={remixCorrect}
+                            onChange={e => setRemixCorrect(e.target.value)}
+                            className="w-full text-xs border border-green-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-400"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      disabled={remixSaving || !remixQuestion.trim()}
+                      onClick={() => handleSaveRemix(entry)}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-violet-600 text-white rounded-lg text-xs font-bold hover:bg-violet-700 transition disabled:opacity-50"
+                    >
+                      {remixSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                      Зачувај во Банка на прашања
+                    </button>
+                  </div>
+                )}
+
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-auto">
                   <div className="text-xs text-gray-400 truncate max-w-[160px]">
@@ -225,27 +317,39 @@ export const NationalLibraryView: React.FC = () => {
                     )}
                     {entry.schoolName && <span> · {entry.schoolName}</span>}
                   </div>
-                  <button
-                    type="button"
-                    disabled={isImporting || isAlreadyImported}
-                    onClick={() => handleImport(entry)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-50 ${
-                      isAlreadyImported
-                        ? 'bg-green-100 text-green-700 cursor-default'
-                        : 'bg-brand-primary text-white hover:bg-brand-primary/90'
-                    }`}
-                  >
-                    {isImporting ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : isAlreadyImported ? (
-                      '✓ Увезено'
-                    ) : (
-                      <>
-                        <Download className="w-3 h-3" />
-                        Увези
-                      </>
+                  <div className="flex items-center gap-1.5">
+                    {remixingId !== entry.id && (
+                      <button
+                        type="button"
+                        title="Ремиксирај — уреди и зачувај своја верзија"
+                        onClick={() => openRemix(entry)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-violet-300 text-violet-600 hover:bg-violet-50 transition"
+                      >
+                        <Wand2 className="w-3 h-3" /> Ремикс
+                      </button>
                     )}
-                  </button>
+                    <button
+                      type="button"
+                      disabled={isImporting || isAlreadyImported}
+                      onClick={() => handleImport(entry)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-50 ${
+                        isAlreadyImported
+                          ? 'bg-green-100 text-green-700 cursor-default'
+                          : 'bg-brand-primary text-white hover:bg-brand-primary/90'
+                      }`}
+                    >
+                      {isImporting ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : isAlreadyImported ? (
+                        '✓ Увезено'
+                      ) : (
+                        <>
+                          <Download className="w-3 h-3" />
+                          Увези
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </Card>
             );
