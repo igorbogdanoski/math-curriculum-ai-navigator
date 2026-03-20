@@ -347,6 +347,7 @@ export const AcademyDailyHub: React.FC<Props> = ({ modules, readLessons, applied
             disabled={isChallengeLoading}
             className="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors disabled:opacity-50"
             title="Генерирај нов предизвик"
+            aria-label="Генерирај нов предизвик"
           >
             <RefreshCw className={`w-4 h-4 ${isChallengeLoading ? 'animate-spin' : ''}`} />
           </button>

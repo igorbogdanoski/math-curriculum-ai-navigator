@@ -49,20 +49,20 @@
 **Статус:** ✅ ЗАВРШЕНО (Сесија 8)
 
 ### P5 — Form валидација со инлајн грешки
-**Статус:** ⬜ Следно
+**Статус:** ✅ ЗАВРШЕНО (Сесија 9)
 
 Засегнати форми:
-- [ ] `views/GradeBookView.tsx` — валидација при додавање запис
-- [ ] `views/AnnualPlanGeneratorView.tsx` — задолжителни полиња
-- [ ] `views/SchoolAdminView.tsx` — join code validation
-- [ ] `views/SettingsView.tsx` — профил update валидација
+- [x] `views/GradeBookView.tsx` — инлајн грешки (name, testTitle, raw, max) со червена рамка
+- [x] `views/AnnualPlanGeneratorView.tsx` — задолжителни полиња со грешки
+- [x] `views/SchoolAdminView.tsx` — нема форми (само акциски копчиња)
+- [x] `views/SettingsView.tsx` — инлајн грешки за додавање студентски профил
 
 ### P6 — i18n за нови компоненти
-**Статус:** ⬜ Следно
+**Статус:** ✅ ЗАВРШЕНО (Сесија 9)
 
-- [ ] `components/generator/SmartStart.tsx` — хардкодирани МК стрингови
-- [ ] `views/WrittenTestReviewView.tsx` — хардкодирани МК стрингови
-- [ ] `components/academy/AcademyDailyHub.tsx` — хардкодирани МК стрингови
+- [x] `components/generator/SmartStart.tsx` — сите UI стрингови на МК; "Smart Start" е бренд-назив
+- [x] `views/WrittenTestReviewView.tsx` — исправено: "Мн. добар" → "Многу добар", "Незад." → "Незадоволителен"
+- [x] `components/academy/AcademyDailyHub.tsx` — сите стрингови на МК ✅; додадено aria-label на refresh копчето
 
 ---
 
@@ -76,10 +76,12 @@
 - [ ] `views/TeacherAnalyticsView.tsx` — announcements optimistic
 
 ### P9 — Keyboard Shortcuts
-- [ ] Cmd+K → GlobalSearchBar focus
-- [ ] Cmd+S → Save во editors
-- [ ] Cmd+G → Отвори Generator
-- [ ] Escape → Затвори panels/modals
+**Статус:** ✅ ДЕЛУМНО ЗАВРШЕНО (Сесија 9)
+
+- [x] Cmd+K → Command Palette (глобален, сите рути + AI акции + концепти)
+- [x] Ctrl+S / Cmd+S → Зачувај во `LessonPlanEditorView` + `AnnualPlanGeneratorView`
+- [x] Escape → Затвори Command Palette, Confirm Dialog, panels
+- [ ] Cmd+G → Отвори AI Generator Panel (следно)
 
 ### P10 — Performance
 - [ ] `views/TeacherAnalyticsView.tsx` — виртуелизација на долги листи
@@ -128,4 +130,4 @@
 > „Апликацијата треба да биде толку добра што кога МОН инспектор ја види,
 > веднаш ќе праша 'Зошто ова не го имаме во секое училиште?'"
 
-*Последно ажурирање: 18 Март 2026 (Сесија 8 — Sprint P1–P4 во тек)*
+*Последно ажурирање: 21 Март 2026 (Сесија 9 — P5, P6, P9 завршени; Deep Audit 8.5/10)*

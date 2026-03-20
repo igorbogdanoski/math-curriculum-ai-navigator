@@ -114,6 +114,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const printRef = useRef<HTMLDivElement>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [savedId, setSavedId] = useState<string | null>(null);
+    const handleSaveRef = useRef<() => void>(() => {});
 
     // Edit mode — load existing plan by planId
     useEffect(() => {
@@ -181,6 +182,20 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
         }
     };
 
+    // Keep ref in sync so the Cmd+S effect always calls the latest version
+    handleSaveRef.current = handleSave;
+
+    // Cmd+S / Ctrl+S — save annual plan from anywhere in the view
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                e.preventDefault();
+                handleSaveRef.current();
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, []); // runs once; ref keeps value fresh
 
     const handleGenerate = async () => {
         const cost = 10; // AI_COSTS.ANNUAL_PLAN
@@ -433,9 +448,12 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                 type="button"
                                                 onClick={handleSave}
                                                 disabled={isSaving}
-                                                className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:opacity-60 transition shadow-sm"
+                                                title="Зачувај (Ctrl+S)"
+                                                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 disabled:opacity-60 transition shadow-sm"
                                             >
-                                                {isSaving ? '...' : savedId && !planId ? '✓ Зачувано' : planId ? 'Ажурирај' : 'Зачувај'}
+                                                {isSaving
+                                                    ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Зачувувам...</>
+                                                    : savedId && !planId ? '✓ Зачувано' : planId ? 'Ажурирај' : 'Зачувај'}
                                             </button>
                                         )}
                                         <button

@@ -377,13 +377,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   }, [plan, user, addNotification, isOnline]);
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = useCallback(async () => {
     if (!plan.title) {
         addNotification('Насловот е задолжителен.', 'error');
         return;
     }
-    
     setIsSaving(true);
     try {
         if (isEditing) {
@@ -407,10 +405,25 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             addNotification('Грешка при зачувување на подготовката.', 'error');
         }
     } finally {
-        if (isMounted.current) {
-            setIsSaving(false);
-        }
+        if (isMounted.current) setIsSaving(false);
     }
+  }, [plan, isEditing, addNotification, clearDraft, navigate, isMounted]);
+
+  // Cmd+S / Ctrl+S keyboard shortcut to save
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (!isSaving) handleSave();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [handleSave, isSaving]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSave();
   };
   
     const arrayToLines = (arr: any[] = []) => arr.map(item => `- ${typeof item === 'string' ? item : item.text}${item.bloomsLevel ? ` [${item.bloomsLevel}]` : ''}`).join('\n');
@@ -690,6 +703,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                         <button
                             type="submit"
                             disabled={isSaving}
+                            title="Зачувај (Ctrl+S)"
                             className="flex items-center bg-brand-primary text-white px-6 py-3 rounded-lg shadow hover:bg-brand-secondary transition-colors font-semibold disabled:bg-gray-400"
                         >
                             {isSaving ? (

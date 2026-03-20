@@ -61,10 +61,10 @@ function heatColor(rate: number): string {
 
 function mkGrade(pct: number) {
   if (pct >= 90) return { grade: '5', label: 'Одличен', color: 'text-green-600' };
-  if (pct >= 75) return { grade: '4', label: 'Мн. добар', color: 'text-blue-600' };
+  if (pct >= 75) return { grade: '4', label: 'Многу добар', color: 'text-blue-600' };
   if (pct >= 60) return { grade: '3', label: 'Добар', color: 'text-yellow-600' };
   if (pct >= 50) return { grade: '2', label: 'Доволен', color: 'text-orange-600' };
-  return { grade: '1', label: 'Незад.', color: 'text-red-600' };
+  return { grade: '1', label: 'Незадоволителен', color: 'text-red-600' };
 }
 
 function readFileAsDataURL(file: File): Promise<string> {
