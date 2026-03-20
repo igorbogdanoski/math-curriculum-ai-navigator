@@ -2,6 +2,7 @@
 import { useReactToPrint } from 'react-to-print';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useNavigation } from '../contexts/NavigationContext';
 import { fetchAnnualPlanById, updateAnnualPlan, createAnnualPlan } from '../services/firestoreService.materials';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -17,11 +18,12 @@ import { generatePlanICS, downloadICS } from '../utils/icalExport';
 
 interface SortableTopicProps {
     topic: AIGeneratedAnnualPlanTopic;
-    id: string; // Use index or unique string as id
+    id: string;
     idx: number;
+    onGenerateLesson: () => void;
 }
 
-const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx }) => {
+const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerateLesson }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style = {
@@ -38,7 +40,6 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx }) => {
             <div className="flex justify-between items-center p-4 bg-gray-100/50 border-b border-gray-200" {...attributes} {...listeners} style={{ cursor: 'grab' }}>
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-3">
                     <div className="text-gray-400 hover:text-gray-600">
-                        {/* Drag Handle Icon Inline */}
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                     </div>
                     <span className="bg-white border text-gray-600 w-8 h-8 flex items-center justify-center rounded-full shadow-sm text-sm">
@@ -46,10 +47,21 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx }) => {
                     </span>
                     {topic.title}
                 </h3>
-                <span className="text-sm font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full shadow-sm border border-blue-100 flex items-center gap-1">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    {topic.durationWeeks} недели
-                </span>
+                <div className="flex items-center gap-2" onPointerDown={e => e.stopPropagation()}>
+                    <button
+                        type="button"
+                        onClick={onGenerateLesson}
+                        title="Генерирај план за час за оваа тема"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white text-xs font-bold rounded-lg hover:bg-violet-700 transition-colors shadow-sm"
+                    >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 3L2 12h3v8h14v-8h3L12 3z"/></svg>
+                        Генерирај Час
+                    </button>
+                    <span className="text-sm font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full shadow-sm border border-blue-100 flex items-center gap-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        {topic.durationWeeks} нед.
+                    </span>
+                </div>
             </div>
             
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -98,6 +110,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
 
     const { user, firebaseUser, updateLocalProfile } = useAuth();
     const { addNotification } = useNotification();
+    const { navigate } = useNavigation();
     const printRef = useRef<HTMLDivElement>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [savedId, setSavedId] = useState<string | null>(null);
@@ -457,6 +470,14 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                     id={`topic-${idx}`}
                                                     topic={topic}
                                                     idx={idx}
+                                                    onGenerateLesson={() => {
+                                                        const params = new URLSearchParams({
+                                                            prefillTopic: topic.title,
+                                                            prefillGrade: plan.grade,
+                                                            prefillSubject: plan.subject,
+                                                        });
+                                                        navigate(`/planner/lesson/new?${params.toString()}`);
+                                                    }}
                                                 />
                                             ))}
                                         </SortableContext>

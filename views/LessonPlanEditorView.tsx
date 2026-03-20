@@ -27,6 +27,10 @@ import { saveAICache, getAICache } from '../services/indexedDBService';
 
 interface LessonPlanEditorViewProps {
   id?: string;
+  // Pre-fill from Annual Plan bridge (query params)
+  prefillTopic?: string;
+  prefillGrade?: string;
+  prefillSubject?: string;
 }
 
 const initialPlanState: Partial<LessonPlan> = {
@@ -49,7 +53,7 @@ const initialPlanState: Partial<LessonPlan> = {
 
 const stringToArray = (str: string = '') => str.split('\n').filter(line => line.trim() !== '');
 
-export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }) => {
+export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, prefillTopic, prefillGrade, prefillSubject }) => {
   const { navigate } = useNavigation();
   const { getLessonPlan, addLessonPlan, updateLessonPlan } = usePlanner();
   const { curriculum, isLoading: isCurriculumLoading } = useCurriculum();
@@ -103,6 +107,27 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
     } else {
         setPlan((currentPlan: Partial<LessonPlan>) => {
             if (currentPlan.topicId === '' && curriculum && curriculum.grades.length > 0) {
+                // Annual Plan bridge — prefill from topic title + grade string
+                if (prefillTopic) {
+                    // Parse grade number from string like "6-то одделение" or "6"
+                    const gradeNum = prefillGrade ? parseInt(prefillGrade) || 6 : 6;
+                    const gradeData = curriculum.grades.find(g => g.level === gradeNum)
+                        ?? curriculum.grades.find(g => prefillGrade?.includes(String(g.level)))
+                        ?? curriculum.grades[0];
+                    // Find topic by title similarity
+                    const matchedTopic = gradeData?.topics.find(t =>
+                        t.title.toLowerCase().includes(prefillTopic.toLowerCase()) ||
+                        prefillTopic.toLowerCase().includes(t.title.toLowerCase())
+                    ) ?? gradeData?.topics[0];
+                    return {
+                        ...initialPlanState,
+                        grade: gradeData?.level || gradeNum,
+                        topicId: matchedTopic?.id || '',
+                        theme: prefillTopic,
+                        subject: prefillSubject || 'Математика',
+                        title: `${prefillSubject || 'Математика'} — ${prefillTopic}`,
+                    };
+                }
                 const defaultGrade = curriculum.grades[0];
                 const defaultTopic = defaultGrade?.topics[0];
                 return {
@@ -115,6 +140,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id }
             return currentPlan;
         });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEditing, getLessonPlan, navigate, addNotification, curriculum, isCurriculumLoading]);
   
   useEffect(() => {

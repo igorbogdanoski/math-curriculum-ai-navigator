@@ -30,6 +30,7 @@ export const SettingsView: React.FC = () => {
     const [studentProfiles, setStudentProfiles] = useState<StudentProfile[]>(user?.studentProfiles || []);
     const [newProfileName, setNewProfileName] = useState('');
     const [newProfileDesc, setNewProfileDesc] = useState('');
+    const [profileFormErrors, setProfileFormErrors] = useState<{ name?: string; desc?: string }>({});
 
     // И1 — School join state
     const [joinCodeInput, setJoinCodeInput] = useState('');
@@ -300,10 +301,11 @@ export const SettingsView: React.FC = () => {
     };
     
     const handleAddProfile = () => {
-        if (!newProfileName.trim() || !newProfileDesc.trim()) {
-            addNotification('Името и описот на профилот се задолжителни.', 'error');
-            return;
-        }
+        const errs: { name?: string; desc?: string } = {};
+        if (!newProfileName.trim()) errs.name = 'Внесете ime на профилот.';
+        if (!newProfileDesc.trim()) errs.desc = 'Внесете опис на профилот.';
+        if (Object.keys(errs).length > 0) { setProfileFormErrors(errs); return; }
+        setProfileFormErrors({});
         const newProfile: StudentProfile = {
             id: crypto.randomUUID(),
             name: newProfileName,
@@ -592,21 +594,23 @@ export const SettingsView: React.FC = () => {
                             <input
                                 id="newProfileName"
                                 value={newProfileName}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewProfileName(e.target.value)}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setNewProfileName(e.target.value); setProfileFormErrors(p => ({ ...p, name: '' })); }}
+                                className={`mt-1 block w-full p-2 border rounded-md ${profileFormErrors.name ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                                 placeholder="Ученик А"
                             />
+                            {profileFormErrors.name && <p className="text-[11px] text-red-500 mt-1">{profileFormErrors.name}</p>}
                         </div>
                          <div>
                             <label htmlFor="newProfileDesc" className="block text-xs font-medium text-gray-600">Краток опис на потреби/стил на учење</label>
                             <textarea
                                 id="newProfileDesc"
                                 value={newProfileDesc}
-                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewProfileDesc(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => { setNewProfileDesc(e.target.value); setProfileFormErrors(p => ({ ...p, desc: '' })); }}
                                 rows={2}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                                className={`mt-1 block w-full p-2 border rounded-md ${profileFormErrors.desc ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                                 placeholder="пр. Визуелен тип, подобро учи со слики. Потребна му е поддршка со текстуални задачи."
                             />
+                            {profileFormErrors.desc && <p className="text-[11px] text-red-500 mt-1">{profileFormErrors.desc}</p>}
                         </div>
                         <div className="text-right">
                              <button onClick={handleAddProfile} type="button" className="bg-brand-secondary text-white px-4 py-2 text-sm rounded-lg shadow hover:bg-brand-primary transition-colors">

@@ -38,6 +38,7 @@ import { AIChatPanel } from './components/ai/AIChatPanel';
 import { UpgradeModal } from './components/common/UpgradeModal';
 import { CookieConsent } from './components/common/CookieConsent';
 import { DemoBanner } from './components/common/DemoBanner';
+import { CommandPalette } from './components/common/CommandPalette';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -366,6 +367,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                           <OnboardingGate />
                           <CookieConsent />
                           <DemoBanner />
+                          <CommandPalette />
                         </GeneratorPanelProvider>
                       </UIProvider>
                     </AcademyProgressProvider>

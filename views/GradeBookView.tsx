@@ -90,11 +90,20 @@ export const GradeBookView: React.FC = () => {
   const [newTestTitle, setNewTestTitle] = useState('');
   const [newRaw, setNewRaw] = useState('');
   const [newMax, setNewMax] = useState('100');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const addEntry = () => {
-    if (!newName.trim() || !newTestTitle.trim() || !newRaw || !newMax) return;
+    const errors: Record<string, string> = {};
+    if (!newName.trim()) errors.name = 'Внесете го името на ученикот.';
+    if (!newTestTitle.trim()) errors.testTitle = 'Внесете наслов на тестот.';
     const raw = Number(newRaw);
     const max = Number(newMax);
+    if (!newRaw) errors.raw = 'Внесете освоени поени.';
+    else if (raw < 0) errors.raw = 'Поените не можат да бидат негативни.';
+    else if (raw > max) errors.raw = 'Не може да надмине максимумот.';
+    if (!newMax || max <= 0) errors.max = 'Максимумот мора да биде > 0.';
+    if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    setFormErrors({});
     const pct = Math.round((raw / max) * 100);
     const entry: GradeEntry = {
       studentId: crypto.randomUUID(),
@@ -400,24 +409,36 @@ export const GradeBookView: React.FC = () => {
           <Plus className="w-4 h-4" /> Додај резултат
         </p>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <input type="text" value={newName} onChange={e => setNewName(e.target.value)}
-            placeholder="Ime na uchenik" aria-label="Ime na uchenik"
-            className="md:col-span-2 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary" />
-          <input type="text" value={newTestTitle} onChange={e => setNewTestTitle(e.target.value)}
-            placeholder="Наслов на тест"  aria-label="Naslов na test"
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary" />
-          <div className="flex gap-2">
-            <input type="number" value={newRaw} onChange={e => setNewRaw(e.target.value)}
-              placeholder="Поени" aria-label="Освоени poeni" min={0}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary" />
-            <span className="self-center text-gray-400 font-bold">/</span>
-            <input type="number" value={newMax} onChange={e => setNewMax(e.target.value)}
-              placeholder="Макс" aria-label="Maksimum poeni" min={1}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary" />
+          <div className="md:col-span-2 space-y-1">
+            <input type="text" value={newName} onChange={e => { setNewName(e.target.value); setFormErrors(p => ({ ...p, name: '' })); }}
+              placeholder="Име на ученик" aria-label="Ime na uchenik"
+              className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary ${formErrors.name ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
+            {formErrors.name && <p className="text-[11px] text-red-500 px-1">{formErrors.name}</p>}
+          </div>
+          <div className="space-y-1">
+            <input type="text" value={newTestTitle} onChange={e => { setNewTestTitle(e.target.value); setFormErrors(p => ({ ...p, testTitle: '' })); }}
+              placeholder="Наслов на тест" aria-label="Наслов на тест"
+              className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary ${formErrors.testTitle ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
+            {formErrors.testTitle && <p className="text-[11px] text-red-500 px-1">{formErrors.testTitle}</p>}
+          </div>
+          <div className="space-y-1">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <input type="number" value={newRaw} onChange={e => { setNewRaw(e.target.value); setFormErrors(p => ({ ...p, raw: '' })); }}
+                  placeholder="Поени" aria-label="Освоени поени" min={0}
+                  className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary ${formErrors.raw ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
+              </div>
+              <span className="self-center text-gray-400 font-bold">/</span>
+              <div className="flex-1">
+                <input type="number" value={newMax} onChange={e => { setNewMax(e.target.value); setFormErrors(p => ({ ...p, max: '' })); }}
+                  placeholder="Макс" aria-label="Максимум поени" min={1}
+                  className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary ${formErrors.max ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
+              </div>
+            </div>
+            {(formErrors.raw || formErrors.max) && <p className="text-[11px] text-red-500 px-1">{formErrors.raw || formErrors.max}</p>}
           </div>
           <button type="button" onClick={addEntry}
-            disabled={!newName.trim() || !newRaw || !newMax}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary disabled:opacity-40 transition-all">
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-xl font-bold text-sm hover:bg-brand-secondary transition-all">
             <Plus className="w-4 h-4" /> Додај
           </button>
         </div>
