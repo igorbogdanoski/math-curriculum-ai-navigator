@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -85,6 +85,9 @@ export const GradeBookView: React.FC = () => {
   const [loadingIntervention, setLoadingIntervention] = useState<string | null>(null);
   const [expandedWarning, setExpandedWarning] = useState<string | null>(null);
 
+  const isMounted = useRef(true);
+  useEffect(() => { return () => { isMounted.current = false; }; }, []);
+
   // New entry form
   const [newName, setNewName] = useState('');
   const [newTestTitle, setNewTestTitle] = useState('');
@@ -163,12 +166,12 @@ export const GradeBookView: React.FC = () => {
       let text = '';
       for await (const chunk of geminiService.getChatResponseStream([{ role: 'user', text: prompt }])) {
         text += chunk;
-        setAiInsights(text);
+        if (isMounted.current) setAiInsights(text);
       }
     } catch {
-      setAiInsights('Грешка при AI анализа.');
+      if (isMounted.current) setAiInsights('Грешка при AI анализа.');
     } finally {
-      setLoadingAI(false);
+      if (isMounted.current) setLoadingAI(false);
     }
   };
 
@@ -212,12 +215,12 @@ export const GradeBookView: React.FC = () => {
       let text = '';
       for await (const chunk of geminiService.getChatResponseStream([{ role: 'user', text: prompt }])) {
         text += chunk;
-        setWarningIntervention(prev => ({ ...prev, [studentName]: text }));
+        if (isMounted.current) setWarningIntervention(prev => ({ ...prev, [studentName]: text }));
       }
     } catch {
-      setWarningIntervention(prev => ({ ...prev, [studentName]: 'Грешка при генерирање на планот.' }));
+      if (isMounted.current) setWarningIntervention(prev => ({ ...prev, [studentName]: 'Грешка при генерирање на планот.' }));
     } finally {
-      setLoadingIntervention(null);
+      if (isMounted.current) setLoadingIntervention(null);
     }
   };
 
@@ -351,6 +354,7 @@ export const GradeBookView: React.FC = () => {
                         <button
                           type="button"
                           title={isExpanded ? 'Сокриј' : 'Прикажи'}
+                          aria-label={isExpanded ? 'Сокриј план за интервенција' : 'Прикажи план за интервенција'}
                           onClick={() => setExpandedWarning(isExpanded ? null : student.name)}
                           className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
                         >
@@ -392,7 +396,7 @@ export const GradeBookView: React.FC = () => {
 
                   {/* Test breakdown */}
                   <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-                    {student.tests.map((t, i) => (
+                    {student.tests.map((t) => (
                       <span key={t} className="text-[10px] bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full font-medium">{t}</span>
                     ))}
                   </div>

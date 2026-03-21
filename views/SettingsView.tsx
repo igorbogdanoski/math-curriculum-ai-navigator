@@ -629,7 +629,7 @@ export const SettingsView: React.FC = () => {
                                             <p className="font-bold text-brand-primary">{p.name}</p>
                                             <p className="text-sm text-gray-600">{p.description}</p>
                                         </div>
-                                        <button onClick={() => handleDeleteProfile(p.id)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full flex-shrink-0 ml-2">
+                                        <button type="button" aria-label={`Избриши профил: ${p.name}`} onClick={() => handleDeleteProfile(p.id)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full flex-shrink-0 ml-2">
                                             <ICONS.trash className="w-5 h-5" />
                                         </button>
                                     </li>

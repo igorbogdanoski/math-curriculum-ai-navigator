@@ -110,7 +110,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                 // Annual Plan bridge — prefill from topic title + grade string
                 if (prefillTopic) {
                     // Parse grade number from string like "6-то одделение" or "6"
-                    const gradeNum = prefillGrade ? parseInt(prefillGrade) || 6 : 6;
+                    const gradeNum = prefillGrade ? parseInt(prefillGrade, 10) || 6 : 6;
                     const gradeData = curriculum.grades.find(g => g.level === gradeNum)
                         ?? curriculum.grades.find(g => prefillGrade?.includes(String(g.level)))
                         ?? curriculum.grades[0];
