@@ -2,9 +2,10 @@ import { assessmentAPI } from './gemini/assessment';
 import { plansAPI } from './gemini/plans';
 import {
     Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, streamGeminiProxy,
-    checkDailyQuotaGuard, TEXT_SYSTEM_INSTRUCTION, SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
+    checkDailyQuotaGuard, SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
     CACHE_COLLECTION, minifyContext, callEmbeddingProxy, sanitizePromptInput,
-    streamGeminiProxyRich, type StreamChunk, type ImagenProxyResponse
+    streamGeminiProxyRich, type StreamChunk, type ImagenProxyResponse,
+    withLangRule, getResolvedTextSystemInstruction,
 } from './gemini/core';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { AIServiceError } from '../utils/errors';
@@ -22,7 +23,7 @@ export const realGeminiService = {
   
 async *getChatResponseStream(history: ChatMessage[], profile?: TeachingProfile, attachment?: { base64: string, mimeType: string }, ragContext?: string): AsyncGenerator<string, void, unknown> {
     checkDailyQuotaGuard(); // П30: block streaming if daily quota is exhausted
-    let systemInstruction = `${TEXT_SYSTEM_INSTRUCTION}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
+    let systemInstruction = `${getResolvedTextSystemInstruction()}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
     if (ragContext) {
         systemInstruction += `\n\n--- КОНТЕКСТ ОД БИБЛИОТЕКАТА НА НАСТАВНИКОТ ---\nСледните материјали се пронајдени како релевантни за прашањето. Користи ги при одговорот:\n\n${ragContext}\n--- КРАЈ НА БИБЛИОТЕЧЕН КОНТЕКСТ ---\n\nКога ги користиш овие материјали, споменувај ги по наслов и тип (пр. "Во вашиот зачуван квиз...").`;
     }
@@ -41,7 +42,7 @@ async *getChatResponseStream(history: ChatMessage[], profile?: TeachingProfile, 
 
 async *getChatResponseStreamWithThinking(history: ChatMessage[], profile?: TeachingProfile, attachment?: { base64: string, mimeType: string }, ragContext?: string): AsyncGenerator<StreamChunk, void, unknown> {
     checkDailyQuotaGuard();
-    let systemInstruction = `${TEXT_SYSTEM_INSTRUCTION}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
+    let systemInstruction = `${getResolvedTextSystemInstruction()}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
     if (ragContext) {
         systemInstruction += `\n\n--- КОНТЕКСТ ОД БИБЛИОТЕКАТА НА НАСТАВНИКОТ ---\nСледните материјали се пронајдени како релевантни за прашањето. Користи ги при одговорот:\n\n${ragContext}\n--- КРАЈ НА БИБЛИОТЕЧЕН КОНТЕКСТ ---\n\nКога ги користиш овие материјали, споменувај ги по наслов и тип (пр. "Во вашиот зачуван квиз...").`;
     }
@@ -189,7 +190,7 @@ async generateAnalogy(concept: Concept, gradeLevel: number, profile?: TeachingPr
     const response = await callGeminiProxy({ 
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 
-        systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+        systemInstruction: getResolvedTextSystemInstruction(),
         safetySettings: SAFETY_SETTINGS,
         userTier: profile?.tier
     });
@@ -351,7 +352,7 @@ async explainSpecificStep(problem: string, stepExplanation: string, stepExpressi
     const response = await callGeminiProxy({ 
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 
-        systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+        systemInstruction: getResolvedTextSystemInstruction(),
         safetySettings: SAFETY_SETTINGS,
         userTier: profile?.tier
     });
@@ -383,7 +384,7 @@ async generatePresentationOutline(concept: Concept, gradeLevel: number, profile?
     const response = await callGeminiProxy({ 
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 
-        systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+        systemInstruction: getResolvedTextSystemInstruction(),
         safetySettings: SAFETY_SETTINGS,
         userTier: profile?.tier
     });
@@ -419,7 +420,7 @@ async enhanceText(textToEnhance: string, action: string, fieldType: string, grad
     const response = await callGeminiProxy({ 
         model: DEFAULT_MODEL, 
         contents: [{ parts: [{ text: prompt }] }], 
-        systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+        systemInstruction: getResolvedTextSystemInstruction(),
         safetySettings: SAFETY_SETTINGS,
         userTier: profile?.tier
     });
@@ -480,7 +481,7 @@ async generateProactiveSuggestion(concept: Concept, _profile?: TeachingProfile):
       const response = await callGeminiProxy({ 
           model: DEFAULT_MODEL, 
           contents: [{ parts: [{ text: prompt }] }], 
-          systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+          systemInstruction: getResolvedTextSystemInstruction(),
           safetySettings: SAFETY_SETTINGS 
       });
       return response.text || "";
@@ -491,7 +492,7 @@ async analyzeReflection(wentWell: string, challenges: string, _profile?: Teachin
       const response = await callGeminiProxy({ 
           model: DEFAULT_MODEL, 
           contents: [{ parts: [{ text: prompt }] }], 
-          systemInstruction: TEXT_SYSTEM_INSTRUCTION, 
+          systemInstruction: getResolvedTextSystemInstruction(),
           safetySettings: SAFETY_SETTINGS 
       });
       return response.text || "";
@@ -868,7 +869,7 @@ async analyzeHandwriting(
           { inlineData: { mimeType, data: base64Image } }
         ]
       }],
-      systemInstruction: TEXT_SYSTEM_INSTRUCTION,
+      systemInstruction: getResolvedTextSystemInstruction(),
       safetySettings: SAFETY_SETTINGS,
     });
     return response.text.trim();
@@ -909,7 +910,7 @@ async generateParentReport(
     const response = await callGeminiProxy({
       model: DEFAULT_MODEL,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      systemInstruction: 'Ти си педагошки советник кој пишува родителски извештаи на македонски јазик.',
+      systemInstruction: withLangRule('Ти си педагошки советник кој пишува родителски извештаи.'),
       safetySettings: SAFETY_SETTINGS,
     });
     return response.text.trim();
@@ -997,7 +998,7 @@ ${toneHint}
     const response = await callGeminiProxy({
       model: DEFAULT_MODEL,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      systemInstruction: 'Ти си пријателски педагог кој дава кратки, конкретни повратни информации на македонски јазик.',
+      systemInstruction: withLangRule('Ти си пријателски педагог кој дава кратки, конкретни повратни информации.'),
       safetySettings: SAFETY_SETTINGS,
       generationConfig: { maxOutputTokens: 150 },
     });
@@ -1099,7 +1100,7 @@ ${notesSample ? `Рефлексивни белешки на ученикот: ${
     const response = await callGeminiProxy({
       model: DEFAULT_MODEL,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      systemInstruction: 'Ти си педагог кој пишува персонализирани нарации за ученичко портфолио на македонски јазик.',
+      systemInstruction: withLangRule('Ти си педагог кој пишува персонализирани нарации за ученичко портфолио.'),
       safetySettings: SAFETY_SETTINGS,
       generationConfig: { maxOutputTokens: 400 },
     });

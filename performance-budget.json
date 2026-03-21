@@ -1,0 +1,20 @@
+[
+  {
+    "path": "dist/**/*.js",
+    "budget": 600,
+    "resourceType": "script"
+  },
+  {
+    "path": "dist/**/*.css",
+    "budget": 80,
+    "resourceType": "stylesheet"
+  },
+  {
+    "resourceType": "total",
+    "budget": 1000
+  },
+  {
+    "resourceType": "third-party",
+    "budget": 400
+  }
+]

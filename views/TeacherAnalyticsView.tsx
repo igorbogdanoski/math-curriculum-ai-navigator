@@ -32,6 +32,7 @@ import { LeagueTab } from './analytics/LeagueTab';
 import { CohortTab } from './analytics/CohortTab';
 import { ZPDRecommendationsCard } from '../components/analytics/ZPDRecommendationsCard';
 import { MasteryTimelineCard } from '../components/analytics/MasteryTimelineCard';
+import { LearningStyleCard } from '../components/analytics/LearningStyleCard';
 import type { DifficultyLevel } from '../services/firestoreService.adaptiveDifficulty';
 import { useReactToPrint } from 'react-to-print';
 import { PrintableEDnevnikReport } from '../components/analytics/PrintableEDnevnikReport';
@@ -519,6 +520,7 @@ const { addNotification } = useNotification();
                     onGenerateForDifficulty={handleGenerateForDifficulty}
                   />
                 )}
+                <LearningStyleCard results={localResults} />
               </div>
             )}
             {activeTab === 'groups' && (

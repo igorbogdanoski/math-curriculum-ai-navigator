@@ -6,6 +6,8 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
+import { firestoreService } from '../services/firestoreService';
+import { useAuth } from '../contexts/AuthContext';
 import type { Concept, Grade, Topic } from '../types';
 
 declare global {
@@ -116,12 +118,27 @@ const matchStrand = (concept: any, strandId: string | null): boolean => {
 };
 
 
+// ── Mastery overlay colour palette ───────────────────────────────────────────
+const MASTERY_COLORS = {
+  mastered:  '#2E7D32', // dark green  ≥ 85 %
+  passing:   '#1565C0', // dark blue   70–84 %
+  developing:'#E65100', // dark amber  50–69 %
+  struggling:'#B71C1C', // dark red    < 50 %
+  noData:    '#757575', // gray        no quiz data
+} as const;
+
 export const CurriculumGraphView: React.FC = () => {
   const graphRef = useRef<HTMLDivElement>(null);
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
   const { allConcepts, isLoading, curriculum } = useCurriculum();
+  const { firebaseUser } = useAuth();
   const networkRef = useRef<any>(null);
+
+  // Mastery Overlay state
+  const [showMasteryOverlay, setShowMasteryOverlay] = useState(false);
+  const [avgMastery, setAvgMastery] = useState<Record<string, number>>({});
+  const [masteryLoading, setMasteryLoading] = useState(false);
 
   // Keep track of nodes in a ref to access latest state inside event listeners
   const nodesRef = useRef<any[]>([]);
@@ -186,6 +203,30 @@ export const CurriculumGraphView: React.FC = () => {
   const CANVAS_BG = '#ffffff';
   const EDGE_DEFAULT_COLOR = '#9E9E9E'; // Material Gray 500
   const EDGE_GLOBAL_COLOR = '#BDBDBD'; // Material Gray 400 (vis-network default)
+
+  // Load quiz results and compute per-concept average when overlay is toggled on
+  useEffect(() => {
+    if (!showMasteryOverlay || !firebaseUser?.uid) return;
+    setMasteryLoading(true);
+    firestoreService.fetchQuizResults(500, firebaseUser.uid)
+      .then(results => {
+        // Group by conceptId, compute average percentage
+        const sums: Record<string, number> = {};
+        const counts: Record<string, number> = {};
+        for (const r of results) {
+          if (!r.conceptId) continue;
+          sums[r.conceptId]   = (sums[r.conceptId]   ?? 0) + r.percentage;
+          counts[r.conceptId] = (counts[r.conceptId] ?? 0) + 1;
+        }
+        const avgs: Record<string, number> = {};
+        for (const cid of Object.keys(sums)) {
+          avgs[cid] = Math.round(sums[cid] / counts[cid]);
+        }
+        setAvgMastery(avgs);
+      })
+      .catch(() => { /* overlay just shows no-data colors */ })
+      .finally(() => setMasteryLoading(false));
+  }, [showMasteryOverlay, firebaseUser?.uid]);
 
   const handleGradeToggle = (gradeLevel: number) => {
     if (focusNodeId) return; // Disable toggling while focused
@@ -327,8 +368,15 @@ export const CurriculumGraphView: React.FC = () => {
             const isFocused = concept.id === focusNodeId;
             
             let nodeColor = gradeColors[concept.gradeLevel] || '#9E9E9E';
-            
-            if (focusNodeId) {
+
+            if (showMasteryOverlay && !focusNodeId) {
+                const score = avgMastery[concept.id];
+                if (score === undefined) nodeColor = MASTERY_COLORS.noData;
+                else if (score >= 85) nodeColor = MASTERY_COLORS.mastered;
+                else if (score >= 70) nodeColor = MASTERY_COLORS.passing;
+                else if (score >= 50) nodeColor = MASTERY_COLORS.developing;
+                else               nodeColor = MASTERY_COLORS.struggling;
+            } else if (focusNodeId) {
                 if (isFocused) nodeColor = FOCUS_COLOR;
                 else if (upstreamNodes.has(concept.id)) nodeColor = PRIOR_COLOR;
                 else if (downstreamNodes.has(concept.id)) nodeColor = FUTURE_COLOR;
@@ -395,7 +443,7 @@ export const CurriculumGraphView: React.FC = () => {
     }).filter(Boolean); // Filter out nulls
 
     return { nodes: nodesData, edges: edgesData };
-  }, [allConcepts, selectedGrades, gradeColors, focusNodeId, curriculum, selectedStrand]);
+  }, [allConcepts, selectedGrades, gradeColors, focusNodeId, curriculum, selectedStrand, showMasteryOverlay, avgMastery]);
 
   // Update ref whenever nodes change so click handler sees latest data
   useEffect(() => {
@@ -820,13 +868,31 @@ export const CurriculumGraphView: React.FC = () => {
                 <button
                     onClick={() => setIsClustered(!isClustered)}
                     className={`flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 border ${
-                        isClustered 
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' 
+                        isClustered
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     }`}
                 >
                     <ICONS.menu className="w-4 h-4" />
                     {isClustered ? 'Групирано по Теми' : 'Детален приказ (Поими)'}
+                </button>
+
+                <div className="h-6 w-px bg-gray-300 mx-2 hidden md:block"></div>
+
+                <button
+                    onClick={() => setShowMasteryOverlay(v => !v)}
+                    disabled={!!focusNodeId}
+                    title="Прикажи ги поимите обоени според просечниот резултат на твоите ученици"
+                    className={`flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 border ${
+                        showMasteryOverlay
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    } ${focusNodeId ? 'opacity-40 cursor-not-allowed' : ''}`}
+                >
+                    {masteryLoading
+                        ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        : <ICONS.activity className="w-4 h-4" />}
+                    {showMasteryOverlay ? 'Мастери ON' : 'Прикажи Мастери'}
                 </button>
             </div>
 
@@ -895,9 +961,40 @@ export const CurriculumGraphView: React.FC = () => {
          <div className="absolute bottom-12 right-4 bg-white/95 p-4 rounded-lg shadow-xl border border-gray-200 text-xs max-w-xs backdrop-blur-sm z-10">
              <div className="font-bold mb-2 text-gray-800 text-sm border-b pb-1 flex justify-between items-center">
                  <span>Легенда</span>
+                 {showMasteryOverlay && !focusNodeId && (
+                     <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+                         🎯 Мастери
+                     </span>
+                 )}
              </div>
              <div className="space-y-3">
-                 {!focusNodeId ? (
+                 {showMasteryOverlay && !focusNodeId ? (
+                     <div className="space-y-1.5 animate-fade-in">
+                         <div className="flex items-center gap-2">
+                             <div className="w-3 h-3 rounded-sm shadow-sm" style={{backgroundColor: MASTERY_COLORS.mastered}}></div>
+                             <span className="font-medium text-gray-700">≥ 85% — Совладано</span>
+                         </div>
+                         <div className="flex items-center gap-2">
+                             <div className="w-3 h-3 rounded-sm shadow-sm" style={{backgroundColor: MASTERY_COLORS.passing}}></div>
+                             <span className="font-medium text-gray-700">70–84% — Задоволително</span>
+                         </div>
+                         <div className="flex items-center gap-2">
+                             <div className="w-3 h-3 rounded-sm shadow-sm" style={{backgroundColor: MASTERY_COLORS.developing}}></div>
+                             <span className="font-medium text-gray-700">50–69% — Во развој</span>
+                         </div>
+                         <div className="flex items-center gap-2">
+                             <div className="w-3 h-3 rounded-sm shadow-sm" style={{backgroundColor: MASTERY_COLORS.struggling}}></div>
+                             <span className="font-medium text-gray-700">&lt; 50% — Потребна помош</span>
+                         </div>
+                         <div className="flex items-center gap-2">
+                             <div className="w-3 h-3 rounded-sm shadow-sm" style={{backgroundColor: MASTERY_COLORS.noData}}></div>
+                             <span className="text-gray-500">Нема податоци</span>
+                         </div>
+                         <p className="text-[10px] text-gray-400 mt-1 border-t pt-1">
+                             Просечен % на твоите ученици по квиз
+                         </p>
+                     </div>
+                 ) : !focusNodeId ? (
                      <div className="grid grid-cols-2 gap-y-2 gap-x-4 animate-fade-in">
                         <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm shadow-sm border border-gray-300" style={{backgroundColor: gradeColors[6]}}></div> 6. Одд. (VI)</div>
                         <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm shadow-sm border border-gray-300" style={{backgroundColor: gradeColors[7]}}></div> 7. Одд. (VII)</div>
@@ -908,20 +1005,20 @@ export const CurriculumGraphView: React.FC = () => {
                  ) : (
                      <div className="space-y-2 animate-fade-in">
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-sm border-2 border-white shadow-sm" style={{backgroundColor: PRIOR_COLOR}}></div> 
+                            <div className="w-3 h-3 rounded-sm border-2 border-white shadow-sm" style={{backgroundColor: PRIOR_COLOR}}></div>
                             <span className="font-medium text-gray-700">Предзнаење (Основа)</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-sm border-2 border-white shadow-sm" style={{backgroundColor: FOCUS_COLOR}}></div> 
+                            <div className="w-3 h-3 rounded-sm border-2 border-white shadow-sm" style={{backgroundColor: FOCUS_COLOR}}></div>
                             <span className="font-bold text-gray-900">Активен Фокус</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-sm border-2 border-white shadow-sm" style={{backgroundColor: FUTURE_COLOR}}></div> 
+                            <div className="w-3 h-3 rounded-sm border-2 border-white shadow-sm" style={{backgroundColor: FUTURE_COLOR}}></div>
                             <span className="font-medium text-gray-700">Идни Знаења (Примена)</span>
                         </div>
                      </div>
                  )}
-                 
+
                  {focusNodeId && (
                     <div className="border-t pt-2 bg-orange-50 -mx-4 px-4 pb-2 -mb-4 rounded-b-lg text-[10px] text-gray-600 leading-tight mt-2">
                         <strong>Режим на Фокус:</strong> Прикажани се само поврзаните поими за да се олесни следењето на вертикалната прогресија.

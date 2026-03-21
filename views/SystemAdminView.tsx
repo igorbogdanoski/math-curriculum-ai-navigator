@@ -2,11 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { Card } from '../components/common/Card';
-import { Building, Plus, ShieldAlert, Users, Copy, Check, BarChart2, TrendingDown, Globe } from 'lucide-react';
+import { Building, Plus, ShieldAlert, Users, Copy, Check, BarChart2, TrendingDown, Globe, MessageSquare, BookOpen, Trash2, Star, RefreshCw } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { fetchAllForumThreadsAdmin, softDeleteThread, restoreThread } from '../services/firestoreService.forum';
+import { fetchNationalLibrary, deleteNationalLibraryEntry, featureNationalLibraryEntry, getAvgRating, type NationalLibraryEntry } from '../services/firestoreService.materials';
 
-type Tab = 'schools' | 'users' | 'stats';
+type Tab = 'schools' | 'users' | 'stats' | 'forum' | 'content';
 
 const ROLE_LABELS: Record<string, string> = {
   teacher:     '🎓 Наставник',
@@ -240,6 +242,18 @@ export const SystemAdminView: React.FC = () => {
     const [nationalStats, setNationalStats] = useState<any>(null);
     const [isLoadingStats, setIsLoadingStats] = useState(false);
 
+    // ── Forum moderation state ──
+    const [forumThreads, setForumThreads] = useState<any[]>([]);
+    const [isLoadingForum, setIsLoadingForum] = useState(false);
+    const [forumSearch, setForumSearch] = useState('');
+    const [forumActionUid, setForumActionUid] = useState<string | null>(null);
+
+    // ── Content moderation state ──
+    const [libEntries, setLibEntries] = useState<NationalLibraryEntry[]>([]);
+    const [isLoadingLib, setIsLoadingLib] = useState(false);
+    const [libSearch, setLibSearch] = useState('');
+    const [libActionId, setLibActionId] = useState<string | null>(null);
+
     useEffect(() => {
         if (!user || user.role !== 'admin') {
             navigate('/');
@@ -254,6 +268,12 @@ export const SystemAdminView: React.FC = () => {
         }
         if (activeTab === 'stats' && !nationalStats) {
             loadNationalStats();
+        }
+        if (activeTab === 'forum' && forumThreads.length === 0) {
+            loadForumThreads();
+        }
+        if (activeTab === 'content' && libEntries.length === 0) {
+            loadLibEntries();
         }
     }, [activeTab]);
 
@@ -292,6 +312,67 @@ export const SystemAdminView: React.FC = () => {
             setNationalStats(data);
         } finally {
             setIsLoadingStats(false);
+        }
+    };
+
+    const loadForumThreads = async () => {
+        setIsLoadingForum(true);
+        try {
+            const data = await fetchAllForumThreadsAdmin(200);
+            setForumThreads(data);
+        } finally {
+            setIsLoadingForum(false);
+        }
+    };
+
+    const handleForumDelete = async (threadId: string) => {
+        setForumActionUid(threadId);
+        try {
+            await softDeleteThread(threadId);
+            setForumThreads(prev => prev.map(t => t.id === threadId ? { ...t, deleted: true } : t));
+        } finally {
+            setForumActionUid(null);
+        }
+    };
+
+    const handleForumRestore = async (threadId: string) => {
+        setForumActionUid(threadId);
+        try {
+            await restoreThread(threadId);
+            setForumThreads(prev => prev.map(t => t.id === threadId ? { ...t, deleted: false } : t));
+        } finally {
+            setForumActionUid(null);
+        }
+    };
+
+    const loadLibEntries = async () => {
+        setIsLoadingLib(true);
+        try {
+            const { entries } = await fetchNationalLibrary({ });
+            setLibEntries(entries);
+        } finally {
+            setIsLoadingLib(false);
+        }
+    };
+
+    const handleLibDelete = async (entryId: string) => {
+        if (!confirm('Да се избрише оваа ставка? Оваа акција е неповратна.')) return;
+        setLibActionId(entryId);
+        try {
+            await deleteNationalLibraryEntry(entryId);
+            setLibEntries(prev => prev.filter(e => e.id !== entryId));
+        } finally {
+            setLibActionId(null);
+        }
+    };
+
+    const handleLibFeature = async (entryId: string, current: boolean) => {
+        setLibActionId(entryId);
+        try {
+            await featureNationalLibraryEntry(entryId, !current);
+            setLibEntries(prev => prev.map(e => e.id === entryId ? { ...e, isFeatured: !current } : e));
+        } finally {
+            setLibActionId(null);
         }
     };
 
@@ -381,8 +462,8 @@ export const SystemAdminView: React.FC = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 border-b border-gray-200">
-                {([['schools', '🏫 Училишта'], ['users', '👥 Корисници'], ['stats', '📊 Статистики']] as [Tab, string][]).map(([id, label]) => (
+            <div className="flex flex-wrap gap-1 border-b border-gray-200">
+                {([['schools', '🏫 Училишта'], ['users', '👥 Корисници'], ['stats', '📊 Статистики'], ['forum', '💬 Форум'], ['content', '📚 Содржина']] as [Tab, string][]).map(([id, label]) => (
                     <button
                         key={id}
                         type="button"
@@ -640,6 +721,156 @@ export const SystemAdminView: React.FC = () => {
                         </button>
                     </div>
                 </div>
+            )}
+
+            {/* ── TAB: Forum Moderation ── */}
+            {activeTab === 'forum' && (
+                <Card className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold flex items-center gap-2">
+                            <MessageSquare className="w-5 h-5 text-gray-500" />
+                            Модерирање на форум ({forumThreads.length})
+                        </h2>
+                        <button type="button" onClick={loadForumThreads} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 underline">
+                            <RefreshCw className="w-3.5 h-3.5" /> Освежи
+                        </button>
+                    </div>
+
+                    <input
+                        type="search"
+                        placeholder="Пребарај по наслов или автор..."
+                        value={forumSearch}
+                        onChange={e => setForumSearch(e.target.value)}
+                        className="w-full mb-4 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-300 outline-none"
+                    />
+
+                    {isLoadingForum ? (
+                        <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+                    ) : forumThreads.length === 0 ? (
+                        <p className="text-center py-8 text-gray-400 text-sm">Нема нишки во форумот.</p>
+                    ) : (
+                        <div className="divide-y divide-gray-100">
+                            {forumThreads
+                                .filter(t => {
+                                    if (!forumSearch.trim()) return true;
+                                    const q = forumSearch.toLowerCase();
+                                    return (t.title ?? '').toLowerCase().includes(q) || (t.authorName ?? '').toLowerCase().includes(q);
+                                })
+                                .map(thread => (
+                                    <div key={thread.id} className={`flex items-start gap-3 py-3 ${thread.deleted ? 'opacity-50' : ''}`}>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-gray-900 truncate flex items-center gap-2">
+                                                {thread.title}
+                                                {thread.deleted && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">ИЗБРИШАНА</span>}
+                                            </p>
+                                            <p className="text-xs text-gray-400">{thread.authorName} · {thread.replyCount} одговори · {thread.upvotedBy?.length ?? 0} гласови</p>
+                                            {thread.conceptTitle && <p className="text-[11px] text-indigo-500 mt-0.5">📌 {thread.conceptTitle}</p>}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            {thread.deleted ? (
+                                                <button
+                                                    type="button"
+                                                    disabled={forumActionUid === thread.id}
+                                                    onClick={() => handleForumRestore(thread.id)}
+                                                    className="text-xs px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-40 transition font-medium"
+                                                >
+                                                    Врати
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    disabled={forumActionUid === thread.id}
+                                                    onClick={() => handleForumDelete(thread.id)}
+                                                    className="text-xs px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-40 transition font-medium flex items-center gap-1"
+                                                >
+                                                    <Trash2 className="w-3 h-3" /> Избриши
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    )}
+                </Card>
+            )}
+
+            {/* ── TAB: Content Moderation ── */}
+            {activeTab === 'content' && (
+                <Card className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold flex items-center gap-2">
+                            <BookOpen className="w-5 h-5 text-gray-500" />
+                            Национална Библиотека ({libEntries.length})
+                        </h2>
+                        <button type="button" onClick={loadLibEntries} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 underline">
+                            <RefreshCw className="w-3.5 h-3.5" /> Освежи
+                        </button>
+                    </div>
+
+                    <input
+                        type="search"
+                        placeholder="Пребарај по прашање или автор..."
+                        value={libSearch}
+                        onChange={e => setLibSearch(e.target.value)}
+                        className="w-full mb-4 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-300 outline-none"
+                    />
+
+                    {isLoadingLib ? (
+                        <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+                    ) : libEntries.length === 0 ? (
+                        <p className="text-center py-8 text-gray-400 text-sm">Нема ставки во библиотеката.</p>
+                    ) : (
+                        <div className="divide-y divide-gray-100">
+                            {libEntries
+                                .filter(e => {
+                                    if (!libSearch.trim()) return true;
+                                    const q = libSearch.toLowerCase();
+                                    return (e.question ?? '').toLowerCase().includes(q) || (e.publishedByName ?? '').toLowerCase().includes(q);
+                                })
+                                .map(entry => {
+                                    const avg = getAvgRating(entry);
+                                    const ratingCount = entry.ratingsByUid ? Object.keys(entry.ratingsByUid).length : 0;
+                                    return (
+                                        <div key={entry.id} className="flex items-start gap-3 py-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-900 line-clamp-2">{entry.question}</p>
+                                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                    <span className="text-[11px] text-gray-400">{entry.publishedByName}</span>
+                                                    {entry.gradeLevel && <span className="text-[11px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">{entry.gradeLevel}. одд.</span>}
+                                                    {entry.conceptTitle && <span className="text-[11px] text-indigo-500 truncate max-w-[150px]">{entry.conceptTitle}</span>}
+                                                    <span className="text-[11px] text-gray-400">📥 {entry.importCount}</span>
+                                                    {avg && <span className="text-[11px] text-amber-600 flex items-center gap-0.5"><Star className="w-3 h-3 fill-amber-400 text-amber-400" />{avg} ({ratingCount})</span>}
+                                                    {entry.isFeatured && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">FEATURED</span>}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <button
+                                                    type="button"
+                                                    disabled={libActionId === entry.id}
+                                                    onClick={() => handleLibFeature(entry.id, entry.isFeatured ?? false)}
+                                                    title={entry.isFeatured ? 'Отстрани Featured' : 'Означи Featured'}
+                                                    className={`text-xs px-2.5 py-1 border rounded-lg disabled:opacity-40 transition font-medium flex items-center gap-1 ${entry.isFeatured ? 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}
+                                                >
+                                                    <Star className={`w-3 h-3 ${entry.isFeatured ? 'fill-amber-400 text-amber-400' : ''}`} />
+                                                    {entry.isFeatured ? 'Unfeature' : 'Feature'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={libActionId === entry.id}
+                                                    onClick={() => handleLibDelete(entry.id)}
+                                                    className="text-xs px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-40 transition font-medium flex items-center gap-1"
+                                                >
+                                                    <Trash2 className="w-3 h-3" /> Избриши
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            }
+                        </div>
+                    )}
+                </Card>
             )}
         </div>
     );

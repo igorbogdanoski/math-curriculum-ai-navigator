@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import { firestoreService } from '../services/firestoreService';
 import type { NationalLibraryEntry } from '../services/firestoreService.materials';
+import { getAvgRating, getUserRating, rateNationalLibraryEntry } from '../services/firestoreService.materials';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import { Library, Search, Download, Globe, Filter, Loader2, BookOpen, ChevronDown, Wand2, X, Save } from 'lucide-react';
+import { Library, Search, Download, Globe, Filter, Loader2, BookOpen, ChevronDown, Wand2, X, Save, Star } from 'lucide-react';
 
 const GRADE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const TYPE_LABELS: Record<string, string> = {
@@ -33,6 +34,26 @@ export const NationalLibraryView: React.FC = () => {
   const [importing, setImporting] = useState<Set<string>>(new Set());
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
   const [imported, setImported] = useState<Set<string>>(new Set());
+
+  // Rating state — optimistic updates per entry
+  const [pendingRatings, setPendingRatings] = useState<Record<string, number>>({});
+
+  const handleRate = async (entry: NationalLibraryEntry, stars: number) => {
+    if (!firebaseUser?.uid) return;
+    setPendingRatings(prev => ({ ...prev, [entry.id]: stars }));
+    // Optimistic update in entries list
+    setEntries(prev => prev.map(e => e.id === entry.id
+      ? { ...e, ratingsByUid: { ...(e.ratingsByUid ?? {}), [firebaseUser.uid]: stars } }
+      : e,
+    ));
+    try {
+      await rateNationalLibraryEntry(entry.id, firebaseUser.uid, stars);
+    } catch {
+      addNotification('Не можев да ја зачувам оценката.', 'error');
+    } finally {
+      setPendingRatings(prev => { const n = { ...prev }; delete n[entry.id]; return n; });
+    }
+  };
 
   // Remix state — inline editor per card
   const [remixingId, setRemixingId] = useState<string | null>(null);
@@ -221,6 +242,10 @@ export const NationalLibraryView: React.FC = () => {
             const isImporting = importing.has(entry.id);
             const isAlreadyImported = imported.has(entry.id);
             const revealed = revealedAnswers.has(entry.id);
+            const avgRating = getAvgRating(entry);
+            const myRating = firebaseUser?.uid ? getUserRating(entry, firebaseUser.uid) : null;
+            const isPendingRating = pendingRatings[entry.id] !== undefined;
+            const ratingCount = entry.ratingsByUid ? Object.keys(entry.ratingsByUid).length : 0;
             return (
               <Card key={entry.id} className="flex flex-col gap-3 hover:shadow-md transition-shadow">
                 {/* Meta row */}
@@ -240,9 +265,37 @@ export const NationalLibraryView: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] text-gray-400 whitespace-nowrap">
-                    {entry.importCount} увози
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {/* Star rating */}
+                    <div className="flex items-center gap-0.5" title={avgRating ? `Просечна оценка: ${avgRating}/5 (${ratingCount} оценки)` : 'Оцени ова прашање'}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                          key={star}
+                          type="button"
+                          disabled={isPendingRating || !firebaseUser?.uid}
+                          onClick={() => handleRate(entry, star)}
+                          className="p-0.5 disabled:cursor-default transition-transform hover:scale-110"
+                          aria-label={`${star} ѕвезди`}
+                        >
+                          <Star
+                            className={`w-3.5 h-3.5 transition-colors ${
+                              star <= (myRating ?? 0)
+                                ? 'text-amber-400 fill-amber-400'
+                                : star <= (avgRating ?? 0)
+                                  ? 'text-amber-300 fill-amber-100'
+                                  : 'text-gray-300'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                      {avgRating !== null && (
+                        <span className="text-[10px] text-gray-400 ml-0.5">{avgRating} ({ratingCount})</span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                      {entry.importCount} увози
+                    </span>
+                  </div>
                 </div>
 
                 {/* Question */}

@@ -116,6 +116,7 @@ const AnnualPlanGalleryView = safeLazy(() => import('./views/AnnualPlanGalleryVi
 const SharedQuizView = safeLazy(() => import('./views/SharedQuizView').then(module => ({ default: module.SharedQuizView })));
 const FavoritesView = safeLazy(() => import('./views/FavoritesView').then(module => ({ default: module.FavoritesView })));
 const NationalLibraryView = safeLazy(() => import('./views/NationalLibraryView').then(module => ({ default: module.NationalLibraryView })));
+const TeacherForumView = safeLazy(() => import('./views/TeacherForumView').then(module => ({ default: module.TeacherForumView })));
 const CurriculumGraphView = safeLazy(() => import('./views/CurriculumGraphView').then(module => ({ default: module.CurriculumGraphView })));
 const CoverageAnalyzerView = safeLazy(() => import('./views/CoverageAnalyzerView').then(module => ({ default: module.CoverageAnalyzerView })));
 const MindMapView = safeLazy(() => import('./views/MindMapView').then(module => ({ default: module.MindMapView })));
@@ -178,6 +179,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/roadmap', component: RoadmapView },
     { path: '/favorites', component: FavoritesView },
     { path: '/national-library', component: NationalLibraryView },
+    { path: '/forum', component: TeacherForumView },
     { path: '/reports/coverage', component: CoverageAnalyzerView },
     { path: '/analytics', component: TeacherAnalyticsView },
     { path: '/test-generator', component: TestGeneratorView },

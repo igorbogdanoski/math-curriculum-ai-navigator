@@ -5,6 +5,7 @@ import type { CurriculumModule } from '../data/curriculum';
 import { firestoreService } from '../services/firestoreService';
 import { useNotification } from '../contexts/NotificationContext';
 import { fetchCurriculumOverrides, type CurriculumOverridesDoc } from '../services/firestoreService.curriculumOverrides';
+import { getLocalizedTitle } from '../data/localeOverrides';
 
 interface ConceptChainEntry { grade: Grade; topic: Topic; concept: Concept; }
 
@@ -38,7 +39,21 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const [overrides, setOverrides] = useState<CurriculumOverridesDoc | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [uiLang, setUiLang] = useState<string>(() => {
+        try { return localStorage.getItem('preferred_language') || 'mk'; } catch { return 'mk'; }
+    });
     const { addNotification } = useNotification();
+
+    // Keep uiLang in sync when user changes language in Settings
+    useEffect(() => {
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === 'preferred_language') {
+                setUiLang(e.newValue || 'mk');
+            }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -64,35 +79,55 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // Merge curriculum overrides (custom concepts/topics added via CurriculumEditorView)
     const curriculum = useMemo((): Curriculum | undefined => {
         if (!data?.curriculumData) return undefined;
-        if (!overrides || (overrides.addedConcepts.length === 0 && overrides.addedTopics.length === 0)) {
-            return data.curriculumData;
-        }
+
+        const needsOverrides = overrides && (overrides.addedConcepts.length > 0 || overrides.addedTopics.length > 0);
+        const needsLocale = uiLang !== 'mk';
+
+        // Fast path: no modifications needed
+        if (!needsOverrides && !needsLocale) return data.curriculumData;
+
         // Deep-clone grades to avoid mutating static data
         const grades = data.curriculumData.grades.map(grade => ({
             ...grade,
             topics: grade.topics.map(topic => ({ ...topic, concepts: [...topic.concepts] })),
         }));
-        // Inject custom concepts into their target topics
-        for (const addition of overrides.addedConcepts) {
-            const grade = grades.find(g => g.id === addition.gradeId);
-            if (!grade) continue;
-            const topic = grade.topics.find(t => t.id === addition.topicId);
-            if (!topic) continue;
-            // Avoid duplicates on hot-reload
-            if (!topic.concepts.find(c => c.id === addition.concept.id)) {
-                topic.concepts.push(addition.concept as unknown as Concept);
+
+        if (needsOverrides) {
+            // Inject custom concepts into their target topics
+            for (const addition of overrides!.addedConcepts) {
+                const grade = grades.find(g => g.id === addition.gradeId);
+                if (!grade) continue;
+                const topic = grade.topics.find(t => t.id === addition.topicId);
+                if (!topic) continue;
+                if (!topic.concepts.find(c => c.id === addition.concept.id)) {
+                    topic.concepts.push(addition.concept as unknown as Concept);
+                }
+            }
+            // Inject custom topics into their target grades
+            for (const topicAdd of overrides!.addedTopics) {
+                const grade = grades.find(g => g.id === topicAdd.gradeId);
+                if (!grade) continue;
+                if (!grade.topics.find(t => t.id === topicAdd.topic.id)) {
+                    grade.topics.push(topicAdd.topic as unknown as Topic);
+                }
             }
         }
-        // Inject custom topics into their target grades
-        for (const topicAdd of overrides.addedTopics) {
-            const grade = grades.find(g => g.id === topicAdd.gradeId);
-            if (!grade) continue;
-            if (!grade.topics.find(t => t.id === topicAdd.topic.id)) {
-                grade.topics.push(topicAdd.topic as unknown as Topic);
+
+        if (needsLocale) {
+            // Remap navigation titles (grade / topic / concept) for SQ / TR UI
+            for (const grade of grades) {
+                grade.title = getLocalizedTitle(grade.title, uiLang);
+                for (const topic of grade.topics) {
+                    topic.title = getLocalizedTitle(topic.title, uiLang);
+                    for (const concept of topic.concepts) {
+                        concept.title = getLocalizedTitle(concept.title, uiLang);
+                    }
+                }
             }
         }
+
         return { grades };
-    }, [data, overrides]);
+    }, [data, overrides, uiLang]);
     const verticalProgression = useMemo(() => data?.verticalProgressionData, [data]);
     const allNationalStandards = useMemo(() => {
         if (!data) return undefined;

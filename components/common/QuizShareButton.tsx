@@ -5,7 +5,7 @@
  * Subsequent clicks reuse the same cacheId — no duplicate saves.
  */
 import React, { useRef, useState } from 'react';
-import { Link, Check, Loader2, QrCode, Printer, X, Copy } from 'lucide-react';
+import { Link, Check, Loader2, QrCode, Printer, X, Copy, BookOpen } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { firestoreService } from '../../services/firestoreService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -76,6 +76,22 @@ export const QuizShareButton: React.FC<Props> = ({ material, materialType, conce
     setShowQR(true);
   };
 
+  const handleShareToClassroom = async () => {
+    const id = await ensureSaved();
+    if (!id) return;
+    const url = encodeURIComponent(makeShareUrl(id));
+    const title = encodeURIComponent(quizTitle);
+    window.open(`https://classroom.google.com/share?url=${url}&title=${title}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleShareToTeams = async () => {
+    const id = await ensureSaved();
+    if (!id) return;
+    const url = encodeURIComponent(makeShareUrl(id));
+    const title = encodeURIComponent(quizTitle);
+    window.open(`https://teams.microsoft.com/share?href=${url}&msgText=${title}`, '_blank', 'noopener,noreferrer');
+  };
+
   const handlePrint = () => {
     if (!printRef.current) return;
     const win = window.open('', '_blank');
@@ -114,6 +130,34 @@ export const QuizShareButton: React.FC<Props> = ({ material, materialType, conce
           : copied
           ? <><Check className="w-4 h-4 text-emerald-600" /><span className="text-emerald-700">Копирано!</span></>
           : <><Link className="w-4 h-4" />Копирај линк</>}
+      </button>
+
+      {/* MS Teams button */}
+      <button
+        type="button"
+        onClick={handleShareToTeams}
+        disabled={saving}
+        title="Испрати во Microsoft Teams"
+        aria-label="Испрати во Microsoft Teams"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M20.625 6.75h-4.5v-.375A2.625 2.625 0 0 0 13.5 3.75h-3a2.625 2.625 0 0 0-2.625 2.625V6.75h-4.5A.375.375 0 0 0 3 7.125v9.75c0 .207.168.375.375.375h17.25A.375.375 0 0 0 21 16.875v-9.75a.375.375 0 0 0-.375-.375zM9.375 6.375A1.125 1.125 0 0 1 10.5 5.25h3a1.125 1.125 0 0 1 1.125 1.125V6.75h-5.25v-.375z"/>
+        </svg>
+        Teams
+      </button>
+
+      {/* Google Classroom button */}
+      <button
+        type="button"
+        onClick={handleShareToClassroom}
+        disabled={saving}
+        title="Испрати во Google Classroom"
+        aria-label="Испрати во Google Classroom"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50"
+      >
+        <BookOpen className="w-4 h-4" />
+        Classroom
       </button>
 
       {/* QR Code button */}

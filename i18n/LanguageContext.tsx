@@ -13,8 +13,11 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLangState] = useState<Language>(getLanguagePreference());
 
+  const RTL_LANGS = new Set(['ar', 'he', 'fa', 'ur']);
+
   useEffect(() => {
     document.documentElement.lang = language;
+    document.documentElement.dir = RTL_LANGS.has(language) ? 'rtl' : 'ltr';
     const handleLangChange = () => setLangState(getLanguagePreference());
     window.addEventListener('languagechange', handleLangChange);
     return () => window.removeEventListener('languagechange', handleLangChange);

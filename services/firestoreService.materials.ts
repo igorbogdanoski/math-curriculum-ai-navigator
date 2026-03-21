@@ -579,7 +579,46 @@ export interface NationalLibraryEntry {
   publisherIsMentor: boolean;
   importCount: number;
   publishedAt: Timestamp | null;
+  /** map of teacherUid → star rating (1–5) */
+  ratingsByUid?: Record<string, number>;
+  /** Admin-marked featured entry (shown at top) */
+  isFeatured?: boolean;
+  /** Soft-deleted by admin */
+  deleted?: boolean;
 }
+
+/** Returns average star rating (1–5) or null if no ratings */
+export function getAvgRating(entry: NationalLibraryEntry): number | null {
+  const ratings = entry.ratingsByUid ? Object.values(entry.ratingsByUid) : [];
+  if (ratings.length === 0) return null;
+  return Math.round((ratings.reduce((s, r) => s + r, 0) / ratings.length) * 10) / 10;
+}
+
+/** Returns this teacher's existing rating or null */
+export function getUserRating(entry: NationalLibraryEntry, teacherUid: string): number | null {
+  return entry.ratingsByUid?.[teacherUid] ?? null;
+}
+
+/** Submit or update a star rating (1–5) for a national library entry */
+export const rateNationalLibraryEntry = async (
+  entryId: string,
+  teacherUid: string,
+  stars: number,
+): Promise<void> => {
+  await updateDoc(doc(db, 'national_library', entryId), {
+    [`ratingsByUid.${teacherUid}`]: stars,
+  });
+};
+
+/** Admin: hard-delete a national library entry */
+export const deleteNationalLibraryEntry = async (entryId: string): Promise<void> => {
+  await deleteDoc(doc(db, 'national_library', entryId));
+};
+
+/** Admin: toggle featured flag on a national library entry */
+export const featureNationalLibraryEntry = async (entryId: string, featured: boolean): Promise<void> => {
+  await updateDoc(doc(db, 'national_library', entryId), { isFeatured: featured });
+};
 
 export const PAGE_SIZE_NATIONAL_LIBRARY = 20;
 

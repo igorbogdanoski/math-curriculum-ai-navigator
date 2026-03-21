@@ -14,6 +14,7 @@ import { geminiService } from '../services/geminiService';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { generatePlanICS, downloadICS } from '../utils/icalExport';
+import { useCollabPlan } from '../hooks/useCollabPlan';
 
 
 interface SortableTopicProps {
@@ -111,6 +112,13 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const { user, firebaseUser, updateLocalProfile } = useAuth();
     const { addNotification } = useNotification();
     const { navigate } = useNavigation();
+
+    // Ж7.1 — Real-time collaboration: presence + remote-change detection
+    const { viewers, remoteUpdatedBy } = useCollabPlan(
+        planId,
+        firebaseUser?.uid,
+        user?.name,
+    );
     const printRef = useRef<HTMLDivElement>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [savedId, setSavedId] = useState<string | null>(null);
@@ -300,6 +308,23 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                             : 'Автоматско генерирање на структуриран годишен план (Annual Curriculum Planner)'}
                     </p>
                 </div>
+                {/* Ж7.1 — Presence indicator (only in edit mode) */}
+                {planId && (viewers.length > 0 || remoteUpdatedBy) && (
+                    <div className="flex flex-col items-end gap-1.5">
+                        {viewers.length > 0 && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-medium text-emerald-700">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                {viewers.map(v => v.displayName).join(', ')} {viewers.length === 1 ? 'е' : 'се'} онлајн
+                            </div>
+                        )}
+                        {remoteUpdatedBy && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-xs font-medium text-amber-700">
+                                <ICONS.arrowPath className="w-3.5 h-3.5" />
+                                {remoteUpdatedBy} зачуваше промени — превчитајте за да ги добиете
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Progress Stepper */}

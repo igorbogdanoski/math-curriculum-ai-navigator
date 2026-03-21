@@ -5,7 +5,8 @@ import { z } from 'zod';
 import { GenerationContext } from '../../types';
 import { ragService } from '../ragService';
 import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
-import { PermissionError, AIServiceError, AppError, ErrorCode } from '../../utils/errors';
+import { PermissionError, AIServiceError, OfflineError, AppError, ErrorCode } from '../../utils/errors';
+import { getAICache, saveAICache } from '../indexedDBService';
 
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
@@ -773,14 +774,47 @@ export const MACEDONIAN_CONTEXT_SNIPPET = `
 НЕ КОРИСТИ: долари, Јани/Мери/Боб, Лондон, Њујорк, MLB, NBA, пица (американска).
 `;
 
+/**
+ * Returns the current AI output language rule string based on the user's preferred_language
+ * setting. Synchronous — no async I/O required.
+ *
+ * MK (default) → "Користи литературен македонски јазик."
+ * SQ           → "Задолжително користи АЛБАНСКИ јазик (Shqip) …"
+ * TR           → "Задолжително користи ТУРСКИ јазик (Türkçe) …"
+ * EN           → "Задолжително користи АНГЛИСКИ јазик (English) …"
+ */
+export function getAILanguageRule(): string {
+    let lang = 'mk';
+    try { lang = localStorage.getItem('preferred_language') || 'mk'; } catch { /* SSR/SW */ }
+    if (lang === 'sq') return "Задолжително користи АЛБАНСКИ јазик (Shqip) за целиот текст и содржина.";
+    if (lang === 'tr') return "Задолжително користи ТУРСКИ јазик (Türkçe) за целиот текст и содржина.";
+    if (lang === 'en') return "Задолжително користи АНГЛИСКИ јазик (English) за целиот текст и содржина.";
+    return "Користи литературен македонски јазик.";
+}
+
+/**
+ * Appends the current language rule to any free-text system instruction string.
+ * Use this for callGeminiProxy() calls that set systemInstruction directly
+ * (as opposed to generateAndParseJSON which goes through buildDynamicSystemInstruction).
+ */
+export function withLangRule(systemInstruction: string): string {
+    return `${systemInstruction}\nЈАЗИК НА ОДГОВОР: ${getAILanguageRule()}`;
+}
+
+/**
+ * Returns TEXT_SYSTEM_INSTRUCTION with {{LANGUAGE_RULE}} replaced.
+ * Use this everywhere TEXT_SYSTEM_INSTRUCTION is passed as systemInstruction
+ * to callGeminiProxy() (which does not do template substitution on its own).
+ */
+export function getResolvedTextSystemInstruction(): string {
+    return TEXT_SYSTEM_INSTRUCTION.replace('{{LANGUAGE_RULE}}', getAILanguageRule());
+}
+
 export async function buildDynamicSystemInstruction(baseInstruction: string, gradeLevel?: number, conceptId?: string, topicId?: string): Promise<string> {
     let instruction = baseInstruction;
+    const langRule = getAILanguageRule();
     let lang = 'mk';
-    try { lang = localStorage.getItem('preferred_language') || 'mk'; } catch(e){}
-    let langRule = "Користи литературен македонски јазик.";
-    if (lang === 'sq') langRule = "Задолжително користи АЛБАНСКИ јазик (Shqip) за целиот текст и содржина.";
-    if (lang === 'tr') langRule = "Задолжително користи ТУРСКИ јазик (Türkçe) за целиот текст и содржина.";
-    if (lang === 'en') langRule = "Задолжително користи АНГЛИСКИ јазик (English) за целиот текст и содржина.";
+    try { lang = localStorage.getItem('preferred_language') || 'mk'; } catch { /* ignore */ }
     
     instruction = instruction.replace('{{LANGUAGE_RULE}}', langRule);
     
@@ -849,6 +883,10 @@ function recoverTruncatedJson(raw: string): unknown | null {
 
 // --- CORE JSON HELPER ---
 export async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false, customSystemInstruction?: string, userTier?: string): Promise<T> {
+    // Fail fast when offline — avoids a 60 s timeout that degrades UX
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        throw new OfflineError('AI generation requires network connection');
+    }
     const activeModel = useThinking ? 'gemini-3.1-pro' : model;
     const _controller = new AbortController();
     const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
@@ -966,17 +1004,25 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
 // --- SERVICE IMPLEMENTATION ---
 // --- HELPER FUNCTIONS FOR CACHING ---
 export async function getCached<T>(key: string): Promise<T | null> {
+    // 1. Try Firestore (works online and from Firestore local persistence when offline)
     try {
         const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, key));
         if (cachedDoc.exists()) return cachedDoc.data().content as T;
-    } catch (e) {
-        // console.warn('Cache read error:', e); 
-        // Silent fail on cache read is okay, we just regenerate
+    } catch {
+        // Firestore unavailable (e.g. offline without persistence) — fall through to IndexedDB
+    }
+    // 2. IndexedDB fallback — always available offline
+    try {
+        const idbContent = await getAICache(key);
+        if (idbContent !== null) return idbContent as T;
+    } catch {
+        // non-fatal
     }
     return null;
 }
 
 export async function setCached(key: string, content: any, metadata: any = {}) {
+    // Write to both stores so content is available offline
     try {
         await setDoc(doc(db, CACHE_COLLECTION, key), {
             content,
@@ -984,7 +1030,12 @@ export async function setCached(key: string, content: any, metadata: any = {}) {
             createdAt: serverTimestamp()
         });
     } catch (e) {
-        console.error('Cache write error:', e);
+        console.error('Cache write error (Firestore):', e);
+    }
+    try {
+        await saveAICache(key, content);
+    } catch {
+        // non-fatal — IndexedDB write is best-effort
     }
 }
 
