@@ -13,11 +13,14 @@
 import React, { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Award, BarChart2 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
+import { NationalBenchmarkCard } from '../../components/analytics/NationalBenchmarkCard';
 import { groupBy, fmt } from './shared';
 import type { QuizResult } from '../../services/firestoreService.types';
 
 interface Props {
     results: QuizResult[];
+    teacherUid: string;
+    gradeLevel: number;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -54,7 +57,7 @@ const PercentBar: React.FC<{ pct: number; color: string; label: string; value: s
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export const CohortTab: React.FC<Props> = ({ results }) => {
+export const CohortTab: React.FC<Props> = ({ results, teacherUid, gradeLevel }) => {
     // ── 1. Performance distribution ──────────────────────────────────────────
     const distribution = useMemo(() => {
         if (results.length === 0) return { fail: 0, risk: 0, pass: 0, mastery: 0, total: 0 };
@@ -306,6 +309,15 @@ export const CohortTab: React.FC<Props> = ({ results }) => {
                     </div>
                     <p className="text-xs text-gray-400 mt-2">Бројот во заграда = квиз обиди тој месец</p>
                 </Card>
+            )}
+
+            {/* ── National Benchmark (Ж6.4) ──────────────────────────────────── */}
+            {teacherUid && (
+                <NationalBenchmarkCard
+                    teacherUid={teacherUid}
+                    results={results}
+                    gradeLevel={gradeLevel}
+                />
             )}
         </div>
     );

@@ -533,7 +533,17 @@ const { addNotification } = useNotification();
             {activeTab === 'league' && firebaseUser?.uid && (
               <LeagueTab teacherUid={firebaseUser.uid} />
             )}
-            {activeTab === 'cohort' && <CohortTab results={localResults} />}
+            {activeTab === 'cohort' && (
+              <CohortTab
+                results={localResults}
+                teacherUid={firebaseUser?.uid ?? ''}
+                gradeLevel={
+                  gradeStats.length > 0
+                    ? Number(gradeStats.reduce((a, b) => a.attempts >= b.attempts ? a : b).grade) || 1
+                    : 1
+                }
+              />
+            )}
           </>
         )}
         </TabErrorBoundary>
