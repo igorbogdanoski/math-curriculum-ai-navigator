@@ -1,11 +1,12 @@
 /**
- * Standalone "Copy share link" button for quiz/assessment materials.
- * Saves the material to cached_ai_materials on first click (lazy),
- * then copies the direct play URL to clipboard.
+ * Standalone share controls for quiz/assessment materials.
+ * - Copy link: saves to cached_ai_materials once, then copies play URL
+ * - QR Code: shows printable QR code modal so students can scan and play
  * Subsequent clicks reuse the same cacheId — no duplicate saves.
  */
-import React, { useState } from 'react';
-import { Link, Copy, Check, Loader2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Link, Check, Loader2, QrCode, Printer, X, Copy } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { firestoreService } from '../../services/firestoreService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -24,38 +25,42 @@ export const QuizShareButton: React.FC<Props> = ({ material, materialType, conce
   const [saving, setSaving] = useState(false);
   const [cacheId, setCacheId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
   const makeShareUrl = (id: string) =>
     `${window.location.origin}${window.location.pathname}#/play/${id}`;
 
-  const handleClick = async () => {
+  /** Ensures material is saved and returns its id */
+  const ensureSaved = async (): Promise<string | null> => {
     if (!firebaseUser?.uid) {
       addNotification('Мора да бидете логирани за да споделите.', 'warning');
-      return;
+      return null;
     }
+    if (cacheId) return cacheId;
 
-    let id = cacheId;
-
-    // Save once; reuse on subsequent clicks
-    if (!id) {
-      setSaving(true);
-      try {
-        id = await firestoreService.saveAssignmentMaterial(material, {
-          title: (material as { title?: string }).title || 'Квиз',
-          type: materialType,
-          conceptId,
-          gradeLevel,
-          teacherUid: firebaseUser.uid,
-        });
-        setCacheId(id);
-      } catch {
-        addNotification('Грешка при генерирање на линк.', 'error');
-        setSaving(false);
-        return;
-      }
+    setSaving(true);
+    try {
+      const id = await firestoreService.saveAssignmentMaterial(material, {
+        title: (material as { title?: string }).title || 'Квиз',
+        type: materialType,
+        conceptId,
+        gradeLevel,
+        teacherUid: firebaseUser.uid,
+      });
+      setCacheId(id);
+      return id;
+    } catch {
+      addNotification('Грешка при генерирање на линк.', 'error');
+      return null;
+    } finally {
       setSaving(false);
     }
+  };
 
+  const handleCopyLink = async () => {
+    const id = await ensureSaved();
+    if (!id) return;
     try {
       await navigator.clipboard.writeText(makeShareUrl(id));
       setCopied(true);
@@ -65,19 +70,130 @@ export const QuizShareButton: React.FC<Props> = ({ material, materialType, conce
     }
   };
 
+  const handleShowQR = async () => {
+    const id = await ensureSaved();
+    if (!id) return;
+    setShowQR(true);
+  };
+
+  const handlePrint = () => {
+    if (!printRef.current) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    const title = (material as { title?: string }).title || 'Квиз';
+    win.document.write(
+      `<html><head><title>QR — ${title}</title>` +
+      `<style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;` +
+      `justify-content:center;height:100vh;margin:0;gap:8px}` +
+      `h2{font-size:1.2rem;font-weight:700;color:#1e1b4b;text-align:center;margin:0}` +
+      `p{font-size:0.8rem;color:#6b7280;text-align:center;margin:0}` +
+      `svg{width:220px;height:220px}</style></head>` +
+      `<body>${printRef.current.innerHTML}</body></html>`,
+    );
+    win.document.close();
+    win.focus();
+    win.print();
+    win.close();
+  };
+
+  const shareUrl = cacheId ? makeShareUrl(cacheId) : '';
+  const quizTitle = (material as { title?: string }).title || 'Квиз';
+
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={saving}
-      title="Копирај директен линк за ученици"
-      className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors disabled:opacity-50"
-    >
-      {saving
-        ? <><Loader2 className="w-4 h-4 animate-spin" />Генерирам…</>
-        : copied
-        ? <><Check className="w-4 h-4 text-emerald-600" /><span className="text-emerald-700">Копирано!</span></>
-        : <><Link className="w-4 h-4" />Копирај линк</>}
-    </button>
+    <div className="flex items-center gap-2">
+      {/* Copy link button */}
+      <button
+        type="button"
+        onClick={handleCopyLink}
+        disabled={saving}
+        title="Копирај директен линк за ученици"
+        className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors disabled:opacity-50"
+      >
+        {saving
+          ? <><Loader2 className="w-4 h-4 animate-spin" />Генерирам…</>
+          : copied
+          ? <><Check className="w-4 h-4 text-emerald-600" /><span className="text-emerald-700">Копирано!</span></>
+          : <><Link className="w-4 h-4" />Копирај линк</>}
+      </button>
+
+      {/* QR Code button */}
+      <button
+        type="button"
+        onClick={handleShowQR}
+        disabled={saving}
+        title="Прикажи QR код за ученици"
+        aria-label="Прикажи QR код"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 transition-colors disabled:opacity-50"
+      >
+        <QrCode className="w-4 h-4" />
+        QR Код
+      </button>
+
+      {/* QR Modal */}
+      {showQR && shareUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="qr-modal-title"
+          onClick={() => setShowQR(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 flex flex-col items-center gap-4"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between w-full">
+              <h2 id="qr-modal-title" className="font-bold text-gray-800 text-base">QR Код за ученици</h2>
+              <button
+                type="button"
+                aria-label="Затвори"
+                onClick={() => setShowQR(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Printable QR area */}
+            <div ref={printRef} className="flex flex-col items-center gap-3 py-2">
+              <QRCodeSVG
+                value={shareUrl}
+                size={200}
+                level="M"
+                includeMargin
+                className="rounded-xl"
+              />
+              <h2 className="text-base font-bold text-indigo-900 text-center">{quizTitle}</h2>
+              <p className="text-xs text-gray-500 text-center">Скенирај за да го играш квизот</p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl transition-colors"
+              >
+                <Printer className="w-4 h-4" />
+                Печати
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-sm font-bold rounded-xl transition-colors"
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Копирано!' : 'Копирај'}
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-400 text-center">
+              Ученикот го скенира QR кодот и веднаш го стартува квизот без логирање
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
