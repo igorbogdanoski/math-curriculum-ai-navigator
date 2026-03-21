@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import type { DocumentSnapshot } from 'firebase/firestore';
 import { firestoreService } from '../services/firestoreService';
 import type { NationalLibraryEntry } from '../services/firestoreService.materials';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,6 +24,9 @@ export const NationalLibraryView: React.FC = () => {
 
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [filterGrade, setFilterGrade] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('');
@@ -37,15 +41,38 @@ export const NationalLibraryView: React.FC = () => {
   const [remixCorrect, setRemixCorrect] = useState('');
   const [remixSaving, setRemixSaving] = useState(false);
 
+  // Reset and fetch first page when filters change
   useEffect(() => {
     setLoading(true);
+    setEntries([]);
+    setLastDoc(null);
     const filters: { gradeLevel?: number; type?: string } = {};
     if (filterGrade) filters.gradeLevel = Number(filterGrade);
     if (filterType) filters.type = filterType;
     firestoreService.fetchNationalLibrary(filters)
-      .then(data => setEntries(data))
+      .then(({ entries: data, lastDoc: cursor }) => {
+        setEntries(data);
+        setLastDoc(cursor);
+        setHasMore(cursor !== null);
+      })
       .finally(() => setLoading(false));
   }, [filterGrade, filterType]);
+
+  const handleLoadMore = async () => {
+    if (!lastDoc || loadingMore) return;
+    setLoadingMore(true);
+    const filters: { gradeLevel?: number; type?: string; cursor: DocumentSnapshot } = { cursor: lastDoc };
+    if (filterGrade) filters.gradeLevel = Number(filterGrade);
+    if (filterType) filters.type = filterType;
+    try {
+      const { entries: more, lastDoc: newCursor } = await firestoreService.fetchNationalLibrary(filters);
+      setEntries(prev => [...prev, ...more]);
+      setLastDoc(newCursor);
+      setHasMore(newCursor !== null);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!searchText) return entries;
@@ -354,6 +381,21 @@ export const NationalLibraryView: React.FC = () => {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* Load More */}
+      {hasMore && !searchText && (
+        <div className="flex justify-center pt-4">
+          <button
+            type="button"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-brand-primary border border-brand-primary rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50"
+          >
+            {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
+            {loadingMore ? 'Вчитувам...' : 'Прикажи повеќе'}
+          </button>
         </div>
       )}
     </div>

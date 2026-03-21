@@ -205,7 +205,7 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
                                         </div>
                                         <div className="flex flex-wrap gap-1.5 mt-2">
                                             {r.signals.map((sig, i) => (
-                                                <span key={i} className="flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white/80 border border-slate-200 px-2 py-0.5 rounded-full">
+                                                <span key={`${sig.icon}-${i}`} className="flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white/80 border border-slate-200 px-2 py-0.5 rounded-full">
                                                     {sig.icon === 'trend' && <TrendingDown className="w-3 h-3 text-red-500" />}
                                                     {sig.icon === 'clock' && <Clock className="w-3 h-3 text-amber-500" />}
                                                     {sig.icon === 'score' && <AlertTriangle className="w-3 h-3 text-orange-500" />}

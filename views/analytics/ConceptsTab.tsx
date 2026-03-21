@@ -24,7 +24,7 @@ const MetacognitiveNotesRow: React.FC<{ notes: string[]; colSpan: number }> = ({
                     </span>
                     <ul className="flex flex-col gap-1">
                         {shown.map((note, i) => (
-                            <li key={i} className="text-xs text-slate-600 bg-white border border-blue-100 rounded px-2 py-1 italic">
+                            <li key={`note-${i}`} className="text-xs text-slate-600 bg-white border border-blue-100 rounded px-2 py-1 italic">
                                 „{note}"
                             </li>
                         ))}
@@ -132,8 +132,8 @@ export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGen
                                                                 Најчести концептуални грешки:
                                                             </span>
                                                             <ul className="list-disc list-inside text-xs text-slate-600 marker:text-red-400">
-                                                                {c.misconceptions?.slice(0, 3).map((m, idx) => (
-                                                                    <li key={idx}>
+                                                                {c.misconceptions?.slice(0, 3).map((m) => (
+                                                                    <li key={m.text}>
                                                                         <span className="font-semibold text-slate-800">{m.text}</span>
                                                                         <span className="text-gray-400 ml-1">({m.count} {m.count === 1 ? 'грешка' : 'грешки'})</span>
                                                                     </li>
@@ -147,7 +147,7 @@ export const ConceptsTab: React.FC<ConceptsTabProps> = ({ allConceptStats, onGen
                                                                         {c.strugglingStudents.length} засегнат{c.strugglingStudents.length === 1 ? '' : 'и'}:
                                                                     </span>
                                                                     {c.strugglingStudents.slice(0, 5).map((s, i) => (
-                                                                        <span key={i} className="text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded-full px-2 py-0.5 font-medium">{s}</span>
+                                                                        <span key={`${s}-${i}`} className="text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded-full px-2 py-0.5 font-medium">{s}</span>
                                                                     ))}
                                                                     {c.strugglingStudents.length > 5 && (
                                                                         <span className="text-xs text-gray-400">+{c.strugglingStudents.length - 5} уште</span>

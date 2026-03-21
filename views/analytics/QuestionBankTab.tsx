@@ -323,7 +323,7 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
                       {q.options && q.options.length > 0 && (
                         <ul className="mt-1 list-disc list-inside space-y-0.5">
                           {q.options.map((opt, i) => (
-                            <li key={i} className={opt === q.answer ? 'font-semibold text-green-700' : ''}>{opt}</li>
+                            <li key={`opt-${i}`} className={opt === q.answer ? 'font-semibold text-green-700' : ''}>{opt}</li>
                           ))}
                         </ul>
                       )}

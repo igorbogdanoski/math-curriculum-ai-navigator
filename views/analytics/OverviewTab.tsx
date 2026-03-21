@@ -143,7 +143,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                             const priorityLabels = ['Итно', 'Важно', 'Препорачано'];
                             const idx = Math.min(rec.priority - 1, 2);
                             return (
-                                <div key={i} className={`rounded-xl border p-4 ${priorityColors[idx]}`}>
+                                <div key={`rec-${rec.conceptId ?? ''}-${i}`} className={`rounded-xl border p-4 ${priorityColors[idx]}`}>
                                     <div className="flex items-start gap-3">
                                         <span className="text-2xl flex-shrink-0 leading-none mt-0.5">{rec.icon}</span>
                                         <div className="flex-1 min-w-0">
@@ -223,7 +223,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Последни обиди</h2>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                         {results.slice(0, 15).map((r, i) => (
-                            <div key={i} className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 last:border-0">
+                            <div key={`result-${r.quizId}-${i}`} className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 last:border-0">
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-gray-700 truncate">{r.quizTitle}</p>
                                     <p className="text-xs text-gray-400">{formatDate(r.playedAt)}</p>

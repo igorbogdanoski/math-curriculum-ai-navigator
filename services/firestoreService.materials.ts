@@ -581,24 +581,30 @@ export interface NationalLibraryEntry {
   publishedAt: Timestamp | null;
 }
 
+export const PAGE_SIZE_NATIONAL_LIBRARY = 20;
+
 export const fetchNationalLibrary = async (filters?: {
     gradeLevel?: number;
     conceptId?: string;
     type?: string;
-  }): Promise<NationalLibraryEntry[]> => {
+    cursor?: DocumentSnapshot;
+  }): Promise<{ entries: NationalLibraryEntry[]; lastDoc: DocumentSnapshot | null }> => {
     try {
       const constraints: any[] = [];
       if (filters?.gradeLevel) constraints.push(where('gradeLevel', '==', filters.gradeLevel));
       if (filters?.type) constraints.push(where('type', '==', filters.type));
       if (filters?.conceptId) constraints.push(where('conceptId', '==', filters.conceptId));
       constraints.push(orderBy('publishedAt', 'desc'));
-      constraints.push(limit(200));
+      if (filters?.cursor) constraints.push(startAfter(filters.cursor));
+      constraints.push(limit(PAGE_SIZE_NATIONAL_LIBRARY));
       const q = query(collection(db, 'national_library'), ...constraints);
       const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() })) as NationalLibraryEntry[];
+      const entries = snap.docs.map(d => ({ id: d.id, ...d.data() })) as NationalLibraryEntry[];
+      const lastDoc = snap.docs.length === PAGE_SIZE_NATIONAL_LIBRARY ? snap.docs[snap.docs.length - 1] : null;
+      return { entries, lastDoc };
     } catch (error) {
       console.error('Error fetching national library:', error);
-      return [];
+      return { entries: [], lastDoc: null };
     }
   };
 

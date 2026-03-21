@@ -42,23 +42,37 @@ export const CommandPalette: React.FC = () => {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
 
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
   const { curriculum } = useCurriculum();
 
-  // ── Open / close via Ctrl+K ──────────────────────────────────────────────
+  // ── Close helper — restores focus to the element that opened the palette ─
+  const close = () => {
+    setOpen(false);
+    setTimeout(() => (triggerRef.current as HTMLElement | null)?.focus(), 50);
+  };
+
+  // ── Open / close via Ctrl+K / Ctrl+G ────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
+        if (!open) triggerRef.current = document.activeElement;
         setOpen(prev => !prev);
       }
-      if (e.key === 'Escape') setOpen(false);
+      if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+        e.preventDefault();
+        setOpen(false);
+        openGeneratorPanel({});
+      }
+      if (e.key === 'Escape') close();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, openGeneratorPanel]);
 
   useEffect(() => {
     if (open) {
@@ -72,7 +86,7 @@ export const CommandPalette: React.FC = () => {
   const go = (path: string, label: string, iconKey: string) => {
     saveRecent({ label, path, icon: iconKey });
     navigate(path);
-    setOpen(false);
+    close();
   };
 
   // ── Nav commands ─────────────────────────────────────────────────────────
@@ -101,17 +115,17 @@ export const CommandPalette: React.FC = () => {
     {
       id: 'gen-quiz', label: 'Генерирај квиз', description: 'AI квиз прашања за ваше одделение',
       icon: Sparkles, group: 'ai', color: 'text-violet-600', keywords: 'generate quiz AI questions',
-      action: () => { openGeneratorPanel({ materialType: 'QUIZ' }); setOpen(false); },
+      action: () => { openGeneratorPanel({ materialType: 'QUIZ' }); close(); },
     },
     {
       id: 'gen-lesson', label: 'Генерирај план за час', description: 'Структуриран AI план за час',
       icon: Wand2, group: 'ai', color: 'text-violet-600', keywords: 'generate lesson plan AI',
-      action: () => { navigate('/planner/lesson/new'); setOpen(false); },
+      action: () => { navigate('/planner/lesson/new'); close(); },
     },
     {
       id: 'gen-materials', label: 'Генерирај материјали', description: 'Работни листови, тестови, задачи',
       icon: Sparkles, group: 'ai', color: 'text-violet-600', keywords: 'generate materials worksheets tests',
-      action: () => { openGeneratorPanel({}); setOpen(false); },
+      action: () => { openGeneratorPanel({}); close(); },
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [navigate, openGeneratorPanel]);
@@ -219,7 +233,7 @@ export const CommandPalette: React.FC = () => {
   return (
     <div
       className="fixed inset-0 z-[200] flex items-start justify-center pt-[12vh] px-4"
-      onClick={() => setOpen(false)}
+      onClick={close}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" aria-hidden="true" />
