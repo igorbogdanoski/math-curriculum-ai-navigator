@@ -69,23 +69,30 @@
 ## 🟡 СРЕДЕН ПРИОРИТЕТ — Следен месец
 
 ### P7 — Canvas Colors → Константи
-- [ ] `views/CurriculumGraphView.tsx` — hex бои → семантички константи
+**Статус:** ✅ ЗАВРШЕНО (Сесија 10)
+
+- [x] `views/CurriculumGraphView.tsx` — CANVAS_BG, EDGE_DEFAULT_COLOR, EDGE_GLOBAL_COLOR извлечени; сите canvas бои се именувани константи
 
 ### P8 — Optimistic UI Updates
-- [ ] `views/AnnualPlanGalleryView.tsx` — like/fork со optimistic update
-- [ ] `views/TeacherAnalyticsView.tsx` — announcements optimistic
+**Статус:** ✅ ЗАВРШЕНО (Сесија 9)
+
+- [x] `views/AnnualPlanGalleryView.tsx` — like: optimistic update + rollback on error; fork: isForking lock + spinner
+- [ ] `views/TeacherAnalyticsView.tsx` — announcements optimistic (backlog)
 
 ### P9 — Keyboard Shortcuts
-**Статус:** ✅ ДЕЛУМНО ЗАВРШЕНО (Сесија 9)
+**Статус:** ✅ ЗАВРШЕНО (Сесија 9–10)
 
 - [x] Cmd+K → Command Palette (глобален, сите рути + AI акции + концепти)
 - [x] Ctrl+S / Cmd+S → Зачувај во `LessonPlanEditorView` + `AnnualPlanGeneratorView`
 - [x] Escape → Затвори Command Palette, Confirm Dialog, panels
-- [ ] Cmd+G → Отвори AI Generator Panel (следно)
+- [x] Ctrl+G → Отвори AI Generator Panel директно (глобален)
+- [x] CommandPalette: focus restoration на затворање (triggerRef); Ctrl+G hint во footer
 
 ### P10 — Performance
-- [ ] `views/TeacherAnalyticsView.tsx` — виртуелизација на долги листи
-- [ ] `views/NationalLibraryView.tsx` — infinite scroll наместо load all
+**Статус:** ✅ ДЕЛУМНО ЗАВРШЕНО (Сесија 10)
+
+- [x] `views/NationalLibraryView.tsx` — cursor-based pagination limit(20) + startAfter; "Прикажи повеќе"
+- [ ] `views/TeacherAnalyticsView.tsx` — виртуелизација на долги листи (сложено, ~4h)
 
 ---
 
@@ -130,4 +137,4 @@
 > „Апликацијата треба да биде толку добра што кога МОН инспектор ја види,
 > веднаш ќе праша 'Зошто ова не го имаме во секое училиште?'"
 
-*Последно ажурирање: 21 Март 2026 (Сесија 9 — P5, P6, P9 завршени; Deep Audit 8.5/10)*
+*Последно ажурирање: 21 Март 2026 (Сесија 10 — P7, P8, P9 целосно ✅; P10 делумно ✅; key stability sweep; NationalLibrary pagination)*

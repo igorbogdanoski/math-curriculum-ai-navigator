@@ -246,7 +246,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                         </p>
                         <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl px-3 py-2 mb-4 space-y-0.5">
                             {csvPreview.names.map((n, i) => (
-                                <p key={i} className="text-sm text-slate-700">{i + 1}. {n}</p>
+                                <p key={`csv-${i}`} className="text-sm text-slate-700">{i + 1}. {n}</p>
                             ))}
                         </div>
                         <div className="flex gap-2">
