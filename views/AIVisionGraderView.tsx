@@ -134,7 +134,7 @@ export const AIVisionGraderView: React.FC = () => {
                         <div className="w-full relative rounded-lg overflow-hidden group">
                             <img src={imageStr} alt="Pregled na domashna" className="w-full h-auto object-contain rounded-lg max-h-[500px]" />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <button onClick={reset} className="bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur transition">
+                                <button type="button" aria-label="Отстрани слика" onClick={reset} className="bg-white/20 hover:bg-white/40 p-3 rounded-full backdrop-blur transition">
                                     <X className="w-8 h-8 text-white" />
                                 </button>
                             </div>

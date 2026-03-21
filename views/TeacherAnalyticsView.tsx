@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { firestoreService, type QuizResult, type ConceptMastery, type Announcement } from '../services/firestoreService';
+import { firestoreService, type QuizResult, type Announcement } from '../services/firestoreService';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import { useNotification } from '../contexts/NotificationContext';
 import { geminiService } from '../services/geminiService';
@@ -80,7 +80,11 @@ const { addNotification } = useNotification();
 
   useEffect(() => {
     if (!firebaseUser?.uid) return;
-    firestoreService.fetchAnnouncements(firebaseUser.uid).then(setAnnouncements);
+    let isMounted = true;
+    firestoreService.fetchAnnouncements(firebaseUser.uid).then(data => {
+      if (isMounted) setAnnouncements(data);
+    });
+    return () => { isMounted = false; };
   }, [firebaseUser?.uid]);
 
   const handlePostAnnouncement = async () => {
@@ -123,7 +127,9 @@ const { addNotification } = useNotification();
 
   useEffect(() => {
     if (!firebaseUser?.uid) return;
-    firestoreService.fetchClasses(firebaseUser.uid).then(setClasses).catch(() => {});
+    firestoreService.fetchClasses(firebaseUser.uid).then(setClasses).catch(err => {
+      console.error('Failed to fetch classes:', err);
+    });
   }, [firebaseUser?.uid]);
 
   const handleShowAssignRemedial = (

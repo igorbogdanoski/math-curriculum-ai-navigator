@@ -145,18 +145,19 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
 
     const deductCredits = async (amount = 1) => {
         if (!user || user.role === 'admin' || user.isPremium || user.hasUnlimitedCredits) return;
-        const newBalance = Math.max(0, (user.aiCreditsBalance || 0) - amount);
+        const originalBalance = user.aiCreditsBalance || 0;
+        const newBalance = Math.max(0, originalBalance - amount);
         try {
             // Optimistically update the UI so it doesn't block the user
             updateLocalProfile({ aiCreditsBalance: newBalance });
-            
+
             // Securely deduct on the server using Cloud Function
             const functions = getFunctions(app);
             const deductFn = httpsCallable(functions, 'deductCredits');
             await deductFn({ amount });
         } catch (err) {
             console.error("Failed to deduct credits remotely", err);
-            // Revert on fail if needed 
+            updateLocalProfile({ aiCreditsBalance: originalBalance });
         }
     };
 
@@ -596,7 +597,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
                     <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
                         <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
                     </div>
                     <div className="flex-1 relative overflow-hidden bg-slate-50">
                         <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
@@ -613,7 +614,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
                     <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
                         <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
                     </div>
                     <div className="flex-1 relative overflow-hidden bg-slate-50">
                         <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
@@ -634,7 +635,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
                     <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
                         <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
                     </div>
                     <div className="flex-1 relative overflow-hidden bg-slate-50">
                         <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
@@ -651,7 +652,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
                     <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
                         <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
                     </div>
                     <div className="flex-1 relative overflow-hidden bg-slate-50">
                         <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
@@ -684,7 +685,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
                     <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
                         <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
                     </div>
                     <div className="flex-1 relative overflow-hidden bg-slate-50">
                         <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
@@ -701,7 +702,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
                     <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
                         <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
                     </div>
                     <div className="flex-1 relative overflow-hidden bg-slate-50">
                         <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
@@ -786,8 +787,8 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                       <div className="flex flex-col gap-3">
                         {(generatedMaterial as AIGeneratedAssessment).questions
                           .filter(q => q.tableData)
-                          .map((q, i) => (
-                            <StatisticsWorkspace key={i} initialData={q.tableData} title={q.tableData?.caption} />
+                          .map((q) => (
+                            <StatisticsWorkspace key={q.tableData?.caption ?? ''} initialData={q.tableData} title={q.tableData?.caption} />
                           ))}
                       </div>
                     )}
@@ -939,7 +940,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
                     <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
                         <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
                     </div>
                     <div className="flex-1 relative overflow-hidden bg-slate-50">
                         <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />

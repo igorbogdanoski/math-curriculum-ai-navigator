@@ -1,25 +1,20 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useNotification } from '../contexts/NotificationContext';
 import { 
-    curriculumOverridesService, 
-    type CurriculumOverridesDoc, 
-    type CustomConcept, 
-    type CustomTopic 
+    curriculumOverridesService,
+    type CustomConcept,
+    type CustomTopic
 } from '../services/firestoreService.curriculumOverrides';
-import { Card } from '../components/common/Card';
 import {
     BookOpen,
     Plus,
     Trash2,
-    Edit2,
     ChevronRight,
     ChevronDown,
-    Save,
     X,
-    AlertCircle,
     Info
 } from 'lucide-react';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -27,11 +22,10 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 export const CurriculumEditorView: React.FC = () => {
     const { user } = useAuth();
     const { navigate } = useNavigation();
-    const { curriculum, getGrade, getTopic } = useCurriculum();
+    const { curriculum } = useCurriculum();
     const { addNotification } = useNotification();
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
-    const [overrides, setOverrides] = useState<CurriculumOverridesDoc | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set());
     const [isAddingConcept, setIsAddingConcept] = useState<{ gradeId: string; topicId: string } | null>(null);
@@ -60,8 +54,7 @@ export const CurriculumEditorView: React.FC = () => {
         const loadOverrides = async () => {
             try {
                 // For now, using 'school_overrides' as well-known key as per hook
-                const data = await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
-                setOverrides(data);
+                await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
             } catch (error) {
                 console.error('Error loading overrides:', error);
                 addNotification('Грешка при вчитување на промените.', 'error');
@@ -99,9 +92,6 @@ export const CurriculumEditorView: React.FC = () => {
                 }
             );
             
-            // Refresh
-            const data = await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
-            setOverrides(data);
             setIsAddingConcept(null);
             setNewConcept({ title: '', description: '', assessmentStandards: [], activities: [], priorKnowledgeIds: [] });
             addNotification('Концептот е успешно додаден.', 'success');
@@ -124,9 +114,6 @@ export const CurriculumEditorView: React.FC = () => {
                 }
             );
             
-            // Refresh
-            const data = await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
-            setOverrides(data);
             setIsAddingTopic(null);
             setNewTopic({ title: '', description: '', suggestedHours: 4 });
             addNotification('Темата е успешно додадена.', 'success');
@@ -143,9 +130,8 @@ export const CurriculumEditorView: React.FC = () => {
                 setConfirmDialog(null);
                 try {
                     await curriculumOverridesService.deleteConceptOverride('school_overrides', conceptId);
-                    const data = await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
-                    setOverrides(data);
-                    addNotification('Избришано.', 'success');
+                    await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
+                        addNotification('Избришано.', 'success');
                 } catch (error) {
                     addNotification('Грешка при бришење.', 'error');
                 }
@@ -236,7 +222,7 @@ export const CurriculumEditorView: React.FC = () => {
                                             <div className="mt-4 p-4 border-2 border-dashed border-brand-primary/30 rounded-xl bg-brand-primary/5 animate-fade-in">
                                                 <div className="flex justify-between items-center mb-4">
                                                     <h4 className="font-bold text-sm text-brand-primary">Нов наставен концепт</h4>
-                                                    <button onClick={() => setIsAddingConcept(null)}><X className="w-4 h-4 text-gray-400" /></button>
+                                                    <button type="button" aria-label="Откажи" onClick={() => setIsAddingConcept(null)}><X className="w-4 h-4 text-gray-400" /></button>
                                                 </div>
                                                 <div className="space-y-3">
                                                     <input 
@@ -284,7 +270,7 @@ export const CurriculumEditorView: React.FC = () => {
                                     <div className="p-4 border-2 border-dashed border-brand-primary/30 rounded-xl bg-brand-primary/5 animate-fade-in">
                                         <div className="flex justify-between items-center mb-4">
                                             <h4 className="font-bold text-sm text-brand-primary">Нова наставна тема</h4>
-                                            <button onClick={() => setIsAddingTopic(null)}><X className="w-4 h-4 text-gray-400" /></button>
+                                            <button type="button" aria-label="Откажи" onClick={() => setIsAddingTopic(null)}><X className="w-4 h-4 text-gray-400" /></button>
                                         </div>
                                         <div className="space-y-3">
                                             <input 

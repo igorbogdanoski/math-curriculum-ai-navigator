@@ -4,7 +4,7 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { RateLimitError } from '../services/apiErrors';
-import type { AIGeneratedIdeas, AIGeneratedPracticeMaterial, LessonPlan } from '../types';
+import type { AIGeneratedIdeas, AIGeneratedPracticeMaterial } from '../types';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -12,7 +12,6 @@ import { MathRenderer } from '../components/common/MathRenderer';
 import { useNotification } from '../contexts/NotificationContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useLastVisited } from '../contexts/LastVisitedContext';
-import { usePlanner } from '../contexts/PlannerContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrowser';
 import { StepByStepSolver } from '../components/StepByStepSolver';
@@ -216,10 +215,10 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                   <MathRenderer text={concept.title} />
                 </h1>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => toggleFavoriteConcept(concept.id)} className="text-yellow-500 hover:scale-110 transition">
+                  <button type="button" onClick={() => toggleFavoriteConcept(concept.id)} aria-label={isFavoriteConcept(concept.id) ? 'Отстрани од омилени' : 'Додај во омилени'} className="text-yellow-500 hover:scale-110 transition">
                     {isFavoriteConcept(concept.id) ? <ICONS.starSolid className="w-8 h-8" /> : <ICONS.star className="w-8 h-8" />}
                   </button>
-                  <button onClick={handleShare} className="text-blue-500 hover:scale-110 transition p-2 rounded-full hover:bg-blue-50" title="Сподели со ученици">
+                  <button type="button" onClick={handleShare} aria-label="Сподели со ученици" className="text-blue-500 hover:scale-110 transition p-2 rounded-full hover:bg-blue-50">
                     <Share2 className="w-8 h-8" />
                   </button>
                   <button
