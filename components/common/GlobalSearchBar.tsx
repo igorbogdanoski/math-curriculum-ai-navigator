@@ -1,9 +1,20 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { X } from 'lucide-react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { usePlanner } from '../../contexts/PlannerContext';
 import { ICONS } from '../../constants';
 import type { Topic, LessonPlan, NationalStandard, Grade, Concept } from '../../types';
 import { useNavigation } from '../../contexts/NavigationContext';
+
+const RECENT_KEY = 'gsb_recent';
+const MAX_RECENT = 5;
+
+function loadRecent(): string[] {
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]'); } catch { return []; }
+}
+function saveRecent(terms: string[]) {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(terms));
+}
 
 interface SearchResult {
     id: string;
@@ -35,6 +46,7 @@ export const GlobalSearchBar: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState<'all' | SearchResult['type']>('all');
     const [focusedIndex, setFocusedIndex] = useState(-1);
+    const [recentSearches, setRecentSearches] = useState<string[]>(loadRecent);
     
     const { allConcepts, curriculum, allNationalStandards } = useCurriculum();
     const { lessonPlans } = usePlanner();
@@ -188,7 +200,31 @@ export const GlobalSearchBar: React.FC = () => {
         }
     };
 
+    const addToRecent = useCallback((term: string) => {
+        const trimmed = term.trim();
+        if (!trimmed) return;
+        setRecentSearches(prev => {
+            const updated = [trimmed, ...prev.filter(r => r !== trimmed)].slice(0, MAX_RECENT);
+            saveRecent(updated);
+            return updated;
+        });
+    }, []);
+
+    const removeRecent = useCallback((term: string) => {
+        setRecentSearches(prev => {
+            const updated = prev.filter(r => r !== term);
+            saveRecent(updated);
+            return updated;
+        });
+    }, []);
+
+    const clearRecent = useCallback(() => {
+        saveRecent([]);
+        setRecentSearches([]);
+    }, []);
+
     const handleResultClick = (path: string) => {
+        if (query.trim().length > 1) addToRecent(query);
         navigate(path);
         setQuery('');
         setIsOpen(false);
@@ -204,9 +240,13 @@ export const GlobalSearchBar: React.FC = () => {
                     type="text"
                     value={query}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-                    onFocus={() => query.trim().length > 1 && setIsOpen(true)}
+                    onFocus={() => {
+                        if (query.trim().length > 1) setIsOpen(true);
+                        else if (recentSearches.length > 0) setIsOpen(true);
+                    }}
                     onKeyDown={handleKeyDown}
                     placeholder="Пребарај низ целата апликација (поими, теми, подготовки, стандарди)..."
+                    aria-label="Пребарај низ целата апликација"
                     className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                     aria-expanded={isOpen}
                     aria-controls="search-results"
@@ -231,6 +271,42 @@ export const GlobalSearchBar: React.FC = () => {
                         ))}
                     </div>
                     
+                    {/* Recent searches — shown when query is empty */}
+                    {query.trim().length <= 1 && recentSearches.length > 0 && (
+                        <div className="py-2">
+                            <div className="flex items-center justify-between px-4 py-1.5">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Последни пребарувања</span>
+                                <button
+                                    type="button"
+                                    onClick={clearRecent}
+                                    className="text-[10px] text-gray-400 hover:text-red-500 transition-colors"
+                                >
+                                    Избриши сите
+                                </button>
+                            </div>
+                            {recentSearches.map(term => (
+                                <div key={term} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 group">
+                                    <ICONS.search className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                                    <button
+                                        type="button"
+                                        className="flex-1 text-left text-sm text-gray-700 truncate"
+                                        onClick={() => { setQuery(term); setIsOpen(true); }}
+                                    >
+                                        {term}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label={`Отстрани "${term}" од историјата`}
+                                        onClick={() => removeRecent(term)}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-gray-400 hover:text-red-500"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {flatResults.length > 0 ? (
                         <ul className="overflow-y-auto" id="search-results" role="listbox" ref={resultListRef}>
                             {Object.entries(groupedResults).map(([type, groupResults]) => (
@@ -238,13 +314,11 @@ export const GlobalSearchBar: React.FC = () => {
                                     <li className="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase sticky top-0 border-b border-gray-100">
                                         {typeLabels[type as SearchResult['type']]}
                                     </li>
-                                    {(groupResults as SearchResult[]).slice(0, 10).map((result, idx) => {
-                                        // Find absolute index in flattened list for highlighting
+                                    {(groupResults as SearchResult[]).slice(0, 10).map((result) => {
                                         const absoluteIndex = flatResults.findIndex((r: SearchResult) => r === result);
                                         const isFocused = absoluteIndex === focusedIndex;
-                                        
                                         return (
-                                            <li 
+                                            <li
                                                 key={`${result.type}-${result.id}`}
                                                 role="option"
                                                 id={`result-${result.id}`}
@@ -268,11 +342,11 @@ export const GlobalSearchBar: React.FC = () => {
                                 </React.Fragment>
                             ))}
                         </ul>
-                    ) : (
-                         <div className="p-4 text-center text-sm text-gray-500">
-                            Нема резултати за "{query}"
+                    ) : query.trim().length > 1 ? (
+                        <div className="p-4 text-center text-sm text-gray-500">
+                            Нема резултати за „{query}"
                         </div>
-                    )}
+                    ) : null}
                 </div>
             )}
         </div>
