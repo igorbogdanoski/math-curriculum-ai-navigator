@@ -458,6 +458,7 @@ export const AssistantView: React.FC = () => {
                                 </div>
                                 <button type="button" onClick={e => handleDeleteSession(s.id, e)}
                                     title="Избриши разговор"
+                                    aria-label="Избриши разговор"
                                     className="opacity-0 group-hover:opacity-100 p-0.5 text-red-400 hover:text-red-600 transition-opacity">
                                     <Trash2 className="w-3 h-3" />
                                 </button>
@@ -578,7 +579,8 @@ export const AssistantView: React.FC = () => {
                             <button type="button" onClick={() => fileInputRef.current?.click()}
                                 disabled={isLoading || !isOnline}
                                 className="p-2 text-gray-500 hover:text-brand-primary hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
-                                title="Прикачи слика или документ">
+                                title="Прикачи слика или документ"
+                                aria-label="Прикачи слика или документ">
                                 <ICONS.paperclip className="w-6 h-6" />
                             </button>
                             <input type="text" value={input}
