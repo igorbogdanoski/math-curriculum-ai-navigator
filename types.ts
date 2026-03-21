@@ -408,6 +408,9 @@ export interface AIGeneratedAssessment {
     profileName: string;
     questions: AssessmentQuestion[];
   }[];
+
+  /** Set to true when AI response was truncated due to token limits and structurally recovered */
+  _isPartial?: boolean;
 }
 
 export interface AIGeneratedIdeas {

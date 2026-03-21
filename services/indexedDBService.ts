@@ -34,27 +34,46 @@ const DB_VERSION = 3;
 const AI_CACHE_TTL_MS = 24 * 60 * 60 * 1000;   // 24 h
 const QUIZ_CACHE_TTL_MS_CLEANUP = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-/** Р3-В: Remove expired ai_cache + quiz_content_cache entries. Called at startup. */
+/**
+ * Р3-В: Remove expired ai_cache + quiz_content_cache entries.
+ * Incremental: deletes at most MAX_PER_TICK entries per store per call,
+ * then yields via requestIdleCallback/setTimeout to avoid blocking the main thread.
+ * Safe to call on mobile with limited IndexedDB quota.
+ */
+const MAX_PER_TICK = 100;
+
 export async function cleanupExpiredCache(): Promise<void> {
   try {
     const db = await getDbPromise();
     const now = Date.now();
 
-    const aiKeys = await db.getAllKeys('ai_cache');
-    for (const key of aiKeys) {
-      const entry = await db.get('ai_cache', key);
-      if (entry && now - entry.timestamp > AI_CACHE_TTL_MS) {
-        await db.delete('ai_cache', key);
+    // Helper: delete up to MAX_PER_TICK expired entries from a store
+    const cleanStore = async (
+      store: 'ai_cache' | 'quiz_content_cache',
+      ttl: number,
+    ): Promise<void> => {
+      const keys = await db.getAllKeys(store);
+      let deleted = 0;
+      for (const key of keys) {
+        if (deleted >= MAX_PER_TICK) break;
+        const entry = await db.get(store, key);
+        if (entry && now - entry.timestamp > ttl) {
+          await db.delete(store, key);
+          deleted++;
+        }
       }
-    }
+    };
 
-    const quizKeys = await db.getAllKeys('quiz_content_cache');
-    for (const key of quizKeys) {
-      const entry = await db.get('quiz_content_cache', key);
-      if (entry && now - entry.timestamp > QUIZ_CACHE_TTL_MS_CLEANUP) {
-        await db.delete('quiz_content_cache', key);
+    // Yield to the browser between store cleanups
+    await cleanStore('ai_cache', AI_CACHE_TTL_MS);
+    await new Promise<void>(resolve => {
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(() => resolve());
+      } else {
+        setTimeout(resolve, 0);
       }
-    }
+    });
+    await cleanStore('quiz_content_cache', QUIZ_CACHE_TTL_MS_CLEANUP);
   } catch {
     // non-fatal — cleanup is best-effort
   }

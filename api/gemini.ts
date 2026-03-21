@@ -98,9 +98,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const status = message.includes('429') ? 429 :
                  message.includes('403') ? 403 :
                  message.includes('400') ? 400 : 500;
+
+  // Distinguish quota types so client can handle correctly:
+  // - 'daily'      → free-tier daily limit hit, all keys exhausted. Block for 24h.
+  // - 'rate_limit' → transient rate limit (paid tier or per-minute cap). Retry after 60s.
+  // - 'rate'       → generic / unknown 429
   const isDailyQuota = status === 429 && (
     message.includes('PerDay') || message.includes('per_day') ||
     message.includes('free_tier') || message.includes('quota')
   );
-  res.status(status).json({ error: message, quotaType: isDailyQuota ? 'daily' : 'rate' });
+  const isRateLimit = status === 429 && !isDailyQuota;
+  const quotaType = isDailyQuota ? 'daily' : isRateLimit ? 'rate_limit' : 'rate';
+
+  res.status(status).json({
+    error: message,
+    quotaType,
+    keysExhausted: apiKeys.length,
+    retryAfterMs: isRateLimit ? 60_000 : undefined,
+  });
 }

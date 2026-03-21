@@ -331,10 +331,14 @@ export async function callGeminiProxy(params: {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         if (response.status === 429) {
+          const quotaType: string = errorData.quotaType ?? 'daily';
+          if (quotaType === 'rate_limit') {
+            // Transient rate limit — do NOT mark daily quota exhausted; retry after backoff
+            throw new RateLimitError('AI привремено е преоптоварен. Обидете се повторно за 60 секунди.');
+          }
+          // True daily quota exhaustion — mark for 24h guard
           markDailyQuotaExhausted();
-          throw new RateLimitError(
-            'AI квотата е привремено исцрпена. Обидете се повторно по неколку минути или утре.'
-          );
+          throw new RateLimitError('Дневната AI квота е исцрпена. Обидете се повторно утре или надградете го планот.');
         }
         if (response.status === 401 || response.status === 403) {
           throw new AuthError(errorData.error || 'Проблем со автентикација.');
@@ -656,13 +660,29 @@ export async function* streamGeminiProxyRich(params: {
  */
 export function sanitizePromptInput(text: string | undefined | null, maxLength = 1000): string {
   if (!text) return '';
-  return text
+
+  // M1: Normalize unicode to NFC first (NFKD → NFC) to collapse homoglyphs
+  // e.g. Cyrillic і (U+0456) → Latin i, and decomposed forms → composed
+  let s = text.normalize('NFKC');
+
+  // M1: Decode percent-encoded sequences (e.g. %49%67%6e%6f%72%65 → "Ignore")
+  // Only attempt decode if the string looks like it contains encoded chars
+  if (/%[0-9A-Fa-f]{2}/.test(s)) {
+    try { s = decodeURIComponent(s.replace(/\+/g, ' ')); } catch { /* malformed — keep as-is */ }
+  }
+
+  return s
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // control chars (keep \t \n \r)
     // Р3-Б: strip prompt-injection patterns before embedding in AI prompts
     .replace(/ignore\s+(previous|above|instructions?)/gi, '[filtered]')
     .replace(/system\s*:/gi, '[filtered]')
     .replace(/<\|im_start\|>|<\|im_end\|>|<\|endoftext\|>/gi, '[filtered]')
     .replace(/\[\s*INST\s*\]|\[\s*\/INST\s*\]/gi, '[filtered]')
+    // M1: Common obfuscated injection patterns after normalization
+    .replace(/disregard\s+(all\s+)?(prior|previous|above|earlier)\s+(instructions?|prompts?|context)/gi, '[filtered]')
+    .replace(/forget\s+(everything|all|prior|previous)/gi, '[filtered]')
+    .replace(/act\s+as\s+(if\s+you\s+are|a\s+)?(?:dan|jailbreak|unrestricted|evil)/gi, '[filtered]')
+    .replace(/\{\{.*?\}\}/g, '[filtered]')               // template injection {{...}}
     .replace(/\s+/g, ' ')                                 // collapse whitespace
     .trim()
     .slice(0, maxLength);
@@ -929,6 +949,7 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
     if (!jsonString) throw new AIServiceError("AI returned empty response");
 
     let parsedJson: unknown;
+    let isPartialResponse = false;
     try {
       parsedJson = JSON.parse(jsonString);
     } catch (parseErr: any) {
@@ -937,6 +958,7 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
       if (recovered !== null) {
         console.warn('[AI] JSON truncated — recovered partial response');
         parsedJson = recovered;
+        isPartialResponse = true;
       } else {
         throw parseErr; // Will be caught by outer catch → retry
       }
@@ -945,9 +967,13 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
     if (zodSchema) {
         const validation = zodSchema.safeParse(parsedJson);
         if (!validation.success) throw new AIServiceError(`Validation failed: ${validation.error.message}`);
-        return validation.data as T;
+        const data = validation.data as T & { _isPartial?: boolean };
+        if (isPartialResponse) data._isPartial = true;
+        return data;
     }
-    return parsedJson as T;
+    const result = parsedJson as T & { _isPartial?: boolean };
+    if (isPartialResponse) result._isPartial = true;
+    return result;
   } catch (error: any) {
     // Timeout: AbortController fired after GENERATION_TIMEOUT_MS — not retryable
     if (error?.name === 'AbortError') {

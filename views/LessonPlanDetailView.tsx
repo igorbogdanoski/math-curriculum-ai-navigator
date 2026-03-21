@@ -12,7 +12,9 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { exportLessonPlanToWord } from '../utils/wordExport';
-import { LessonPlanPDFButton } from '../components/lesson-plan-editor/LessonPlanPDF';
+const LessonPlanPDFButton = React.lazy(() =>
+  import('../components/lesson-plan-editor/LessonPlanPDF').then(m => ({ default: m.LessonPlanPDFButton }))
+);
 
 interface LessonPlanDetailViewProps {
   id: string;
@@ -338,7 +340,9 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
                 {isExportMenuOpen && (
                     <div className="absolute right-0 mt-2 w-64 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-20 animate-fade-in-up">
                         <div className="py-1">
-                            <LessonPlanPDFButton plan={plan as LessonPlan} />
+                            <React.Suspense fallback={null}>
+                              <LessonPlanPDFButton plan={plan as LessonPlan} />
+                            </React.Suspense>
                             <button onClick={() => handleExport('pdf')} disabled={isGeneratingPDF || isGeneratingWord} className="w-full text-left flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
                                 {isGeneratingPDF ? <ICONS.spinner className="w-5 h-5 mr-3 animate-spin" /> : <ICONS.printer className="w-5 h-5 mr-3" />}
                                 {isGeneratingPDF ? 'Генерирам PDF...' : 'Сними како PDF (Screenshot)'}

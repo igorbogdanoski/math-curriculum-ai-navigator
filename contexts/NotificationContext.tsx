@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useCallback, useContext, useMemo } from 'react';
+import React, { createContext, useState, useCallback, useContext, useMemo, useRef } from 'react';
 
 type NotificationType = 'success' | 'error' | 'info' | 'warning';
 
@@ -45,18 +45,23 @@ const NotificationContainer: React.FC<{ notifications: Notification[]; removeNot
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  // Monotonic counter — avoids Date.now() collisions when two notifications arrive simultaneously
+  const counterRef = useRef(0);
 
   const removeNotification = useCallback((id: number) => {
     setNotifications((prev: Notification[]) => prev.filter((n: Notification) => n.id !== id));
   }, []);
 
+  // Break the removeNotification → addNotification dependency chain:
+  // use a functional setNotifications update inside the timeout so addNotification
+  // has NO dependencies and never changes identity — zero context re-renders.
   const addNotification = useCallback((message: string, type: NotificationType) => {
-    const id = Date.now();
+    const id = ++counterRef.current;
     setNotifications((prev: Notification[]) => [...prev, { id, message, type }]);
     setTimeout(() => {
-      removeNotification(id);
+      setNotifications((prev: Notification[]) => prev.filter((n: Notification) => n.id !== id));
     }, 5000);
-  }, [removeNotification]);
+  }, []); // stable — no deps
 
   const value = useMemo(() => ({ addNotification }), [addNotification]);
 

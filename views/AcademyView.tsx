@@ -9,7 +9,9 @@ import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { ACADEMY_CONTENT } from '../data/academy/content';
 import { SPECIALIZATIONS } from '../data/academy/specializations';
 
-import { AcademyCertificateButton } from '../components/academy/AcademyCertificate';
+const AcademyCertificateButton = React.lazy(() =>
+  import('../components/academy/AcademyCertificate').then(m => ({ default: m.AcademyCertificateButton }))
+);
 import { AcademyDailyHub } from '../components/academy/AcademyDailyHub';
 import AcademySpacedRep from '../components/academy/AcademySpacedRep';
 import { useAuth } from '../contexts/AuthContext';
@@ -262,11 +264,13 @@ export const AcademyView: React.FC = () => {
                         <span className={`flex items-center gap-1 text-xs font-bold text-white px-3 py-1 rounded-full ${spec.badgeColor}`}>
                           <Trophy className="w-3 h-3" /> Сертификат
                         </span>
-                        <AcademyCertificateButton 
-                          userName={user?.name || 'Наставник'} 
-                          specializationTitle={spec.title} 
-                          date={new Date().toLocaleDateString('mk-MK')} 
-                        />
+                        <React.Suspense fallback={null}>
+                          <AcademyCertificateButton
+                            userName={user?.name || 'Наставник'}
+                            specializationTitle={spec.title}
+                            date={new Date().toLocaleDateString('mk-MK')}
+                          />
+                        </React.Suspense>
                       </div>
                     )}
                   </div>

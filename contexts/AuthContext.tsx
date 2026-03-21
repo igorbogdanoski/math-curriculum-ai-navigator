@@ -115,6 +115,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     isAuthenticated: false,
                     isLoading: false,
                 });
+                // Poll every 3s — when user verifies in another tab Firebase won't re-fire
+                // onAuthStateChanged; we need to detect it ourselves.
+                const verifyPoll = setInterval(async () => {
+                    try {
+                        await user.reload();
+                        if (user.emailVerified) {
+                            clearInterval(verifyPoll);
+                            // Re-trigger full auth flow by calling the outer handler again
+                            const profile = await fetchUserProfile(user.uid);
+                            if (profile) {
+                                setAuthState({ firebaseUser: user, profile, isAuthenticated: true, isLoading: false });
+                            }
+                        }
+                    } catch { clearInterval(verifyPoll); }
+                }, 3_000);
+                // Stop polling after 10 minutes to avoid indefinite background work
+                setTimeout(() => clearInterval(verifyPoll), 10 * 60_000);
             } else {
                 console.info("Fetching profile for verified user. UID:", user.uid);
                 const profile = await fetchUserProfile(user.uid);

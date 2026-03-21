@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, serverTimestamp, startAfter, documentId, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, serverTimestamp, startAfter, documentId, type QueryConstraint, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
@@ -91,14 +91,18 @@ export const quizService = {
       await setDoc(docRef, { ...result, playedAt: serverTimestamp() });
       // Fire-and-forget: update ZPD difficulty target for this student/concept
       if (result.teacherUid && result.studentName && result.conceptId) {
-        import('./firestoreService.adaptiveDifficulty').then(({ adaptiveDifficultyService }) => {
-          adaptiveDifficultyService.updateAfterQuiz(
-            result.teacherUid!,
-            result.studentName!,
-            result.conceptId!,
-            result.percentage,
-          );
-        });
+        import('./firestoreService.adaptiveDifficulty')
+          .then(({ adaptiveDifficultyService }) => {
+            adaptiveDifficultyService.updateAfterQuiz(
+              result.teacherUid!,
+              result.studentName!,
+              result.conceptId!,
+              result.percentage,
+            );
+          })
+          .catch((err) => {
+            console.warn('[AdaptiveDifficulty] fire-and-forget update failed:', err);
+          });
       }
       return docRef.id;
     } catch (error) {
@@ -344,15 +348,29 @@ export const quizService = {
       return window.__E2E_MOCK_MASTERY__ || [];
     }
 
+    const PAGE_SIZE = 500;
+    const allResults: ConceptMastery[] = [];
+    let lastDoc: DocumentSnapshot | null = null;
+
     try {
-      const q = teacherUid
-        ? query(collection(db, 'concept_mastery'), where('teacherUid', '==', teacherUid), limit(5000))
-        : query(collection(db, 'concept_mastery'), limit(5000));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
+      // Paginate in batches of 500 to avoid loading 18MB in one shot on mobile
+      while (true) {
+        const constraints: QueryConstraint[] = [
+          ...(teacherUid ? [where('teacherUid', '==', teacherUid)] : []),
+          limit(PAGE_SIZE),
+          ...(lastDoc ? [startAfter(lastDoc)] : []),
+        ];
+        const q = query(collection(db, 'concept_mastery'), ...constraints);
+        const snap = await getDocs(q);
+        const page = snap.docs.map((d: DocumentSnapshot) => d.data()).filter(isValidConceptMastery);
+        allResults.push(...page);
+        if (snap.docs.length < PAGE_SIZE) break; // last page
+        lastDoc = snap.docs[snap.docs.length - 1];
+      }
+      return allResults;
     } catch (error) {
       console.error('Error fetching all mastery:', error);
-      return [];
+      return allResults; // return whatever we managed to fetch
     }
   },
 

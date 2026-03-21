@@ -90,11 +90,26 @@ export function useCollabPlan(
     refreshViewers();
     const viewerPoll = setInterval(refreshViewers, 15_000);
 
+    // Also clean up on browser close / tab unload (best-effort via sendBeacon)
+    const handleUnload = () => {
+      // sendBeacon keeps the request alive after page unload
+      // Firestore REST delete endpoint
+      const projectId = selfViewerRef.firestore.app.options.projectId;
+      if (projectId) {
+        const path = `projects/${projectId}/databases/(default)/documents/academic_annual_plans/${planId}/viewers/${selfUid}`;
+        navigator.sendBeacon?.(
+          `https://firestore.googleapis.com/v1/${path}?delete=true`,
+        );
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+
     return () => {
       unsubPlan();
       clearInterval(heartbeatRef.current!);
       clearInterval(viewerPoll);
-      // Remove own presence on unmount (best-effort)
+      window.removeEventListener('beforeunload', handleUnload);
+      // Remove own presence on unmount
       deleteDoc(selfViewerRef).catch(() => {});
     };
   }, [planId, selfUid, selfName]);

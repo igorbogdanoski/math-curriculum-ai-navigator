@@ -588,6 +588,16 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
 
     return (
         <>
+        {/* Truncation warning — shown when AI hit token limits and response was structurally recovered */}
+        {editableMaterial._isPartial && (
+            <div className="mt-4 flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-300 rounded-xl text-sm text-amber-800 no-print">
+                <RefreshCw className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-600" />
+                <span>
+                    <strong>Делумен одговор</strong> — AI го достигна лимитот на токени и материјалот може да биде некомплетен.
+                    Намалете го бројот на прашања или генерирајте повторно.
+                </span>
+            </div>
+        )}
         <Card id="printable-area" className="mt-6 border-l-4 border-brand-accent" ref={contentRef}>
             <div className="flex justify-between items-start mb-4">
                 <div className='flex-1 pr-4'>

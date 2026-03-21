@@ -178,19 +178,23 @@ service cloud.firestore {
     }
 
     // ── Live сесии (live_sessions) ──
-    // read: public — students need to find session by join code before they authenticate
+    // get: public — students need to read session by join code before they authenticate
+    // list: authenticated only — prevents enumeration of all active sessions
     match /live_sessions/{doc} {
-      allow read:   if true;
+      allow get:    if true;
+      allow list:   if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (resource.data.status != 'ended' || isOwner(resource.data.teacherUid));
       allow delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
     // ── Live квизови (live_quizzes) ──
-    // read: public — students join by PIN before auth
+    // get: public — students join by PIN (direct doc access only; PIN is the doc ID)
+    // list: authenticated only — prevents brute-force enumeration of all active PINs
     // participants subcollection: any authenticated user can add themselves
     match /live_quizzes/{pin} {
-      allow read:   if true;
+      allow get:    if true;
+      allow list:   if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
       allow delete: if isAdmin();
