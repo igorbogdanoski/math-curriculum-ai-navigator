@@ -149,6 +149,7 @@ export const AIChatPanel: React.FC = () => {
                             type="button"
                             onClick={sendMessage}
                             disabled={!input.trim() || isStreaming}
+                            aria-label="Испрати порака"
                             className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-brand-primary text-white hover:bg-brand-primary/90 transition disabled:opacity-40"
                         >
                             <Send className="w-4 h-4" />

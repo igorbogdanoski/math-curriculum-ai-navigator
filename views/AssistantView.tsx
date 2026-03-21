@@ -531,7 +531,7 @@ export const AssistantView: React.FC = () => {
                     <div className="mb-3 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-2 text-sm text-indigo-800">
                         <BookOpen className="w-4 h-4 flex-shrink-0 text-indigo-500" />
                         <span><strong>NotebookLM режим:</strong> Одговарам врз основа на {libraryMaterials.length} ваши материјали.</span>
-                        <button type="button" onClick={handleToggleLibraryMode} title="Исклучи библиотечен режим" className="ml-auto text-indigo-400 hover:text-indigo-700">
+                        <button type="button" onClick={handleToggleLibraryMode} title="Исклучи библиотечен режим" aria-label="Исклучи библиотечен режим" className="ml-auto text-indigo-400 hover:text-indigo-700">
                             <XIcon className="w-4 h-4" />
                         </button>
                     </div>
@@ -593,6 +593,7 @@ export const AssistantView: React.FC = () => {
                                 autoFocus />
                             <button type="button" onClick={handleSend}
                                 title="Испрати порака"
+                                aria-label="Испрати порака"
                                 disabled={isLoading || (!input.trim() && !attachment) || !isOnline}
                                 className="bg-brand-primary text-white px-6 py-3 rounded-xl disabled:bg-gray-400 hover:bg-brand-secondary transition-all shadow-md active:scale-95 font-semibold">
                                 <ICONS.chatBubble className="w-5 h-5" />
