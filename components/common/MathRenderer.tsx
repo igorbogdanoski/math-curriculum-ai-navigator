@@ -187,11 +187,6 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
 
     useEffect(() => {
         if (isKatexLoaded) return;
-        
-        // Set a timeout to stop checking and show fallback
-        const timeoutId = setTimeout(() => {
-            if (!isKatexLoaded) setHasTimedOut(true);
-        }, 2000);
 
         const checkKatex = () => {
             if (window.katex && typeof window.katex.renderToString === 'function') {
@@ -203,16 +198,38 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
 
         if (checkKatex()) return;
 
-        const intervalId = setInterval(() => { 
+        // M13: Poll up to 8 s (covers 3G). If still missing, inject the CDN script once and wait another 8 s.
+        let injected = false;
+        const injectKatex = () => {
+            if (injected || document.querySelector('script[data-katex-retry]')) return;
+            injected = true;
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js';
+            s.setAttribute('data-katex-retry', '1');
+            s.onload = () => { if (checkKatex()) { clearInterval(intervalId); clearTimeout(retryTimeoutId); } };
+            document.head.appendChild(s);
+        };
+
+        const intervalId = setInterval(() => {
             if (checkKatex()) {
                 clearInterval(intervalId);
-                clearTimeout(timeoutId);
             }
         }, 100);
-        
+
+        // First deadline: 8 s — inject script if CDN tag hasn't fired yet
+        const timeoutId = setTimeout(() => {
+            if (!checkKatex()) injectKatex();
+        }, 8_000);
+
+        // Second deadline: 16 s — give up and show raw text
+        const retryTimeoutId = setTimeout(() => {
+            if (!window.katex) setHasTimedOut(true);
+        }, 16_000);
+
         return () => {
             clearInterval(intervalId);
             clearTimeout(timeoutId);
+            clearTimeout(retryTimeoutId);
         };
     }, [isKatexLoaded]);
 
