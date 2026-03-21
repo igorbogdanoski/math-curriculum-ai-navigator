@@ -286,29 +286,33 @@ export const MathScratchpad: React.FC<MathScratchpadProps> = ({ isOpen, onClose 
                 
                 {/* Left controls */}
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-                    <button onClick={handleUndo} disabled={strokes.length === 0} className={`p-2 rounded-lg transition-colors ${strokes.length === 0 ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-100'}`} title="Врати НАЗАД">
+                    <button type="button" aria-label="Врати назад" onClick={handleUndo} disabled={strokes.length === 0} className={`p-2 rounded-lg transition-colors ${strokes.length === 0 ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-100'}`} title="Врати НАЗАД">
                         <Undo2 className="w-5 h-5" />
                     </button>
-                    <button onClick={handleRedo} disabled={redoStack.length === 0} className={`p-2 rounded-lg transition-colors ${redoStack.length === 0 ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-100'}`} title="Повтори (Redo)">
+                    <button type="button" aria-label="Повтори" onClick={handleRedo} disabled={redoStack.length === 0} className={`p-2 rounded-lg transition-colors ${redoStack.length === 0 ? 'text-gray-300' : 'text-gray-700 hover:bg-gray-100'}`} title="Повтори (Redo)">
                         <Redo2 className="w-5 h-5" />
                     </button>
                     <div className="w-px h-6 bg-gray-200 mx-1"></div>
-                    <button onClick={clearCanvas} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Избриши СЕ">
+                    <button type="button" aria-label="Избриши сè" onClick={clearCanvas} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Избриши СЕ">
                         <Trash2 className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Drawing Tools */}
                 <div className="flex items-center gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-                    <button 
-                        onClick={() => setMode('draw')} 
+                    <button
+                        type="button"
+                        aria-label="Режим на цртање"
+                        onClick={() => setMode('draw')}
                         className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${mode === 'draw' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
                         title="Цртај"
                     >
                         <PenTool className="w-5 h-5" />
                     </button>
-                    <button 
-                        onClick={() => setMode('erase')} 
+                    <button
+                        type="button"
+                        aria-label="Режим на бришење"
+                        onClick={() => setMode('erase')}
                         className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${mode === 'erase' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
                         title="Бриши"
                     >
@@ -322,6 +326,8 @@ export const MathScratchpad: React.FC<MathScratchpadProps> = ({ isOpen, onClose 
                         {COLORS.map(c => (
                             <button
                                 key={c.id}
+                                type="button"
+                                aria-label={`Боја: ${c.name}`}
                                 onClick={() => setColor(c.hex)}
                                 className={`w-7 h-7 rounded-full border-2 transition-transform ${color === c.hex ? 'scale-110 border-gray-800' : 'border-transparent'}`}
                                 style={{ backgroundColor: c.hex }}
@@ -333,22 +339,22 @@ export const MathScratchpad: React.FC<MathScratchpadProps> = ({ isOpen, onClose 
 
                 {/* Paper Types & End Controls */}
                 <div className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-                    <button onClick={() => setPaperStyle('grid')} className={`p-2 rounded-lg ${paperStyle === 'grid' ? 'bg-gray-200' : 'hover:bg-gray-100'} text-gray-600`} title="Квадратчиња">
+                    <button type="button" aria-label="Квадратчиња" onClick={() => setPaperStyle('grid')} className={`p-2 rounded-lg ${paperStyle === 'grid' ? 'bg-gray-200' : 'hover:bg-gray-100'} text-gray-600`} title="Квадратчиња">
                         <Grid3X3 className="w-5 h-5" />
                     </button>
-                    <button onClick={() => setPaperStyle('lines')} className={`p-2 rounded-lg ${paperStyle === 'lines' ? 'bg-gray-200' : 'hover:bg-gray-100'} text-gray-600`} title="Линии">
+                    <button type="button" aria-label="Линии" onClick={() => setPaperStyle('lines')} className={`p-2 rounded-lg ${paperStyle === 'lines' ? 'bg-gray-200' : 'hover:bg-gray-100'} text-gray-600`} title="Линии">
                         <LayoutList className="w-5 h-5" />
                     </button>
-                    <button onClick={() => setPaperStyle('blank')} className={`p-2 rounded-lg ${paperStyle === 'blank' ? 'bg-gray-200' : 'hover:bg-gray-100'} text-gray-600`} title="Чисто">
+                    <button type="button" aria-label="Чисто" onClick={() => setPaperStyle('blank')} className={`p-2 rounded-lg ${paperStyle === 'blank' ? 'bg-gray-200' : 'hover:bg-gray-100'} text-gray-600`} title="Чисто">
                         <Square className="w-5 h-5 text-gray-400" fill="currentColor"/>
                     </button>
-                    
+
                     <div className="w-px h-6 bg-gray-200 mx-1"></div>
-                    
-                    <button onClick={downloadCanvas} className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Зачувај како Слика">
+
+                    <button type="button" aria-label="Зачувај како слика" onClick={downloadCanvas} className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Зачувај како Слика">
                         <Download className="w-5 h-5" />
                     </button>
-                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg ml-1" title="Затвори Работна Табла">
+                    <button type="button" aria-label="Затвори работна табла" onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg ml-1" title="Затвори Работна Табла">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
