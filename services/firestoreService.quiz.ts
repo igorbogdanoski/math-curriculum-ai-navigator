@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, addDoc, deleteDoc, serverTimestamp, startAfter, documentId, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, serverTimestamp, startAfter, documentId, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
@@ -89,6 +89,17 @@ export const quizService = {
     try {
       const docRef = doc(collection(db, 'quiz_results'));
       await setDoc(docRef, { ...result, playedAt: serverTimestamp() });
+      // Fire-and-forget: update ZPD difficulty target for this student/concept
+      if (result.teacherUid && result.studentName && result.conceptId) {
+        import('./firestoreService.adaptiveDifficulty').then(({ adaptiveDifficultyService }) => {
+          adaptiveDifficultyService.updateAfterQuiz(
+            result.teacherUid!,
+            result.studentName!,
+            result.conceptId!,
+            result.percentage,
+          );
+        });
+      }
       return docRef.id;
     } catch (error) {
       console.warn('Firestore write failed, falling back to offline queue:', error);

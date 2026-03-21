@@ -30,6 +30,8 @@ import { QuizCoverageTab } from './analytics/QuizCoverageTab';
 import { AssignmentsTab } from './analytics/AssignmentsTab';
 import { LeagueTab } from './analytics/LeagueTab';
 import { CohortTab } from './analytics/CohortTab';
+import { ZPDRecommendationsCard } from '../components/analytics/ZPDRecommendationsCard';
+import type { DifficultyLevel } from '../services/firestoreService.adaptiveDifficulty';
 import { useReactToPrint } from 'react-to-print';
 import { PrintableEDnevnikReport } from '../components/analytics/PrintableEDnevnikReport';
 import type { SchoolClass } from '../services/firestoreService';
@@ -218,6 +220,24 @@ const { addNotification } = useNotification();
       materialType: 'ASSESSMENT',
       differentiationLevel: 'support',
       customInstruction: `РЕМЕДИЈАЦИЈА НА КОНЦЕПТУАЛНИ ГРЕШКИ за "${conceptTitle}".\n\nИдентификувани грешки кај учениците:\n${topMisconceptions}\n\nГенерирај квиз со прашања кои ДИРЕКТНО ги адресираат овие погрешни сфаќања. За секоја грешка вклучи барем едно прашање кое ја разоткрива и коригира. Додај кратки образложенија зошто одговорот е точен.`,
+    });
+  };
+
+  const handleGenerateForDifficulty = (
+    difficulty: DifficultyLevel,
+    conceptId: string,
+    conceptLabel: string,
+  ) => {
+    const { grade, topic } = getConceptDetails(conceptId);
+    const diffLabel = difficulty === 'easy' ? 'ЛЕСНО (поддршка)' : difficulty === 'hard' ? 'ТЕШКО (збогатување)' : 'СРЕДНО';
+    openGeneratorPanel({
+      selectedGrade: grade?.id || '',
+      selectedTopic: topic?.id || '',
+      selectedConcepts: [conceptId],
+      contextType: 'CONCEPT',
+      materialType: 'ASSESSMENT',
+      differentiationLevel: difficulty === 'easy' ? 'support' : difficulty === 'hard' ? 'advanced' : 'standard',
+      customInstruction: `ЗПД АДАПТАЦИЈА: Генерирај квиз на ниво ${diffLabel} за концептот "${conceptLabel}". Прашањата да одговараат на тежина ${diffLabel}.`,
     });
   };
 
@@ -476,12 +496,23 @@ const { addNotification } = useNotification();
               />
             )}
             {activeTab === 'alerts' && (
-              <AlertsTab
-                perStudentStats={perStudentStats}
-                weakConcepts={weakConcepts}
-                results={localResults}
-                onGenerateRemedial={handleGenerateRemedial}
-              />
+              <div className="space-y-6">
+                <AlertsTab
+                  perStudentStats={perStudentStats}
+                  weakConcepts={weakConcepts}
+                  results={localResults}
+                  onGenerateRemedial={handleGenerateRemedial}
+                />
+                {firebaseUser?.uid && (
+                  <ZPDRecommendationsCard
+                    teacherUid={firebaseUser.uid}
+                    conceptLabels={Object.fromEntries(
+                      (allConcepts ?? []).map(c => [c.id, c.title]),
+                    )}
+                    onGenerateForDifficulty={handleGenerateForDifficulty}
+                  />
+                )}
+              </div>
             )}
             {activeTab === 'groups' && (
               <GroupsTab perStudentStats={perStudentStats} teacherUid={firebaseUser?.uid} />
