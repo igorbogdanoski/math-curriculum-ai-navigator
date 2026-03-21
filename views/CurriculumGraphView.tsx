@@ -182,6 +182,10 @@ export const CurriculumGraphView: React.FC = () => {
   const PRIOR_COLOR = '#1976D2'; // Blue (Prior Knowledge)
   const FUTURE_COLOR = '#388E3C'; // Green (Future Application)
   const FADED_COLOR = '#E0E0E0'; // Gray (Unrelated)
+  // Canvas / edge utility colors
+  const CANVAS_BG = '#ffffff';
+  const EDGE_DEFAULT_COLOR = '#9E9E9E'; // Material Gray 500
+  const EDGE_GLOBAL_COLOR = '#BDBDBD'; // Material Gray 400 (vis-network default)
 
   const handleGradeToggle = (gradeLevel: number) => {
     if (focusNodeId) return; // Disable toggling while focused
@@ -231,7 +235,7 @@ export const CurriculumGraphView: React.FC = () => {
       tempCanvas.height = canvas.height;
       const ctx = tempCanvas.getContext('2d');
       if (ctx) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = CANVAS_BG;
         ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
         ctx.drawImage(canvas, 0, 0);
         const url = tempCanvas.toDataURL('image/png');
@@ -362,7 +366,7 @@ export const CurriculumGraphView: React.FC = () => {
         const isConnected = activeConceptIds.has(concept.id) && activeConceptIds.has(priorId);
         if (!isConnected) return null;
 
-        let edgeColor = '#9E9E9E';
+        let edgeColor = EDGE_DEFAULT_COLOR;
         let edgeWidth = 2;
 
         if (focusNodeId) {
@@ -515,7 +519,7 @@ export const CurriculumGraphView: React.FC = () => {
           widthConstraint: { maximum: 220 },
         },
         edges: {
-          color: '#BDBDBD',
+          color: EDGE_GLOBAL_COLOR,
           smooth: { type: 'cubicBezier', forceDirection: 'horizontal', roundness: 0.4 }
         },
         layout: {

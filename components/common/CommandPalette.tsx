@@ -324,8 +324,13 @@ export const CommandPalette: React.FC = () => {
             <span className="flex items-center gap-1"><CornerDownLeft className="w-3 h-3" /> Избор</span>
             <span>ESC Затвори</span>
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-gray-400">
-            <Command className="w-3 h-3" /><span>K</span>
+          <div className="flex items-center gap-3 text-[11px] text-gray-400">
+            <span className="flex items-center gap-1" title="Отвори AI Генератор">
+              <Command className="w-3 h-3" /><span>G AI</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <Command className="w-3 h-3" /><span>K</span>
+            </span>
           </div>
         </div>
       </div>

@@ -115,6 +115,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const [isSaving, setIsSaving] = useState(false);
     const [savedId, setSavedId] = useState<string | null>(null);
     const handleSaveRef = useRef<() => void>(() => {});
+    const [subjectError, setSubjectError] = useState('');
 
     // Edit mode — load existing plan by planId
     useEffect(() => {
@@ -361,14 +362,19 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                     title="Предмет"
                                     placeholder="пр. Математика"
                                     value={subject}
-                                    onChange={(e) => setSubject(e.target.value)}
-                                    className="w-full p-3 border-2 border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium"
+                                    onChange={(e) => { setSubject(e.target.value); if (subjectError) setSubjectError(''); }}
+                                    className={`w-full p-3 border-2 rounded-xl bg-gray-50 focus:bg-white outline-none transition-all font-medium ${subjectError ? 'border-red-400 focus:border-red-500' : 'border-gray-100 focus:border-blue-500'}`}
                                 />
+                                {subjectError && <p className="mt-1 text-xs text-red-500">{subjectError}</p>}
                             </div>
                         </div>
                         <div className="mt-8 flex justify-end">
-                            <button 
-                                onClick={() => setCurrentStep(2)}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!subject.trim()) { setSubjectError('Внесете назив на предметот.'); return; }
+                                    setCurrentStep(2);
+                                }}
                                 className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all flex items-center gap-2"
                             >
                                 Следно <ICONS.chevronDown className="w-5 h-5 -rotate-90" />
