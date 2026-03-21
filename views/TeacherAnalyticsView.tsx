@@ -71,6 +71,7 @@ const { addNotification } = useNotification();
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview');
+  const [isExportingXlsx, setIsExportingXlsx] = useState(false);
   const [showMoreTabs, setShowMoreTabs] = useState(false);
 
   // ── Announcements ───────────────────────────────────────────────────────────
@@ -280,8 +281,14 @@ const { addNotification } = useNotification();
   };
 
   const handleExportXlsx = async () => {
-    await exportAnalyticsXlsx(localResults, masteryRecords, 'math-navigator-analitika');
-    addNotification('Excel датотеката е подготвена (3 листови: резултати, по ученик, по концепт)', 'success');
+    if (isExportingXlsx) return;
+    setIsExportingXlsx(true);
+    try {
+      await exportAnalyticsXlsx(localResults, masteryRecords, 'math-navigator-analitika');
+      addNotification('Excel датотеката е подготвена (3 листови: резултати, по ученик, по концепт)', 'success');
+    } finally {
+      setIsExportingXlsx(false);
+    }
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -340,12 +347,11 @@ const { addNotification } = useNotification();
             <button
               type="button"
               onClick={handleExportXlsx}
-              disabled={localResults.length === 0}
+              disabled={localResults.length === 0 || isExportingXlsx}
               className="flex items-center gap-2 px-4 py-2 rounded-xl border border-green-200 text-green-700 hover:bg-green-50 text-sm font-medium transition active:scale-95 disabled:opacity-40"
               title="Извези во Excel со 3 листови (резултати, по ученик, по концепт)"
             >
-              <FileSpreadsheet className="w-4 h-4" />
-              Excel (.xlsx)
+              {isExportingXlsx ? <><span className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin inline-block" />Извезувам…</> : <><FileSpreadsheet className="w-4 h-4" />Excel (.xlsx)</>}
             </button>
             <button
               type="button"
