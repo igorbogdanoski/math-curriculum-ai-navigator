@@ -343,9 +343,9 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Одделение</label>
+                                <label htmlFor="apg-grade" className="block text-sm font-bold text-gray-700 mb-2">Одделение</label>
                                 <select
-                                    title="Одделение"
+                                    id="apg-grade"
                                     className="w-full p-3 border-2 border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition-all font-medium"
                                     value={selectedGradeId}
                                     onChange={(e) => setSelectedGradeId(e.target.value)}
@@ -356,10 +356,10 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Предмет</label>
+                                <label htmlFor="apg-subject" className="block text-sm font-bold text-gray-700 mb-2">Предмет</label>
                                 <input
+                                    id="apg-subject"
                                     type="text"
-                                    title="Предмет"
                                     placeholder="пр. Математика"
                                     value={subject}
                                     onChange={(e) => { setSubject(e.target.value); if (subjectError) setSubjectError(''); }}

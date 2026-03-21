@@ -170,6 +170,7 @@ export const ExploreView: React.FC = () => {
                             <span className="absolute inset-y-0 left-0 flex items-center pl-3"><ICONS.search className="w-5 h-5 text-gray-400" /></span>
                             <input
                                 type="text"
+                                aria-label="Пребарај теми или поими"
                                 value={searchQuery}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                                 placeholder="Пребарај теми или поими..."

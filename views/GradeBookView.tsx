@@ -267,14 +267,14 @@ export const GradeBookView: React.FC = () => {
           {/* Class info */}
           <div className="flex flex-col gap-3 w-full lg:w-64">
             <div>
-              <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Назив на класа</label>
-              <input type="text" value={className} onChange={e => setClassName(e.target.value)}
+              <label htmlFor="gb-class-name" className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Назив на класа</label>
+              <input id="gb-class-name" type="text" value={className} onChange={e => setClassName(e.target.value)}
                 placeholder="Пр. VI-3 Математика"
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary" />
             </div>
             <div>
-              <label className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Одделение</label>
-              <select value={gradeLevel} onChange={e => setGradeLevel(Number(e.target.value))}
+              <label htmlFor="gb-grade-level" className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Одделение</label>
+              <select id="gb-grade-level" value={gradeLevel} onChange={e => setGradeLevel(Number(e.target.value))}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary">
                 {[6, 7, 8, 9].map(g => <option key={g} value={g}>{g}. одделение</option>)}
               </select>
