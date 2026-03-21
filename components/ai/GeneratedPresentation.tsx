@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Presentation, Image as ImageIcon, ChevronLeft, ChevronRight, FileDown, Sparkles, Loader2, BookOpen, Cpu, MousePointer2, Radio, Zap, X, Users, ExternalLink, Maximize2, Minimize2, PenLine, Plus, Trash2, Save, Check } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
@@ -36,9 +36,9 @@ const renderPureMathToSvg = (text: string): { uri: string; ratio: number } | nul
     // viewBox="minX minY W H" — last two values give aspect ratio
     const vb = svgHtml.match(/viewBox="([\d\-.]+)\s+([\d\-.]+)\s+([\d.]+)\s+([\d.]+)"/);
     const ratio = vb ? parseFloat(vb[4]) / parseFloat(vb[3]) : 0.25;
-    const uri = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(
-      `<?xml version="1.0" encoding="UTF-8"?>${svgHtml}`
-    )))}`;
+    // encodeURIComponent → Uint8Array → btoa avoids deprecated unescape()
+    const encoded = new TextEncoder().encode(`<?xml version="1.0" encoding="UTF-8"?>${svgHtml}`);
+    const uri = `data:image/svg+xml;base64,${btoa(String.fromCharCode(...encoded))}`;
     return { uri, ratio };
   } catch { return null; }
 };
@@ -259,6 +259,9 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
   const [loadingQuizzes, setLoadingQuizzes] = useState(false);
   const [launchingId, setLaunchingId] = useState<string | null>(null);
   const [liveSession, setLiveSession] = useState<{ joinCode: string; sessionId: string } | null>(null);
+  const liveUnsubRef = useRef<(() => void) | null>(null);
+  // Cancel pending live subscription on unmount
+  useEffect(() => () => { liveUnsubRef.current?.(); }, []);
 
   const handleOpenLivePanel = async () => {
     setShowLivePanel(true);
@@ -282,10 +285,12 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
     setLaunchingId(quiz.id);
     try {
       const sessionId = await firestoreService.createLiveSession(firebaseUser.uid, quiz.id, quiz.title, quiz.conceptId);
-      const unsub = firestoreService.subscribeLiveSession(sessionId, (s) => {
+      liveUnsubRef.current?.(); // cancel any previous pending subscription
+      liveUnsubRef.current = firestoreService.subscribeLiveSession(sessionId, (s) => {
         if (s?.joinCode) {
           setLiveSession({ joinCode: s.joinCode, sessionId });
-          unsub();
+          liveUnsubRef.current?.();
+          liveUnsubRef.current = null;
         }
       });
     } catch {
@@ -677,6 +682,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             <div className="flex bg-gray-100 p-1 rounded-xl">
                 {(['modern', 'classic', 'dark', 'creative'] as const).map((t) => (
                     <button
+                        type="button"
                         key={t}
                         onClick={() => setTheme(t)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${theme === t ? 'bg-white text-brand-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
@@ -687,6 +693,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             </div>
 
             <button
+                        type="button"
                 onClick={() => setShowCurriculumSide(!showCurriculumSide)}
                 className={`p-2 rounded-xl transition-colors ${showCurriculumSide ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
                 title="Курикулум пано"
@@ -842,6 +849,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                                     </div>
                                     <p className="text-sm font-bold text-gray-400 mb-4">{current.visualPrompt || 'Нема дефинирана визуелна идеја'}</p>
                                     <button
+                        type="button"
                                         onClick={() => handleGenerateImage(currentSlide, current.visualPrompt || current.title)}
                                         disabled={currentVisual?.loading}
                                         className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-all"
@@ -888,6 +896,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             <div className="h-24 flex gap-3 overflow-x-auto pb-2 custom-scrollbar no-print">
                 {data.slides.map((s, idx) => (
                     <button
+                        type="button"
                         key={idx}
                         onClick={() => setCurrentSlide(idx)}
                         className={`flex-shrink-0 w-40 rounded-xl border-2 transition-all p-2 text-left relative overflow-hidden ${
@@ -975,6 +984,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                         <ChevronRight className="w-4 h-4 text-gray-300" />
                     </button>
                     <button
+                        type="button"
                         onClick={handleOpenLivePanel}
                         className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-red-50 transition-colors group border border-red-100"
                     >
@@ -1063,11 +1073,13 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                 <PenLine className="w-4 h-4 text-indigo-400" />
                 <h4 className="text-sm font-black text-gray-200 uppercase tracking-widest">Уредување</h4>
               </div>
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">Наслов</label>
+              <label htmlFor="slide-title-input" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">Наслов</label>
               <input
+                id="slide-title-input"
                 type="text"
                 value={current.title}
                 onChange={e => updateSlideTitle(currentSlide, e.target.value)}
+                placeholder="Наслов на слајд"
                 className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500"
               />
             </div>
@@ -1087,6 +1099,8 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                         value={bullet}
                         onChange={e => updateSlideBullet(currentSlide, bIdx, e.target.value)}
                         rows={2}
+                        aria-label={`Содржина ${bIdx + 1}`}
+                        placeholder="Содржина на точката..."
                         className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 resize-none"
                       />
                       <button type="button" onClick={() => removeSlideBullet(currentSlide, bIdx)} title="Избриши" className="p-1.5 hover:bg-red-900/40 rounded-lg text-gray-600 hover:text-red-400 mt-1 flex-shrink-0">

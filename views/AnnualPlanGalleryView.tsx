@@ -30,6 +30,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
     const { addNotification } = useNotification();
     const { navigate } = useNavigation();
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
+    const [isForking, setIsForking] = useState(false);
 
     useEffect(() => {
         fetchPlans();
@@ -70,17 +71,19 @@ export const AnnualPlanGalleryView: React.FC = () => {
     };
 
     const handleFork = async (plan: SavedPlan) => {
-        if (!user) { addNotification("Мора да сте најавени за да клонирате план.", 'warning'); return; }
+        if (!user || !firebaseUser?.uid) { addNotification("Мора да сте најавени за да клонирате план.", 'warning'); return; }
+        if (isForking) return;
 
         setConfirmDialog({
             message: `Дали сакате да го копирате планот за ${plan.subject} (${plan.grade}) во вашиот работен простор?`,
             variant: 'info',
             onConfirm: async () => {
                 setConfirmDialog(null);
+                setIsForking(true);
                 try {
                     // 1. Create forked copy in user's workspace
                     const newId = await createAnnualPlan(
-                        firebaseUser!.uid,
+                        firebaseUser.uid,
                         { ...plan.planData },
                         { isForked: true, originalPlanId: plan.id }
                     );
@@ -91,12 +94,13 @@ export const AnnualPlanGalleryView: React.FC = () => {
                     });
 
                     addNotification("Планот е клониран! Отвора уредувач...", 'success');
-                    // Navigate directly to editor with the new copy
                     navigate(`/annual-planner/${newId}`);
 
                 } catch (error) {
                     console.error("Failed to fork:", error);
                     addNotification("Настана грешка при клонирањето.", 'error');
+                } finally {
+                    setIsForking(false);
                 }
             }
         });
@@ -181,12 +185,13 @@ export const AnnualPlanGalleryView: React.FC = () => {
                                         <ICONS.starSolid className="w-4 h-4" /> 
                                         {plan.likes || 0}
                                     </button>
-                                    <button 
+                                    <button
                                         title="Fork/Clone овој план"
                                         onClick={() => handleFork(plan)}
-                                        className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors"
+                                        disabled={isForking}
+                                        className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors disabled:opacity-50"
                                     >
-                                        <ICONS.gitBranch className="w-4 h-4" /> 
+                                        <ICONS.gitBranch className="w-4 h-4" />
                                         {plan.forks || 0}
                                     </button>
                                 </div>
@@ -206,10 +211,11 @@ export const AnnualPlanGalleryView: React.FC = () => {
                                         type="button"
                                         title="Клонирај и уреди"
                                         aria-label="Клонирај план"
-                                        className="px-3 py-1.5 text-xs font-semibold border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1"
+                                        disabled={isForking}
+                                        className="px-3 py-1.5 text-xs font-semibold border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                                         onClick={() => handleFork(plan)}
                                     >
-                                        <ICONS.gitBranch className="w-3.5 h-3.5" /> Ремикс
+                                        {isForking ? <ICONS.spinner className="w-3.5 h-3.5 animate-spin" /> : <ICONS.gitBranch className="w-3.5 h-3.5" />} Ремикс
                                     </button>
                                 )}
                             </div>

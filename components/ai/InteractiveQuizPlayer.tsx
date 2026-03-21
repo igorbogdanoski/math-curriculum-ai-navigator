@@ -1,7 +1,7 @@
 import './InteractiveQuizPlayer.css';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Timer, Flame, Trophy, X, Lightbulb, Loader2, PenTool, Calculator, Eye } from 'lucide-react';
+import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Flame, Trophy, X, Lightbulb, Loader2, PenTool, Calculator, Eye } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 import { MathInput } from '../common/MathInput';
 import { GeometryDiagramRenderer } from '../common/GeometryDiagramRenderer';
@@ -12,7 +12,7 @@ import { MathToolsPanel } from '../common/MathToolsPanel';
 import { MathScratchpad } from '../common/MathScratchpad';
 import { ReadingModeBar, defaultReadingMode, type ReadingModeState } from '../common/ReadingModeBar';
 import { ReadingModeQuestion, getChunkCount } from '../common/ReadingModeQuestion';
-import { type AssessmentQuestion, QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial } from '../../types';
+import { QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial } from '../../types';
 import { StepByStepSolver } from '../StepByStepSolver';
 import { geminiService } from '../../services/geminiService';
 
@@ -80,6 +80,10 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   }, [propQuestions, quiz]);
 
   const quizTitle = title || quiz?.title || 'Квиз';
+
+  // Guard against state updates after unmount (async misconception diagnosis)
+  const isMounted = useRef(true);
+  useEffect(() => { return () => { isMounted.current = false; }; }, []);
 
   // State
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -152,13 +156,13 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   };
 
   const handleAnswer = (option: string) => {
-    if (selectedOption || showResult) return;
+    if (selectedOption || showResult || !currentQ) return;
 
     setIsTimerRunning(false);
     setSelectedOption(option);
-    
+
     // Use math equivalence checker for smart validation
-    const correct = checkMathEquivalence(option, currentQ.answer);
+    const correct = checkMathEquivalence(option, currentQ.answer ?? '');
 
     setIsCorrect(correct);
 
@@ -178,13 +182,14 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       
       // Diagnose misconception asynchronously
       if (option !== 'TIME_UP') {
-        geminiService.diagnoseMisconception(currentQ.question, currentQ.answer, option)
+        geminiService.diagnoseMisconception(currentQ.question, currentQ.answer ?? '', option)
           .then(misconception => {
-             setMisconceptions(prev => [...prev, {
-                question: currentQ.question,
-                studentAnswer: option,
-                misconception
-             }]);
+            if (!isMounted.current) return;
+            setMisconceptions(prev => [...prev, {
+              question: currentQ.question,
+              studentAnswer: option,
+              misconception
+            }]);
           })
           .catch(err => console.error("Error diagnosing misconception", err));
       }
@@ -356,7 +361,6 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   }
 
   // --- QUIZ SCREEN ---
-  const progress = ((currentIndex + 1) / normalizedQuestions.length) * 100;
   const timePercentage = (timeLeft / SECONDS_PER_QUESTION) * 100;
 
   return (
