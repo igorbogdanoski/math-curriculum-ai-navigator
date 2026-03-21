@@ -1,11 +1,119 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore, Star, Loader2 } from 'lucide-react';
+import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore, Star, Loader2, Eye } from 'lucide-react';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
 import { callEmbeddingProxy } from '../services/gemini/core';
 import { bm25Score, cosineSimilarity, hybridScore } from '../utils/search';
+import type { AIGeneratedAssessment } from '../types';
+
+const GeneratedAssessment = React.lazy(() =>
+  import('../components/ai/GeneratedAssessment').then(m => ({ default: m.GeneratedAssessment }))
+);
+
+// ── Preview Modal ────────────────────────────────────────────────────────────
+const PreviewModal: React.FC<{ material: CachedMaterial; onClose: () => void }> = ({ material, onClose }) => {
+  const content = material.content as any;
+  const isAssessment = material.type === 'quiz' || material.type === 'assessment';
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-6 flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Modal header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div>
+            <h2 className="text-lg font-bold text-gray-800 truncate">{material.title || 'Преглед на материјал'}</h2>
+            <p className="text-xs text-gray-400 mt-0.5">{typeLabel[material.type] ?? material.type} · {material.gradeLevel > 0 ? `${material.gradeLevel}. одд.` : ''}</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition" title="Затвори">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Modal body */}
+        <div className="overflow-y-auto p-4 md:p-6">
+          {isAssessment && content ? (
+            <React.Suspense fallback={<div className="text-center py-10 text-gray-400">Вчитувам преглед…</div>}>
+              <GeneratedAssessment material={content as AIGeneratedAssessment} />
+            </React.Suspense>
+          ) : content ? (
+            <GenericContentRenderer content={content} type={material.type} />
+          ) : (
+            <p className="text-gray-400 text-center py-10">Нема содржина за прикажување.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Generic renderer for non-assessment types (rubric, ideas, outline, etc.)
+const GenericContentRenderer: React.FC<{ content: any; type: string }> = ({ content, type }) => {
+  if (type === 'rubric') {
+    const criteria: any[] = content?.criteria ?? content?.rubric ?? [];
+    if (criteria.length > 0) {
+      return (
+        <div className="space-y-4">
+          {criteria.map((c: any, i: number) => (
+            <div key={i} className="border rounded-xl p-4">
+              <p className="font-semibold text-gray-800 mb-2">{c.criterion ?? c.name ?? `Критериум ${i + 1}`}</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {(c.levels ?? []).map((l: any, j: number) => (
+                  <div key={j} className="bg-gray-50 rounded-lg p-2 text-xs">
+                    <p className="font-bold text-gray-700 mb-1">{l.level ?? l.name}</p>
+                    <p className="text-gray-500">{l.description}</p>
+                    {l.points != null && <p className="mt-1 font-semibold text-indigo-600">{l.points} поени</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+  }
+
+  if (type === 'ideas') {
+    const sections: [string, any][] = Object.entries(content ?? {}).filter(([, v]) => v);
+    return (
+      <div className="space-y-4">
+        {sections.map(([key, val]) => (
+          <div key={key}>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-1">{key.replace(/_/g, ' ')}</h3>
+            <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 whitespace-pre-wrap">
+              {typeof val === 'string' ? val : Array.isArray(val) ? val.join('\n') : JSON.stringify(val, null, 2)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Fallback: render all top-level string/array fields
+  const entries = Object.entries(content ?? {}).filter(([k]) => !['embedding', 'id'].includes(k));
+  return (
+    <div className="space-y-4">
+      {entries.map(([key, val]) => {
+        if (!val || (Array.isArray(val) && val.length === 0)) return null;
+        return (
+          <div key={key}>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-1">{key.replace(/_/g, ' ')}</h3>
+            <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 whitespace-pre-wrap">
+              {typeof val === 'string' ? val
+                : Array.isArray(val) ? val.map((item: any, i: number) => (
+                    <div key={i} className={i > 0 ? 'mt-2 pt-2 border-t border-gray-200' : ''}>
+                      {typeof item === 'string' ? item : JSON.stringify(item, null, 2)}
+                    </div>
+                  ))
+                : JSON.stringify(val, null, 2)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 type ScoredMaterial = CachedMaterial & { score: number };
 
@@ -56,6 +164,7 @@ export const ContentLibraryView: React.FC = () => {
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
+    const [previewMaterial, setPreviewMaterial] = useState<CachedMaterial | null>(null);
 
     // И3 — rating + sort + fork
     const [sortBy, setSortBy] = useState<'date' | 'rating'>('date');
@@ -262,6 +371,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
     const publishedCount = materials.filter(m => m.status === 'published').length;
 
     return (
+        <>
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
             {/* Header */}
             <div className="mb-6">
@@ -313,6 +423,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
                         />
                     </div>
                     <button
+                        type="button"
                         onClick={() => setUseSemanticSearch(!useSemanticSearch)}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
                             useSemanticSearch 
@@ -510,6 +621,17 @@ const handleUnpublish = async (m: CachedMaterial) => {
 
                                         {/* Actions */}
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
+                                        {/* Preview button — available for all modes */}
+                                        <button
+                                            type="button"
+                                            title="Прегледај содржина"
+                                            onClick={() => setPreviewMaterial(m)}
+                                            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition"
+                                        >
+                                            <Eye className="w-3.5 h-3.5" />
+                                            Прегледај
+                                        </button>
+
                                         {viewMode === 'national' ? (
                                             <div className="flex items-center gap-1.5">
                                                 {m.isApproved ? (
@@ -575,5 +697,11 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 </div>
             )}
         </div>
+
+        {/* Preview Modal */}
+        {previewMaterial && (
+            <PreviewModal material={previewMaterial} onClose={() => setPreviewMaterial(null)} />
+        )}
+        </>
     );
 };
