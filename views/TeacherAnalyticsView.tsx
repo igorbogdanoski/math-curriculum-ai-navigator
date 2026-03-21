@@ -31,6 +31,7 @@ import { AssignmentsTab } from './analytics/AssignmentsTab';
 import { LeagueTab } from './analytics/LeagueTab';
 import { CohortTab } from './analytics/CohortTab';
 import { ZPDRecommendationsCard } from '../components/analytics/ZPDRecommendationsCard';
+import { MasteryTimelineCard } from '../components/analytics/MasteryTimelineCard';
 import type { DifficultyLevel } from '../services/firestoreService.adaptiveDifficulty';
 import { useReactToPrint } from 'react-to-print';
 import { PrintableEDnevnikReport } from '../components/analytics/PrintableEDnevnikReport';
@@ -502,6 +503,12 @@ const { addNotification } = useNotification();
                   weakConcepts={weakConcepts}
                   results={localResults}
                   onGenerateRemedial={handleGenerateRemedial}
+                />
+                <MasteryTimelineCard
+                  results={localResults}
+                  conceptLabels={Object.fromEntries(
+                    (allConcepts ?? []).map(c => [c.id, c.title]),
+                  )}
                 />
                 {firebaseUser?.uid && (
                   <ZPDRecommendationsCard
