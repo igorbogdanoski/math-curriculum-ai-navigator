@@ -58,15 +58,15 @@ export const AnnualPlanGalleryView: React.FC = () => {
 
     const handleLike = async (planId: string) => {
         if (!user) { addNotification("Мора да сте најавени за да лајкнете.", 'warning'); return; }
+        // Optimistic update first
+        const prevLikes = plans.find(p => p.id === planId)?.likes ?? 0;
+        setPlans(prev => prev.map(p => p.id === planId ? { ...p, likes: prevLikes + 1 } : p));
         try {
-            const planRef = doc(db, 'academic_annual_plans', planId);
-            await updateDoc(planRef, {
-                likes: increment(1)
-            });
-            // Update local UI immediately
-            setPlans(prev => prev.map(p => p.id === planId ? { ...p, likes: (p.likes || 0) + 1 } : p));
+            await updateDoc(doc(db, 'academic_annual_plans', planId), { likes: increment(1) });
         } catch (error) {
-            console.error("Failed to like:", error);
+            // Rollback on failure
+            setPlans(prev => prev.map(p => p.id === planId ? { ...p, likes: prevLikes } : p));
+            addNotification("Грешка при лајкување. Обидете се повторно.", 'error');
         }
     };
 
@@ -178,15 +178,20 @@ export const AnnualPlanGalleryView: React.FC = () => {
 
                             <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-100">
                                 <div className="flex gap-3">
-                                    <button 
+                                    <button
+                                        type="button"
+                                        title="Лајк"
+                                        aria-label={`Лајкни го овој план (${plan.likes || 0} лајкови)`}
                                         onClick={() => handleLike(plan.id)}
                                         className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition-colors"
                                     >
-                                        <ICONS.starSolid className="w-4 h-4" /> 
+                                        <ICONS.starSolid className="w-4 h-4" />
                                         {plan.likes || 0}
                                     </button>
                                     <button
+                                        type="button"
                                         title="Fork/Clone овој план"
+                                        aria-label={`Клонирај план (${plan.forks || 0} клонирања)`}
                                         onClick={() => handleFork(plan)}
                                         disabled={isForking}
                                         className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors disabled:opacity-50"

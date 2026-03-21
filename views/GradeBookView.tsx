@@ -393,7 +393,7 @@ export const GradeBookView: React.FC = () => {
                   {/* Test breakdown */}
                   <div className="px-4 pb-3 flex flex-wrap gap-1.5">
                     {student.tests.map((t, i) => (
-                      <span key={i} className="text-[10px] bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full font-medium">{t}</span>
+                      <span key={t} className="text-[10px] bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full font-medium">{t}</span>
                     ))}
                   </div>
                 </div>

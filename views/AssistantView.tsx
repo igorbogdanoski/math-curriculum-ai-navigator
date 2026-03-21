@@ -538,7 +538,7 @@ export const AssistantView: React.FC = () => {
 
                 <Card className="flex-1 flex flex-col relative overflow-hidden shadow-lg border-brand-secondary/10">
                     <div className="flex-1 overflow-y-auto p-4 pb-24 scroll-smooth">
-                        {history.map((msg, i) => <Message key={i} message={msg} />)}
+                        {history.map((msg, i) => <Message key={`${i}-${msg.role}`} message={msg} />)}
                         {isLoading && history[history.length - 1]?.text === '' && (
                             <div className="flex items-start gap-3 my-4">
                                 <div className="p-2 rounded-full bg-brand-secondary">

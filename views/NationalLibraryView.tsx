@@ -227,7 +227,7 @@ export const NationalLibraryView: React.FC = () => {
                 {entry.type === 'MULTIPLE_CHOICE' && entry.options && entry.options.length > 0 && (
                   <ul className="space-y-1">
                     {entry.options.map((opt, i) => (
-                      <li key={i} className="text-xs text-gray-600 flex items-start gap-1.5">
+                      <li key={`${entry.id}-opt-${i}`} className="text-xs text-gray-600 flex items-start gap-1.5">
                         <span className="font-bold text-gray-400 w-4 flex-shrink-0">{String.fromCharCode(65 + i)}.</span>
                         <span>{opt}</span>
                       </li>
@@ -272,7 +272,7 @@ export const NationalLibraryView: React.FC = () => {
                         <p className="text-[10px] font-semibold text-gray-500 uppercase">Опции</p>
                         {remixOptions.map((opt, i) => (
                           <input
-                            key={i}
+                            key={`remix-opt-${i}`}
                             type="text"
                             title={`Опција ${i + 1}`}
                             value={opt}
