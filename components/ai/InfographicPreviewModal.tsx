@@ -160,12 +160,19 @@ export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) =>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={e => e.target === e.currentTarget && onClose()}
+      aria-hidden="true"
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="infographic-modal-title"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Modal header */}
         <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
           <div>
-            <h2 className="text-lg font-bold text-gray-800">Инфографик за часот</h2>
+            <h2 id="infographic-modal-title" className="text-lg font-bold text-gray-800">Инфографик за часот</h2>
             <p className="text-xs text-gray-500 mt-0.5">Преглед — преземи го PNG со копчето подолу</p>
           </div>
           <div className="flex items-center gap-3">
