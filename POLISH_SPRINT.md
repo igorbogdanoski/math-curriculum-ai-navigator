@@ -96,6 +96,40 @@
 
 ---
 
+## 🔵 WCAG 2.1 AA — Accessibility Sprint (Сесија 10–11)
+
+### A1 — aria-label на icon-only копчиња (втора рунда)
+**Статус:** ✅ ЗАВРШЕНО (Сесија 11)
+
+- [x] `views/AIVisionGraderView.tsx` — remove-image button
+- [x] `views/ConceptDetailView.tsx` — favorite + share buttons (динамички aria-label)
+- [x] `views/CurriculumEditorView.tsx` — cancel (X) buttons на add-concept/add-topic форми
+- [x] `views/MaterialsGeneratorView.tsx` — 6× MathTools close buttons
+- [x] `components/ai/AIChatPanel.tsx` — send button ✅ (Сесија 10)
+- [x] `views/AssistantView.tsx` — delete session, attach, send, library-close buttons ✅ (Сесија 10)
+
+### A2 — aria-label на search/filter inputs
+**Статус:** ✅ ЗАВРШЕНО (Сесија 11)
+
+- [x] `views/ExploreView.tsx` — search input
+- [x] `views/AnnualPlanGalleryView.tsx` — search input
+- [x] `views/GradeBookView.tsx` — class name input + grade select (htmlFor/id)
+- [x] `views/AnnualPlanGeneratorView.tsx` — grade select + subject input (htmlFor/id)
+
+### A3 — ARIA modal attributes
+**Статус:** ✅ ЗАВРШЕНО (Сесија 10)
+
+- [x] `components/ai/InfographicPreviewModal.tsx` — role="dialog" + aria-modal + aria-labelledby
+
+### A4 — Race conditions + streaming guards
+**Статус:** ✅ ЗАВРШЕНО (Сесија 10–11)
+
+- [x] `views/GradeBookView.tsx` — isMounted guard на AI streaming
+- [x] `views/TeacherAnalyticsView.tsx` — isMounted guard на fetchAnnouncements
+- [x] `views/MaterialsGeneratorView.tsx` — optimistic credit balance rollback on server error
+
+---
+
 ## 🟢 BACKLOG — По МОН Презентација
 
 ### P11 — Undo/Redo во Editors
