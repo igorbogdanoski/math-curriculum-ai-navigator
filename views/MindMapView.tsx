@@ -102,7 +102,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
     });
 
     // 2. Concept Nodes (Main branches)
-    topic.concepts?.forEach((concept: Concept, i: number) => {
+    topic.concepts?.forEach((concept: Concept) => {
       nodes.push({
         id: concept.id,
         label: concept.title,
@@ -221,7 +221,6 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
             const safeId = String(targetId).trim();
             // Basic validation: ensure ID looks like a concept ID (starts with 'g' or is known format)
             if (safeId.startsWith('g')) {
-                console.log(`[MindMap] Navigating to concept: ${safeId}`);
                 navigate(`/concept/${encodeURIComponent(safeId)}`);
             } else {
                 console.warn(`[MindMap] Ignored navigation to non-concept node: ${safeId}`);
