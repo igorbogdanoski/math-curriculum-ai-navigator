@@ -147,6 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/favorites" currentPath={currentPath} icon={ICONS.star} label={t("nav.favorites")} onClick={onClose} />
               <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label={t("nav.gallery")} onClick={onClose} />
               <NavItem path="/national-library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.nationalLibrary")} onClick={onClose} />
+              <NavItem path="/data-viz" currentPath={currentPath} icon={ICONS.chart} label="DataViz Studio" onClick={onClose} badge="NEW" />
               <NavItem path="/forum" currentPath={currentPath} icon={ICONS.chatBubble} label="Форум" onClick={onClose} badge="CoP" />
             </div>
           )}
