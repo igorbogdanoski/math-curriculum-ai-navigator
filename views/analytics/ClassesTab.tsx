@@ -8,6 +8,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { SkeletonList } from '../../components/common/Skeleton';
 import { useNotification } from '../../contexts/NotificationContext';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
+import { useNavigation } from '../../contexts/NavigationContext';
 
 interface ClassesTabProps {
     teacherUid: string;
@@ -18,6 +19,7 @@ const GRADE_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
     const { t } = useLanguage();
     const { addNotification } = useNotification();
+    const { navigate } = useNavigation();
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [loading, setLoading] = useState(true);
@@ -648,6 +650,23 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                                                 <p className="text-[10px] text-slate-400 pt-1">
                                                     Просек одд.: <strong>{Math.round((statsCache[cls.id] ?? []).reduce((a, s) => a + s.avgPct, 0) / ((statsCache[cls.id] ?? []).length || 1))}%</strong>
                                                 </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const stats = statsCache[cls.id] ?? [];
+                                                        sessionStorage.setItem('dataviz_import', JSON.stringify({
+                                                            tableData: {
+                                                                headers: ['Ученик', 'Просек %', 'Квизови'],
+                                                                rows: stats.map(s => [s.name, s.avgPct, s.count]),
+                                                            },
+                                                            config: { title: `Резултати — ${cls.name}`, xLabel: 'Ученик', yLabel: 'Просек %', unit: '%', type: 'bar' },
+                                                        }));
+                                                        navigate('/data-viz');
+                                                    }}
+                                                    className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition"
+                                                >
+                                                    <BarChart2 className="w-3 h-3" /> Визуализирај во DataViz
+                                                </button>
                                             </div>
                                         )}
                                     </div>

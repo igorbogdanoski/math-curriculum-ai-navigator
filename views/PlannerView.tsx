@@ -313,7 +313,31 @@ export const PlannerView: React.FC = () => {
                         </div>
                     </div>
                     <div data-tour="planner-add-buttons" className="flex items-center space-x-2 flex-wrap gap-2 justify-end">
-                         <button 
+                        <button
+                            type="button"
+                            title="Визуализирај часови по месец во DataViz Studio"
+                            onClick={() => {
+                                const MK_MONTHS = ['Јан', 'Фев', 'Мар', 'Апр', 'Мај', 'Јун', 'Јул', 'Авг', 'Сеп', 'Окт', 'Ное', 'Дек'];
+                                const counts: Record<string, number> = {};
+                                items.filter((i: PlannerItem) => i.type === PlannerItemType.LESSON && i.date)
+                                    .forEach((i: PlannerItem) => {
+                                        const m = MK_MONTHS[new Date(i.date!).getMonth()];
+                                        counts[m] = (counts[m] ?? 0) + 1;
+                                    });
+                                const rows = MK_MONTHS.filter(m => counts[m]).map(m => [m, counts[m]]);
+                                if (rows.length === 0) return;
+                                sessionStorage.setItem('dataviz_import', JSON.stringify({
+                                    tableData: { headers: ['Месец', 'Часови'], rows },
+                                    config: { title: 'Часови по месец', xLabel: 'Месец', yLabel: 'Часови', type: 'bar' },
+                                }));
+                                navigate('/data-viz');
+                            }}
+                            className="flex items-center bg-indigo-600 text-white px-3 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors text-sm"
+                        >
+                            <ICONS.chart className="w-4 h-4 mr-1" />
+                            DataViz
+                        </button>
+                         <button
                             onClick={handleShareAnnualPlan}
                             className="flex items-center bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm"
                         >

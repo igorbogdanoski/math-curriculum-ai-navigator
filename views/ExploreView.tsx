@@ -156,14 +156,41 @@ export const ExploreView: React.FC = () => {
                  <header className="mb-6">
                      <div data-tour="explore-header" className="flex justify-between items-center">
                         <h1 className="text-2xl md:text-3xl font-bold text-brand-primary">{selectedGrade?.title}</h1>
-                         {selectedGrade?.transversalStandards && (
-                             <button
-                                onClick={() => handleShowTransversal(selectedGrade.transversalStandards ?? [], selectedGrade.title)}
-                                className="text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 font-semibold px-3 py-1 rounded-full flex-shrink-0"
-                            >
-                                Трансверзални компетенции
-                            </button>
-                        )}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {selectedGrade?.transversalStandards && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleShowTransversal(selectedGrade.transversalStandards ?? [], selectedGrade.title)}
+                                    className="text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 font-semibold px-3 py-1 rounded-full"
+                                >
+                                    Трансверзални компетенции
+                                </button>
+                            )}
+                            {filteredTopics.length > 0 && (
+                                <button
+                                    type="button"
+                                    title="Визуализирај покриеност по теми во DataViz Studio"
+                                    onClick={() => {
+                                        sessionStorage.setItem('dataviz_import', JSON.stringify({
+                                            tableData: {
+                                                headers: ['Тема', 'Поими'],
+                                                rows: filteredTopics.map((t: Topic) => [t.title.slice(0, 28), t.concepts.length]),
+                                            },
+                                            config: {
+                                                title: `Покриеност — ${selectedGrade?.title ?? ''}`,
+                                                xLabel: 'Тема',
+                                                yLabel: 'Број на поими',
+                                                type: 'bar',
+                                            },
+                                        }));
+                                        navigate('/data-viz');
+                                    }}
+                                    className="text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-semibold px-3 py-1 rounded-full flex items-center gap-1"
+                                >
+                                    📊 DataViz
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <div data-tour="explore-search" className="mt-4">
                         <div className="relative">

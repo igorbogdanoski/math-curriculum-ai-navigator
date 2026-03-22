@@ -504,6 +504,22 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                         >
                                             🖨️
                                         </button>
+                                        <button
+                                            onClick={() => {
+                                                sessionStorage.setItem('dataviz_import', JSON.stringify({
+                                                    tableData: {
+                                                        headers: ['Тема', 'Недели'],
+                                                        rows: plan.topics.map((t: AIGeneratedAnnualPlanTopic) => [t.title.slice(0, 30), t.durationWeeks]),
+                                                    },
+                                                    config: { title: `${plan.grade} — ${plan.subject}`, xLabel: 'Тема', yLabel: 'Недели', type: 'bar-horizontal' },
+                                                }));
+                                                navigate('/data-viz');
+                                            }}
+                                            className="p-2 border-2 border-indigo-100 rounded-xl hover:bg-indigo-50 transition text-indigo-600"
+                                            title="Визуализирај во DataViz Studio"
+                                        >
+                                            📊
+                                        </button>
                                     </div>
                                 </div>
 

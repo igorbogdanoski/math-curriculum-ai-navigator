@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
   Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown
@@ -46,6 +46,19 @@ export const DataVizStudioView: React.FC = () => {
   const [showCustomize, setShowCustomize] = useState(false);
   const [exporting, setExporting] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
+
+  // В2 — import data from sessionStorage (sent by Analytics, AnnualPlanner, Explore, Planner)
+  useEffect(() => {
+    const ext = sessionStorage.getItem('dataviz_import');
+    if (!ext) return;
+    try {
+      const parsed = JSON.parse(ext) as { tableData?: TableData; config?: Partial<ChartConfig> };
+      if (parsed.tableData) setTableData(parsed.tableData);
+      if (parsed.config) setConfig(prev => ({ ...prev, ...parsed.config }));
+      sessionStorage.removeItem('dataviz_import');
+      addNotification('Податоците се увезени во DataViz Studio ✅', 'success');
+    } catch { /* ignore malformed data */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateConfig = useCallback(<K extends keyof ChartConfig>(key: K, value: ChartConfig[K]) => {
     setConfig(prev => ({ ...prev, [key]: value }));
