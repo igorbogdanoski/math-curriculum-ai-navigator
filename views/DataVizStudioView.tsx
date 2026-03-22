@@ -84,8 +84,10 @@ export const DataVizStudioView: React.FC = () => {
     if (!chartRef.current) return;
     const canvas = await html2canvas(chartRef.current, { scale: 2, backgroundColor: '#ffffff' });
     const dataUrl = canvas.toDataURL('image/png');
-    const win = window.open('', '_blank')!;
-    win.document.write(`<html><head><title>${config.title}</title><style>body{margin:20px;font-family:sans-serif}h2{font-size:16px;margin-bottom:12px}img{max-width:100%}@media print{body{margin:10px}}</style></head><body><h2>${config.title}</h2><img src="${dataUrl}" onload="window.print()"/></body></html>`);
+    const win = window.open('', '_blank');
+    if (!win) { addNotification('Попап е блокиран. Дозволете попапи за оваа страница.', 'warning'); return; }
+    const safeTitle = config.title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    win.document.write(`<html><head><title>${safeTitle}</title><style>body{margin:20px;font-family:sans-serif}h2{font-size:16px;margin-bottom:12px}img{max-width:100%}@media print{body{margin:10px}}</style></head><body><h2>${safeTitle}</h2><img src="${dataUrl}" onload="window.print()"/></body></html>`);
     win.document.close();
   };
 
@@ -370,8 +372,10 @@ export const DataVizStudioView: React.FC = () => {
             <AIStatsAssistant
               tableData={tableData}
               chartConfig={config}
+              chartRef={chartRef}
               onChartTypeChange={type => updateConfig('type', type)}
               onTableDataChange={setTableData}
+              onConfigChange={updates => setConfig(prev => ({ ...prev, ...updates }))}
               onGoToChart={() => setActiveTab('chart')}
             />
           </div>

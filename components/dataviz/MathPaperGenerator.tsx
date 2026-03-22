@@ -236,7 +236,8 @@ export const MathPaperGenerator: React.FC = () => {
   const printPaper = () => {
     const canvas = canvasRef.current; if (!canvas) return;
     const dataUrl = canvas.toDataURL('image/png');
-    const win = window.open('', '_blank')!;
+    const win = window.open('', '_blank');
+    if (!win) { alert('Попап е блокиран. Дозволете попапи за оваа страница.'); return; }
     win.document.write(`<html><head><title>Математичка хартија</title><style>body{margin:0;padding:0}img{width:100%;height:auto}@media print{body{margin:0}}</style></head><body><img src="${dataUrl}" onload="window.print()"/></body></html>`);
     win.document.close();
   };
