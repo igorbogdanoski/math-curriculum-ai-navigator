@@ -1,14 +1,14 @@
 /**
  * Secondary education curriculum module (Н4 — Средно образование).
  * Exports 3 track curricula:
- *   - gymnasium   → grades 10–12
+ *   - gymnasium   → grades 10–13 (4 години гимназија)
  *   - vocational4 → grades 10–12
  *   - vocational3 → grades 10–11
  */
 
 import type { SecondaryCurriculumModule, SecondaryTrack } from '../types';
 import { SECONDARY_TRACK_LABELS } from '../types';
-import { gymnasiumGrade10, gymnasiumGrade11, gymnasiumGrade12 } from './secondary/gymnasium';
+import { gymnasiumGrade10, gymnasiumGrade11, gymnasiumGrade12, gymnasiumGrade13 } from './secondary/gymnasium';
 import { vocational4Grade10, vocational4Grade11, vocational4Grade12 } from './secondary/vocational4';
 import { vocational3Grade10, vocational3Grade11 } from './secondary/vocational3';
 
@@ -17,7 +17,7 @@ export const secondaryCurricula: SecondaryCurriculumModule[] = [
     track: 'gymnasium',
     label: SECONDARY_TRACK_LABELS.gymnasium,
     curriculum: {
-      grades: [gymnasiumGrade10, gymnasiumGrade11, gymnasiumGrade12],
+      grades: [gymnasiumGrade10, gymnasiumGrade11, gymnasiumGrade12, gymnasiumGrade13],
     },
   },
   {
