@@ -10,7 +10,10 @@
 import type { SecondaryCurriculumModule, SecondaryTrack } from '../types';
 import { SECONDARY_TRACK_LABELS } from '../types';
 import { gymnasiumGrade10, gymnasiumGrade11, gymnasiumGrade12, gymnasiumGrade13 } from './secondary/gymnasium';
-import { elementaryAlgebraGrade11 } from './secondary/gymnasium_electives';
+import {
+  elementaryAlgebraGrade11,
+  elementaryAlgebraGeometryGrade11,
+} from './secondary/gymnasium_electives';
 import { vocational4Grade10, vocational4Grade11, vocational4Grade12 } from './secondary/vocational4';
 import { vocational3Grade10, vocational3Grade11 } from './secondary/vocational3';
 
@@ -26,7 +29,7 @@ export const secondaryCurricula: SecondaryCurriculumModule[] = [
     track: 'gymnasium_elective',
     label: SECONDARY_TRACK_LABELS.gymnasium_elective,
     curriculum: {
-      grades: [elementaryAlgebraGrade11],
+      grades: [elementaryAlgebraGrade11, elementaryAlgebraGeometryGrade11],
     },
   },
   {
