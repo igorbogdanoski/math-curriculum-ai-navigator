@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2 } from 'lucide-react';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 import { ChartPreview } from '../dataviz/ChartPreview';
 import type { ChartConfig } from '../dataviz/ChartPreview';
 import type { TableData } from '../dataviz/DataTable';
+import { SlideSVGRenderer } from './SlideSVGRenderer';
+import { generateMathSVG } from '../../services/gemini/svg';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -33,12 +35,43 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [visible, setVisible]   = useState(true);
   const [dir, setDir]           = useState<'fwd' | 'back'>('fwd');
 
+  // ── SVG illustration cache: slideIdx → svg string ─────────────────────────
+  const [svgCache, setSvgCache]       = useState<Record<number, string>>({});
+  const [svgLoading, setSvgLoading]   = useState<Record<number, boolean>>({});
+  const generatingRef                 = useRef<Set<number>>(new Set());
+
   const slides = data.slides;
   const slide  = slides[idx];
   const total  = slides.length;
   const meta   = SLIDE_META[slide.type];
   const isStepSlide = slide.type === 'step-by-step';
   const hasReveal   = (slide.type === 'task' || slide.type === 'example') && (slide.solution?.length ?? 0) > 0;
+
+  // ── SVG illustration generation ───────────────────────────────────────────
+  const generateSVGForSlide = useCallback(async (slideIndex: number) => {
+    const s = slides[slideIndex];
+    if (!s?.visualPrompt) return;
+    if (svgCache[slideIndex] || svgLoading[slideIndex] || generatingRef.current.has(slideIndex)) return;
+    generatingRef.current.add(slideIndex);
+    setSvgLoading(prev => ({ ...prev, [slideIndex]: true }));
+    try {
+      const svg = await generateMathSVG(s.visualPrompt);
+      setSvgCache(prev => ({ ...prev, [slideIndex]: svg }));
+    } catch {
+      // Silently ignore — slide renders fine without illustration
+    } finally {
+      setSvgLoading(prev => ({ ...prev, [slideIndex]: false }));
+      generatingRef.current.delete(slideIndex);
+    }
+  }, [slides, svgCache, svgLoading]);
+
+  // Auto-generate SVG when entering a task/example slide with visualPrompt
+  useEffect(() => {
+    const s = slides[idx];
+    if ((s.type === 'task' || s.type === 'example') && s.visualPrompt) {
+      generateSVGForSlide(idx);
+    }
+  }, [idx, slides, generateSVGForSlide]);
 
   // ── Directional slide transition ──────────────────────────────────────────
   const animateTransition = useCallback((fn: () => void, direction: 'fwd' | 'back') => {
@@ -181,27 +214,61 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       case 'task':
       case 'example': {
         const isTask = slide.type === 'task';
+        const slideSvg = svgCache[idx];
+        const slideLoadingSvg = svgLoading[idx];
+        const hasVisual = !!slide.visualPrompt;
+
         return (
           <div className="flex-1 flex flex-col justify-center px-8 md:px-16 gap-6 max-w-4xl mx-auto w-full">
-            {/* Task box */}
-            <div className={`rounded-3xl border p-8 ${
-              isTask
-                ? 'bg-amber-950/30 border-amber-700/40'
-                : 'bg-emerald-950/30 border-emerald-700/40'
-            }`}>
-              <div className={`flex items-center gap-2 mb-4 text-xs font-black uppercase tracking-widest ${
-                isTask ? 'text-amber-400' : 'text-emerald-400'
+            {/* Main row: task text + optional SVG illustration */}
+            <div className={`flex gap-6 items-start ${slideSvg ? 'flex-col md:flex-row' : ''}`}>
+              {/* Task box */}
+              <div className={`rounded-3xl border p-8 flex-1 ${
+                isTask
+                  ? 'bg-amber-950/30 border-amber-700/40'
+                  : 'bg-emerald-950/30 border-emerald-700/40'
               }`}>
-                <BookOpen className="w-3.5 h-3.5" />
-                {isTask ? 'Задача' : 'Пример'}
+                <div className={`flex items-center gap-2 mb-4 text-xs font-black uppercase tracking-widest ${
+                  isTask ? 'text-amber-400' : 'text-emerald-400'
+                }`}>
+                  <BookOpen className="w-3.5 h-3.5" />
+                  {isTask ? 'Задача' : 'Пример'}
+                </div>
+                <div className="space-y-2">
+                  {slide.content.map((line, i) => (
+                    <p key={i} className="text-xl md:text-2xl text-white font-medium leading-relaxed">
+                      <MathRenderer text={line} />
+                    </p>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                {slide.content.map((line, i) => (
-                  <p key={i} className="text-xl md:text-2xl text-white font-medium leading-relaxed">
-                    <MathRenderer text={line} />
-                  </p>
-                ))}
-              </div>
+
+              {/* SVG illustration panel */}
+              {slideSvg ? (
+                <div className="md:w-56 flex-shrink-0 flex items-center justify-center animate-fade-in">
+                  <SlideSVGRenderer svg={slideSvg} caption={slide.visualPrompt} className="w-full" />
+                </div>
+              ) : hasVisual && (
+                <div className="md:w-56 flex-shrink-0 flex items-center justify-center">
+                  {slideLoadingSvg ? (
+                    <div className="w-full flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-6">
+                      <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+                      <p className="text-xs text-slate-500">Генерирам илустрација…</p>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => generateSVGForSlide(idx)}
+                      className="w-full flex flex-col items-center gap-2 rounded-2xl border border-dashed border-white/10 hover:border-indigo-500/50 bg-white/5 hover:bg-indigo-900/20 p-6 transition-all group"
+                    >
+                      <Sparkles className="w-5 h-5 text-slate-500 group-hover:text-indigo-400 transition" />
+                      <p className="text-xs text-slate-500 group-hover:text-indigo-300 text-center transition">
+                        AI илустрација
+                      </p>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Solution reveal */}
