@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair } from 'lucide-react';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 import { ChartPreview } from '../dataviz/ChartPreview';
@@ -44,6 +44,91 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
   // ── Speaker notes ─────────────────────────────────────────────────────────
   const [notesOpen, setNotesOpen]     = useState(false);
+
+  // ── Annotation tools ──────────────────────────────────────────────────────
+  type AnnotMode = 'draw' | 'highlight' | 'laser' | null;
+  const [annotMode, setAnnotMode]       = useState<AnnotMode>(null);
+  const [hasAnnotations, setHasAnnot]   = useState(false);
+  const [laserPos, setLaserPos]         = useState<{ x: number; y: number } | null>(null);
+  const canvasRef                       = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef                    = useRef(false);
+  const lastPosRef                      = useRef({ x: 0, y: 0 });
+
+  // Size canvas to match its CSS size whenever layout changes
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ro = new ResizeObserver(() => {
+      // Preserve drawings by copying to temp canvas first
+      const tmp = document.createElement('canvas');
+      tmp.width = canvas.width; tmp.height = canvas.height;
+      tmp.getContext('2d')?.drawImage(canvas, 0, 0);
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      canvas.getContext('2d')?.drawImage(tmp, 0, 0);
+    });
+    ro.observe(canvas);
+    return () => ro.disconnect();
+  }, []);
+
+  // Clear canvas on slide change
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    setHasAnnot(false);
+    setLaserPos(null);
+  }, [idx]);
+
+  const clearCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    setHasAnnot(false);
+  }, []);
+
+  const toggleAnnot = useCallback((mode: AnnotMode) => {
+    setAnnotMode(prev => prev === mode ? null : mode);
+    setLaserPos(null);
+  }, []);
+
+  const onCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (annotMode === 'laser' || !annotMode) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    isDrawingRef.current = true;
+    lastPosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }, [annotMode]);
+
+  const onCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (annotMode === 'laser') {
+      setLaserPos({ x, y });
+      return;
+    }
+    if (!isDrawingRef.current || !annotMode) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.beginPath();
+    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = annotMode === 'highlight' ? 'rgba(250,204,21,0.35)' : '#ef4444';
+    ctx.lineWidth   = annotMode === 'highlight' ? 22 : 3;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    ctx.stroke();
+    lastPosRef.current = { x, y };
+    setHasAnnot(true);
+  }, [annotMode]);
+
+  const onCanvasMouseUp = useCallback(() => { isDrawingRef.current = false; }, []);
 
   // ── Task timer ────────────────────────────────────────────────────────────
   const [taskTimer, setTaskTimer]     = useState<number | null>(null);
@@ -183,12 +268,16 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); goNext(); }
       if (e.key === 'ArrowLeft')  { e.preventDefault(); goPrev(); }
-      if (e.key === 'Escape')     onClose();
+      if (e.key === 'Escape')     { if (annotMode) { setAnnotMode(null); } else { onClose(); } }
       if (e.key === 'r' || e.key === 'R') setRevealed(true);
+      if (e.key === 'd' || e.key === 'D') toggleAnnot('draw');
+      if (e.key === 'h' || e.key === 'H') toggleAnnot('highlight');
+      if (e.key === 'l' || e.key === 'L') toggleAnnot('laser');
+      if (e.key === 'c' || e.key === 'C') clearCanvas();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goNext, goPrev, onClose]);
+  }, [goNext, goPrev, onClose, annotMode, toggleAnnot, clearCanvas]);
 
   // ── Hint for Space/Enter action ───────────────────────────────────────────
   const spaceHint = isStepSlide && stepIdx < slide.content.length - 1
@@ -560,6 +649,28 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             </button>
           )}
 
+          {/* Annotation toolbar */}
+          <div className="flex items-center gap-0.5 border border-white/10 rounded-xl p-0.5 bg-white/5">
+            <button type="button" title="Рисување (D)" onClick={() => toggleAnnot('draw')}
+              className={`p-1.5 rounded-lg transition ${annotMode === 'draw' ? 'bg-red-500/30 text-red-300' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}>
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button type="button" title="Маркер / Highlight (H)" onClick={() => toggleAnnot('highlight')}
+              className={`p-1.5 rounded-lg transition ${annotMode === 'highlight' ? 'bg-yellow-500/30 text-yellow-300' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}>
+              <span className="text-[11px] font-black leading-none select-none">HL</span>
+            </button>
+            <button type="button" title="Laser pointer (L)" onClick={() => toggleAnnot('laser')}
+              className={`p-1.5 rounded-lg transition ${annotMode === 'laser' ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}>
+              <Crosshair className="w-3.5 h-3.5" />
+            </button>
+            {hasAnnotations && (
+              <button type="button" title="Избриши аннотации (C)" onClick={clearCanvas}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-red-300 hover:bg-red-500/10 transition">
+                <Eraser className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <span className="text-xs font-bold text-slate-500 ml-1">
             {idx + 1} / {total}
           </span>
@@ -571,7 +682,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       </div>
 
       {/* ── Slide canvas ───────────────────────────────────────────────────── */}
-      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-200 ${
+      <div className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-200 ${
         !visible
           ? dir === 'fwd' ? 'opacity-0 translate-x-8' : 'opacity-0 -translate-x-8'
           : 'opacity-100 translate-x-0'
@@ -587,6 +698,42 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         )}
 
         {renderBody()}
+
+        {/* Annotation canvas overlay */}
+        <canvas
+          ref={canvasRef}
+          className={`absolute inset-0 z-20 ${
+            annotMode && annotMode !== 'laser' ? 'cursor-crosshair' :
+            annotMode === 'laser' ? 'cursor-none' : 'pointer-events-none'
+          } w-full h-full`}
+          onMouseDown={onCanvasMouseDown}
+          onMouseMove={onCanvasMouseMove}
+          onMouseUp={onCanvasMouseUp}
+          onMouseLeave={() => { onCanvasMouseUp(); setLaserPos(null); }}
+        />
+
+        {/* Laser pointer glow */}
+        {annotMode === 'laser' && laserPos && (
+          <div className="absolute z-30 pointer-events-none"
+            style={{ left: laserPos.x - 14, top: laserPos.y - 14, width: 28, height: 28 }}>
+            <div className="absolute inset-0 rounded-full bg-red-500/25 animate-ping" />
+            <div className="absolute inset-2 rounded-full bg-red-500 shadow-[0_0_12px_4px_rgba(239,68,68,0.6)]" />
+          </div>
+        )}
+
+        {/* Active mode indicator badge */}
+        {annotMode && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm border ${
+              annotMode === 'draw'      ? 'bg-red-950/60 border-red-500/30 text-red-300' :
+              annotMode === 'highlight' ? 'bg-yellow-950/60 border-yellow-500/30 text-yellow-300' :
+                                          'bg-cyan-950/60 border-cyan-500/30 text-cyan-300'
+            }`}>
+              {annotMode === 'draw' ? '✏ Рисување' : annotMode === 'highlight' ? '◼ Маркер' : '⊕ Laser'}
+              {' · '}Esc за излез
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── Speaker notes panel ────────────────────────────────────────────── */}

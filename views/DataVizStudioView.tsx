@@ -36,6 +36,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'box-whisker',    label: 'Box-and-Whisker',    emoji: '⊟',  desc: 'Квартили + медијана',       minCols: 1 },
   { id: 'stem-leaf',      label: 'Стебло-Листови',    emoji: '🌿', desc: 'Сите вредности, МОН 6-8р.',  minCols: 1 },
   { id: 'dot-plot',       label: 'Точкаст дијаграм',  emoji: '⠿',  desc: 'Броење на точки, МОН 5-7р.', minCols: 1 },
+  { id: 'heatmap',        label: 'Toplinska karta',   emoji: '🌡️', desc: 'Корелации, МОН IX одд.',      minCols: 2 },
 ];
 
 type StudioTab = 'chart' | 'paper' | 'ai' | 'prob';

@@ -262,6 +262,131 @@ const DiceCoinTree: React.FC<{ lastResult?: string }> = ({ lastResult }) => {
   );
 };
 
+// ── ConditionalProbabilityVenn ────────────────────────────────────────────────
+const ConditionalProbabilityVenn: React.FC = () => {
+  const [pA,  setPa]  = useState(0.40);
+  const [pB,  setPb]  = useState(0.50);
+  const [pAB, setPab] = useState(0.20);
+
+  // Clamp P(A∩B) when sliders change
+  const safeAB = Math.min(pAB, Math.min(pA, pB));
+
+  const pAuB     = pA + pB - safeAB;
+  const pAgivenB = pB > 0 ? safeAB / pB : 0;
+  const pBgivenA = pA > 0 ? safeAB / pA : 0;
+  const indep     = Math.abs(pAgivenB - pA) < 0.02;
+
+  // Visual: move circle centers based on overlap ratio
+  const W = 420; const H = 200; const cy = 95;
+  const rA = 70; const rB = 70;
+  const overlapRatio = Math.min(pA, pB) > 0 ? safeAB / Math.min(pA, pB) : 0;
+  const dist = Math.max(10, rA + rB - overlapRatio * (rA + rB - 4));
+  const cx1 = W / 2 - dist / 2;
+  const cx2 = W / 2 + dist / 2;
+
+  const updatePab = (v: number) => setPab(Math.min(v, Math.min(pA, pB)));
+
+  const rows = [
+    { label: 'P(A)',    val: pA,                  cls: 'text-blue-600'    },
+    { label: 'P(B)',    val: pB,                  cls: 'text-emerald-700' },
+    { label: 'P(A∩B)', val: safeAB,               cls: 'text-violet-700'  },
+    { label: 'P(A∪B)', val: Math.min(1, pAuB),   cls: 'text-gray-600'    },
+    { label: 'P(A|B)',  val: pAgivenB,             cls: 'text-amber-600 text-lg' },
+    { label: 'P(B|A)',  val: pBgivenA,             cls: 'text-red-600 text-lg'   },
+    { label: "P(Ā)",    val: 1 - pA,              cls: 'text-slate-500'   },
+    { label: "P(B̄)",    val: 1 - pB,              cls: 'text-slate-500'   },
+  ];
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+        Условна веројатност — P(A|B) · Venn дијаграм · МОН IX одд.
+      </p>
+
+      {/* Venn SVG */}
+      <div className="flex justify-center">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-lg">
+          <defs>
+            <clipPath id="venn-clip-b"><circle cx={cx2} cy={cy} r={rB} /></clipPath>
+          </defs>
+          {/* A */}
+          <circle cx={cx1} cy={cy} r={rA} fill="#3b82f6" fillOpacity={0.18} stroke="#3b82f6" strokeWidth={2.5} />
+          {/* B */}
+          <circle cx={cx2} cy={cy} r={rB} fill="#10b981" fillOpacity={0.18} stroke="#10b981" strokeWidth={2.5} />
+          {/* A ∩ B overlay */}
+          {safeAB > 0 && (
+            <circle cx={cx1} cy={cy} r={rA} fill="#7c3aed" fillOpacity={0.38} clipPath="url(#venn-clip-b)" />
+          )}
+          {/* Labels */}
+          <text x={cx1 - dist * 0.28} y={cy - 8}  textAnchor="middle" fontSize={13} fontWeight={800} fill="#1d4ed8">A</text>
+          <text x={cx2 + dist * 0.28} y={cy - 8}  textAnchor="middle" fontSize={13} fontWeight={800} fill="#065f46">B</text>
+          {safeAB > 0 && (
+            <text x={W / 2} y={cy - 6} textAnchor="middle" fontSize={9} fontWeight={700} fill="#4c1d95">A∩B</text>
+          )}
+          {/* P values inside circles */}
+          <text x={cx1 - dist * 0.28} y={cy + 10} textAnchor="middle" fontSize={11} fill="#1d4ed8">{pA.toFixed(2)}</text>
+          <text x={cx2 + dist * 0.28} y={cy + 10} textAnchor="middle" fontSize={11} fill="#065f46">{pB.toFixed(2)}</text>
+          {safeAB > 0 && (
+            <text x={W / 2} y={cy + 10} textAnchor="middle" fontSize={10} fill="#5b21b6">{safeAB.toFixed(2)}</text>
+          )}
+          {/* Universe box */}
+          <rect x={4} y={4} width={W - 8} height={H - 8} fill="none" stroke="#e5e7eb" strokeWidth={1.5} rx={8} />
+          <text x={10} y={16} fontSize={9} fill="#d1d5db" fontWeight={600}>Ω</text>
+          <text x={W - 10} y={H - 6} textAnchor="end" fontSize={9} fill="#d1d5db">
+            P(A∪B) = {Math.min(1, pAuB).toFixed(2)}
+          </text>
+        </svg>
+      </div>
+
+      {/* Sliders */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {([
+          { label: 'P(A)',   val: pA,     set: setPa,     color: 'blue',   note: '' },
+          { label: 'P(B)',   val: pB,     set: setPb,     color: 'emerald',note: '' },
+          { label: 'P(A∩B)', val: safeAB, set: updatePab, color: 'violet', note: `max ${Math.min(pA, pB).toFixed(2)}` },
+        ]).map(({ label, val, set, color, note }) => (
+          <div key={label}>
+            <label className={`text-xs font-bold text-${color}-600 mb-1 flex justify-between`}>
+              <span>{label}{note ? <span className="text-gray-400 font-normal"> ({note})</span> : null}</span>
+              <span className="font-extrabold">{val.toFixed(2)}</span>
+            </label>
+            <input type="range" min={0.01} max={0.99} step={0.01} value={val}
+              onChange={e => (set as (v: number) => void)(parseFloat(e.target.value))}
+              className={`w-full accent-${color}-600`}
+              aria-label={label} title={label} />
+          </div>
+        ))}
+      </div>
+
+      {/* Results grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {rows.map(({ label, val, cls }) => (
+          <div key={label} className="rounded-xl bg-gray-50 border border-gray-100 p-2.5 text-center">
+            <p className="text-[10px] text-gray-400 font-semibold mb-0.5">{label}</p>
+            <p className={`font-black ${cls}`}>{val.toFixed(3)}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Independence check */}
+      <div className={`rounded-xl p-3 text-xs font-semibold flex items-center gap-2 ${
+        indep ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
+      }`}>
+        <span className="text-base">{indep ? '✓' : '≠'}</span>
+        {indep
+          ? 'Настаните A и B се НЕЗАВИСНИ — P(A|B) ≈ P(A)'
+          : `Настаните A и B се ЗАВИСНИ — P(A|B) = ${pAgivenB.toFixed(3)} ≠ P(A) = ${pA.toFixed(3)}`
+        }
+      </div>
+
+      <p className="text-[10px] text-gray-400">
+        P(A|B) = P(A∩B) / P(B) — веројатноста на A под услов дека B се случило.
+        Ако P(A|B) = P(A), тогаш A и B се независни.
+      </p>
+    </div>
+  );
+};
+
 // ── BinomialDistributionChart ─────────────────────────────────────────────────
 interface BinomialChartProps {
   n: number;
@@ -745,6 +870,9 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
           поблиску е <em>експерименталната</em> веројатност до <em>теоретската</em>. Пробај ×1000 и провери!
         </p>
       </div>
+
+      {/* ── Conditional probability / Venn ───────────────────────────────────── */}
+      <ConditionalProbabilityVenn />
 
     </div>
   );

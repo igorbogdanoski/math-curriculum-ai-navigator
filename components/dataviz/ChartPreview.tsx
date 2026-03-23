@@ -12,7 +12,7 @@ import { tableToChartData } from './DataTable';
 export type ChartType =
   | 'bar' | 'bar-horizontal' | 'line' | 'area'
   | 'pie' | 'scatter' | 'scatter-trend' | 'histogram' | 'box-whisker' | 'bubble'
-  | 'stem-leaf' | 'dot-plot';
+  | 'stem-leaf' | 'dot-plot' | 'heatmap';
 
 export interface ChartConfig {
   type: ChartType;
@@ -275,6 +275,114 @@ const DotPlotChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ data
   );
 };
 
+// ─── Heatmap chart ───────────────────────────────────────────────────────────
+function lerpColor(cold: [number,number,number], hot: [number,number,number], t: number): string {
+  const r = Math.round(cold[0] + (hot[0] - cold[0]) * t);
+  const g = Math.round(cold[1] + (hot[1] - cold[1]) * t);
+  const b = Math.round(cold[2] + (hot[2] - cold[2]) * t);
+  return `rgb(${r},${g},${b})`;
+}
+
+const HeatmapChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ data, config }) => {
+  const colLabels = data.headers.slice(1);   // X axis
+  const rowLabels = data.rows.map(r => String(r[0]));  // Y axis
+  const nCols = colLabels.length;
+  const nRows = rowLabels.length;
+
+  if (nCols === 0 || nRows === 0) return <p className="text-gray-400 text-sm text-center p-8">Нема доволно податоци за heatmap.</p>;
+
+  // Flatten all numeric values to find range
+  const allVals: number[] = [];
+  data.rows.forEach(r => {
+    for (let c = 1; c <= nCols; c++) {
+      const v = typeof r[c] === 'number' ? r[c] as number : parseFloat(String(r[c]));
+      if (!isNaN(v)) allVals.push(v);
+    }
+  });
+  const minV = Math.min(...allVals);
+  const maxV = Math.max(...allVals);
+  const range = maxV - minV || 1;
+
+  const COLD: [number,number,number] = [219, 234, 254]; // blue-100
+  const HOT:  [number,number,number] = [185, 28,  28];  // red-700
+  const MID:  [number,number,number] = [254, 243, 199]; // yellow-100
+
+  function cellColor(val: number): string {
+    const t = (val - minV) / range;
+    if (t < 0.5) return lerpColor(COLD, MID, t * 2);
+    return lerpColor(MID, HOT, (t - 0.5) * 2);
+  }
+
+  const labelW = 70;
+  const headerH = 44;
+  const cellSize = Math.min(64, Math.max(32, Math.floor((540 - labelW) / nCols)));
+  const W = labelW + nCols * cellSize;
+  const H = headerH + nRows * cellSize + 20;
+
+  return (
+    <div className="overflow-x-auto">
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ minWidth: W }} className="block max-h-[440px]">
+        {config.title && (
+          <text x={W / 2} y={14} textAnchor="middle" fontSize={12} fontWeight={700} fill="#1f2937">{config.title}</text>
+        )}
+        {/* Column headers */}
+        {colLabels.map((lbl, ci) => (
+          <text key={ci} x={labelW + ci * cellSize + cellSize / 2} y={headerH - 6}
+            textAnchor="middle" fontSize={10} fontWeight={600} fill="#374151"
+            transform={`rotate(-35 ${labelW + ci * cellSize + cellSize / 2} ${headerH - 6})`}>
+            {String(lbl).slice(0, 10)}
+          </text>
+        ))}
+        {/* Rows */}
+        {data.rows.map((row, ri) => (
+          <g key={ri}>
+            {/* Row label */}
+            <text x={labelW - 6} y={headerH + ri * cellSize + cellSize / 2 + 4}
+              textAnchor="end" fontSize={10} fill="#374151" fontWeight={600}>
+              {String(row[0]).slice(0, 9)}
+            </text>
+            {/* Cells */}
+            {colLabels.map((_, ci) => {
+              const raw = row[ci + 1];
+              const val = typeof raw === 'number' ? raw : parseFloat(String(raw));
+              const ok = !isNaN(val);
+              const bg = ok ? cellColor(val) : '#f3f4f6';
+              const t = ok ? (val - minV) / range : 0;
+              const textFill = t > 0.6 ? '#fff' : '#1f2937';
+              const x = labelW + ci * cellSize;
+              const y = headerH + ri * cellSize;
+              return (
+                <g key={ci}>
+                  <rect x={x} y={y} width={cellSize} height={cellSize}
+                    fill={bg} stroke="white" strokeWidth={1.5} rx={2} />
+                  {ok && cellSize >= 32 && (
+                    <text x={x + cellSize / 2} y={y + cellSize / 2 + 4}
+                      textAnchor="middle" fontSize={cellSize >= 48 ? 11 : 9}
+                      fontWeight={600} fill={textFill}>
+                      {Number.isInteger(val) ? val : val.toFixed(2)}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        ))}
+        {/* Color legend bar */}
+        {Array.from({ length: 40 }, (_, i) => {
+          const t = i / 39;
+          const lx = labelW + i * (nCols * cellSize / 40);
+          return (
+            <rect key={i} x={lx} y={H - 14} width={nCols * cellSize / 40 + 1} height={8}
+              fill={t < 0.5 ? lerpColor(COLD, MID, t * 2) : lerpColor(MID, HOT, (t - 0.5) * 2)} />
+          );
+        })}
+        <text x={labelW} y={H - 1} textAnchor="start" fontSize={8} fill="#6b7280">{minV.toFixed(1)}</text>
+        <text x={labelW + nCols * cellSize} y={H - 1} textAnchor="end" fontSize={8} fill="#6b7280">{maxV.toFixed(1)}</text>
+      </svg>
+    </div>
+  );
+};
+
 // ─── Histogram helper ───────────────────────────────────────────────────────
 function buildHistogram(values: number[], bins = 8): { name: string; count: number }[] {
   if (values.length === 0) return [];
@@ -319,6 +427,10 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
 
   if (config.type === 'box-whisker') {
     return <BoxWhiskerChart data={data} config={config} />;
+  }
+
+  if (config.type === 'heatmap') {
+    return <HeatmapChart data={data} config={config} />;
   }
 
   if (config.type === 'stem-leaf') {
