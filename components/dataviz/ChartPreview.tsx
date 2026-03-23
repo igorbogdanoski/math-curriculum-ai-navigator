@@ -69,6 +69,7 @@ const BoxWhiskerChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ d
   });
 
   const allVals = seriesData.flatMap(s => [s.stats.min, s.stats.max]);
+  if (allVals.length === 0) return <p className="text-gray-400 text-sm text-center p-8">Нема доволно податоци за box-whisker.</p>;
   const minY = Math.min(...allVals);
   const maxY = Math.max(...allVals);
   const range = maxY - minY || 1;
@@ -158,6 +159,8 @@ const StemLeafChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ dat
     .filter(v => !isNaN(v))
     .map(v => Math.round(v));
 
+  if (values.length === 0) return <p className="text-gray-400 text-sm text-center p-8">Нема доволно податоци за стебло-лист.</p>;
+
   const stems = new Map<number, number[]>();
   for (const v of values) {
     const stem = Math.floor(Math.abs(v) / 10) * Math.sign(v);
@@ -209,6 +212,8 @@ const DotPlotChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ data
   const values = data.rows
     .map(r => typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])))
     .filter(v => !isNaN(v));
+
+  if (values.length === 0) return <p className="text-gray-400 text-sm text-center p-8">Нема доволно податоци за точкест дијаграм.</p>;
 
   const minV = Math.min(...values);
   const maxV = Math.max(...values);
@@ -299,6 +304,7 @@ const HeatmapChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ data
       if (!isNaN(v)) allVals.push(v);
     }
   });
+  if (allVals.length === 0) return <p className="text-gray-400 text-sm text-center p-8">Нема нумерички податоци за heatmap.</p>;
   const minV = Math.min(...allVals);
   const maxV = Math.max(...allVals);
   const range = maxV - minV || 1;
@@ -488,6 +494,7 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
       const { slope, intercept, r2 } = linearRegression(scatterData);
       const xs = scatterData.map(p => p.x);
       const xMin = Math.min(...xs); const xMax = Math.max(...xs);
+      if (xMin === xMax) return <p className="text-gray-400 text-sm text-center p-8">Не може да се пресмета трендот — сите X вредности се исти.</p>;
       const trendLine = [
         { x: xMin, trend: slope * xMin + intercept },
         { x: xMax, trend: slope * xMax + intercept },
