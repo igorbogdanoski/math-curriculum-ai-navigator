@@ -59,13 +59,19 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ro = new ResizeObserver(() => {
-      // Preserve drawings by copying to temp canvas first
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (w === 0 || h === 0) return; // hidden or not yet laid out
+      // Preserve existing drawings by copying to a temp canvas
       const tmp = document.createElement('canvas');
-      tmp.width = canvas.width; tmp.height = canvas.height;
-      tmp.getContext('2d')?.drawImage(canvas, 0, 0);
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-      canvas.getContext('2d')?.drawImage(tmp, 0, 0);
+      tmp.width = canvas.width;
+      tmp.height = canvas.height;
+      const tmpCtx = tmp.getContext('2d');
+      if (tmpCtx) tmpCtx.drawImage(canvas, 0, 0);
+      canvas.width  = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.drawImage(tmp, 0, 0);
     });
     ro.observe(canvas);
     return () => ro.disconnect();
@@ -164,23 +170,18 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     setTimerRunning(false);
   }, []);
 
-  const resetTimer = useCallback(() => {
-    stopTimer();
-    setTaskTimer(null);
-  }, [stopTimer]);
-
   // Auto-init timer when entering a task slide
   useEffect(() => {
+    // Directly clear any running interval — avoids stale closure on rapid navigation
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    timerIntervalRef.current = null;
+    setTimerRunning(false);
     if (slide.type === 'task') {
-      const secs = slide.estimatedSeconds ?? 120;
-      resetTimer();
-      setTaskTimer(secs);
-      setTimerRunning(false); // wait for teacher to start
+      setTaskTimer(slide.estimatedSeconds ?? 120);
     } else {
-      resetTimer();
+      setTaskTimer(null);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx]);
+  }, [idx, slide.type, slide.estimatedSeconds]);
 
   // Cleanup on unmount
   useEffect(() => () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); }, []);
@@ -755,6 +756,8 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             return (
               <button key={di} type="button"
                 title={`Оди на слајд ${dotSlideIdx + 1}`}
+                aria-label={`Слајд ${dotSlideIdx + 1} од ${total}`}
+                aria-current={isActive ? 'step' : undefined}
                 onClick={() => { setIdx(dotSlideIdx); setRevealed(false); setStepIdx(0); }}
                 className={`rounded-full transition-all ${
                   isActive ? 'w-5 h-2.5 bg-indigo-400' : 'w-2 h-2 bg-slate-700 hover:bg-slate-500'

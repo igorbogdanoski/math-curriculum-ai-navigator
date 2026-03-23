@@ -50,7 +50,7 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 Генерирај го сценариото СТРИКТНО според официјалниот JSON шаблон.
 `;
 
-    const safeInstruction = sanitizePromptInput(customInstruction);
+    const safeInstruction = sanitizePromptInput(customInstruction, 500);
     if (safeInstruction) prompt += `\nДополнителна инструкција од наставникот: ${safeInstruction}`;
 
     const schema = {

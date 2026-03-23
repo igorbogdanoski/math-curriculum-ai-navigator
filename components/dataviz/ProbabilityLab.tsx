@@ -103,11 +103,13 @@ function rollOne(exp: ExperimentType, df: number, sec: SpinnerSector[], bn = 10,
     case 'dice-coin': return `${Math.floor(Math.random()*6)+1}-${Math.random()<0.5?'Г':'П'}`;
     case 'spinner': {
       const tot = sec.reduce((s, x) => s + x.weight, 0);
+      if (!tot || sec.length === 0) return '—';
       let r = Math.random() * tot;
       for (const s of sec) { r -= s.weight; if (r <= 0) return s.label; }
-      return sec[sec.length - 1]?.label ?? '';
+      return sec[sec.length - 1].label;
     }
     case 'binomial': {
+      if (bn <= 0) return 'k=0';
       let successes = 0;
       for (let i = 0; i < bn; i++) if (Math.random() < bp) successes++;
       return `k=${successes}`;
@@ -271,9 +273,9 @@ const ConditionalProbabilityVenn: React.FC = () => {
   // Clamp P(A∩B) when sliders change
   const safeAB = Math.min(pAB, Math.min(pA, pB));
 
-  const pAuB     = pA + pB - safeAB;
-  const pAgivenB = pB > 0 ? safeAB / pB : 0;
-  const pBgivenA = pA > 0 ? safeAB / pA : 0;
+  const pAuB     = Math.min(1, pA + pB - safeAB);
+  const pAgivenB = pB > 0 ? Math.min(1, safeAB / pB) : 0;
+  const pBgivenA = pA > 0 ? Math.min(1, safeAB / pA) : 0;
   const indep     = Math.abs(pAgivenB - pA) < 0.02;
 
   // Visual: move circle centers based on overlap ratio
@@ -636,6 +638,8 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
                       setSectors(s); reset();
                     }}
                     className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:ring-1 focus:ring-violet-300"
+                    aria-label={`Тежина за ${sec.label || `сектор ${i + 1}`}`}
+                    title={`Тежина за ${sec.label || `сектор ${i + 1}`}`}
                   />
                   {sectors.length > 2 && (
                     <button type="button"

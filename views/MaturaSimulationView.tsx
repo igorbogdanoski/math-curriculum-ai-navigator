@@ -18,6 +18,7 @@ import { MathRenderer } from '../components/common/MathRenderer';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { geminiService } from '../services/geminiService';
+import { sanitizePromptInput } from '../services/gemini/core';
 import type { MaturaChoice, MaturaExam, MaturaQuestion } from '../types';
 import { SECONDARY_TRACK_LABELS } from '../types';
 import type { SecondaryTrack } from '../types';
@@ -233,7 +234,8 @@ export const MaturaSimulationView: React.FC = () => {
       .map(([topic, v]) => `${topic}: ${v.correct}/${v.total} точни`)
       .join(', ');
 
-    const prompt = `Ученик полагаше симулација на матура по математика (${selectedExam.title ?? selectedExam.year}).
+    const safeExamTitle = sanitizePromptInput(selectedExam.title ?? String(selectedExam.year), 100);
+    const prompt = `Ученик полагаше симулација на матура по математика (${safeExamTitle}).
 Резултат: ${result.score}/${result.totalPoints} поени (${Math.round((result.score / result.totalPoints) * 100)}%).
 Слаби теми: ${weakTopics || 'нема'}.
 Дај кратка, охрабрувачка анализа (3–4 реченици на македонски) со конкретни совети за подобрување.`;
