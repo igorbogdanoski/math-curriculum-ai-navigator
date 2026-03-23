@@ -1256,9 +1256,9 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
     );
   },
 
-  async generatePresentation(topic: string, gradeLevel: number, concepts: string[], customInstruction?: string, profile?: TeachingProfile): Promise<AIGeneratedPresentation> {
+  async generatePresentation(topic: string, gradeLevel: number, concepts: string[], customInstruction?: string, profile?: TeachingProfile, slideCount = 10): Promise<AIGeneratedPresentation> {
     checkDailyQuotaGuard();
-    return plansAPI.generatePresentation(topic, gradeLevel, concepts, customInstruction, profile);
+    return plansAPI.generatePresentation(topic, gradeLevel, concepts, customInstruction, profile, slideCount);
   },
 
   async generateEmbedding(text: string): Promise<number[]> {

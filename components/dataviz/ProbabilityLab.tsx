@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { BarChart2, RefreshCw } from 'lucide-react';
 import type { TableData } from './DataTable';
 import type { ChartConfig } from './ChartPreview';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type ExperimentType = 'coin' | 'die' | 'two-dice' | 'dice-coin' | 'spinner';
+type ExperimentType = 'coin' | 'die' | 'two-dice' | 'dice-coin' | 'spinner' | 'binomial';
 
 interface SpinnerSector { label: string; weight: number; }
 
@@ -29,6 +29,7 @@ const EXPERIMENTS: { id: ExperimentType; label: string; emoji: string; desc: str
   { id: 'two-dice',  label: 'Две коцки',    emoji: '🎲🎲', desc: 'Сума 2–12' },
   { id: 'dice-coin', label: 'Коцка+Монета', emoji: '🎲🪙', desc: '12 исходи' },
   { id: 'spinner',   label: 'Спинер',       emoji: '🎡',    desc: 'Прилагоди' },
+  { id: 'binomial',  label: 'Биномна расп.', emoji: '📉',  desc: 'B(n,p) + нормална' },
 ];
 
 const EXP_LABEL: Record<ExperimentType, string> = Object.fromEntries(
@@ -36,7 +37,24 @@ const EXP_LABEL: Record<ExperimentType, string> = Object.fromEntries(
 ) as Record<ExperimentType, string>;
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
-function getOutcomes(exp: ExperimentType, df: number, sec: SpinnerSector[]): string[] {
+function binomCoeff(n: number, k: number): number {
+  if (k === 0 || k === n) return 1;
+  if (k > n) return 0;
+  let c = 1;
+  for (let i = 0; i < Math.min(k, n - k); i++) c = c * (n - i) / (i + 1);
+  return c;
+}
+
+export function binomialPMF(n: number, p: number): number[] {
+  return Array.from({ length: n + 1 }, (_, k) => binomCoeff(n, k) * p ** k * (1 - p) ** (n - k));
+}
+
+function normalPDF(x: number, mu: number, sigma: number): number {
+  if (sigma <= 0) return 0;
+  return Math.exp(-0.5 * ((x - mu) / sigma) ** 2) / (sigma * Math.sqrt(2 * Math.PI));
+}
+
+function getOutcomes(exp: ExperimentType, df: number, sec: SpinnerSector[], bn = 10): string[] {
   switch (exp) {
     case 'coin':      return ['Глава', 'Писмо'];
     case 'die':       return Array.from({ length: df }, (_, i) => String(i + 1));
@@ -47,10 +65,11 @@ function getOutcomes(exp: ExperimentType, df: number, sec: SpinnerSector[]): str
       return out;
     }
     case 'spinner':   return sec.map(s => s.label);
+    case 'binomial':  return Array.from({ length: bn + 1 }, (_, k) => `k=${k}`);
   }
 }
 
-function theoretical(exp: ExperimentType, df: number, sec: SpinnerSector[]): Record<string, number> {
+function theoretical(exp: ExperimentType, df: number, sec: SpinnerSector[], bn = 10, bp = 0.5): Record<string, number> {
   switch (exp) {
     case 'coin':      return { 'Глава': 0.5, 'Писмо': 0.5 };
     case 'die':       return Object.fromEntries(Array.from({ length: df }, (_, i) => [String(i + 1), 1 / df]));
@@ -69,10 +88,14 @@ function theoretical(exp: ExperimentType, df: number, sec: SpinnerSector[]): Rec
       const total = sec.reduce((s, x) => s + x.weight, 0) || 1;
       return Object.fromEntries(sec.map(x => [x.label, x.weight / total]));
     }
+    case 'binomial': {
+      const pmf = binomialPMF(bn, bp);
+      return Object.fromEntries(pmf.map((p, k) => [`k=${k}`, p]));
+    }
   }
 }
 
-function rollOne(exp: ExperimentType, df: number, sec: SpinnerSector[]): string {
+function rollOne(exp: ExperimentType, df: number, sec: SpinnerSector[], bn = 10, bp = 0.5): string {
   switch (exp) {
     case 'coin':      return Math.random() < 0.5 ? 'Глава' : 'Писмо';
     case 'die':       return String(Math.floor(Math.random() * df) + 1);
@@ -83,6 +106,11 @@ function rollOne(exp: ExperimentType, df: number, sec: SpinnerSector[]): string 
       let r = Math.random() * tot;
       for (const s of sec) { r -= s.weight; if (r <= 0) return s.label; }
       return sec[sec.length - 1]?.label ?? '';
+    }
+    case 'binomial': {
+      let successes = 0;
+      for (let i = 0; i < bn; i++) if (Math.random() < bp) successes++;
+      return `k=${successes}`;
     }
   }
 }
@@ -234,18 +262,126 @@ const DiceCoinTree: React.FC<{ lastResult?: string }> = ({ lastResult }) => {
   );
 };
 
+// ── BinomialDistributionChart ─────────────────────────────────────────────────
+interface BinomialChartProps {
+  n: number;
+  p: number;
+  counts: Record<string, number>;
+  total: number;
+}
+const BinomialDistributionChart: React.FC<BinomialChartProps> = ({ n, p, counts, total }) => {
+  const pmf = binomialPMF(n, p);
+  const mu = n * p;
+  const sigma = Math.sqrt(n * p * (1 - p));
+  const maxPMF = Math.max(...pmf);
+
+  const W = 560; const H = 280;
+  const padL = 40; const padR = 20; const padT = 30; const padB = 50;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const barW = Math.min(28, plotW / (n + 2));
+  const toX = (k: number) => padL + ((k + 0.5) / (n + 1)) * plotW;
+  const toY = (v: number) => padT + plotH - (v / (maxPMF * 1.15)) * plotH;
+
+  // Normal curve path: sample 200 points
+  const curvePts: string[] = [];
+  for (let i = 0; i <= 200; i++) {
+    const x = (i / 200) * (n + 1);
+    const xPx = padL + (x / (n + 1)) * plotW;
+    const pdf = normalPDF(x - 0.5, mu, sigma);
+    const yPx = toY(pdf);
+    curvePts.push(`${i === 0 ? 'M' : 'L'}${xPx.toFixed(1)},${yPx.toFixed(1)}`);
+  }
+
+  // Y axis ticks
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => f * maxPMF * 1.15);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 300 }}>
+      {/* Grid */}
+      {yTicks.map((v, i) => (
+        <g key={i}>
+          <line x1={padL} x2={W - padR} y1={toY(v)} y2={toY(v)} stroke="#f0f0f0" strokeWidth={1} />
+          <text x={padL - 4} y={toY(v) + 4} textAnchor="end" fontSize={9} fill="#9ca3af">{(v * 100).toFixed(1)}%</text>
+        </g>
+      ))}
+
+      {/* Theoretical PMF bars (blue) */}
+      {pmf.map((prob, k) => {
+        const bx = toX(k) - barW / 2;
+        const by = toY(prob);
+        const bh = toY(0) - by;
+        return (
+          <rect key={k} x={bx} y={by} width={barW} height={bh}
+            fill="#3b82f6" fillOpacity={0.3} stroke="#3b82f6" strokeWidth={1} rx={2} />
+        );
+      })}
+
+      {/* Empirical frequency overlay (violet) */}
+      {total > 0 && pmf.map((_, k) => {
+        const cnt = counts[`k=${k}`] ?? 0;
+        const freq = cnt / total;
+        const bx = toX(k) - barW * 0.35;
+        const by = toY(freq);
+        const bh = Math.max(0, toY(0) - by);
+        return (
+          <rect key={k} x={bx} y={by} width={barW * 0.7} height={bh}
+            fill="#7c3aed" fillOpacity={0.7} rx={2} />
+        );
+      })}
+
+      {/* Normal approximation curve (orange) */}
+      {sigma > 0 && (
+        <path d={curvePts.join(' ')} fill="none" stroke="#f97316" strokeWidth={2} strokeDasharray="6 3" />
+      )}
+
+      {/* X axis labels */}
+      {pmf.map((_, k) => (
+        <text key={k} x={toX(k)} y={toY(0) + 14} textAnchor="middle" fontSize={9} fill="#374151">{k}</text>
+      ))}
+
+      {/* Axes */}
+      <line x1={padL} x2={padL} y1={padT} y2={toY(0)} stroke="#d1d5db" strokeWidth={1.5} />
+      <line x1={padL} x2={W - padR} y1={toY(0)} y2={toY(0)} stroke="#d1d5db" strokeWidth={1.5} />
+
+      {/* μ marker */}
+      <line x1={toX(mu)} x2={toX(mu)} y1={padT} y2={toY(0)} stroke="#ef4444" strokeWidth={1.5} strokeDasharray="4 2" />
+      <text x={toX(mu)} y={padT - 4} textAnchor="middle" fontSize={9} fill="#ef4444" fontWeight={700}>μ={mu.toFixed(1)}</text>
+
+      {/* Legend */}
+      <rect x={padL + 4} y={padT} width={10} height={10} fill="#3b82f6" fillOpacity={0.4} />
+      <text x={padL + 18} y={padT + 9} fontSize={9} fill="#374151">Теор. PMF</text>
+      {total > 0 && <>
+        <rect x={padL + 74} y={padT} width={10} height={10} fill="#7c3aed" fillOpacity={0.7} />
+        <text x={padL + 88} y={padT + 9} fontSize={9} fill="#374151">Измерено</text>
+      </>}
+      <line x1={padL + 144} y1={padT + 5} x2={padL + 156} y2={padT + 5} stroke="#f97316" strokeWidth={2} strokeDasharray="4 2" />
+      <text x={padL + 160} y={padT + 9} fontSize={9} fill="#374151">Нормална апрокс.</text>
+
+      {/* Stats footer */}
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontSize={9} fill="#6b7280">
+        μ = {mu.toFixed(2)} · σ = {sigma.toFixed(2)} · σ² = {(sigma ** 2).toFixed(2)} · n={n} · p={p}
+      </text>
+    </svg>
+  );
+};
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz, onGoToChart }) => {
   const [experiment, setExperiment] = useState<ExperimentType>('coin');
   const [dieFaces, setDieFaces]     = useState(6);
   const [sectors, setSectors]       = useState<SpinnerSector[]>(DEFAULT_SECTORS);
+  const [binN, setBinN]             = useState(10);
+  const [binP, setBinP]             = useState(0.5);
   const [counts, setCounts]         = useState<Record<string, number>>({});
   const [total, setTotal]           = useState(0);
   const [lastResult, setLastResult] = useState<string | undefined>();
   const [flash, setFlash]           = useState(false);
+  const [animating, setAnimating]   = useState(false);
+  const animTimerRef                = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const theory   = theoretical(experiment, dieFaces, sectors);
-  const outcomes = getOutcomes(experiment, dieFaces, sectors);
+  const theory   = theoretical(experiment, dieFaces, sectors, binN, binP);
+  const outcomes = getOutcomes(experiment, dieFaces, sectors, binN);
 
   const reset = useCallback(() => {
     setCounts({}); setTotal(0); setLastResult(undefined);
@@ -259,7 +395,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
     const nc = { ...counts };
     let last = '';
     for (let i = 0; i < n; i++) {
-      const r = rollOne(experiment, dieFaces, sectors);
+      const r = rollOne(experiment, dieFaces, sectors, binN, binP);
       nc[r] = (nc[r] ?? 0) + 1;
       last = r;
     }
@@ -268,7 +404,19 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
     setLastResult(last);
     setFlash(true);
     setTimeout(() => setFlash(false), 350);
-  }, [counts, experiment, dieFaces, sectors]);
+  }, [counts, experiment, dieFaces, sectors, binN, binP]);
+
+  // Animated single roll (×1 only)
+  const runAnimated = useCallback(() => {
+    if (animating) return;
+    setAnimating(true);
+    setLastResult(undefined);
+    if (animTimerRef.current) clearTimeout(animTimerRef.current);
+    animTimerRef.current = setTimeout(() => {
+      setAnimating(false);
+      runN(1);
+    }, 480);
+  }, [animating, runN]);
 
   const handleSend = () => {
     if (!total) return;
@@ -386,11 +534,69 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
         </div>
       )}
 
+      {/* ── Binomial config ─────────────────────────────────────────────────── */}
+      {experiment === 'binomial' && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Параметри на биномна распределба B(n, p)</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-gray-500 mb-1 flex justify-between">
+                <span>n — број на обиди</span>
+                <span className="text-violet-700 font-extrabold">{binN}</span>
+              </label>
+              <input type="range" min={1} max={30} step={1} value={binN}
+                onChange={e => { setBinN(parseInt(e.target.value, 10)); reset(); }}
+                className="w-full accent-violet-600"
+                aria-label="Број на обиди n"
+                title="Број на обиди n" />
+              <div className="flex justify-between text-[9px] text-gray-400 mt-0.5"><span>1</span><span>30</span></div>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 mb-1 flex justify-between">
+                <span>p — веројатност на успех</span>
+                <span className="text-violet-700 font-extrabold">{binP.toFixed(2)}</span>
+              </label>
+              <input type="range" min={0.01} max={0.99} step={0.01} value={binP}
+                onChange={e => { setBinP(parseFloat(e.target.value)); reset(); }}
+                className="w-full accent-violet-600"
+                aria-label="Веројатност на успех p"
+                title="Веројатност на успех p" />
+              <div className="flex justify-between text-[9px] text-gray-400 mt-0.5"><span>0.01</span><span>0.99</span></div>
+            </div>
+          </div>
+          <div className="bg-violet-50 rounded-xl p-3">
+            <p className="text-xs text-violet-700 font-semibold mb-1">Теоретски параметри:</p>
+            <div className="flex flex-wrap gap-4 text-xs text-violet-800">
+              <span>μ = np = <strong>{(binN * binP).toFixed(2)}</strong></span>
+              <span>σ² = np(1−p) = <strong>{(binN * binP * (1 - binP)).toFixed(2)}</strong></span>
+              <span>σ = <strong>{Math.sqrt(binN * binP * (1 - binP)).toFixed(2)}</strong></span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Binomial distribution chart ──────────────────────────────────────── */}
+      {experiment === 'binomial' && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">
+            Биномна распределба B({binN}, {binP.toFixed(2)}) + нормална апроксимација
+          </p>
+          <BinomialDistributionChart n={binN} p={binP} counts={counts} total={total} />
+        </div>
+      )}
+
       {/* ── Run controls ────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex flex-wrap items-center gap-2.5">
           <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mr-1">Фрли</p>
-          {[1, 10, 100, 1000].map(n => (
+          {/* Animated single roll */}
+          <button type="button" onClick={runAnimated} disabled={animating}
+            className={`px-4 py-2 text-white text-sm font-bold rounded-xl active:scale-95 transition shadow-sm ${
+              animating ? 'bg-violet-400 cursor-wait' : 'bg-violet-600 hover:bg-violet-700'
+            }`}>
+            {animating ? '...' : '×1'}
+          </button>
+          {[10, 100, 1000].map(n => (
             <button key={n} type="button" onClick={() => runN(n)}
               className="px-4 py-2 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 active:scale-95 transition shadow-sm">
               ×{n}
@@ -409,12 +615,14 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       </div>
 
       {/* ── Last result display ─────────────────────────────────────────────── */}
-      {lastResult !== undefined && (
+      {(animating || lastResult !== undefined) && (
         <div className={`rounded-2xl border-2 p-5 text-center transition-colors duration-200 ${
           flash ? 'bg-violet-50 border-violet-400' : 'bg-white border-violet-200'
         }`}>
           <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">Последен резултат</p>
-          <div className="text-5xl font-black text-violet-700 tracking-wide">{lastResult}</div>
+          <div className={`text-5xl font-black tracking-wide transition-all duration-200 ${
+            animating ? 'text-violet-300 animate-bounce' : 'text-violet-700'
+          }`}>{animating ? '?' : lastResult}</div>
           {experiment === 'coin' && (
             <div className={`mt-3 w-16 h-16 rounded-full mx-auto flex items-center justify-center text-2xl font-black border-4 transition ${
               lastResult === 'Глава'

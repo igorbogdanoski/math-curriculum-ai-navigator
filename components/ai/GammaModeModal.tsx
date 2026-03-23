@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield } from 'lucide-react';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 import { ChartPreview } from '../dataviz/ChartPreview';
@@ -17,14 +17,16 @@ interface Props {
 
 // ── Slide type config ─────────────────────────────────────────────────────────
 const SLIDE_META: Record<PresentationSlide['type'], { label: string; color: string; bg: string }> = {
-  'title':           { label: 'Наслов',          color: 'text-indigo-300',  bg: 'bg-indigo-900/40' },
-  'content':         { label: 'Содржина',         color: 'text-blue-300',    bg: 'bg-blue-900/40'   },
-  'formula-centered':{ label: 'Формула',          color: 'text-violet-300',  bg: 'bg-violet-900/40' },
-  'step-by-step':    { label: 'Постапка',         color: 'text-cyan-300',    bg: 'bg-cyan-900/40'   },
-  'example':         { label: 'Пример',           color: 'text-emerald-300', bg: 'bg-emerald-900/40'},
-  'task':            { label: 'Задача',            color: 'text-amber-300',   bg: 'bg-amber-900/40'  },
-  'summary':         { label: 'Заклучок',         color: 'text-rose-300',    bg: 'bg-rose-900/40'   },
-  'chart-embed':     { label: 'Дијаграм',         color: 'text-teal-300',    bg: 'bg-teal-900/40'   },
+  'title':           { label: 'Наслов',          color: 'text-indigo-300',  bg: 'bg-indigo-900/40'  },
+  'content':         { label: 'Содржина',         color: 'text-blue-300',    bg: 'bg-blue-900/40'    },
+  'formula-centered':{ label: 'Формула',          color: 'text-violet-300',  bg: 'bg-violet-900/40'  },
+  'step-by-step':    { label: 'Постапка',         color: 'text-cyan-300',    bg: 'bg-cyan-900/40'    },
+  'example':         { label: 'Пример',           color: 'text-emerald-300', bg: 'bg-emerald-900/40' },
+  'task':            { label: 'Задача',            color: 'text-amber-300',   bg: 'bg-amber-900/40'   },
+  'summary':         { label: 'Заклучок',         color: 'text-rose-300',    bg: 'bg-rose-900/40'    },
+  'chart-embed':     { label: 'Дијаграм',         color: 'text-teal-300',    bg: 'bg-teal-900/40'    },
+  'comparison':      { label: 'Споредба',         color: 'text-sky-300',     bg: 'bg-sky-900/40'     },
+  'proof':           { label: 'Доказ',            color: 'text-purple-300',  bg: 'bg-purple-900/40'  },
 };
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
@@ -40,12 +42,68 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [svgLoading, setSvgLoading]   = useState<Record<number, boolean>>({});
   const generatingRef                 = useRef<Set<number>>(new Set());
 
+  // ── Speaker notes ─────────────────────────────────────────────────────────
+  const [notesOpen, setNotesOpen]     = useState(false);
+
+  // ── Task timer ────────────────────────────────────────────────────────────
+  const [taskTimer, setTaskTimer]     = useState<number | null>(null);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const timerIntervalRef              = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const slides = data.slides;
   const slide  = slides[idx];
   const total  = slides.length;
   const meta   = SLIDE_META[slide.type];
-  const isStepSlide = slide.type === 'step-by-step';
+  const isStepSlide = slide.type === 'step-by-step' || slide.type === 'proof';
   const hasReveal   = (slide.type === 'task' || slide.type === 'example') && (slide.solution?.length ?? 0) > 0;
+
+  // ── Task timer logic ──────────────────────────────────────────────────────
+  const startTimer = useCallback((seconds: number) => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    setTaskTimer(seconds);
+    setTimerRunning(true);
+    timerIntervalRef.current = setInterval(() => {
+      setTaskTimer(prev => {
+        if (prev === null || prev <= 1) {
+          clearInterval(timerIntervalRef.current!);
+          setTimerRunning(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const stopTimer = useCallback(() => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    setTimerRunning(false);
+  }, []);
+
+  const resetTimer = useCallback(() => {
+    stopTimer();
+    setTaskTimer(null);
+  }, [stopTimer]);
+
+  // Auto-init timer when entering a task slide
+  useEffect(() => {
+    if (slide.type === 'task') {
+      const secs = slide.estimatedSeconds ?? 120;
+      resetTimer();
+      setTaskTimer(secs);
+      setTimerRunning(false); // wait for teacher to start
+    } else {
+      resetTimer();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx]);
+
+  // Cleanup on unmount
+  useEffect(() => () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); }, []);
+
+  const timerPct  = taskTimer !== null && slide.type === 'task'
+    ? (taskTimer / (slide.estimatedSeconds ?? 120)) * 100
+    : 100;
+  const timerColor = timerPct > 40 ? 'bg-emerald-500' : timerPct > 15 ? 'bg-amber-500' : 'bg-red-500';
 
   // ── SVG illustration generation ───────────────────────────────────────────
   const generateSVGForSlide = useCallback(async (slideIndex: number) => {
@@ -299,6 +357,79 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         );
       }
 
+      case 'comparison': {
+        const left  = slide.content;
+        const right = slide.rightContent ?? [];
+        const [leftLabel, rightLabel] = (slide.title ?? '').includes(' vs ')
+          ? slide.title.split(' vs ').map(s => s.trim())
+          : ['А', 'Б'];
+        return (
+          <div className="flex-1 flex flex-col justify-center px-6 md:px-12 gap-4 max-w-5xl mx-auto w-full">
+            <div className="grid grid-cols-2 gap-4 flex-1">
+              {/* Left column */}
+              <div className="flex flex-col rounded-3xl border border-sky-700/40 bg-sky-950/20 p-6 gap-3">
+                <div className="text-xs font-black uppercase tracking-widest text-sky-400 flex items-center gap-2 mb-1">
+                  <ArrowLeftRight className="w-3.5 h-3.5" />{leftLabel}
+                </div>
+                {left.map((line, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0 mt-2.5" />
+                    <p className="text-lg text-slate-200 leading-relaxed font-medium">
+                      <MathRenderer text={line} />
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {/* Right column */}
+              <div className="flex flex-col rounded-3xl border border-violet-700/40 bg-violet-950/20 p-6 gap-3">
+                <div className="text-xs font-black uppercase tracking-widest text-violet-400 flex items-center gap-2 mb-1">
+                  <ArrowLeftRight className="w-3.5 h-3.5" />{rightLabel}
+                </div>
+                {right.map((line, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0 mt-2.5" />
+                    <p className="text-lg text-slate-200 leading-relaxed font-medium">
+                      <MathRenderer text={line} />
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      case 'proof': {
+        return (
+          <div className="flex-1 flex flex-col justify-center px-8 md:px-16 gap-4 max-w-4xl mx-auto w-full">
+            <div className="rounded-3xl border border-purple-700/40 bg-purple-950/20 p-8">
+              <div className="flex items-center gap-2 mb-5 text-xs font-black uppercase tracking-widest text-purple-400">
+                <Shield className="w-3.5 h-3.5" /> Доказ
+              </div>
+              <div className="space-y-4">
+                {slide.content.map((line, i) => (
+                  <div key={i} className={`flex items-start gap-4 transition-all duration-300 ${i > stepIdx ? 'opacity-0 translate-y-1' : i < stepIdx ? 'opacity-40' : ''}`}>
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 mt-0.5 transition ${
+                      i < stepIdx ? 'bg-purple-800 text-purple-300' : i === stepIdx ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30' : 'bg-slate-800 text-slate-500'
+                    }`}>
+                      {i < stepIdx ? '✓' : i + 1}
+                    </div>
+                    <p className={`text-lg leading-relaxed font-medium transition ${i === stepIdx ? 'text-white' : i < stepIdx ? 'text-slate-400' : 'text-transparent'}`}>
+                      <MathRenderer text={line} />
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {stepIdx >= slide.content.length - 1 && (
+                <div className="mt-6 flex items-center gap-2 text-purple-300 text-sm font-bold">
+                  <CheckCircle2 className="w-4 h-4" /> Q.E.D. — Доказот е завршен
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
       case 'summary':
         return (
           <div className="flex-1 flex flex-col justify-center px-8 md:px-16 gap-4 max-w-4xl mx-auto w-full">
@@ -390,13 +521,46 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {spaceHint && (
             <span className="hidden md:flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
               <Lightbulb className="w-3 h-3" />{spaceHint}
             </span>
           )}
-          <span className="text-xs font-bold text-slate-500">
+
+          {/* Task timer — visible on task slides */}
+          {slide.type === 'task' && taskTimer !== null && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div className={`h-full ${timerColor} transition-all duration-1000`} style={{ width: `${timerPct}%` }} />
+              </div>
+              <span className={`font-mono text-xs font-bold ${taskTimer === 0 ? 'text-red-400 animate-pulse' : taskTimer < 20 ? 'text-amber-400' : 'text-slate-400'}`}>
+                {Math.floor(taskTimer / 60)}:{String(taskTimer % 60).padStart(2, '0')}
+              </span>
+              <button
+                type="button"
+                title={timerRunning ? 'Пауза' : 'Започни тајмер'}
+                onClick={() => timerRunning ? stopTimer() : startTimer(taskTimer)}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-500 hover:text-white transition"
+              >
+                <Timer className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Speaker notes toggle */}
+          {slide.speakerNotes && (
+            <button
+              type="button"
+              title={notesOpen ? 'Скриј белешки' : 'Прикажи белешки за наставникот'}
+              onClick={() => setNotesOpen(v => !v)}
+              className={`p-1.5 rounded-lg transition ${notesOpen ? 'bg-amber-500/20 text-amber-300' : 'hover:bg-white/10 text-slate-500 hover:text-white'}`}
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
+          )}
+
+          <span className="text-xs font-bold text-slate-500 ml-1">
             {idx + 1} / {total}
           </span>
           <button type="button" onClick={onClose} title="Излези од Gamma Mode (Esc)"
@@ -424,6 +588,16 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
         {renderBody()}
       </div>
+
+      {/* ── Speaker notes panel ────────────────────────────────────────────── */}
+      {notesOpen && slide.speakerNotes && (
+        <div className="flex-shrink-0 border-t border-amber-500/20 bg-amber-950/30 px-8 py-3 animate-fade-in">
+          <div className="flex items-start gap-2 max-w-4xl mx-auto">
+            <MessageSquare className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-amber-200/80 leading-relaxed">{slide.speakerNotes}</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Footer: progress + navigation ─────────────────────────────────── */}
       <div className="flex flex-col gap-3 px-6 py-4 border-t border-white/5 flex-shrink-0">

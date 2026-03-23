@@ -140,12 +140,16 @@ export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' |
 export interface PresentationSlide {
   title: string;
   content: string[];
-  solution?: string[]; // Revealed on demand in Gamma Mode (task/example slides)
-  visualPrompt?: string; // Prompt for Imagen if teacher wants a background/image
+  solution?: string[];       // Revealed on demand (task/example)
+  rightContent?: string[];   // Second column for comparison slides
+  visualPrompt?: string;     // English prompt for AI SVG illustration
+  speakerNotes?: string;     // Hidden notes visible only in speaker mode
+  estimatedSeconds?: number; // Suggested time on this slide (default: 60)
   // chart-embed: DataViz chart injected directly into Gamma Mode
   chartData?: { headers: string[]; rows: (string | number)[][] };
   chartConfig?: Record<string, unknown>;
-  type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step' | 'formula-centered' | 'chart-embed';
+  type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step'
+      | 'formula-centered' | 'chart-embed' | 'comparison' | 'proof';
 }
 
 export interface AIGeneratedPresentation {

@@ -30,9 +30,12 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'area',           label: 'Површински',         emoji: '🏔️', desc: 'Акумулирани вредности',    minCols: 1 },
   { id: 'pie',            label: 'Пита',               emoji: '🥧', desc: 'Делови од целина',          minCols: 1 },
   { id: 'scatter',        label: 'Расеан (Scatter)',   emoji: '✦',  desc: 'Корелација X-Y',            minCols: 2 },
+  { id: 'scatter-trend',  label: 'Scatter + Тренд',   emoji: '📐', desc: 'Линеарна регресија R²',     minCols: 2 },
   { id: 'bubble',         label: 'Balloon (Bubble)',   emoji: '🫧', desc: 'Три dimenzii',              minCols: 3 },
   { id: 'histogram',      label: 'Хистограм',          emoji: '▬',  desc: 'Распределба',               minCols: 1 },
   { id: 'box-whisker',    label: 'Box-and-Whisker',    emoji: '⊟',  desc: 'Квартили + медијана',       minCols: 1 },
+  { id: 'stem-leaf',      label: 'Стебло-Листови',    emoji: '🌿', desc: 'Сите вредности, МОН 6-8р.',  minCols: 1 },
+  { id: 'dot-plot',       label: 'Точкаст дијаграм',  emoji: '⠿',  desc: 'Броење на точки, МОН 5-7р.', minCols: 1 },
 ];
 
 type StudioTab = 'chart' | 'paper' | 'ai' | 'prob';
@@ -285,6 +288,27 @@ export const DataVizStudioView: React.FC = () => {
                         </label>
                       ))}
                     </div>
+
+                    {/* Histogram bins slider */}
+                    {config.type === 'histogram' && (
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block flex items-center justify-between">
+                          <span>Број на класи (bins)</span>
+                          <span className="text-indigo-600 font-extrabold">{config.bins ?? 8}</span>
+                        </label>
+                        <input
+                          type="range" min={2} max={20} step={1}
+                          value={config.bins ?? 8}
+                          onChange={e => updateConfig('bins', parseInt(e.target.value, 10))}
+                          className="w-full accent-indigo-600"
+                          aria-label="Број на класи за хистограм"
+                          title="Број на класи за хистограм"
+                        />
+                        <div className="flex justify-between text-[9px] text-gray-400 mt-0.5">
+                          <span>2</span><span>20</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

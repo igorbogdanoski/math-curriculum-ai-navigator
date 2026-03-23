@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import {
   BarChart, Bar, LabelList, LineChart, Line, AreaChart, Area,
   PieChart, Pie, Cell, ScatterChart, Scatter,
+  ComposedChart,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ZAxis,
 } from 'recharts';
@@ -10,7 +11,8 @@ import { tableToChartData } from './DataTable';
 
 export type ChartType =
   | 'bar' | 'bar-horizontal' | 'line' | 'area'
-  | 'pie' | 'scatter' | 'histogram' | 'box-whisker' | 'bubble';
+  | 'pie' | 'scatter' | 'scatter-trend' | 'histogram' | 'box-whisker' | 'bubble'
+  | 'stem-leaf' | 'dot-plot';
 
 export interface ChartConfig {
   type: ChartType;
@@ -21,6 +23,7 @@ export interface ChartConfig {
   showLegend: boolean;
   showGrid: boolean;
   unit: string;
+  bins?: number;
 }
 
 export const COLOR_PALETTES: Record<string, string[]> = {
@@ -42,6 +45,7 @@ export const DEFAULT_CONFIG: ChartConfig = {
   showLegend: true,
   showGrid: true,
   unit: '',
+  bins: 8,
 };
 
 // ─── Box-Whisker custom SVG ─────────────────────────────────────────────────
@@ -128,6 +132,149 @@ const BoxWhiskerChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ d
   );
 };
 
+// ─── Linear regression helper ────────────────────────────────────────────────
+function linearRegression(points: { x: number; y: number }[]) {
+  const n = points.length;
+  if (n < 2) return { slope: 0, intercept: 0, r2: 0 };
+  const sumX = points.reduce((a, p) => a + p.x, 0);
+  const sumY = points.reduce((a, p) => a + p.y, 0);
+  const sumXY = points.reduce((a, p) => a + p.x * p.y, 0);
+  const sumX2 = points.reduce((a, p) => a + p.x * p.x, 0);
+  const sumY2 = points.reduce((a, p) => a + p.y * p.y, 0);
+  const denom = n * sumX2 - sumX * sumX;
+  if (denom === 0) return { slope: 0, intercept: sumY / n, r2: 0 };
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
+  const ssRes = points.reduce((a, p) => a + (p.y - (slope * p.x + intercept)) ** 2, 0);
+  const ssTot = points.reduce((a, p) => a + (p.y - sumY / n) ** 2, 0);
+  const r2 = ssTot === 0 ? 1 : 1 - ssRes / ssTot;
+  return { slope, intercept, r2 };
+}
+
+// ─── Stem-and-Leaf chart ─────────────────────────────────────────────────────
+const StemLeafChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ data, config }) => {
+  const values = data.rows
+    .map(r => typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])))
+    .filter(v => !isNaN(v))
+    .map(v => Math.round(v));
+
+  const stems = new Map<number, number[]>();
+  for (const v of values) {
+    const stem = Math.floor(Math.abs(v) / 10) * Math.sign(v);
+    const leaf = Math.abs(v) % 10;
+    if (!stems.has(stem)) stems.set(stem, []);
+    stems.get(stem)!.push(leaf);
+  }
+  const sortedStems = Array.from(stems.keys()).sort((a, b) => a - b);
+  for (const leaves of stems.values()) leaves.sort((a, b) => a - b);
+
+  const W = 420; const rowH = 28; const stemColW = 60; const padV = 44;
+  const H = padV + sortedStems.length * rowH + 20;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 400 }}>
+      {config.title && (
+        <text x={W / 2} y={18} textAnchor="middle" fontSize={13} fontWeight={700} fill="#1f2937">{config.title}</text>
+      )}
+      {/* Column headers */}
+      <text x={stemColW / 2} y={36} textAnchor="middle" fontSize={11} fontWeight={700} fill="#6b7280">Стебло</text>
+      <text x={stemColW + 12} y={36} textAnchor="start" fontSize={11} fontWeight={700} fill="#6b7280">Листови</text>
+      {/* Divider header line */}
+      <line x1={stemColW} x2={stemColW} y1={26} y2={H - 8} stroke="#d1d5db" strokeWidth={1.5} />
+      <line x1={0} x2={W} y1={40} y2={40} stroke="#e5e7eb" strokeWidth={1} />
+      {/* Rows */}
+      {sortedStems.map((stem, i) => {
+        const y = padV + i * rowH + rowH / 2 + 4;
+        const rowBg = i % 2 === 0 ? '#f9fafb' : '#ffffff';
+        return (
+          <g key={stem}>
+            <rect x={0} y={padV + i * rowH} width={W} height={rowH} fill={rowBg} />
+            <text x={stemColW - 8} y={y} textAnchor="end" fontSize={13} fontWeight={700} fill="#1d4ed8">{stem}</text>
+            <text x={stemColW + 10} y={y} textAnchor="start" fontSize={13} fill="#374151" fontFamily="monospace" letterSpacing={6}>
+              {stems.get(stem)!.join('  ')}
+            </text>
+          </g>
+        );
+      })}
+      {/* Bottom border */}
+      <line x1={0} x2={W} y1={H - 8} y2={H - 8} stroke="#e5e7eb" strokeWidth={1} />
+      {/* Count label */}
+      <text x={W - 4} y={H - 12} textAnchor="end" fontSize={9} fill="#9ca3af">n = {values.length}</text>
+    </svg>
+  );
+};
+
+// ─── Dot Plot chart ──────────────────────────────────────────────────────────
+const DotPlotChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ data, config }) => {
+  const values = data.rows
+    .map(r => typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])))
+    .filter(v => !isNaN(v));
+
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+  const range = maxV - minV || 1;
+
+  // Count stacks per value (rounded to 1 decimal for display)
+  const stacks = new Map<number, number>();
+  for (const v of values) {
+    const key = Math.round(v * 10) / 10;
+    stacks.set(key, (stacks.get(key) ?? 0) + 1);
+  }
+  const maxStack = Math.max(...stacks.values(), 1);
+
+  const W = 560; const padL = 40; const padR = 20; const padB = 50; const padT = 30;
+  const plotW = W - padL - padR;
+  const dotR = Math.min(10, plotW / (stacks.size + 1) / 2 - 1);
+  const H = padT + (maxStack + 1) * (dotR * 2 + 3) + padB;
+  const baseY = H - padB;
+  const color = config.colorPalette[0] ?? '#3B82F6';
+
+  const toX = (v: number) => padL + ((v - minV) / range) * plotW;
+
+  // Axis ticks: 5 evenly spaced
+  const ticks = Array.from({ length: 5 }, (_, i) => minV + (i / 4) * range);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 360 }}>
+      {config.title && (
+        <text x={W / 2} y={16} textAnchor="middle" fontSize={13} fontWeight={700} fill="#1f2937">{config.title}</text>
+      )}
+      {/* Grid lines */}
+      {config.showGrid && ticks.map((t, i) => (
+        <line key={i} x1={toX(t)} x2={toX(t)} y1={padT} y2={baseY} stroke="#f0f0f0" strokeWidth={1} />
+      ))}
+      {/* Number line */}
+      <line x1={padL} x2={W - padR} y1={baseY} y2={baseY} stroke="#6b7280" strokeWidth={2} />
+      {/* Tick marks + labels */}
+      {ticks.map((t, i) => (
+        <g key={i}>
+          <line x1={toX(t)} x2={toX(t)} y1={baseY} y2={baseY + 6} stroke="#6b7280" strokeWidth={1.5} />
+          <text x={toX(t)} y={baseY + 18} textAnchor="middle" fontSize={10} fill="#374151">
+            {Number.isInteger(t) ? t : t.toFixed(1)}
+          </text>
+        </g>
+      ))}
+      {/* X label */}
+      {config.xLabel && (
+        <text x={W / 2} y={H - 4} textAnchor="middle" fontSize={11} fill="#6b7280">{config.xLabel}</text>
+      )}
+      {/* Dots */}
+      {Array.from(stacks.entries()).map(([val, count]) => {
+        const cx = toX(val);
+        return Array.from({ length: count }, (_, stackI) => {
+          const cy = baseY - dotR - stackI * (dotR * 2 + 3) - 2;
+          return (
+            <circle key={`${val}-${stackI}`} cx={cx} cy={cy} r={dotR}
+              fill={color} fillOpacity={0.8} stroke={color} strokeWidth={1} />
+          );
+        });
+      })}
+      {/* Count */}
+      <text x={W - 4} y={padT + 10} textAnchor="end" fontSize={9} fill="#9ca3af">n = {values.length}</text>
+    </svg>
+  );
+};
+
 // ─── Histogram helper ───────────────────────────────────────────────────────
 function buildHistogram(values: number[], bins = 8): { name: string; count: number }[] {
   if (values.length === 0) return [];
@@ -174,9 +321,17 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
     return <BoxWhiskerChart data={data} config={config} />;
   }
 
+  if (config.type === 'stem-leaf') {
+    return <StemLeafChart data={data} config={config} />;
+  }
+
+  if (config.type === 'dot-plot') {
+    return <DotPlotChart data={data} config={config} />;
+  }
+
   if (config.type === 'histogram') {
     const values = data.rows.map(r => typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])) || 0);
-    const histData = buildHistogram(values);
+    const histData = buildHistogram(values, config.bins ?? 8);
     return (
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={histData} barCategoryGap="5%">
@@ -210,12 +365,44 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
     );
   }
 
-  if (config.type === 'scatter') {
+  if (config.type === 'scatter' || config.type === 'scatter-trend') {
     const scatterData = data.rows.map(r => ({
       x: typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])) || 0,
       y: typeof r[2] === 'number' ? r[2] : parseFloat(String(r[2])) || 0,
       name: String(r[0]),
     }));
+
+    if (config.type === 'scatter-trend' && scatterData.length >= 2) {
+      const { slope, intercept, r2 } = linearRegression(scatterData);
+      const xs = scatterData.map(p => p.x);
+      const xMin = Math.min(...xs); const xMax = Math.max(...xs);
+      const trendLine = [
+        { x: xMin, trend: slope * xMin + intercept },
+        { x: xMax, trend: slope * xMax + intercept },
+      ];
+      return (
+        <div className="relative">
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart>
+              {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
+              <XAxis dataKey="x" type="number" domain={['auto', 'auto']} tick={{ fontSize: 10 }}
+                label={config.xLabel ? { value: config.xLabel, position: 'insideBottom', offset: -5, style: { fontSize: 10 } } : undefined} />
+              <YAxis dataKey="y" type="number" domain={['auto', 'auto']} tick={{ fontSize: 10 }}
+                label={config.yLabel ? { value: config.yLabel, angle: -90, position: 'insideLeft', style: { fontSize: 10 } } : undefined} />
+              <Tooltip formatter={(v) => [`${v}${unit}`, '']} />
+              <Scatter data={scatterData} fill={colors[0]} fillOpacity={0.8} name="Податоци" />
+              <Line data={trendLine} dataKey="trend" type="linear" dot={false}
+                stroke={colors[1] ?? '#ef4444'} strokeWidth={2} strokeDasharray="6 3" name="Тренд" legendType="line" />
+              {config.showLegend && <Legend wrapperStyle={{ fontSize: 11 }} />}
+            </ComposedChart>
+          </ResponsiveContainer>
+          <p className="text-[10px] text-gray-400 text-right pr-2 -mt-1">
+            R² = {r2.toFixed(3)} · y = {slope.toFixed(2)}x {intercept >= 0 ? '+' : '−'} {Math.abs(intercept).toFixed(2)}
+          </p>
+        </div>
+      );
+    }
+
     return (
       <ResponsiveContainer width="100%" height={300}>
         <ScatterChart>
