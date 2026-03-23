@@ -105,6 +105,7 @@ export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' |
 export interface PresentationSlide {
   title: string;
   content: string[];
+  solution?: string[]; // Revealed on demand in Gamma Mode (task/example slides)
   visualPrompt?: string; // Prompt for Imagen if teacher wants a background/image
   type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step' | 'formula-centered';
 }

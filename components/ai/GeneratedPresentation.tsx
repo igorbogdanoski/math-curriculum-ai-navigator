@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Presentation, Image as ImageIcon, ChevronLeft, ChevronRight, FileDown, Sparkles, Loader2, BookOpen, Cpu, MousePointer2, Radio, Zap, X, Users, ExternalLink, Maximize2, Minimize2, PenLine, Plus, Trash2, Save, Check } from 'lucide-react';
+import { Presentation, Image as ImageIcon, ChevronLeft, ChevronRight, FileDown, Sparkles, Loader2, BookOpen, Cpu, MousePointer2, Radio, Zap, X, Users, ExternalLink, Maximize2, Minimize2, PenLine, Plus, Trash2, Save, Check, Play } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
+import { GammaModeModal } from './GammaModeModal';
 import { Card } from '../common/Card';
 import { MathRenderer } from '../common/MathRenderer';
 import { geminiService } from '../../services/geminiService';
@@ -216,6 +217,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
   const [theme, setTheme] = useState<'modern' | 'classic' | 'dark' | 'creative'>('modern');
   const [showCurriculumSide, setShowCurriculumSide] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [gammaMode, setGammaMode] = useState(false);
   const [editedSlides, setEditedSlides] = useState<PresentationSlide[]>(() => data.slides.map(s => ({ ...s, content: [...s.content] })));
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -699,6 +701,16 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                 title="Курикулум пано"
             >
                 <BookOpen className="w-5 h-5" />
+            </button>
+
+            <button
+                type="button"
+                onClick={() => setGammaMode(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold hover:from-indigo-700 hover:to-violet-700 transition-all shadow-md active:scale-95"
+                title="Gamma Mode — Наставно предавање со решенија"
+            >
+                <Play className="w-4 h-4" />
+                <span className="hidden sm:inline text-sm">Gamma Mode</span>
             </button>
 
             <button
@@ -1254,6 +1266,15 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Gamma Mode fullscreen overlay ──────────────────────────────────── */}
+      {gammaMode && (
+        <GammaModeModal
+          data={{ ...data, slides: editedSlides }}
+          startIndex={currentSlide}
+          onClose={() => setGammaMode(false)}
+        />
       )}
     </div>
   );
