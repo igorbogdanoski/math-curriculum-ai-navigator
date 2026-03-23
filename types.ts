@@ -85,6 +85,41 @@ export interface SecondaryCurriculumModule {
   curriculum: Curriculum;
 }
 
+// ─── Матура / ДИМ Симулација ─────────────────────────────────────────────────
+
+export type MaturaChoice = 'А' | 'Б' | 'В' | 'Г';
+
+export interface MaturaQuestion {
+  id: string;
+  questionNumber: number;
+  questionText: string;
+  choices: Record<MaturaChoice, string>;
+  correctAnswer: MaturaChoice;
+  topic: string;
+  bloomLevel?: string;
+  points: number;
+  imageUrl?: string;
+}
+
+export interface MaturaExam {
+  id: string;
+  year: number;
+  track: SecondaryTrack;
+  gradeLevel: number;
+  title?: string;
+  durationMinutes: number;
+  questions: MaturaQuestion[];
+}
+
+export interface MaturaResult {
+  examId: string;
+  completedAt: string;
+  answers: Record<string, MaturaChoice>;
+  score: number;
+  totalPoints: number;
+  durationSeconds: number;
+}
+
 export interface ConceptProgression {
   conceptId: string;
   title:string;
