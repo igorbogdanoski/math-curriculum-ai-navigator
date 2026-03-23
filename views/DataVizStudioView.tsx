@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
-  Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown
+  Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { DataTable, DEFAULT_TABLE } from '../components/dataviz/DataTable';
@@ -10,6 +10,7 @@ import { ChartPreview, COLOR_PALETTES, DEFAULT_CONFIG } from '../components/data
 import type { ChartType, ChartConfig } from '../components/dataviz/ChartPreview';
 import { MathPaperGenerator } from '../components/dataviz/MathPaperGenerator';
 import { AIStatsAssistant } from '../components/dataviz/AIStatsAssistant';
+import { ProbabilityLab } from '../components/dataviz/ProbabilityLab';
 import { useNotification } from '../contexts/NotificationContext';
 
 // ─── Chart type definitions ──────────────────────────────────────────────────
@@ -33,7 +34,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'box-whisker',    label: 'Box-and-Whisker',    emoji: '⊟',  desc: 'Квартили + медијана',       minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai';
+type StudioTab = 'chart' | 'paper' | 'ai' | 'prob';
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 export const DataVizStudioView: React.FC = () => {
@@ -121,9 +122,10 @@ export const DataVizStudioView: React.FC = () => {
 
   // ── Tabs ───────────────────────────────────────────────────────────────────
   const TABS = [
-    { id: 'chart' as StudioTab,  label: 'Градител на графици',    icon: BarChart2,      color: 'indigo' },
-    { id: 'paper' as StudioTab,  label: 'Математичка хартија',    icon: Grid3X3,        color: 'emerald' },
-    { id: 'ai'    as StudioTab,  label: 'AI Асистент',            icon: Sparkles,       color: 'violet' },
+    { id: 'chart' as StudioTab, label: 'Градител на графици',  icon: BarChart2, color: 'indigo'  },
+    { id: 'paper' as StudioTab, label: 'Математичка хартија',  icon: Grid3X3,   color: 'emerald' },
+    { id: 'ai'    as StudioTab, label: 'AI Асистент',          icon: Sparkles,  color: 'violet'  },
+    { id: 'prob'  as StudioTab, label: 'Лаб. Веројатност',     icon: Sigma,     color: 'rose'    },
   ];
 
   return (
@@ -389,6 +391,27 @@ export const DataVizStudioView: React.FC = () => {
               onChartTypeChange={type => updateConfig('type', type)}
               onTableDataChange={setTableData}
               onConfigChange={updates => setConfig(prev => ({ ...prev, ...updates }))}
+              onGoToChart={() => setActiveTab('chart')}
+            />
+          </div>
+        )}
+
+        {/* ══ TAB 4: PROBABILITY LAB ═══════════════════════════════════════ */}
+        {activeTab === 'prob' && (
+          <div>
+            <div className="mb-5 bg-white rounded-2xl border border-gray-200 p-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Sigma className="w-5 h-5 text-rose-500" /> Лабораторија за Веројатност
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Симулирај монета, коцка, спинер и составени настани · Теоретска vs. Експериментална веројатност
+              </p>
+            </div>
+            <ProbabilityLab
+              onSendToDataViz={(td, cfg) => {
+                setTableData(td);
+                setConfig(prev => ({ ...prev, ...cfg }));
+              }}
               onGoToChart={() => setActiveTab('chart')}
             />
           </div>
