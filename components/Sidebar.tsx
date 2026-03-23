@@ -158,6 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value as import('../i18n').Language)}
+              aria-label="Избери јазик на интерфејсот"
               className="w-full text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary py-1.5 px-2"
             >
               <option value="mk">🇲🇰 Македонски</option>

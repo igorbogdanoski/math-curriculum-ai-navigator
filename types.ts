@@ -107,7 +107,10 @@ export interface PresentationSlide {
   content: string[];
   solution?: string[]; // Revealed on demand in Gamma Mode (task/example slides)
   visualPrompt?: string; // Prompt for Imagen if teacher wants a background/image
-  type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step' | 'formula-centered';
+  // chart-embed: DataViz chart injected directly into Gamma Mode
+  chartData?: { headers: string[]; rows: (string | number)[][] };
+  chartConfig?: Record<string, unknown>;
+  type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step' | 'formula-centered' | 'chart-embed';
 }
 
 export interface AIGeneratedPresentation {

@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen } from 'lucide-react';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
+import { ChartPreview } from '../dataviz/ChartPreview';
+import type { ChartConfig } from '../dataviz/ChartPreview';
+import type { TableData } from '../dataviz/DataTable';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -19,6 +22,7 @@ const SLIDE_META: Record<PresentationSlide['type'], { label: string; color: stri
   'example':         { label: 'Пример',           color: 'text-emerald-300', bg: 'bg-emerald-900/40'},
   'task':            { label: 'Задача',            color: 'text-amber-300',   bg: 'bg-amber-900/40'  },
   'summary':         { label: 'Заклучок',         color: 'text-rose-300',    bg: 'bg-rose-900/40'   },
+  'chart-embed':     { label: 'Дијаграм',         color: 'text-teal-300',    bg: 'bg-teal-900/40'   },
 };
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
@@ -26,20 +30,24 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [idx, setIdx]           = useState(startIndex);
   const [revealed, setRevealed] = useState(false);
   const [stepIdx, setStepIdx]   = useState(0);
-  const [entering, setEntering] = useState(false);
+  const [visible, setVisible]   = useState(true);
+  const [dir, setDir]           = useState<'fwd' | 'back'>('fwd');
 
   const slides = data.slides;
   const slide  = slides[idx];
   const total  = slides.length;
   const meta   = SLIDE_META[slide.type];
-  const isStepSlide   = slide.type === 'step-by-step';
-  const hasReveal     = (slide.type === 'task' || slide.type === 'example') && (slide.solution?.length ?? 0) > 0;
+  const isStepSlide = slide.type === 'step-by-step';
+  const hasReveal   = (slide.type === 'task' || slide.type === 'example') && (slide.solution?.length ?? 0) > 0;
 
-  // ── Animate slide transition ───────────────────────────────────────────────
-  const animateTransition = useCallback((fn: () => void) => {
-    setEntering(true);
-    fn();
-    setTimeout(() => setEntering(false), 20);
+  // ── Directional slide transition ──────────────────────────────────────────
+  const animateTransition = useCallback((fn: () => void, direction: 'fwd' | 'back') => {
+    setDir(direction);
+    setVisible(false);
+    setTimeout(() => {
+      fn();
+      requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
+    }, 160);
   }, []);
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -57,7 +65,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         setIdx(p => p + 1);
         setRevealed(false);
         setStepIdx(0);
-      });
+      }, 'fwd');
     }
   }, [idx, total, revealed, hasReveal, isStepSlide, stepIdx, slide, animateTransition]);
 
@@ -75,7 +83,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         setIdx(p => p - 1);
         setRevealed(false);
         setStepIdx(0);
-      });
+      }, 'back');
     }
   }, [idx, revealed, isStepSlide, stepIdx, animateTransition]);
 
@@ -238,6 +246,48 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           </div>
         );
 
+      case 'chart-embed': {
+        const td = slide.chartData
+          ? { headers: slide.chartData.headers, rows: slide.chartData.rows } as TableData
+          : null;
+        const cfg = slide.chartConfig as ChartConfig | undefined;
+        return (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4 overflow-auto">
+            {td && cfg ? (
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden">
+                {cfg.title && (
+                  <div className="px-6 pt-5">
+                    <h3 className="text-xl font-black text-gray-800 text-center">{String(cfg.title)}</h3>
+                  </div>
+                )}
+                <div className="p-6">
+                  <ChartPreview data={td} config={cfg} />
+                </div>
+                {(cfg.xLabel || cfg.yLabel) && (
+                  <p className="px-6 pb-4 text-center text-xs text-gray-400">
+                    {cfg.xLabel && <span>X: {String(cfg.xLabel)}</span>}
+                    {cfg.xLabel && cfg.yLabel && ' · '}
+                    {cfg.yLabel && <span>Y: {String(cfg.yLabel)}</span>}
+                    {cfg.unit && <span> ({String(cfg.unit)})</span>}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-slate-400">Нема податоци за дијаграм.</p>
+            )}
+            {slide.content.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-3">
+                {slide.content.map((note, i) => (
+                  <span key={i} className="px-3 py-1.5 bg-white/10 text-slate-300 rounded-full text-sm">
+                    <MathRenderer text={note} />
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       default: // 'content'
         return (
           <div className="flex-1 flex flex-col justify-center px-8 md:px-16 gap-4 max-w-4xl mx-auto w-full">
@@ -282,7 +332,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           <span className="text-xs font-bold text-slate-500">
             {idx + 1} / {total}
           </span>
-          <button type="button" onClick={onClose}
+          <button type="button" onClick={onClose} title="Излези од Gamma Mode (Esc)"
             className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition">
             <X className="w-5 h-5" />
           </button>
@@ -290,7 +340,11 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       </div>
 
       {/* ── Slide canvas ───────────────────────────────────────────────────── */}
-      <div className={`flex-1 flex flex-col overflow-hidden transition-opacity duration-150 ${entering ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-200 ${
+        !visible
+          ? dir === 'fwd' ? 'opacity-0 translate-x-8' : 'opacity-0 -translate-x-8'
+          : 'opacity-100 translate-x-0'
+      }`}>
 
         {/* Slide title (except for 'title' type which renders its own) */}
         {slide.type !== 'title' && (
@@ -312,6 +366,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             const isActive = idx >= dotSlideIdx && (di === dots.length - 1 || idx < dots[di + 1]);
             return (
               <button key={di} type="button"
+                title={`Оди на слајд ${dotSlideIdx + 1}`}
                 onClick={() => { setIdx(dotSlideIdx); setRevealed(false); setStepIdx(0); }}
                 className={`rounded-full transition-all ${
                   isActive ? 'w-5 h-2.5 bg-indigo-400' : 'w-2 h-2 bg-slate-700 hover:bg-slate-500'

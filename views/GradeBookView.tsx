@@ -415,7 +415,7 @@ export const GradeBookView: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div className="md:col-span-2 space-y-1">
             <input type="text" value={newName} onChange={e => { setNewName(e.target.value); setFormErrors(p => ({ ...p, name: '' })); }}
-              placeholder="Име на ученик" aria-label="Ime na uchenik"
+              placeholder="Име на ученик" aria-label="Име на ученик"
               className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-primary ${formErrors.name ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
             {formErrors.name && <p className="text-[11px] text-red-500 px-1">{formErrors.name}</p>}
           </div>

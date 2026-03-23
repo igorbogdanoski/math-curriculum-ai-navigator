@@ -25,7 +25,7 @@ export const useNotification = () => {
 
 const NotificationContainer: React.FC<{ notifications: Notification[]; removeNotification: (id: number) => void }> = ({ notifications, removeNotification }) => {
   return (
-    <div className="fixed top-5 right-5 z-50 space-y-3">
+    <div className="fixed top-5 right-5 z-50 space-y-3" aria-live="polite" aria-atomic="true" role="status">
       {notifications.map((notification: Notification) => (
         <div
           key={notification.id}

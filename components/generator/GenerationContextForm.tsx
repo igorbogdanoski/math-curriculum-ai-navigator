@@ -239,8 +239,8 @@ export const GenerationContextForm: React.FC<GenerationContextFormProps> = ({ st
                 
                 {contextType === 'STANDARD' && (
                     <div className="animate-fade-in">
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Национален стандард</label>
-                        <select value={selectedStandard} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedStandard', value: e.target.value }})} className="block w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-0 focus:border-brand-primary outline-none transition-all shadow-sm font-medium text-gray-800">
+                        <label htmlFor="national-standard" className="block text-sm font-bold text-gray-700 mb-2">Национален стандард</label>
+                        <select id="national-standard" value={selectedStandard} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'selectedStandard', value: e.target.value }})} className="block w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-0 focus:border-brand-primary outline-none transition-all shadow-sm font-medium text-gray-800">
                             {allNationalStandards?.map((s: NationalStandard) => <option key={s.id} value={s.id}>{s.code} - {s.description}</option>)}
                         </select>
                     </div>

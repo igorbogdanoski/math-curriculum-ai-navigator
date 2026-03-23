@@ -11,6 +11,7 @@ import type { ChartType, ChartConfig } from '../components/dataviz/ChartPreview'
 import { MathPaperGenerator } from '../components/dataviz/MathPaperGenerator';
 import { AIStatsAssistant } from '../components/dataviz/AIStatsAssistant';
 import { ProbabilityLab } from '../components/dataviz/ProbabilityLab';
+import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { useNotification } from '../contexts/NotificationContext';
 
 // ─── Chart type definitions ──────────────────────────────────────────────────
@@ -46,6 +47,7 @@ export const DataVizStudioView: React.FC = () => {
   const [config, setConfig] = useState<ChartConfig>(DEFAULT_CONFIG);
   const [showCustomize, setShowCustomize] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [gammaOpen, setGammaOpen] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
   // В2 — import data from sessionStorage (sent by Analytics, AnnualPlanner, Explore, Planner)
@@ -320,7 +322,11 @@ export const DataVizStudioView: React.FC = () => {
                 <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-1.5">
                   <Download className="w-3.5 h-3.5" /> Извоз
                 </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <button type="button" onClick={() => setGammaOpen(true)}
+                    className="flex flex-col items-center gap-1 px-3 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-xl text-xs font-bold hover:opacity-90 transition shadow-md col-span-1">
+                    <Eye className="w-4 h-4" />Gamma<span className="font-normal opacity-80">Слајд</span>
+                  </button>
                   <button type="button" onClick={exportPNG} disabled={exporting}
                     className="flex flex-col items-center gap-1 px-3 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-60 transition">
                     <Download className="w-4 h-4" />PNG<span className="font-normal opacity-70">300 DPI</span>
@@ -417,6 +423,28 @@ export const DataVizStudioView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* ── Gamma Mode: chart as single slide ─────────────────────────────── */}
+      {gammaOpen && (
+        <GammaModeModal
+          data={{
+            title: config.title || 'Дијаграм',
+            topic: config.xLabel || 'DataViz Studio',
+            gradeLevel: 0,
+            slides: [{
+              type: 'chart-embed',
+              title: config.title || 'Дијаграм',
+              content: [
+                ...(config.xLabel ? [`X: ${config.xLabel}`] : []),
+                ...(config.yLabel ? [`Y: ${config.yLabel}`] : []),
+              ],
+              chartData: { headers: tableData.headers, rows: tableData.rows },
+              chartConfig: config as unknown as Record<string, unknown>,
+            }],
+          }}
+          onClose={() => setGammaOpen(false)}
+        />
+      )}
     </div>
   );
 };

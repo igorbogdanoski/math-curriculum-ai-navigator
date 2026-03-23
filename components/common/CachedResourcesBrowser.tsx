@@ -68,6 +68,7 @@ export const CachedResourcesBrowser: React.FC<CachedResourcesBrowserProps> = ({ 
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
+            aria-label="Пребарај низ архивата"
             placeholder="Пребарај низ архивата..."
             className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm focus:border-blue-500 outline-none transition-all"
             value={searchTerm}
