@@ -12,6 +12,7 @@ import { MathPaperGenerator } from '../components/dataviz/MathPaperGenerator';
 import { AIStatsAssistant } from '../components/dataviz/AIStatsAssistant';
 import { ProbabilityLab } from '../components/dataviz/ProbabilityLab';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
+import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import { useNotification } from '../contexts/NotificationContext';
 
 // ─── Chart type definitions ──────────────────────────────────────────────────
@@ -451,24 +452,30 @@ export const DataVizStudioView: React.FC = () => {
 
       {/* ── Gamma Mode: chart as single slide ─────────────────────────────── */}
       {gammaOpen && (
-        <GammaModeModal
-          data={{
-            title: config.title || 'Дијаграм',
-            topic: config.xLabel || 'DataViz Studio',
-            gradeLevel: 0,
-            slides: [{
-              type: 'chart-embed',
+        <SilentErrorBoundary name="GammaMode" fallback={
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950 text-white" onClick={() => setGammaOpen(false)}>
+            <p className="text-slate-400">Gamma Mode не можеше да се вчита. Кликни за да затвориш.</p>
+          </div>
+        }>
+          <GammaModeModal
+            data={{
               title: config.title || 'Дијаграм',
-              content: [
-                ...(config.xLabel ? [`X: ${config.xLabel}`] : []),
-                ...(config.yLabel ? [`Y: ${config.yLabel}`] : []),
-              ],
-              chartData: { headers: tableData.headers, rows: tableData.rows },
-              chartConfig: config as unknown as Record<string, unknown>,
-            }],
-          }}
-          onClose={() => setGammaOpen(false)}
-        />
+              topic: config.xLabel || 'DataViz Studio',
+              gradeLevel: 0,
+              slides: [{
+                type: 'chart-embed',
+                title: config.title || 'Дијаграм',
+                content: [
+                  ...(config.xLabel ? [`X: ${config.xLabel}`] : []),
+                  ...(config.yLabel ? [`Y: ${config.yLabel}`] : []),
+                ],
+                chartData: { headers: tableData.headers, rows: tableData.rows },
+                chartConfig: config as unknown as Record<string, unknown>,
+              }],
+            }}
+            onClose={() => setGammaOpen(false)}
+          />
+        </SilentErrorBoundary>
       )}
     </div>
   );
