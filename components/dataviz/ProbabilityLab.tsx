@@ -44,7 +44,7 @@ function wilsonCI(count: number, total: number): [number, number] {
   const z = 1.96; // 95%
   const z2n = (z * z) / total;
   const center = (p + z2n / 2) / (1 + z2n);
-  const margin = (z / (1 + z2n)) * Math.sqrt(p * (1 - p) / total + z2n / 4);
+  const margin = (z / (1 + z2n)) * Math.sqrt(p * (1 - p) / total + z2n / (4 * total));
   return [Math.max(0, center - margin), Math.min(1, center + margin)];
 }
 

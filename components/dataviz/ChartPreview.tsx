@@ -52,9 +52,10 @@ export const DEFAULT_CONFIG: ChartConfig = {
 function computeBoxStats(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
   const n = sorted.length;
-  const q1 = sorted[Math.floor(n * 0.25)];
+  // For n < 4 the percentile method gives degenerate results; fall back to min/max
+  const q1 = n >= 4 ? sorted[Math.floor(n * 0.25)] : sorted[0];
   const median = n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[Math.floor(n / 2)];
-  const q3 = sorted[Math.floor(n * 0.75)];
+  const q3 = n >= 4 ? sorted[Math.floor(n * 0.75)] : sorted[n - 1];
   const iqr = q3 - q1;
   const whiskerLow = Math.max(sorted[0], q1 - 1.5 * iqr);
   const whiskerHigh = Math.min(sorted[n - 1], q3 + 1.5 * iqr);

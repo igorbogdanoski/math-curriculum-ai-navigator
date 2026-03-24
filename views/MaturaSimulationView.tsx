@@ -177,14 +177,12 @@ export const MaturaSimulationView: React.FC = () => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current!);
-          handleSubmit();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, submitted]);
 
   // ── Start exam ───────────────────────────────────────────────────────────
@@ -223,6 +221,13 @@ export const MaturaSimulationView: React.FC = () => {
     setResult(r);
     setMode('results');
   }, [selectedExam, submitted, answers, examStart]);
+
+  // Auto-submit when timer reaches zero (kept separate to avoid setState side effects)
+  useEffect(() => {
+    if (mode === 'exam' && !submitted && timeLeft === 0 && selectedExam) {
+      handleSubmit();
+    }
+  }, [timeLeft, mode, submitted, selectedExam, handleSubmit]);
 
   // ── AI analysis ──────────────────────────────────────────────────────────
   const requestAiAnalysis = async () => {
@@ -266,7 +271,7 @@ export const MaturaSimulationView: React.FC = () => {
 
   // ── Render: SELECT ───────────────────────────────────────────────────────
   if (mode === 'select') {
-    const tracks: SecondaryTrack[] = ['gymnasium', 'vocational4', 'vocational3'];
+    const tracks: SecondaryTrack[] = ['gymnasium', 'gymnasium_elective', 'vocational4', 'vocational3'];
     return (
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
         {/* Header */}

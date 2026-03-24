@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Loader2, Check, X, Wand2 } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGeminiProxy, DEFAULT_MODEL, sanitizePromptInput } from '../../services/gemini/core';
 import type { MaterialType } from '../../types';
 
 interface IntentResult {
@@ -51,12 +51,7 @@ export const SmartStart: React.FC<SmartStartProps> = ({ onAccept }) => {
     setError(null);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) throw new Error('No API key');
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
+      const safeInput = sanitizePromptInput(trimmed, 500);
       const prompt = `You are an AI assistant for Macedonian math teachers (grades 1-13, covering primary school grades 1-9 and secondary/gymnasium grades 10-13).
 Given the teacher's description, choose the single best material type.
 
@@ -72,13 +67,17 @@ Available types and when to use each:
 - WORKED_EXAMPLE: step-by-step solved example with explanation per step
 - PRESENTATION: slides with content, activities, AI elements (PRO)
 
-Teacher's request: "${trimmed}"
+Teacher's request: "${safeInput}"
 
 Respond ONLY with valid JSON, no markdown fences:
 {"materialType":"EXIT_TICKET","grade":null,"topicHint":null,"explanation":"Краток опис на македонски зошто (макс 15 зборови)"}`;
 
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim().replace(/^```json\n?|\n?```$/g, '');
+      const { text } = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 200 },
+      });
+      const raw = text.trim().replace(/^```json\n?|\n?```$/g, '');
       const parsed = JSON.parse(raw) as IntentResult;
       setSuggestion(parsed);
     } catch {

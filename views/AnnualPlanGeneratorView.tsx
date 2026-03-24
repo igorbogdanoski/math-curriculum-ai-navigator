@@ -102,6 +102,16 @@ interface AnnualPlanGeneratorViewProps {
 export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = ({ planId }) => {
     const { curriculum } = useCurriculum();
     const [selectedGradeId, setSelectedGradeId] = useState<string>('grade-6');
+
+    // Correct default grade when curriculum loads (secondary teachers don't have grade-6)
+    useEffect(() => {
+        if (!curriculum) return;
+        const ids = curriculum.grades.map(g => g.id);
+        if (!ids.includes(selectedGradeId)) {
+            setSelectedGradeId(ids[0] ?? 'grade-6');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [curriculum]);
     const [subject, setSubject] = useState<string>('Математика');
     const [weeks, setWeeks] = useState<number>(36);
     const [currentStep, setCurrentStep] = useState(1);

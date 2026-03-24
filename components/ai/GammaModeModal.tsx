@@ -56,6 +56,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const isDrawingRef                    = useRef(false);
   const lastPosRef                      = useRef({ x: 0, y: 0 });
   const undoStackRef                    = useRef<ImageData[]>([]);
+  const [undoCount, setUndoCount]       = useState(0);
 
   // Size canvas to match its CSS size whenever layout changes
   useEffect(() => {
@@ -97,6 +98,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     // Push current state to undo stack before clearing
     undoStackRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
     if (undoStackRef.current.length > 20) undoStackRef.current.shift();
+    setUndoCount(undoStackRef.current.length);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasAnnot(false);
   }, []);
@@ -107,6 +109,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const prev = undoStackRef.current.pop()!;
+    setUndoCount(undoStackRef.current.length);
     ctx.putImageData(prev, 0, 0);
     // Check if canvas still has content after undo
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -142,6 +145,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       // Snapshot before each stroke for undo
       undoStackRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
       if (undoStackRef.current.length > 20) undoStackRef.current.shift();
+      setUndoCount(undoStackRef.current.length);
     }
     const rect = canvas.getBoundingClientRect();
     isDrawingRef.current = true;
@@ -708,7 +712,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
               className={`p-1.5 rounded-lg transition ${annotMode === 'laser' ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}>
               <Crosshair className="w-3.5 h-3.5" />
             </button>
-            {undoStackRef.current.length > 0 && (
+            {undoCount > 0 && (
               <button type="button" title="Врати (Ctrl+Z)" onClick={undoAnnotation}
                 className="p-1.5 rounded-lg text-slate-500 hover:text-blue-300 hover:bg-blue-500/10 transition">
                 <RotateCcw className="w-3.5 h-3.5" />
