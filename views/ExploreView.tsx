@@ -13,6 +13,7 @@ import { exploreTourSteps } from '../tours/tour-steps';
 
 
 import { MathRenderer } from '../components/common/MathRenderer';
+import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
 
 const GradeSelector: React.FC<{
   grades: Grade[];
@@ -243,6 +244,16 @@ export const ExploreView: React.FC = () => {
                     ) : null}
                 </div>
             </div>
+
+            {selectedGrade && (
+                <QuickToolsPanel
+                    gradeId={selectedGrade.id}
+                    topicId={selectedGrade.topics?.[0]?.id ?? ''}
+                    conceptIds={selectedGrade.topics?.flatMap((t: Topic) => t.concepts?.map((c: Concept) => c.id) ?? []) ?? []}
+                    gradeName={selectedGrade.title}
+                    topicName={selectedGrade.topics?.[0]?.title ?? selectedGrade.title}
+                />
+            )}
         </div>
     );
 };

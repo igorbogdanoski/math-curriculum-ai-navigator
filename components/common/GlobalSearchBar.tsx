@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X, Wand2 } from 'lucide-react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { usePlanner } from '../../contexts/PlannerContext';
+import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 import { ICONS } from '../../constants';
 import type { Topic, LessonPlan, NationalStandard, Grade, Concept } from '../../types';
 import { useNavigation } from '../../contexts/NavigationContext';
@@ -22,6 +23,18 @@ interface SearchResult {
     type: 'concept' | 'topic' | 'lesson' | 'standard';
     path: string;
     description: string;
+    // For quick-generate action
+    gradeId?: string;
+    topicId?: string;
+    conceptId?: string;
+}
+
+/** Convert curriculum grade level to short display label */
+function gradeLabel(level: number): string {
+    const gymNums = ['I', 'II', 'III', 'IV'];
+    return level >= 10
+        ? `${gymNums[level - 10] ?? String(level - 9)} год. гимназија`
+        : `${level}. Одд.`;
 }
 
 const typeLabels: Record<SearchResult['type'], string> = {
@@ -41,17 +54,26 @@ const filterOptions: { id: SearchResult['type'] | 'all', label: string }[] = [
 
 export const GlobalSearchBar: React.FC = () => {
     const { navigate } = useNavigation();
+    const { openGeneratorPanel } = useGeneratorPanel();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState<'all' | SearchResult['type']>('all');
     const [focusedIndex, setFocusedIndex] = useState(-1);
     const [recentSearches, setRecentSearches] = useState<string[]>(loadRecent);
-    
+
     const { allConcepts, curriculum, allNationalStandards } = useCurriculum();
     const { lessonPlans } = usePlanner();
     const searchRef = useRef<HTMLDivElement>(null);
+    const inputRef   = useRef<HTMLInputElement>(null);
     const resultListRef = useRef<HTMLUListElement>(null);
+
+    // Grade ID lookup map: level → id
+    const gradeLevelToId = useMemo(() => {
+        const map = new Map<number, string>();
+        curriculum?.grades?.forEach((g: Grade) => map.set(g.level, g.id));
+        return map;
+    }, [curriculum]);
 
     const allTopics = (curriculum?.grades || []).flatMap((g: Grade) => g.topics.map((t: Topic) => ({ ...t, gradeLevel: g.level }))) ?? [];
 
@@ -82,29 +104,34 @@ export const GlobalSearchBar: React.FC = () => {
                 const lowerCaseQuery = query.toLowerCase();
                 
                 const conceptResults: SearchResult[] = allConcepts
-                    .filter((c: Concept & { gradeLevel: number; topicId: string }) => 
+                    .filter((c: Concept & { gradeLevel: number; topicId: string }) =>
                         c.title.toLowerCase().includes(lowerCaseQuery) ||
                         c.description.toLowerCase().includes(lowerCaseQuery)
                     )
                     .map((c: Concept & { gradeLevel: number; topicId: string }) => ({
                         id: c.id,
                         title: c.title,
-                        type: 'concept',
+                        type: 'concept' as const,
                         path: `/concept/${c.id}`,
-                        description: `${c.gradeLevel}. Одделение`
+                        description: gradeLabel(c.gradeLevel),
+                        gradeId: gradeLevelToId.get(c.gradeLevel),
+                        topicId: c.topicId,
+                        conceptId: c.id,
                     }));
 
                 const topicResults: SearchResult[] = allTopics
-                    .filter((t: Topic & { gradeLevel: number }) => 
+                    .filter((t: Topic & { gradeLevel: number }) =>
                         t.title.toLowerCase().includes(lowerCaseQuery) ||
                         t.description?.toLowerCase().includes(lowerCaseQuery)
                     )
                     .map((t: Topic & { gradeLevel: number }) => ({
                         id: t.id,
                         title: t.title,
-                        type: 'topic',
+                        type: 'topic' as const,
                         path: `/topic/${t.id}`,
-                        description: `${t.gradeLevel}. Одделение`
+                        description: gradeLabel(t.gradeLevel),
+                        gradeId: gradeLevelToId.get(t.gradeLevel),
+                        topicId: t.id,
                     }));
 
                 const lessonResults: SearchResult[] = lessonPlans
@@ -164,6 +191,19 @@ export const GlobalSearchBar: React.FC = () => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
+    }, []);
+
+    // Ctrl+K / Cmd+K → focus search from anywhere
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                inputRef.current?.focus();
+                inputRef.current?.select();
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
     }, []);
 
     useEffect(() => {
@@ -237,6 +277,7 @@ export const GlobalSearchBar: React.FC = () => {
                     <ICONS.search className="w-5 h-5 text-gray-400" />
                 </span>
                 <input
+                    ref={inputRef}
                     type="text"
                     value={query}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
@@ -245,7 +286,7 @@ export const GlobalSearchBar: React.FC = () => {
                         else if (recentSearches.length > 0) setIsOpen(true);
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder="Пребарај низ целата апликација (поими, теми, подготовки, стандарди)..."
+                    placeholder="Пребарај… (Ctrl+K)"
                     aria-label="Пребарај низ целата апликација"
                     className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                     aria-expanded={isOpen}
@@ -323,19 +364,41 @@ export const GlobalSearchBar: React.FC = () => {
                                                 role="option"
                                                 id={`result-${result.id}`}
                                                 aria-selected={isFocused}
-                                                className={`border-b last:border-b-0 border-gray-50 ${isFocused ? 'bg-blue-50' : ''}`}
+                                                className={`border-b last:border-b-0 border-gray-50 group ${isFocused ? 'bg-blue-50' : ''}`}
                                             >
-                                                <a
-                                                    href={`#${result.path}`}
-                                                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.preventDefault(); handleResultClick(result.path); }}
-                                                    className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none"
-                                                >
-                                                    <p className="font-semibold truncate pr-2 flex items-center">
-                                                        {isFocused && <span className="w-1.5 h-1.5 bg-brand-secondary rounded-full mr-2 inline-block"></span>}
-                                                        {result.title}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 pl-3.5">{result.description}</p>
-                                                </a>
+                                                <div className="flex items-center gap-1 pr-2">
+                                                    <a
+                                                        href={`#${result.path}`}
+                                                        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.preventDefault(); handleResultClick(result.path); }}
+                                                        className="flex-1 block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none min-w-0"
+                                                    >
+                                                        <p className="font-semibold truncate pr-2 flex items-center">
+                                                            {isFocused && <span className="w-1.5 h-1.5 bg-brand-secondary rounded-full mr-2 inline-block flex-shrink-0"></span>}
+                                                            {result.title}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 pl-3.5">{result.description}</p>
+                                                    </a>
+                                                    {(result.type === 'concept' || result.type === 'topic') && result.gradeId && result.topicId && (
+                                                        <button
+                                                            type="button"
+                                                            title="Генерирај материјал за ова"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                openGeneratorPanel({
+                                                                    selectedGrade: result.gradeId,
+                                                                    selectedTopic: result.topicId,
+                                                                    selectedConcepts: result.conceptId ? [result.conceptId] : [],
+                                                                    contextType: result.conceptId ? 'CONCEPT' : 'ACTIVITY',
+                                                                });
+                                                                setIsOpen(false);
+                                                                setQuery('');
+                                                            }}
+                                                            className="flex-shrink-0 p-1.5 rounded-lg text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 transition opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <Wand2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </li>
                                         );
                                     })}

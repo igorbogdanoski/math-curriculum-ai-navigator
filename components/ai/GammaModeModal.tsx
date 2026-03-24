@@ -237,10 +237,15 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const timerColor = timerPct > 40 ? 'bg-emerald-500' : timerPct > 15 ? 'bg-amber-500' : 'bg-red-500';
 
   // ── SVG illustration generation ───────────────────────────────────────────
+  const svgCacheRef   = useRef(svgCache);
+  const svgLoadingRef = useRef(svgLoading);
+  svgCacheRef.current   = svgCache;
+  svgLoadingRef.current = svgLoading;
+
   const generateSVGForSlide = useCallback(async (slideIndex: number) => {
     const s = slides[slideIndex];
     if (!s?.visualPrompt) return;
-    if (svgCache[slideIndex] || svgLoading[slideIndex] || generatingRef.current.has(slideIndex)) return;
+    if (svgCacheRef.current[slideIndex] || svgLoadingRef.current[slideIndex] || generatingRef.current.has(slideIndex)) return;
     generatingRef.current.add(slideIndex);
     setSvgLoading(prev => ({ ...prev, [slideIndex]: true }));
     try {
@@ -252,7 +257,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       setSvgLoading(prev => ({ ...prev, [slideIndex]: false }));
       generatingRef.current.delete(slideIndex);
     }
-  }, [slides, svgCache, svgLoading]);
+  }, [slides]);
 
   // Auto-generate SVG when entering a task/example slide with visualPrompt
   useEffect(() => {
@@ -646,10 +651,10 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const dots = Array.from({ length: Math.ceil(total / step) }, (_, i) => i * step);
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-[200] flex flex-col bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 select-none">
+    <div ref={containerRef} className="gamma-mode-container fixed inset-0 z-[200] flex flex-col bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 select-none">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-white/5 flex-shrink-0">
+      <div className="gamma-controls flex items-center justify-between px-6 py-3 border-b border-white/5 flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className={`px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-widest ${meta.color} ${meta.bg}`}>
             {meta.label}
@@ -812,7 +817,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       )}
 
       {/* ── Footer: progress + navigation ─────────────────────────────────── */}
-      <div className="flex flex-col gap-3 px-6 py-4 border-t border-white/5 flex-shrink-0">
+      <div className="gamma-controls flex flex-col gap-3 px-6 py-4 border-t border-white/5 flex-shrink-0">
         {/* Progress dots */}
         <div className="flex items-center justify-center gap-1.5">
           {dots.map((dotSlideIdx, di) => {

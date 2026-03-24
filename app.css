@@ -140,6 +140,34 @@ button:active:not(:disabled) {
     border: none !important;
   }
 
+  /* ── Gamma Mode print ── */
+  .gamma-mode-container, .gamma-mode-container * {
+    visibility: visible !important;
+  }
+  .gamma-mode-container {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    background: #fff !important;
+    color: #000 !important;
+    padding: 2cm !important;
+    box-shadow: none !important;
+  }
+  /* Hide controls, annotations canvas, timer, notes panel */
+  .gamma-mode-container .gamma-controls,
+  .gamma-mode-container canvas,
+  .gamma-mode-container .gamma-notes,
+  .gamma-mode-container .gamma-timer {
+    display: none !important;
+  }
+  /* Force light colours for slide content */
+  .gamma-mode-container h1,
+  .gamma-mode-container h2,
+  .gamma-mode-container p,
+  .gamma-mode-container li {
+    color: #000 !important;
+  }
+
   .printable-root, .print-container {
     position: static !important;
   }
