@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw } from 'lucide-react';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 import { ChartPreview } from '../dataviz/ChartPreview';
@@ -36,6 +36,8 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [stepIdx, setStepIdx]   = useState(0);
   const [visible, setVisible]   = useState(true);
   const [dir, setDir]           = useState<'fwd' | 'back'>('fwd');
+  const containerRef            = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // ── SVG illustration cache: slideIdx → svg string ─────────────────────────
   const [svgCache, setSvgCache]       = useState<Record<number, string>>({});
@@ -53,6 +55,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const canvasRef                       = useRef<HTMLCanvasElement>(null);
   const isDrawingRef                    = useRef(false);
   const lastPosRef                      = useRef({ x: 0, y: 0 });
+  const undoStackRef                    = useRef<ImageData[]>([]);
 
   // Size canvas to match its CSS size whenever layout changes
   useEffect(() => {
@@ -89,8 +92,40 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    // Push current state to undo stack before clearing
+    undoStackRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    if (undoStackRef.current.length > 20) undoStackRef.current.shift();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasAnnot(false);
+  }, []);
+
+  const undoAnnotation = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || undoStackRef.current.length === 0) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const prev = undoStackRef.current.pop()!;
+    ctx.putImageData(prev, 0, 0);
+    // Check if canvas still has content after undo
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    setHasAnnot(data.some(v => v !== 0));
+  }, []);
+
+  // ── Fullscreen ────────────────────────────────────────────────────────────
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
   const toggleAnnot = useCallback((mode: AnnotMode) => {
@@ -102,6 +137,12 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     if (annotMode === 'laser' || !annotMode) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      // Snapshot before each stroke for undo
+      undoStackRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+      if (undoStackRef.current.length > 20) undoStackRef.current.shift();
+    }
     const rect = canvas.getBoundingClientRect();
     isDrawingRef.current = true;
     lastPosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -275,10 +316,13 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       if (e.key === 'h' || e.key === 'H') toggleAnnot('highlight');
       if (e.key === 'l' || e.key === 'L') toggleAnnot('laser');
       if (e.key === 'c' || e.key === 'C') clearCanvas();
+      if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoAnnotation(); }
+      if (e.key === 'p' || e.key === 'P') { e.preventDefault(); window.print(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goNext, goPrev, onClose, annotMode, toggleAnnot, clearCanvas]);
+  }, [goNext, goPrev, onClose, annotMode, toggleAnnot, clearCanvas, toggleFullscreen, undoAnnotation]);
 
   // ── Hint for Space/Enter action ───────────────────────────────────────────
   const spaceHint = isStepSlide && stepIdx < slide.content.length - 1
@@ -598,7 +642,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const dots = Array.from({ length: Math.ceil(total / step) }, (_, i) => i * step);
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 select-none">
+    <div ref={containerRef} className="fixed inset-0 z-[200] flex flex-col bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 select-none">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-white/5 flex-shrink-0">
@@ -664,6 +708,12 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
               className={`p-1.5 rounded-lg transition ${annotMode === 'laser' ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}>
               <Crosshair className="w-3.5 h-3.5" />
             </button>
+            {undoStackRef.current.length > 0 && (
+              <button type="button" title="Врати (Ctrl+Z)" onClick={undoAnnotation}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-300 hover:bg-blue-500/10 transition">
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            )}
             {hasAnnotations && (
               <button type="button" title="Избриши аннотации (C)" onClick={clearCanvas}
                 className="p-1.5 rounded-lg text-slate-500 hover:text-red-300 hover:bg-red-500/10 transition">
@@ -671,6 +721,16 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
               </button>
             )}
           </div>
+
+          {/* Print / Fullscreen */}
+          <button type="button" onClick={() => window.print()} title="Печати / Зачувај PDF (P)"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
+            <Printer className="w-3.5 h-3.5" />
+          </button>
+          <button type="button" onClick={toggleFullscreen} title={isFullscreen ? 'Излези од цел екран (F)' : 'Цел екран (F)'}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
+            {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
+          </button>
 
           <span className="text-xs font-bold text-slate-500 ml-1">
             {idx + 1} / {total}
@@ -807,7 +867,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
         {/* Keyboard hint */}
         <p className="text-center text-[10px] text-slate-600 hidden md:block">
-          ← → навигација · Space / Enter следен чекор · R прикажи решение · Esc излез
+          ← → навигација · Space следен · R решение · D/H/L аннотации · Ctrl+Z врати · F цел екран · P печати · Esc излез
         </p>
       </div>
     </div>

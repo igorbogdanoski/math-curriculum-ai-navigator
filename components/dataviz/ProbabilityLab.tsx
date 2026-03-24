@@ -36,6 +36,41 @@ const EXP_LABEL: Record<ExperimentType, string> = Object.fromEntries(
   EXPERIMENTS.map(e => [e.id, e.label])
 ) as Record<ExperimentType, string>;
 
+// ── Statistical helpers ───────────────────────────────────────────────────────
+/** Wilson score 95% CI for a proportion. Returns [lo, hi] clamped to [0,1]. */
+function wilsonCI(count: number, total: number): [number, number] {
+  if (total === 0) return [0, 1];
+  const p = count / total;
+  const z = 1.96; // 95%
+  const z2n = (z * z) / total;
+  const center = (p + z2n / 2) / (1 + z2n);
+  const margin = (z / (1 + z2n)) * Math.sqrt(p * (1 - p) / total + z2n / 4);
+  return [Math.max(0, center - margin), Math.min(1, center + margin)];
+}
+
+/** Exact factorial for small n (≤20); returns Infinity otherwise */
+function factorial(n: number): number {
+  if (n < 0 || !Number.isInteger(n)) return NaN;
+  if (n > 20) return Infinity;
+  let r = 1;
+  for (let i = 2; i <= n; i++) r *= i;
+  return r;
+}
+
+/** C(n,k) exact */
+function combinations(n: number, k: number): number {
+  if (k < 0 || k > n) return 0;
+  return binomCoeff(n, k);
+}
+
+/** P(n,k) = n! / (n-k)! */
+function permutations(n: number, k: number): number {
+  if (k < 0 || k > n) return 0;
+  let r = 1;
+  for (let i = n - k + 1; i <= n; i++) r *= i;
+  return r;
+}
+
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 function binomCoeff(n: number, k: number): number {
   if (k === 0 || k === n) return 1;
@@ -260,6 +295,82 @@ const DiceCoinTree: React.FC<{ lastResult?: string }> = ({ lastResult }) => {
           );
         })}
       </svg>
+    </div>
+  );
+};
+
+// ── CombinatoricsCalculator ───────────────────────────────────────────────────
+const CombinatoricsCalculator: React.FC = () => {
+  const [n, setN] = useState(5);
+  const [k, setK] = useState(2);
+  const safeK = Math.min(k, n);
+  const C = combinations(n, safeK);
+  const P = permutations(n, safeK);
+
+  const fmt = (v: number) =>
+    v === Infinity ? '> 10²⁰' : Number.isNaN(v) ? '—' : v.toLocaleString();
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+        Комбинаторика — C(n,k) · P(n,k) · МОН XI одд. (изборен)
+      </p>
+
+      {/* n and k sliders */}
+      <div className="grid grid-cols-2 gap-4">
+        {([
+          { label: 'n (вкупно елементи)', val: n, set: setN, max: 20 },
+          { label: 'k (избираме)',        val: k, set: setK, max: n  },
+        ] as const).map(({ label, val, set, max }) => (
+          <div key={label}>
+            <label className="text-xs font-semibold text-gray-600 flex justify-between mb-1">
+              <span>{label}</span>
+              <span className="font-black text-indigo-700">{val}</span>
+            </label>
+            <input
+              type="range" min={0} max={max} step={1} value={val}
+              onChange={e => (set as (v: number) => void)(Number(e.target.value))}
+              className="w-full accent-indigo-600"
+              aria-label={label}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Results */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3 text-center">
+          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wide mb-1">
+            Комбинации C({n},{safeK})
+          </p>
+          <p className="text-xs text-indigo-400 mb-1">
+            <span className="font-mono">{n}! / ({safeK}! · {n - safeK}!)</span>
+          </p>
+          <p className="text-2xl font-black text-indigo-700">{fmt(C)}</p>
+          <p className="text-[9px] text-indigo-400 mt-1">Редоследот НЕ е важен</p>
+        </div>
+        <div className="rounded-xl bg-violet-50 border border-violet-100 p-3 text-center">
+          <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wide mb-1">
+            Пермутации P({n},{safeK})
+          </p>
+          <p className="text-xs text-violet-400 mb-1">
+            <span className="font-mono">{n}! / {n - safeK}!</span>
+          </p>
+          <p className="text-2xl font-black text-violet-700">{fmt(P)}</p>
+          <p className="text-[9px] text-violet-400 mt-1">Редоследот Е важен</p>
+        </div>
+      </div>
+
+      {/* Педагошка белешка */}
+      <div className="rounded-xl bg-amber-50 border border-amber-100 p-3">
+        <p className="text-xs text-amber-700">
+          <strong>Пример:</strong> Од {n} ученици избираме {safeK} —{' '}
+          {C === Infinity ? 'premногу за прикажување' : (
+            <>ако <em>редоследот не е важен</em> (одбор): <strong>{fmt(C)}</strong> начини;{' '}
+            ако <em>редоследот е важен</em> (порота): <strong>{fmt(P)}</strong> начини.</>
+          )}
+        </p>
+      </div>
     </div>
   );
 };
@@ -784,18 +895,26 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
               const expPct = total > 0 ? cnt / total : 0;
               const thPct  = theory[o] ?? 0;
               const close  = Math.abs(expPct - thPct) < 0.05;
+              const [ciLo, ciHi] = total >= 30 ? wilsonCI(cnt, total) : [0, 0];
+              const thInCI = total >= 30 && thPct >= ciLo && thPct <= ciHi;
               return (
                 <div key={o} className="flex items-center gap-3">
                   <span className="text-xs font-semibold text-gray-700 shrink-0 w-16 truncate">{o}</span>
                   <div className="flex-1 relative h-4 bg-gray-100 rounded-full overflow-hidden">
+                    {/* 95% CI band */}
+                    {total >= 30 && (
+                      <div className="absolute top-0 bottom-0 rounded-full bg-blue-200/60 z-0"
+                        style={{ left: `${ciLo * 100}%`, width: `${(ciHi - ciLo) * 100}%` }} />
+                    )}
                     {/* Theoretical marker */}
-                    <div className="absolute top-0 bottom-0 w-0.5 bg-gray-300 z-10"
+                    <div className="absolute top-0 bottom-0 w-0.5 bg-gray-400 z-10"
                       style={{ left: `${thPct * 100}%` }} />
                     {/* Experimental bar */}
                     <div className="absolute inset-0 rounded-full transition-all duration-200"
                       style={{
                         width: `${expPct * 100}%`,
                         backgroundColor: close ? '#10b981' : '#6366f1',
+                        opacity: 0.85,
                       }} />
                   </div>
                   <span className="text-xs font-bold text-gray-700 w-11 text-right shrink-0">
@@ -804,12 +923,18 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
                   <span className="text-[10px] text-gray-400 w-11 text-right shrink-0">
                     ≈{(thPct * 100).toFixed(1)}%
                   </span>
+                  {total >= 30 && (
+                    <span className={`text-[9px] font-semibold w-20 text-right shrink-0 ${thInCI ? 'text-emerald-600' : 'text-amber-600'}`}
+                      title="95% доверлив интервал (Вилсон)">
+                      [{(ciLo * 100).toFixed(0)}–{(ciHi * 100).toFixed(0)}%]{thInCI ? ' ✓' : ''}
+                    </span>
+                  )}
                   <span className="text-xs font-bold text-gray-500 w-7 text-right shrink-0">{cnt}</span>
                 </div>
               );
             })}
             <p className="text-[10px] text-gray-400 pt-1">
-              Зелено = блиску до теор. | Линија = теоретска | Вредност = измерена · теоретска · бројач
+              Зелено = блиску до теор. · Сина лента = 95% CI (по 30+ обиди) · ✓ = теор. вредност е во CI
             </p>
           </div>
         </div>
@@ -874,6 +999,9 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
           поблиску е <em>експерименталната</em> веројатност до <em>теоретската</em>. Пробај ×1000 и провери!
         </p>
       </div>
+
+      {/* ── Permutation / Combination Calculator ────────────────────────────── */}
+      <CombinatoricsCalculator />
 
       {/* ── Conditional probability / Venn ───────────────────────────────────── */}
       <ConditionalProbabilityVenn />

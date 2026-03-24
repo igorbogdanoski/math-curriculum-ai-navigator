@@ -58,7 +58,10 @@ function computeBoxStats(values: number[]) {
   const iqr = q3 - q1;
   const whiskerLow = Math.max(sorted[0], q1 - 1.5 * iqr);
   const whiskerHigh = Math.min(sorted[n - 1], q3 + 1.5 * iqr);
-  return { min: sorted[0], max: sorted[n - 1], q1, median, q3, whiskerLow, whiskerHigh };
+  const mean = values.reduce((s, v) => s + v, 0) / n;
+  const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
+  const stdDev = Math.sqrt(variance);
+  return { min: sorted[0], max: sorted[n - 1], q1, median, q3, whiskerLow, whiskerHigh, mean, stdDev };
 }
 
 const BoxWhiskerChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ data, config }) => {
@@ -97,12 +100,20 @@ const BoxWhiskerChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ d
       {/* Boxes */}
       {seriesData.map((s, i) => {
         const xCenter = pad.l + (plotW / (seriesData.length + 1)) * (i + 1);
-        const { q1, q3, median, whiskerLow, whiskerHigh, min, max } = s.stats;
+        const { q1, q3, median, whiskerLow, whiskerHigh, min, max, mean, stdDev } = s.stats;
         const yQ1 = toY(q1); const yQ3 = toY(q3);
         const yMed = toY(median);
         const yWL = toY(whiskerLow); const yWH = toY(whiskerHigh);
+        const yMean = toY(mean);
+        // ±1σ lines clamped to plot area
+        const sigma1Lo = Math.max(minY, mean - stdDev);
+        const sigma1Hi = Math.min(maxY, mean + stdDev);
+        const ySigLo = toY(sigma1Lo); const ySigHi = toY(sigma1Hi);
         return (
           <g key={i}>
+            {/* ±1σ band (subtle) */}
+            <rect x={xCenter - boxW * 0.8} width={boxW * 1.6} y={ySigHi} height={Math.abs(ySigLo - ySigHi)}
+              fill={s.color} fillOpacity={0.07} stroke={s.color} strokeOpacity={0.25} strokeWidth={1} strokeDasharray="3 3" rx={2} />
             {/* Whisker lines */}
             <line x1={xCenter} x2={xCenter} y1={yWH} y2={yQ3} stroke={s.color} strokeWidth={2} strokeDasharray="4 2" />
             <line x1={xCenter} x2={xCenter} y1={yQ1} y2={yWL} stroke={s.color} strokeWidth={2} strokeDasharray="4 2" />
@@ -113,10 +124,17 @@ const BoxWhiskerChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ d
             <rect x={xCenter - boxW / 2} y={yQ3} width={boxW} height={yQ1 - yQ3} fill={s.color} fillOpacity={0.3} stroke={s.color} strokeWidth={2} rx={2} />
             {/* Median */}
             <line x1={xCenter - boxW / 2} x2={xCenter + boxW / 2} y1={yMed} y2={yMed} stroke={s.color} strokeWidth={3} />
+            {/* Mean diamond ♦ */}
+            <polygon
+              points={`${xCenter},${yMean - 6} ${xCenter + 6},${yMean} ${xCenter},${yMean + 6} ${xCenter - 6},${yMean}`}
+              fill="#fff" stroke={s.color} strokeWidth={1.5}
+            />
             {/* Outliers */}
             {[min, max].filter(v => v < whiskerLow || v > whiskerHigh).map((v, oi) => (
               <circle key={oi} cx={xCenter} cy={toY(v)} r={4} fill="none" stroke={s.color} strokeWidth={1.5} />
             ))}
+            {/* Stats tooltip: μ ± σ */}
+            <title>{`μ=${mean.toFixed(2)}  σ=${stdDev.toFixed(2)}  Med=${median.toFixed(2)}`}</title>
             {/* Label */}
             <text x={xCenter} y={H - pad.b + 16} textAnchor="middle" fontSize={11} fill="#374151" fontWeight={600}>{s.name}</text>
           </g>
@@ -129,6 +147,13 @@ const BoxWhiskerChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ d
       {config.title && <text x={W / 2} y={16} textAnchor="middle" fontSize={13} fontWeight={700} fill="#1f2937">{config.title}</text>}
       {/* Y label */}
       {config.yLabel && <text x={12} y={H / 2} textAnchor="middle" fontSize={11} fill="#6b7280" transform={`rotate(-90 12 ${H / 2})`}>{config.yLabel}</text>}
+      {/* Legend: ♦ = μ, dashed box = ±1σ */}
+      <g transform={`translate(${W - pad.r - 120}, ${pad.t})`}>
+        <polygon points="6,0 12,6 6,12 0,6" fill="#fff" stroke="#6b7280" strokeWidth={1.5} />
+        <text x={17} y={9} fontSize={9} fill="#6b7280">Средна вредност (μ)</text>
+        <rect x={0} y={18} width={12} height={10} fill="#6b7280" fillOpacity={0.1} stroke="#6b7280" strokeOpacity={0.4} strokeDasharray="3 2" strokeWidth={1} />
+        <text x={17} y={27} fontSize={9} fill="#6b7280">±1σ опсег</text>
+      </g>
     </svg>
   );
 };
