@@ -32,6 +32,8 @@ const EXAMPLE_PROMPTS = [
   'Подготви план за час за множење на двоцифрени броеви',
   'Треба тест за геометрија — триаголници и нивни видови',
   'Картички за учење на пати-таблицата за 3-то одделение',
+  'Квиз за тригонометриски функции за II година гимназија',
+  'Тест за диференцијално сметање за IV гимназија',
 ];
 
 export const SmartStart: React.FC<SmartStartProps> = ({ onAccept }) => {
@@ -55,7 +57,7 @@ export const SmartStart: React.FC<SmartStartProps> = ({ onAccept }) => {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-      const prompt = `You are an AI assistant for Macedonian math teachers (grades 1-9).
+      const prompt = `You are an AI assistant for Macedonian math teachers (grades 1-13, covering primary school grades 1-9 and secondary/gymnasium grades 10-13).
 Given the teacher's description, choose the single best material type.
 
 Available types and when to use each:

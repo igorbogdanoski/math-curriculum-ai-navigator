@@ -6,6 +6,8 @@ import { firestoreService } from '../services/firestoreService';
 import { useNotification } from '../contexts/NotificationContext';
 import { fetchCurriculumOverrides, type CurriculumOverridesDoc } from '../services/firestoreService.curriculumOverrides';
 import { getLocalizedTitle } from '../data/localeOverrides';
+import { useAuth } from '../contexts/AuthContext';
+import { secondaryCurriculumByTrack } from '../data/secondaryCurriculum';
 
 interface ConceptChainEntry { grade: Grade; topic: Topic; concept: Concept; }
 
@@ -43,6 +45,8 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         try { return localStorage.getItem('preferred_language') || 'mk'; } catch { return 'mk'; }
     });
     const { addNotification } = useNotification();
+    const { user } = useAuth();
+    const secondaryTrack = user?.secondaryTrack;
 
     // Keep uiLang in sync when user changes language in Settings
     useEffect(() => {
@@ -82,9 +86,10 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         const needsOverrides = overrides && (overrides.addedConcepts.length > 0 || overrides.addedTopics.length > 0);
         const needsLocale = uiLang !== 'mk';
+        const secondaryModule = secondaryTrack ? (secondaryCurriculumByTrack[secondaryTrack] ?? null) : null;
 
-        // Fast path: no modifications needed
-        if (!needsOverrides && !needsLocale) return data.curriculumData;
+        // Fast path: no modifications needed and no secondary curriculum
+        if (!needsOverrides && !needsLocale && !secondaryModule) return data.curriculumData;
 
         // Deep-clone grades to avoid mutating static data
         const grades = data.curriculumData.grades.map(grade => ({
@@ -126,8 +131,17 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }
         }
 
+        // Append secondary curriculum grades (gymnasium / vocational) after primary grades
+        if (secondaryModule) {
+            for (const secGrade of secondaryModule.curriculum.grades) {
+                if (!grades.find(g => g.id === secGrade.id)) {
+                    grades.push(secGrade);
+                }
+            }
+        }
+
         return { grades };
-    }, [data, overrides, uiLang]);
+    }, [data, overrides, uiLang, secondaryTrack]);
     const verticalProgression = useMemo(() => data?.verticalProgressionData, [data]);
     const allNationalStandards = useMemo(() => {
         if (!data) return undefined;

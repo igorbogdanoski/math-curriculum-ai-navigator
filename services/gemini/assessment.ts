@@ -40,8 +40,10 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
       advanced: 'ЗБОГАТУВАЊЕ: Предизвикувачки прашања со отворен крај, критичко размислување, меѓупредметни врски и примена во реален контекст',
     };
     const diffDesc = diffDescriptions[differentiationLevel] || diffDescriptions.standard;
-    const gradeLevelPrompt = context.grade.level && context.grade.level <= 3 
-      ? ' ЗАБЕЛЕШКА ЗА ВОЗРАСТА: Ова е за рана училишна возраст (1-3 одд). Користи МНОГУ ЕДНОСТАВЕН јазик, кратки реченици и примери со конкретни предмети (на пр. јаболка, играчки). Бројките да соодветствуваат на нивото.' 
+    const gradeLevelPrompt = context.grade.level && context.grade.level <= 3
+      ? ' ЗАБЕЛЕШКА ЗА ВОЗРАСТА: Ова е за рана училишна возраст (1-3 одд). Користи МНОГУ ЕДНОСТАВЕН јазик, кратки реченици и примери со конкретни предмети (на пр. јаболка, играчки). Бројките да соодветствуваат на нивото.'
+      : context.grade.level && context.grade.level >= 10
+      ? ` ЗАБЕЛЕШКА ЗА НИВО: Ова е за средно образование (${context.grade.level - 9}. година гимназија/стручно). Користи напреден математички јазик и нотација. Прашањата може да бараат повеќечекорни докази, апстрактно мислење и формална математичка аргументација соодветна за средношколско ниво.`
       : '';
     const safeCustomInstruction = sanitizePromptInput(customInstruction);
 

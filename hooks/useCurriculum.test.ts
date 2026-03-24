@@ -15,6 +15,11 @@ vi.mock('../services/firestoreService', () => ({
     },
 }));
 
+// Mock useAuth so CurriculumProvider can run without a real AuthProvider
+vi.mock('../contexts/AuthContext', () => ({
+    useAuth: () => ({ user: null, firebaseUser: null, isAuthenticated: false, isLoading: false }),
+}));
+
 
 const wrapper = ({ children }: { children: React.ReactNode }) => {
     return React.createElement(
