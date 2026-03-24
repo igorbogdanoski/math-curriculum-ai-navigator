@@ -3,6 +3,7 @@ import { Presentation, Image as ImageIcon, ChevronLeft, ChevronRight, FileDown, 
 import QRCode from 'react-qr-code';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { GammaModeModal } from './GammaModeModal';
+import { SilentErrorBoundary } from '../common/SilentErrorBoundary';
 import { Card } from '../common/Card';
 import { MathRenderer } from '../common/MathRenderer';
 import { geminiService } from '../../services/geminiService';
@@ -1270,11 +1271,13 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
 
       {/* ── Gamma Mode fullscreen overlay ──────────────────────────────────── */}
       {gammaMode && (
-        <GammaModeModal
-          data={{ ...data, slides: editedSlides }}
-          startIndex={currentSlide}
-          onClose={() => setGammaMode(false)}
-        />
+        <SilentErrorBoundary name="GammaMode" fallback={<div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950 text-white" onClick={() => setGammaMode(false)}><p className="text-slate-400">Gamma Mode не можеше да се вчита. Кликни за да затвориш.</p></div>}>
+          <GammaModeModal
+            data={{ ...data, slides: editedSlides }}
+            startIndex={currentSlide}
+            onClose={() => setGammaMode(false)}
+          />
+        </SilentErrorBoundary>
       )}
     </div>
   );
