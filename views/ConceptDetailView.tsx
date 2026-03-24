@@ -18,6 +18,7 @@ import { StepByStepSolver } from '../components/StepByStepSolver';
 import { GeometryExplorer } from '../components/GeometryExplorer';
 import { useReactToPrint } from 'react-to-print';
 import { Printer, Share2, Brain, GraduationCap, Sparkles, Lightbulb, Zap } from 'lucide-react';
+import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
 
 const InteractiveQuizPlayer = React.lazy(() => import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 
@@ -424,6 +425,14 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                 ))}
             </div>
         </div>
+
+      <QuickToolsPanel
+        gradeId={grade.id}
+        topicId={topic.id}
+        conceptIds={[concept.id]}
+        gradeName={grade.title}
+        topicName={topic.title}
+      />
     </div>
   );
 };

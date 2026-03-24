@@ -10,6 +10,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
+import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
 
 interface TopicViewProps {
   id: string;
@@ -423,6 +424,14 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
           />
         ))}
       </Card>
+
+      <QuickToolsPanel
+        gradeId={grade.id}
+        topicId={topic.id}
+        conceptIds={concepts.map((c: Concept) => c.id)}
+        gradeName={grade.title}
+        topicName={topic.title}
+      />
     </div>
   );
 };
