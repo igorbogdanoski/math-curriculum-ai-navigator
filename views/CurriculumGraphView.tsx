@@ -150,11 +150,11 @@ export const CurriculumGraphView: React.FC = () => {
   // Clustering State
   const [isClustered, setIsClustered] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [aiAnalysisConcept, setAiAnalysisConcept] = useState<any>(null);
-  
+  const [aiAnalysisConcept, setAiAnalysisConcept] = useState<EnrichedConcept | null>(null);
+
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<EnrichedConcept[]>([]);
 
   // Layout Mode state
   const [layoutMode, setLayoutMode] = useState<'organic' | 'hierarchical'>('hierarchical');
@@ -606,7 +606,14 @@ export const CurriculumGraphView: React.FC = () => {
         },
       };
 
-      const network = new window.vis.Network(graphRef.current, data, options);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let network: any;
+      try {
+        network = new window.vis.Network(graphRef.current, data, options);
+      } catch (err) {
+        console.error('[CurriculumGraph] vis.js Network init failed:', err);
+        return;
+      }
       networkRef.current = network;
 
       // Click handler for menu and focus

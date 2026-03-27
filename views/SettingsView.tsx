@@ -504,6 +504,7 @@ export const SettingsView: React.FC = () => {
                         </label>
                         <p className="text-xs text-gray-500 mb-1">
                             Изберете средно образование ако предавате во гимназија или стручно училиште (одд. X–XII).
+                            Стручните програми се во БЕТА фаза — содржината е во подготовка.
                         </p>
                         <select
                             id="secondaryTrack"
@@ -520,7 +521,9 @@ export const SettingsView: React.FC = () => {
                             <option value="">Основно (одд. I–IX)</option>
                             {(Object.entries(SECONDARY_TRACK_LABELS) as [SecondaryTrack, string][]).map(
                                 ([key, label]) => (
-                                    <option key={key} value={key}>{label}</option>
+                                    <option key={key} value={key}>
+                                        {label}{(key === 'vocational4' || key === 'vocational3') ? ' (БЕТА)' : ''}
+                                    </option>
                                 )
                             )}
                         </select>

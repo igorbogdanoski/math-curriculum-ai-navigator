@@ -12,7 +12,7 @@ import { MathToolsPanel } from '../common/MathToolsPanel';
 import { MathScratchpad } from '../common/MathScratchpad';
 import { ReadingModeBar, defaultReadingMode, type ReadingModeState } from '../common/ReadingModeBar';
 import { ReadingModeQuestion, getChunkCount } from '../common/ReadingModeQuestion';
-import { QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial } from '../../types';
+import { QuestionType, type AIGeneratedAssessment, type AIGeneratedPracticeMaterial, type AssessmentQuestion } from '../../types';
 import { StepByStepSolver } from '../StepByStepSolver';
 import { geminiService } from '../../services/geminiService';
 
@@ -43,7 +43,7 @@ export interface QuizCompletionResult {
 interface Props {
   title?: string;
   questions?: Question[];
-  quiz?: AIGeneratedAssessment | AIGeneratedPracticeMaterial | any;
+  quiz?: AIGeneratedAssessment | AIGeneratedPracticeMaterial;
   onComplete?: (result: QuizCompletionResult) => void;
   onClose?: () => void;
 }
@@ -52,27 +52,28 @@ const SECONDS_PER_QUESTION = 20;
 
 export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQuestions, quiz, onComplete, onClose }) => {
   // State for Step 1.3: Dynamic parallel generation
-  const [dynamicQuestions, setDynamicQuestions] = useState<any[] | null>(null);
+  const [dynamicQuestions, setDynamicQuestions] = useState<Question[] | null>(null);
   const [isGeneratingParallel, setIsGeneratingParallel] = useState(false);
 
-  // Normalize data from props
-  const normalizedQuestions = useMemo(() => {
+  // Normalize all input shapes to the local Question interface
+  const normalizedQuestions = useMemo((): Question[] => {
     if (dynamicQuestions) return dynamicQuestions;
     if (propQuestions) return propQuestions;
     if (quiz) {
-      if ('questions' in quiz) return quiz.questions;
+      if ('questions' in quiz) return quiz.questions as unknown as Question[];
       if ('items' in quiz) {
-        return quiz.items.map((item: any, idx: number) => ({
+        return quiz.items.map((item, idx) => ({
           id: idx,
           question: item.text,
-          options: item.options || [], // Fallback if no options
-          answer: item.answer,
-          imageUrl: item.imageUrl,
-          explanation: item.solution || item.explanation,
+          options: (item as { options?: string[] }).options ?? [],
+          answer: item.answer ?? '',
+          imageUrl: (item as { imageUrl?: string }).imageUrl,
+          explanation: (item as { solution?: string; explanation?: string }).solution
+            || (item as { explanation?: string }).explanation,
           type: item.type === 'problem' ? QuestionType.SHORT_ANSWER : QuestionType.MULTIPLE_CHOICE,
-          cognitiveLevel: item.cognitiveLevel,
-          isWorkedExample: item.isWorkedExample,
-          workedExampleType: item.workedExampleType
+          cognitiveLevel: (item as { cognitiveLevel?: string }).cognitiveLevel,
+          isWorkedExample: (item as { isWorkedExample?: boolean }).isWorkedExample,
+          workedExampleType: (item as { workedExampleType?: 'full' | 'partial' }).workedExampleType,
         }));
       }
     }
@@ -261,9 +262,9 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     try {
       const parentQuestions = propQuestions || (quiz && ('questions' in quiz ? quiz.questions : quiz.items)) || [];
       if (!parentQuestions || parentQuestions.length === 0) return;
-      const newQuestions = await geminiService.generateParallelQuestions(parentQuestions);
+      const newQuestions = await geminiService.generateParallelQuestions(parentQuestions as AssessmentQuestion[]);
       if (newQuestions && newQuestions.length > 0) {
-        setDynamicQuestions(newQuestions);
+        setDynamicQuestions(newQuestions as unknown as Question[]);
         resetQuiz();
       }
     } catch (err) {

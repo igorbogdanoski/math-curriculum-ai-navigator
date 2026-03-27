@@ -5,6 +5,32 @@ import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { ICONS } from '../constants';
 
+const RATE_LIMIT_KEY = 'live_join_attempts';
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 60_000; // 60 секунди
+
+function getRateLimit(): { count: number; since: number } {
+    try {
+        const raw = localStorage.getItem(RATE_LIMIT_KEY);
+        return raw ? JSON.parse(raw) : { count: 0, since: Date.now() };
+    } catch {
+        return { count: 0, since: Date.now() };
+    }
+}
+
+function recordFailedAttempt(): number {
+    const now = Date.now();
+    const rl = getRateLimit();
+    const resetted = now - rl.since > LOCKOUT_MS ? { count: 0, since: now } : rl;
+    const updated = { count: resetted.count + 1, since: resetted.since };
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(updated));
+    return updated.count;
+}
+
+function clearRateLimit(): void {
+    localStorage.removeItem(RATE_LIMIT_KEY);
+}
+
 export const StudentLiveView: React.FC = () => {
     const [nameInput, setNameInput] = useState(
         () => localStorage.getItem('studentName') || ''
@@ -31,6 +57,16 @@ export const StudentLiveView: React.FC = () => {
         if (!name) { setError('Внеси го своето име.'); return; }
         if (code.length !== 4) { setError('Кодот мора да има точно 4 карактери.'); return; }
 
+        // Rate-limit check (prevents brute-force PIN guessing)
+        const rl = getRateLimit();
+        const elapsedMs = Date.now() - rl.since;
+        if (rl.count >= MAX_ATTEMPTS && elapsedMs < LOCKOUT_MS) {
+            const secsLeft = Math.ceil((LOCKOUT_MS - elapsedMs) / 1000);
+            setError(`Премногу обиди. Обиди се повторно за ${secsLeft} секунди.`);
+            return;
+        }
+        if (elapsedMs >= LOCKOUT_MS) clearRateLimit();
+
         setLoading(true);
         setError('');
         try {
@@ -39,16 +75,19 @@ export const StudentLiveView: React.FC = () => {
             }
             const session = await firestoreService.getLiveSessionByCode(code);
             if (!session) {
+                recordFailedAttempt();
                 setError('Не е пронајдена активна сесија со тој код. Провери го кодот.');
                 setLoading(false);
                 return;
             }
-            // Save name + join session
+            // Successful join — reset rate limit
+            clearRateLimit();
             localStorage.setItem('studentName', name);
             await firestoreService.joinLiveSession(session.id, name);
             // Navigate to quiz with sessionId + teacher-tag params
             window.location.hash = `/play/${session.quizId}?sessionId=${encodeURIComponent(session.id)}&tid=${encodeURIComponent(session.hostUid)}`;
         } catch {
+            recordFailedAttempt();
             setError('Грешка при поврзување. Обиди се повторно.');
             setLoading(false);
         }
