@@ -54,19 +54,41 @@ const AppSkeleton = () => (
   </div>
 );
 
-// Helper for safe lazy loading to prevent module resolution crashes
+// Helper for safe lazy loading to prevent module resolution crashes.
+// On chunk-load failures (stale HTML after new deploy with new hashes),
+// force a hard reload so the browser fetches fresh index.html + new chunks.
+const CHUNK_RELOAD_KEY = '__chunk_reload_attempted__';
 const safeLazy = (importFunc: () => Promise<any>) => {
   return React.lazy(() =>
     importFunc().catch((error) => {
       console.error("Failed to load view:", error);
+      const msg = error instanceof Error ? error.message : String(error);
+      const isChunkLoadError =
+        msg.includes('Failed to fetch dynamically imported module') ||
+        msg.includes('Importing a module script failed') ||
+        msg.includes('dynamically imported module') ||
+        msg.includes('Loading chunk') ||
+        msg.includes('ChunkLoadError');
+      if (isChunkLoadError && !sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+        sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+        window.location.reload();
+        return { default: () => null as any };
+      }
       return {
         default: () => (
           <div className="p-8 text-center">
             <Card className="border-red-200 bg-red-50">
               <h2 className="text-xl font-bold text-red-600 mb-2">Грешка при вчитување</h2>
               <p className="text-gray-700">Оваа страница моментално не е достапна. Ве молиме освежете ја апликацијата.</p>
+              <button
+                type="button"
+                onClick={() => { sessionStorage.removeItem(CHUNK_RELOAD_KEY); window.location.reload(); }}
+                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+              >
+                Освежи
+              </button>
               <pre className="mt-4 text-xs text-left bg-white p-2 rounded border text-red-500 overflow-auto">
-                {error instanceof Error ? error.message : 'Unknown module error'}
+                {msg}
               </pre>
             </Card>
           </div>
@@ -98,7 +120,6 @@ const TopicView = safeLazy(() => import('./views/TopicView').then(module => ({ d
 const ConceptDetailView = safeLazy(() => import('./views/ConceptDetailView').then(module => ({ default: module.ConceptDetailView })));
 const PlannerView = safeLazy(() => import('./views/PlannerView').then(module => ({ default: module.PlannerView })));
 const AssistantView = safeLazy(() => import('./views/AssistantView').then(module => ({ default: module.AssistantView })));
-const MaterialsGeneratorView = safeLazy(() => import('./views/MaterialsGeneratorView').then(module => ({ default: module.MaterialsGeneratorView })));
 const SettingsView = safeLazy(() => import('./views/SettingsView').then(module => ({ default: module.SettingsView })));
 const AIVisionGraderView = safeLazy(() => import('./views/AIVisionGraderView').then(module => ({ default: module.AIVisionGraderView })));
 const ContentReviewView = safeLazy(() => import('./views/ContentReviewView').then(module => ({ default: module.ContentReviewView })));
