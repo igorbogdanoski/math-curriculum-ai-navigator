@@ -200,7 +200,8 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /participants/{participantId} {
-        allow read:   if true;
+        // Restrict to authenticated users — all participants are authenticated (incl. anonymous auth)
+        allow read:   if isAuthenticated();
         allow create: if isAuthenticated();
         allow update: if isAuthenticated() && (
           resource.data.participantId == participantId || isAdmin()

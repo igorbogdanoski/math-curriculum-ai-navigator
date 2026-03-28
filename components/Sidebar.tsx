@@ -105,16 +105,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label={t("nav.mylessons")} onClick={onClose} />
           <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label={t("nav.analytics")} onClick={onClose} />
           <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.library")} onClick={onClose} />
-          <NavItem path="/forum" currentPath={currentPath} icon={ICONS.chatBubble} label="Форум" onClick={onClose} badge="CoP" unreadCount={forumUnread} />
+          <NavItem path="/forum" currentPath={currentPath} icon={ICONS.chatBubble} label={t("nav.forum")} onClick={onClose} badge="CoP" unreadCount={forumUnread} />
           {(user?.role === 'school_admin' || user?.role === 'admin') && (
             <>
               <NavItem path="/school-admin" currentPath={currentPath} icon={ICONS.school} label={t("nav.schooladmin")} onClick={onClose} />
-              <NavItem path="/school-admin/curriculum" currentPath={currentPath} icon={ICONS.bookOpen} label="Уреди Курикулум" onClick={onClose} badge="NEW" />
-              <NavItem path="/reviews" currentPath={currentPath} icon={ICONS.shieldCheck} label="Рецензии" onClick={onClose} />
+              <NavItem path="/school-admin/curriculum" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.editCurriculum")} onClick={onClose} badge="NEW" />
+              <NavItem path="/reviews" currentPath={currentPath} icon={ICONS.shieldCheck} label={t("nav.reviews")} onClick={onClose} />
             </>
           )}
           {user?.role === 'admin' && (
-            <NavItem path="/system-admin" currentPath={currentPath} icon={ICONS.shieldAlert} label="Училишта" onClick={onClose} />
+            <NavItem path="/system-admin" currentPath={currentPath} icon={ICONS.shieldAlert} label={t("nav.schools")} onClick={onClose} />
           )}
           <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label={t("nav.settings")} onClick={onClose} />
         </div>
@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
             onClick={() => setShowMore(v => !v)}
             className="w-full flex items-center justify-between px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50"
           >
-            <span>{showMore ? 'Помалку' : 'Повеќе алатки'}</span>
+            <span>{showMore ? t('sidebar.less') : t('sidebar.moreTools')}</span>
             {showMore ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
 
@@ -134,21 +134,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
             <div className="mt-1 space-y-0.5 animate-fade-in">
               {/* Планирање */}
               <hr className="mb-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Планирање</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.planning')}</p>
               <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label={t("nav.planner")} onClick={onClose} />
               <NavItem path="/annual-planner" currentPath={currentPath} icon={ICONS.planner} label="Годишна Програма" onClick={onClose} badge="AI" />
               <NavItem path="/annual-gallery" currentPath={currentPath} icon={ICONS.database} label="Галерија на Планови" onClick={onClose} badge="CoM" />
 
               {/* Истражи Програма */}
               <hr className="my-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Програма</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.programme')}</p>
               <NavItem path="/explore" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.explore")} onClick={onClose} />
               <NavItem path="/graph" currentPath={currentPath} icon={ICONS.share} label={t("nav.graph")} onClick={onClose} />
               <NavItem path="/roadmap" currentPath={currentPath} icon={ICONS.mindmap} label={t("nav.roadmap")} onClick={onClose} />
 
               {/* AI Алатки */}
               <hr className="my-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">AI Алатки</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.aitools')}</p>
               <NavItem path="/assistant" currentPath={currentPath} icon={ICONS.assistant} label={t("nav.assistant")} onClick={onClose} />
               <NavItem path="/vision-assessment" currentPath={currentPath} icon={ICONS.camera} label={t("nav.visionAssessment")} onClick={onClose} badge="NEW" />
               <NavItem path="/test-generator" currentPath={currentPath} icon={ICONS.assessment} label={t("nav.testgenerator")} onClick={onClose} />
@@ -160,7 +160,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
 
               {/* Развој на наставник */}
               <hr className="my-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Развој</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.development')}</p>
               <NavItem path="/academy" currentPath={currentPath} icon={ICONS.education} label={t("nav.academy")} onClick={onClose} badge="NEW" />
               <NavItem path="/my-profile" currentPath={currentPath} icon={ICONS.profile} label="Мој Профил (CPD)" onClick={onClose} badge="НОВО" />
               <NavItem path="/my-progress" currentPath={currentPath} icon={ICONS.analytics} label="Мој Напредок" onClick={onClose} />
@@ -168,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
 
               {/* Ресурси */}
               <hr className="my-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Ресурси</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.resources')}</p>
               <NavItem path="/national-library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.nationalLibrary")} onClick={onClose} />
               <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label={t("nav.gallery")} onClick={onClose} />
               <NavItem path="/favorites" currentPath={currentPath} icon={ICONS.star} label={t("nav.favorites")} onClick={onClose} />
