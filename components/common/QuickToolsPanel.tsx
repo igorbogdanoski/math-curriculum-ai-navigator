@@ -110,8 +110,10 @@ Respond ONLY with valid JSON (no markdown):
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.2, maxOutputTokens: 120 },
       });
-      const raw = text.trim().replace(/^```json\n?|\n?```$/g, '');
-      setAiSuggestion(JSON.parse(raw) as AISuggestion);
+      // Robust extraction: find first {...} block in case model adds prose around the JSON
+      const jsonMatch = text.match(/\{[\s\S]*?\}/);
+      if (!jsonMatch) throw new Error('no-json');
+      setAiSuggestion(JSON.parse(jsonMatch[0]) as AISuggestion);
     } catch {
       setAiError(true);
     } finally {

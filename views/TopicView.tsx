@@ -2,10 +2,10 @@ import React, { useMemo, memo, useState, useRef, useEffect, useCallback } from '
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
-import type { Concept, NationalStandard, Topic } from '../types';
+import type { Concept, Topic } from '../types';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { useNavigation } from '../contexts/NavigationContext';
-import { useModal } from '../contexts/ModalContext';
+
 import { useNotification } from '../contexts/NotificationContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -209,8 +209,27 @@ const ConceptCard: React.FC<{
                 />
             ) : (
                 concept.activities && concept.activities.length > 0 ? (
-                  <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm">
-                    {concept.activities.map((activity: string, i: number) => <li key={i}><MathRenderer text={activity} /></li>)}
+                  <ul className="space-y-1.5 text-gray-700 text-sm">
+                    {concept.activities.map((activity: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2 group">
+                        <span className="text-gray-400 mt-0.5 select-none flex-shrink-0">•</span>
+                        <span className="flex-1 leading-snug"><MathRenderer text={activity} /></span>
+                        <button
+                          type="button"
+                          onClick={() => openGeneratorPanel({
+                            selectedGrade: String(gradeLevel),
+                            selectedTopic: topicId,
+                            selectedConcepts: [concept.id],
+                            contextType: 'ACTIVITY',
+                            customInstruction: activity,
+                          })}
+                          title="Генерирај материјал за оваа активност"
+                          className="flex-shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95"
+                        >
+                          <ICONS.sparkles className="w-3.5 h-3.5" />
+                        </button>
+                      </li>
+                    ))}
                   </ul>
                 ) : (
                    <p className="text-sm text-gray-500 italic">Нема дефинирани предлог активности.</p>
@@ -257,7 +276,6 @@ const ConceptCard: React.FC<{
 export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
   const { navigate } = useNavigation();
   const { getTopic, isLoading: curriculumIsLoading } = useCurriculum();
-  const { showModal } = useModal();
   const [expandedConceptId, setExpandedConceptId] = useState<string | null>(null);
   const { addNotification } = useNotification();
   const { firebaseUser } = useAuth();
