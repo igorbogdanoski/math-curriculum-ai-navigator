@@ -5,7 +5,7 @@
  * Subsequent clicks reuse the same cacheId — no duplicate saves.
  */
 import React, { useRef, useState } from 'react';
-import { Link, Check, Loader2, QrCode, Printer, X, Copy, BookOpen } from 'lucide-react';
+import { Link, Check, Loader2, QrCode, Printer, X, Copy, BookOpen, Lock, Globe } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { firestoreService } from '../../services/firestoreService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -20,13 +20,15 @@ interface Props {
 }
 
 export const QuizShareButton: React.FC<Props> = ({ material, materialType, conceptId, gradeLevel }) => {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, user } = useAuth();
   const { addNotification } = useNotification();
   const [saving, setSaving] = useState(false);
   const [cacheId, setCacheId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
+  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'Unlimited';
 
   const makeShareUrl = (id: string) =>
     `${window.location.origin}${window.location.pathname}#/play/${id}`;
@@ -47,6 +49,7 @@ export const QuizShareButton: React.FC<Props> = ({ material, materialType, conce
         conceptId,
         gradeLevel,
         teacherUid: firebaseUser.uid,
+        isPublic,
       });
       setCacheId(id);
       return id;
@@ -116,7 +119,25 @@ export const QuizShareButton: React.FC<Props> = ({ material, materialType, conce
   const quizTitle = (material as { title?: string }).title || 'Квиз';
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
+      {/* PRO privacy toggle */}
+      {isPro && !cacheId && (
+        <button
+          type="button"
+          onClick={() => setIsPublic(v => !v)}
+          title={isPublic ? 'Материјалот ќе биде јавен во Библиотеката' : 'Материјалот е приватен — само за тебе (PRO)'}
+          className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border transition-colors ${
+            isPublic
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+              : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          {isPublic
+            ? <><Globe className="w-3.5 h-3.5" /> Јавно</>
+            : <><Lock className="w-3.5 h-3.5" /> Приватно (PRO)</>
+          }
+        </button>
+      )}
       {/* Copy link button */}
       <button
         type="button"

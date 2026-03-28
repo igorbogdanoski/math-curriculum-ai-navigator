@@ -10,7 +10,12 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
+import { geminiService } from '../services/geminiService';
 import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
+import { GammaModeModal } from '../components/ai/GammaModeModal';
+import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
+import type { AIGeneratedPresentation } from '../types';
+import { MonitorPlay, Loader2 } from 'lucide-react';
 
 interface TopicViewProps {
   id: string;
@@ -259,6 +264,9 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [gammaPresentation, setGammaPresentation] = useState<AIGeneratedPresentation | null>(null);
+  const [gammaOpen, setGammaOpen] = useState(false);
+  const [loadingGamma, setLoadingGamma] = useState(false);
   const [editedTopicData, setEditedTopicData] = useState<Topic | null>(null);
   const [userEdits, setUserEdits] = useState<Record<string, { assessmentStandards?: string[]; activities?: string[] }>>({});
   const initializedIdRef = useRef<string | null>(null);
@@ -348,6 +356,25 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
     }
   };
   
+  const handleGenerateGamma = async () => {
+    if (!topic || !grade) return;
+    setLoadingGamma(true);
+    try {
+      const conceptNames = concepts.slice(0, 6).map((c: Concept) => c.title);
+      const presentation = await geminiService.generatePresentation(
+        topic.title,
+        grade.level,
+        conceptNames,
+      );
+      setGammaPresentation(presentation);
+      setGammaOpen(true);
+    } catch {
+      addNotification('Грешка при генерирање презентација.', 'error');
+    } finally {
+      setLoadingGamma(false);
+    }
+  };
+
   const handleCancelEdit = () => {
     if (topic) setEditedTopicData(JSON.parse(JSON.stringify(topic)));
     setIsEditing(false);
@@ -394,6 +421,18 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
                     </>
                 ) : (
                     <>
+                        <button
+                          type="button"
+                          onClick={handleGenerateGamma}
+                          disabled={loadingGamma}
+                          title="Направи Gamma презентација за оваа тема"
+                          className="flex items-center bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-3 py-2 rounded-lg hover:opacity-90 transition-colors text-sm font-medium disabled:opacity-60"
+                        >
+                          {loadingGamma
+                            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Генерирам...</>
+                            : <><MonitorPlay className="w-5 h-5 mr-2" /> Gamma Презентација</>
+                          }
+                        </button>
                          <button onClick={() => navigate(`/mindmap/${topic.id}`)} className="flex items-center bg-purple-100 text-purple-800 px-3 py-2 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium">
                             <ICONS.mindmap className="w-5 h-5 mr-2" /> Мисловна Мапа
                         </button>
@@ -432,6 +471,16 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
         gradeName={grade.title}
         topicName={topic.title}
       />
+
+      {gammaOpen && gammaPresentation && (
+        <SilentErrorBoundary name="GammaModeTopic" fallback={
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950 text-white cursor-pointer" onClick={() => setGammaOpen(false)}>
+            <p className="text-slate-400">Gamma Mode не можеше да се вчита. Кликни за да затвориш.</p>
+          </div>
+        }>
+          <GammaModeModal data={gammaPresentation} onClose={() => setGammaOpen(false)} />
+        </SilentErrorBoundary>
+      )}
     </div>
   );
 };

@@ -69,6 +69,17 @@ service firebase.storage {
       allow delete: if isOwner(uid);
     }
 
+    // ── Слики прикачени од наставник во квиз прашање (П4) ─────
+    // /question-images/{uid}/{fileName}
+    // Само сопственикот чита/пишува; јавно читање за студентите кои го играат квизот
+    match /question-images/{uid}/{fileName} {
+      allow read:  if isAuthenticated(); // ученици и наставници
+      allow write: if isOwner(uid)
+                   && isImage()
+                   && request.resource.size <= 8 * 1024 * 1024; // Max 8MB
+      allow delete: if isOwner(uid);
+    }
+
     // ── Јавна национална библиотека — само читање ─────────────
     // /national_library/{resourceId}
     match /national_library/{resourceId} {

@@ -1,6 +1,8 @@
 import './InteractiveQuizPlayer.css';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
+import { ChartPreview } from '../dataviz/ChartPreview';
+import type { ChartType, ChartConfig } from '../dataviz/ChartPreview';
 import { Sparkles, CheckCircle, XCircle, RefreshCw, ArrowRight, Flame, Trophy, X, Lightbulb, Loader2, PenTool, Calculator, Eye } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 import { MathInput } from '../common/MathInput';
@@ -31,6 +33,9 @@ export interface Question {
   isWorkedExample?: boolean;
   workedExampleType?: 'full' | 'partial';
   cognitiveLevel?: string;
+  /** Embedded DataViz chart for statistics/data questions */
+  chartData?: { headers: string[]; rows: (string | number)[][] };
+  chartConfig?: { type?: string; title?: string; xLabel?: string; yLabel?: string; unit?: string; colorPalette?: string[]; bins?: number };
 }
 
 export interface QuizCompletionResult {
@@ -74,6 +79,8 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
           cognitiveLevel: (item as { cognitiveLevel?: string }).cognitiveLevel,
           isWorkedExample: (item as { isWorkedExample?: boolean }).isWorkedExample,
           workedExampleType: (item as { workedExampleType?: 'full' | 'partial' }).workedExampleType,
+          chartData: (item as { chartData?: Question['chartData'] }).chartData,
+          chartConfig: (item as { chartConfig?: Question['chartConfig'] }).chartConfig,
         }));
       }
     }
@@ -471,6 +478,24 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                 readOnly
                 compact
                 title={currentQ.tableData.caption}
+              />
+            </div>
+          )}
+
+          {/* Embedded DataViz chart */}
+          {currentQ.chartData && (
+            <div className="mb-6 rounded-2xl border-2 border-teal-200 bg-teal-50/40 p-3 shadow-sm">
+              <ChartPreview
+                data={currentQ.chartData}
+                config={{
+                  type: (currentQ.chartConfig?.type as ChartType) ?? 'bar',
+                  title: currentQ.chartConfig?.title,
+                  xLabel: currentQ.chartConfig?.xLabel,
+                  yLabel: currentQ.chartConfig?.yLabel,
+                  unit: currentQ.chartConfig?.unit,
+                  colorPalette: currentQ.chartConfig?.colorPalette,
+                  bins: currentQ.chartConfig?.bins,
+                } as ChartConfig}
               />
             </div>
           )}

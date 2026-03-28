@@ -325,6 +325,7 @@ export const saveToLibrary = async (content: any, meta: {
     conceptId?: string;
     topicId?: string;
     gradeLevel?: number;
+    isPublic?: boolean;
 }): Promise<string> => {
     // Generate embedding for semantic search
     let embedding: number[] | undefined;
@@ -348,6 +349,7 @@ export const saveToLibrary = async (content: any, meta: {
         topicId: meta.topicId,
         gradeLevel: meta.gradeLevel ?? 0,
         status: 'draft',
+        isPublic: meta.isPublic !== false, // default true; PRO can set false
         embedding,
         createdAt: serverTimestamp(),
     });
@@ -373,7 +375,10 @@ export const fetchGlobalLibraryMaterials = async (): Promise<CachedMaterial[]> =
         limit(200)
       );
       const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as CachedMaterial));
+      // Filter client-side: exclude materials explicitly marked private (isPublic === false)
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as CachedMaterial))
+        .filter(m => m.isPublic !== false);
     } catch (error) {
       console.error('Error fetching global library materials:', error);
       return [];
@@ -521,7 +526,7 @@ export const deleteAssignment = async (assignmentId: string): Promise<void> => {
     await deleteDoc(doc(db, 'assignments', assignmentId));
   };
 
-export const saveAssignmentMaterial = async (content: any, meta: { title: string; type: 'QUIZ' | 'ASSESSMENT'; conceptId?: string; gradeLevel?: number; teacherUid: string }): Promise<string> => {
+export const saveAssignmentMaterial = async (content: any, meta: { title: string; type: 'QUIZ' | 'ASSESSMENT'; conceptId?: string; gradeLevel?: number; teacherUid: string; isPublic?: boolean }): Promise<string> => {
     const ref = await addDoc(collection(db, 'cached_ai_materials'), {
       content,
       type: meta.type.toLowerCase(),
@@ -529,6 +534,7 @@ export const saveAssignmentMaterial = async (content: any, meta: { title: string
       conceptId: meta.conceptId,
       gradeLevel: meta.gradeLevel,
       teacherUid: meta.teacherUid,
+      isPublic: meta.isPublic !== false, // default true
       createdAt: serverTimestamp(),
     });
     return ref.id;

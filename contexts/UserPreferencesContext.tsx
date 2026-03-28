@@ -53,7 +53,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
         setFavoriteLessonPlanIds(data.favoriteLessonPlanIds || []);
         setToursSeen(data.toursSeen || {});
       } else {
-        console.log("User preferences document does not exist!");
+        // Document does not exist yet — no preferences saved
       }
       setIsPreferencesLoaded(true);
     }, (error) => {

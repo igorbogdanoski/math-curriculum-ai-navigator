@@ -19,6 +19,7 @@ import { ACADEMY_CONTENT } from '../data/academy/content';
 import { SPECIALIZATIONS } from '../data/academy/specializations';
 import { loadCards, isDueToday } from '../utils/sm2';
 import { geminiService } from '../services/geminiService';
+import { AcademyCertificateButton } from '../components/academy/AcademyCertificate';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -112,6 +113,19 @@ export const TeacherProfileView: React.FC = () => {
     const quizzed = spec.lessonIds.filter(id => completedQuizzes.includes(id)).length;
     return applied === spec.lessonIds.length && quizzed === spec.lessonIds.length;
   });
+
+  const inProgressSpecializations = SPECIALIZATIONS
+    .filter(spec => !earnedSpecializations.includes(spec))
+    .map(spec => {
+      const total = spec.lessonIds.length;
+      const applied = spec.lessonIds.filter(id => appliedLessons.includes(id)).length;
+      const quizzed = spec.lessonIds.filter(id => completedQuizzes.includes(id)).length;
+      const pct = Math.round(((applied + quizzed) / (total * 2)) * 100);
+      return { spec, applied, quizzed, total, pct };
+    })
+    .filter(({ pct }) => pct > 0);
+
+  const todayFormatted = new Date().toLocaleDateString('mk-MK', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const profileUrl = `${window.location.origin}/#/my-profile?uid=${firebaseUser?.uid ?? ''}`;
 
@@ -313,28 +327,68 @@ export const TeacherProfileView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Earned Specializations ── */}
+      {/* ── Earned Specializations + Certificates ── */}
       {earnedSpecializations.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h2 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
             <Award className="w-5 h-5 text-amber-500" /> Освоени специјализации
+            <span className="ml-auto text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+              {earnedSpecializations.length} сертификат{earnedSpecializations.length !== 1 ? 'и' : ''}
+            </span>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-3">
             {earnedSpecializations.map(spec => (
-              <div key={spec.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 ${spec.borderColor} bg-white`}>
-                <span className="text-2xl">{spec.emoji}</span>
+              <div key={spec.id} className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 rounded-xl border-2 ${spec.borderColor} bg-white`}>
+                <span className="text-3xl">{spec.emoji}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-900 text-sm truncate">{spec.title}</p>
-                  <p className="text-xs text-gray-400 truncate">{spec.subtitle}</p>
+                  <p className="font-black text-gray-900 text-sm">{spec.title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{spec.certificateLabel}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Завршено · {todayFormatted}</p>
                 </div>
-                <Trophy className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <div className="flex items-center gap-2 flex-shrink-0 print:hidden">
+                  <Trophy className="w-5 h-5 text-amber-500" />
+                  <AcademyCertificateButton
+                    userName={user?.name || 'Наставник'}
+                    specializationTitle={spec.title}
+                    date={todayFormatted}
+                    className="!px-3 !py-1.5 !text-xs !rounded-lg"
+                  />
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {earnedSpecializations.length === 0 && (
+      {/* ── In-progress specializations ── */}
+      {inProgressSpecializations.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h2 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
+            <Star className="w-5 h-5 text-indigo-400" /> Специјализации во тек
+          </h2>
+          <div className="space-y-3">
+            {inProgressSpecializations.map(({ spec, applied, quizzed, total, pct }) => (
+              <div key={spec.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-xl">{spec.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-bold text-gray-700 text-sm truncate">{spec.title}</p>
+                    <span className="text-xs font-black text-indigo-600 flex-shrink-0 ml-2">{pct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    {applied}/{total} применети · {quizzed}/{total} квизови
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {earnedSpecializations.length === 0 && inProgressSpecializations.length === 0 && (
         <div className="bg-gray-50 rounded-2xl border border-gray-100 p-5 text-center text-gray-400">
           <Award className="w-10 h-10 mx-auto mb-2 opacity-30" />
           <p className="text-sm font-medium">Сè уште нема освоени специјализации</p>

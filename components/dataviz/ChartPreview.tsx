@@ -10,9 +10,11 @@ import type { TableData } from './DataTable';
 import { tableToChartData } from './DataTable';
 
 export type ChartType =
-  | 'bar' | 'bar-horizontal' | 'line' | 'area'
+  | 'bar' | 'bar-horizontal' | 'stacked-bar' | 'stacked-bar-horizontal' | 'divided-bar'
+  | 'line' | 'area'
   | 'pie' | 'scatter' | 'scatter-trend' | 'histogram' | 'box-whisker' | 'bubble'
-  | 'stem-leaf' | 'dot-plot' | 'heatmap';
+  | 'stem-leaf' | 'dot-plot' | 'heatmap'
+  | 'frequency-polygon' | 'cumulative-frequency' | 'back-to-back-histogram' | 'pareto' | 'pictogram';
 
 export interface ChartConfig {
   type: ChartType;
@@ -415,6 +417,155 @@ const HeatmapChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ data
   );
 };
 
+// ─── Back-to-Back Histogram ──────────────────────────────────────────────────
+const BackToBackHistogram: React.FC<{ data: TableData; config: ChartConfig }> = ({ data, config }) => {
+  const bins = config.bins ?? 8;
+  const series1 = data.rows.map(r => typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])) || 0);
+  const series2 = data.rows.map(r =>
+    data.headers.length >= 3
+      ? (typeof r[2] === 'number' ? r[2] : parseFloat(String(r[2])) || 0)
+      : 0
+  );
+  const allVals = [...series1, ...series2].filter(v => !isNaN(v));
+  if (allVals.length === 0) return <p className="text-gray-400 text-sm text-center p-8">Нема доволно податоци за back-to-back хистограм.</p>;
+
+  const minV = Math.min(...allVals);
+  const maxV = Math.max(...allVals);
+  const step = (maxV - minV) / bins || 1;
+
+  const buildCounts = (vals: number[]) =>
+    Array.from({ length: bins }, (_, i) => {
+      const lo = minV + i * step; const hi = lo + step;
+      return vals.filter(v => v >= lo && (i === bins - 1 ? v <= hi : v < hi)).length;
+    });
+
+  const counts1 = buildCounts(series1);
+  const counts2 = buildCounts(series2);
+  const maxCount = Math.max(...counts1, ...counts2, 1);
+
+  const W = 540; const H = 360;
+  const padT = 36; const padB = 64; const padSide = 10; const centerGap = 64;
+  const centerX = W / 2;
+  const halfPlot = (W - padSide * 2 - centerGap) / 2;
+  const plotH = H - padT - padB;
+  const barH = plotH / bins;
+  const color1 = config.colorPalette[0] ?? '#3B82F6';
+  const color2 = config.colorPalette[1] ?? '#EF4444';
+  const label1 = data.headers[1] ?? 'Серија 1';
+  const label2 = data.headers[2] ?? 'Серија 2';
+  const toBarW = (count: number) => (count / maxCount) * halfPlot;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 400 }}>
+      {config.title && <text x={W / 2} y={20} textAnchor="middle" fontSize={13} fontWeight={700} fill="#1f2937">{config.title}</text>}
+      {counts1.map((count, i) => {
+        const bw = toBarW(count);
+        const y = padT + i * barH;
+        const lo = minV + i * step; const hi = lo + step;
+        return (
+          <g key={`s1-${i}`}>
+            {config.showGrid && <line x1={centerX - halfPlot - centerGap / 2} x2={centerX - centerGap / 2} y1={y + barH / 2} y2={y + barH / 2} stroke="#f0f0f0" strokeWidth={0.5} />}
+            <rect x={centerX - centerGap / 2 - bw} y={y + 1} width={bw} height={barH - 2} fill={color1} fillOpacity={0.85} rx={2} />
+            <text x={centerX} y={y + barH / 2 + 4} textAnchor="middle" fontSize={7} fill="#6b7280">{`${lo.toFixed(1)}–${hi.toFixed(1)}`}</text>
+          </g>
+        );
+      })}
+      {counts2.map((count, i) => {
+        const bw = toBarW(count);
+        const y = padT + i * barH;
+        return (
+          <g key={`s2-${i}`}>
+            {config.showGrid && <line x1={centerX + centerGap / 2} x2={centerX + centerGap / 2 + halfPlot} y1={y + barH / 2} y2={y + barH / 2} stroke="#f0f0f0" strokeWidth={0.5} />}
+            <rect x={centerX + centerGap / 2} y={y + 1} width={bw} height={barH - 2} fill={color2} fillOpacity={0.85} rx={2} />
+          </g>
+        );
+      })}
+      <line x1={centerX} x2={centerX} y1={padT} y2={H - padB} stroke="#374151" strokeWidth={2} />
+      <line x1={padSide} x2={W - padSide} y1={H - padB} y2={H - padB} stroke="#d1d5db" strokeWidth={1.5} />
+      {[0, 0.25, 0.5, 0.75, 1].map((f, i) => {
+        const x = centerX - centerGap / 2 - f * halfPlot;
+        return (
+          <g key={`xtl-${i}`}>
+            <line x1={x} x2={x} y1={H - padB} y2={H - padB + 5} stroke="#6b7280" strokeWidth={1} />
+            <text x={x} y={H - padB + 16} textAnchor="middle" fontSize={9} fill="#6b7280">{Math.round(f * maxCount)}</text>
+          </g>
+        );
+      })}
+      {[0.25, 0.5, 0.75, 1].map((f, i) => {
+        const x = centerX + centerGap / 2 + f * halfPlot;
+        return (
+          <g key={`xtr-${i}`}>
+            <line x1={x} x2={x} y1={H - padB} y2={H - padB + 5} stroke="#6b7280" strokeWidth={1} />
+            <text x={x} y={H - padB + 16} textAnchor="middle" fontSize={9} fill="#6b7280">{Math.round(f * maxCount)}</text>
+          </g>
+        );
+      })}
+      <text x={centerX - centerGap / 2 - halfPlot / 2} y={H - padB + 34} textAnchor="middle" fontSize={11} fontWeight={700} fill={color1}>{label1}</text>
+      <text x={centerX + centerGap / 2 + halfPlot / 2} y={H - padB + 34} textAnchor="middle" fontSize={11} fontWeight={700} fill={color2}>{label2}</text>
+      <text x={W / 2} y={H - padB + 50} textAnchor="middle" fontSize={9} fill="#9ca3af">← Фреквенција · Фреквенција →</text>
+    </svg>
+  );
+};
+
+// ─── Pictogram Chart ─────────────────────────────────────────────────────────
+const PictogramChart: React.FC<{ data: TableData; config: ChartConfig }> = ({ data, config }) => {
+  const rows = data.rows.slice(0, 12);
+  if (rows.length === 0) return <p className="text-gray-400 text-sm text-center p-8">Нема доволно податоци за пиктограм.</p>;
+
+  const values = rows.map(r => Math.max(0, Math.round(
+    typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])) || 0
+  )));
+  const maxVal = Math.max(...values, 1);
+  const iconScale = Math.max(1, Math.ceil(maxVal / 15));
+  const maxIcons = Math.ceil(maxVal / iconScale);
+
+  const W = 560;
+  const nCats = rows.length;
+  const colW = Math.min(72, Math.floor((W - 24) / nCats));
+  const iconSize = Math.min(20, colW - 6);
+  const iconGap = 3;
+  const padT = 52; const padB = 72;
+  const H = padT + maxIcons * (iconSize + iconGap) + padB;
+  const baseY = H - padB;
+  const startX = (W - nCats * colW) / 2 + colW / 2;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 500 }}>
+      {config.title && <text x={W / 2} y={20} textAnchor="middle" fontSize={13} fontWeight={700} fill="#1f2937">{config.title}</text>}
+      <text x={W / 2} y={38} textAnchor="middle" fontSize={10} fill="#6b7280">
+        {`★ = ${iconScale} ${config.unit || (iconScale === 1 ? 'единица' : 'единици')}`}
+      </text>
+      {rows.map((row, ci) => {
+        const val = values[ci];
+        const fullIcons = Math.floor(val / iconScale);
+        const partial = (val % iconScale) / iconScale;
+        const cx = startX + ci * colW;
+        const color = config.colorPalette[ci % config.colorPalette.length];
+        return (
+          <g key={ci}>
+            {Array.from({ length: fullIcons }, (_, ii) => (
+              <text key={ii} x={cx} y={baseY - ii * (iconSize + iconGap) - iconGap}
+                textAnchor="middle" fontSize={iconSize} fill={color}>★</text>
+            ))}
+            {partial >= 0.5 && (
+              <text x={cx} y={baseY - fullIcons * (iconSize + iconGap) - iconGap}
+                textAnchor="middle" fontSize={iconSize} fill={color} opacity={0.35}>★</text>
+            )}
+            <text x={cx} y={baseY + 15} textAnchor="middle" fontSize={11} fontWeight={700} fill={color}>
+              {val}{config.unit ? ` ${config.unit}` : ''}
+            </text>
+            <text x={cx} y={baseY + 30} textAnchor="middle" fontSize={9} fill="#374151" fontWeight={500}>
+              {String(row[0]).slice(0, 9)}
+            </text>
+          </g>
+        );
+      })}
+      <line x1={startX - colW / 2} x2={startX + (nCats - 0.5) * colW} y1={baseY + 2} y2={baseY + 2} stroke="#d1d5db" strokeWidth={1.5} />
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontSize={9} fill="#9ca3af">МОН: I–IV одделение · Прв циклус</text>
+    </svg>
+  );
+};
+
 // ─── Histogram helper ───────────────────────────────────────────────────────
 function buildHistogram(values: number[], bins = 8): { name: string; count: number }[] {
   if (values.length === 0) return [];
@@ -582,6 +733,14 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
     );
   }
 
+  if (config.type === 'back-to-back-histogram') {
+    return <BackToBackHistogram data={data} config={config} />;
+  }
+
+  if (config.type === 'pictogram') {
+    return <PictogramChart data={data} config={config} />;
+  }
+
   const commonAxis = (
     <>
       {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
@@ -599,6 +758,133 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
       {config.showLegend && seriesKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
     </>
   );
+
+  if (config.type === 'stacked-bar') {
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={chartData} barCategoryGap="20%">
+          {commonAxis}
+          {seriesKeys.map((k, i) => (
+            <Bar key={k} dataKey={k} stackId="a" fill={colors[i % colors.length]}
+              radius={i === seriesKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (config.type === 'stacked-bar-horizontal') {
+    return (
+      <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 44)}>
+        <BarChart data={chartData} layout="vertical">
+          {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />}
+          <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => `${v}${unit}`} />
+          <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={80} />
+          <Tooltip formatter={tooltipFormatter as any} />
+          {config.showLegend && <Legend wrapperStyle={{ fontSize: 11 }} />}
+          {seriesKeys.map((k, i) => (
+            <Bar key={k} dataKey={k} stackId="a" fill={colors[i % colors.length]} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (config.type === 'divided-bar') {
+    const normalizedData = chartData.map(row => {
+      const total = seriesKeys.reduce((s, k) => s + (Number(row[k]) || 0), 0);
+      const result: Record<string, string | number> = { name: String(row.name ?? '') };
+      seriesKeys.forEach(k => { result[k] = total > 0 ? +((Number(row[k]) / total * 100).toFixed(1)) : 0; });
+      return result;
+    });
+    return (
+      <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 52)}>
+        <BarChart data={normalizedData} layout="vertical">
+          {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />}
+          <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10 }} />
+          <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={80} />
+          <Tooltip formatter={(v, n) => [`${v}%`, String(n)]} />
+          {config.showLegend && <Legend wrapperStyle={{ fontSize: 11 }} />}
+          {seriesKeys.map((k, i) => (
+            <Bar key={k} dataKey={k} stackId="a" fill={colors[i % colors.length]} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (config.type === 'frequency-polygon') {
+    const fpValues = data.rows.map(r => typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])) || 0);
+    const fpBins = buildHistogram(fpValues, config.bins ?? 8);
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={fpBins}>
+          {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
+          <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-20} textAnchor="end" height={46}
+            label={config.xLabel ? { value: config.xLabel, position: 'insideBottom', offset: -8, style: { fontSize: 10 } } : undefined} />
+          <YAxis tick={{ fontSize: 10 }}
+            label={{ value: 'Фреквенција', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }} />
+          <Tooltip formatter={v => [`${v}`, 'Фреквенција']} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Line type="linear" dataKey="count" stroke={colors[0]} strokeWidth={2.5} name="Фреквенција"
+            dot={{ r: 5, fill: colors[0], stroke: '#fff', strokeWidth: 2 }} activeDot={{ r: 7 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (config.type === 'cumulative-frequency') {
+    const cfValues = data.rows.map(r => typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])) || 0);
+    const cfBins = buildHistogram(cfValues, config.bins ?? 8);
+    let cumAcc = 0;
+    const cfData = cfBins.map(d => {
+      cumAcc += d.count;
+      return { name: d.name, cumFreq: cumAcc, relFreq: +(cumAcc / (cfValues.length || 1) * 100).toFixed(1) };
+    });
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <ComposedChart data={cfData}>
+          {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
+          <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-20} textAnchor="end" height={46} />
+          <YAxis yAxisId="abs" tick={{ fontSize: 10 }}
+            label={{ value: 'Кумул. фрекв.', angle: -90, position: 'insideLeft', style: { fontSize: 9 } }} />
+          <YAxis yAxisId="rel" orientation="right" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10 }} />
+          <Tooltip formatter={(v, n) => n === 'cumFreq' ? [`${v}`, 'Кумулат. фреквенција'] : [`${v}%`, 'Релат. кумул. %']} />
+          <Line yAxisId="abs" type="monotone" dataKey="cumFreq" stroke={colors[0]} strokeWidth={2.5}
+            dot={{ r: 4 }} name="Кумулат. фреквенција" />
+          <Line yAxisId="rel" type="monotone" dataKey="relFreq" stroke={colors[1] ?? '#ef4444'}
+            strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3 }} name="Релат. кумул. %" />
+          {config.showLegend && <Legend wrapperStyle={{ fontSize: 11 }} />}
+        </ComposedChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (config.type === 'pareto') {
+    let paretoCum = 0;
+    const paretoTotal = data.rows.reduce((s, r) => s + (typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])) || 0), 0);
+    const paretoData = data.rows
+      .map(r => ({ name: String(r[0]), value: typeof r[1] === 'number' ? r[1] : parseFloat(String(r[1])) || 0 }))
+      .sort((a, b) => b.value - a.value)
+      .map(d => { paretoCum += (d.value / (paretoTotal || 1)) * 100; return { ...d, cumPct: +(paretoCum.toFixed(1)) }; });
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <ComposedChart data={paretoData}>
+          {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
+          <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+          <YAxis yAxisId="bar" tick={{ fontSize: 10 }} tickFormatter={v => `${v}${unit}`} />
+          <YAxis yAxisId="line" orientation="right" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10 }} />
+          <Tooltip formatter={(v, n) => n === 'cumPct' ? [`${v}%`, 'Кумулат. %'] : [`${v}${unit}`, String(n)]} />
+          <Bar yAxisId="bar" dataKey="value" name="Вредност" radius={[4, 4, 0, 0]}>
+            {paretoData.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+          </Bar>
+          <Line yAxisId="line" type="monotone" dataKey="cumPct" stroke="#ef4444"
+            strokeWidth={2.5} dot={{ r: 4 }} name="Кумулат. %" />
+          {config.showLegend && <Legend wrapperStyle={{ fontSize: 11 }} />}
+        </ComposedChart>
+      </ResponsiveContainer>
+    );
+  }
 
   if (config.type === 'line') {
     return (

@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bookmark, Image as ImageIcon, Loader2, X, RefreshCw } from 'lucide-react';
+import { Bookmark, Image as ImageIcon, Loader2, X, RefreshCw, BarChart2, Upload } from 'lucide-react';
+import { ChartPreview, DEFAULT_CONFIG } from '../dataviz/ChartPreview';
+import type { ChartType, ChartConfig } from '../dataviz/ChartPreview';
+import { DataTable, DEFAULT_TABLE } from '../dataviz/DataTable';
+import type { TableData } from '../dataviz/DataTable';
 import { Card } from '../common/Card';
 import { downloadAsPdf } from '../../utils/pdfDownload';
 import { ICONS } from '../../constants';
@@ -10,6 +14,9 @@ import { QuizViewer } from './QuizViewer';
 import { shareService } from '../../services/shareService';
 import { useNotification } from '../../contexts/NotificationContext';
 import { geminiService } from '../../services/geminiService';
+import { uploadQuestionImage } from '../../services/storageService';
+import { useAuth } from '../../contexts/AuthContext';
+import { ForumShareButton } from '../forum/ForumShareButton';
 
 const InteractiveQuizPlayer = React.lazy(() => import('./InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 
@@ -33,6 +40,8 @@ const cognitiveLevelConfig: Record<string, { label: string; color: string; }> = 
     Creating: { label: 'Креирање', color: 'bg-pink-100 text-pink-800' },
 };
 
+const CHART_BUILDER_TYPES: ChartType[] = ['bar', 'pie', 'line', 'histogram', 'scatter', 'stacked-bar', 'frequency-polygon'];
+
 const QuestionList: React.FC<{
     questions: AssessmentQuestion[];
     isEditing: boolean;
@@ -43,9 +52,17 @@ const QuestionList: React.FC<{
     onDeleteImage?: (idx: number) => void;
     onRegenerateImage?: (idx: number, customPrompt: string) => Promise<void>;
     visualizingIdx?: number | null;
-}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion, onVisualize, onDeleteImage, onRegenerateImage, visualizingIdx }) => {
+    onChartChange?: (idx: number, chartData: AssessmentQuestion['chartData'], chartConfig: AssessmentQuestion['chartConfig']) => void;
+    onUploadImage?: (idx: number, file: File) => Promise<void>;
+}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion, onVisualize, onDeleteImage, onRegenerateImage, visualizingIdx, onChartChange, onUploadImage }) => {
     const [openPromptIdx, setOpenPromptIdx] = useState<number | null>(null);
     const [promptMap, setPromptMap] = useState<Record<number, string>>({});
+    const [chartBuilderIdx, setChartBuilderIdx] = useState<number | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadTargetIdx, setUploadTargetIdx] = useState<number | null>(null);
+    const [chartBuilderTable, setChartBuilderTable] = useState<TableData>(DEFAULT_TABLE);
+    const [chartBuilderType, setChartBuilderType] = useState<ChartType>('bar');
+    const chartBuilderConfig: ChartConfig = { ...DEFAULT_CONFIG, type: chartBuilderType };
     const questionTypeIcons: Record<string, React.ComponentType<{className?: string}>> = {
         MULTIPLE_CHOICE: ICONS.myLessons,
         SHORT_ANSWER: ICONS.edit,
@@ -88,6 +105,17 @@ const QuestionList: React.FC<{
                                         {isVisualizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
                                     </button>
                                 )}
+                                {!isEditing && !q.imageUrl && onUploadImage && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setUploadTargetIdx(index); fileInputRef.current?.click(); }}
+                                        disabled={isVisualizing}
+                                        title="Прикачи своја слика"
+                                        className="p-1.5 text-gray-300 hover:text-violet-600 transition opacity-0 group-hover:opacity-100 flex-shrink-0"
+                                    >
+                                        <Upload className="w-4 h-4" />
+                                    </button>
+                                )}
                                 {onSaveQuestion && (
                                     <button
                                         type="button"
@@ -96,6 +124,16 @@ const QuestionList: React.FC<{
                                         className="p-1.5 text-gray-300 hover:text-indigo-600 transition flex-shrink-0"
                                     >
                                         <Bookmark className="w-4 h-4" />
+                                    </button>
+                                )}
+                                {!isEditing && !q.chartData && onChartChange && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setChartBuilderIdx(index); setChartBuilderTable(DEFAULT_TABLE); setChartBuilderType('bar'); }}
+                                        title="Додади DataViz График кон ова прашање"
+                                        className="p-1.5 text-gray-300 hover:text-teal-600 transition opacity-0 group-hover:opacity-100 flex-shrink-0"
+                                    >
+                                        <BarChart2 className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
@@ -215,7 +253,76 @@ const QuestionList: React.FC<{
                                     </div>
                                 </div>
                             )}
+                            {q.chartData && (
+                                <div className="md:w-72 flex-shrink-0 animate-in fade-in zoom-in duration-500">
+                                    <div className="rounded-xl overflow-hidden border border-teal-200 shadow-sm bg-white">
+                                        <div className="p-3">
+                                            <ChartPreview
+                                                data={q.chartData as TableData}
+                                                config={{ ...DEFAULT_CONFIG, type: (q.chartConfig?.type as ChartType) ?? 'bar', ...q.chartConfig } as ChartConfig}
+                                            />
+                                        </div>
+                                        <div className="px-3 py-1.5 bg-teal-50 border-t border-teal-100 flex items-center justify-between">
+                                            <span className="text-[10px] text-teal-700 font-bold flex items-center gap-1">
+                                                <BarChart2 className="w-3 h-3" /> DataViz График
+                                            </span>
+                                            {onChartChange && (
+                                                <button type="button"
+                                                    onClick={() => onChartChange(index, undefined, undefined)}
+                                                    title="Отстрани график"
+                                                    className="text-[10px] text-red-400 hover:text-red-600 font-medium flex items-center gap-0.5 no-print"
+                                                >
+                                                    <X className="w-2.5 h-2.5" /> Отстрани
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
+                        {chartBuilderIdx === index && (
+                            <div className="mt-3 ml-6 p-4 border-2 border-teal-300 rounded-xl bg-teal-50/60 space-y-3 no-print">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm font-black text-teal-800 flex items-center gap-2">
+                                        <BarChart2 className="w-4 h-4" /> Додади DataViz График
+                                    </p>
+                                    <button type="button" onClick={() => setChartBuilderIdx(null)} title="Откажи" aria-label="Откажи" className="p-1 text-gray-400 hover:text-red-500 transition">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                    {CHART_BUILDER_TYPES.map(ct => (
+                                        <button key={ct} type="button" onClick={() => setChartBuilderType(ct)}
+                                            className={`px-2 py-1 text-[11px] font-bold rounded-lg border-2 transition ${
+                                                chartBuilderType === ct ? 'border-teal-500 bg-teal-100 text-teal-800' : 'border-gray-200 bg-white text-gray-600 hover:border-teal-300'
+                                            }`}
+                                        >{ct}</button>
+                                    ))}
+                                </div>
+                                <div className="bg-white rounded-lg border border-gray-200 p-2">
+                                    <DataTable data={chartBuilderTable} onChange={setChartBuilderTable} />
+                                </div>
+                                <div className="bg-white rounded-lg border border-gray-200 p-3">
+                                    <ChartPreview data={chartBuilderTable} config={chartBuilderConfig} />
+                                </div>
+                                <div className="flex gap-2">
+                                    <button type="button"
+                                        onClick={() => {
+                                            if (onChartChange) onChartChange(index, chartBuilderTable, { type: chartBuilderType });
+                                            setChartBuilderIdx(null);
+                                        }}
+                                        className="flex-1 bg-teal-600 text-white py-2 rounded-xl text-sm font-black hover:bg-teal-700 transition"
+                                    >
+                                        ✓ Зачувај График во Прашањето
+                                    </button>
+                                    <button type="button" onClick={() => setChartBuilderIdx(null)}
+                                        className="px-4 bg-gray-100 text-gray-600 py-2 rounded-xl text-sm font-bold hover:bg-gray-200 transition">
+                                        Откажи
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {!isEditing && (
                             <div className="ml-8 mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[10px] no-print">
@@ -227,6 +334,24 @@ const QuestionList: React.FC<{
                     </div>
                 );
             })}
+            {/* Hidden file input for teacher image upload — shared across all questions */}
+            {onUploadImage && (
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    aria-label="Прикачи слика за прашање"
+                    className="hidden"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && uploadTargetIdx !== null) {
+                            onUploadImage(uploadTargetIdx, file);
+                        }
+                        e.target.value = '';
+                        setUploadTargetIdx(null);
+                    }}
+                />
+            )}
         </div>
     );
 };
@@ -246,6 +371,37 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
     const contentRef = useRef<HTMLDivElement>(null);
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const { addNotification } = useNotification();
+    const { firebaseUser } = useAuth();
+
+    const handleUploadImage = async (idx: number, file: File) => {
+        if (!firebaseUser?.uid) {
+            addNotification('Мора да бидете логирани за да прикачите слика.', 'warning');
+            return;
+        }
+        setVisualizingIdx(idx);
+        try {
+            const url = await uploadQuestionImage(file, firebaseUser.uid);
+            setEditableMaterial(prev => {
+                const setImage = (qs: AssessmentQuestion[]) => {
+                    const next = [...qs];
+                    next[idx] = { ...next[idx], imageUrl: url };
+                    return next;
+                };
+                if (activeTab === 'standard') return { ...prev, questions: setImage(prev.questions) };
+                return {
+                    ...prev,
+                    differentiatedVersions: prev.differentiatedVersions?.map(v =>
+                        v.profileName === activeTab ? { ...v, questions: setImage(v.questions) } : v
+                    ) || [],
+                };
+            });
+            addNotification('Сликата е успешно прикачена!', 'success');
+        } catch {
+            addNotification('Грешка при прикачување на сликата.', 'error');
+        } finally {
+            setVisualizingIdx(null);
+        }
+    };
 
     const handleVisualize = async (idx: number, questionText: string) => {
         setVisualizingIdx(idx);
@@ -397,6 +553,25 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                     const newQuestions = [...v.questions];
                     newQuestions[qIndex] = { ...newQuestions[qIndex], [field]: value };
                     return { ...v, questions: newQuestions };
+                }
+                return v;
+            }) || [];
+            return { ...prev, differentiatedVersions: newVersions };
+        });
+    };
+
+    const handleChartChangeForVersion = (versionName: string, qIndex: number, chartData: AssessmentQuestion['chartData'], chartConfig: AssessmentQuestion['chartConfig']) => {
+        setEditableMaterial((prev: AIGeneratedAssessment) => {
+            if (versionName === 'standard') {
+                const newQuestions = [...prev.questions];
+                newQuestions[qIndex] = { ...newQuestions[qIndex], chartData, chartConfig };
+                return { ...prev, questions: newQuestions };
+            }
+            const newVersions = prev.differentiatedVersions?.map((v: DifferentiatedVersion) => {
+                if (v.profileName === versionName) {
+                    const newQ = [...v.questions];
+                    newQ[qIndex] = { ...newQ[qIndex], chartData, chartConfig };
+                    return { ...v, questions: newQ };
                 }
                 return v;
             }) || [];
@@ -696,6 +871,16 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                                          <button type="button" onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст
                                         </button>
+                                        <div className="border-t border-gray-100 my-1" />
+                                        <div className="px-2 py-1">
+                                            <ForumShareButton
+                                                prefillTitle={editableMaterial.title}
+                                                prefillBody={`Споделувам: „${editableMaterial.title}" — генерирано со AI. Мислења, подобрувања?`}
+                                                prefillCategory="resource"
+                                                className="w-full justify-start !px-2 !py-2 !text-sm !border-0 !bg-transparent !text-indigo-600 hover:!bg-indigo-50 !rounded-md"
+                                                label="Сподели во Форум"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -747,6 +932,8 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                     onDeleteImage={handleDeleteImage}
                     onRegenerateImage={handleRegenerateImage}
                     visualizingIdx={visualizingIdx}
+                    onChartChange={(qIndex, chartData, chartConfig) => handleChartChangeForVersion(activeTab, qIndex, chartData, chartConfig)}
+                    onUploadImage={handleUploadImage}
                 />
                 {selfAssessmentSection(editableMaterial.selfAssessmentQuestions)}
             </div>

@@ -27,7 +27,6 @@ async function tryGeminiImageGen(apiKey: string, prompt: string): Promise<{ mime
       const parts: any[] = result?.response?.candidates?.[0]?.content?.parts ?? [];
       const imgPart = parts.find((p: any) => p.inlineData?.data);
       if (imgPart?.inlineData) {
-        console.log(`[imagen] Strategy 2 succeeded with model: ${modelName}`);
         return { mimeType: imgPart.inlineData.mimeType || 'image/png', data: imgPart.inlineData.data };
       }
       console.warn(`[imagen] ${modelName}: no image parts in response`);
@@ -79,7 +78,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const s2result = await tryGeminiImageGen(apiKey, prompt);
       if (s2result) {
-        console.log(`[imagen] Success with ${keyHint}`);
         return res.status(200).json({ inlineData: s2result });
       }
 

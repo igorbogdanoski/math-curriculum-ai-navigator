@@ -141,7 +141,7 @@ function ClassSummary({ results }: { results: QuizResult[] }) {
       const sums: Record<string, number> = {};
       const cnts: Record<string, number> = {};
       for (const r of studentResults) {
-        const text = (((r as any).quizTitle ?? '') + ' ' + ((r as any).conceptTitle ?? '')).toLowerCase();
+        const text = ((r.quizTitle ?? '') + ' ' + (r.conceptTitle ?? '')).toLowerCase();
         for (const [sid, kws] of Object.entries(STRAND_KEYWORDS)) {
           if (kws.some(k => text.includes(k))) {
             sums[sid] = (sums[sid] ?? 0) + r.percentage;

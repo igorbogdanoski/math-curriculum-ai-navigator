@@ -60,6 +60,9 @@ export function useGeneratorSave({
   const { trackMaterialSaved } = useAcademyProgress();
   const [savedToLibrary, setSavedToLibrary] = useState<Set<string>>(new Set());
   const [assignTarget, setAssignTarget] = useState<AIGeneratedAssessment | null>(null);
+  // PRO privacy: default public; PRO users may switch to private before saving
+  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'Unlimited';
+  const [saveIsPublic, setSaveIsPublic] = useState(true);
 
   const handleSaveToLibrary = async (material: GeneratedMaterial, keyHint: string) => {
     if (!firebaseUser?.uid) { addNotification('Мора да бидете логирани.', 'error'); return; }
@@ -84,6 +87,7 @@ export function useGeneratorSave({
         conceptId,
         topicId: state.selectedTopic,
         gradeLevel,
+        isPublic: isPro ? saveIsPublic : true, // FREE always public; PRO chooses
       });
       setSavedToLibrary(prev => new Set(prev).add(keyHint));
       const newAchievements = trackMaterialSaved(libType);
@@ -179,6 +183,9 @@ export function useGeneratorSave({
     savedToLibrary,
     assignTarget,
     setAssignTarget,
+    isPro,
+    saveIsPublic,
+    setSaveIsPublic,
     handleSaveToLibrary,
     handleSaveQuestion,
     handleSaveAsNote,

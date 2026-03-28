@@ -395,6 +395,9 @@ export interface AssessmentQuestion {
   svgDiagram?: string;
   /** Structured data table (statistics questions) */
   tableData?: QuestionTableData;
+  /** DataViz chart embedded in the question (Statistics/Data questions) — teacher-added */
+  chartData?: { headers: string[]; rows: (string | number)[][] };
+  chartConfig?: { type?: string; title?: string; xLabel?: string; yLabel?: string; unit?: string; colorPalette?: string[]; bins?: number };
   levelDescription?: string;
 
   solution?: string;

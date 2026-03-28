@@ -25,19 +25,27 @@ interface ChartTypeDef {
 }
 
 const CHART_TYPES: ChartTypeDef[] = [
-  { id: 'bar',            label: 'Столбест верт.',    emoji: '📊', desc: 'Споредба категории',        minCols: 1 },
-  { id: 'bar-horizontal', label: 'Столбест хориз.',   emoji: '📉', desc: 'Долги наслови',             minCols: 1 },
-  { id: 'line',           label: 'Линиски',            emoji: '📈', desc: 'Тренд низ времето',         minCols: 1 },
-  { id: 'area',           label: 'Површински',         emoji: '🏔️', desc: 'Акумулирани вредности',    minCols: 1 },
-  { id: 'pie',            label: 'Пита',               emoji: '🥧', desc: 'Делови од целина',          minCols: 1 },
-  { id: 'scatter',        label: 'Расеан (Scatter)',   emoji: '✦',  desc: 'Корелација X-Y',            minCols: 2 },
-  { id: 'scatter-trend',  label: 'Scatter + Тренд',   emoji: '📐', desc: 'Линеарна регресија R²',     minCols: 2 },
-  { id: 'bubble',         label: 'Balloon (Bubble)',   emoji: '🫧', desc: 'Три dimenzii',              minCols: 3 },
-  { id: 'histogram',      label: 'Хистограм',          emoji: '▬',  desc: 'Распределба',               minCols: 1 },
-  { id: 'box-whisker',    label: 'Box-and-Whisker',    emoji: '⊟',  desc: 'Квартили + медијана',       minCols: 1 },
-  { id: 'stem-leaf',      label: 'Стебло-Листови',    emoji: '🌿', desc: 'Сите вредности, МОН 6-8р.',  minCols: 1 },
-  { id: 'dot-plot',       label: 'Точкаст дијаграм',  emoji: '⠿',  desc: 'Броење на точки, МОН 5-7р.', minCols: 1 },
-  { id: 'heatmap',        label: 'Toplinska karta',   emoji: '🌡️', desc: 'Корелации, МОН IX одд.',      minCols: 2 },
+  { id: 'bar',                     label: 'Столбест верт.',       emoji: '📊', desc: 'Споредба категории, МОН 2–13р.',       minCols: 1 },
+  { id: 'bar-horizontal',          label: 'Столбест хориз.',      emoji: '📉', desc: 'Категории со долги имиња',             minCols: 1 },
+  { id: 'stacked-bar',             label: 'Наредени столбови',    emoji: '📶', desc: 'Повеќе серии наредени, МОН 4–9р.',     minCols: 2 },
+  { id: 'stacked-bar-horizontal',  label: 'Наредени хориз.',      emoji: '☰',  desc: 'Хориз. наредени, МОН 4–9р.',          minCols: 2 },
+  { id: 'divided-bar',             label: 'Делен (100%) Бар',     emoji: '🔲', desc: 'Пропорционален — Divided Bar, МОН 5+', minCols: 2 },
+  { id: 'line',                    label: 'Линиски',               emoji: '📈', desc: 'Тренд низ времето',                   minCols: 1 },
+  { id: 'area',                    label: 'Површински',            emoji: '🏔️', desc: 'Акумулирани вредности',              minCols: 1 },
+  { id: 'pie',                     label: 'Пита',                  emoji: '🥧', desc: 'Делови од целина',                    minCols: 1 },
+  { id: 'scatter',                 label: 'Расеан (Scatter)',      emoji: '✦',  desc: 'Корелација X-Y',                      minCols: 2 },
+  { id: 'scatter-trend',           label: 'Scatter + Тренд',      emoji: '📐', desc: 'Линеарна регресија R²',               minCols: 2 },
+  { id: 'bubble',                  label: 'Balloon (Bubble)',      emoji: '🫧', desc: 'Три димензии',                        minCols: 3 },
+  { id: 'histogram',               label: 'Хистограм',             emoji: '▬',  desc: 'Распределба на податоци',             minCols: 1 },
+  { id: 'frequency-polygon',       label: 'Фрекв. многуаголник',  emoji: '📿', desc: 'Линија на фреквенции, МОН 6–9р.',     minCols: 1 },
+  { id: 'cumulative-frequency',    label: 'Кумулат. фреквенција', emoji: '〰', desc: 'Огива — кумулатив, МОН 8–13р.',       minCols: 1 },
+  { id: 'back-to-back-histogram',  label: 'B-to-B Хистограм',     emoji: '⇔',  desc: 'Споредба 2 групи, МОН 7–9р.',         minCols: 2 },
+  { id: 'pareto',                  label: 'Парето дијаграм',       emoji: '🎯', desc: 'Сортиран + кумул. %, МОН 9–13р.',    minCols: 1 },
+  { id: 'box-whisker',             label: 'Box-and-Whisker',       emoji: '⊟',  desc: 'Квартили + медијана',                 minCols: 1 },
+  { id: 'stem-leaf',               label: 'Стебло-Листови',       emoji: '🌿', desc: 'Сите вредности, МОН 6-8р.',           minCols: 1 },
+  { id: 'dot-plot',                label: 'Точкаст дијаграм',     emoji: '⠿',  desc: 'Броење на точки, МОН 5-7р.',          minCols: 1 },
+  { id: 'heatmap',                 label: 'Топлинска карта',       emoji: '🌡️', desc: 'Корелации, МОН IX одд.',              minCols: 2 },
+  { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
 type StudioTab = 'chart' | 'paper' | 'ai' | 'prob';
@@ -284,7 +292,7 @@ export const DataVizStudioView: React.FC = () => {
                         <label key={key} className="flex items-center gap-2 cursor-pointer">
                           <input type="checkbox"
                             checked={config[key as keyof ChartConfig] as boolean}
-                            onChange={e => updateConfig(key as keyof ChartConfig, e.target.checked as any)}
+                            onChange={e => updateConfig(key as keyof ChartConfig, e.target.checked as ChartConfig[keyof ChartConfig])}
                             className="accent-indigo-600 w-4 h-4" />
                           <span className="text-sm text-gray-600 font-medium">{label}</span>
                         </label>
@@ -292,7 +300,7 @@ export const DataVizStudioView: React.FC = () => {
                     </div>
 
                     {/* Histogram bins slider */}
-                    {config.type === 'histogram' && (
+                    {(['histogram', 'frequency-polygon', 'cumulative-frequency', 'back-to-back-histogram'] as ChartType[]).includes(config.type) && (
                       <div>
                         <label className="text-xs font-bold text-gray-500 mb-1 block flex items-center justify-between">
                           <span>Број на класи (bins)</span>
@@ -381,11 +389,13 @@ export const DataVizStudioView: React.FC = () => {
                   <Settings2 className="w-3.5 h-3.5" /> Педагошки совети
                 </p>
                 <ul className="text-xs text-indigo-700 space-y-1">
-                  <li>• <strong>Scatter Plot</strong> — нужни 3 колони: Ознака, X, Y</li>
-                  <li>• <strong>Bubble Chart</strong> — нужни 4 колони: Ознака, X, Y, Голем.</li>
-                  <li>• <strong>Хистограм</strong> — прва колона се игнорира; AI ги групира бројките</li>
-                  <li>• <strong>Box-Whisker</strong> — секоја серија е посебна група за квартили</li>
-                  <li>• Копирај во clipboard → залепи директно во Word/PowerPoint</li>
+                  <li>• <strong>Scatter / Bubble</strong> — 3 или 4 колони: Ознака, X, Y [, Големина]</li>
+                  <li>• <strong>Хистограм / Фрекв. полигон / Огива</strong> — прва колона се игнорира; прилагоди ги класите</li>
+                  <li>• <strong>B-to-B Хистограм</strong> — 3 колони: Ознака, Серија1, Серија2</li>
+                  <li>• <strong>Наредени / Делен бар</strong> — 2+ колони со серии; Делен бар нормализира на 100%</li>
+                  <li>• <strong>Пиктограм ★</strong> — идеален за I–IV одд.; скалата се прилагодува автоматски</li>
+                  <li>• <strong>Парето</strong> — автоматски сортира опаѓачки + додава кумулатив. линија (80/20 правило)</li>
+                  <li>• Копирај во clipboard → залепи директно во Word/PowerPoint/Canva</li>
                 </ul>
               </div>
             </div>

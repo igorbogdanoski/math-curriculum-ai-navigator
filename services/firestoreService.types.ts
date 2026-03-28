@@ -120,6 +120,7 @@ export interface QuizResult {
   percentage: number;
   playedAt?: Timestamp;
   conceptId?: string;
+  conceptTitle?: string;
   topicId?: string;
   gradeLevel?: number;
   studentName?: string;
@@ -164,4 +165,6 @@ export interface CachedMaterial {
   isForked?: boolean;
   sourceId?: string;
   sourceAuthor?: string;
+  /** PRO feature: false = private (only visible to owning teacher); default true = public library */
+  isPublic?: boolean;
 }

@@ -187,8 +187,8 @@ export function useLearningStyleProfile(
     for (const r of filtered) {
       // Use conceptTitle if available, fallback to quizTitle
       const strand = detectStrand(
-        (r as any).quizTitle ?? (r as any).title ?? '',
-        (r as any).conceptTitle ?? null,
+        r.quizTitle ?? '',
+        r.conceptTitle ?? null,
       );
       if (!strand) continue;
       sums[strand]   = (sums[strand]   ?? 0) + r.percentage;

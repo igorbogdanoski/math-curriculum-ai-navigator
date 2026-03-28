@@ -7,6 +7,7 @@ import { LanguageSelector } from './common/LanguageSelector';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
+import { useForumUnreadCount } from '../hooks/useForumUnreadCount';
 
 interface SidebarProps {
   currentPath: string;
@@ -22,7 +23,8 @@ const NavItem: React.FC<{
   onClick: () => void;
   isGenerator?: boolean;
   badge?: string;
-}> = ({ path, currentPath, icon: Icon, label, onClick, isGenerator = false, badge }) => {
+  unreadCount?: number;
+}> = ({ path, currentPath, icon: Icon, label, onClick, isGenerator = false, badge, unreadCount }) => {
   const { navigate } = useNavigation();
   const { t, language, setLanguage } = useLanguage();
   const { openGeneratorPanel } = useGeneratorPanel();
@@ -48,7 +50,12 @@ const NavItem: React.FC<{
     >
       <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
       <span className="font-medium truncate flex-1">{label}</span>
-      {badge && (
+      {unreadCount != null && unreadCount > 0 && (
+        <span className="ml-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-black bg-rose-500 text-white px-1 rounded-full animate-pulse">
+          {unreadCount > 9 ? '9+' : unreadCount}
+        </span>
+      )}
+      {!unreadCount && badge && (
         <span className="ml-1 text-[10px] font-bold bg-brand-accent/20 text-brand-accent px-1.5 py-0.5 rounded-full">
           {badge}
         </span>
@@ -59,8 +66,9 @@ const NavItem: React.FC<{
   import { InstallPWAButton } from './common/InstallPWAButton';
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }) => {
   const { t, language, setLanguage } = useLanguage();
-    const { user, logout } = useAuth();
+    const { user, logout, firebaseUser } = useAuth();
     const { navigate } = useNavigation();
+    const forumUnread = useForumUnreadCount(firebaseUser?.uid ?? null);
 
     // Progressive disclosure â€” secondary nav collapsed by default
     const [showMore, setShowMore] = useState(() => {
@@ -149,7 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label={t("nav.gallery")} onClick={onClose} />
               <NavItem path="/national-library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.nationalLibrary")} onClick={onClose} />
               <NavItem path="/data-viz" currentPath={currentPath} icon={ICONS.chart} label="DataViz Studio" onClick={onClose} badge="NEW" />
-              <NavItem path="/forum" currentPath={currentPath} icon={ICONS.chatBubble} label="Форум" onClick={onClose} badge="CoP" />
+              <NavItem path="/forum" currentPath={currentPath} icon={ICONS.chatBubble} label="Форум" onClick={onClose} badge="CoP" unreadCount={forumUnread} />
             </div>
           )}
         </div>

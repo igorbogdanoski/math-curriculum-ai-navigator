@@ -4,7 +4,9 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { RateLimitError } from '../services/apiErrors';
-import type { AIGeneratedIdeas, AIGeneratedPracticeMaterial } from '../types';
+import type { AIGeneratedIdeas, AIGeneratedPracticeMaterial, AIGeneratedPresentation } from '../types';
+import { GammaModeModal } from '../components/ai/GammaModeModal';
+import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -17,7 +19,7 @@ import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrow
 import { StepByStepSolver } from '../components/StepByStepSolver';
 import { GeometryExplorer } from '../components/GeometryExplorer';
 import { useReactToPrint } from 'react-to-print';
-import { Printer, Share2, Brain, GraduationCap, Sparkles, Lightbulb, Zap } from 'lucide-react';
+import { Printer, Share2, Brain, GraduationCap, Sparkles, Lightbulb, Zap, MonitorPlay, Loader2 } from 'lucide-react';
 import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
 
 const InteractiveQuizPlayer = React.lazy(() => import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
@@ -56,8 +58,10 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   const [isThrottled, setIsThrottled] = useState(false);
   
   const [loadingState, setLoadingState] = useState({
-    ideas: false, analogy: false, quiz: false, solver: false
+    ideas: false, analogy: false, quiz: false, solver: false, gamma: false
   });
+  const [gammaPresentation, setGammaPresentation] = useState<AIGeneratedPresentation | null>(null);
+  const [gammaOpen, setGammaOpen] = useState(false);
 
   const printComponentRef = useRef<HTMLDivElement>(null);
 
@@ -158,6 +162,27 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     finally { setLoadingState(p => ({ ...p, quiz: false })); }
   };
 
+  const handleGenerateGamma = async () => {
+    if (!concept || !grade || checkThrottle()) return;
+    setLoadingState(p => ({ ...p, gamma: true }));
+    try {
+      const presentation = await geminiService.generatePresentation(
+        concept.title,
+        grade.level,
+        [concept.title],
+        conceptCustomInstruction || undefined,
+        user ?? undefined,
+      );
+      setGammaPresentation(presentation);
+      setGammaOpen(true);
+    } catch (e) {
+      console.error('[AI Gamma]', e);
+      addNotification(aiErrMsg(e, 'Грешка при генерирање презентација.'), 'error');
+    } finally {
+      setLoadingState(p => ({ ...p, gamma: false }));
+    }
+  };
+
   const handleGenerateSolver = async () => {
     if (!concept || !grade || checkThrottle()) return;
     setLoadingState(p => ({ ...p, solver: true }));
@@ -229,6 +254,18 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                   >
                     <Zap className="w-4 h-4" />
                     Генерирај Материјали
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGenerateGamma}
+                    disabled={loadingState.gamma}
+                    title="Направи Gamma презентација за овој поим"
+                    className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-md hover:opacity-90 transition active:scale-95 disabled:opacity-60"
+                  >
+                    {loadingState.gamma
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Генерирам слајдови...</>
+                      : <><MonitorPlay className="w-4 h-4" /> Gamma Презентација</>
+                    }
                   </button>
                 </div>
               </div>
@@ -433,6 +470,16 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
         gradeName={grade.title}
         topicName={topic.title}
       />
+
+      {gammaOpen && gammaPresentation && (
+        <SilentErrorBoundary name="GammaModeConcept" fallback={
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950 text-white cursor-pointer" onClick={() => setGammaOpen(false)}>
+            <p className="text-slate-400">Gamma Mode не можеше да се вчита. Кликни за да затвориш.</p>
+          </div>
+        }>
+          <GammaModeModal data={gammaPresentation} onClose={() => setGammaOpen(false)} />
+        </SilentErrorBoundary>
+      )}
     </div>
   );
 };

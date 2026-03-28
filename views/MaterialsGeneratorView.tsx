@@ -21,7 +21,7 @@ class ResultErrorBoundary extends Component<{ children: ReactNode }, { error: Er
         return this.props.children;
     }
 }
-import { X, ClipboardList, BookmarkPlus, CheckCircle, ShieldCheck } from 'lucide-react';
+import { X, ClipboardList, BookmarkPlus, CheckCircle, ShieldCheck, Globe, Lock } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { MathToolsPanel } from '../components/common/MathToolsPanel';
@@ -212,6 +212,9 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         assignTarget,
         setAssignTarget,
         savedToLibrary,
+        isPro,
+        saveIsPublic,
+        setSaveIsPublic,
         teacherNote,
         setTeacherNote,
         teacherNoteSaved,
@@ -795,7 +798,22 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                     {'questions' in generatedMaterial && (
                         <div className="flex flex-col gap-2">
                             <GeneratedAssessment material={generatedMaterial} onSaveQuestion={handleSaveQuestion} />
-                            <div className="flex justify-end gap-2 flex-wrap">
+                            <div className="flex justify-end gap-2 flex-wrap items-center">
+                                {/* PRO privacy toggle — shown only for PRO users before first save */}
+                                {isPro && !savedToLibrary.has('main') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSaveIsPublic(v => !v)}
+                                    title={saveIsPublic ? 'Материјалот ќе биде јавен во Библиотеката' : 'Материјалот е приватен — само за тебе (PRO)'}
+                                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                                      saveIsPublic
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                        : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                    }`}
+                                  >
+                                    {saveIsPublic ? <><Globe className="w-3.5 h-3.5" /> Јавно</> : <><Lock className="w-3.5 h-3.5" /> Приватно (PRO)</>}
+                                  </button>
+                                )}
                                 <button type="button"
                                     onClick={() => handleSaveToLibrary(generatedMaterial, 'main')}
                                     disabled={savedToLibrary.has('main')}
@@ -863,7 +881,21 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                     {variants[activeVariantTab] && (
                         <div className="flex flex-col gap-2">
                             <GeneratedAssessment material={variants[activeVariantTab]} onSaveQuestion={handleSaveQuestion} />
-                            <div className="flex justify-end gap-2 flex-wrap">
+                            <div className="flex justify-end gap-2 flex-wrap items-center">
+                                {isPro && !savedToLibrary.has(`variant-${activeVariantTab}`) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSaveIsPublic(v => !v)}
+                                    title={saveIsPublic ? 'Материјалот ќе биде јавен во Библиотеката' : 'Материјалот е приватен — само за тебе (PRO)'}
+                                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                                      saveIsPublic
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                        : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                    }`}
+                                  >
+                                    {saveIsPublic ? <><Globe className="w-3.5 h-3.5" /> Јавно</> : <><Lock className="w-3.5 h-3.5" /> Приватно (PRO)</>}
+                                  </button>
+                                )}
                                 <button type="button"
                                     onClick={() => handleSaveToLibrary(variants[activeVariantTab], `variant-${activeVariantTab}`)}
                                     disabled={savedToLibrary.has(`variant-${activeVariantTab}`)}
