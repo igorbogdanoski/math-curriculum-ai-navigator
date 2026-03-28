@@ -70,10 +70,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     const { navigate } = useNavigation();
     const forumUnread = useForumUnreadCount(firebaseUser?.uid ?? null);
 
-    // Progressive disclosure â€” secondary nav collapsed by default
+    // Progressive disclosure — secondary nav collapsed by default, auto-opens when on a secondary path
     const [showMore, setShowMore] = useState(() => {
-      const secondaryPaths = ['/explore', '/graph', '/roadmap', '/assistant', '/vision-assessment',
-        '/test-generator', '/grade-book', '/test-review', '/live', '/my-profile', '/reports/coverage', '/favorites', '/gallery'];
+      const secondaryPaths = [
+        '/explore', '/graph', '/roadmap',
+        '/planner', '/annual-planner', '/annual-gallery',
+        '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
+        '/matura', '/test-review', '/live', '/data-viz',
+        '/academy', '/my-profile', '/my-progress', '/portfolio',
+        '/national-library', '/gallery', '/favorites', '/reports/coverage',
+      ];
       return secondaryPaths.some(p => currentPath === p || currentPath.startsWith(p));
     });
 
@@ -92,31 +98,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
       </div>
 
       <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar" aria-label="Главна навигација">
-        {/* ── PRIMARY NAV (always visible) ── */}
+        {/* ── PRIMARY NAV (7 core items, always visible) ── */}
         <div className="space-y-0.5">
           <NavItem path="/" currentPath={currentPath} icon={ICONS.home} label={t("nav.home")} onClick={onClose} />
-          <NavItem path="/academy" currentPath={currentPath} icon={ICONS.education} label={t("nav.academy")} onClick={onClose} badge="NEW" />
           <NavItem path="/generator" currentPath={currentPath} icon={ICONS.generator} label={t("nav.generator")} onClick={onClose} isGenerator={true} badge="AI" />
-          <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label={t("nav.planner")} onClick={onClose} />
-          <NavItem path="/annual-planner" currentPath={currentPath} icon={ICONS.planner} label={"Годишна Програма"} onClick={onClose} badge="AI" />
-          <NavItem path="/annual-gallery" currentPath={currentPath} icon={ICONS.database} label={"Галерија на Планови"} onClick={onClose} badge="COMMUNITY" />
-          <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label={t("nav.analytics")} onClick={onClose} />
           <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label={t("nav.mylessons")} onClick={onClose} />
-          <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.library")} onClick={onClose} />            
+          <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label={t("nav.analytics")} onClick={onClose} />
+          <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.library")} onClick={onClose} />
+          <NavItem path="/forum" currentPath={currentPath} icon={ICONS.chatBubble} label="Форум" onClick={onClose} badge="CoP" unreadCount={forumUnread} />
           {(user?.role === 'school_admin' || user?.role === 'admin') && (
-              <>
-                <NavItem path="/school-admin" currentPath={currentPath} icon={ICONS.school} label={t("nav.schooladmin")} onClick={onClose} />
-                <NavItem path="/school-admin/curriculum" currentPath={currentPath} icon={ICONS.bookOpen} label="Уреди Курикулум" onClick={onClose} badge="NEW" />
-                <NavItem path="/reviews" currentPath={currentPath} icon={ICONS.shieldCheck} label="Рецензии" onClick={onClose} />
-              </>
-            )}          
+            <>
+              <NavItem path="/school-admin" currentPath={currentPath} icon={ICONS.school} label={t("nav.schooladmin")} onClick={onClose} />
+              <NavItem path="/school-admin/curriculum" currentPath={currentPath} icon={ICONS.bookOpen} label="Уреди Курикулум" onClick={onClose} badge="NEW" />
+              <NavItem path="/reviews" currentPath={currentPath} icon={ICONS.shieldCheck} label="Рецензии" onClick={onClose} />
+            </>
+          )}
           {user?.role === 'admin' && (
-              <NavItem path="/system-admin" currentPath={currentPath} icon={ICONS.shieldAlert} label="Училишта" onClick={onClose} />
+            <NavItem path="/system-admin" currentPath={currentPath} icon={ICONS.shieldAlert} label="Училишта" onClick={onClose} />
           )}
           <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label={t("nav.settings")} onClick={onClose} />
         </div>
 
-        {/* ── SECONDARY NAV (collapsible) ── */}
+        {/* ── SECONDARY NAV (collapsible, grouped) ── */}
         <div className="mt-3">
           <button
             type="button"
@@ -129,11 +132,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
 
           {showMore && (
             <div className="mt-1 space-y-0.5 animate-fade-in">
+              {/* Планирање */}
               <hr className="mb-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Истражи</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Планирање</p>
+              <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label={t("nav.planner")} onClick={onClose} />
+              <NavItem path="/annual-planner" currentPath={currentPath} icon={ICONS.planner} label="Годишна Програма" onClick={onClose} badge="AI" />
+              <NavItem path="/annual-gallery" currentPath={currentPath} icon={ICONS.database} label="Галерија на Планови" onClick={onClose} badge="CoM" />
+
+              {/* Истражи Програма */}
+              <hr className="my-2 border-gray-100" />
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Програма</p>
               <NavItem path="/explore" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.explore")} onClick={onClose} />
               <NavItem path="/graph" currentPath={currentPath} icon={ICONS.share} label={t("nav.graph")} onClick={onClose} />
               <NavItem path="/roadmap" currentPath={currentPath} icon={ICONS.mindmap} label={t("nav.roadmap")} onClick={onClose} />
+
+              {/* AI Алатки */}
               <hr className="my-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">AI Алатки</p>
               <NavItem path="/assistant" currentPath={currentPath} icon={ICONS.assistant} label={t("nav.assistant")} onClick={onClose} />
@@ -141,23 +154,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/test-generator" currentPath={currentPath} icon={ICONS.assessment} label={t("nav.testgenerator")} onClick={onClose} />
               <NavItem path="/grade-book" currentPath={currentPath} icon={ICONS.gradeBook} label="Тетратка за оценки" onClick={onClose} badge="NEW" />
               <NavItem path="/matura" currentPath={currentPath} icon={ICONS.education} label="Симулација матура" onClick={onClose} badge="ДИМ" />
-              <NavItem path="/test-review" currentPath={currentPath} icon={ICONS.camera} label="AI Прегледувач на тестови" onClick={onClose} badge="NEW" />
+              <NavItem path="/test-review" currentPath={currentPath} icon={ICONS.camera} label="AI Прегледувач" onClick={onClose} badge="NEW" />
               <NavItem path="/live/host" currentPath={currentPath} icon={ICONS.live} label="Час во живо" onClick={onClose} badge="LIVE" />
-              <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label={t("nav.coverage")} onClick={onClose} />
+              <NavItem path="/data-viz" currentPath={currentPath} icon={ICONS.chart} label="DataViz Studio" onClick={onClose} badge="NEW" />
+
+              {/* Развој на наставник */}
               <hr className="my-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Наставник</p>
+              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Развој</p>
+              <NavItem path="/academy" currentPath={currentPath} icon={ICONS.education} label={t("nav.academy")} onClick={onClose} badge="NEW" />
               <NavItem path="/my-profile" currentPath={currentPath} icon={ICONS.profile} label="Мој Профил (CPD)" onClick={onClose} badge="НОВО" />
-              <hr className="my-2 border-gray-100" />
-              <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Ученици</p>
               <NavItem path="/my-progress" currentPath={currentPath} icon={ICONS.analytics} label="Мој Напредок" onClick={onClose} />
               <NavItem path="/portfolio" currentPath={currentPath} icon={ICONS.star} label="Портфолио" onClick={onClose} badge="NEW" />
+
+              {/* Ресурси */}
               <hr className="my-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">Ресурси</p>
-              <NavItem path="/favorites" currentPath={currentPath} icon={ICONS.star} label={t("nav.favorites")} onClick={onClose} />
-              <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label={t("nav.gallery")} onClick={onClose} />
               <NavItem path="/national-library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.nationalLibrary")} onClick={onClose} />
-              <NavItem path="/data-viz" currentPath={currentPath} icon={ICONS.chart} label="DataViz Studio" onClick={onClose} badge="NEW" />
-              <NavItem path="/forum" currentPath={currentPath} icon={ICONS.chatBubble} label="Форум" onClick={onClose} badge="CoP" unreadCount={forumUnread} />
+              <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label={t("nav.gallery")} onClick={onClose} />
+              <NavItem path="/favorites" currentPath={currentPath} icon={ICONS.star} label={t("nav.favorites")} onClick={onClose} />
+              <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label={t("nav.coverage")} onClick={onClose} />
             </div>
           )}
         </div>

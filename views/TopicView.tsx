@@ -470,6 +470,8 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
         conceptIds={concepts.map((c: Concept) => c.id)}
         gradeName={grade.title}
         topicName={topic.title}
+        onGamma={handleGenerateGamma}
+        gammaLoading={loadingGamma}
       />
 
       {gammaOpen && gammaPresentation && (

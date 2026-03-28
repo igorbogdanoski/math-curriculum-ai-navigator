@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Wand2, ChevronDown, ChevronUp, Sparkles, Loader2, Check, X } from 'lucide-react';
+import { Wand2, ChevronDown, ChevronUp, Sparkles, Loader2, Check, X, MonitorPlay, CalendarDays } from 'lucide-react';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
+import { useNavigation } from '../../contexts/NavigationContext';
 import { callGeminiProxy, DEFAULT_MODEL, sanitizePromptInput } from '../../services/gemini/core';
 import type { MaterialType } from '../../types';
 
@@ -11,6 +12,10 @@ interface QuickToolsPanelProps {
   gradeName: string;
   topicName: string;
   customInstruction?: string;
+  /** If provided, shows the Gamma Presentation button */
+  onGamma?: () => void;
+  /** True while Gamma is loading — shows spinner on button */
+  gammaLoading?: boolean;
 }
 
 interface AISuggestion {
@@ -41,8 +46,11 @@ export const QuickToolsPanel: React.FC<QuickToolsPanelProps> = ({
   gradeName,
   topicName,
   customInstruction = '',
+  onGamma,
+  gammaLoading = false,
 }) => {
   const { openGeneratorPanel } = useGeneratorPanel();
+  const { navigate } = useNavigation();
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem(STORAGE_KEY) === 'true'; }
@@ -159,6 +167,31 @@ Respond ONLY with valid JSON (no markdown):
             <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider leading-none mb-0.5">Контекст</p>
             <p className="text-xs text-indigo-800 font-semibold leading-snug truncate">{shortGrade}</p>
             <p className="text-[11px] text-indigo-600 leading-snug truncate">{shortTopic}</p>
+          </div>
+
+          {/* ── Gamma + Annual Planner quick actions ── */}
+          <div className="px-2 pt-2 flex gap-1.5">
+            {onGamma && (
+              <button
+                type="button"
+                onClick={onGamma}
+                disabled={gammaLoading}
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-[10px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+              >
+                {gammaLoading
+                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                  : <MonitorPlay className="w-3 h-3" />}
+                Gamma
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => navigate('/annual-planner')}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold hover:bg-amber-100 active:scale-95 transition-all"
+            >
+              <CalendarDays className="w-3 h-3" />
+              Год. план
+            </button>
           </div>
 
           {/* ── Quick tool buttons ── */}

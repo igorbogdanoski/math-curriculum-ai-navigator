@@ -3,12 +3,13 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
-import type { Topic, Grade, NationalStandard, Concept } from '../types';
-import { ModalType } from '../types';
+import type { Topic, Grade, NationalStandard, Concept, SecondaryTrack } from '../types';
+import { ModalType, SECONDARY_TRACK_LABELS } from '../types';
 import { useModal } from '../contexts/ModalContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { exploreTourSteps } from '../tours/tour-steps';
+import { secondaryCurriculumByTrack } from '../data/secondaryCurriculum';
 
 
 
@@ -67,27 +68,36 @@ export const ExploreView: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [selectedGradeId, setSelectedGradeId] = useState<string>('');
+    // Track selector — '' = primary (I–IX), otherwise shows the secondary track grades
+    const [selectedTrack, setSelectedTrack] = useState<SecondaryTrack | ''>('');
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedQuery(searchQuery), 200);
         return () => clearTimeout(t);
     }, [searchQuery]);
 
+    // Grades to display — primary or secondary track
+    const activeGrades: Grade[] = useMemo(() => {
+        if (selectedTrack) {
+            return secondaryCurriculumByTrack[selectedTrack]?.curriculum.grades ?? [];
+        }
+        return curriculum?.grades ?? [];
+    }, [curriculum, selectedTrack]);
 
     useEffect(() => {
-        if (curriculum && curriculum.grades.length > 0 && !selectedGradeId) {
-            setSelectedGradeId(curriculum.grades[0].id);
+        if (activeGrades.length > 0) {
+            setSelectedGradeId(activeGrades[0].id);
         }
-    }, [curriculum, selectedGradeId]);
+    }, [selectedTrack, curriculum]); // eslint-disable-line react-hooks/exhaustive-deps
     
     const handleGradeSelect = (id: string) => {
         setSelectedGradeId(id);
         setSearchQuery(''); // Reset search
     };
 
-    const selectedGrade = useMemo(() => 
-        curriculum?.grades.find((g: Grade) => g.id === selectedGradeId)
-    , [curriculum, selectedGradeId]);
+    const selectedGrade = useMemo(() =>
+        activeGrades.find((g: Grade) => g.id === selectedGradeId)
+    , [activeGrades, selectedGradeId]);
     
     const handleShowTransversal = (standards: NationalStandard[], gradeTitle: string) => {
         showModal(ModalType.TransversalStandards, { standards, gradeTitle });
@@ -126,29 +136,64 @@ export const ExploreView: React.FC = () => {
 
     return (
         <div className="flex flex-col md:flex-row h-full">
-            {/* Left Column: Grade Selector */}
-            <div data-tour="explore-grade-selector" className="w-full md:w-64 p-4 bg-white border-b md:border-b-0 md:border-r flex-shrink-0">
-                <h2 className="text-xl font-bold text-brand-primary mb-4 px-2 hidden md:block">Одделенија</h2>
-                <div className="md:hidden">
-                    <label htmlFor="grade-select-mobile" className="sr-only">Избери одделение</label>
-                    <div className="relative">
-                        <select
-                            id="grade-select-mobile"
-                            value={selectedGradeId}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleGradeSelect(e.target.value)}
-                            className="w-full appearance-none bg-brand-primary text-white font-semibold px-4 py-3 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                        >
-                            {curriculum.grades.map((grade: Grade) => (
-                                <option key={grade.id} value={grade.id}>{grade.title}</option>
-                            ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                            <ICONS.chevronDown className="w-4 h-4 text-white" />
-                        </div>
-                    </div>
+            {/* Left Column: Track + Grade Selector */}
+            <div data-tour="explore-grade-selector" className="w-full md:w-64 p-4 bg-white border-b md:border-b-0 md:border-r flex-shrink-0 flex flex-col gap-3">
+                {/* ── Track selector ── */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1 mb-1.5">Ниво на образование</p>
+                  <div className="flex flex-col gap-1">
+                    {([
+                      { id: '' as const, label: '🏫 Основно (I–IX)' },
+                      { id: 'gymnasium' as SecondaryTrack, label: `🎓 ${SECONDARY_TRACK_LABELS.gymnasium}` },
+                      { id: 'gymnasium_elective' as SecondaryTrack, label: `📐 ${SECONDARY_TRACK_LABELS.gymnasium_elective}` },
+                      { id: 'vocational4' as SecondaryTrack, label: `🔧 ${SECONDARY_TRACK_LABELS.vocational4}` },
+                      { id: 'vocational3' as SecondaryTrack, label: `🔧 ${SECONDARY_TRACK_LABELS.vocational3}` },
+                    ] as const).map(({ id, label }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setSelectedTrack(id)}
+                        className={`text-left px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          selectedTrack === id
+                            ? 'bg-brand-primary text-white shadow-sm'
+                            : 'text-gray-600 hover:bg-blue-50 hover:text-brand-primary'
+                        }`}
+                      >
+                        {label}
+                        {(id === 'vocational4' || id === 'vocational3') && (
+                          <span className="ml-1 text-[9px] opacity-70">(БЕТА)</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="hidden md:block">
-                    <GradeSelector grades={curriculum.grades} selectedGradeId={selectedGradeId} onSelect={handleGradeSelect} />
+
+                <hr className="border-gray-100" />
+
+                {/* ── Grade list ── */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1 mb-1.5">Одделение / Година</p>
+                  <div className="md:hidden">
+                      <label htmlFor="grade-select-mobile" className="sr-only">Избери одделение</label>
+                      <div className="relative">
+                          <select
+                              id="grade-select-mobile"
+                              value={selectedGradeId}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleGradeSelect(e.target.value)}
+                              className="w-full appearance-none bg-brand-primary text-white font-semibold px-4 py-3 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                          >
+                              {activeGrades.map((grade: Grade) => (
+                                  <option key={grade.id} value={grade.id}>{grade.title}</option>
+                              ))}
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                              <ICONS.chevronDown className="w-4 h-4 text-white" />
+                          </div>
+                      </div>
+                  </div>
+                  <div className="hidden md:block">
+                      <GradeSelector grades={activeGrades} selectedGradeId={selectedGradeId} onSelect={handleGradeSelect} />
+                  </div>
                 </div>
             </div>
 
