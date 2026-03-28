@@ -287,8 +287,10 @@ export async function callGeminiProxy(params: {
   generationConfig?: any;
   systemInstruction?: string;
   safetySettings?: any;
-  userTier?: string; // Optional user tier
-}, signal?: AbortSignal): Promise<{ text: string; candidates: any[] }> {
+  userTier?: string;
+  /** Pass `[{ googleSearch: {} }]` to enable Gemini Grounding with real-time internet search */
+  tools?: unknown[];
+}, signal?: AbortSignal): Promise<{ text: string; candidates: any[]; groundingMetadata?: unknown }> {
   return queueRequest(async () => {
     // Build a combined abort signal: caller signal OR 60-second timeout
     const timeoutController = new AbortController();
@@ -323,7 +325,8 @@ export async function callGeminiProxy(params: {
             systemInstruction: params.systemInstruction,
             safetySettings: params.safetySettings,
             ...params.generationConfig
-          }
+          },
+          ...(params.tools && params.tools.length > 0 ? { tools: params.tools } : {}),
         }),
         signal: effectiveSignal
       });

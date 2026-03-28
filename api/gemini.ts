@@ -26,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const { model, contents, config } = validated;
+  const { model, contents, config, tools } = validated;
   let modelName = model;
   
   // Upgrade logic: route to best available models on paid tier
@@ -70,12 +70,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const result = await modelInstance.generateContent({
         contents: normalizedContents,
         generationConfig: generationConfig as GenerationConfig,
+        ...(tools && tools.length > 0 ? { tools: tools as any } : {}),
       });
       const response = await result.response;
       if (!response.candidates || response.candidates.length === 0) {
         throw new Error("No candidates returned. Likely safety block.");
       }
-      return res.status(200).json({ text: response.text(), candidates: response.candidates });
+      const groundingMetadata = response.candidates[0]?.groundingMetadata ?? null;
+      return res.status(200).json({ text: response.text(), candidates: response.candidates, groundingMetadata });
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       const msg = lastError.message;

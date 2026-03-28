@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import {
   Sparkles, BarChart2, FileText, TrendingUp, Loader2, Copy,
-  CheckCircle, ChevronRight, PlusCircle, Download,
+  CheckCircle, ChevronRight, PlusCircle, Download, Globe,
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { callGeminiProxy, DEFAULT_MODEL, sanitizePromptInput } from '../../services/gemini/core';
@@ -86,9 +86,10 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const MODE_OPTIONS = [
-  { id: 'tasks',    label: 'Генерирај задачи',    icon: FileText,    desc: 'AI создава педагошки прашања од вашиот дијаграм' },
-  { id: 'generate', label: 'Генерирај податоци',   icon: BarChart2,   desc: 'Опишете сценарио → AI ги измислува вредностите + ги назива оските' },
-  { id: 'analyze',  label: 'Анализирај податоци',  icon: TrendingUp,  desc: 'Статистичка анализа + препорака за тип на дијаграм' },
+  { id: 'tasks',    label: 'Генерирај задачи',     icon: FileText,  desc: 'AI создава педагошки прашања од вашиот дијаграм' },
+  { id: 'generate', label: 'Генерирај податоци',    icon: BarChart2, desc: 'Опишете сценарио → AI ги измислува вредностите + ги назива оските' },
+  { id: 'analyze',  label: 'Анализирај податоци',   icon: TrendingUp, desc: 'Статистичка анализа + препорака за тип на дијаграм' },
+  { id: 'grounding', label: '🌐 Реални статистики', icon: Globe,     desc: 'AI претражува интернет → вистински податоци + извори' },
 ] as const;
 type Mode = typeof MODE_OPTIONS[number]['id'];
 
@@ -108,6 +109,7 @@ export const AIStatsAssistant: React.FC<Props> = ({
   const [taskCount, setTaskCount] = useState(5);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [exportingQuiz, setExportingQuiz] = useState(false);
+  const [groundingSources, setGroundingSources] = useState<string[]>([]);
   const resultRef = useRef<HTMLDivElement>(null);
 
   const getSeriesValues = useCallback((): number[] =>
@@ -216,6 +218,67 @@ ${sanitizePromptInput(dataStr, 800)}
     else if (n <= 15) rec = '📊 **Столбест дијаграм** — јасна споредба на дискретни категории.';
     else rec = '📉 **Хистограм** — многу вредности, покажува распределба на фреквенции.';
     setAiRecommendation(rec);
+  };
+
+  // ── Реални статистики (Gemini Grounding) ──────────────────────────────────
+  const handleGrounding = async () => {
+    if (!descriptionInput.trim()) {
+      addNotification('Опишете какви статистики барате (пр. „население по општини во Македонија").', 'warning');
+      return;
+    }
+    setLoading(true);
+    setGroundingSources([]);
+    try {
+      const prompt = `Search the internet for real, up-to-date statistics about: ${sanitizePromptInput(descriptionInput, 300)}
+
+This data is for Macedonian math education (grade ${sanitizePromptInput(gradeInput, 5)}).
+
+Using REAL data from your search results, return ONLY valid JSON (no markdown):
+{
+  "headers": ["Категорија", "Вредност"],
+  "rows": [["Ознака1", number], ["Ознака2", number]],
+  "suggestedChartType": "bar|line|pie|scatter|histogram",
+  "title": "Наслов на дијаграмот на македонски",
+  "xLabel": "Назив на X оска (македонски)",
+  "yLabel": "Назив на Y оска со единица (македонски)",
+  "unit": "единица (%, км, €, лица...)",
+  "explanation": "Краток опис на изворот и податоците (македонски)"
+}
+
+Maximum 12 rows. Use REAL values — do NOT invent data.`;
+
+      const resp = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        tools: [{ googleSearch: {} }],
+      });
+
+      const parsed = extractJson(resp.text, 'object');
+      if (!isValidDataObj(parsed)) throw new Error('Invalid data structure');
+
+      onTableDataChange({ headers: parsed.headers, rows: parsed.rows });
+      if (parsed.suggestedChartType) onChartTypeChange(parsed.suggestedChartType as ChartType);
+
+      const configUpdates: Partial<ChartConfig> = {};
+      if (parsed.title)  configUpdates.title  = parsed.title;
+      if (parsed.xLabel) configUpdates.xLabel = parsed.xLabel;
+      if (parsed.yLabel) configUpdates.yLabel = parsed.yLabel;
+      if (parsed.unit)   configUpdates.unit   = parsed.unit;
+      if (Object.keys(configUpdates).length > 0) onConfigChange(configUpdates);
+
+      // Extract web source URLs from grounding metadata
+      const meta = resp.groundingMetadata as { groundingChunks?: { web?: { uri?: string; title?: string } }[] } | null;
+      const sources = meta?.groundingChunks
+        ?.map(c => c.web?.title ?? c.web?.uri ?? '')
+        .filter(Boolean) ?? [];
+      setGroundingSources(sources);
+      setAiRecommendation(parsed.explanation ?? '');
+
+      addNotification(`Реални податоци вчитани${sources.length > 0 ? ` (${sources.length} извори)` : ''} ✅`, 'success');
+      onGoToChart();
+    } catch {
+      addNotification('Грешката: пребарувањето не врати валидни податоци. Обидете се со попрецизен опис.', 'error');
+    } finally { setLoading(false); }
   };
 
   // ── Додај во квиз ──────────────────────────────────────────────────────────
@@ -428,6 +491,73 @@ ${sanitizePromptInput(dataStr, 800)}
                   <p className="text-lg font-mono font-bold text-gray-800 mt-0.5">{s.value}</p>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Реални статистики (Grounding) ── */}
+      {mode === 'grounding' && (
+        <div className="bg-white rounded-2xl border border-emerald-200 p-5 space-y-4">
+          <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+            <Globe className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-emerald-800">
+              <strong>Gemini Grounding</strong> — AI претражува интернет за реални, верифицирани статистики. Добиваш вистински податоци со извори, не измислени вредности.
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 block">Какви статистики барате?</label>
+            <textarea
+              value={descriptionInput}
+              onChange={e => setDescriptionInput(e.target.value)}
+              rows={3}
+              placeholder="Пример: население во Македонија по општини — БДП на земји во Европа — просечни температури во Скопје по месеци — стапка на невработеност по возраст..."
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 mb-1 block">Одделение</label>
+            <select value={gradeInput} onChange={e => setGradeInput(e.target.value)}
+              title="Изберете одделение"
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300">
+              {[4,5,6,7,8,9,10,11,12].map(g => <option key={g} value={g}>{g}-то</option>)}
+            </select>
+          </div>
+          {/* Quick prompts */}
+          <div>
+            <p className="text-xs font-bold text-gray-400 mb-1.5">Брзи примери:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                'Население на општини во Македонија',
+                'БДП по глава на жител — Балкан',
+                'Просечни температури во Скопје по месеци',
+                'Стапка на невработеност во земји од ЕУ',
+                'Потрошувачка на обновлива енергија по земји',
+                'Население по возрасни групи во Македонија',
+              ].map(ex => (
+                <button key={ex} type="button" onClick={() => setDescriptionInput(ex)}
+                  className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-gray-600 transition flex items-center gap-1">
+                  <ChevronRight className="w-3 h-3" />{ex}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button type="button" onClick={handleGrounding} disabled={loading}
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-semibold text-sm hover:bg-emerald-700 disabled:opacity-60 transition">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
+            {loading ? 'Пребарувам интернет...' : 'Пребарај и вчитај реални податоци'}
+          </button>
+          {groundingSources.length > 0 && (
+            <div className="pt-2 border-t border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Извори</p>
+              <ul className="space-y-1">
+                {groundingSources.slice(0, 5).map((src, i) => (
+                  <li key={i} className="text-xs text-emerald-700 truncate flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                    {src}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

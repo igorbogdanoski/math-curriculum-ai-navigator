@@ -138,6 +138,8 @@ export const GeminiRequestSchema = z.object({
     z.array(z.any())
   ]),
   config: SafeConfigSchema,
+  // Optional Gemini tools — used for Google Search grounding
+  tools: z.array(z.any()).optional(),
 });
 
 export type GeminiRequest = z.infer<typeof GeminiRequestSchema>;

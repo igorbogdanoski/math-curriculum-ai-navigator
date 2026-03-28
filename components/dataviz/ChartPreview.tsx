@@ -606,7 +606,14 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
   const unit = config.unit ? ` ${config.unit}` : '';
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tooltipFormatter = (value: any) => (unit ? `${value}${unit}` : String(value ?? ''));
+  // Typed recharts Tooltip formatter — matches ValueType/NameType including undefined variants
+  const tooltipFormatter = (
+    value: number | string | readonly (string | number)[] | undefined,
+    name: string | number | undefined,
+  ): [string, string] => {
+    const v = Array.isArray(value) ? (value[0] ?? '') : (value ?? '');
+    return [`${v}${unit}`, String(name ?? '')];
+  };
 
   if (config.type === 'box-whisker') {
     return <BoxWhiskerChart data={data} config={config} />;
@@ -754,7 +761,7 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
         label={config.yLabel ? { value: config.yLabel, angle: -90, position: 'insideLeft', style: { fontSize: 10 } } : undefined}
         tickFormatter={(v) => `${v}${unit}`}
       />
-      <Tooltip formatter={tooltipFormatter as any} />
+      <Tooltip formatter={tooltipFormatter} />
       {config.showLegend && seriesKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
     </>
   );
@@ -780,7 +787,7 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
           {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />}
           <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => `${v}${unit}`} />
           <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={80} />
-          <Tooltip formatter={tooltipFormatter as any} />
+          <Tooltip formatter={tooltipFormatter} />
           {config.showLegend && <Legend wrapperStyle={{ fontSize: 11 }} />}
           {seriesKeys.map((k, i) => (
             <Bar key={k} dataKey={k} stackId="a" fill={colors[i % colors.length]} />
@@ -924,13 +931,13 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
           {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />}
           <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `${v}${unit}`} />
           <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={80} />
-          <Tooltip formatter={tooltipFormatter as any} />
+          <Tooltip formatter={tooltipFormatter} />
           {config.showLegend && seriesKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
           {seriesKeys.map((k, i) => (
             <Bar key={k} dataKey={k} fill={colors[i % colors.length]} radius={[0, 4, 4, 0]}>
               {seriesKeys.length === 1 && (
                 <LabelList dataKey={k} position="right" style={{ fontSize: 10 }}
-                  formatter={((v: unknown) => `${v}${unit}`) as any} />
+                  formatter={(v: unknown) => `${v ?? ''}${unit}`} />
               )}
             </Bar>
           ))}
