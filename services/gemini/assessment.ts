@@ -18,7 +18,7 @@ async generatePracticeMaterials(concept: Concept, gradeLevel: number, materialTy
     return result;
   },
 
-async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean, includeWorkedExamples?: boolean): Promise<AIGeneratedAssessment> {
+async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTypes: QuestionType[], numQuestions: number, context: GenerationContext, profile?: TeachingProfile, differentiationLevel: DifferentiationLevel = 'standard', studentProfiles?: StudentProfile[], image?: { base64: string, mimeType: string }, customInstruction?: string, includeSelfAssessment?: boolean, includeWorkedExamples?: boolean, dokTarget?: 1 | 2 | 3 | 4 | 'mixed'): Promise<AIGeneratedAssessment> {
     const bloomDist = context.bloomDistribution;
     const hasBloom = bloomDist && Object.keys(bloomDist).length > 0;
     let bloomPart = '';
@@ -47,6 +47,13 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
       : '';
     const safeCustomInstruction = sanitizePromptInput(customInstruction);
 
+    // DoK targeting
+    const dokPart = dokTarget === 'mixed'
+      ? ' DOK РАСПРЕДЕЛБА (Webb\'s Depth of Knowledge): Генерирај 25% DoK-1 (recall), 35% DoK-2 (skill/concept), 30% DoK-3 (strategic thinking), 10% DoK-4 (extended thinking). За секое прашање постави го полето dokLevel (1/2/3/4).'
+      : dokTarget
+      ? ` DOK НИВО: Сите прашања треба да бидат на Webb's DoK ниво ${dokTarget} (${dokTarget === 1 ? 'Recall & Reproduction — директни процедури и факти' : dokTarget === 2 ? 'Skills & Concepts — примена на концепти, интерпретација' : dokTarget === 3 ? 'Strategic Thinking — доказ, анализа, повеќечекорно стратешко решавање' : 'Extended Thinking — истражување, проектни задачи, интердисциплинарни врски'}). За секое прашање постави го полето dokLevel (${dokTarget}).`
+      : ' За секое прашање постави го полето dokLevel (Webb\'s DoK: 1=Recall, 2=Skill/Concept, 3=Strategic Thinking, 4=Extended Thinking).';
+
     // Detect domain from topic/concept for visual enrichment
     const topicId = (context.topic?.id || '').toLowerCase();
     const conceptTitles = (context.concepts || []).map(c => (c.title || '').toLowerCase()).join(' ');
@@ -60,8 +67,8 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
       ? ' СТАТИСТИКА — ТАБЕЛА СО ПОДАТОЦИ: За прашања со статистички податоци, генерирај структурирана табела во полето "tableData" со формат: {"headers": ["Вредност", "Честота"], "rows": [[...], [...]], "caption": "..."}. Корисни реалистични броеви соодветни за нивото. Прашањето нека бара конкретна пресметка (средна вредност, медијана, мод, опсег) врз основа на табелата.'
       : '';
 
-    const prompt = `Генерирај ${type} со ${numQuestions} прашања. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart}${workedExamplePart}${gradeLevelPrompt}${geometryPart}${statisticsPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (лесно/средно/тешко).${safeCustomInstruction ? ` ${safeCustomInstruction}` : ''}`;
-    const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, alignment_goal: { type: Type.STRING }, selfAssessmentQuestions: { type: Type.ARRAY, items: { type: Type.STRING } }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, svgDiagram: { type: Type.STRING }, tableData: { type: Type.OBJECT, properties: { headers: { type: Type.ARRAY, items: { type: Type.STRING } }, rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: {} } }, caption: { type: Type.STRING } } }, isWorkedExample: { type: Type.BOOLEAN }, workedExampleType: { type: Type.STRING }, cognitiveLevel: { type: Type.STRING }, difficulty_level: { type: Type.STRING }, concept_evaluated: { type: Type.STRING } }, required: ["type", "question", "answer", "cognitiveLevel"] } } }, required: ["title", "questions"] };
+    const prompt = `Генерирај ${type} со ${numQuestions} прашања. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart}${workedExamplePart}${gradeLevelPrompt}${geometryPart}${statisticsPart}${dokPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (Easy/Medium/Hard).${safeCustomInstruction ? ` ${safeCustomInstruction}` : ''}`;
+    const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, alignment_goal: { type: Type.STRING }, selfAssessmentQuestions: { type: Type.ARRAY, items: { type: Type.STRING } }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, svgDiagram: { type: Type.STRING }, tableData: { type: Type.OBJECT, properties: { headers: { type: Type.ARRAY, items: { type: Type.STRING } }, rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: {} } }, caption: { type: Type.STRING } } }, isWorkedExample: { type: Type.BOOLEAN }, workedExampleType: { type: Type.STRING }, cognitiveLevel: { type: Type.STRING }, difficulty_level: { type: Type.STRING }, concept_evaluated: { type: Type.STRING }, dokLevel: { type: Type.INTEGER } }, required: ["type", "question", "answer", "cognitiveLevel", "dokLevel"] } } }, required: ["title", "questions"] };
 
     const canCache = !customInstruction && !studentProfiles?.length && differentiationLevel === 'standard' && !image && !isGeometry && !isStatistics;
     const conceptCacheId = context.concepts?.[0]?.id || 'gen';

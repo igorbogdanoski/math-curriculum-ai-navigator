@@ -375,7 +375,7 @@ export function useGeneratorActions({
             } else {
               result = await geminiService.generateAssessment(
                 materialType, questionTypes, numQuestions, finalContext,
-                user ?? undefined, differentiationLevel, studentProfilesToPass, imageParam, effectiveInstruction, state.includeSelfAssessment, state.includeWorkedExamples,
+                user ?? undefined, differentiationLevel, studentProfilesToPass, imageParam, effectiveInstruction, state.includeSelfAssessment, state.includeWorkedExamples, state.dokTarget,
               );
             }
             break;

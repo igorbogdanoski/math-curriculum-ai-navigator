@@ -31,7 +31,8 @@ import { geminiService, isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { app } from '../firebaseConfig';
 import { RateLimitError } from '../services/apiErrors';
-import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType, DifferentiationLevel, AssessmentQuestion, AIGeneratedWorkedExample } from '../types';
+import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, GenerationContext, Topic, Concept, Grade, NationalStandard, StudentProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, MaterialType, DifferentiationLevel, AssessmentQuestion, AIGeneratedWorkedExample, DokLevel } from '../types';
+import { DOK_META } from '../types';
 import { ModalType, PlannerItemType, QuestionType } from '../types';
 import { firestoreService } from '../services/firestoreService';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
@@ -466,6 +467,58 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                 value={state.bloomDistribution}
                                 onChange={(dist) => dispatch({ type: 'SET_FIELD', payload: { field: 'bloomDistribution', value: dist } })}
                               />
+                            )}
+
+                            {/* Webb's DoK target — само за QUIZ и ASSESSMENT */}
+                            {(state.materialType === 'QUIZ' || state.materialType === 'ASSESSMENT') && (
+                              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-2xl">
+                                <p className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3">Webb's Depth of Knowledge (DoK)</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {/* Auto option */}
+                                  <button
+                                    type="button"
+                                    onClick={() => dispatch({ type: 'SET_FIELD', payload: { field: 'dokTarget', value: undefined } })}
+                                    className={`col-span-3 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                                      state.dokTarget === undefined
+                                        ? 'bg-gray-800 text-white border-gray-800'
+                                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                                    }`}
+                                  >
+                                    Авто (AI одлучува)
+                                  </button>
+                                  {/* Mixed option */}
+                                  <button
+                                    type="button"
+                                    onClick={() => dispatch({ type: 'SET_FIELD', payload: { field: 'dokTarget', value: 'mixed' } })}
+                                    className={`col-span-3 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                                      state.dokTarget === 'mixed'
+                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                        : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300'
+                                    }`}
+                                  >
+                                    🎯 Мешана распределба (DoK 1→4)
+                                  </button>
+                                  {/* Specific DoK levels */}
+                                  {([1, 2, 3, 4] as DokLevel[]).map(lvl => {
+                                    const m = DOK_META[lvl];
+                                    const active = state.dokTarget === lvl;
+                                    return (
+                                      <button
+                                        key={lvl}
+                                        type="button"
+                                        onClick={() => dispatch({ type: 'SET_FIELD', payload: { field: 'dokTarget', value: lvl } })}
+                                        className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl text-[10px] font-bold border transition-all ${
+                                          active ? `${m.color} border-current` : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                        }`}
+                                      >
+                                        <span className={`w-2.5 h-2.5 rounded-full ${active ? m.dot : 'bg-gray-300'}`} />
+                                        {m.label}
+                                        <span className="font-normal opacity-70 text-center leading-none">{m.mk}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             )}
 
                             {/* Legacy Differentiation section removed as it's now inside MaterialOptions Advanced */}

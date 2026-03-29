@@ -66,7 +66,8 @@ const AssessmentQuestionSchema = z.object({
     cognitiveLevel: z.string().optional(),
     difficulty_level: z.string().optional(),
     alignment_justification: z.string().optional(),
-    concept_evaluated: z.string().optional()
+    concept_evaluated: z.string().optional(),
+    dokLevel: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).optional(),
 });
 
 export const AIGeneratedAssessmentSchema = z.object({

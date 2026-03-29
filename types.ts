@@ -1,4 +1,14 @@
 
+// ─── Webb's Depth of Knowledge ────────────────────────────────────────────────
+export const DOK_META = {
+  1: { label: 'DoK 1', title: 'Recall & Reproduction', mk: 'Припомнување', color: 'bg-sky-100 text-sky-700 border-sky-200', dot: 'bg-sky-500', hex: '#0ea5e9' },
+  2: { label: 'DoK 2', title: 'Skills & Concepts',     mk: 'Вештини',       color: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', hex: '#10b981' },
+  3: { label: 'DoK 3', title: 'Strategic Thinking',    mk: 'Стратешко',     color: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500', hex: '#f59e0b' },
+  4: { label: 'DoK 4', title: 'Extended Thinking',     mk: 'Проширено',     color: 'bg-rose-100 text-rose-700 border-rose-200', dot: 'bg-rose-500', hex: '#f43f5e' },
+} as const;
+
+export type DokLevel = 1 | 2 | 3 | 4;
+
 export interface School {
   id: string;
   name: string;
@@ -409,6 +419,8 @@ export interface AssessmentQuestion {
   difficulty_level?: 'Easy' | 'Medium' | 'Hard';
   alignment_justification?: string;
   concept_evaluated?: string;
+  /** Webb's Depth of Knowledge level (1=Recall, 2=Skill/Concept, 3=Strategic Thinking, 4=Extended Thinking) */
+  dokLevel?: 1 | 2 | 3 | 4;
 }
 
 export interface SavedQuestion {
@@ -424,6 +436,8 @@ export interface SavedQuestion {
     workedExampleType?: 'full' | 'partial';
   cognitiveLevel?: string;
   difficulty_level?: string;
+  /** Webb's Depth of Knowledge level */
+  dokLevel?: 1 | 2 | 3 | 4;
   conceptId?: string;
   conceptTitle?: string;
   topicId?: string;

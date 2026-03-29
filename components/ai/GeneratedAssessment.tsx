@@ -8,7 +8,8 @@ import { Card } from '../common/Card';
 import { downloadAsPdf } from '../../utils/pdfDownload';
 import { ICONS } from '../../constants';
 import { MathRenderer } from '../common/MathRenderer';
-import type { AIGeneratedAssessment, AssessmentQuestion, DifferentiationLevel } from '../../types';
+import type { AIGeneratedAssessment, AssessmentQuestion, DifferentiationLevel, DokLevel } from '../../types';
+import { DokBadge, DokDistributionBar } from '../common/DokBadge';
 import { FlashcardViewer } from './FlashcardViewer';
 import { QuizViewer } from './QuizViewer';
 import { shareService } from '../../services/shareService';
@@ -325,8 +326,9 @@ const QuestionList: React.FC<{
                         )}
 
                         {!isEditing && (
-                            <div className="ml-8 mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[10px] no-print">
+                            <div className="ml-8 mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[10px] no-print items-center">
                                 <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-widest ${levelInfo.color}`}>{levelInfo.label}</span>
+                                {q.dokLevel && <DokBadge level={q.dokLevel as DokLevel} size="compact" />}
                                 {q.difficulty_level && <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Тежина: {q.difficulty_level}</span>}
                                 {q.concept_evaluated && <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Поим: {q.concept_evaluated}</span>}
                             </div>
@@ -896,6 +898,11 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
             {editableMaterial.alignment_goal && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 no-print">
                     <strong>Цел на тестот:</strong> {editableMaterial.alignment_goal}
+                </div>
+            )}
+            {editableMaterial.questions.some(q => q.dokLevel) && (
+                <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl no-print">
+                    <DokDistributionBar questions={editableMaterial.questions} />
                 </div>
             )}
             

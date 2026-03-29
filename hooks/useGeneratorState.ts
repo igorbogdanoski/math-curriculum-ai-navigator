@@ -1,6 +1,6 @@
 
 import { useReducer, useEffect, useRef } from 'react';
-import { QuestionType, type MaterialType, type GenerationContextType, type StudentProfile, type DifferentiationLevel, type BloomDistribution } from '../types';
+import { QuestionType, type MaterialType, type GenerationContextType, type StudentProfile, type DifferentiationLevel, type BloomDistribution, type DokLevel } from '../types';
 import { useCurriculum } from './useCurriculum';
 
 
@@ -39,6 +39,8 @@ export interface GeneratorState {
     aiTone: 'creative' | 'formal' | 'friendly' | 'expert' | 'playful';
     aiVocabLevel: 'simplified' | 'standard' | 'advanced';
     aiStyle: 'standard' | 'socratic' | 'direct' | 'inquiry' | 'problem';
+    /** Webb's DoK target: specific level 1-4, 'mixed' for balanced distribution, undefined = auto */
+    dokTarget?: DokLevel | 'mixed';
 }
 
 // Actions
@@ -90,6 +92,7 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         aiTone: 'creative',
         aiVocabLevel: 'standard',
         aiStyle: 'standard',
+        dokTarget: undefined,
     };
 };
 
