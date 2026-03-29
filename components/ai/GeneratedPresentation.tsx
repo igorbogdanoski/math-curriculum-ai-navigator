@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Presentation, Image as ImageIcon, ChevronLeft, ChevronRight, FileDown, Sparkles, Loader2, BookOpen, Cpu, MousePointer2, Radio, Zap, X, Users, ExternalLink, Maximize2, Minimize2, PenLine, Plus, Trash2, Save, Check, Play } from 'lucide-react';
+import { Presentation, Image as ImageIcon, ChevronLeft, ChevronRight, FileDown, Sparkles, Loader2, BookOpen, Cpu, MousePointer2, Radio, Zap, X, Users, ExternalLink, Maximize2, Minimize2, PenLine, Plus, Trash2, Save, Check, Play, ArrowUp, ArrowDown, FileText } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { GammaModeModal } from './GammaModeModal';
@@ -222,6 +222,9 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
   const [editedSlides, setEditedSlides] = useState<PresentationSlide[]>(() => data.slides.map(s => ({ ...s, content: [...s.content] })));
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showAiContentModal, setShowAiContentModal] = useState(false);
+  const [aiContentText, setAiContentText] = useState('');
+  const [isGeneratingFromContent, setIsGeneratingFromContent] = useState(false);
   const { addNotification } = useNotification();
 
   const updateSlideTitle = (idx: number, title: string) =>
@@ -232,6 +235,56 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
     setEditedSlides(prev => prev.map((s, i) => i === slideIdx ? { ...s, content: [...s.content, ''] } : s));
   const removeSlideBullet = (slideIdx: number, bulletIdx: number) =>
     setEditedSlides(prev => prev.map((s, i) => i === slideIdx ? { ...s, content: s.content.filter((_, j) => j !== bulletIdx) } : s));
+
+  const addSlide = (afterIdx: number) => {
+    setEditedSlides(prev => {
+      const copy = [...prev];
+      copy.splice(afterIdx + 1, 0, { type: 'content', title: 'Нов слајд', content: [''] });
+      return copy;
+    });
+    setCurrentSlide(afterIdx + 1);
+  };
+
+  const deleteSlide = (idx: number) => {
+    setEditedSlides(prev => {
+      if (prev.length <= 1) return prev;
+      const copy = prev.filter((_, i) => i !== idx);
+      setCurrentSlide(s => Math.min(s, copy.length - 1));
+      return copy;
+    });
+  };
+
+  const moveSlide = (idx: number, dir: -1 | 1) => {
+    const target = idx + dir;
+    setEditedSlides(prev => {
+      if (target < 0 || target >= prev.length) return prev;
+      const copy = [...prev];
+      [copy[idx], copy[target]] = [copy[target], copy[idx]];
+      return copy;
+    });
+    setCurrentSlide(target);
+  };
+
+  const handleGenerateFromContent = async () => {
+    if (!aiContentText.trim() || isGeneratingFromContent) return;
+    setIsGeneratingFromContent(true);
+    try {
+      const result = await geminiService.generatePresentation(
+        data.topic, data.gradeLevel, [],
+        `Генерирај слајдови врз основа на следната содржина:\n\n${aiContentText}`,
+        user ?? undefined,
+      );
+      setEditedSlides(result.slides.map(s => ({ ...s, content: [...s.content] })));
+      setCurrentSlide(0);
+      setShowAiContentModal(false);
+      setAiContentText('');
+      addNotification('Слајдовите се генерирани од содржината!', 'success');
+    } catch {
+      addNotification('Грешка при генерирање на слајдови.', 'error');
+    } finally {
+      setIsGeneratingFromContent(false);
+    }
+  };
 
   const handleSavePresentation = async () => {
     if (!firebaseUser) return;
@@ -717,6 +770,16 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
 
             <button
                 type="button"
+                onClick={() => setShowAiContentModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold hover:bg-emerald-100 transition-all active:scale-95"
+                title="AI генерирај слајдови од содржина"
+            >
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline text-sm">AI од содржина</span>
+            </button>
+
+            <button
+                type="button"
                 onClick={() => setGammaMode(true)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold hover:from-indigo-700 hover:to-violet-700 transition-all shadow-md active:scale-95"
                 title="Gamma Mode — Наставно предавање со решенија"
@@ -987,10 +1050,14 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                         <div>
                             <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest block mb-2">Дигитални Алатки</span>
                             <div className="grid grid-cols-2 gap-2">
-                                <button type="button" className="p-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-2 hover:bg-white/10 transition-colors">
+                                <button type="button"
+                  onClick={() => window.open(`https://www.geogebra.org/calculator`, '_blank')}
+                  className="p-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-2 hover:bg-white/10 transition-colors">
                                     <MousePointer2 className="w-3 h-3" /> GeoGebra
                                 </button>
-                                <button type="button" className="p-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-2 hover:bg-white/10 transition-colors">
+                                <button type="button"
+                  onClick={() => window.open(`https://www.desmos.com/calculator`, '_blank')}
+                  className="p-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-2 hover:bg-white/10 transition-colors">
                                     <MousePointer2 className="w-3 h-3" /> Desmos
                                 </button>
                             </div>
@@ -1035,18 +1102,43 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
               </button>
             </div>
             {slides.map((s, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setCurrentSlide(idx)}
-                className={`w-full text-left p-2 rounded-xl border-2 transition-all ${
-                  currentSlide === idx ? 'border-indigo-500 bg-indigo-900/40' : 'border-gray-800 bg-gray-900 hover:border-gray-700'
-                }`}
-              >
-                <span className="text-[9px] font-black text-gray-500 block">{idx + 1}</span>
-                <p className="text-[10px] font-bold line-clamp-2 mt-0.5 leading-tight text-gray-300">{s.title}</p>
-              </button>
+              <div key={idx} className={`rounded-xl border-2 transition-all ${
+                currentSlide === idx ? 'border-indigo-500 bg-indigo-900/40' : 'border-gray-800 bg-gray-900'
+              }`}>
+                <button
+                  type="button"
+                  onClick={() => setCurrentSlide(idx)}
+                  className="w-full text-left p-2"
+                >
+                  <span className="text-[9px] font-black text-gray-500 block">{idx + 1}</span>
+                  <p className="text-[10px] font-bold line-clamp-2 mt-0.5 leading-tight text-gray-300">{s.title}</p>
+                </button>
+                {currentSlide === idx && (
+                  <div className="flex items-center gap-0.5 px-1.5 pb-1.5">
+                    <button type="button" title="Помести горе" onClick={() => moveSlide(idx, -1)} disabled={idx === 0}
+                      className="p-1 hover:bg-gray-700 rounded disabled:opacity-20 transition-colors">
+                      <ArrowUp className="w-3 h-3 text-gray-400" />
+                    </button>
+                    <button type="button" title="Помести долу" onClick={() => moveSlide(idx, 1)} disabled={idx === slides.length - 1}
+                      className="p-1 hover:bg-gray-700 rounded disabled:opacity-20 transition-colors">
+                      <ArrowDown className="w-3 h-3 text-gray-400" />
+                    </button>
+                    <button type="button" title="Додај слајд по овој" onClick={() => addSlide(idx)}
+                      className="p-1 hover:bg-indigo-800 rounded transition-colors ml-auto">
+                      <Plus className="w-3 h-3 text-indigo-400" />
+                    </button>
+                    <button type="button" title="Избриши слајд" onClick={() => deleteSlide(idx)} disabled={slides.length <= 1}
+                      className="p-1 hover:bg-red-900/40 rounded disabled:opacity-20 transition-colors">
+                      <Trash2 className="w-3 h-3 text-red-400" />
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
+            <button type="button" onClick={() => addSlide(slides.length - 1)}
+              className="w-full flex items-center justify-center gap-1.5 py-2 mt-1 rounded-xl border border-dashed border-gray-700 text-gray-500 hover:border-indigo-500 hover:text-indigo-400 transition-colors text-[10px] font-bold">
+              <Plus className="w-3 h-3" /> Додај слајд
+            </button>
           </div>
 
           {/* Center: Slide Canvas */}
@@ -1108,28 +1200,50 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
               />
             </div>
 
-            {current.type !== 'title' && current.type !== 'step-by-step' && current.type !== 'formula-centered' && (
+            {current.type !== 'title' && (
               <div className="p-4 border-b border-gray-800">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Содржина</label>
-                  <button type="button" onClick={() => addSlideBullet(currentSlide)} title="Додај точка" className="p-1 hover:bg-gray-800 rounded-lg text-indigo-400">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                    {current.type === 'formula-centered' ? 'Формула и белешки' : current.type === 'step-by-step' ? 'Чекори' : 'Содржина'}
+                  </label>
+                  <button type="button" onClick={() => addSlideBullet(currentSlide)} title="Додај ред" className="p-1 hover:bg-gray-800 rounded-lg text-indigo-400">
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="flex flex-col gap-2">
+                {current.type === 'formula-centered' && (
+                  <p className="text-[9px] text-indigo-400 mb-2">Прв ред = главна формула; следните = белешки</p>
+                )}
+                <div className="flex flex-col gap-3">
                   {current.content.map((bullet, bIdx) => (
-                    <div key={bIdx} className="flex gap-2 items-start">
-                      <textarea
-                        value={bullet}
-                        onChange={e => updateSlideBullet(currentSlide, bIdx, e.target.value)}
-                        rows={2}
-                        aria-label={`Содржина ${bIdx + 1}`}
-                        placeholder="Содржина на точката..."
-                        className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 resize-none"
-                      />
-                      <button type="button" onClick={() => removeSlideBullet(currentSlide, bIdx)} title="Избриши" className="p-1.5 hover:bg-red-900/40 rounded-lg text-gray-600 hover:text-red-400 mt-1 flex-shrink-0">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <div key={bIdx} className="flex flex-col gap-1">
+                      <div className="flex gap-2 items-start">
+                        {current.type === 'step-by-step' && (
+                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-700 text-white text-[9px] font-black flex items-center justify-center mt-2">{bIdx + 1}</span>
+                        )}
+                        {current.type === 'formula-centered' && bIdx === 0 && (
+                          <span className="flex-shrink-0 text-[9px] font-bold text-blue-400 mt-2.5 w-5 text-center">Σ</span>
+                        )}
+                        <textarea
+                          value={bullet}
+                          onChange={e => updateSlideBullet(currentSlide, bIdx, e.target.value)}
+                          rows={2}
+                          aria-label={`Содржина ${bIdx + 1}`}
+                          placeholder={
+                            current.type === 'formula-centered' && bIdx === 0 ? 'Пр. $a^2 + b^2 = c^2$'
+                            : current.type === 'step-by-step' ? `Чекор ${bIdx + 1}…`
+                            : 'Содржина…'
+                          }
+                          className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 resize-none font-mono"
+                        />
+                        <button type="button" onClick={() => removeSlideBullet(currentSlide, bIdx)} title="Избриши" className="p-1.5 hover:bg-red-900/40 rounded-lg text-gray-600 hover:text-red-400 mt-1 flex-shrink-0">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      {bullet.includes('$') && (
+                        <div className="ml-7 px-2 py-1 rounded-lg bg-gray-800 border border-gray-700 text-sm text-gray-200">
+                          <MathRenderer text={bullet} />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1275,6 +1389,51 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── AI from content modal ───────────────────────────────────────────── */}
+      {showAiContentModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black">AI од содржина</h3>
+                    <p className="text-emerald-100 text-xs">Залепете текст — AI генерира слајдови</p>
+                  </div>
+                </div>
+                <button type="button" onClick={() => setShowAiContentModal(false)} aria-label="Затвори" className="p-2 rounded-xl hover:bg-white/20 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 flex flex-col gap-4">
+              <textarea
+                value={aiContentText}
+                onChange={e => setAiContentText(e.target.value)}
+                placeholder={`Залепете или напишете содржина за темата „${data.topic}"…\n\nПр. белешки, учебничка страница, список на концепти…`}
+                rows={8}
+                className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none"
+              />
+              <p className="text-xs text-gray-400">Постојните слајдови ќе бидат заменети со ново генерирани.</p>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setShowAiContentModal(false)}
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-colors">
+                  Откажи
+                </button>
+                <button type="button" onClick={handleGenerateFromContent} disabled={!aiContentText.trim() || isGeneratingFromContent}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold hover:opacity-90 disabled:opacity-50 transition-all">
+                  {isGeneratingFromContent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {isGeneratingFromContent ? 'Генерирам…' : 'Генерирај слајдови'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
