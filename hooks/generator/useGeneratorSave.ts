@@ -28,6 +28,13 @@ type GeneratedMaterial =
   | AIGeneratedPresentation
   | null;
 
+type BulkResults = {
+  scenario?: AIGeneratedIdeas;
+  quiz?: AIGeneratedAssessment;
+  assessment?: AIGeneratedAssessment;
+  rubric?: AIGeneratedRubric;
+} | null;
+
 interface UseGeneratorSaveParams {
   state: GeneratorState;
   curriculum: Curriculum;
@@ -35,6 +42,7 @@ interface UseGeneratorSaveParams {
   user: TeachingProfile | null;
   firebaseUser: User | null;
   generatedMaterial: GeneratedMaterial;
+  bulkResults: BulkResults;
   verifiedQs: ReturnType<typeof useVerifiedQuestions>['data'] extends (infer T)[] ? T[] : SavedQuestion[];
   addNotification: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
   addItem: (item: Omit<PlannerItem, 'id'>) => Promise<void>;
@@ -50,6 +58,7 @@ export function useGeneratorSave({
   user,
   firebaseUser,
   generatedMaterial,
+  bulkResults,
   verifiedQs,
   addNotification,
   addItem,
@@ -157,6 +166,36 @@ export function useGeneratorSave({
     ).catch(err => console.warn('[Feedback] save failed:', err));
   };
 
+  const handleSavePackage = async () => {
+    if (!firebaseUser?.uid) { addNotification('Мора да бидете логирани.', 'error'); return; }
+    if (!bulkResults || Object.keys(bulkResults).filter(k => bulkResults[k as keyof typeof bulkResults]).length === 0) {
+      addNotification('Нема генериран пакет за зачувување.', 'error');
+      return;
+    }
+    if (savedToLibrary.has('package')) return;
+    try {
+      const gradeLevel = curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level;
+      const conceptId  = state.selectedConcepts[0];
+      const topicTitle = (bulkResults.scenario as { title?: string })?.title
+        ?? (bulkResults.quiz as { title?: string })?.title
+        ?? 'Пакет материјали';
+      const title = `📦 ${topicTitle}`;
+      await firestoreService.saveToLibrary(bulkResults as unknown as Record<string, unknown>, {
+        title,
+        type: 'package',
+        teacherUid: firebaseUser.uid,
+        conceptId,
+        topicId: state.selectedTopic,
+        gradeLevel,
+        isPublic: isPro ? saveIsPublic : true,
+      });
+      setSavedToLibrary(prev => new Set(prev).add('package'));
+      addNotification('Пакетот е зачуван во библиотеката! 📦', 'success');
+    } catch {
+      addNotification('Грешка при зачувување на пакетот.', 'error');
+    }
+  };
+
   const handleGenerateFromBank = () => {
     if (!verifiedQs || verifiedQs.length === 0) return;
     const conceptTitle = (verifiedQs[0] as { conceptTitle?: string })?.conceptTitle ?? 'Верификуван квиз';
@@ -191,5 +230,6 @@ export function useGeneratorSave({
     handleSaveAsNote,
     handleMaterialRate,
     handleGenerateFromBank,
+    handleSavePackage,
   };
 }

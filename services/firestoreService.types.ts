@@ -144,7 +144,7 @@ export interface Announcement {
 export interface CachedMaterial {
   id: string;
   content: unknown;
-  type: 'analogy' | 'outline' | 'quiz' | 'discussion' | 'problems' | 'assessment' | 'rubric' | 'thematicplan' | 'ideas' | 'solver';
+  type: 'analogy' | 'outline' | 'quiz' | 'discussion' | 'problems' | 'assessment' | 'rubric' | 'thematicplan' | 'ideas' | 'solver' | 'package';
   title?: string;
   conceptId?: string;
   topicId?: string;

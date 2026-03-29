@@ -233,6 +233,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         handleSaveTeacherNote,
         handleSaveQuestion,
         handleSaveToLibrary,
+        handleSavePackage,
         handleMaterialRate,
         handleGenerateFromBank,
         handleClearQuota,
@@ -919,16 +920,69 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                 </div>
             )}
 
-            {/* Bulk results */}
+            {/* Bulk results — full lesson package */}
             {!isGeneratingBulk && bulkResults && Object.keys(bulkResults).length > 0 && (
                 <div className="mt-6 space-y-6">
-                    <h3 className="text-xl font-bold text-purple-800 flex items-center gap-2">
-                        <ICONS.sparkles className="w-5 h-5" />
-                        Генериран пакет материјали
-                    </h3>
-                    {bulkResults.quiz && <GeneratedAssessment material={bulkResults.quiz} onSaveQuestion={handleSaveQuestion} />}
-                    {bulkResults.assessment && <GeneratedAssessment material={bulkResults.assessment} onSaveQuestion={handleSaveQuestion} />}
-                    {bulkResults.rubric && <GeneratedRubric material={bulkResults.rubric} />}
+                    {/* Header + Save Package */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <h3 className="text-xl font-bold text-purple-800 flex items-center gap-2">
+                            <ICONS.sparkles className="w-5 h-5" />
+                            Генериран пакет материјали
+                        </h3>
+                        <div className="flex items-center gap-2">
+                            {isPro && !savedToLibrary.has('package') && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSaveIsPublic(v => !v)}
+                                    title={saveIsPublic ? 'Пакетот ќе биде јавен' : 'Пакетот е приватен (PRO)'}
+                                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border transition-colors ${saveIsPublic ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-600'}`}
+                                >
+                                    {saveIsPublic ? <><Globe className="w-3.5 h-3.5" /> Јавно</> : <><Lock className="w-3.5 h-3.5" /> Приватно</>}
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleSavePackage}
+                                disabled={savedToLibrary.has('package')}
+                                className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors ${savedToLibrary.has('package') ? 'bg-green-100 text-green-700' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                            >
+                                {savedToLibrary.has('package') ? <CheckCircle className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
+                                {savedToLibrary.has('package') ? 'Пакетот зачуван' : '💾 Зачувај цел пакет'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Scenario (lesson plan) */}
+                    {bulkResults.scenario && (
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-purple-500 mb-2">🎭 Сценарио за час</p>
+                            <GeneratedIdeas material={bulkResults.scenario} onSaveAsNote={handleSaveAsNote} />
+                        </div>
+                    )}
+
+                    {/* Quiz */}
+                    {bulkResults.quiz && (
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-blue-500 mb-2">❓ Квиз</p>
+                            <GeneratedAssessment material={bulkResults.quiz} onSaveQuestion={handleSaveQuestion} />
+                        </div>
+                    )}
+
+                    {/* Assessment */}
+                    {bulkResults.assessment && (
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-indigo-500 mb-2">📄 Писмена работа</p>
+                            <GeneratedAssessment material={bulkResults.assessment} onSaveQuestion={handleSaveQuestion} />
+                        </div>
+                    )}
+
+                    {/* Rubric */}
+                    {bulkResults.rubric && (
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-green-500 mb-2">📊 Рубрика</p>
+                            <GeneratedRubric material={bulkResults.rubric} />
+                        </div>
+                    )}
                 </div>
             )}
 

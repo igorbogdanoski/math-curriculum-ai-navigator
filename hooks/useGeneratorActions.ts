@@ -6,7 +6,7 @@ import { RateLimitError } from '../services/apiErrors';
 import { ValidationError } from '../utils/errors';
 import { useLanguage } from '../i18n/LanguageContext';
 import type {
-  AIGeneratedAssessment, AIGeneratedRubric,
+  AIGeneratedAssessment, AIGeneratedRubric, AIGeneratedIdeas,
   Topic, Concept, Grade, NationalStandard,
   TeachingProfile, PlannerItem, Curriculum, ConceptProgression,
 } from '../types';
@@ -111,8 +111,9 @@ export function useGeneratorActions({
 
   // ── Bulk generation state ─────────────────────────────────────────────────
   const [isGeneratingBulk, setIsGeneratingBulk] = useState(false);
-  const [bulkStep, setBulkStep] = useState<'QUIZ' | 'ASSESSMENT' | 'RUBRIC' | null>(null);
+  const [bulkStep, setBulkStep] = useState<'SCENARIO' | 'QUIZ' | 'ASSESSMENT' | 'RUBRIC' | null>(null);
   const [bulkResults, setBulkResults] = useState<{
+    scenario?: AIGeneratedIdeas;
     quiz?: AIGeneratedAssessment;
     assessment?: AIGeneratedAssessment;
     rubric?: AIGeneratedRubric;
@@ -169,6 +170,7 @@ export function useGeneratorActions({
     handleSaveAsNote,
     handleMaterialRate,
     handleGenerateFromBank,
+    handleSavePackage,
   } = useGeneratorSave({
     state,
     curriculum,
@@ -176,6 +178,7 @@ export function useGeneratorActions({
     user,
     firebaseUser,
     generatedMaterial,
+    bulkResults,
     verifiedQs,
     addNotification,
     addItem,
@@ -238,9 +241,24 @@ export function useGeneratorActions({
     setIsGeneratingBulk(true);
     setBulkResults(null);
     setGeneratedMaterial(null);
-    const acc: { quiz?: AIGeneratedAssessment; assessment?: AIGeneratedAssessment; rubric?: AIGeneratedRubric } = {};
+    const acc: {
+      scenario?: AIGeneratedIdeas;
+      quiz?: AIGeneratedAssessment;
+      assessment?: AIGeneratedAssessment;
+      rubric?: AIGeneratedRubric;
+    } = {};
 
-    const steps: Array<{ key: 'QUIZ' | 'ASSESSMENT' | 'RUBRIC'; fn: () => Promise<void> }> = [
+    const steps: Array<{ key: 'SCENARIO' | 'QUIZ' | 'ASSESSMENT' | 'RUBRIC'; fn: () => Promise<void> }> = [
+      { key: 'SCENARIO', fn: async () => {
+        const ideas = await geminiService.generateLessonPlanIdeas(
+          context.concepts || [], context.topic!, context.grade.level,
+          user ?? undefined,
+          { focus: state.activityFocus, tone: state.scenarioTone, learningDesign: state.learningDesignModel },
+          effectiveInstruction,
+        );
+        ideas.generationContext = context;
+        acc.scenario = ideas;
+      } },
       { key: 'QUIZ', fn: async () => {
         acc.quiz = await geminiService.generateAssessment(
           'QUIZ', [QuestionType.MULTIPLE_CHOICE], 5, context, user ?? undefined,
@@ -468,6 +486,7 @@ export function useGeneratorActions({
     handleSaveTeacherNote,
     handleSaveQuestion,
     handleSaveToLibrary,
+    handleSavePackage,
     handleMaterialRate,
     handleGenerateFromBank,
     handleClearQuota,
