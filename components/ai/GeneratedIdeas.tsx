@@ -9,6 +9,7 @@ import { usePlanner } from '../../contexts/PlannerContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { geminiService } from '../../services/geminiService';
+import { ForumShareButton } from '../forum/ForumShareButton';
 
 interface GeneratedIdeasProps {
   material: AIGeneratedIdeas;
@@ -339,8 +340,8 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
                                     <button type="button" onClick={() => handleExport('doc')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.copy className="w-5 h-5 mr-3" /> Копирај за Word (форматирано)
                                     </button>
-                                    <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
+                                    <button type="button" onClick={() => handleExport('pdf')} disabled={isPdfLoading} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50">
+                                        {isPdfLoading ? <Loader2 className="w-5 h-5 mr-3 animate-spin" /> : <ICONS.printer className="w-5 h-5 mr-3" />} Печати/Сними како PDF
                                     </button>
                                      <button type="button" onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст
@@ -411,6 +412,11 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
              <div className="mt-4 flex flex-wrap gap-2 no-print">
                 <button type="button" onClick={handleSaveAsPlan} className="flex items-center text-sm bg-green-600 text-white px-3 py-1.5 rounded-lg shadow hover:bg-green-700"><ICONS.plus className="w-4 h-4 mr-1"/> Зачувај како подготовка</button>
                 <button type="button" onClick={onSaveAsNote} className="flex items-center text-sm bg-yellow-500 text-white px-3 py-1.5 rounded-lg shadow hover:bg-yellow-600"><ICONS.edit className="w-4 h-4 mr-1"/> Зачувај како белешка</button>
+                <ForumShareButton
+                    prefillTitle={material.title}
+                    prefillBody={`Споделувам сценарио за час: „${material.title}" — генерирано со AI. Мислења, подобрувања?`}
+                    prefillCategory="resource"
+                />
             </div>
         </Card>
     );

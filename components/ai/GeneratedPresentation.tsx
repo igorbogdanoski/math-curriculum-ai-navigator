@@ -59,10 +59,10 @@ const renderBulletToImg = async (
   const container = document.createElement('div');
   container.style.cssText = [
     'position:fixed', 'top:-9999px', 'left:-9999px',
-    'background:#ffffff', 'padding:6px 14px',
-    'font-size:20px', 'font-family:Arial,Helvetica,sans-serif',
-    `color:#${hexColor}`, 'max-width:640px',
-    'line-height:1.65', 'white-space:pre-wrap',
+    'background:#ffffff', 'padding:8px 16px',
+    'font-size:32px', 'font-family:Arial,Helvetica,sans-serif',
+    `color:#${hexColor}`, 'max-width:420px',
+    'line-height:1.5', 'white-space:pre-wrap',
   ].join(';');
   const katex = window.katex;
   const toHtml = (src: string): string => {
@@ -369,10 +369,21 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
       };
       const colors = THEMES[theme];
 
+      // ── Normalize: split content-heavy slides into continuation slides ────────
+      const MAX_BULLETS_PER_SLIDE = 5;
+      const SPLITTABLE = new Set(['content', 'summary', 'comparison', 'proof']);
+      const normalizedSlides: PresentationSlide[] = data.slides.flatMap(slide => {
+        if (!SPLITTABLE.has(slide.type ?? 'content') || slide.content.length <= MAX_BULLETS_PER_SLIDE) return [slide];
+        const chunks: PresentationSlide[] = [];
+        for (let i = 0; i < slide.content.length; i += MAX_BULLETS_PER_SLIDE) {
+          chunks.push({ ...slide, content: slide.content.slice(i, i + MAX_BULLETS_PER_SLIDE) });
+        }
+        return chunks;
+      });
       // ── Pre-render ALL math strings in parallel ─────────────────────────────
       type MathKey = string; // `${text}::${hexColor}`
       const mathJobs = new Map<MathKey, { text: string; color: string }>();
-      for (const slide of data.slides) {
+      for (const slide of normalizedSlides) {
         if (slide.type === 'formula-centered' && slide.content[0] && HAS_MATH.test(slide.content[0])) {
           const k = `${slide.content[0]}::${colors.title}`;
           if (!mathJobs.has(k)) mathJobs.set(k, { text: slide.content[0], color: colors.title });
@@ -396,14 +407,14 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
       );
       // ────────────────────────────────────────────────────────────────────────
 
-      for (let idx = 0; idx < data.slides.length; idx++) {
-        const slide: PresentationSlide = data.slides[idx];
+      for (let idx = 0; idx < normalizedSlides.length; idx++) {
+        const slide: PresentationSlide = normalizedSlides[idx];
         const slideVisual = visuals[idx];
         const pptSlide = pptx.addSlide();
         pptSlide.background = { color: colors.bg };
 
         // Progress tracking
-        setPptxProgress(Math.round(((idx + 1) / data.slides.length) * 100));
+        setPptxProgress(Math.round(((idx + 1) / normalizedSlides.length) * 100));
 
         if (slide.type === 'title') {
           pptSlide.addText(slide.title, {
