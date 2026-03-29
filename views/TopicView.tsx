@@ -15,7 +15,7 @@ import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import type { AIGeneratedPresentation } from '../types';
-import { MonitorPlay, Loader2 } from 'lucide-react';
+import { MonitorPlay, Loader2, Wand2 } from 'lucide-react';
 
 interface TopicViewProps {
   id: string;
@@ -109,7 +109,8 @@ const ConceptCard: React.FC<{
   isEditing: boolean;
   onAssessmentStandardChange: (conceptId: string, index: number, newText: string) => void;
   onActivitiesChange: (conceptId: string, newActivities: string[]) => void;
-}> = memo(({ concept, allConceptsInTopic, gradeLevel, topicId, isExpanded, onToggle, navigate, isEditing, onAssessmentStandardChange, onActivitiesChange }) => {
+  onSendToSmartAI?: (activity: string) => void;
+}> = memo(({ concept, allConceptsInTopic, gradeLevel, topicId, isExpanded, onToggle, navigate, isEditing, onAssessmentStandardChange, onActivitiesChange, onSendToSmartAI }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const { openGeneratorPanel } = useGeneratorPanel();
 
@@ -214,20 +215,32 @@ const ConceptCard: React.FC<{
                       <li key={i} className="flex items-start gap-2 group">
                         <span className="text-gray-400 mt-0.5 select-none flex-shrink-0">•</span>
                         <span className="flex-1 leading-snug"><MathRenderer text={activity} /></span>
-                        <button
-                          type="button"
-                          onClick={() => openGeneratorPanel({
-                            selectedGrade: String(gradeLevel),
-                            selectedTopic: topicId,
-                            selectedConcepts: [concept.id],
-                            contextType: 'ACTIVITY',
-                            customInstruction: activity,
-                          })}
-                          title="Генерирај материјал за оваа активност"
-                          className="flex-shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95"
-                        >
-                          <ICONS.sparkles className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => openGeneratorPanel({
+                              selectedGrade: String(gradeLevel),
+                              selectedTopic: topicId,
+                              selectedConcepts: [concept.id],
+                              contextType: 'ACTIVITY',
+                              customInstruction: activity,
+                            })}
+                            title="Генерирај материјал за оваа активност"
+                            className="p-1 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95"
+                          >
+                            <ICONS.sparkles className="w-3.5 h-3.5" />
+                          </button>
+                          {onSendToSmartAI && (
+                            <button
+                              type="button"
+                              onClick={() => onSendToSmartAI(activity)}
+                              title="Испрати во Smart AI → Алатки за темата"
+                              className="p-1 rounded-md bg-purple-50 text-purple-600 hover:bg-purple-100 active:scale-95"
+                            >
+                              <Wand2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -288,6 +301,12 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
   const [editedTopicData, setEditedTopicData] = useState<Topic | null>(null);
   const [userEdits, setUserEdits] = useState<Record<string, { assessmentStandards?: string[]; activities?: string[] }>>({});
   const initializedIdRef = useRef<string | null>(null);
+
+  // Smart AI activity forwarding — nonce ensures re-trigger for same activity text
+  const [smartAiInput, setSmartAiInput] = useState<{ text: string; nonce: number } | undefined>(undefined);
+  const handleSendToSmartAI = useCallback((activity: string) => {
+    setSmartAiInput(prev => ({ text: activity, nonce: (prev?.nonce ?? 0) + 1 }));
+  }, []);
 
   const { grade, topic } = useMemo(() => getTopic(id), [getTopic, id]);
 
@@ -478,6 +497,7 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
             isEditing={isEditing}
             onAssessmentStandardChange={handleAssessmentStandardChange}
             onActivitiesChange={handleActivitiesChange}
+            onSendToSmartAI={handleSendToSmartAI}
           />
         ))}
       </Card>
@@ -490,6 +510,7 @@ export const TopicView: React.FC<TopicViewProps> = ({ id }) => {
         topicName={topic.title}
         onGamma={handleGenerateGamma}
         gammaLoading={loadingGamma}
+        externalAiInput={smartAiInput}
       />
 
       {gammaOpen && gammaPresentation && (

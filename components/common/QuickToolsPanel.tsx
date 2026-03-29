@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Wand2, ChevronDown, ChevronUp, Sparkles, Loader2, Check, X, MonitorPlay, CalendarDays } from 'lucide-react';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 import { useNavigation } from '../../contexts/NavigationContext';
@@ -16,6 +16,9 @@ interface QuickToolsPanelProps {
   onGamma?: () => void;
   /** True while Gamma is loading — shows spinner on button */
   gammaLoading?: boolean;
+  /** When set, pre-fills Smart AI textarea and auto-runs analysis.
+   *  nonce must increment each time to re-trigger even for the same text. */
+  externalAiInput?: { text: string; nonce: number };
 }
 
 interface AISuggestion {
@@ -48,6 +51,7 @@ export const QuickToolsPanel: React.FC<QuickToolsPanelProps> = ({
   customInstruction = '',
   onGamma,
   gammaLoading = false,
+  externalAiInput,
 }) => {
   const { openGeneratorPanel } = useGeneratorPanel();
   const { navigate } = useNavigation();
@@ -62,6 +66,7 @@ export const QuickToolsPanel: React.FC<QuickToolsPanelProps> = ({
   const [aiLoading, setAiLoading]     = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null);
   const [aiError, setAiError]         = useState(false);
+  const pendingAutoRun                = useRef(false);
 
   // Pre-fill AI input when context changes
   useEffect(() => {
@@ -69,6 +74,24 @@ export const QuickToolsPanel: React.FC<QuickToolsPanelProps> = ({
     setAiSuggestion(null);
     setAiError(false);
   }, [gradeId, topicId]);
+
+  // When an activity is sent from ConceptCard: expand, pre-fill, auto-run
+  useEffect(() => {
+    if (!externalAiInput?.text) return;
+    setCollapsed(false);
+    setAiText(externalAiInput.text);
+    setAiSuggestion(null);
+    setAiError(false);
+    pendingAutoRun.current = true;
+  }, [externalAiInput?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-run analysis once aiText is updated from external source
+  useEffect(() => {
+    if (pendingAutoRun.current && aiText.trim()) {
+      pendingAutoRun.current = false;
+      handleAIAnalyze();
+    }
+  }, [aiText]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, String(collapsed)); }
