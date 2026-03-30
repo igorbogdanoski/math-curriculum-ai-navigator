@@ -19,10 +19,14 @@ import { MonitorPlay, Loader2, Wand2, Layers, Box } from 'lucide-react';
 import { AlgebraTilesCanvas } from '../components/math/AlgebraTilesCanvas';
 import { Shape3DViewer } from '../components/math/Shape3DViewer';
 
-/** Returns true when the concept title/keywords suggest algebraic content */
+/**
+ * Returns true when the concept suggests algebraic manipulation (Algebra Tiles).
+ * "линеарн" is intentionally excluded — linear FUNCTIONS (y=mx+b, graphs) are not
+ * algebra-tile territory. Linear EQUATIONS are caught via "равенк".
+ */
 const isAlgebraConcept = (concept: Concept): boolean => {
   const text = `${concept.title} ${(concept.activities ?? []).join(' ')}`.toLowerCase();
-  return /алгебр|израз|полином|множење|факториз|равенк|монном|бином|тринном|x\^|линеарн|квадратн|степен/.test(text);
+  return /алгебр|израз|полином|факториз|равенк|монном|бином|тринном|x\^|квадратн/.test(text);
 };
 
 /** Returns true when the concept involves 3D geometry */

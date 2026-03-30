@@ -226,7 +226,7 @@ const PRESET_VIEWS = {
 
 // ─── Default dims + shape order ───────────────────────────────────────────────
 export const SHAPE_DEFAULT_DIMS: Record<Shape3DType, ShapeDimensions> = {
-  cube:     { a: 2 },
+  cube:     { a: 3 },
   cuboid:   { a: 3, b: 2, h: 2 },
   sphere:   { r: 1.5 },
   cylinder: { r: 1.5, h: 3 },

@@ -266,7 +266,17 @@ Respond ONLY with valid JSON (no markdown):
             </div>
 
             {aiError && (
-              <p className="mt-1 text-[10px] text-red-400">AI не одговори. Пробај повторно.</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="text-[10px] text-red-400">AI не одговори.</p>
+                <button
+                  type="button"
+                  onClick={handleAIAnalyze}
+                  disabled={aiLoading}
+                  className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 underline underline-offset-2 disabled:opacity-40"
+                >
+                  Повторно →
+                </button>
+              </div>
             )}
 
             {aiSuggestion && (
