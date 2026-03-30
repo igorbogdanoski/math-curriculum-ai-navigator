@@ -160,8 +160,10 @@ export interface PresentationSlide {
   // chart-embed: DataViz chart injected directly into Gamma Mode
   chartData?: { headers: string[]; rows: (string | number)[][] };
   chartConfig?: Record<string, unknown>;
+  // shape-3d: interactive 3D geometry viewer in Gamma Mode
+  shape3dShape?: string;
   type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step'
-      | 'formula-centered' | 'chart-embed' | 'comparison' | 'proof';
+      | 'formula-centered' | 'chart-embed' | 'comparison' | 'proof' | 'shape-3d';
 }
 
 export interface AIGeneratedPresentation {

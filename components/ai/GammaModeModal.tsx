@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw } from 'lucide-react';
+import { Shape3DViewer, Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
 import { ChartPreview } from '../dataviz/ChartPreview';
@@ -25,6 +26,7 @@ const SLIDE_META: Record<PresentationSlide['type'], { label: string; color: stri
   'task':            { label: 'Задача',            color: 'text-amber-300',   bg: 'bg-amber-900/40'   },
   'summary':         { label: 'Заклучок',         color: 'text-rose-300',    bg: 'bg-rose-900/40'    },
   'chart-embed':     { label: 'Дијаграм',         color: 'text-teal-300',    bg: 'bg-teal-900/40'    },
+  'shape-3d':        { label: '3D Тело',          color: 'text-cyan-300',    bg: 'bg-cyan-900/40'    },
   'comparison':      { label: 'Споредба',         color: 'text-sky-300',     bg: 'bg-sky-900/40'     },
   'proof':           { label: 'Доказ',            color: 'text-purple-300',  bg: 'bg-purple-900/40'  },
 };
@@ -628,6 +630,28 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           </div>
         );
       }
+
+      case 'shape-3d':
+        return (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4 overflow-auto">
+            <div className="bg-slate-800 rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden">
+              <Shape3DViewer
+                initialShape={(SHAPE_ORDER.includes(slide.shape3dShape as Shape3DType) ? slide.shape3dShape : 'cube') as Shape3DType}
+                hideSelector={false}
+                compact={false}
+              />
+            </div>
+            {slide.content.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-3">
+                {slide.content.map((note, i) => (
+                  <span key={i} className="px-3 py-1.5 bg-white/10 text-slate-300 rounded-full text-sm">
+                    <MathRenderer text={note} />
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
 
       default: // 'content'
         return (
