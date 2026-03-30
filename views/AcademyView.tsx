@@ -74,7 +74,35 @@ export const AcademyView: React.FC = () => {
         { title: 'Компетентносно образование (CBE)', id: 'assessment-cbe' },
       ],
       badge: 'НОВО',
-    }
+    },
+    {
+      id: 'dok',
+      title: "Webb's Depth of Knowledge",
+      description: "Разберете ја DoK рамката и дизајнирајте балансирани тестови кои мерат вистинска когнитивна длабочина — не само меморирање.",
+      icon: Brain,
+      color: 'bg-violet-50 text-violet-700',
+      borderColor: 'border-violet-200',
+      badge: 'НОВО',
+      topics: [
+        { title: 'DoK — 4 нивоа и разлика со Bloom', id: 'dok-theory' },
+        { title: 'DoK во македонскиот curriculum', id: 'dok-curriculum' },
+        { title: 'Дизајн на балансиран тест + Класификатор', id: 'dok-test-design' },
+      ]
+    },
+    {
+      id: 'visual',
+      title: 'Визуелна Математика',
+      description: 'Откријте ги моќните манипулативи — Алгебарски плочки и 3D Геометрија — и научете кога и зошто да ги применувате во наставата.',
+      icon: Shapes,
+      color: 'bg-teal-50 text-teal-700',
+      borderColor: 'border-teal-200',
+      badge: 'НОВО',
+      topics: [
+        { title: 'Алгебарски плочки — манипулативна алгебра', id: 'visual-tiles' },
+        { title: '3D Геометрија со технологија', id: 'visual-3d' },
+        { title: 'Кога и зошто — избор на визуелни претстави', id: 'visual-when-why' },
+      ]
+    },
   ];
 
   const totalLessons = MODULES.reduce((acc, m) => acc + m.topics.length, 0);

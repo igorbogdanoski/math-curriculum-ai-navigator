@@ -1,12 +1,91 @@
-import React, { useEffect } from 'react';
-import { ArrowLeft, BookOpen, BrainCircuit, Rocket, Target, Wand2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, BookOpen, BrainCircuit, Rocket, Target, Wand2, CheckCircle2, XCircle } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ACADEMY_CONTENT } from '../data/academy/content';
+import type { DokClassifyItem } from '../data/academy/content';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { GeneratorState } from '../hooks/useGeneratorState';
 import { AcademyMentor } from '../components/academy/AcademyMentor';
 import { AcademyQuiz } from '../components/academy/AcademyQuiz';
 import { useAcademyProgress } from '../contexts/AcademyProgressContext';
+import { DokBadge } from '../components/common/DokBadge';
+import { DOK_META } from '../types';
+import type { DokLevel } from '../types';
+
+const AlgebraTilesCanvas = React.lazy(() =>
+  import('../components/math/AlgebraTilesCanvas').then(m => ({ default: m.AlgebraTilesCanvas }))
+);
+const Shape3DViewer = React.lazy(() =>
+  import('../components/math/Shape3DViewer').then(m => ({ default: m.Shape3DViewer }))
+);
+
+/** DoK classification exercise — teacher picks DoK level for each item */
+const DokClassifier: React.FC<{ items: DokClassifyItem[] }> = ({ items }) => {
+  const [answers, setAnswers] = useState<Record<number, DokLevel>>({});
+  const [revealed, setRevealed] = useState<Record<number, boolean>>({});
+
+  const handlePick = (idx: number, lvl: DokLevel) => {
+    if (revealed[idx]) return;
+    setAnswers(a => ({ ...a, [idx]: lvl }));
+    setRevealed(r => ({ ...r, [idx]: true }));
+  };
+
+  const score = items.filter((item, i) => answers[i] === item.correctDok).length;
+  const allDone = Object.keys(revealed).length === items.length;
+
+  return (
+    <div className="bg-indigo-950 rounded-2xl p-6 space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-indigo-300 font-black text-sm uppercase tracking-widest">Вежба: Класифицирај по DoK ниво</p>
+        {allDone && (
+          <span className={`px-3 py-1 rounded-full text-sm font-black ${score >= 6 ? 'bg-green-500 text-white' : score >= 4 ? 'bg-amber-400 text-amber-900' : 'bg-red-500 text-white'}`}>
+            {score}/{items.length} точни
+          </span>
+        )}
+      </div>
+      <div className="space-y-3">
+        {items.map((item, idx) => {
+          const chosen = answers[idx];
+          const done = revealed[idx];
+          const correct = chosen === item.correctDok;
+          return (
+            <div key={idx} className={`rounded-xl p-4 border transition-colors ${done ? (correct ? 'border-green-500 bg-green-900/30' : 'border-red-500 bg-red-900/20') : 'border-indigo-700 bg-indigo-900/40'}`}>
+              <p className="text-white text-sm font-medium mb-3 leading-snug">{idx + 1}. {item.question}</p>
+              <div className="flex flex-wrap gap-2 items-center">
+                {([1, 2, 3, 4] as DokLevel[]).map(lvl => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    disabled={done}
+                    onClick={() => handlePick(idx, lvl)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black border transition-all ${
+                      done && lvl === item.correctDok ? `${DOK_META[lvl].color} scale-105 shadow-lg` :
+                      done && lvl === chosen && !correct ? 'border-red-400 bg-red-900/40 text-red-300' :
+                      'border-indigo-600 bg-indigo-800 text-indigo-300 hover:bg-indigo-700 disabled:cursor-default'
+                    }`}
+                  >
+                    {DOK_META[lvl].label}
+                  </button>
+                ))}
+                {done && (
+                  <span className="ml-auto flex items-center gap-1 text-xs">
+                    {correct
+                      ? <><CheckCircle2 className="w-4 h-4 text-green-400" /><span className="text-green-400 font-bold">Точно!</span></>
+                      : <><XCircle className="w-4 h-4 text-red-400" /><span className="text-red-400 font-bold">DoK {item.correctDok}</span></>
+                    }
+                  </span>
+                )}
+              </div>
+              {done && (
+                <p className="mt-2 text-xs text-indigo-300 italic leading-snug">{item.explanation}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
   const { navigate } = useNavigation();
@@ -30,7 +109,8 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
          </div>
          <h2 className="text-2xl font-bold text-gray-800 mb-2">Лекцијата не е пронајдена</h2>
          <p className="text-gray-500 mb-6 max-w-md">Модулот што го барате моментално е во подготовка или е преместен.</p>
-         <button 
+         <button
+           type="button"
            onClick={() => navigate('/academy')}
            className="px-6 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary transition-colors"
          >
@@ -59,6 +139,8 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
        case 'model': return 'Педагошки модел';
        case 'tone': return 'Тон на сценариото';
        case 'focus': return 'Фокус на активноста';
+       case 'dok': return "Webb's Depth of Knowledge";
+       case 'visual': return 'Визуелна Математика — Манипулативи';
        default: return 'Лекција';
      }
   };
@@ -69,17 +151,19 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
       {/* Header Navigation */}
       <div className="border-b bg-white top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <button 
+          <button
+            type="button"
             onClick={() => navigate('/academy')}
             className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Назад во Едукативен Центар</span>
           </button>
-          
-          <button 
-             onClick={handleTryItOut}
-             className="hidden sm:flex px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg items-center gap-2 font-medium transition-colors border border-indigo-200"
+
+          <button
+            type="button"
+            onClick={handleTryItOut}
+            className="hidden sm:flex px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg items-center gap-2 font-medium transition-colors border border-indigo-200"
           >
             <Wand2 className="w-4 h-4" />
             Генерирај час со овој пристап
@@ -148,6 +232,31 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                </div>
             </div>
             
+            {/* Interactive Demo (algebra-tiles or shape-3d) */}
+            {lesson.interactiveDemo && (
+              <div className="bg-slate-900 rounded-2xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                    <Target className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <h2 className="text-lg font-black text-cyan-300 uppercase tracking-widest">
+                    {lesson.interactiveDemo === 'algebra-tiles' ? 'Интерактивна демо: Алгебарски плочки' : 'Интерактивна демо: 3D Геометрија'}
+                  </h2>
+                </div>
+                <React.Suspense fallback={<div className="h-48 flex items-center justify-center text-slate-400">Се вчитува...</div>}>
+                  {lesson.interactiveDemo === 'algebra-tiles'
+                    ? <AlgebraTilesCanvas />
+                    : <Shape3DViewer compact={false} />
+                  }
+                </React.Suspense>
+              </div>
+            )}
+
+            {/* DoK Classification Exercise */}
+            {lesson.dokClassifyItems && lesson.dokClassifyItems.length > 0 && (
+              <DokClassifier items={lesson.dokClassifyItems} />
+            )}
+
             {/* Mastery Quiz */}
             <AcademyQuiz lesson={lesson} />
             
@@ -160,7 +269,8 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                 <p className="text-gray-500 max-w-md mx-auto mb-8">
                   Видовте како изгледа во теорија. Сега е време да пуштите вештачката интелигенција да ви генерира вистински час базиран на овие принципи.
                 </p>
-                <button 
+                <button
+                  type="button"
                   onClick={handleTryItOut}
                   className="px-8 py-4 bg-brand-primary text-white rounded-xl font-bold text-lg hover:bg-brand-secondary hover:shadow-lg transition-all flex items-center gap-3 transform hover:-translate-y-1"
                 >
