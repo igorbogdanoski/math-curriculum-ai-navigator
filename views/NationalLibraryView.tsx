@@ -7,6 +7,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
 import { Library, Search, Download, Globe, Filter, Loader2, BookOpen, ChevronDown, Wand2, X, Save, Star } from 'lucide-react';
+import { DokBadge } from '../components/common/DokBadge';
+import { DOK_META } from '../types';
+import type { DokLevel } from '../types';
 
 const GRADE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const TYPE_LABELS: Record<string, string> = {
@@ -31,6 +34,7 @@ export const NationalLibraryView: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [filterGrade, setFilterGrade] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('');
+  const [filterDok, setFilterDok] = useState<DokLevel | 0>(0);
   const [importing, setImporting] = useState<Set<string>>(new Set());
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
   const [imported, setImported] = useState<Set<string>>(new Set());
@@ -96,9 +100,12 @@ export const NationalLibraryView: React.FC = () => {
   };
 
   const filtered = useMemo(() => {
-    if (!searchText) return entries;
-    return entries.filter(e => e.question.toLowerCase().includes(searchText.toLowerCase()));
-  }, [entries, searchText]);
+    return entries.filter(e => {
+      if (searchText && !e.question.toLowerCase().includes(searchText.toLowerCase())) return false;
+      if (filterDok && e.dokLevel !== filterDok) return false;
+      return true;
+    });
+  }, [entries, searchText, filterDok]);
 
   const allTypes = useMemo(() => {
     const s = new Set(entries.map(e => e.type));
@@ -192,6 +199,7 @@ export const NationalLibraryView: React.FC = () => {
         <div className="relative">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <select
+            title="Филтрирај по одделение"
             value={filterGrade}
             onChange={e => setFilterGrade(e.target.value)}
             className="pl-9 pr-8 py-2 border border-gray-200 rounded-xl text-sm appearance-none bg-white focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none"
@@ -206,6 +214,7 @@ export const NationalLibraryView: React.FC = () => {
         <div className="relative">
           <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <select
+            title="Филтрирај по тип на прашање"
             value={filterType}
             onChange={e => setFilterType(e.target.value)}
             className="pl-9 pr-8 py-2 border border-gray-200 rounded-xl text-sm appearance-none bg-white focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none"
@@ -216,6 +225,27 @@ export const NationalLibraryView: React.FC = () => {
             ))}
           </select>
           <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+        </div>
+        {/* DoK filter buttons */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setFilterDok(0)}
+            className={`px-2.5 py-2 rounded-xl text-xs font-bold border transition-colors ${filterDok === 0 ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+          >
+            Сите DoK
+          </button>
+          {([1, 2, 3, 4] as DokLevel[]).map(lvl => (
+            <button
+              key={lvl}
+              type="button"
+              title={`DoK ${lvl}: ${DOK_META[lvl].mk}`}
+              onClick={() => setFilterDok(filterDok === lvl ? 0 : lvl)}
+              className={`px-2 py-2 rounded-xl text-xs font-black border transition-colors ${filterDok === lvl ? `${DOK_META[lvl].color} border-current` : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'}`}
+            >
+              {DOK_META[lvl].label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -259,6 +289,9 @@ export const NationalLibraryView: React.FC = () => {
                     <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
                       {TYPE_LABELS[entry.type] ?? entry.type}
                     </span>
+                    {entry.dokLevel && (
+                      <DokBadge level={entry.dokLevel as DokLevel} size="compact" showTooltip />
+                    )}
                     {entry.conceptTitle && (
                       <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-xs font-medium truncate max-w-[120px]">
                         {entry.conceptTitle}

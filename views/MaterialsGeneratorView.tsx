@@ -48,7 +48,8 @@ import { usePlanner } from '../contexts/PlannerContext';
 import { GeneratedLearningPaths } from '../components/ai/GeneratedLearningPaths';
 import { GeneratedPresentation } from '../components/ai/GeneratedPresentation';
 import { WorkedExample } from '../components/materials/WorkedExample';
-import { BloomSliders, BloomDonutChart } from '../components/generator/BloomSliders';
+import { BloomSliders } from '../components/generator/BloomSliders';
+import { DokDistributionBar } from '../components/common/DokBadge';
 import { StatisticsWorkspace } from '../components/data/StatisticsWorkspace';
 import { RefineGenerationChat } from '../components/generator/RefineGenerationChat';
 import { AIFeedbackBar } from '../components/ai/AIFeedbackBar';
@@ -838,7 +839,10 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                     {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
                     {'openingActivity' in generatedMaterial && <GeneratedIdeas material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />}
                     {'questions' in generatedMaterial && (state.materialType === 'QUIZ' || state.materialType === 'ASSESSMENT') && (
-                      <BloomDonutChart questions={(generatedMaterial as AIGeneratedAssessment).questions} />
+                      <div className="bg-white border border-indigo-100 rounded-2xl p-4">
+                        <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3">Webb's DoK — Распределба на генерираните прашања</p>
+                        <DokDistributionBar questions={(generatedMaterial as AIGeneratedAssessment).questions} />
+                      </div>
                     )}
                     {'questions' in generatedMaterial && (generatedMaterial as AIGeneratedAssessment).questions?.some(q => q.tableData) && (
                       <div className="flex flex-col gap-3">

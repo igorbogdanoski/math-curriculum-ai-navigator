@@ -21,6 +21,11 @@ import { GeometryExplorer } from '../components/GeometryExplorer';
 import { useReactToPrint } from 'react-to-print';
 import { Printer, Share2, Brain, GraduationCap, Sparkles, Lightbulb, Zap, MonitorPlay, Loader2 } from 'lucide-react';
 import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
+import { DokBadge, DokDistributionBar } from '../components/common/DokBadge';
+import { firestoreService } from '../services/firestoreService';
+import type { SavedQuestion, DokLevel } from '../types';
+
+const DOK_LEVELS: DokLevel[] = [1, 2, 3, 4];
 
 const InteractiveQuizPlayer = React.lazy(() => import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 
@@ -41,7 +46,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
   const { getConceptDetails } = useCurriculum();
-  const { user } = useAuth();
+  const { user, firebaseUser } = useAuth();
   const { isFavoriteConcept, toggleFavoriteConcept } = useUserPreferences();
   const { addNotification } = useNotification();
   const { setLastVisited } = useLastVisited();
@@ -60,6 +65,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   const [loadingState, setLoadingState] = useState({
     ideas: false, analogy: false, quiz: false, solver: false, gamma: false
   });
+  const [dokQuestions, setDokQuestions] = useState<SavedQuestion[]>([]);
   const [gammaPresentation, setGammaPresentation] = useState<AIGeneratedPresentation | null>(null);
   const [gammaOpen, setGammaOpen] = useState(false);
 
@@ -200,6 +206,15 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   useEffect(() => {
     if (concept) setLastVisited({ path: `/concept/${id}`, label: concept.title, type: 'concept' });
   }, [concept, id, setLastVisited]);
+
+  // Fetch DoK coverage from teacher's question bank for this concept
+  useEffect(() => {
+    if (!firebaseUser?.uid || !concept) return;
+    firestoreService.fetchSavedQuestions(firebaseUser.uid).then(qs => {
+      setDokQuestions(qs.filter(q => q.conceptId === concept.id && q.dokLevel));
+    }).catch(() => {/* non-fatal */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser?.uid, concept?.id]);
 
   if (!concept || !topic || !grade) {
       return (
@@ -424,6 +439,34 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
 
             {/* ДЕСНА КОЛОНА */}
             <aside className="space-y-8">
+                {/* DoK Coverage Ring */}
+                <Card className="border-indigo-100 bg-gradient-to-br from-indigo-50/60 to-violet-50/40">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-lg font-black text-indigo-700">DoK Покриеност</span>
+                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Банка прашања</span>
+                  </div>
+                  {dokQuestions.length > 0 ? (
+                    <div className="space-y-3">
+                      <DokDistributionBar questions={dokQuestions} />
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {DOK_LEVELS.map(lvl => {
+                          const cnt = dokQuestions.filter(q => q.dokLevel === lvl).length;
+                          return (
+                            <div key={lvl} className="flex items-center gap-2">
+                              <DokBadge level={lvl} size="compact" showTooltip />
+                              <span className="text-xs font-bold text-gray-500">{cnt} прашање{cnt !== 1 ? 'а' : ''}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-xs text-gray-400 font-medium">Нема прашања со DoK ниво</p>
+                      <p className="text-[10px] text-gray-300 mt-1">Додај DoK нивоа во Банката на прашања за овој концепт</p>
+                    </div>
+                  )}
+                </Card>
                 <Card className="bg-slate-900 border-none text-white overflow-hidden ring-4 ring-blue-500/20">
                     <div className="flex items-center gap-2 mb-6">
                        <Sparkles className="w-5 h-5 text-blue-400" />

@@ -562,6 +562,7 @@ export const publishToNationalLibrary = async (
       publisherIsMentor,
       importCount: 0,
       publishedAt: serverTimestamp(),
+      ...(q.dokLevel ? { dokLevel: q.dokLevel } : {}),
     });
     // Mark the original question as public
     await updateDoc(doc(db, 'saved_questions', q.id), { isPublic: true });
@@ -589,6 +590,8 @@ export interface NationalLibraryEntry {
   ratingsByUid?: Record<string, number>;
   /** Admin-marked featured entry (shown at top) */
   isFeatured?: boolean;
+  /** Webb's Depth of Knowledge level */
+  dokLevel?: 1 | 2 | 3 | 4 | null;
   /** Soft-deleted by admin */
   deleted?: boolean;
 }
@@ -672,6 +675,7 @@ export const importFromNationalLibrary = async (
       isVerified: false,
       importedFrom: entry.id,
       importedFromAuthor: entry.publishedByName,
+      ...(entry.dokLevel ? { dokLevel: entry.dokLevel } : {}),
     });
     // Increment importCount atomically — avoids race condition when multiple users import simultaneously
     try {

@@ -5,6 +5,15 @@ import { ICONS } from '../constants';
 import { geminiService } from '../services/geminiService';
 import { firestoreService } from '../services/firestoreService';
 import { MathRenderer } from '../components/common/MathRenderer';
+import { DokBadge } from '../components/common/DokBadge';
+import type { DokLevel } from '../types';
+
+const DOK_TUTOR_HINTS: Record<DokLevel, string> = {
+  1: 'Се потсетуваме на дефиниции и факти',
+  2: 'Применуваме концепти и постапки',
+  3: 'Анализираме и решаваме повеќечекорни задачи',
+  4: 'Истражуваме и поврзуваме концепти',
+};
 
 /** Parse hash query params, e.g. #/tutor?student=Марко&concept=fractions&title=Дропки */
 const getHashParams = (): URLSearchParams => {
@@ -130,6 +139,15 @@ export const StudentTutorView: React.FC = () => {
               )}
             </div>
           </div>
+          {/* DoK level strip */}
+          <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
+            {([1, 2, 3, 4] as DokLevel[]).map(lvl => (
+              <div key={lvl} className="flex flex-col items-center gap-0.5" title={`DoK ${lvl}: ${DOK_TUTOR_HINTS[lvl]}`}>
+                <DokBadge level={lvl} size="compact" showTooltip={false} />
+                <span className="text-[8px] text-gray-400 font-medium text-center leading-none max-w-[44px] truncate">{DOK_TUTOR_HINTS[lvl].split(' ').slice(0, 2).join(' ')}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-gray-50/50">
@@ -178,6 +196,8 @@ export const StudentTutorView: React.FC = () => {
               rows={1}
             />
             <button
+              type="button"
+              title="Испрати порака"
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
               className="absolute right-2 bottom-2 rounded-lg p-2 h-10 w-10 flex items-center justify-center bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:bg-gray-300"
