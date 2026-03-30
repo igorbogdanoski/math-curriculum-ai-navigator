@@ -13,13 +13,22 @@ import { markForumVisited } from '../hooks/useForumUnreadCount';
 import {
   MessageSquare, Plus, ThumbsUp, Award, ChevronLeft,
   Send, Loader2, Search, Tag, X, CheckCircle2, Pin,
-  TrendingUp, Clock, Sparkles, Users,
+  TrendingUp, Clock, Sparkles, Users, Box,
 } from 'lucide-react';
-import { Card } from '../components/common/Card';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import type { Concept } from '../types';
+import { DokBadge } from '../components/common/DokBadge';
+import { DOK_META } from '../types';
+import type { DokLevel } from '../types';
+import { uploadForumImage } from '../services/storageService';
+
+const Shape3DViewer = React.lazy(() =>
+  import('../components/math/Shape3DViewer').then(m => ({ default: m.Shape3DViewer }))
+);
+import { SHAPE_ORDER } from '../components/math/Shape3DViewer';
+import type { Shape3DType } from '../components/math/Shape3DViewer';
 
 type EnrichedConcept = Concept & { gradeLevel: number; topicId: string };
 type SortMode = 'new' | 'hot' | 'active';
@@ -193,14 +202,19 @@ interface NewThreadModalProps {
   concepts: EnrichedConcept[];
   authorUid: string;
   authorName: string;
+  initialImageDataUrl?: string | null;
 }
 
-const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, concepts, authorUid, authorName }) => {
+const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, concepts, authorUid, authorName, initialImageDataUrl }) => {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [conceptId, setConceptId] = useState('');
   const [category, setCategory] = useState<ThreadCategory>('question');
   const [saving, setSaving] = useState(false);
+  const [dokLevel, setDokLevel] = useState<DokLevel | 0>(0);
+  const [imageDataUrl] = useState<string | null>(initialImageDataUrl ?? null);
+  const [show3d, setShow3d] = useState(false);
+  const [shape3dShape, setShape3dShape] = useState<string>('cube');
 
   const selectedConcept = concepts.find(c => c.id === conceptId);
 
@@ -209,6 +223,10 @@ const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, con
     if (!title.trim() || !body.trim()) return;
     setSaving(true);
     try {
+      let forumImageUrl: string | null = null;
+      if (imageDataUrl) {
+        forumImageUrl = await uploadForumImage(imageDataUrl, authorUid);
+      }
       const id = await createForumThread({
         authorUid,
         authorName,
@@ -217,6 +235,9 @@ const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, con
         category,
         title:  title.trim(),
         body:   body.trim(),
+        ...(dokLevel ? { dokLevel } : {}),
+        ...(forumImageUrl ? { forumImageUrl } : {}),
+        ...(show3d ? { shape3dShape } : {}),
       });
       const thread = await fetchForumThread(id);
       if (thread) onCreated(thread);
@@ -304,6 +325,67 @@ const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, con
               placeholder="Детално опишете го прашањето, контекстот, она што сте го пробале..."
               className="w-full border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none"
             />
+          </div>
+
+          {/* DoK level (optional) */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-2">Webb's DoK ниво (опционално)</label>
+            <div className="flex gap-1.5 flex-wrap">
+              {([1, 2, 3, 4] as DokLevel[]).map(lvl => {
+                const meta = DOK_META[lvl];
+                return (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setDokLevel(dokLevel === lvl ? 0 : lvl)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                      dokLevel === lvl
+                        ? `${meta.color} border-current ring-2 ring-offset-1 ring-current`
+                        : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    DoK {lvl} — {meta.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Image preview (from Algebra Tiles share) */}
+          {imageDataUrl && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Прикачена слика</label>
+              <img src={imageDataUrl} alt="Алгебарски плочки" className="rounded-xl border border-gray-200 max-h-40 w-auto" />
+            </div>
+          )}
+
+          {/* Shape3D toggle */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShow3d(v => !v)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                show3d
+                  ? 'bg-cyan-50 border-cyan-300 text-cyan-700 ring-2 ring-offset-1 ring-cyan-300'
+                  : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-cyan-300 hover:text-cyan-600'
+              }`}
+            >
+              <Box className="w-3.5 h-3.5" /> Додај 3D тело
+            </button>
+            {show3d && (
+              <div className="mt-2">
+                <select
+                  title="Избери 3D тело"
+                  value={shape3dShape}
+                  onChange={e => setShape3dShape(e.target.value)}
+                  className="border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-cyan-400 focus:outline-none"
+                >
+                  {SHAPE_ORDER.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-1">
@@ -404,6 +486,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread, myUid, onClick, onUpvot
                 <Tag className="w-2.5 h-2.5" />{thread.conceptTitle}
               </span>
             )}
+            {thread.dokLevel && <DokBadge level={thread.dokLevel} size="compact" />}
             <span className="text-[10px] text-gray-400 ml-auto">{timeAgo(thread.lastActivityAt ?? thread.createdAt)}</span>
             {totalReactions > 0 && (
               <span className="text-[10px] text-gray-400">{totalReactions} реакции</span>
@@ -539,10 +622,29 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
                   <Tag className="w-2.5 h-2.5" />{thread.conceptTitle}
                 </span>
               )}
+              {thread.dokLevel && <DokBadge level={thread.dokLevel} size="compact" />}
             </div>
 
             <h2 className="text-xl font-black text-gray-900 leading-snug mb-3">{thread.title}</h2>
             <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{thread.body}</p>
+            {thread.forumImageUrl && (
+              <img
+                src={thread.forumImageUrl}
+                alt="Прикачена слика"
+                className="mt-3 rounded-xl border border-gray-200 max-h-64 w-auto"
+              />
+            )}
+            {thread.shape3dShape && (
+              <div className="mt-3 rounded-2xl overflow-hidden border border-cyan-200 bg-slate-800">
+                <React.Suspense fallback={<div className="h-48 bg-slate-700 animate-pulse" />}>
+                  <Shape3DViewer
+                    initialShape={(SHAPE_ORDER.includes(thread.shape3dShape as Shape3DType) ? thread.shape3dShape : 'cube') as Shape3DType}
+                    hideSelector={false}
+                    compact={false}
+                  />
+                </React.Suspense>
+              </div>
+            )}
 
             <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 flex-wrap">
               <AuthorAvatar name={thread.authorName} size="md" />
@@ -683,13 +785,25 @@ export const TeacherForumView: React.FC = () => {
   const [search, setSearch] = useState('');
   const [filterConceptId, setFilterConceptId] = useState('');
   const [filterCategory, setFilterCategory] = useState<ThreadCategory | ''>('');
+  const [filterDok, setFilterDok] = useState<DokLevel | 0>(0);
   const [sortMode, setSortMode] = useState<SortMode>('new');
+  const [draftImageUrl, setDraftImageUrl] = useState<string | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
 
   const concepts = (allConcepts ?? []) as EnrichedConcept[];
 
   // Mark forum as visited (clears unread badge in sidebar)
   useEffect(() => { markForumVisited(); }, []);
+
+  // Check for Algebra Tiles image shared from TopicView
+  useEffect(() => {
+    const img = sessionStorage.getItem('forum_draft_img');
+    if (img) {
+      sessionStorage.removeItem('forum_draft_img');
+      setDraftImageUrl(img);
+      setShowNewModal(true);
+    }
+  }, []);
 
   // ── Real-time subscription ─────────────────────────────────────────────────
   useEffect(() => {
@@ -767,6 +881,7 @@ export const TeacherForumView: React.FC = () => {
 
   const filtered = unpinned.filter(t => {
     if (filterCategory && t.category !== filterCategory) return false;
+    if (filterDok && t.dokLevel !== filterDok) return false;
     if (search && !t.title.toLowerCase().includes(search.toLowerCase()) && !t.body.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -817,7 +932,7 @@ export const TeacherForumView: React.FC = () => {
           <StatsBanner stats={stats} />
 
           {/* Category tabs */}
-          <div className="flex gap-1.5 mb-4 flex-wrap">
+          <div className="flex gap-1.5 mb-3 flex-wrap">
             {ALL_CATEGORIES.map(cat => (
               <button
                 key={cat.id}
@@ -832,6 +947,39 @@ export const TeacherForumView: React.FC = () => {
                 <span>{cat.emoji}</span> {cat.label}
               </button>
             ))}
+          </div>
+
+          {/* DoK filter row */}
+          <div className="flex gap-1.5 mb-4 flex-wrap items-center">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mr-1">DoK:</span>
+            <button
+              type="button"
+              onClick={() => setFilterDok(0)}
+              className={`px-2.5 py-1 rounded-full text-xs font-bold border transition-all ${
+                filterDok === 0
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300'
+              }`}
+            >
+              Сите
+            </button>
+            {([1, 2, 3, 4] as DokLevel[]).map(lvl => {
+              const meta = DOK_META[lvl];
+              return (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => setFilterDok(filterDok === lvl ? 0 : lvl)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-all ${
+                    filterDok === lvl
+                      ? `${meta.color} border-current ring-2 ring-offset-1 ring-current`
+                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  DoK {lvl}
+                </button>
+              );
+            })}
           </div>
 
           {/* Toolbar: search + sort + new */}
@@ -953,11 +1101,12 @@ export const TeacherForumView: React.FC = () => {
 
       {showNewModal && (
         <NewThreadModal
-          onClose={() => setShowNewModal(false)}
+          onClose={() => { setShowNewModal(false); setDraftImageUrl(null); }}
           onCreated={handleThreadCreated}
           concepts={concepts}
           authorUid={myUid}
           authorName={myName}
+          initialImageDataUrl={draftImageUrl}
         />
       )}
     </div>

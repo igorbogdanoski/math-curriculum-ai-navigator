@@ -28,3 +28,17 @@ export const uploadQuestionImage = async (file: File, teacherUid: string): Promi
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
 };
+
+/**
+ * Uploads a data-URL (PNG) from AlgebraTiles canvas to Firebase Storage.
+ * Returns the public download URL.
+ * Path: forum-images/{teacherUid}/{timestamp}.png
+ */
+export const uploadForumImage = async (dataUrl: string, teacherUid: string): Promise<string> => {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const path = `forum-images/${teacherUid}/${Date.now()}.png`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, blob, { contentType: 'image/png' });
+  return getDownloadURL(storageRef);
+};

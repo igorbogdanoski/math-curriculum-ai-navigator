@@ -80,6 +80,12 @@ export interface ForumThread {
   isPinned: boolean;
   /** Soft-delete */
   deleted?: boolean;
+  /** Webb's DoK level tag (optional) */
+  dokLevel?: 1 | 2 | 3 | 4;
+  /** Attached Algebra Tiles PNG (Firebase Storage URL) */
+  forumImageUrl?: string | null;
+  /** Attached 3D shape name for inline Shape3DViewer */
+  shape3dShape?: string | null;
 }
 
 export interface ForumReply {
@@ -123,6 +129,9 @@ export const createForumThread = async (data: {
   category?: ThreadCategory;
   title: string;
   body: string;
+  dokLevel?: 1 | 2 | 3 | 4;
+  forumImageUrl?: string;
+  shape3dShape?: string;
 }): Promise<string> => {
   const ref = await addDoc(collection(db, 'forum_threads'), {
     authorUid:        data.authorUid,
@@ -142,6 +151,9 @@ export const createForumThread = async (data: {
     reactionsGreat:   [],
     isPinned:         false,
     deleted:          false,
+    ...(data.dokLevel     ? { dokLevel:      data.dokLevel }     : {}),
+    ...(data.forumImageUrl? { forumImageUrl: data.forumImageUrl }: {}),
+    ...(data.shape3dShape ? { shape3dShape:  data.shape3dShape }  : {}),
   });
   return ref.id;
 };

@@ -300,7 +300,10 @@ const ConceptCard: React.FC<{
               </button>
               {showAlgebraTiles && (
                 <div className="mt-3 p-4 bg-white border border-indigo-100 rounded-2xl shadow-sm overflow-x-auto">
-                  <AlgebraTilesCanvas />
+                  <AlgebraTilesCanvas onForumShare={dataUrl => {
+                    sessionStorage.setItem('forum_draft_img', dataUrl);
+                    navigate('/forum');
+                  }} />
                 </div>
               )}
             </div>

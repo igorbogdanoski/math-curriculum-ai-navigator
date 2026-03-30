@@ -14,7 +14,7 @@
  *  - Macedonian UI
  */
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { RefreshCw, Sparkles, Trash2, Undo2, Camera, BookOpen } from 'lucide-react';
+import { RefreshCw, Sparkles, Trash2, Undo2, Camera, BookOpen, Share2 } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -147,9 +147,11 @@ const nextUid = () => `t${++_uid}`;
 interface AlgebraTilesCanvasProps {
   /** Pre-populate with a preset key, e.g. "x²+3x+2" */
   presetExpression?: string;
+  /** Show "Share to Forum" button — calls back with PNG data URL */
+  onForumShare?: (dataUrl: string) => void;
 }
 
-export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetExpression }) => {
+export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetExpression, onForumShare }) => {
   const initTiles = useCallback((): Tile[] => {
     if (!presetExpression) return [];
     const preset = PRESETS.find(p => p.label === presetExpression || p.latex === presetExpression);
@@ -286,6 +288,20 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
     }
   }, [exporting]);
 
+  const shareToForum = useCallback(async () => {
+    if (!wrapperRef.current || exporting || !onForumShare) return;
+    setExporting(true);
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(wrapperRef.current, { scale: 2, backgroundColor: '#f8fafc', logging: false });
+      onForumShare(canvas.toDataURL('image/png'));
+    } catch {
+      // silent
+    } finally {
+      setExporting(false);
+    }
+  }, [exporting, onForumShare]);
+
   // ── Stats ────────────────────────────────────────────────────────────────────
   const zeroPairs = (['x2', 'x', '1'] as TileKind[]).reduce((sum, k) => {
     const p = tiles.filter(t => t.kind === k && t.sign === 1).length;
@@ -406,6 +422,13 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
               className="w-full flex items-center justify-center gap-1 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 text-[10px] font-bold hover:bg-indigo-100 disabled:opacity-30 transition-colors">
               <Camera className="w-3 h-3" /> {exporting ? '…' : 'Зачувај PNG'}
             </button>
+            {onForumShare && (
+              <button type="button" onClick={shareToForum} disabled={exporting || tiles.length === 0}
+                title="Сподели во Форум"
+                className="w-full flex items-center justify-center gap-1 py-1.5 rounded-xl bg-violet-50 text-violet-600 text-[10px] font-bold hover:bg-violet-100 disabled:opacity-30 transition-colors">
+                <Share2 className="w-3 h-3" /> {exporting ? '…' : 'Форум'}
+              </button>
+            )}
           </div>
         </div>
 
