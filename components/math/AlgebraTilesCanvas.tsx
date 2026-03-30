@@ -161,6 +161,7 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
   const [tiles, setTiles] = useState<Tile[]>(initTiles);
   const [guidedMode, setGuidedMode] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState(false);
 
   // Undo stack: array of tile snapshots
   const undoStack = useRef<Tile[][]>([]);
@@ -282,7 +283,8 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch {
-      // silent
+      setExportError(true);
+      setTimeout(() => setExportError(false), 3000);
     } finally {
       setExporting(false);
     }
@@ -296,7 +298,8 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
       const canvas = await html2canvas(wrapperRef.current, { scale: 2, backgroundColor: '#f8fafc', logging: false });
       onForumShare(canvas.toDataURL('image/png'));
     } catch {
-      // silent
+      setExportError(true);
+      setTimeout(() => setExportError(false), 3000);
     } finally {
       setExporting(false);
     }
@@ -428,6 +431,9 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
                 className="w-full flex items-center justify-center gap-1 py-1.5 rounded-xl bg-violet-50 text-violet-600 text-[10px] font-bold hover:bg-violet-100 disabled:opacity-30 transition-colors">
                 <Share2 className="w-3 h-3" /> {exporting ? '…' : 'Форум'}
               </button>
+            )}
+            {exportError && (
+              <p className="text-[10px] text-red-500 text-center font-medium">Неуспешно — обиди се повторно</p>
             )}
           </div>
         </div>

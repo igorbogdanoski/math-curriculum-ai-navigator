@@ -45,6 +45,7 @@ import {
   toggleForumReaction,
   markBestAnswer,
   softDeleteThread,
+  pinThread,
   hotScore,
   CATEGORY_CONFIG,
   REACTIONS,
@@ -54,6 +55,7 @@ import {
   type ForumStats,
   type ReactionField,
 } from '../services/firestoreService.forum';
+import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -638,7 +640,7 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
               <div className="mt-3 rounded-2xl overflow-hidden border border-cyan-200 bg-slate-800">
                 <React.Suspense fallback={<div className="h-48 bg-slate-700 animate-pulse" />}>
                   <Shape3DViewer
-                    initialShape={(SHAPE_ORDER.includes(thread.shape3dShape as Shape3DType) ? thread.shape3dShape : 'cube') as Shape3DType}
+                    initialShape={(thread.shape3dShape && SHAPE_ORDER.includes(thread.shape3dShape as Shape3DType) ? thread.shape3dShape as Shape3DType : 'cube')}
                     hideSelector={false}
                     compact={false}
                   />
@@ -788,6 +790,7 @@ export const TeacherForumView: React.FC = () => {
   const [filterDok, setFilterDok] = useState<DokLevel | 0>(0);
   const [sortMode, setSortMode] = useState<SortMode>('new');
   const [draftImageUrl, setDraftImageUrl] = useState<string | null>(null);
+  const [generatingChallenge, setGeneratingChallenge] = useState(false);
   const unsubRef = useRef<(() => void) | null>(null);
 
   const concepts = (allConcepts ?? []) as EnrichedConcept[];
@@ -874,6 +877,44 @@ export const TeacherForumView: React.FC = () => {
     setActiveThread(thread);
   };
 
+  const handleGenerateDokChallenge = async () => {
+    if (generatingChallenge) return;
+    setGeneratingChallenge(true);
+    try {
+      const weekStr = new Date().toLocaleDateString('mk-MK', { day: 'numeric', month: 'long', year: 'numeric' });
+      const resp = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{
+          parts: [{ text: `Генерирај „DoK Предизвик на неделата" (${weekStr}) за заедница на македонски наставници по математика (5–12 одд).
+Предизвикот треба да поттикнува размислување на DoK ниво 3–4.
+Врати САМО валиден JSON: { "title": "...", "body": "..." }
+Наслов: кратко (до 80 знаки), привлечен.
+Тело: 3–4 пасуси на македонски — опис на предизвикот, прашања за рефлексија по DoK нивоа, повик за акција.` }],
+        }],
+        systemInstruction: 'Одговори САМО со валиден JSON објект. Без markdown, без обjaснувања.',
+        generationConfig: { temperature: 0.8, maxOutputTokens: 600 },
+      });
+      const raw = resp.text ?? '';
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('No JSON');
+      const parsed = JSON.parse(match[0]) as { title: string; body: string };
+      const threadId = await createForumThread({
+        authorUid: myUid,
+        authorName: 'DoK Предизвик 📌',
+        category: 'resource',
+        title: parsed.title,
+        body: parsed.body,
+        dokLevel: 3,
+      });
+      await pinThread(threadId, true);
+      addNotification('DoK Предизвик создаден и прикачен!', 'success');
+    } catch {
+      addNotification('Грешка при генерирање на предизвикот.', 'error');
+    } finally {
+      setGeneratingChallenge(false);
+    }
+  };
+
   // ── Filtering + sorting ────────────────────────────────────────────────────
 
   const pinned = threads.filter(t => t.isPinned);
@@ -910,10 +951,24 @@ export const TeacherForumView: React.FC = () => {
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-md">
             <MessageSquare className="w-5 h-5 text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-black text-gray-900">Наставнички Форум</h1>
             <p className="text-sm text-gray-500">Заедница за размена на искуства, идеи и совети</p>
           </div>
+          {user?.role === 'admin' && (
+            <button
+              type="button"
+              onClick={handleGenerateDokChallenge}
+              disabled={generatingChallenge}
+              title="Генерирај DoK Предизвик на неделата (admin)"
+              className="flex items-center gap-2 px-3 py-1.5 bg-violet-600 text-white text-xs font-bold rounded-xl hover:bg-violet-700 transition disabled:opacity-50 shadow-sm"
+            >
+              {generatingChallenge
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Pin className="w-3.5 h-3.5" />}
+              DoK Предизвик
+            </button>
+          )}
         </div>
       </header>
 
