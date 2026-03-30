@@ -15,7 +15,14 @@ import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import type { AIGeneratedPresentation } from '../types';
-import { MonitorPlay, Loader2, Wand2 } from 'lucide-react';
+import { MonitorPlay, Loader2, Wand2, Layers } from 'lucide-react';
+import { AlgebraTilesCanvas } from '../components/math/AlgebraTilesCanvas';
+
+/** Returns true when the concept title/keywords suggest algebraic content */
+const isAlgebraConcept = (concept: Concept): boolean => {
+  const text = `${concept.title} ${(concept.activities ?? []).join(' ')}`.toLowerCase();
+  return /алгебр|израз|полином|множење|факториз|равенк|монном|бином|тринном|x\^|линеарн|квадратн|степен/.test(text);
+};
 
 interface TopicViewProps {
   id: string;
@@ -113,6 +120,8 @@ const ConceptCard: React.FC<{
 }> = memo(({ concept, allConceptsInTopic, gradeLevel, topicId, isExpanded, onToggle, navigate, isEditing, onAssessmentStandardChange, onActivitiesChange, onSendToSmartAI }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const { openGeneratorPanel } = useGeneratorPanel();
+  const [showAlgebraTiles, setShowAlgebraTiles] = useState(false);
+  const showTilesBtn = isAlgebraConcept(concept);
 
   const arrayToString = (arr: string[] = []) => arr.join('\n');
   const stringToArray = (str: string = '') => str.split('\n').filter(line => line.trim() !== '');
@@ -249,6 +258,25 @@ const ConceptCard: React.FC<{
                 )
             )}
           </div>
+
+          {/* Algebra Tiles — shown only for algebra concepts */}
+          {showTilesBtn && (
+            <div className="mt-4 border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setShowAlgebraTiles(v => !v)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold hover:bg-indigo-100 transition-colors"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                {showAlgebraTiles ? 'Скриј алгебарски плочки' : '🧩 Алгебарски плочки (Algebra Tiles)'}
+              </button>
+              {showAlgebraTiles && (
+                <div className="mt-3 p-4 bg-white border border-indigo-100 rounded-2xl shadow-sm overflow-x-auto">
+                  <AlgebraTilesCanvas />
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="mt-4 flex flex-wrap justify-between items-center gap-2 pt-4 border-t">
             <div className="flex flex-wrap gap-2">
