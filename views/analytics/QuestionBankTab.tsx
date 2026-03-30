@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Trash2, Search, BookOpen, CheckSquare, Square, PlusSquare, ShieldCheck, Shield, Globe } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
-import type { SavedQuestion } from '../../types';
+import type { SavedQuestion, DokLevel } from '../../types';
+import { DOK_META } from '../../types';
+import { DokBadge } from '../../components/common/DokBadge';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
@@ -58,6 +60,20 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
   }, [questions]);
 
   const verifiedCount = useMemo(() => questions.filter(q => q.isVerified).length, [questions]);
+
+  const dokStats = useMemo(() => {
+    const total = questions.length;
+    if (total === 0) return null;
+    const counts: Record<DokLevel, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    let tagged = 0;
+    for (const q of questions) {
+      if (q.dokLevel && q.dokLevel >= 1 && q.dokLevel <= 4) {
+        counts[q.dokLevel as DokLevel]++;
+        tagged++;
+      }
+    }
+    return { counts, tagged, total };
+  }, [questions]);
 
   const filtered = useMemo(() => {
     return questions.filter(q => {
@@ -204,6 +220,51 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
         </button>
       </div>
 
+      {/* DoK Analytics Panel */}
+      {dokStats && dokStats.tagged > 0 && (
+        <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-black text-indigo-700 uppercase tracking-widest">Webb's DoK — Покриеност на банката</p>
+            <span className="text-xs text-gray-400">{dokStats.tagged}/{dokStats.total} прашања со DoK ознака</span>
+          </div>
+          {/* Stacked bar */}
+          <div className="flex h-4 rounded-full overflow-hidden gap-0.5 mb-3">
+            {([1, 2, 3, 4] as DokLevel[]).map(lvl => {
+              const pct = dokStats.tagged > 0 ? Math.round((dokStats.counts[lvl] / dokStats.tagged) * 100) : 0;
+              if (pct === 0) return null;
+              return (
+                <div key={lvl} title={`${DOK_META[lvl].label}: ${dokStats.counts[lvl]} прашања (${pct}%)`}
+                  className={`h-full ${DOK_META[lvl].dot} transition-all`} style={{ width: `${pct}%` }} />
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {([1, 2, 3, 4] as DokLevel[]).map(lvl => {
+              const m = DOK_META[lvl];
+              const count = dokStats.counts[lvl];
+              const pct = dokStats.tagged > 0 ? Math.round((count / dokStats.tagged) * 100) : 0;
+              const isLow = pct < 10 && dokStats.tagged >= 5;
+              return (
+                <div key={lvl} className={`p-2.5 rounded-xl border ${m.color} ${isLow ? 'ring-2 ring-amber-400' : ''}`}>
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className={`w-2 h-2 rounded-full ${m.dot}`} />
+                    <span className="text-[10px] font-black">{m.label}</span>
+                  </div>
+                  <p className="text-xl font-black leading-none">{count}</p>
+                  <p className="text-[9px] opacity-70 mt-0.5">{pct}% · {m.mk}</p>
+                  {isLow && <p className="text-[9px] text-amber-600 font-bold mt-1">⚠ Мало покритие</p>}
+                </div>
+              );
+            })}
+          </div>
+          {([1, 2, 3, 4] as DokLevel[]).some(l => dokStats.counts[l] === 0 && dokStats.tagged >= 4) && (
+            <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+              💡 Некои DoK нивоа немаат прашања. Генерирај материјали со цел DoK таргет за целосна педагошка покриеност.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
@@ -309,6 +370,7 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
                         {q.cognitiveLevel}
                       </span>
                     )}
+                    {q.dokLevel && <DokBadge level={q.dokLevel as DokLevel} size="compact" />}
                     {q.isVerified && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-green-600 text-white font-semibold flex items-center gap-1">
                         <ShieldCheck className="w-3 h-3" /> Верификувана
