@@ -15,13 +15,20 @@ import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import type { AIGeneratedPresentation } from '../types';
-import { MonitorPlay, Loader2, Wand2, Layers } from 'lucide-react';
+import { MonitorPlay, Loader2, Wand2, Layers, Box } from 'lucide-react';
 import { AlgebraTilesCanvas } from '../components/math/AlgebraTilesCanvas';
+import { Shape3DViewer } from '../components/math/Shape3DViewer';
 
 /** Returns true when the concept title/keywords suggest algebraic content */
 const isAlgebraConcept = (concept: Concept): boolean => {
   const text = `${concept.title} ${(concept.activities ?? []).join(' ')}`.toLowerCase();
   return /алгебр|израз|полином|множење|факториз|равенк|монном|бином|тринном|x\^|линеарн|квадратн|степен/.test(text);
+};
+
+/** Returns true when the concept involves 3D geometry */
+const is3DConcept = (concept: Concept): boolean => {
+  const text = `${concept.title} ${(concept.activities ?? []).join(' ')}`.toLowerCase();
+  return /коцк|призм|цилиндар|конус|пирамид|сфер|волумен|површин|простор|3d|тело/.test(text);
 };
 
 interface TopicViewProps {
@@ -121,7 +128,9 @@ const ConceptCard: React.FC<{
   const contentRef = useRef<HTMLDivElement>(null);
   const { openGeneratorPanel } = useGeneratorPanel();
   const [showAlgebraTiles, setShowAlgebraTiles] = useState(false);
+  const [show3DViewer, setShow3DViewer] = useState(false);
   const showTilesBtn = isAlgebraConcept(concept);
+  const show3DBtn = is3DConcept(concept);
 
   const arrayToString = (arr: string[] = []) => arr.join('\n');
   const stringToArray = (str: string = '') => str.split('\n').filter(line => line.trim() !== '');
@@ -258,6 +267,25 @@ const ConceptCard: React.FC<{
                 )
             )}
           </div>
+
+          {/* 3D Geometry Viewer — shown only for 3D geometry concepts */}
+          {show3DBtn && (
+            <div className="mt-4 border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setShow3DViewer(v => !v)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold hover:bg-blue-100 transition-colors"
+              >
+                <Box className="w-3.5 h-3.5" />
+                {show3DViewer ? 'Скриј 3D визуелизација' : '📦 3D Геометрија — интерактивен приказ'}
+              </button>
+              {show3DViewer && (
+                <div className="mt-3 p-4 bg-white border border-blue-100 rounded-2xl shadow-sm overflow-x-auto">
+                  <Shape3DViewer />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Algebra Tiles — shown only for algebra concepts */}
           {showTilesBtn && (
