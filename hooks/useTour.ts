@@ -20,6 +20,7 @@ export function useTour(
     if (startedSessionTours.has(tourName)) return;
     if (toursSeen[tourName] === true) return;
     if (window.innerWidth < 768) return; // Skip tours on mobile
+    if (navigator.webdriver) return; // Skip tours during E2E/browser automation
 
     const timer = setTimeout(() => {
         // Double check

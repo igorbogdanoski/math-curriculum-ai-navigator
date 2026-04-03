@@ -3,6 +3,7 @@ import { Camera, Upload, X, CheckCircle, Loader2, RefreshCw, Sparkles, Printer, 
 import { Card } from '../components/common/Card';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
+import { AppError, ErrorCode } from '../utils/errors';
 
 export const AIVisionGraderView: React.FC = () => {
     const [imageStr, setImageStr] = useState<string | null>(null);
@@ -10,8 +11,49 @@ export const AIVisionGraderView: React.FC = () => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [result, setResult] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+        const [showAdvanced, setShowAdvanced] = useState(false);
+        const [analysisDepth, setAnalysisDepth] = useState<'standard' | 'detailed'>('standard');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
+
+        const downloadFile = (filename: string, content: string, mimeType: string) => {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        };
+
+        const handleExportMarkdown = () => {
+            if (!result) return;
+            const md = [
+                '# AI Проверка на Домашна',
+                '',
+                `- Датум: ${new Date().toLocaleString('mk-MK')}`,
+                `- Контекст: ${conceptContext || 'Не е внесен'}`,
+                `- Режим: ${analysisDepth === 'detailed' ? 'Детална анализа' : 'Стандардна анализа'}`,
+                '',
+                '## Резултат',
+                '',
+                result,
+            ].join('\n');
+            downloadFile('ai-analiza-domashna.md', md, 'text/markdown;charset=utf-8');
+        };
+
+        const handleExportJson = () => {
+            if (!result) return;
+            const payload = {
+                generatedAt: new Date().toISOString(),
+                context: conceptContext || null,
+                analysisDepth,
+                result,
+            };
+            downloadFile('ai-analiza-domashna.json', JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+        };
 
     const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -37,7 +79,14 @@ export const AIVisionGraderView: React.FC = () => {
 
         try {
             const match = imageStr.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-            if (!match) throw new Error('Неподдржан формат на слика.');
+            if (!match) {
+                throw new AppError(
+                    'Unsupported image format',
+                    ErrorCode.VALIDATION_FAILED,
+                    'Неподдржан формат на слика. Користете ја камерата или вчитајте безбедна слика (PNG, JPG, WebP).',
+                    false,
+                );
+            }
             const mimeType = match[1];
             const base64Data = match[2];
             const text = await geminiService.analyzeHandwriting(base64Data, mimeType, conceptContext.trim() || undefined);
@@ -79,6 +128,26 @@ export const AIVisionGraderView: React.FC = () => {
                     placeholder="пр. Собирање дропки со различен именител"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
+                <button
+                    type="button"
+                    onClick={() => setShowAdvanced(v => !v)}
+                    className="mt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition"
+                >
+                    {showAdvanced ? '▾ Сокриј напредни опции' : '▸ Напредни опции'}
+                </button>
+                {showAdvanced && (
+                    <div className="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">Режим на анализа</label>
+                        <select
+                            value={analysisDepth}
+                            onChange={(e) => setAnalysisDepth(e.target.value as 'standard' | 'detailed')}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                        >
+                            <option value="standard">Стандардна (побрза)</option>
+                            <option value="detailed">Детална (подлабока)</option>
+                        </select>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -151,13 +220,32 @@ export const AIVisionGraderView: React.FC = () => {
                                 <h3 className="font-semibold text-gray-800">Резултат од Анализата</h3>
                             </div>
                             {result && (
-                                <button
-                                    onClick={handlePrint}
-                                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition no-print"
-                                >
-                                    <Printer className="w-4 h-4" />
-                                    Печати
-                                </button>
+                                <div className="flex items-center gap-2 no-print">
+                                    <button
+                                        type="button"
+                                        onClick={handleExportMarkdown}
+                                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition"
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                        MD
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleExportJson}
+                                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition"
+                                    >
+                                        <Upload className="w-4 h-4" />
+                                        JSON
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handlePrint}
+                                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition"
+                                    >
+                                        <Printer className="w-4 h-4" />
+                                        Печати
+                                    </button>
+                                </div>
                             )}
                         </div>
 

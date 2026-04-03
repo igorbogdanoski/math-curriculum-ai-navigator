@@ -129,6 +129,33 @@ export const HomeView: React.FC = () => {
 
   const firstName = user?.name?.split(' ')[0] || 'Корисник';
 
+  const featuredTools = [
+    {
+      title: 'Екстракција од Видео',
+      description: 'Внеси YouTube/Vimeo линк и извлечи наставно сценарио со AI preview чекор.',
+      cta: 'Отвори алатка',
+      action: () => openGeneratorPanel({ materialType: 'VIDEO_EXTRACTOR', contextType: 'SCENARIO' }),
+      icon: ICONS.gallery,
+      accent: 'text-blue-700 bg-blue-50 border-blue-100',
+    },
+    {
+      title: 'Дигитална Библиотека',
+      description: 'Прегледај, филтрирај и организирај ги зачуваните материјали по тема, DoK и тежина.',
+      cta: 'Отвори библиотека',
+      action: () => navigate('/library'),
+      icon: ICONS.bookOpen,
+      accent: 'text-indigo-700 bg-indigo-50 border-indigo-100',
+    },
+    {
+      title: 'Генератор на Тестови',
+      description: 'Селектирај задачи од библиотека и генерирај печатлив тест со професионален изглед.',
+      cta: 'Креирај тест',
+      action: () => navigate('/test-generator'),
+      icon: ICONS.quiz,
+      accent: 'text-purple-700 bg-purple-50 border-purple-100',
+    },
+  ];
+
   // Macedonian date, first letter capitalised
   const todayFormatted = new Date().toLocaleDateString('mk-MK', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -193,6 +220,50 @@ export const HomeView: React.FC = () => {
               Нова подготовка
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* ── E5 PHASE-1: QUOTE + FEATURED TOOLS ─────────────────────── */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-5">
+        <Card className="xl:col-span-2 border-l-4 border-l-cyan-500 bg-gradient-to-br from-white to-slate-50">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-brand-primary/80 mb-2">Мисла на денот</p>
+              <blockquote className="text-xl md:text-2xl leading-tight font-bold text-slate-800 max-w-3xl">
+                "Суштината на математиката не е да ги направи едноставните работи комплицирани, туку комплицираните работи едноставни."
+              </blockquote>
+              <p className="mt-4 text-sm text-slate-500 font-semibold">Стенли Гудер · познат математичар</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/academy')}
+              className="w-11 h-11 rounded-full border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-center text-brand-primary"
+              title="Отвори Академија"
+            >
+              <ICONS.play className="w-4 h-4" />
+            </button>
+          </div>
+        </Card>
+
+        <div className="xl:col-span-1 grid grid-cols-1 gap-4">
+          {featuredTools.map((tool) => {
+            const ToolIcon = tool.icon;
+            return (
+              <button
+                key={tool.title}
+                type="button"
+                onClick={tool.action}
+                className="text-left p-4 rounded-2xl bg-white border border-slate-200 hover:border-brand-primary/30 hover:shadow-md transition-all group"
+              >
+                <div className={`inline-flex w-10 h-10 rounded-xl items-center justify-center border ${tool.accent}`}>
+                  <ToolIcon className="w-5 h-5" />
+                </div>
+                <p className="mt-3 font-bold text-slate-800 group-hover:text-brand-primary transition-colors">{tool.title}</p>
+                <p className="mt-1 text-xs text-slate-500 leading-relaxed">{tool.description}</p>
+                <p className="mt-3 text-sm font-bold text-brand-primary">{tool.cta} →</p>
+              </button>
+            );
+          })}
         </div>
       </div>
 

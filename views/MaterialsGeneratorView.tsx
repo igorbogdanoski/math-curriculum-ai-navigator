@@ -88,6 +88,7 @@ const MATERIAL_META: Record<string, {
   QUIZ:          { emoji: '❓', description: 'Интерактивен квиз — учениците играат на нивните уреди во реално време', timeEst: '~10 мин', tags: ['Интерактивно', '📱 Ученици'], badge: 'ПОПУЛАРНО', badgeColor: 'bg-green-100 text-green-700 border-green-200' },
   EXIT_TICKET:   { emoji: '🎟️', description: '2–3 брзи прашања за проверка на разбирањето пред крај на часот', timeEst: '~3 мин', tags: ['⚡ Брзо', 'Крај на час'], badge: 'БРЗО', badgeColor: 'bg-blue-100 text-blue-700 border-blue-200' },
   ILLUSTRATION:  { emoji: '🖼️', description: 'AI генерирана слика или дијаграм за визуелно претставување на концепт', timeEst: '~2 мин', tags: ['Визуелно', 'Презентација'] },
+    VIDEO_EXTRACTOR:{ emoji: '🎬', description: 'Внеси видео URL, потврди preview и генерирај наставно сценарио од содржината', timeEst: '~3 мин', tags: ['URL', 'Preview', 'MVP'], badge: 'MVP', badgeColor: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
   WORKED_EXAMPLE:{ emoji: '✍️', description: 'Детален чекор-по-чекор решен пример со образложение за секој чекор', timeEst: '~5 мин', tags: ['Пример', 'Моделирање'], badge: 'НОВО', badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' },
 };
 
@@ -120,6 +121,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     { id: 'QUIZ', label: t('generator.types.quiz'), icon: 'quiz' },
     { id: 'EXIT_TICKET', label: t('generator.types.exitTicket'), icon: 'quiz' },
     { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' },
+        { id: 'VIDEO_EXTRACTOR', label: 'Video Extractor (MVP)', icon: 'gallery' },
     { id: 'WORKED_EXAMPLE', label: 'Работен Пример', icon: 'lightbulb' }
   ];
 
@@ -650,79 +652,19 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                 {/* Delete old reset button from footer, keep only powerful generate buttons */}
                                 {state.materialType !== null && (['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as MaterialType[]).includes(state.materialType) && (
                                     <button type="button" onClick={() => requirePremiumOrCredits(() => handleGenerateVariants(), 3, false, '3x Варијанти')} disabled={isGenerateDisabled || isGeneratingVariants || isGenerating} title="3 варијанти: Поддршка, Основно и Збогатување" className="flex items-center gap-2 border-2 border-brand-primary text-brand-primary px-4 py-2.5 rounded-xl hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold">
-                                        {isGeneratingVariants ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пресметувам...{showMathTools && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
-                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
-                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
-                    </div>
-                    <div className="flex-1 relative overflow-hidden bg-slate-50">
-                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
-                    </div>
-                </div>
-            </div>
-        )}
-        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
-            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
-        </button>
-        </> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">3× Варијанти</span><span className="sm:hidden">3×</span>{showMathTools && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
-                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
-                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
-                    </div>
-                    <div className="flex-1 relative overflow-hidden bg-slate-50">
-                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
-                    </div>
-                </div>
-            </div>
-        )}
-        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
-            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
-        </button>
-        </>}
+                                        {isGeneratingVariants ? (
+                                          <><ICONS.spinner className="w-4 h-4 animate-spin" />Пресметувам...</>
+                                        ) : (
+                                          <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">3× Варијанти</span><span className="sm:hidden">3×</span></>
+                                        )}
                                     </button>
                                 )}
                                 <button type="button" onClick={() => requirePremiumOrCredits(() => handleBulkGenerate(), 5, false, 'Пакет материјали')} disabled={isGenerateDisabled || isGenerating || isGeneratingVariants || isGeneratingBulk} title="Квиз + Тест + Рубрика одеднаш" className="flex items-center gap-2 border-2 border-purple-500 text-purple-700 px-4 py-2.5 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-all font-bold">
-                                    {isGeneratingBulk ? <><ICONS.spinner className="w-4 h-4 animate-spin" />Пакет...{showMathTools && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
-                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
-                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
-                    </div>
-                    <div className="flex-1 relative overflow-hidden bg-slate-50">
-                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
-                    </div>
-                </div>
-            </div>
-        )}
-        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
-            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
-        </button>
-        </> : <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">Пакет материјали</span><span className="sm:hidden">Пакет</span>{showMathTools && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
-                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
-                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
-                    </div>
-                    <div className="flex-1 relative overflow-hidden bg-slate-50">
-                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
-                    </div>
-                </div>
-            </div>
-        )}
-        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
-            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
-        </button>
-        </>}
+                                    {isGeneratingBulk ? (
+                                      <><ICONS.spinner className="w-4 h-4 animate-spin" />Пакет...</>
+                                    ) : (
+                                      <><ICONS.sparkles className="w-4 h-4" /><span className="hidden sm:inline">Пакет материјали</span><span className="sm:hidden">Пакет</span></>
+                                    )}
                                 </button>
                                 {verifiedQs.length > 0 && (
                                     <button
@@ -738,41 +680,11 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                                     </button>
                                 )}
                                 <button type="submit" disabled={isGenerateDisabled || isGeneratingVariants || isGeneratingBulk} title={!isOnline ? 'Нема интернет' : 'Генерирај'} className="flex items-center gap-2 bg-gradient-to-r from-brand-primary to-blue-700 text-white px-8 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold transform hover:-translate-y-0.5">
-                                    {isGenerating ? <><ICONS.spinner className="w-5 h-5 animate-spin" /> Генерирам...{showMathTools && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
-                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
-                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
-                    </div>
-                    <div className="flex-1 relative overflow-hidden bg-slate-50">
-                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
-                    </div>
-                </div>
-            </div>
-        )}
-        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
-            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
-        </button>
-        </> : <><ICONS.sparkles className="w-5 h-5" /> Генерирај AI{showMathTools && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
-                    <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
-                        <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-                        <button type="button" aria-label="Затвори математички алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
-                    </div>
-                    <div className="flex-1 relative overflow-hidden bg-slate-50">
-                        <MathToolsPanel onClose={() => setShowMathTools(false)} className="h-full" />
-                    </div>
-                </div>
-            </div>
-        )}
-        <button onClick={() => setShowMathTools(true)} className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95" title="Математички Алатки (GeoGebra, Desmos...)">
-            <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки</span>
-        </button>
-        </>}
+                                    {isGenerating ? (
+                                      <><ICONS.spinner className="w-5 h-5 animate-spin" /> Генерирам...</>
+                                    ) : (
+                                      <><ICONS.sparkles className="w-5 h-5" /> Генерирај AI</>
+                                    )}
                                 </button>
                             </div>
                         )}
