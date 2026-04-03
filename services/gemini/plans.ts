@@ -22,6 +22,7 @@ async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: num
     const topicTitle = topic?.title || "Општа математичка тема";
     
     // Advanced Prompt Engineering: Chain-of-Thought + Tree of Thoughts + Persona
+    // @prompt-start: lesson_ideas
     let prompt = `
 ### УЛОГА
 Ти си врвен експерт за методика на наставата по математика со 20-годишно искуство во креирање иновативни сценарија за часови според најновите Кембриџ и национални стандарди.
@@ -50,6 +51,7 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 Генерирај го сценариото СТРИКТНО според официјалниот JSON шаблон.
 `;
 
+    // @prompt-end: lesson_ideas
     const safeInstruction = sanitizePromptInput(customInstruction, 500);
     if (safeInstruction) prompt += `\nДополнителна инструкција од наставникот: ${safeInstruction}`;
 
@@ -79,15 +81,17 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 
     const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id);
     // Use high-quality model for better pedagogical reasoning
-    const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
-    await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'ideas', conceptId, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
+        const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
+        // Cache write must never block UI completion; generation result is already available.
+        void setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: result, type: 'ideas', conceptId, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
     return result;
   },
 
 async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingProfile, image?: { base64: string, mimeType: string }): Promise<Partial<LessonPlan>> {
       const topicTitle = context.topic?.title || "Општа тема";
       const gradeLevel = context.grade?.level || 6;
-      
+
+      // @prompt-start: lesson_plan
       const prompt = `
 ### УЛОГА
 Ти си врвен експерт за методика на наставата по математика со долгогодишно искуство. Твоја задача е да креираш детална и професионална подготовка за час.
@@ -113,78 +117,82 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
 - СРЕДСТВА: Наведи конкретни наставни средства (табла, креда, дигитален уред, работен лист).
 - СЛЕДЕЊЕ: Наведи конкретни методи за следење на напредокот (набљудување, прашања/одговори).
 `;
-      const schema = { 
-          type: Type.OBJECT, 
-          properties: { 
-              title: { type: Type.STRING }, 
-              subject: { type: Type.STRING }, 
-              theme: { type: Type.STRING }, 
-              objectives: { 
-                  type: Type.ARRAY, 
-                  items: { 
-                      type: Type.OBJECT, 
-                      properties: { 
-                          text: { type: Type.STRING }, 
-                          bloomsLevel: { type: Type.STRING, enum: ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'] } 
-                      }, 
-                      required: ["text"] 
-                  } 
-              }, 
-              scenario: { 
-                  type: Type.OBJECT, 
-                  properties: { 
-                      introductory: { 
-                          type: Type.OBJECT, 
-                          properties: { 
+      // @prompt-end: lesson_plan
+
+      const schema = {
+          type: Type.OBJECT,
+          properties: {
+              title: { type: Type.STRING },
+              subject: { type: Type.STRING },
+              theme: { type: Type.STRING },
+              objectives: {
+                  type: Type.ARRAY,
+                  items: {
+                      type: Type.OBJECT,
+                      properties: {
+                          text: { type: Type.STRING },
+                          bloomsLevel: { type: Type.STRING, enum: ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'] }
+                      },
+                      required: ["text"]
+                  }
+              },
+              scenario: {
+                  type: Type.OBJECT,
+                  properties: {
+                      introductory: {
+                          type: Type.OBJECT,
+                          properties: {
                               text: { type: Type.STRING },
                               duration: { type: Type.STRING }
-                          } 
-                      }, 
-                      main: { 
-                          type: Type.ARRAY, 
-                          items: { 
-                              type: Type.OBJECT, 
-                              properties: { 
+                          }
+                      },
+                      main: {
+                          type: Type.ARRAY,
+                          items: {
+                              type: Type.OBJECT,
+                              properties: {
                                   text: { type: Type.STRING },
                                   bloomsLevel: { type: Type.STRING }
-                              } 
-                          } 
-                      }, 
-                      concluding: { 
-                          type: Type.OBJECT, 
-                          properties: { 
+                              }
+                          }
+                      },
+                      concluding: {
+                          type: Type.OBJECT,
+                          properties: {
                               text: { type: Type.STRING },
                               duration: { type: Type.STRING }
-                          } 
-                      } 
-                  } 
+                          }
+                      }
+                  }
               },
               assessmentStandards: { type: Type.ARRAY, items: { type: Type.STRING } },
               materials: { type: Type.ARRAY, items: { type: Type.STRING } },
               progressMonitoring: { type: Type.ARRAY, items: { type: Type.STRING } },
               differentiation: { type: Type.STRING },
-              concepts: { 
-                  type: Type.ARRAY, 
-                  items: { 
-                      type: Type.OBJECT, 
-                      properties: { 
-                          title: { type: Type.STRING } 
-                      }, 
-                      required: ["title"] 
-                  } 
+              concepts: {
+                  type: Type.ARRAY,
+                  items: {
+                      type: Type.OBJECT,
+                      properties: {
+                          title: { type: Type.STRING }
+                      },
+                      required: ["title"]
+                  }
               }
-          }, 
-          required: ["title", "objectives", "scenario", "assessmentStandards", "concepts"] 
+          },
+          required: ["title", "objectives", "scenario", "assessmentStandards", "concepts"]
       };
+
       const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
       if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
       const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, context.concepts?.[0]?.id, context.topic?.id);
-      
+
       // Use Thinking model for high-quality pedagogical planning
       return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   },
 
 async generateAnnualPlan(grade: Grade, startDate: string, endDate: string, holidays: string, winterBreak: {start: string, end: string}, profile?: TeachingProfile): Promise<Omit<PlannerItem, 'id'>[]> {
+      // @prompt-start: annual_plan
       const prompt = `
 ### УЛОГА
 Ти си врвен стратешки планер во образованието. Твоја задача е да креираш ГОДИШЕН ПЛАН за наставата по математика.
@@ -205,17 +213,18 @@ async generateAnnualPlan(grade: Grade, startDate: string, endDate: string, holid
 - Внимавај на вертикалната прогресија — потешките теми не треба да дојдат одеднаш.
 - Исходот треба да биде низа од настани кои формираат кохерентна целина за целата учебна година.
 `;
-      const schema = { 
-          type: Type.ARRAY, 
-          items: { 
-              type: Type.OBJECT, 
-              properties: { 
-                  date: { type: Type.STRING }, 
-                  title: { type: Type.STRING }, 
-                  description: { type: Type.STRING } 
-              }, 
-              required: ["date", "title"] 
-          } 
+      // @prompt-end: annual_plan
+      const schema = {
+          type: Type.ARRAY,
+          items: {
+              type: Type.OBJECT,
+              properties: {
+                  date: { type: Type.STRING },
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING }
+              },
+              required: ["date", "title"]
+          }
       };
       // Use Thinking model for complex calendar and curriculum alignment
       return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{ text: prompt }, { text: `Датуми: ${startDate} до ${endDate}` }], schema, DEFAULT_MODEL, AnnualPlanSchema, MAX_RETRIES, true, undefined, profile?.tier);
@@ -227,6 +236,7 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
           const cached = await getCached<AIGeneratedThematicPlan>(cacheKey);
           if (cached) return cached;
 
+      // @prompt-start: thematic_plan
       const prompt = `
 ### УЛОГА
 Ти си експерт за курикулум по математика. Креирај ТЕМАТСКО ПЛАНИРАЊЕ (Прилог 1) за конкретна тема.
@@ -248,30 +258,31 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
 - Колоната за СРЕДСТВА треба да содржи конкретни наставни помагала.
 - Колоната за ЧАСОВИ треба да содржи број на часови за таа подтема.
 `;
-      const schema = { 
-          type: Type.OBJECT, 
-          properties: { 
-              thematicUnit: { type: Type.STRING }, 
-              lessons: { 
-                  type: Type.ARRAY, 
-                  items: { 
-                      type: Type.OBJECT, 
-                      properties: { 
-                          lessonNumber: { type: Type.INTEGER }, 
-                          lessonUnit: { type: Type.STRING }, 
-                          learningOutcomes: { type: Type.STRING }, 
-                          keyActivities: { type: Type.STRING }, 
+      // @prompt-end: thematic_plan
+      const schema = {
+          type: Type.OBJECT,
+          properties: {
+              thematicUnit: { type: Type.STRING },
+              lessons: {
+                  type: Type.ARRAY,
+                  items: {
+                      type: Type.OBJECT,
+                      properties: {
+                          lessonNumber: { type: Type.INTEGER },
+                          lessonUnit: { type: Type.STRING },
+                          learningOutcomes: { type: Type.STRING },
+                          keyActivities: { type: Type.STRING },
                           assessment: { type: Type.STRING },
                           resources: { type: Type.STRING },
                           hours: { type: Type.INTEGER }
-                      }, 
-                      required: ["lessonNumber", "lessonUnit"] 
-                  } 
-              } 
-          }, 
-          required: ["thematicUnit", "lessons"] 
+                      },
+                      required: ["lessonNumber", "lessonUnit"]
+                  }
+              }
+          },
+          required: ["thematicUnit", "lessons"]
       };
-      
+
       const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, grade.level, undefined, topic.id);
       // Use Thinking model for structural curriculum mapping
       const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema, MAX_RETRIES, true, systemInstr, profile?.tier);

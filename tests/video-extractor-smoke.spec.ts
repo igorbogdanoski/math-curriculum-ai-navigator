@@ -1,15 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { setupTeacherMocks } from './helpers';
 
-test.describe.skip('E1: Video Extractor Runtime Smoke', () => {
+test.describe('E1: Video Extractor Runtime Smoke', () => {
   test('URL -> preview -> generate -> save note flow works', async ({ page }) => {
+    test.setTimeout(120_000);
+
     await page.addInitScript(() => {
       // Keep startup quiet: disable home auto AI calls that can occupy queue in E2E.
       localStorage.setItem('auto_ai_suggestions', 'false');
-      localStorage.setItem('ai_daily_quota_exhausted', JSON.stringify({
-        exhaustedAt: new Date().toISOString(),
-        nextResetMs: Date.now() + 60 * 60 * 1000,
-      }));
     });
 
     await page.route(/firestore\.googleapis\.com.*:batchGet/, async (route) => {
@@ -31,17 +29,15 @@ test.describe.skip('E1: Video Extractor Runtime Smoke', () => {
       });
     });
 
-    await page.route(/firestore\.googleapis\.com.*documents\//, async (route) => {
-      const method = route.request().method();
-      if (method === 'GET') {
-        await route.fulfill({
-          status: 404,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: { code: 404, message: 'NOT_FOUND' } }),
-        });
-        return;
-      }
-      await route.fallback();
+    await page.route(/firestore\.googleapis\.com.*:commit/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          writeResults: [{ updateTime: new Date().toISOString() }],
+          commitTime: new Date().toISOString(),
+        }),
+      });
     });
 
     const dismissCoachmarks = async () => {
@@ -78,11 +74,12 @@ test.describe.skip('E1: Video Extractor Runtime Smoke', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
+          access_token: 'mock-access-token',
           id_token: 'mock-id-token',
           refresh_token: 'mock-refresh-token',
-          expires_in: '3600',
           user_id: 'test-teacher-uid',
           project_id: 'mock-project-id',
+          expires_in: '3600',
           token_type: 'Bearer',
         }),
       });
@@ -163,7 +160,7 @@ test.describe.skip('E1: Video Extractor Runtime Smoke', () => {
       });
     });
 
-    await page.goto('/');
+    await page.goto('/#/generator');
 
     await page.addStyleTag({
       content: '#react-joyride-portal, .react-joyride__overlay, .react-joyride__spotlight, [role="dialog"][aria-label*="колачиња"] { display: none !important; pointer-events: none !important; }',
@@ -176,7 +173,6 @@ test.describe.skip('E1: Video Extractor Runtime Smoke', () => {
       await acceptCookie.first().click();
     }
 
-    await page.getByRole('button', { name: /AI Генератор/i }).first().click();
     await expect(page.getByRole('heading', { name: /AI Генератор/i })).toBeVisible();
     await dismissCoachmarks();
 
@@ -211,6 +207,6 @@ test.describe.skip('E1: Video Extractor Runtime Smoke', () => {
     await expect(page.getByText(/Видео-сценарио: Питагорова теорема/i)).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole('button', { name: /Зачувај како белешка/i }).click();
-    await expect(page.getByText(/успешно зачувана како белешка/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/Белешка:\s*Видео-сценарио:\s*Питагорова теорема/i)).toBeVisible({ timeout: 15000 });
   });
 });

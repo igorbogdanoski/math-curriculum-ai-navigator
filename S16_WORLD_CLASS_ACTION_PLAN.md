@@ -67,7 +67,7 @@
 
 | ID | Задача | KPI за pass | Статус |
 |---|---|---|---|
-| E1 | Video Extractor MVP (S16.A) | URL -> preview -> confirm -> save работи стабилно | 🟨 in progress |
+| E1 | Video Extractor MVP (S16.A) | URL -> preview -> confirm -> save работи стабилно | ✅ |
 | E2 | Recovery Worksheet pipeline (S16.B) | Auto remedial flow со teacher confirm | ⬜ |
 | E3 | Intent Router spike | Мерливо намалена латенција/cost по request | ⬜ |
 | E4 | Vertex AI controlled spike | 1 production-safe path под feature flag | ⬜ |
@@ -145,6 +145,7 @@
 - E1 hardening validation: додадени се unit тестови `utils/videoPreview.test.ts` (8/8 зелени) за YouTube/Vimeo URL normalization, unsupported URL fallback и oEmbed error path. Остаток за финално затворање на E1: runtime smoke (URL -> preview -> generate -> save) во UI flow.
 - E1 runtime smoke (diagnostic e2e): додаден е `tests/video-extractor-smoke.spec.ts` со teacher mocks (auth + oEmbed + Gemini response), но flow е нестабилен во automation поради onboarding/tour overlay и генератор runtime состојба што останува во loading под mock env; тестот е оставен како `skip` до стабилизација на overlay/flow hooks.
 - E1 deep validation update: потврден е hard deadlock во mocked runtime path (не е само timeout) и по 120s прозорец. Следен чекор за root-cause: trace-led анализа на `generateLessonPlanIdeas` chain + queue/auth/cache calls во isolated e2e harness пред повторно активирање на smoke gate.
+- E1 closure update (2026-04-03): root-cause deadlock е затворен со non-blocking cache write во `services/gemini/plans.ts` (`void setDoc(...).catch(...)`), smoke gate е повторно активиран во `tests/video-extractor-smoke.spec.ts`, и финална валидација е зелена (`video-extractor-smoke` + `video-extractor-isolated-harness` -> PASS).
 - E5 phase-1 (Home enrichment): во `HomeView.tsx` е додаден нов quote/insight блок („Мисла на денот“) и 3 action cards (Video Extractor, Digital Library, Test Generator) со директни CTA рути/акции за побрз влез во core workflows.
 - E5 phase-2 (Extraction UX uplift): во `AIVisionGraderView.tsx` додадени се `MD/JSON` export actions за резултат, collapsible „Напредни опции“ (режим на анализа), и појасен workspace flow за работа со OCR резултати.
 
