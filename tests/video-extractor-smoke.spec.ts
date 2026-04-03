@@ -3,6 +3,15 @@ import { setupTeacherMocks } from './helpers';
 
 test.describe.skip('E1: Video Extractor Runtime Smoke', () => {
   test('URL -> preview -> generate -> save note flow works', async ({ page }) => {
+    await page.addInitScript(() => {
+      // Keep startup quiet: disable home auto AI calls that can occupy queue in E2E.
+      localStorage.setItem('auto_ai_suggestions', 'false');
+      localStorage.setItem('ai_daily_quota_exhausted', JSON.stringify({
+        exhaustedAt: new Date().toISOString(),
+        nextResetMs: Date.now() + 60 * 60 * 1000,
+      }));
+    });
+
     await page.route(/firestore\.googleapis\.com.*:batchGet/, async (route) => {
       const body = route.request().postData() ?? '';
       if (body.includes('/documents/users/')) {
@@ -63,6 +72,21 @@ test.describe.skip('E1: Video Extractor Runtime Smoke', () => {
     };
 
     await setupTeacherMocks(page);
+
+    await page.route(/securetoken\.googleapis\.com.*token/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id_token: 'mock-id-token',
+          refresh_token: 'mock-refresh-token',
+          expires_in: '3600',
+          user_id: 'test-teacher-uid',
+          project_id: 'mock-project-id',
+          token_type: 'Bearer',
+        }),
+      });
+    });
 
     await page.route(/youtube\.com\/oembed/, async (route) => {
       await route.fulfill({
@@ -184,7 +208,7 @@ test.describe.skip('E1: Video Extractor Runtime Smoke', () => {
     await expect(page.getByText(/Preview потврден/i)).toBeVisible();
 
     await page.getByRole('button', { name: /Генерирај AI/i }).click();
-    await expect(page.getByText(/Видео-сценарио: Питагорова теорема/i)).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText(/Видео-сценарио: Питагорова теорема/i)).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole('button', { name: /Зачувај како белешка/i }).click();
     await expect(page.getByText(/успешно зачувана како белешка/i)).toBeVisible({ timeout: 15000 });
