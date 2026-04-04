@@ -66,6 +66,20 @@ async function collectByFieldSafe(
   }
 }
 
+async function getProfileSafe(
+  uid: string,
+  warnings: string[]
+): Promise<Record<string, unknown> | null> {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    return snap.exists() ? (snap.data() as Record<string, unknown>) : null;
+  } catch (err: any) {
+    const msg = err?.message ? String(err.message) : 'unknown_error';
+    warnings.push(`users/${uid}: ${msg}`);
+    return null;
+  }
+}
+
 /**
  * Брише СИТЕ кориснички податоци од Firestore + Storage.
  * Не го брише Firebase Auth акаунтот — тоа е одговорност на повикувачот.
@@ -115,7 +129,7 @@ export async function exportUserData(
   const warnings: string[] = [];
 
   const [
-    profileSnap,
+    profile,
     quizResults,
     conceptMastery,
     materials,
@@ -130,7 +144,7 @@ export async function exportUserData(
     liveSessions,
     nationalLibrary,
   ] = await Promise.all([
-    getDoc(doc(db, 'users', uid)),
+    getProfileSafe(uid, warnings),
     collectByFieldSafe('quiz_results', 'teacherUid', uid, warnings),
     collectByFieldSafe('concept_mastery', 'teacherUid', uid, warnings),
     collectByFieldSafe('cached_ai_materials', 'teacherUid', uid, warnings),
@@ -149,7 +163,7 @@ export async function exportUserData(
   return {
     exportedAt: new Date().toISOString(),
     uid,
-    profile: profileSnap.exists() ? profileSnap.data() : null,
+    profile,
     quizResults,
     conceptMastery,
     materials,

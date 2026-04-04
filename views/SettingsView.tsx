@@ -375,8 +375,17 @@ export const SettingsView: React.FC = () => {
             } else {
                 addNotification('Вашите податоци се преземени успешно.', 'success');
             }
-        } catch {
-            addNotification('Грешка при извоз на податоците. Обидете се повторно.', 'error');
+        } catch (err: any) {
+            const code = err?.code ? String(err.code) : '';
+            const message = err?.message ? String(err.message) : '';
+            if (code.includes('permission-denied')) {
+                addNotification('Грешка при извоз: немате дозвола за дел од податоците. Обидете се повторно по refresh/login.', 'error');
+            } else if (message) {
+                addNotification(`Грешка при извоз на податоците: ${message}`, 'error');
+            } else {
+                addNotification('Грешка при извоз на податоците. Обидете се повторно.', 'error');
+            }
+            console.error('GDPR export failed:', err);
         } finally {
             setIsExporting(false);
         }
