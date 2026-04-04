@@ -26,9 +26,27 @@ function fmtRatio(value, sampleText) {
 }
 
 function replaceRow(planText, rowLabel, newBaselineValue) {
-  const escaped = rowLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const rx = new RegExp(`(^\\|\\s*${escaped}\\s*\\|)\\s*([^|]+?)\\s*(\\|)`, 'm');
-  return planText.replace(rx, `$1 ${newBaselineValue} $3`);
+  const lines = planText.split(/\r?\n/);
+  let replaced = false;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!line.trim().startsWith('|')) continue;
+
+    const cells = line.split('|');
+    if (cells.length < 4) continue;
+
+    const firstCell = String(cells[1] ?? '').trim();
+    if (firstCell !== rowLabel) continue;
+
+    // Preserve table shape: | KPI | Baseline | Target | Data source | Window |
+    cells[2] = ` ${newBaselineValue} `;
+    lines[i] = cells.join('|');
+    replaced = true;
+    break;
+  }
+
+  return { text: lines.join('\n'), replaced };
 }
 
 const baselinePath = arg('--baseline');
@@ -69,11 +87,11 @@ const rows = [
 
 for (const row of rows) {
   const updated = replaceRow(plan, row.label, row.value);
-  if (updated === plan) {
+  if (!updated.replaced) {
     console.error(`Could not update row: ${row.label}`);
     process.exit(2);
   }
-  plan = updated;
+  plan = updated.text;
 }
 
 fs.writeFileSync(path.resolve(planPath), plan, 'utf8');
