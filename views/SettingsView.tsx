@@ -12,7 +12,8 @@ import { firestoreService } from '../services/firestoreService';
 import { exportUserData, downloadUserDataAsJson } from '../services/firestoreService.gdpr';
 import { isFeedbackTaxonomyRolloutEnabled, setFeedbackTaxonomyRolloutEnabled } from '../services/feedbackTaxonomyRollout';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
-import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, isIntentRouterEnabled, setIntentRouterEnabled } from '../services/geminiService';
+import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, isIntentRouterEnabled, setIntentRouterEnabled, isVertexShadowEnabled, setVertexShadowEnabled, getShadowCompareReport, clearShadowLog } from '../services/geminiService';
+import type { ShadowCompareReport } from '../services/geminiService';
 import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle, Crown, CreditCard, ExternalLink } from 'lucide-react';
 import { AppError, ErrorCode } from '../utils/errors';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -107,6 +108,8 @@ export const SettingsView: React.FC = () => {
     const [recoveryWorksheetEnabled, setRecoveryWorksheetState] = useState(() => isRecoveryWorksheetEnabled());
     const [intentRouterEnabled, setIntentRouterState] = useState(() => isIntentRouterEnabled());
     const [feedbackTaxonomyEnabled, setFeedbackTaxonomyState] = useState(() => isFeedbackTaxonomyRolloutEnabled());
+        const [vertexShadowEnabled, setVertexShadowState] = useState(() => isVertexShadowEnabled());
+        const [shadowReport, setShadowReport] = useState<ShadowCompareReport | null>(null);
     const [isMentorEnabled, setIsMentorEnabled] = useState(user?.isMentor ?? false);
     useEffect(() => { setIsMentorEnabled(user?.isMentor ?? false); }, [user?.isMentor]);
     // E2.2 — Global accessibility settings
@@ -178,6 +181,21 @@ export const SettingsView: React.FC = () => {
         const next = !feedbackTaxonomyEnabled;
         setFeedbackTaxonomyState(next);
         setFeedbackTaxonomyRolloutEnabled(next);
+    };
+
+    const toggleVertexShadow = () => {
+        const next = !vertexShadowEnabled;
+        setVertexShadowState(next);
+        setVertexShadowEnabled(next);
+    };
+
+    const loadShadowReport = () => {
+        setShadowReport(getShadowCompareReport());
+    };
+
+    const handleClearShadowLog = () => {
+        clearShadowLog();
+        setShadowReport(null);
     };
 
     const toggleMentor = async () => {
@@ -623,6 +641,91 @@ export const SettingsView: React.FC = () => {
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${feedbackTaxonomyEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
                     </div>
+                    <div className="flex items-center justify-between py-3 border-t">
+                        <div>
+                            <p className="text-sm font-medium text-gray-700">🔬 Vertex AI Shadow Mode (E4)</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Секој AI повик испраќа паралелен shadow повик до Vertex AI proxy. Резултатот не се користи — само метрики (latency/status) се логираат.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={toggleVertexShadow}
+                            title={vertexShadowEnabled ? 'Исклучи Vertex Shadow Mode' : 'Вклучи Vertex Shadow Mode'}
+                            aria-label={vertexShadowEnabled ? 'Исклучи Vertex Shadow Mode' : 'Вклучи Vertex Shadow Mode'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${vertexShadowEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${vertexShadowEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                    {vertexShadowEnabled && (
+                        <div className="py-3 border-t space-y-2">
+                            <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">E4 Compare Report</p>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={loadShadowReport}
+                                    className="text-xs px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                                >
+                                    Прикажи извештај
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleClearShadowLog}
+                                    className="text-xs px-3 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                                >
+                                    Исчисти лог
+                                </button>
+                            </div>
+                            {shadowReport && (
+                                <div className="mt-2 overflow-x-auto rounded border border-blue-100 bg-blue-50 text-xs">
+                                    {shadowReport.sampleSize === 0 ? (
+                                        <p className="p-3 text-gray-500">Нема логови. Вклучи shadow mode и изврши неколку AI повици.</p>
+                                    ) : (
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="border-b border-blue-200">
+                                                    <th className="px-3 py-2 font-semibold text-blue-800">Метрика</th>
+                                                    <th className="px-3 py-2 font-semibold text-blue-800">Gemini (prod)</th>
+                                                    <th className="px-3 py-2 font-semibold text-blue-800">Vertex (shadow)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-blue-100">
+                                                <tr>
+                                                    <td className="px-3 py-2 text-gray-600">Примероци</td>
+                                                    <td className="px-3 py-2">{shadowReport.sampleSize}</td>
+                                                    <td className="px-3 py-2">{shadowReport.sampleSize}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="px-3 py-2 text-gray-600">Prosечна латентност</td>
+                                                    <td className="px-3 py-2">{shadowReport.geminiAvgLatencyMs} ms</td>
+                                                    <td className="px-3 py-2">{shadowReport.vertexAvgLatencyMs !== null ? `${shadowReport.vertexAvgLatencyMs} ms` : '—'}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="px-3 py-2 text-gray-600">Успешност</td>
+                                                    <td className="px-3 py-2">100%</td>
+                                                    <td className="px-3 py-2">{(shadowReport.vertexSuccessRate * 100).toFixed(0)}%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="px-3 py-2 text-gray-600">Грешки</td>
+                                                    <td className="px-3 py-2">—</td>
+                                                    <td className="px-3 py-2">{(shadowReport.vertexErrorRate * 100).toFixed(0)}%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="px-3 py-2 text-gray-600">Not configured</td>
+                                                    <td className="px-3 py-2">—</td>
+                                                    <td className="px-3 py-2">{(shadowReport.vertexNotConfiguredRate * 100).toFixed(0)}%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="px-3 py-2 text-gray-600">Релативна цена</td>
+                                                    <td className="px-3 py-2">1.00×</td>
+                                                    <td className="px-3 py-2">{shadowReport.vertexRelativeCost !== null ? `~${shadowReport.vertexRelativeCost.toFixed(2)}×` : '—'}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                     <div className="flex items-center justify-between py-3 border-t">
                         <div>
                             <p className="text-sm font-medium text-gray-700">🏆 Ментор статус</p>

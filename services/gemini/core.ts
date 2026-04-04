@@ -1,4 +1,5 @@
 import { getAuth } from 'firebase/auth';
+import { isVertexShadowEnabled, runVertexShadow } from './vertexShadow';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
@@ -318,6 +319,8 @@ export async function callGeminiProxy(params: {
           modelToUse = DEFAULT_MODEL;
       }
 
+      // E4 — record start time before the fetch for accurate round-trip measurement
+      const geminiCallStart = performance.now();
       const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: {
@@ -336,8 +339,7 @@ export async function callGeminiProxy(params: {
         }),
         signal: effectiveSignal
       });
-
-      if (!response.ok) {
+  if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         if (response.status === 429) {
           const quotaType: string = errorData.quotaType ?? 'daily';
@@ -358,7 +360,14 @@ export async function callGeminiProxy(params: {
         throw new ApiError(errorData.error || `Грешка: ${response.status}`);
       }
 
-      return await response.json();
+      // E4 — Vertex AI Shadow Mode: fire-and-forget, never affects production outcome
+      const geminiLatencyMs = Math.round(performance.now() - geminiCallStart);
+      const result = await response.json();
+      if (isVertexShadowEnabled()) {
+        runVertexShadow(modelToUse, normalizeContents(params.contents), geminiLatencyMs, token)
+          .catch(() => { /* shadow errors never surface to production */ });
+      }
+      return result;
     } catch (err: any) {
       if (err.name === 'AbortError') throw err;
       if (err instanceof ApiError) throw err; // Already typed — propagate as-is

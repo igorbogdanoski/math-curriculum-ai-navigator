@@ -17,6 +17,8 @@ import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalA
 
 // Core exports
 export { scheduleQuotaNotification, isDailyQuotaKnownExhausted, clearDailyQuotaFlag, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, buildDynamicSystemInstruction } from './gemini/core';
+export { isVertexShadowEnabled, setVertexShadowEnabled, getShadowLog, clearShadowLog, getShadowCompareReport } from './gemini/vertexShadow';
+export type { ShadowLogEntry, ShadowCompareReport } from './gemini/vertexShadow';
 
 const MIN_ANNUAL_PLAN_TOPICS = 8;
 const ANNUAL_PLAN_FALLBACK_TOPICS = [
