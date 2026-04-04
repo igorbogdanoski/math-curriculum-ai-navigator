@@ -129,6 +129,7 @@ const ContentLibraryView = safeLazy(() => import('./views/ContentLibraryView').t
 const LessonPlanDetailView = safeLazy(() => import('./views/LessonPlanDetailView').then(module => ({ default: module.LessonPlanDetailView })));
 const SharedPlanView = safeLazy(() => import('./views/SharedPlanView').then(module => ({ default: module.SharedPlanView })));
 const SharedAnnualPlanView = safeLazy(() => import('./views/SharedAnnualPlanView').then(module => ({ default: module.SharedAnnualPlanView })));
+const ShareVisualView = safeLazy(() => import('./views/ShareVisualView').then(module => ({ default: module.ShareVisualView })));
 const AnnualPlanGeneratorView = safeLazy(() => import('./views/AnnualPlanGeneratorView').then(module => ({ default: module.AnnualPlanGeneratorView })));
 const AnnualPlanGalleryView = safeLazy(() => import('./views/AnnualPlanGalleryView').then(module => ({ default: module.AnnualPlanGalleryView })));
 const SharedQuizView = safeLazy(() => import('./views/SharedQuizView').then(module => ({ default: module.SharedQuizView })));
@@ -231,6 +232,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/matura', component: MaturaSimulationView },
     { path: '/share/:data', component: SharedPlanView },
     { path: '/share/annual/:data', component: SharedAnnualPlanView },
+    { path: '/share/visual', component: ShareVisualView }, // C2.4/C3.4 — AlgebraTiles + Shape3D shareable URLs
     { path: '/quiz/:data', component: SharedQuizView },
     { path: '/mindmap/:topicId', component: MindMapView },
 ];

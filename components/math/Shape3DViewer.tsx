@@ -14,7 +14,8 @@
  */
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { MathRenderer } from '../common/MathRenderer';
-import { RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { RefreshCw, ZoomIn, ZoomOut, Link2, CheckCheck } from 'lucide-react';
+import { buildShapeShareUrl } from '../../utils/visualShareUrl';
 
 // ─── 3D helpers ───────────────────────────────────────────────────────────────
 type Vec3 = [number, number, number];
@@ -240,16 +241,21 @@ export const SHAPE_ORDER: Shape3DType[] = ['cube','cuboid','sphere','cylinder','
 // ─── Component ────────────────────────────────────────────────────────────────
 interface Shape3DViewerProps {
   initialShape?: Shape3DType;
+  /** Override default dimensions on mount (used for URL share, C3.4) */
+  initialDims?: ShapeDimensions;
   compact?: boolean;
   /** If true, shape selector is hidden (used when parent controls shape) */
   hideSelector?: boolean;
 }
 
 export const Shape3DViewer: React.FC<Shape3DViewerProps> = ({
-  initialShape = 'cube', compact = false, hideSelector = false,
+  initialShape = 'cube', initialDims, compact = false, hideSelector = false,
 }) => {
   const [shape, setShape] = useState<Shape3DType>(initialShape);
-  const [dims,  setDims]  = useState<ShapeDimensions>(SHAPE_DEFAULT_DIMS[initialShape]);
+  const [dims,  setDims]  = useState<ShapeDimensions>(
+    initialDims ? { ...SHAPE_DEFAULT_DIMS[initialShape], ...initialDims } : SHAPE_DEFAULT_DIMS[initialShape]
+  );
+  const [urlCopied, setUrlCopied] = useState(false);
   const [yaw,   setYaw]   = useState(PRESET_VIEWS.iso.yaw);
   const [pitch, setPitch] = useState(PRESET_VIEWS.iso.pitch);
   const [scale, setScale] = useState(55);
@@ -487,6 +493,20 @@ export const Shape3DViewer: React.FC<Shape3DViewerProps> = ({
             {/* Reset */}
             <button type="button" title="Ресетирај поглед" onClick={() => { setYaw(PRESET_VIEWS.iso.yaw); setPitch(PRESET_VIEWS.iso.pitch); setScale(55); setDims(SHAPE_DEFAULT_DIMS[shape]); setCrossSection(0); setShowCrossSlider(false); }}
               className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"><RefreshCw className="w-3.5 h-3.5 text-gray-600"/></button>
+            {/* Share URL */}
+            <button type="button"
+              title="Копирај линк за споделување"
+              onClick={() => {
+                const url = buildShapeShareUrl(shape, dims);
+                void navigator.clipboard.writeText(url).then(() => {
+                  setUrlCopied(true);
+                  setTimeout(() => setUrlCopied(false), 2500);
+                });
+              }}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors ${urlCopied ? 'bg-green-100 text-green-700 border-green-300' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}`}>
+              {urlCopied ? <CheckCheck className="w-3 h-3" /> : <Link2 className="w-3 h-3" />}
+              {urlCopied ? 'Копирано!' : 'URL'}
+            </button>
           </div>
 
           {/* Cross-section slider */}

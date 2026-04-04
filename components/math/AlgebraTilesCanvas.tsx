@@ -13,9 +13,11 @@
  *  - Full touch support (mobile/tablet)
  *  - Macedonian UI
  */
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { RefreshCw, Sparkles, Trash2, Undo2, Camera, BookOpen, Share2 } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { RefreshCw, Sparkles, Trash2, Undo2, Camera, BookOpen, Share2, Link2, CheckCheck } from 'lucide-react';
 import { MathRenderer } from '../common/MathRenderer';
+import { buildTileShareUrl } from '../../utils/visualShareUrl';
+import type { TileSpec } from '../../utils/visualShareUrl';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TileKind = 'x2' | 'x' | '1';
@@ -147,21 +149,44 @@ const nextUid = () => `t${++_uid}`;
 interface AlgebraTilesCanvasProps {
   /** Pre-populate with a preset key, e.g. "x²+3x+2" */
   presetExpression?: string;
+  /** Pre-populate from decoded URL share specs (C2.4) */
+  initialTileSpecs?: TileSpec[];
   /** Show "Share to Forum" button — calls back with PNG data URL */
   onForumShare?: (dataUrl: string) => void;
 }
 
-export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetExpression, onForumShare }) => {
+/** Convert live Tile[] → TileSpec[] for URL encoding */
+function tilesToSpecs(tiles: Tile[]): TileSpec[] {
+  const counts = new Map<string, number>();
+  for (const t of tiles) {
+    const key = `${t.kind}:${t.sign}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const result: TileSpec[] = [];
+  for (const kind of ['x2', 'x', '1'] as TileKind[]) {
+    const pos = counts.get(`${kind}:1`) ?? 0;
+    const neg = counts.get(`${kind}:-1`) ?? 0;
+    if (pos > 0) result.push({ kind, sign: 1, count: pos });
+    if (neg > 0) result.push({ kind, sign: -1, count: neg });
+  }
+  return result;
+}
+
+export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetExpression, initialTileSpecs, onForumShare }) => {
   const initTiles = useCallback((): Tile[] => {
+    if (initialTileSpecs && initialTileSpecs.length > 0) {
+      return layoutTiles(initialTileSpecs);
+    }
     if (!presetExpression) return [];
     const preset = PRESETS.find(p => p.label === presetExpression || p.latex === presetExpression);
     return preset ? layoutTiles(preset.tiles) : [];
-  }, [presetExpression]);
+  }, [presetExpression, initialTileSpecs]);
 
   const [tiles, setTiles] = useState<Tile[]>(initTiles);
   const [guidedMode, setGuidedMode] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
 
   // Undo stack: array of tile snapshots
   const undoStack = useRef<Tile[][]>([]);
@@ -290,6 +315,17 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
     }
   }, [exporting]);
 
+  // ── Copy shareable URL ───────────────────────────────────────────────────────
+  const copyShareUrl = useCallback(() => {
+    if (tiles.length === 0) return;
+    const url = buildTileShareUrl(tilesToSpecs(tiles));
+    if (!url) return;
+    void navigator.clipboard.writeText(url).then(() => {
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2500);
+    });
+  }, [tiles]);
+
   const shareToForum = useCallback(async () => {
     if (!wrapperRef.current || exporting || !onForumShare) return;
     setExporting(true);
@@ -311,8 +347,31 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
     const n = tiles.filter(t => t.kind === k && t.sign === -1).length;
     return sum + Math.min(p, n);
   }, 0);
+
+  // A1.8 — identify which tiles are in zero pairs for pulsing animation
+  const zeroPairTileIds = useMemo<Set<string>>(() => {
+    const ids = new Set<string>();
+    for (const kind of ['x2', 'x', '1'] as TileKind[]) {
+      const pos = tiles.filter(t => t.kind === kind && t.sign === 1);
+      const neg = tiles.filter(t => t.kind === kind && t.sign === -1);
+      const pairCount = Math.min(pos.length, neg.length);
+      pos.slice(0, pairCount).forEach(t => ids.add(t.id));
+      neg.slice(0, pairCount).forEach(t => ids.add(t.id));
+    }
+    return ids;
+  }, [tiles]);
+
   const expr = buildExpression(tiles);
   const canUndo = undoStack.current.length > 0;
+
+  // A1.9 — copy LaTeX expression to clipboard
+  const [latexCopied, setLatexCopied] = useState(false);
+  const copyLatex = useCallback(() => {
+    void navigator.clipboard.writeText(expr).then(() => {
+      setLatexCopied(true);
+      setTimeout(() => setLatexCopied(false), 2000);
+    });
+  }, [expr]);
 
   // ── Guided mode: check if tiles form a valid rectangle ──────────────────────
   const guidedTarget = PRESETS[0]; // default: x²+3x+2 = (x+1)(x+2)
@@ -343,8 +402,23 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
         <div className="flex-1 text-white text-lg font-bold min-w-0">
           <MathRenderer text={`$${expr}$`} />
         </div>
+        {/* A1.9 — Copy LaTeX button */}
+        {tiles.length > 0 && (
+          <button
+            type="button"
+            title="Копирај LaTeX израз"
+            onClick={copyLatex}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-800 hover:bg-indigo-700 text-indigo-200 text-[9px] font-bold transition-colors flex-shrink-0"
+          >
+            {latexCopied
+              ? <CheckCheck className="w-3 h-3 text-green-400" />
+              : <span className="font-mono text-[9px]">LaTeX</span>
+            }
+            {latexCopied ? 'Копирано!' : 'Копирај'}
+          </button>
+        )}
         {zeroPairs > 0 && (
-          <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold flex-shrink-0">
+          <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold flex-shrink-0 animate-pulse">
             {zeroPairs} нулти пар{zeroPairs > 1 ? 'а' : ''}
           </span>
         )}
@@ -432,6 +506,12 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
                 <Share2 className="w-3 h-3" /> {exporting ? '…' : 'Форум'}
               </button>
             )}
+            <button type="button" onClick={copyShareUrl} disabled={tiles.length === 0}
+              title="Копирај линк за споделување"
+              className="w-full flex items-center justify-center gap-1 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 text-[10px] font-bold hover:bg-emerald-100 disabled:opacity-30 transition-colors">
+              {urlCopied ? <CheckCheck className="w-3 h-3 text-green-600" /> : <Link2 className="w-3 h-3" />}
+              {urlCopied ? 'Копирано!' : 'Копирај URL'}
+            </button>
             {exportError && (
               <p className="text-[10px] text-red-500 text-center font-medium">Неуспешно — обиди се повторно</p>
             )}
@@ -469,7 +549,7 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({ presetEx
                 onTouchEnd={onTouchEnd}
                 onTouchCancel={onTouchEnd}
                 title="Влечи · двоен клик за бришење"
-                className={`absolute flex items-center justify-center rounded border-2 font-black text-[10px] cursor-grab active:cursor-grabbing transition-shadow touch-none ${colors} ${isDragged ? 'shadow-2xl ring-2 ring-white/70 z-10 scale-105' : 'shadow-sm hover:shadow-md hover:scale-105'}`}
+                className={`absolute flex items-center justify-center rounded border-2 font-black text-[10px] cursor-grab active:cursor-grabbing transition-shadow touch-none ${colors} ${isDragged ? 'shadow-2xl ring-2 ring-white/70 z-10 scale-105' : 'shadow-sm hover:shadow-md hover:scale-105'} ${zeroPairTileIds.has(tile.id) ? 'ring-2 ring-amber-400 ring-offset-1 animate-pulse' : ''}`}
                 style={{ left: tile.x, top: tile.y, width: cfg.w, height: cfg.h, transition: isDragged ? 'none' : 'box-shadow 0.15s, transform 0.1s' }}
               >
                 {cfg.label}

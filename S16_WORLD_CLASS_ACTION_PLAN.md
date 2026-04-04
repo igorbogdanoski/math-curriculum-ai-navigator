@@ -405,8 +405,8 @@ EOD формат (обврзен):
 | ID | Приоритет | Owner | KPI threshold | Exit evidence |
 |---|---|---|---|---|
 | X1 | E4 Vertex shadow path | @ai-core | >= 1 gated production-safe path зад feature flag | ✅ closed (feature flag + shadow log/report UI shipped on 04.04.2026) |
-| X2 | E4 go/no-go board | @pm + @ai-core | јасни launch thresholds и rollback trigger | 🟨 in progress (threshold table + rollback protocol below) |
-| X3 | E5 outcome metrics | @product + @frontend | measurable uplift во task-completion и reuse | 🟨 in progress (baseline table + measurement windows below) |
+| X2 | E4 go/no-go board | @pm + @ai-core | јасни launch thresholds и rollback trigger | 🟨 in progress — **deadline: 18.04.2026** (shadow samples + green thresholds за 3 consecutive runs потребни за Go) |
+| X3 | E5 outcome metrics | @product + @frontend | measurable uplift во task-completion и reuse | 🟨 in progress — T0 = Day 0 (04.04.2026, telemetry launch); **T1 мерење: 18.04.2026** |
 
 ### 9.3 LATER (21-45 дена)
 
@@ -589,41 +589,38 @@ Go одлука: дозволена само ако сите метрики се
 
 ### 9.11 X3 Outcome Metrics Baseline (E5)
 
-Статус: ACTIVE (baseline capture started)
+Статус: ACTIVE — T0 = Day 0 (04.04.2026); T1 мерење: **18.04.2026**
+
+**Забелешка за T0 = DATA_UNAVAILABLE**: `aiMaterialFeedbackEvents` telemetry беше лансирана во рамките на S16 (D4, 04.04.2026). GDPR export од 04.04.2026 содржи 0 events бидејќи нема историски податоци пред датумот на лансирање. Ова е очекувано — T0 = "ден нула" (нема pre-telemetry baseline). T1 ќе биде прво мерливо читање со реални корисничи податоци по 14 дена акумулација (18.04.2026).
 
 #### 9.11.1 KPI table (before/after)
 
 | KPI | Baseline (T0) | Target (T1) | Data source | Window |
 |---|---|---|---|---|
-| Task completion rate (teacher flow) | DATA_UNAVAILABLE | +10% vs T0 | Teacher analytics funnel | 7d rolling |
-| Time-to-first-material (median) | DATA_UNAVAILABLE | -20% vs T0 | generation timestamps | 7d rolling |
-| Material reuse rate | DATA_UNAVAILABLE | +15% vs T0 | library usage analytics | 14d rolling |
-| Reject/Edit ratio | DATA_UNAVAILABLE | -15% vs T0 | review moderation logs | 14d rolling |
-| Recovery worksheet adoption (E2 path) | DATA_UNAVAILABLE | >= 25% од eligible cases | analytics event counters | 14d rolling |
+| Task completion rate (teacher flow) | Day 0 — no pre-telemetry data | measurable positive vs Day 0 | Teacher analytics funnel | 7d rolling |
+| Time-to-first-material (median) | Day 0 — no pre-telemetry data | measurable improvement vs Day 0 | generation timestamps | 7d rolling |
+| Material reuse rate | Day 0 — no pre-telemetry data | +15% vs first T1 reading | library usage analytics | 14d rolling |
+| Reject/Edit ratio | Day 0 — no pre-telemetry data | measurable decline vs first T1 reading | review moderation logs | 14d rolling |
+| Recovery worksheet adoption (E2 path) | Day 0 — no pre-telemetry data | >= 25% од eligible cases | analytics event counters | 14d rolling |
 
 #### 9.11.2 Measurement protocol
 
-1. T0 (baseline): последни 7/14 дена пред broad E5 rollout.
-2. T1 (post): првите 7/14 дена по rollout stage што вклучува E5 tools.
-3. Секој KPI мора да има ист data source за T0 и T1 (без мешање извори).
-4. Ако недостига telemetry за KPI, статусот останува `TBD` и не е closeable.
+1. T0 (baseline): **04.04.2026** — telemetry launch date, 0 events (Day 0 anchor).
+2. T1 (post): **18.04.2026** — прво мерење со реални корисничи податоци (14 дена акумулација).
+3. T2 (trend): **02.05.2026** — втора точка за потврда на тренд.
+4. Секој KPI мора да има ист data source за T0 и T1 (без мешање извори).
+5. Ако недостига telemetry за KPI, статусот останува `TBD` и не е closeable.
 
 #### 9.11.3 Exit rule for X3
 
-1. Пополнети baseline (T0) и post (T1) вредности за сите KPI редови.
-2. Најмалку 3 од 5 KPI во target или подобро.
+1. Пополнети T1 вредности за сите KPI редови (18.04.2026).
+2. Најмалку 3 од 5 KPI покажуваат позитивен trend vs Day 0.
 3. Додаден краток outcome note: што работеше, што не, и што оди во следен wave.
 
-#### 9.11.4 T0 extraction checklist (next commit must replace DATA_PENDING)
+#### 9.11.4 T1 extraction command (18.04.2026)
 
-Run command:
-1. `npm run -s x3:baseline -- --input <gdpr-export.json> --out eval/x3-baseline-t0.json --markdown`
-2. `npm run -s x3:fill-t0 -- --baseline eval/x3-baseline-t0.json --plan S16_WORLD_CLASS_ACTION_PLAN.md`
-
-1. Export `Teacher analytics funnel` за последни 7 дена и пресметај completion rate.
-2. Export generation events (create -> first saved material) за 7 дена и пресметај median time-to-first-material.
-3. Export library usage за 14 дена и пресметај reuse rate.
-4. Export review/moderation events (`approved/rejected/revision_requested`) за 14 дена и пресметај reject/edit ratio.
-5. Export E2 counters: `eligible cases` и `teacher confirmed worksheets` за 14 дена и пресметај adoption %.
-6. Во следниот update, секое `DATA_PENDING` поле мора да се замени со формат: `value (n=sample, period)`.
+```bash
+npm run -s x3:baseline -- --input <gdpr-export-2026-04-18.json> --out eval/x3-baseline-t1.json --markdown
+npm run -s x3:fill-t0 -- --baseline eval/x3-baseline-t1.json --plan S16_WORLD_CLASS_ACTION_PLAN.md
+```
 

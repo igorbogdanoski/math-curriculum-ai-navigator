@@ -544,6 +544,7 @@ const { addNotification } = useNotification();
             {activeTab === 'overview' && (
               <OverviewTab
                 masteryStats={masteryStats}
+                masteryRecords={masteryRecords}
                 results={localResults}
                 weakConcepts={weakConcepts}
                 uniqueStudents={uniqueStudents}

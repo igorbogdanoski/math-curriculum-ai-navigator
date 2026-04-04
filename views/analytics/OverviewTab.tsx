@@ -7,11 +7,13 @@ import {
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { FeedbackTaxonomyCard } from '../../components/analytics/FeedbackTaxonomyCard';
+import { DoKScaffoldCard } from '../../components/analytics/DoKScaffoldCard';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 import { ScoreBar, QuizRow, fmt, formatDate, type ConceptStat, type QuizAggregate } from './shared';
 import type { QuizResult } from '../../services/firestoreService';
+import type { ConceptMastery } from '../../services/firestoreService.types';
 import type { FeedbackReasonBreakdown } from '../../types';
 
 interface MasteryStats {
@@ -23,6 +25,7 @@ interface MasteryStats {
 
 interface OverviewTabProps {
     masteryStats: MasteryStats | null;
+    masteryRecords: ConceptMastery[];
     results: QuizResult[];
     weakConcepts: ConceptStat[];
     uniqueStudents: string[];
@@ -41,6 +44,7 @@ interface OverviewTabProps {
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({
     masteryStats,
+    masteryRecords,
     results,
     weakConcepts,
     uniqueStudents,
@@ -101,6 +105,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                         </div>
                     )}
                 </Card>
+            )}
+
+            {/* Adaptive DoK Scaffolding recommendations */}
+            {masteryRecords.length > 0 && (
+                <DoKScaffoldCard
+                    masteryRecords={masteryRecords}
+                    onOpenGenerator={openGeneratorPanel}
+                    getConceptDetails={getConceptDetails}
+                />
             )}
 
             {showFeedbackTaxonomy && (
