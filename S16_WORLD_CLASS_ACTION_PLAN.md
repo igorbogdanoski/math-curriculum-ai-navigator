@@ -34,7 +34,7 @@
 | A1 | E2E стабилизација на auth-guard тестови | 3 последователни run-ови без flaky во auth-guard suite | ✅ |
 | A2 | Build/Runtime стабилност | 0 compile errors, 0 runtime-crash regression во smoke/e2e | ✅ |
 | A3 | Error-system cleanup во legacy сервиси | Намален број raw `throw new Error` патеки во критични services | ✅ |
-| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 50.00%, 4/8) |
+| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 37.50%, 6/16 — потребни 13 consecutive successes) |
 
 ### ФАЗА B — Performance and Bundle Excellence
 
@@ -72,7 +72,7 @@
 | E2 | Recovery Worksheet pipeline (S16.B) | Auto remedial flow со teacher confirm | ✅ |
 | E3 | Intent Router spike | Мерливо намалена латенција/cost по request | ✅ |
 | E4 | Vertex AI controlled spike | 1 production-safe path под feature flag | ⬜ |
-| E5 | UX enrichment from reference app | Home + Extract + Teacher tools parity (phase-gated) | 🟨 in progress |
+| E5 | UX enrichment from reference app | Home + Extract + Teacher tools parity (phase-gated) | ✅ Wave A+B+C completed |
 
 ---
 
@@ -256,7 +256,7 @@
 
 | ID | Ставка | Тековен статус | Target статус |
 |---|---|---|---|
-| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 4/8, 50.00% | ✅ closed |
+| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 6/16, 37.50% — потребни 13 consecutive successes | ✅ closed |
 | B2 | Route-based lazy loading + мерлив uplift | ✅ closed | ✅ closed |
 | B4 | Lighthouse стабилизација (без NO_FCP) | ⬜ | ✅ closed |
 | C4 | Restore drill + evidence | ✅ closed | ✅ closed — import operation SUCCESSFUL + 5/5 smoke PASS, evidence pack во секција 9.7 |
