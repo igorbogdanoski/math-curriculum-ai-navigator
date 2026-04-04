@@ -494,6 +494,13 @@ C4 се затвора кога:
 2. Да нема нов failure што ќе го ресетира потребниот streak window.
 3. Дури потоа A4 се менува во `✅ closed`.
 
+Operational close path (starting from `4/8`, 04.04.2026):
+1. Користи `workflow_dispatch` на `CI Quality Gate` на тековниот `main` без code changes меѓу run-овите, за да се мери чиста stability baseline.
+2. По секој run, запиши ги 4 полиња од summary: `Window`, `Success`, `Pass rate`, `Target`.
+3. Ако run-от е `success`, продолжи со следниот manual run сè додека rolling window не стигне најмалку `19/20`.
+4. Ако се појави нов `failure`, A4 close attempt се паузира и се отвора root-cause review пред нов streak.
+5. A4 се затвора само кога summary експлицитно покаже `Pass rate >= 95%` на completed window и status check-овите се зелени.
+
 #### N4 (B2 formal close) — статус: CLOSED
 
 Што е потврдено:
