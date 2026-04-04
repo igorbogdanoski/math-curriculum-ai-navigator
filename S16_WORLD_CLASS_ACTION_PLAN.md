@@ -597,11 +597,11 @@ Go одлука: дозволена само ако сите метрики се
 
 | KPI | Baseline (T0) | Target (T1) | Data source | Window |
 |---|---|---|---|---|
-| Task completion rate (teacher flow) | TBD | +10% vs T0 | Teacher analytics funnel | 7d rolling |
-| Time-to-first-material (median) | TBD | -20% vs T0 | generation timestamps | 7d rolling |
-| Material reuse rate | TBD | +15% vs T0 | library usage analytics | 14d rolling |
-| Reject/Edit ratio | TBD | -15% vs T0 | review moderation logs | 14d rolling |
-| Recovery worksheet adoption (E2 path) | TBD | >= 25% од eligible cases | analytics event counters | 14d rolling |
+| Task completion rate (teacher flow) | DATA_PENDING (prod telemetry export not attached in repo) | +10% vs T0 | Teacher analytics funnel | 7d rolling |
+| Time-to-first-material (median) | DATA_PENDING (missing 7d generation timestamp extract) | -20% vs T0 | generation timestamps | 7d rolling |
+| Material reuse rate | DATA_PENDING (missing 14d library usage extract) | +15% vs T0 | library usage analytics | 14d rolling |
+| Reject/Edit ratio | DATA_PENDING (feedback events exist; baseline extract pending) | -15% vs T0 | review moderation logs | 14d rolling |
+| Recovery worksheet adoption (E2 path) | DATA_PENDING (eligible vs confirmed counts not exported yet) | >= 25% од eligible cases | analytics event counters | 14d rolling |
 
 #### 9.11.2 Measurement protocol
 
@@ -615,4 +615,13 @@ Go одлука: дозволена само ако сите метрики се
 1. Пополнети baseline (T0) и post (T1) вредности за сите KPI редови.
 2. Најмалку 3 од 5 KPI во target или подобро.
 3. Додаден краток outcome note: што работеше, што не, и што оди во следен wave.
+
+#### 9.11.4 T0 extraction checklist (next commit must replace DATA_PENDING)
+
+1. Export `Teacher analytics funnel` за последни 7 дена и пресметај completion rate.
+2. Export generation events (create -> first saved material) за 7 дена и пресметај median time-to-first-material.
+3. Export library usage за 14 дена и пресметај reuse rate.
+4. Export review/moderation events (`approved/rejected/revision_requested`) за 14 дена и пресметај reject/edit ratio.
+5. Export E2 counters: `eligible cases` и `teacher confirmed worksheets` за 14 дена и пресметај adoption %.
+6. Во следниот update, секое `DATA_PENDING` поле мора да се замени со формат: `value (n=sample, period)`.
 
