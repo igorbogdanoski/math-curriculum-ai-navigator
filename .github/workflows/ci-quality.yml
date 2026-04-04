@@ -140,14 +140,48 @@ jobs:
             const success = completed.filter((r) => r.conclusion === 'success').length;
             const passRate = total === 0 ? 0 : (success / total) * 100;
             const threshold = 95;
+            const targetSuccessesAt20 = Math.ceil((threshold / 100) * 20); // 19
+            const minConsecutiveNeeded = Math.max(0, targetSuccessesAt20 - success);
+            const closed = total >= 20 && passRate >= threshold;
+
+            // Worst-case estimate if upcoming successful runs push out existing successes from the window.
+            // We can compute this from the current ordered window: [current run, previous runs...].
+            const maxExtraNeeded = (() => {
+              if (total < 20) return minConsecutiveNeeded;
+              let successInWindow = completed.filter((r) => r.conclusion === 'success').length;
+              const window = [...completed.slice(0, 20)];
+              let added = 0;
+              while (successInWindow < targetSuccessesAt20 && added < 200) {
+                const dropped = window.pop();
+                if (dropped?.conclusion === 'success') successInWindow -= 1;
+                window.unshift({ conclusion: 'success' });
+                successInWindow += 1;
+                added += 1;
+              }
+              return added;
+            })();
+
+            const trajectory = minConsecutiveNeeded === maxExtraNeeded
+              ? `${minConsecutiveNeeded}`
+              : `${minConsecutiveNeeded}-${maxExtraNeeded}`;
 
             core.summary
               .addHeading('CI Reliability Baseline')
               .addRaw(`Window: last ${total} completed runs\n\n`)
               .addRaw(`Success: ${success}/${total}\n\n`)
               .addRaw(`Pass rate: ${passRate.toFixed(2)}%\n\n`)
-              .addRaw(`Target: >= ${threshold}%`)
+              .addRaw(`Target: >= ${threshold}%\n\n`)
+              .addRaw(`Remaining consecutive successes (est.): ${trajectory}\n\n`)
+              .addRaw(closed
+                ? 'A4 close trigger: ✅ reached (>=95% over last 20 completed runs)'
+                : 'A4 close trigger: ⏳ pending (needs >=95% over last 20 completed runs)')
               .write();
+
+            if (closed) {
+              core.notice(`A4 close trigger reached: ${success}/20 (${passRate.toFixed(2)}%).`);
+            } else {
+              core.notice(`A4 in progress: ${success}/${total}, pass ${passRate.toFixed(2)}%, remaining consecutive estimate ${trajectory}.`);
+            }
 
             if (total >= 10 && passRate < threshold) {
               core.setFailed(`CI pass rate ${passRate.toFixed(2)}% is below ${threshold}% over the last ${total} runs.`);
