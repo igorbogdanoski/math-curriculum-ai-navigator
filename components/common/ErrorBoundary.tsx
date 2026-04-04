@@ -2,6 +2,7 @@ import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Card } from './Card';
 import { AlertTriangle } from 'lucide-react';
 import { captureException } from '../../services/sentryService';
+import { AppError, ErrorCode } from '../../utils/errors';
 
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -29,7 +30,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // getDerivedStateFromError already set hasError+error; here we add errorInfo for the stack trace UI.
     this.setState({ errorInfo });
     console.error("Uncaught error in ErrorBoundary:", error, errorInfo);
-    captureException(error, { componentStack: errorInfo.componentStack ?? undefined });
+    // Wrap plain render errors so they get app_error_code=RENDER_ERROR in Sentry (not UNCLASSIFIED)
+    const reportError = error instanceof AppError
+      ? error
+      : new AppError(
+          error instanceof Error ? error.message : String(error),
+          ErrorCode.RENDER_ERROR,
+          'Настана грешка при прикажување на компонента.',
+          false,
+        );
+    captureException(reportError, {
+      componentStack: errorInfo.componentStack ?? undefined,
+      originalErrorName: error instanceof Error ? error.name : typeof error,
+    });
   }
 
   handleRefresh = () => {

@@ -13,6 +13,7 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { captureException } from '../../services/sentryService';
+import { AppError, ErrorCode } from '../../utils/errors';
 
 interface Props {
   children: ReactNode;
@@ -34,8 +35,18 @@ export class TabErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
     console.error(`[TabErrorBoundary:${this.props.tabName ?? 'unknown'}]`, error, info);
-    captureException(error instanceof Error ? error : new Error(String(error)), {
+    // Wrap as RENDER_ERROR so Sentry tags it with app_error_code (not UNCLASSIFIED)
+    const reportError = error instanceof AppError
+      ? error
+      : new AppError(
+          error instanceof Error ? error.message : String(error),
+          ErrorCode.RENDER_ERROR,
+          'Настана грешка при прикажување на табот.',
+          false,
+        );
+    captureException(reportError, {
       componentStack: info.componentStack ?? undefined,
+      tabName: this.props.tabName ?? 'unknown',
     });
   }
 

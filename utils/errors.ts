@@ -28,6 +28,9 @@ export enum ErrorCode {
   FIRESTORE_WRITE = 'FIRESTORE_WRITE',
   FIRESTORE_READ = 'FIRESTORE_READ',
 
+  // UI / React render errors (caught by ErrorBoundary)
+  RENDER_ERROR = 'RENDER_ERROR',
+
   // Generic
   UNKNOWN = 'UNKNOWN',
 }

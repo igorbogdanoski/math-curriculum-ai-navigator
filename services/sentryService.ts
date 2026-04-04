@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { onCLS, onFCP, onINP, onLCP, onTTFB, type Metric } from 'web-vitals';
+import { ErrorCode, toAppError } from '../utils/errors';
 
 /**
  * Sentry Application Monitoring + Core Web Vitals
@@ -61,6 +62,55 @@ export function clearSentryUser(): void {
   Sentry.setUser(null);
 }
 
+// ─── Error classification ─────────────────────────────────────────────────────
+
+/**
+ * Maps any thrown value → { code, retryable, errorType }.
+ * Ensures every captureException call emits a specific app_error_code tag
+ * so Sentry UNCLASSIFIED ratio stays below the L2 threshold (≤15%).
+ *
+ * Priority order:
+ *   1. AppError subclasses (already have .code + .retryable)
+ *   2. ApiError subclasses (detect by .name, map to ErrorCode)
+ *   3. Plain Error / unknown → toAppError() heuristic classifier
+ */
+function classifyError(error: unknown): {
+  code: string;
+  retryable: boolean;
+  errorType: 'app_error' | 'api_error' | 'untyped_error';
+  errorName?: string;
+  userMessage?: string;
+} {
+  // 1) Already a typed AppError
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    'retryable' in error
+  ) {
+    const e = error as { code: string; retryable: boolean; name?: string; userMessage?: string };
+    return { code: e.code, retryable: e.retryable, errorType: 'app_error', errorName: e.name, userMessage: e.userMessage };
+  }
+
+  // 2) ApiError subclasses (no .code but have a discriminating .name)
+  if (error instanceof Error) {
+    switch (error.name) {
+      case 'RateLimitError': return { code: ErrorCode.QUOTA_EXHAUSTED,    retryable: false, errorType: 'api_error', errorName: error.name };
+      case 'AuthError':      return { code: ErrorCode.NOT_AUTHENTICATED,  retryable: false, errorType: 'api_error', errorName: error.name };
+      case 'ServerError':    return { code: ErrorCode.AI_UNAVAILABLE,     retryable: true,  errorType: 'api_error', errorName: error.name };
+      case 'BadInputError':  return { code: ErrorCode.VALIDATION_FAILED,  retryable: false, errorType: 'api_error', errorName: error.name };
+      case 'ApiError':       return { code: ErrorCode.AI_UNAVAILABLE,     retryable: true,  errorType: 'api_error', errorName: error.name };
+      default: break;
+    }
+
+    // 3) Heuristic classification via toAppError
+    const classified = toAppError(error);
+    return { code: classified.code, retryable: classified.retryable, errorType: 'untyped_error', errorName: error.name };
+  }
+
+  return { code: ErrorCode.UNKNOWN, retryable: false, errorType: 'untyped_error' };
+}
+
 /** Manually report a caught error (e.g. in catch blocks). */
 export function captureException(
   error: unknown,
@@ -68,31 +118,18 @@ export function captureException(
 ): void {
   if (!import.meta.env.VITE_SENTRY_DSN) return;
 
-  const isTypedAppError =
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    'retryable' in error;
-
-  const appError = isTypedAppError
-    ? (error as { code: string; retryable: boolean; name?: string; userMessage?: string })
-    : null;
+  const { code, retryable, errorType, errorName, userMessage } = classifyError(error);
 
   const tags: Record<string, string> = {
-    error_type: appError ? 'app_error' : 'untyped_error',
+    error_type: errorType,
+    app_error_code: code,           // always present — eliminates UNCLASSIFIED at source
+    app_error_retryable: String(retryable),
   };
-
-  if (appError) {
-    tags.app_error_code = appError.code;
-    tags.app_error_retryable = String(appError.retryable);
-    if (appError.name) {
-      tags.app_error_name = appError.name;
-    }
-  }
+  if (errorName) tags.app_error_name = errorName;
 
   const extra = {
     ...(context ?? {}),
-    ...(appError?.userMessage ? { appErrorUserMessage: appError.userMessage } : {}),
+    ...(userMessage ? { appErrorUserMessage: userMessage } : {}),
   };
 
   Sentry.captureException(error, { tags, extra });

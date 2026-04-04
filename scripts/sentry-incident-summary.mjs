@@ -7,7 +7,7 @@ const project = process.env.SENTRY_PROJECT;
 const statsPeriod = process.env.SENTRY_STATS_PERIOD || '14d';
 const issueQuery = process.env.SENTRY_ISSUE_QUERY || 'is:unresolved';
 const issueLimit = Number(process.env.SENTRY_ISSUE_LIMIT || 100);
-const unclassifiedWarnPct = Number(process.env.SENTRY_UNCLASSIFIED_WARN_PCT || 30);
+const unclassifiedWarnPct = Number(process.env.SENTRY_UNCLASSIFIED_WARN_PCT || 15); // L2 target: ≤15%
 
 function appendSummary(markdown) {
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
