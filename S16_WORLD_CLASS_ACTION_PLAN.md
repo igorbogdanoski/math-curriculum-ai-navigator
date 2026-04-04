@@ -620,6 +620,7 @@ Go одлука: дозволена само ако сите метрики се
 
 Run command:
 1. `npm run -s x3:baseline -- --input <gdpr-export.json> --out eval/x3-baseline-t0.json --markdown`
+2. `npm run -s x3:fill-t0 -- --baseline eval/x3-baseline-t0.json --plan S16_WORLD_CLASS_ACTION_PLAN.md`
 
 1. Export `Teacher analytics funnel` за последни 7 дена и пресметај completion rate.
 2. Export generation events (create -> first saved material) за 7 дена и пресметај median time-to-first-material.
