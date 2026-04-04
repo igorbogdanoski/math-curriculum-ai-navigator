@@ -34,7 +34,7 @@
 | A1 | E2E стабилизација на auth-guard тестови | 3 последователни run-ови без flaky во auth-guard suite | ✅ |
 | A2 | Build/Runtime стабилност | 0 compile errors, 0 runtime-crash regression во smoke/e2e | ✅ |
 | A3 | Error-system cleanup во legacy сервиси | Намален број raw `throw new Error` патеки во критични services | ✅ |
-| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 37.50%, 6/16 — потребни 13 consecutive successes) |
+| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 33.33%, 6/18 — потребни 13 consecutive successes) |
 
 ### ФАЗА B — Performance and Bundle Excellence
 
@@ -71,7 +71,7 @@
 | E1 | Video Extractor MVP (S16.A) | URL -> preview -> confirm -> save работи стабилно | ✅ |
 | E2 | Recovery Worksheet pipeline (S16.B) | Auto remedial flow со teacher confirm | ✅ |
 | E3 | Intent Router spike | Мерливо намалена латенција/cost по request | ✅ |
-| E4 | Vertex AI controlled spike | 1 production-safe path под feature flag | ⬜ |
+| E4 | Vertex AI controlled spike | 1 production-safe path под feature flag | ✅ implemented (04.04.2026, shadow mode gated) |
 | E5 | UX enrichment from reference app | Home + Extract + Teacher tools parity (phase-gated) | ✅ Wave A+B+C completed |
 
 ---
@@ -256,7 +256,7 @@
 
 | ID | Ставка | Тековен статус | Target статус |
 |---|---|---|---|
-| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 6/16, 37.50% — потребни 13 consecutive successes | ✅ closed |
+| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 6/18, 33.33% — потребни 13 consecutive successes | ✅ closed |
 | B2 | Route-based lazy loading + мерлив uplift | ✅ closed | ✅ closed |
 | B4 | Lighthouse стабилизација (без NO_FCP) | ⬜ | ✅ closed |
 | C4 | Restore drill + evidence | ✅ closed | ✅ closed — import operation SUCCESSFUL + 5/5 smoke PASS, evidence pack во секција 9.7 |
@@ -375,6 +375,7 @@ EOD формат (обврзен):
 - 03.04.2026 — **C4 статус: ⏸️ DEFERRED** — repo artifacts (runbook, `firestore-restore-drill.yml`, `check-backup-readiness.mjs`, CI guardrail) се комплетни; external execution blocker: Firestore backup bucket (`gs://ai-navigator-ee967-backups/firestore/`) и изолиран GCP restore проект не се провизионирани. Ова е инфраструктурен prerequisite, не код. C4 ќе се затвори кога ќе се постави GCS bucket + restore project. Следен приоритет: **E3** (Intent Router spike) или **A4** финална валидација.
 - 04.04.2026 — **C4 статус: ✅ CLOSED** — Firestore import operation `projects/ai-navigator-ee967/databases/(default)/operations/AiAzM2ZjNDI0MTY4M2QtZmE3Yi00MmQ0LWJhNDAtMTcxNDYyMWQkGnNlbmlsZXBpcAkKMxI` е `SUCCESSFUL` (667/667 docs), и smoke validation е 5/5 PASS (login, planner, library/cache, analytics, error monitoring). Evidence pack е запишан во секција 9.7.
 - **E3 статус: ✅ ЗАТВОРЕНА** — `services/gemini/intentRouter.ts` (NEW): `AITaskType`, `AITaskComplexity`, feature flag via `localStorage[intent_router_enabled]`, `shouldUseLiteModel()`, `logRouterDecision()`, `getRouterStats()`. `LITE_MODEL='gemini-2.0-flash-lite'` додаден во `core.ts`. `skipTierOverride` param додаден на `callGeminiProxy`. Router применет на 5 lite call sites: `generateSmartQuizTitle`, `parsePlannerInput`, `generateAnalogy`, `diagnoseMisconception` (конвертирана од raw fetch), `explainConcept`. Settings toggle додаден во `SettingsView.tsx`. 14/14 нови unit tests зелени. Вкупно 408/408 тестови зелени. TypeScript: 0 грешки.
+- 04.04.2026 — **E4 статус: ✅ IMPLEMENTED (controlled spike)** — воведен е `vertex_ai_shadow_enabled` feature flag и production-safe shadow path: `services/gemini/core.ts` прави fire-and-forget shadow call кон `/api/vertex-shadow` само по успешен Gemini response (без влијание врз production output). Додаден е `services/gemini/vertexShadow.ts` со rolling shadow log (max 50), status tracking (`ok/error/not_configured`) и compare aggregation (`latency/success/error/cost`). `views/SettingsView.tsx` има toggle + compare report panel + clear log action. Validation: `npx tsc --noEmit` PASS. Commit: `68ac145`.
 
 ---
 
@@ -403,7 +404,7 @@ EOD формат (обврзен):
 
 | ID | Приоритет | Owner | KPI threshold | Exit evidence |
 |---|---|---|---|---|
-| X1 | E4 Vertex shadow path | @ai-core | >= 1 gated production-safe path зад feature flag | compare report: quality/latency/cost/failure-rate |
+| X1 | E4 Vertex shadow path | @ai-core | >= 1 gated production-safe path зад feature flag | ✅ closed (feature flag + shadow log/report UI shipped on 04.04.2026) |
 | X2 | E4 go/no-go board | @pm + @ai-core | јасни launch thresholds и rollback trigger | signed decision note + rollout playbook |
 | X3 | E5 outcome metrics | @product + @frontend | measurable uplift во task-completion и reuse | before/after KPI table по wave |
 
