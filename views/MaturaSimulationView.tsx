@@ -448,9 +448,9 @@ export const MaturaSimulationView: React.FC = () => {
               <MathRenderer text={q.questionText} />
             </div>
 
-            {/* Choices */}
+            {/* Choices (MC only) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {CHOICES.map((choice) => {
+              {q.choices && Object.keys(q.choices).length > 0 && CHOICES.map((choice) => {
                 const selected = answers[q.id] === choice;
                 return (
                   <button
@@ -469,7 +469,7 @@ export const MaturaSimulationView: React.FC = () => {
                       {choice}
                     </span>
                     <span className="text-sm font-medium">
-                      <MathRenderer text={q.choices[choice]} />
+                      <MathRenderer text={q.choices?.[choice] ?? ''} />
                     </span>
                   </button>
                 );
@@ -637,12 +637,12 @@ export const MaturaSimulationView: React.FC = () => {
                     <p className="text-xs mt-0.5">
                       {userAns
                         ? <span className={correct ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
-                            Твој одговор: {userAns} — {q.choices[userAns]}
+                            Твој одговор: {userAns}{q.choices?.[userAns as keyof typeof q.choices] ? ` — ${q.choices[userAns as keyof typeof q.choices]}` : ''}
                           </span>
                         : <span className="text-gray-400 italic">Не одговорено</span>}
                       {!correct && (
                         <span className="ml-2 text-emerald-600 font-semibold">
-                          Точно: {q.correctAnswer} — {q.choices[q.correctAnswer]}
+                          Точно: {q.correctAnswer}{q.choices?.[q.correctAnswer as keyof typeof q.choices] ? ` — ${q.choices[q.correctAnswer as keyof typeof q.choices]}` : ''}
                         </span>
                       )}
                     </p>
