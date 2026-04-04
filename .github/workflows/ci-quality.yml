@@ -1,0 +1,131 @@
+name: CI Quality Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  quality-gate:
+    name: Typecheck + Unit + Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm run -s test
+
+      - name: Build (stub env)
+        run: npm run -s build
+        env:
+          VITE_FIREBASE_API_KEY: dummy-key
+          VITE_FIREBASE_AUTH_DOMAIN: dummy.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: dummy-project
+          VITE_FIREBASE_STORAGE_BUCKET: dummy.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+          VITE_FIREBASE_APP_ID: "1:000000000000:web:0000000000000000"
+          VITE_GEMINI_API_KEY: dummy-gemini-key
+
+      - name: Enforce performance budget
+        run: npm run -s perf:budget
+
+      - name: Backup readiness check
+        run: npm run -s backup:readiness-check
+
+      - name: Eval golden-set schema validation
+        run: npm run -s eval:validate-schema
+
+      - name: Eval quality smoke gate
+        run: npm run -s eval:smoke-gate
+
+      - name: Prompt registry drift check
+        run: npm run -s prompts:check
+
+  reliability-baseline:
+    name: Reliability Baseline (last 20 runs)
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [quality-gate]
+
+    steps:
+      - name: Compute rolling pass rate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const workflowId = 'ci-quality.yml';
+
+            const runsResp = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: workflowId,
+              per_page: 50,
+              status: 'completed',
+            });
+
+            const completed = runsResp.data.workflow_runs
+              .filter((r) => r.conclusion === 'success' || r.conclusion === 'failure')
+              .slice(0, 20);
+
+            const total = completed.length;
+            const success = completed.filter((r) => r.conclusion === 'success').length;
+            const passRate = total === 0 ? 0 : (success / total) * 100;
+            const threshold = 95;
+
+            core.summary
+              .addHeading('CI Reliability Baseline')
+              .addRaw(`Window: last ${total} completed runs\\n\\n`)
+              .addRaw(`Success: ${success}/${total}\\n\\n`)
+              .addRaw(`Pass rate: ${passRate.toFixed(2)}%\\n\\n`)
+              .addRaw(`Target: >= ${threshold}%`) 
+              .write();
+
+            if (total >= 10 && passRate < threshold) {
+              core.setFailed(`CI pass rate ${passRate.toFixed(2)}% is below ${threshold}% over the last ${total} runs.`);
+            }
+
+  incident-observability-summary:
+    name: Incident Observability Summary (Sentry)
+    runs-on: ubuntu-latest
+    if: always() && github.event_name != 'pull_request'
+    needs: [quality-gate]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate incident summary
+        run: npm run -s obs:incident-summary
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_STATS_PERIOD: 14d
+          SENTRY_ISSUE_QUERY: is:unresolved
+          SENTRY_UNCLASSIFIED_WARN_PCT: "30"
