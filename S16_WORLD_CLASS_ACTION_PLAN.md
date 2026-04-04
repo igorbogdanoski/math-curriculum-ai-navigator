@@ -412,9 +412,9 @@ EOD формат (обврзен):
 
 | ID | Приоритет | Owner | KPI threshold | Exit evidence |
 |---|---|---|---|---|
-| L1 | Reliability SLO dashboard | @platform | weekly SLO reporting live | crash-free, p95 latency, AI failover, flaky-rate dashboard |
-| L2 | Incident taxonomy hardening | @platform + @qa | UNCLASSIFIED ratio <= 15% | sentry incident summary trend |
-| L3 | E5 national-scale hardening | @product + @eng | no regression on CI/perf/security gates during scale rollout | monthly quality report |
+| L1 | Reliability SLO dashboard | @platform | weekly SLO reporting live | ✅ closed (04.04.2026, commit `a5282ab`) — 5-panel RAG dashboard live, `/slo` route, admin nav |
+| L2 | Incident taxonomy hardening | @platform + @qa | UNCLASSIFIED ratio <= 15% | ✅ closed (04.04.2026, commit `a8d3c4f`) — classifyError() emits app_error_code на СЕКОЈ captureException; RENDER_ERROR за ErrorBoundary; ApiError subclasses mapped; threshold 30%→15% |
+| L3 | E5 national-scale hardening | @product + @eng | no regression on CI/perf/security gates during scale rollout | 🟨 in progress — started 04.04.2026, детали во секција 9.12 |
 
 ### 9.4 Start Today (оперативен старт)
 
@@ -546,6 +546,8 @@ Final perf snapshot:
 | 2026-04-04 | X2 kickoff | c0e33cd | ✅ quality-gate / ❌ reliability-baseline | 6/20, 30.00% | 13-18 | X2 thresholds draft |
 | 2026-04-04 | X2 plan sync | ba364ea | ✅ quality-gate / ❌ reliability-baseline | 3/20, 15.00% | 16-18 | finalize go/no-go board |
 | 2026-04-04 | X2 finalized + X3 kickoff | 0a3a562 | ✅ quality-gate / ❌ reliability-baseline | 3/20, 15.00% | 16-18 | fill X3 baseline metrics |
+| 2026-04-04 | L1 SLO Dashboard | a5282ab | ✅ quality-gate | — | — | L2 incident taxonomy |
+| 2026-04-04 | L2 incident taxonomy hardening | a8d3c4f | ✅ quality-gate | — | — | L3 national-scale hardening |
 
 ### 9.10 X2 Go/No-Go Board (E4 Vertex shadow)
 
@@ -623,4 +625,60 @@ Go одлука: дозволена само ако сите метрики се
 npm run -s x3:baseline -- --input <gdpr-export-2026-04-18.json> --out eval/x3-baseline-t1.json --markdown
 npm run -s x3:fill-t0 -- --baseline eval/x3-baseline-t1.json --plan S16_WORLD_CLASS_ACTION_PLAN.md
 ```
+
+---
+
+### 9.12 L3 — E5 National-Scale Hardening
+
+**Статус:** 🟨 IN PROGRESS — started 04.04.2026
+
+**Цел:** Да се обезбеди дека апликацијата издржува национален obim (повеќе училишта, повеќе наставници, повеќе паралелни класи) без регресија на CI/perf/security gate-ови. Не нови функции — само hardening на постоечките за scale.
+
+#### 9.12.1 Scope (4 столба)
+
+| ID | Столб | Опис | KPI |
+|---|---|---|---|
+| L3-A | Firestore query scalability | Сите teacher queries да работат со 1000+ records без timeout; индекси потврдени | Нема Firestore quota error / timeout во CI smoke при симулиран голем dataset |
+| L3-B | Bundle + perf budget при scale | Perf budget да остане зелен при додавање нови наставници / класи / материјали | `npm run perf:budget` зелен; LCP ≤ 2.5s на Lighthouse |
+| L3-C | Auth/App Check при concurrent load | App Check + auth flow стабилен при паралелни login-и; нема race condition | E2E auth-guard suite: 3× consecutive pass при паралелна симулација |
+| L3-D | CI gate non-regression check | Ниту еден постоечки CI gate да не регресира при scale feature commits | `ci-quality.yml` quality-gate зелен на секој L3 commit |
+
+#### 9.12.2 Firestore index audit (L3-A)
+
+Критични queries кои треба потврдени composite индекси:
+
+| Collection | Query pattern | Index потребен |
+|---|---|---|
+| `quiz_results` | `where(classId).orderBy(createdAt)` | `classId ASC, createdAt DESC` |
+| `concept_mastery` | `where(teacherUid).where(conceptId).orderBy(lastScore)` | `teacherUid ASC, conceptId ASC, lastScore ASC` |
+| `cached_ai_materials` | `where(ownerUid).where(status).orderBy(createdAt)` | `ownerUid ASC, status ASC, createdAt DESC` |
+| `forum_threads` | `where(isPinned).orderBy(createdAt)` | `isPinned ASC, createdAt DESC` |
+| `assignments` | `where(classId).where(dueDate)` | `classId ASC, dueDate ASC` |
+
+Акција: верификација дека `firestore.indexes.json` ги покрива сите горни patterns.
+
+#### 9.12.3 Load simulation protocol (L3-A)
+
+```bash
+# Simulate 500 concept_mastery records per teacher (Firestore emulator)
+npm run test:e2e -- --grep "analytics.*pagination"
+# Verify TeacherAnalyticsView handles 1000+ quiz_results without timeout
+npm run test:e2e -- --grep "teacher-analytics.*large-dataset"
+```
+
+#### 9.12.4 Definition of Done (L3)
+
+| Чекор | Evidence |
+| --- | --- |
+| Firestore indexes reviewed + `firestore.indexes.json` ажуриран | commit со index additions |
+| `npm run perf:budget` зелен по L3 commits | CI artifact |
+| Auth-guard e2e: 3× consecutive PASS | CI run IDs |
+| `ci-quality.yml` quality-gate зелен на сите L3 commits | CI summary |
+| Краток L3 outcome note во оваа секција | датум + наод |
+
+#### 9.12.5 Execution log (L3)
+
+| Датум | Акција | Commit | Резултат |
+| --- | --- | --- | --- |
+| 2026-04-04 | L3 kicked off — scope и план дефинирани | — | план во 9.12 |
 
