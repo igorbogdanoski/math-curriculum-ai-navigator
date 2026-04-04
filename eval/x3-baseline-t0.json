@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-04-04T13:24:03.071Z",
+  "windows": {
+    "sevenDays": "7d",
+    "fourteenDays": "14d"
+  },
+  "sample": {
+    "events7": 0,
+    "events14": 0,
+    "materials14": 0,
+    "approvals14": 0,
+    "eligibleRecovery14": 0
+  },
+  "kpis": {
+    "taskCompletionRatePct_7d": null,
+    "timeToFirstMaterialMedianMs_7d": null,
+    "materialReuseRatePct_14d": null,
+    "rejectEditRatio_14d": null,
+    "recoveryWorksheetAdoptionPct_14d": null
+  },
+  "notes": [
+    "Task completion rate is computed as accept/actionable event share in 7d.",
+    "Time-to-first-material uses first event to first accept per material in 7d.",
+    "Reuse proxy counts sourceQuizId/approvalRef/isForked markers in materials.",
+    "Reject/Edit ratio is reject_* divided by edit_* events in 14d.",
+    "Recovery adoption uses worksheet_approvals over generated recovery worksheets in 14d."
+  ]
+}

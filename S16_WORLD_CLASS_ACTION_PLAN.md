@@ -597,11 +597,11 @@ Go одлука: дозволена само ако сите метрики се
 
 | KPI | Baseline (T0) | Target (T1) | Data source | Window |
 |---|---|---|---|---|
-| Task completion rate (teacher flow) | DATA_PENDING (prod telemetry export not attached in repo) | +10% vs T0 | Teacher analytics funnel | 7d rolling |
-| Time-to-first-material (median) | DATA_PENDING (missing 7d generation timestamp extract) | -20% vs T0 | generation timestamps | 7d rolling |
-| Material reuse rate | DATA_PENDING (missing 14d library usage extract) | +15% vs T0 | library usage analytics | 14d rolling |
-| Reject/Edit ratio | DATA_PENDING (feedback events exist; baseline extract pending) | -15% vs T0 | review moderation logs | 14d rolling |
-| Recovery worksheet adoption (E2 path) | DATA_PENDING (eligible vs confirmed counts not exported yet) | >= 25% од eligible cases | analytics event counters | 14d rolling |
+| Task completion rate (teacher flow) | DATA_UNAVAILABLE | +10% vs T0 | Teacher analytics funnel | 7d rolling |
+| Time-to-first-material (median) | DATA_UNAVAILABLE | -20% vs T0 | generation timestamps | 7d rolling |
+| Material reuse rate | DATA_UNAVAILABLE | +15% vs T0 | library usage analytics | 14d rolling |
+| Reject/Edit ratio | DATA_UNAVAILABLE | -15% vs T0 | review moderation logs | 14d rolling |
+| Recovery worksheet adoption (E2 path) | DATA_UNAVAILABLE | >= 25% од eligible cases | analytics event counters | 14d rolling |
 
 #### 9.11.2 Measurement protocol
 
