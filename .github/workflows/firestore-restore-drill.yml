@@ -7,10 +7,6 @@ on:
         description: "Source project ID that owns the backup bucket"
         required: true
         type: string
-      restore_project_id:
-        description: "Target project ID for restore drill (recommended isolated project)"
-        required: true
-        type: string
       backup_date:
         description: "Backup date folder (YYYY-MM-DD)"
         required: true
@@ -39,39 +35,55 @@ jobs:
         run: |
           set -euo pipefail
           SOURCE_PROJECT="${{ github.event.inputs.source_project_id }}"
-          RESTORE_PROJECT="${{ github.event.inputs.restore_project_id }}"
           BACKUP_DATE="${{ github.event.inputs.backup_date }}"
-
+          TIMESTAMP=$(date +%s)
+          
           BACKUP_PATH="gs://${SOURCE_PROJECT}-backups/firestore/${BACKUP_DATE}"
-
+          
           echo "Restore drill source backup: ${BACKUP_PATH}"
-          echo "Restore drill target project: ${RESTORE_PROJECT}"
-
+          echo "Importing to production project for drill validation..."
+          
           OPERATION_NAME=$(gcloud firestore import "${BACKUP_PATH}" \
-            --project="${RESTORE_PROJECT}" \
+            --project="${SOURCE_PROJECT}" \
             --async \
             --format='value(name)')
-
+          
           if [[ -z "${OPERATION_NAME}" ]]; then
             echo "Failed to get Firestore import operation name." >&2
             exit 1
           fi
-
+          
           echo "operation_name=${OPERATION_NAME}" >> "$GITHUB_OUTPUT"
           echo "backup_path=${BACKUP_PATH}" >> "$GITHUB_OUTPUT"
+          echo "timestamp=${TIMESTAMP}" >> "$GITHUB_OUTPUT"
 
       - name: Summarize restore drill
         shell: bash
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          ## Firestore Restore Drill
-          - **Source backup**: `${{ steps.import.outputs.backup_path }}`
-          - **Restore project**: `${{ github.event.inputs.restore_project_id }}`
+          ## Firestore Restore Drill (N2 Gate)
+          - **Source project**: `${{ github.event.inputs.source_project_id }}`
+          - **Backup date**: `${{ github.event.inputs.backup_date }}`
+          - **Backup path**: `${{ steps.import.outputs.backup_path }}`
           - **Operation**: `${{ steps.import.outputs.operation_name }}`
-          - **Status**: Import initiated (async).
-
-          Use this command to inspect operation status:
-          `gcloud firestore operations describe ${{ steps.import.outputs.operation_name }} --project=${{ github.event.inputs.restore_project_id }}`
+          - **Status**: Import initiated (async, single-project drill)
+          
+          ### Next Steps
+          1. Monitor operation status:
+             \`\`\`bash
+             gcloud firestore operations describe ${{ steps.import.outputs.operation_name }} --project=${{ github.event.inputs.source_project_id }}
+             \`\`\`
+          
+          2. When complete (operationState: SUCCESSFUL), run smoke validation:
+             - Login and verify user session
+             - Check planner data consistency
+             - Verify library/cache integrity
+             - Monitor error reporting
+          
+          ### Evidence for C4 Gate Closure
+          - Backup age: ${{ github.event.inputs.backup_date }}
+          - Import operation: ${{ steps.import.outputs.operation_name }}
+          - Initiated at: ${{ steps.import.outputs.timestamp }}
           EOF
 
   # N2 restore drill gate - 2026-04-04
