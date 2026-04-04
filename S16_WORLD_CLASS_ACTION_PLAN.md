@@ -681,4 +681,5 @@ npm run test:e2e -- --grep "teacher-analytics.*large-dataset"
 | Датум | Акција | Commit | Резултат |
 | --- | --- | --- | --- |
 | 2026-04-04 | L3 kicked off — scope и план дефинирани | — | план во 9.12 |
+| 2026-04-04 | L3-A Firestore index audit + 9 missing indexes | 53fa832 | indexes 24→33; forum_threads+conceptId/deleted/createdAt, forum_replies, ai_material_feedback_events, cached_ai_materials(archivedAt), chat_sessions, material_feedback, national_library combos ✅ |
 
