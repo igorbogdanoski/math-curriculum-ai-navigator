@@ -146,9 +146,9 @@
       "topic": "Funksioni linear",
       "topicArea": "analiza",
       "conceptIds": [],
-      "imageUrls": [],
+      "imageUrls": ["data/matura/images/2025/august/q07-fig1.png"],
       "hasImage": true,
-      "imageDescription": "Grafiku i funksionit linear në sistemin koordinativ, kalon nëpër pikat (1,0) dhe (0,3).",
+      "imageDescription": "Sistemi koordinativ (x: -2 deri 4, y: -1 deri 4). Vijë e kuqe me pjerrësi negative kalon nëpër pikat (0, 3) dhe (1, 0), duke paraqitur funksionin y = -3x + 3.",
       "dokLevel": 2
     },
     {
