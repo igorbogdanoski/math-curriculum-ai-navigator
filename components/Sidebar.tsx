@@ -76,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         '/explore', '/graph', '/roadmap',
         '/planner', '/annual-planner', '/annual-gallery',
         '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
-        '/matura', '/test-review', '/live', '/data-viz',
+        '/matura', '/matura-library', '/test-review', '/live', '/data-viz',
         '/academy', '/my-profile', '/my-progress', '/portfolio',
         '/national-library', '/gallery', '/favorites', '/reports/coverage',
       ];
@@ -156,7 +156,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/vision-assessment" currentPath={currentPath} icon={ICONS.camera} label={t("nav.visionAssessment")} onClick={onClose} badge="NEW" />
               <NavItem path="/test-generator" currentPath={currentPath} icon={ICONS.assessment} label={t("nav.testgenerator")} onClick={onClose} />
               <NavItem path="/grade-book" currentPath={currentPath} icon={ICONS.gradeBook} label="Тетратка за оценки" onClick={onClose} badge="NEW" />
-              <NavItem path="/matura" currentPath={currentPath} icon={ICONS.education} label="Симулација матура" onClick={onClose} badge="ДИМ" />
+              <NavItem path="/matura-library" currentPath={currentPath} icon={ICONS.education} label="Библиотека матура" onClick={onClose} badge="ДИМ" />
+              <NavItem path="/matura" currentPath={currentPath} icon={ICONS.assessment} label="Симулација матура" onClick={onClose} />
               <NavItem path="/test-review" currentPath={currentPath} icon={ICONS.camera} label="AI Прегледувач" onClick={onClose} badge="NEW" />
               <NavItem path="/live/host" currentPath={currentPath} icon={ICONS.live} label="Час во живо" onClick={onClose} badge="LIVE" />
               <NavItem path="/data-viz" currentPath={currentPath} icon={ICONS.chart} label="DataViz Studio" onClick={onClose} badge="NEW" />
