@@ -406,7 +406,7 @@ EOD формат (обврзен):
 |---|---|---|---|---|
 | X1 | E4 Vertex shadow path | @ai-core | >= 1 gated production-safe path зад feature flag | ✅ closed (feature flag + shadow log/report UI shipped on 04.04.2026) |
 | X2 | E4 go/no-go board | @pm + @ai-core | јасни launch thresholds и rollback trigger | 🟨 in progress (threshold table + rollback protocol below) |
-| X3 | E5 outcome metrics | @product + @frontend | measurable uplift во task-completion и reuse | before/after KPI table по wave |
+| X3 | E5 outcome metrics | @product + @frontend | measurable uplift во task-completion и reuse | 🟨 in progress (baseline table + measurement windows below) |
 
 ### 9.3 LATER (21-45 дена)
 
@@ -547,6 +547,7 @@ Final perf snapshot:
 |---|---|---|---|---|---|---|
 | 2026-04-04 | X2 kickoff | c0e33cd | ✅ quality-gate / ❌ reliability-baseline | 6/20, 30.00% | 13-18 | X2 thresholds draft |
 | 2026-04-04 | X2 plan sync | ba364ea | ✅ quality-gate / ❌ reliability-baseline | 3/20, 15.00% | 16-18 | finalize go/no-go board |
+| 2026-04-04 | X2 finalized + X3 kickoff | 0a3a562 | ✅ quality-gate / ❌ reliability-baseline | 3/20, 15.00% | 16-18 | fill X3 baseline metrics |
 
 ### 9.10 X2 Go/No-Go Board (E4 Vertex shadow)
 
@@ -587,4 +588,31 @@ Go одлука: дозволена само ако сите метрики се
 2. Verify: изврши `Typecheck + Unit + Build` и 1 smoke run.
 3. Record: запиши incident note (timestamp, trigger, impact, mitigation) во 9.9 log.
 4. Re-entry: повторен rollout е дозволен само со root-cause fix + 2 зелени run-ови.
+
+### 9.11 X3 Outcome Metrics Baseline (E5)
+
+Статус: ACTIVE (baseline capture started)
+
+#### 9.11.1 KPI table (before/after)
+
+| KPI | Baseline (T0) | Target (T1) | Data source | Window |
+|---|---|---|---|---|
+| Task completion rate (teacher flow) | TBD | +10% vs T0 | Teacher analytics funnel | 7d rolling |
+| Time-to-first-material (median) | TBD | -20% vs T0 | generation timestamps | 7d rolling |
+| Material reuse rate | TBD | +15% vs T0 | library usage analytics | 14d rolling |
+| Reject/Edit ratio | TBD | -15% vs T0 | review moderation logs | 14d rolling |
+| Recovery worksheet adoption (E2 path) | TBD | >= 25% од eligible cases | analytics event counters | 14d rolling |
+
+#### 9.11.2 Measurement protocol
+
+1. T0 (baseline): последни 7/14 дена пред broad E5 rollout.
+2. T1 (post): првите 7/14 дена по rollout stage што вклучува E5 tools.
+3. Секој KPI мора да има ист data source за T0 и T1 (без мешање извори).
+4. Ако недостига telemetry за KPI, статусот останува `TBD` и не е closeable.
+
+#### 9.11.3 Exit rule for X3
+
+1. Пополнети baseline (T0) и post (T1) вредности за сите KPI редови.
+2. Најмалку 3 од 5 KPI во target или подобро.
+3. Додаден краток outcome note: што работеше, што не, и што оди во следен wave.
 
