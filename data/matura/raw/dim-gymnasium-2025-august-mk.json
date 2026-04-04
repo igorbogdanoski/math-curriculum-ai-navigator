@@ -1,0 +1,415 @@
+{
+  "exam": {
+    "id": "dim-gymnasium-2025-august-mk",
+    "year": 2025,
+    "session": "august",
+    "track": "gymnasium",
+    "gradeLevel": 13,
+    "language": "mk",
+    "durationMinutes": 180,
+    "title": "Државна матура — Гимназиско — август 2025",
+    "hasOfficialKey": true
+  },
+  "questions": [
+    {
+      "questionNumber": 1,
+      "part": 1,
+      "points": 1,
+      "questionText": "Кој од дадените искази е негација на исказот: $3<2$ или $3$ е прост број?",
+      "choices": {
+        "А": "$3 \\ge 2$ или $3$ е прост број",
+        "Б": "$3 \\ge 2$ или $3$ не е прост број",
+        "В": "$3 \\ge 2$ и $3$ не е прост број",
+        "Г": "$3 \\ge 2$ и $3$ е прост број"
+      },
+      "correctAnswer": "В",
+      "topic": "Искази",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 2,
+      "part": 1,
+      "points": 1,
+      "questionText": "Кој од следниве броеви е имагинарен дел на комплексниот број $z = -3 + 5i$?",
+      "choices": {
+        "А": "$-3i$",
+        "Б": "$-3$",
+        "В": "$5i$",
+        "Г": "$5$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 3,
+      "part": 1,
+      "points": 1,
+      "questionText": "Ако бројот $64$ се подели на три дела кои се пропорционални на $2$, $4$ и $6$, тогаш најмалиот дел изнесува:",
+      "choices": {
+        "А": "$5$",
+        "Б": "$5 \\frac{1}{3}$",
+        "В": "$10 \\frac{2}{3}$",
+        "Г": "$11$"
+      },
+      "correctAnswer": "В",
+      "topic": "Пропорции",
+      "topicArea": "broevi",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 4,
+      "part": 1,
+      "points": 1,
+      "questionText": "Изразот $\\frac{4 \\cdot 6^n}{2^n}$ е еднаков на:",
+      "choices": {
+        "А": "$12n$",
+        "Б": "$4 \\cdot 3^n$",
+        "В": "$2 \\cdot 3^n$",
+        "Г": "$12$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Степени",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 5,
+      "part": 1,
+      "points": 1,
+      "questionText": "Ако едно решение на квадратната равенка $x^2 - x - 6 = 0$ е бројот $3$, тогаш другото решение е бројот:",
+      "choices": {
+        "А": "$-1$",
+        "Б": "$-2$",
+        "В": "$1$",
+        "Г": "$2$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Квадратни равенки",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 6,
+      "part": 1,
+      "points": 1,
+      "questionText": "Областа на дефинираност на алгебарската дропка $\\frac{3x+4}{4x^2-25}$ е:",
+      "choices": {
+        "А": "$\\mathbb{R} \\setminus \\{-\\frac{4}{3}\\}$",
+        "Б": "$\\mathbb{R} \\setminus \\{-\\frac{2}{5}, \\frac{2}{5}\\}$",
+        "В": "$\\mathbb{R} \\setminus \\{-\\frac{5}{2}, \\frac{5}{2}\\}$",
+        "Г": "$\\mathbb{R}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Алгебарски дропки",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 7,
+      "part": 1,
+      "points": 1,
+      "questionText": "На сликата е претставен графикот на линеарната функција:",
+      "choices": {
+        "А": "$y = -3x + 3$",
+        "Б": "$y = 3x + 3$",
+        "В": "$y = -3x - 3$",
+        "Г": "$y = 3x - 3$"
+      },
+      "correctAnswer": "А",
+      "topic": "Линеарна функција",
+      "topicArea": "analiza",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": true,
+      "imageDescription": "График на линеарна функција во координатен систем, минува низ точките (1,0) и (0,3).",
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 8,
+      "part": 1,
+      "points": 1,
+      "questionText": "Организаторите на еден натпревар донеле одлука на сите наградени да им исплатат по $1000$ денари, а на останатите учесници по $250$ денари. На натпреварот учествувале $63$ натпреварувачи, а исплатени се вкупно $30000$ денари. Колку од натпреварувачите биле наградени?",
+      "choices": {
+        "А": "$15$",
+        "Б": "$18$",
+        "В": "$19$",
+        "Г": "$20$"
+      },
+      "correctAnswer": "В",
+      "topic": "Систем линеарни равенки",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 9,
+      "part": 1,
+      "points": 1,
+      "questionText": "За која вредност на реалниот параметар $a$, неравенката $a(x-3)+3<x$ нема реални решенија?",
+      "choices": {
+        "А": "$a = -2$",
+        "Б": "$a = -1$",
+        "В": "$a = 0$",
+        "Г": "$a = 1$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Линеарни неравенки",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 10,
+      "part": 1,
+      "points": 1,
+      "questionText": "Ако $M$, $N$ и $P$ (по овој редослед) се колинеарни и ако $\\overrightarrow{NP} = \\frac{1}{4}\\overrightarrow{MN}$, тогаш векторот $\\overrightarrow{PN}$ е еднаков на:",
+      "choices": {
+        "А": "$\\frac{1}{4}\\overrightarrow{MN}$",
+        "Б": "$\\frac{1}{3}\\overrightarrow{MN}$",
+        "В": "$-\\frac{1}{4}\\overrightarrow{MN}$",
+        "Г": "$-\\frac{1}{3}\\overrightarrow{MN}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Вектори",
+      "topicArea": "matrici-vektori",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 11,
+      "part": 2,
+      "points": 2,
+      "questionText": "Волуменот на топка со радиус $3\\text{ cm}$ е еднаков на:",
+      "choices": {
+        "А": "$27\\pi\\text{ cm}^2$",
+        "Б": "$27\\pi\\text{ cm}^3$",
+        "В": "$36\\pi\\text{ cm}^2$",
+        "Г": "$36\\pi\\text{ cm}^3$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Стереометрија - Топка",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 12,
+      "part": 2,
+      "points": 2,
+      "questionText": "Страната на ромб има должина $15$, а еден од внатрешните агли е $120^{\\circ}$. Колкава е должината на помалата дијагонала на ромбот?",
+      "choices": {
+        "А": "$15$",
+        "Б": "$14$",
+        "В": "$13$",
+        "Г": "$10$"
+      },
+      "correctAnswer": "А",
+      "topic": "Планиметрија - Ромб",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 13,
+      "part": 2,
+      "points": 2,
+      "questionText": "Волуменот на квадар, со основни рабови $2\\text{ cm}$, $4\\text{ cm}$ и $8\\text{ cm}$, е еднаков на волуменот на коцка. Колкав е основниот раб на коцката?",
+      "choices": {
+        "А": "$2\\text{ cm}$",
+        "Б": "$4\\text{ cm}$",
+        "В": "$8\\text{ cm}$",
+        "Г": "$16\\text{ cm}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Стереометрија - Квадар и коцка",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 14,
+      "part": 2,
+      "points": 2,
+      "questionText": "Триаголникот $ABC$, со страни $AC = 12\\text{ cm}$ и $AB = 20\\text{ cm}$, е впишан во кружница чиј дијаметар е страната $AB$. Колкава е должината на страната $BC$?",
+      "choices": {
+        "А": "$8\\text{ cm}$",
+        "Б": "$12\\text{ cm}$",
+        "В": "$16\\text{ cm}$",
+        "Г": "$32\\text{ cm}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Планиметрија - Триаголник и кружница",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 15,
+      "part": 2,
+      "points": 2,
+      "questionText": "Вредноста на изразот $\\text{tg}^2 45^{\\circ} - 4\\sin^2 30^{\\circ} + 8\\cos^2 60^{\\circ}$ е еднаква на:",
+      "choices": {
+        "А": "$1$",
+        "Б": "$2$",
+        "В": "$3$",
+        "Г": "$4$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Тригонометриски изрази",
+      "topicArea": "trigonometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 16,
+      "part": 3,
+      "points": 3,
+      "questionText": "А. Дадено е множеството $A=\\{2,3,4\\}$ и $B=\\{4,6,8,9\\}$. Запиши го табеларно множеството $C=\\{(x,y) \\mid x \\in A, y \\in B, x \\text{ е делител на } y\\}$. Б. Наставникот по математика установил дека во класот се присутни $80\\%$ од учениците. На следниот час, под претпоставка дека бројот на ученици не се променил, наставникот по историја воочил дека се присутни $16$ ученици. Колку вкупно ученици има во класот?",
+      "choices": {
+        "А": "А. $\\{(2,4), (2,6), (2,8), (3,6), (3,9), (4,8)\\}$, Б. $20$",
+        "Б": "А. $\\{(2,4), (3,6), (4,8)\\}$, Б. $24$",
+        "В": "А. $\\{(2,6), (3,9)\\}$, Б. $25$",
+        "Г": "А. $\\{(2,8), (3,6), (4,8)\\}$, Б. $16$"
+      },
+      "correctAnswer": "А",
+      "topic": "Множества и проценти",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 17,
+      "part": 3,
+      "points": 3,
+      "questionText": "А. За која вредност на параметарот $k$, равенката $(k-1)x = k^2 - 1$ има бесконечно многу решенија? Б. За која вредност на параметарот $k$, системот линеарни равенки $kx + 2y = 3$ и $x + y = 1$ има единствено решение?",
+      "choices": {
+        "А": "А. $k=1$, Б. $k \\neq 2$",
+        "Б": "А. $k=-1$, Б. $k=2$",
+        "В": "А. $k=0$, Б. $k \\neq 1$",
+        "Г": "А. $k=2$, Б. $k \\neq -2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Линеарни равенки и системи",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 18,
+      "part": 3,
+      "points": 3,
+      "questionText": "А. Разложи го на множители полиномот $P(x,y) = 2x^2 + 3xy + y^2 - 2x - y$. Б. Разложи го полиномот $x^2 - 4x + 4$.",
+      "choices": {
+        "А": "А. $(2x+y)(x+y-1)$, Б. $(x-2)^2$",
+        "Б": "А. $(x+y)(2x-y+1)$, Б. $(x+2)^2$",
+        "В": "А. $(2x-y)(x-y-1)$, Б. $(x-2)(x+2)$",
+        "Г": "А. $(x-y)(2x+y+1)$, Б. $x^2-4$"
+      },
+      "correctAnswer": "А",
+      "topic": "Полиноми",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 19,
+      "part": 3,
+      "points": 3,
+      "questionText": "Дадена е правилна четириаголна пирамида со основен раб $8\\text{ cm}$ и апотема $10\\text{ cm}$. А. Плоштината на обвивката на дадената пирамида изнесува $M$. Б. Пирамидата има висина $H$.",
+      "choices": {
+        "А": "А. $M=160\\text{ cm}^2$, Б. $H=\\sqrt{84}\\text{ cm}$",
+        "Б": "А. $M=320\\text{ cm}^2$, Б. $H=8\\text{ cm}$",
+        "В": "А. $M=120\\text{ cm}^2$, Б. $H=\\sqrt{84}\\text{ cm}$",
+        "Г": "А. $M=160\\text{ cm}^2$, Б. $H=10\\text{ cm}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Стереометрија - Пирамида",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 20,
+      "part": 3,
+      "points": 3,
+      "questionText": "А. Еден од аглите во триаголникот е $36^{\\circ}$, а другите два агли се однесуваат како $3 : 5$. Колкав е најголемиот агол во тој триаголник? Б. Правоаголен триаголник има катети $a=8$ и $b=15$. Колкав е косинусот од поголемиот од двата остри агли во триаголникот?",
+      "choices": {
+        "А": "А. $90^{\\circ}$, Б. $\\frac{8}{17}$",
+        "Б": "А. $72^{\\circ}$, Б. $\\frac{15}{17}$",
+        "В": "А. $108^{\\circ}$, Б. $\\frac{8}{15}$",
+        "Г": "А. $90^{\\circ}$, Б. $\\frac{15}{17}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Планиметрија и тригонометрија на правоаголен триаголник",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    }
+  ]
+}

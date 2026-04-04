@@ -1,0 +1,415 @@
+{
+  "exam": {
+    "id": "dim-gymnasium-2025-august-al",
+    "year": 2025,
+    "session": "august",
+    "track": "gymnasium",
+    "gradeLevel": 13,
+    "language": "al",
+    "durationMinutes": 180,
+    "title": "Matura shtetërore — Gjimnaziale — gusht 2025",
+    "hasOfficialKey": true
+  },
+  "questions": [
+    {
+      "questionNumber": 1,
+      "part": 1,
+      "points": 1,
+      "questionText": "Cili prej gjykimeve të dhëna është negacion i gjykimit: $3<2$ ose $3$ është numër i thjeshtë?",
+      "choices": {
+        "А": "$3 \\ge 2$ ose $3$ është numër i thjeshtë",
+        "Б": "$3 \\ge 2$ ose $3$ nuk është numër i thjeshtë",
+        "В": "$3 \\ge 2$ dhe $3$ nuk është numër i thjeshtë",
+        "Г": "$3 \\ge 2$ dhe $3$ është numër i thjeshtë"
+      },
+      "correctAnswer": "В",
+      "topic": "Iskazi",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 2,
+      "part": 1,
+      "points": 1,
+      "questionText": "Cili prej numrave në vijim është pjesa imagjinare e numrit kompleks $z = -3 + 5i$?",
+      "choices": {
+        "А": "$-3i$",
+        "Б": "$-3$",
+        "В": "$5i$",
+        "Г": "$5$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Numrat kompleks",
+      "topicArea": "broevi",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 3,
+      "part": 1,
+      "points": 1,
+      "questionText": "Nëse numri $64$ ndahet në tri pjesë të cilat janë proporcionale me $2$, $4$ dhe $6$, atëherë pjesa më e vogël është:",
+      "choices": {
+        "А": "$5$",
+        "Б": "$5 \\frac{1}{3}$",
+        "В": "$10 \\frac{2}{3}$",
+        "Г": "$11$"
+      },
+      "correctAnswer": "В",
+      "topic": "Proporcionet",
+      "topicArea": "broevi",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 4,
+      "part": 1,
+      "points": 1,
+      "questionText": "Shprehja $\\frac{4 \\cdot 6^n}{2^n}$ është e barabartë me:",
+      "choices": {
+        "А": "$12n$",
+        "Б": "$4 \\cdot 3^n$",
+        "В": "$2 \\cdot 3^n$",
+        "Г": "$12$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Fuqitë",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 5,
+      "part": 1,
+      "points": 1,
+      "questionText": "Nëse një zgjidhje e barazimit katror $x^2 - x - 6 = 0$ është numri $3$, atëherë zgjidhja tjetër është numri:",
+      "choices": {
+        "А": "$-1$",
+        "Б": "$-2$",
+        "В": "$1$",
+        "Г": "$2$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Barazimet katrore",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 6,
+      "part": 1,
+      "points": 1,
+      "questionText": "Fusha e definimit të thyesës algjebrike $\\frac{3x+4}{4x^2-25}$ është:",
+      "choices": {
+        "А": "$\\mathbb{R} \\setminus \\{-\\frac{4}{3}\\}$",
+        "Б": "$\\mathbb{R} \\setminus \\{-\\frac{2}{5}, \\frac{2}{5}\\}$",
+        "В": "$\\mathbb{R} \\setminus \\{-\\frac{5}{2}, \\frac{5}{2}\\}$",
+        "Г": "$\\mathbb{R}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Thyesat algjebrike",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 7,
+      "part": 1,
+      "points": 1,
+      "questionText": "Në fotografi është i paraqitur grafiku i funksionit linear:",
+      "choices": {
+        "А": "$y = -3x + 3$",
+        "Б": "$y = 3x + 3$",
+        "В": "$y = -3x - 3$",
+        "Г": "$y = 3x - 3$"
+      },
+      "correctAnswer": "А",
+      "topic": "Funksioni linear",
+      "topicArea": "analiza",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": true,
+      "imageDescription": "Grafiku i funksionit linear në sistemin koordinativ, kalon nëpër pikat (1,0) dhe (0,3).",
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 8,
+      "part": 1,
+      "points": 1,
+      "questionText": "Organizatorët e një gare kanë sjellë vendim që gjithë të fituesëve t'u paguajnë nga $1000$ denarë, kurse pjesëmarrësve të tjerë nga $250$ denarë. Në garë kanë marrë pjesë $63$ garues, kurse janë paguar gjithsej $30000$ denarë. Sa prej garuesve kanë qenë të shpërblyer?",
+      "choices": {
+        "А": "$15$",
+        "Б": "$18$",
+        "В": "$19$",
+        "Г": "$20$"
+      },
+      "correctAnswer": "В",
+      "topic": "Sistemi i barazimeve lineare",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 9,
+      "part": 1,
+      "points": 1,
+      "questionText": "Për cilën vlerë të parametrit real $a$, jobarazimi $a(x-3)+3<x$ nuk ka zgjidhje reale?",
+      "choices": {
+        "А": "$a = -2$",
+        "Б": "$a = -1$",
+        "В": "$a = 0$",
+        "Г": "$a = 1$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Jobarazimet lineare",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 10,
+      "part": 1,
+      "points": 1,
+      "questionText": "Nëse $M$, $N$ dhe $P$ (me këtë renditje) janë kolineare dhe nëse $\\overrightarrow{NP} = \\frac{1}{4}\\overrightarrow{MN}$, atëherë vektori $\\overrightarrow{PN}$ është i barabartë me:",
+      "choices": {
+        "А": "$\\frac{1}{4}\\overrightarrow{MN}$",
+        "Б": "$\\frac{1}{3}\\overrightarrow{MN}$",
+        "В": "$-\\frac{1}{4}\\overrightarrow{MN}$",
+        "Г": "$-\\frac{1}{3}\\overrightarrow{MN}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Vektorët",
+      "topicArea": "matrici-vektori",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 11,
+      "part": 2,
+      "points": 2,
+      "questionText": "Vëllimi i topit me rreze $3\\text{ cm}$ është i barabartë me:",
+      "choices": {
+        "А": "$27\\pi\\text{ cm}^2$",
+        "Б": "$27\\pi\\text{ cm}^3$",
+        "В": "$36\\pi\\text{ cm}^2$",
+        "Г": "$36\\pi\\text{ cm}^3$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Stereometria - Topi",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 12,
+      "part": 2,
+      "points": 2,
+      "questionText": "Brinja e rombit ka gjatësi $15$, kurse njëri prej këndeve të brendshëm është $120^{\\circ}$. Sa është gjatësia e diagonales më të vogël të rombit?",
+      "choices": {
+        "А": "$15$",
+        "Б": "$14$",
+        "В": "$13$",
+        "Г": "$10$"
+      },
+      "correctAnswer": "А",
+      "topic": "Planimetria - Rombi",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 13,
+      "part": 2,
+      "points": 2,
+      "questionText": "Vëllimi i kuadrit, me tehe të bazës $2\\text{ cm}$, $4\\text{ cm}$ dhe $8\\text{ cm}$, është i barabartë me vëllimin e kubit. Sa është tehu i bazës së kubit?",
+      "choices": {
+        "А": "$2\\text{ cm}$",
+        "Б": "$4\\text{ cm}$",
+        "В": "$8\\text{ cm}$",
+        "Г": "$16\\text{ cm}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Stereometria - Kuadri dhe kubi",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 14,
+      "part": 2,
+      "points": 2,
+      "questionText": "Trekëndëshi $ABC$, me brinjë $AC = 12\\text{ cm}$ dhe $AB = 20\\text{ cm}$, është brendashkruar në rreth, diametri i të cilit është brinja $AB$. Sa është gjatësia e brinjës $BC$?",
+      "choices": {
+        "А": "$8\\text{ cm}$",
+        "Б": "$12\\text{ cm}$",
+        "В": "$16\\text{ cm}$",
+        "Г": "$32\\text{ cm}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Planimetria - Trekëndëshi dhe rrethi",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 15,
+      "part": 2,
+      "points": 2,
+      "questionText": "Vlera e shprehjes $\\text{tg}^2 45^{\\circ} - 4\\sin^2 30^{\\circ} + 8\\cos^2 60^{\\circ}$ është e barabartë me:",
+      "choices": {
+        "А": "$1$",
+        "Б": "$2$",
+        "В": "$3$",
+        "Г": "$4$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Shprehjet trigonometrike",
+      "topicArea": "trigonometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 16,
+      "part": 3,
+      "points": 3,
+      "questionText": "A. Është dhënë bashkësia $A=\\{2,3,4\\}$ dhe $B=\\{4,6,8,9\\}$. Shkruaj në mënyrë tabelare bashkësinë $C=\\{(x,y) \\mid x \\in A, y \\in B, x \\text{ është pjestues i } y\\}$. B. Mësimdhënësi i matematikës ka vënë re se në klasë janë prezent $80\\%$ e nxënësve. Orën e ardhshme, nën supozimin se numri i nxënësve nuk ka ndryshuar, mësimdhënësi i historisë ka vërejtur se janë prezent $16$ nxënës. Sa nxënës gjithësejt ka në klasë?",
+      "choices": {
+        "А": "A. $\\{(2,4), (2,6), (2,8), (3,6), (3,9), (4,8)\\}$, B. $20$",
+        "Б": "A. $\\{(2,4), (3,6), (4,8)\\}$, B. $24$",
+        "В": "A. $\\{(2,6), (3,9)\\}$, B. $25$",
+        "Г": "A. $\\{(2,8), (3,6), (4,8)\\}$, B. $16$"
+      },
+      "correctAnswer": "А",
+      "topic": "Bashkësite dhe përqindjet",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 17,
+      "part": 3,
+      "points": 3,
+      "questionText": "A. Për cilën vlerë të parametrit $k$, barazimi $(k-1)x = k^2 - 1$ ka pakufi shumë zgjidhje? B. Për cilën vlerë të parametrit $k$, sistemi i barazimeve lineare $kx + 2y = 3$ dhe $x + y = 1$ ka zgjidhje të vetme?",
+      "choices": {
+        "А": "A. $k=1$, B. $k \\neq 2$",
+        "Б": "A. $k=-1$, B. $k=2$",
+        "В": "A. $k=0$, B. $k \\neq 1$",
+        "Г": "A. $k=2$, B. $k \\neq -2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Barazimet dhe sistemet lineare",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 18,
+      "part": 3,
+      "points": 3,
+      "questionText": "A. Zbërthe në shumëzues polinomin $P(x,y) = 2x^2 + 3xy + y^2 - 2x - y$. B. Zbërthe në shumëzues polinomin $x^2 - 4x + 4$.",
+      "choices": {
+        "А": "A. $(2x+y)(x+y-1)$, B. $(x-2)^2$",
+        "Б": "A. $(x+y)(2x-y+1)$, B. $(x+2)^2$",
+        "В": "A. $(2x-y)(x-y-1)$, B. $(x-2)(x+2)$",
+        "Г": "A. $(x-y)(2x+y+1)$, B. $x^2-4$"
+      },
+      "correctAnswer": "А",
+      "topic": "Polinom",
+      "topicArea": "algebra",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 19,
+      "part": 3,
+      "points": 3,
+      "questionText": "Është dhënë piramida e rregullt katërkëndore me teh të bazës $8\\text{ cm}$ dhe apotemë $10\\text{ cm}$. A. Syprina e mbështjellësit të piramidës së dhënë është $M$. B. Piramida ka lartësi $H$.",
+      "choices": {
+        "А": "A. $M=160\\text{ cm}^2$, B. $H=\\sqrt{84}\\text{ cm}$",
+        "Б": "A. $M=320\\text{ cm}^2$, B. $H=8\\text{ cm}$",
+        "В": "A. $M=120\\text{ cm}^2$, B. $H=\\sqrt{84}\\text{ cm}$",
+        "Г": "A. $M=160\\text{ cm}^2$, B. $H=10\\text{ cm}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Stereometria - Piramida",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 20,
+      "part": 3,
+      "points": 3,
+      "questionText": "A. Njëri prej këndeve të trekëndëshit është $36^{\\circ}$, kurse dy këndet tjerë sillen si $3 : 5$. Sa është këndi më i madh në atë trekëndësh? B. Trekëndëshi kënddrejtë ka katete $a=8$ dhe $b=15$. Sa është kosinusi i këndit më të madh nga dy këndet e ngushtë të trekëndëshit?",
+      "choices": {
+        "А": "A. $90^{\\circ}$, B. $\\frac{8}{17}$",
+        "Б": "A. $72^{\\circ}$, B. $\\frac{15}{17}$",
+        "В": "A. $108^{\\circ}$, B. $\\frac{8}{15}$",
+        "Г": "A. $90^{\\circ}$, B. $\\frac{15}{17}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Planimetria dhe trigonometria e trekëndëshit kënddrejtë",
+      "topicArea": "geometrija",
+      "conceptIds": [],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # S17 — Државна Матура Question Bank (ДИМ Integration)
 
 **Датум старт:** 04.04.2026  
-**Статус:** ПЛАНИРАЊЕ → АКТИВНО  
+**Статус:** АКТИВНО — M1 ✅ ЗАВРШЕНО  
 **Извор на содржина:** Државен испитен центар (ДИЦ) — јавно објавени тестови
 
 ---
@@ -180,19 +180,19 @@ npm run matura:enrich -- --examId dim-gymnasium-2025-june-mk
 
 | ID | Задача | KPI | Статус |
 | --- | --- | --- | --- |
-| M1 | Проширување на типови + Firestore schema + `scripts/import-matura.mjs` | Import на 1 тест < 5 мин | ⬜ |
+| M1 | Проширување на типови + Firestore schema + `scripts/import-matura.mjs` | Import на 1 тест < 5 мин | ✅ |
 | M2 | `MaturaLibraryView` — browse/filter по год/сесија/тема/јазик/дел | Пагинација + KaTeX preview | ⬜ |
 | M3 | `MaturaPracticeView` — избери тема + број задачи → adaptive pull | Uses постоечки `adaptiveDifficulty.ts` | ⬜ |
 | M4 | `MaturaExamSimView` — цел тест, тајмер 180 мин, 3 дела, auto-grade | Score + official-key review | ⬜ |
 | M5 | Live Exam Mode — наставник хостира, ученици се приклучуваат по PIN | Надградба на `live_sessions` | ⬜ |
-| M6 | AI hint chain — 3 нивоа (совет → насока → целото решение) | Cached `aiSolution` + `hints[]` | ⬜ |
-| M7 | Curriculum bridge — поврзи секоја задача со concept во програмата | `conceptIds[]` auto-tagged при AI enrich | ⬜ |
+| M6 | AI hint chain — 3 нивоа (совет → насока → целото решение) | Cached `aiSolution` + `hints[]` | ✅ (script: enrich-matura.mjs) |
+| M7 | Curriculum bridge — поврзи секоја задача со concept во програмата | `conceptIds[]` auto-tagged при AI enrich | ✅ (auto-tagged во enrich) |
 
 ### ФАЗА I — Import Content (паралелно со M1)
 
 | Приоритет | Тестови | Забелешка |
 | --- | --- | --- |
-| 1 | 2025 јуни + август (МК + АЛ) | Прв реален content |
+| 1 | 2025 јуни + август (МК + АЛ) | ✅ август (МК+АЛ) импортирано; јуни — следно |
 | 2 | 2024, 2023, 2022 | По 2 сесии годишно |
 | 3 | 2021, 2020 | 2020 = само 1 сесија |
 | 4 | 2019–2006 | Историска база (background) |
@@ -227,6 +227,11 @@ npm run matura:enrich -- --examId dim-gymnasium-2025-june-mk
 | --- | --- | --- | --- |
 | 2026-04-04 | F1-F5 code quality fixes (S16 bridge) | 422290d | TSC 0 errors, 420/420 tests ✅ |
 | 2026-04-04 | S17 план запишан | — | овој документ |
+| 2026-04-04 | types.ts — MaturaQuestion/Exam extended (part, language, session, topicArea, hints, etc.) | — | ✅ |
+| 2026-04-04 | 2025 август МК + АЛ — прв реален content (20 прашања × 2 јазика) | — | data/matura/raw/ ✅ |
+| 2026-04-04 | docs/NOTEBOOKLM_MATURA_EXTRACTION_TEMPLATE.md — extraction guide + 3 prompts | — | ✅ |
+| 2026-04-04 | M1 pipeline: validate-matura.mjs + import-matura.mjs + enrich-matura.mjs | — | `npm run matura:validate/import/enrich` ✅ |
+| 2026-04-04 | Dry-run validation PASSED: 2025-august-mk ✅ 2025-august-al ✅ (0 errors, 0 warnings) | — | ✅ |
 
 ---
 

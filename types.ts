@@ -100,6 +100,11 @@ export interface SecondaryCurriculumModule {
 // ─── Матура / ДИМ Симулација ─────────────────────────────────────────────────
 
 export type MaturaChoice = 'А' | 'Б' | 'В' | 'Г';
+export type MaturaLanguage = 'mk' | 'al' | 'tr';
+export type MaturaSession = 'june' | 'august' | 'demo';
+export type MaturaTopicArea =
+  | 'algebra' | 'analiza' | 'geometrija' | 'statistika'
+  | 'kombinatorika' | 'trigonometrija' | 'matrici-vektori' | 'broevi';
 
 export interface MaturaQuestion {
   id: string;
@@ -110,7 +115,21 @@ export interface MaturaQuestion {
   topic: string;
   bloomLevel?: string;
   points: number;
+  // Legacy single image — kept for backward compat with existing demo data
   imageUrl?: string;
+
+  // Extended fields (ДИЦ import pipeline, S17)
+  part?: 1 | 2 | 3;                      // кој дел: 1=1pt, 2=2pt, 3=3pt
+  topicArea?: MaturaTopicArea;            // тематска област
+  conceptIds?: string[];                  // врска со gymnasium.ts концепти
+  imageUrls?: string[];                   // Firebase Storage URLs (може повеќе)
+  hasImage?: boolean;
+  imageDescription?: string | null;       // accessibility alt-text
+  dokLevel?: 1 | 2 | 3 | 4;
+  questionGroupId?: string;               // поврзува МК+АЛ+ТР верзии
+  successRatePercent?: number;            // агрегирано од matura_results
+  aiSolution?: string;                    // Gemini чекор-по-чекор (cached)
+  hints?: string[];                       // [hint1, hint2, full solution]
 }
 
 export interface MaturaExam {
@@ -121,6 +140,13 @@ export interface MaturaExam {
   title?: string;
   durationMinutes: number;
   questions: MaturaQuestion[];
+
+  // Extended fields (S17)
+  session?: MaturaSession;
+  language?: MaturaLanguage;
+  languages?: MaturaLanguage[];
+  hasOfficialKey?: boolean;
+  importedAt?: string;
 }
 
 export interface MaturaResult {
