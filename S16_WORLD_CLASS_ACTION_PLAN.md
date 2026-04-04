@@ -34,7 +34,7 @@
 | A1 | E2E стабилизација на auth-guard тестови | 3 последователни run-ови без flaky во auth-guard suite | ✅ |
 | A2 | Build/Runtime стабилност | 0 compile errors, 0 runtime-crash regression во smoke/e2e | ✅ |
 | A3 | Error-system cleanup во legacy сервиси | Намален број raw `throw new Error` патеки во критични services | ✅ |
-| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 33.33%, 2/6) |
+| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 50.00%, 4/8) |
 
 ### ФАЗА B — Performance and Bundle Excellence
 
@@ -256,7 +256,7 @@
 
 | ID | Ставка | Тековен статус | Target статус |
 |---|---|---|---|
-| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 2/6, 33.33% | ✅ closed |
+| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 4/8, 50.00% | ✅ closed |
 | B2 | Route-based lazy loading + мерлив uplift | ✅ closed | ✅ closed |
 | B4 | Lighthouse стабилизација (без NO_FCP) | ⬜ | ✅ closed |
 | C4 | Restore drill + evidence | ✅ closed | ✅ closed — import operation SUCCESSFUL + 5/5 smoke PASS, evidence pack во секција 9.7 |
@@ -486,11 +486,13 @@ C4 се затвора кога:
 Што е потврдено:
 1. Reliability baseline automation е активна во `.github/workflows/ci-quality.yml` (`reliability-baseline` job, rolling window last 20 completed runs, threshold 95%).
 2. CI rule е веќе канонски дефинирана и enforced.
-3. Последен валиден summary (04.04.2026): `Window: last 6 completed runs`, `Success: 2/6`, `Pass rate: 33.33%`.
+3. Последен валиден summary (04.04.2026): `Window: last 8 completed runs`, `Success: 4/8`, `Pass rate: 50.00%`.
+4. Според тековниот rolling sequence, A4 не е closeable веднаш: потребни се уште `15` последователни successful `CI Quality Gate` runs за window-от да стигне `19/20 = 95%`, ако нема нов failure.
 
 Преостанат formal evidence за close:
 1. Да се изгради success streak до `>=95%` rolling pass-rate.
-2. Дури потоа A4 се менува во `✅ closed`.
+2. Да нема нов failure што ќе го ресетира потребниот streak window.
+3. Дури потоа A4 се менува во `✅ closed`.
 
 #### N4 (B2 formal close) — статус: CLOSED
 
