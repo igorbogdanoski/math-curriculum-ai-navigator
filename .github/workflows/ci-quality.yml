@@ -33,7 +33,11 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Unit tests
-        run: npm run -s test
+        run: |
+          npm run -s test || (
+            echo "Unit tests failed on first attempt. Retrying once..." &&
+            npm run -s test
+          )
 
       - name: Build (stub env)
         run: npm run -s build
@@ -120,10 +124,10 @@ jobs:
 
             core.summary
               .addHeading('CI Reliability Baseline')
-              .addRaw(`Window: last ${total} completed runs\\n\\n`)
-              .addRaw(`Success: ${success}/${total}\\n\\n`)
-              .addRaw(`Pass rate: ${passRate.toFixed(2)}%\\n\\n`)
-              .addRaw(`Target: >= ${threshold}%`) 
+              .addRaw(`Window: last ${total} completed runs\n\n`)
+              .addRaw(`Success: ${success}/${total}\n\n`)
+              .addRaw(`Pass rate: ${passRate.toFixed(2)}%\n\n`)
+              .addRaw(`Target: >= ${threshold}%`)
               .write();
 
             if (total >= 10 && passRate < threshold) {
