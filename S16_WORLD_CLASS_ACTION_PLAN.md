@@ -618,6 +618,9 @@ Go одлука: дозволена само ако сите метрики се
 
 #### 9.11.4 T0 extraction checklist (next commit must replace DATA_PENDING)
 
+Run command:
+1. `npm run -s x3:baseline -- --input <gdpr-export.json> --out eval/x3-baseline-t0.json --markdown`
+
 1. Export `Teacher analytics funnel` за последни 7 дена и пресметај completion rate.
 2. Export generation events (create -> first saved material) за 7 дена и пресметај median time-to-first-material.
 3. Export library usage за 14 дена и пресметај reuse rate.

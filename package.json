@@ -9,6 +9,7 @@
     "perf:budget": "node scripts/enforce-perf-budget.mjs",
     "backup:readiness-check": "node scripts/check-backup-readiness.mjs",
     "obs:incident-summary": "node scripts/sentry-incident-summary.mjs",
+    "x3:baseline": "node scripts/compute-x3-baseline.mjs",
     "eval:validate-schema": "node scripts/run-eval.mjs --validate-schema",
     "eval:run": "node scripts/run-eval.mjs --outputs",
     "eval:smoke-gate": "node scripts/run-eval.mjs --outputs eval/sample-outputs.json --only-provided --min-score 70 --fail-below",
