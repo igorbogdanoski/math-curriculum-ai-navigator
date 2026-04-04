@@ -115,12 +115,17 @@
     },
     "assessment_test": {
       "id": "assessment_test",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "Assessment/quiz generation with DoK targeting, Bloom distribution, and differentiation levels",
       "sourceFile": "services/gemini/assessment.ts",
-      "hash": "65da6e5e22e6ad4f278bc321eccfcfe037018b5c130ecf3dc1d5345e27e4cf50",
-      "lastModified": "2026-04-03",
+      "hash": "aded097f825c7bc56ba49660b85bca1f56cffbc16cc48fc27722a8045ba199ee",
+      "lastModified": "2026-04-04",
       "history": [
+        {
+          "version": "1.0.1",
+          "hash": "65da6e5e22e6ad4f278bc321eccfcfe037018b5c130ecf3dc1d5345e27e4cf50",
+          "replacedAt": "2026-04-04"
+        },
         {
           "version": "1.0.0",
           "hash": "",

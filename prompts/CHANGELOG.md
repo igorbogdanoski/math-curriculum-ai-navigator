@@ -33,3 +33,6 @@ To rollback a prompt, restore the source code to the version tagged in `history[
 
 ## 2026-04-03
 - **thematic_plan**: v1.0.1 → v1.0.2
+
+## 2026-04-04
+- **assessment_test**: v1.0.1 → v1.0.2

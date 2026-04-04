@@ -18,6 +18,90 @@ import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalA
 // Core exports
 export { scheduleQuotaNotification, isDailyQuotaKnownExhausted, clearDailyQuotaFlag, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, buildDynamicSystemInstruction } from './gemini/core';
 
+const MIN_ANNUAL_PLAN_TOPICS = 8;
+const ANNUAL_PLAN_FALLBACK_TOPICS = [
+  'Вовед и дијагностика',
+  'Рационални броеви и операции',
+  'Пропорции и проценти',
+  'Алгебарски изрази и равенки',
+  'Геометрија и конструкции',
+  'Мерење и примени',
+  'Статистика и веројатност',
+  'Систематизација и проектни задачи',
+];
+
+function normalizeTopicWeeks(plan: AIGeneratedAnnualPlan): AIGeneratedAnnualPlan {
+  const topics = (plan.topics ?? []).map((topic) => ({
+    ...topic,
+    durationWeeks: Math.max(1, Math.round(Number(topic.durationWeeks ?? 1))),
+    objectives: Array.isArray(topic.objectives) && topic.objectives.length > 0
+      ? topic.objectives
+      : ['Совладување на клучните поими за темата.'],
+    suggestedActivities: Array.isArray(topic.suggestedActivities) && topic.suggestedActivities.length > 0
+      ? topic.suggestedActivities
+      : ['Кратка наставна активност со проверка на разбирање.'],
+  }));
+
+  let sum = topics.reduce((acc, t) => acc + t.durationWeeks, 0);
+  const baseWeeks = plan.totalWeeks ?? sum ?? 1;
+  const targetWeeks = Math.max(1, Math.round(Number(baseWeeks)));
+
+  if (topics.length === 0) {
+    return {
+      ...plan,
+      totalWeeks: targetWeeks,
+      topics: [{
+        title: 'Годишна рамка',
+        durationWeeks: targetWeeks,
+        objectives: ['Покривање на годишните цели според наставната програма.'],
+        suggestedActivities: ['Насочено планирање, вежбање и формативна евалуација.'],
+      }],
+    };
+  }
+
+  let cursor = 0;
+  while (sum < targetWeeks) {
+    topics[cursor % topics.length].durationWeeks += 1;
+    sum += 1;
+    cursor += 1;
+  }
+  while (sum > targetWeeks) {
+    const idx = cursor % topics.length;
+    if (topics[idx].durationWeeks > 1) {
+      topics[idx].durationWeeks -= 1;
+      sum -= 1;
+    }
+    cursor += 1;
+  }
+
+  return {
+    ...plan,
+    totalWeeks: targetWeeks,
+    topics,
+  };
+}
+
+function enforceAnnualPlanQuality(plan: AIGeneratedAnnualPlan): AIGeneratedAnnualPlan {
+  const topics = [...(plan.topics ?? [])];
+  const existingTitles = new Set(topics.map((topic) => (topic.title ?? '').toLowerCase()));
+
+  for (const title of ANNUAL_PLAN_FALLBACK_TOPICS) {
+    if (topics.length >= MIN_ANNUAL_PLAN_TOPICS) break;
+    if (existingTitles.has(title.toLowerCase())) continue;
+    topics.push({
+      title,
+      durationWeeks: 1,
+      objectives: ['Развивање на математички компетенции и примена во контекст.'],
+      suggestedActivities: ['Наставна активност со вежби, дискусија и кратка проверка.'],
+    });
+  }
+
+  return normalizeTopicWeeks({
+    ...plan,
+    topics,
+  });
+}
+
 export const realGeminiService = {
   ...assessmentAPI,
   ...plansAPI,
@@ -1149,6 +1233,7 @@ ${notesSample ? `Рефлексивни белешки на ученикот: ${
     profile?: TeachingProfile,
     customInstruction?: string
   ): Promise<AIGeneratedAnnualPlan> {
+    const safeCustomInstruction = sanitizePromptInput(customInstruction, 600);
     const prompt = `
 Вие сте врвен експерт за планирање на наставата по ${subject} за ${grade} во македонскиот образовен систем.
 Ваша задача е да креирате детална, практична и изводлива предлог-годишна програма.
@@ -1162,10 +1247,11 @@ ${curriculumContext}
 УПАТСТВА:
 1. Строго базирајте го вашиот план на официалните теми дадени погоре.
 2. Распределете ги темите низ неделите така што сумата од сите недели да биде ТОЧНО ${totalWeeks}.
-3. Конвертирајте ги "Препорачани часови" (suggested hours) во реални недели на настава (претпоставувајќи просечно 4-5 часа неделно за математика).
-4. За секоја тема, извлечете ги примарните цели и предложете 2-3 креативни, модерни активности погодни за тоа одделение.
-5. КАЛЕНДАРСКИ ИНТЕЛИГЕНТНО ПЛАНИРАЊЕ: Земете ги предвид македонските државни празници (како 8 Септември, 11 Октомври, 23 Октомври, 8 Декември, 1 Мај, 24 Мај) и училишните зимски распусти (обично јануари). Прилагодете ја тежината или времетраењето на темите што паѓаат во овие периоди (наведете во активностите доколку некоја недела е скратена поради празник).
-${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НАСТАВНИКОТ: ${customInstruction}` : ''}
+3. Вклучи најмалку ${MIN_ANNUAL_PLAN_TOPICS} одделни теми во полето "topics" (не спојувај повеќе теми во една ставка).
+4. Конвертирајте ги "Препорачани часови" (suggested hours) во реални недели на настава (претпоставувајќи просечно 4-5 часа неделно за математика).
+5. За секоја тема, извлечете ги примарните цели и предложете 2-3 креативни, модерни активности погодни за тоа одделение.
+6. КАЛЕНДАРСКИ ИНТЕЛИГЕНТНО ПЛАНИРАЊЕ: Земете ги предвид македонските државни празници (како 8 Септември, 11 Октомври, 23 Октомври, 8 Декември, 1 Мај, 24 Мај) и училишните зимски распусти (обично јануари). Прилагодете ја тежината или времетраењето на темите што паѓаат во овие периоди (наведете во активностите доколку некоја недела е скратена поради празник).
+${safeCustomInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НАСТАВНИКОТ: ${safeCustomInstruction}` : ''}
 
 Вратете ВАЛИДЕН JSON според шемата, без дополнителен текст.
     `.trim();
@@ -1199,7 +1285,7 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
       required: ['grade', 'subject', 'totalWeeks', 'topics'],
     };
 
-    return generateAndParseJSON<AIGeneratedAnnualPlan>(
+    const generatedPlan = await generateAndParseJSON<AIGeneratedAnnualPlan>(
       [{ text: prompt }],
       schema,
       DEFAULT_MODEL,
@@ -1207,8 +1293,11 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
       MAX_RETRIES,
       false,
       undefined,
-      profile?.tier
+      profile?.tier,
+      { temperature: 0.2, topP: 0.9 }
     );
+
+    return enforceAnnualPlanQuality(generatedPlan);
   },
 
   async generateAdaptiveHomework(

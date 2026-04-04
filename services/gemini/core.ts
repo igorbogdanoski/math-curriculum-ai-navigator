@@ -949,7 +949,17 @@ function recoverTruncatedJson(raw: string): unknown | null {
 }
 
 // --- CORE JSON HELPER ---
-export async function generateAndParseJSON<T>(contents: Part[], schema: any, model: string = DEFAULT_MODEL, zodSchema?: z.ZodTypeAny, retries = MAX_RETRIES, useThinking = false, customSystemInstruction?: string, userTier?: string): Promise<T> {
+export async function generateAndParseJSON<T>(
+  contents: Part[],
+  schema: any,
+  model: string = DEFAULT_MODEL,
+  zodSchema?: z.ZodTypeAny,
+  retries = MAX_RETRIES,
+  useThinking = false,
+  customSystemInstruction?: string,
+  userTier?: string,
+  generationOverrides?: { temperature?: number; topP?: number; maxOutputTokens?: number }
+): Promise<T> {
     // Fail fast when offline — avoids a 60 s timeout that degrades UX
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
         throw new OfflineError('AI generation requires network connection');
@@ -959,9 +969,9 @@ export async function generateAndParseJSON<T>(contents: Part[], schema: any, mod
     const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
     try {
       const generationConfig: any = {
-        temperature: 0.7,
-        topP: 0.95,
-        maxOutputTokens: 32768   // 8192 caused truncation on 10+ question assessments
+        temperature: generationOverrides?.temperature ?? 0.7,
+        topP: generationOverrides?.topP ?? 0.95,
+        maxOutputTokens: generationOverrides?.maxOutputTokens ?? 32768   // 8192 caused truncation on 10+ question assessments
       };
 
       if (useThinking) {

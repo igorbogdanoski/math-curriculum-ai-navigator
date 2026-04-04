@@ -2,6 +2,39 @@ import { Type, Part, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateA
 import { Concept, QuestionType, GenerationContext, TeachingProfile, DifferentiationLevel, StudentProfile, AIGeneratedAssessment, AIGeneratedPracticeMaterial } from '../../types';
 import { AIGeneratedAssessmentSchema, AIGeneratedPracticeMaterialSchema } from '../../utils/schemas';
 
+const FRACTION_KEYWORDS = ['дропка', 'собирање', 'одземање'];
+
+function isFractionContext(context: GenerationContext): boolean {
+  const topicText = `${context.topic?.id ?? ''} ${context.topic?.title ?? ''}`.toLowerCase();
+  const conceptText = (context.concepts ?? []).map(c => `${c.id ?? ''} ${c.title ?? ''}`.toLowerCase()).join(' ');
+  return topicText.includes('дропк') || conceptText.includes('дропк') || conceptText.includes('fraction');
+}
+
+function includesAnyKeyword(text: string, keywords: string[]): boolean {
+  const source = (text ?? '').toLowerCase();
+  return keywords.some((kw) => source.includes(kw.toLowerCase()));
+}
+
+function reinforceFractionKeywords(result: AIGeneratedAssessment, context: GenerationContext): AIGeneratedAssessment {
+  if (!isFractionContext(context) || !Array.isArray(result.questions)) {
+    return result;
+  }
+
+  return {
+    ...result,
+    questions: result.questions.map((q) => {
+      const combined = `${q.question ?? ''} ${q.answer ?? ''}`;
+      if (includesAnyKeyword(combined, FRACTION_KEYWORDS)) {
+        return q;
+      }
+      return {
+        ...q,
+        question: `${q.question ?? ''} (Користи дропка и образложи собирање или одземање.)`.trim(),
+      };
+    }),
+  };
+}
+
 export const assessmentAPI = {
 async generatePracticeMaterials(concept: Concept, gradeLevel: number, materialType: 'problems' | 'questions'): Promise<AIGeneratedPracticeMaterial> {
     const typeKey = materialType === 'problems' ? 'quiz' : 'discussion';
@@ -68,7 +101,7 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
       : '';
 
       // @prompt-start: assessment_test
-    const prompt = `Генерирај ${type} со ${numQuestions} прашања. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart}${workedExamplePart}${gradeLevelPrompt}${geometryPart}${statisticsPart}${dokPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (Easy/Medium/Hard).${safeCustomInstruction ? ` ${safeCustomInstruction}` : ''}`;
+    const prompt = `Генерирај ${type} со ${numQuestions} прашања. Типови: ${questionTypes.join(', ')}. Ниво на диференцијација: ${diffDesc}.${bloomPart}${selfAssessmentPart}${workedExamplePart}${gradeLevelPrompt}${geometryPart}${statisticsPart}${dokPart} За секое прашање задолжително наведи 'cognitiveLevel' (Remembering/Understanding/Applying/Analyzing/Evaluating/Creating) и 'difficulty_level' (Easy/Medium/Hard). Ако темата е за дропки, барем еден од следниве термини мора експлицитно да се појави во прашањето или одговорот: "дропка", "собирање", "одземање".${safeCustomInstruction ? ` ${safeCustomInstruction}` : ''}`;
       // @prompt-end: assessment_test
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, alignment_goal: { type: Type.STRING }, selfAssessmentQuestions: { type: Type.ARRAY, items: { type: Type.STRING } }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, answer: { type: Type.STRING }, solution: { type: Type.STRING }, svgDiagram: { type: Type.STRING }, tableData: { type: Type.OBJECT, properties: { headers: { type: Type.ARRAY, items: { type: Type.STRING } }, rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: {} } }, caption: { type: Type.STRING } } }, isWorkedExample: { type: Type.BOOLEAN }, workedExampleType: { type: Type.STRING }, cognitiveLevel: { type: Type.STRING }, difficulty_level: { type: Type.STRING }, concept_evaluated: { type: Type.STRING }, dokLevel: { type: Type.INTEGER } }, required: ["type", "question", "answer", "cognitiveLevel", "dokLevel"] } } }, required: ["title", "questions"] };
 
@@ -100,13 +133,15 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
         MAX_RETRIES, 
         false, 
         systemInstr,
-        profile?.tier
+      profile?.tier,
+      { temperature: 0.2, topP: 0.9 }
     );
+    const hardenedResult = reinforceFractionKeywords(result, context);
     
     if (canCache && cacheKey) {
-        await setCached(cacheKey, result, { type: 'assessment', conceptId: conceptCacheId !== 'gen' ? conceptCacheId : undefined, gradeLevel: context.grade.level });
+      await setCached(cacheKey, hardenedResult, { type: 'assessment', conceptId: conceptCacheId !== 'gen' ? conceptCacheId : undefined, gradeLevel: context.grade.level });
     }
-    return result;
+    return hardenedResult;
   },
 
 async generateExitTicket(numQuestions: number, focus: string, context: GenerationContext, profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedAssessment> {
