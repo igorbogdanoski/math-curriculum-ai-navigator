@@ -34,7 +34,7 @@
 | A1 | E2E стабилизација на auth-guard тестови | 3 последователни run-ови без flaky во auth-guard suite | ✅ |
 | A2 | Build/Runtime стабилност | 0 compile errors, 0 runtime-crash regression во smoke/e2e | ✅ |
 | A3 | Error-system cleanup во legacy сервиси | Намален број raw `throw new Error` патеки во критични services | ✅ |
-| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 15.00%, 3/20 — потребни 16-18 consecutive successes) |
+| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | ✅ closed (20/20, 100.00%, A4 close trigger reached on 04.04.2026) |
 
 ### ФАЗА B — Performance and Bundle Excellence
 
@@ -256,7 +256,7 @@
 
 | ID | Ставка | Тековен статус | Target статус |
 |---|---|---|---|
-| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 3/20, 15.00% — потребни 16-18 consecutive successes | ✅ closed |
+| A4 | CI reliability baseline >= 95% | ✅ closed — 20/20, 100.00%, close trigger reached (04.04.2026) | ✅ closed |
 | B2 | Route-based lazy loading + мерлив uplift | ✅ closed | ✅ closed |
 | B4 | Lighthouse стабилизација (без NO_FCP) | ⬜ | ✅ closed |
 | C4 | Restore drill + evidence | ✅ closed | ✅ closed — import operation SUCCESSFUL + 5/5 smoke PASS, evidence pack во секција 9.7 |
@@ -431,7 +431,7 @@ EOD формат (обврзен):
 - A4 нема формално затворен reliability baseline,
 - E4 нема shadow compare report со јасни go/no-go thresholds.
 
-Моментален статус (04.04.2026): C4 evidence = ✅, E4 shadow path/report = ✅, A4 = 🟨 in progress.
+Моментален статус (04.04.2026): C4 evidence = ✅, E4 shadow path/report = ✅, A4 = ✅ closed.
 
 ### 9.6 Кориснички сегменти (за KPI и rollout)
 
@@ -482,25 +482,23 @@ C4 се затвора кога:
 
 ### 9.8 N3/N4 Execution Snapshot (04.04.2026)
 
-#### N3 (A4 formal close) — статус: IN PROGRESS
+#### N3 (A4 formal close) — статус: CLOSED
 
 Што е потврдено:
 1. Reliability baseline automation е активна во `.github/workflows/ci-quality.yml` (`reliability-baseline` job, rolling window last 20 completed runs, threshold 95%).
 2. Summary автоматски прикажува `Remaining consecutive successes (est.)` и `A4 close trigger`.
-3. Последен валиден summary (04.04.2026): `Window: last 20 completed runs`, `Success: 3/20`, `Pass rate: 15.00%`, `Remaining est.: 16-18`.
-4. A4 е formal closeable само кога summary ќе покаже `A4 close trigger: reached` и `Pass rate >=95%`.
+3. Финален summary (04.04.2026): `Window: last 20 completed runs`, `Success: 20/20`, `Pass rate: 100.00%`, `Remaining est.: 0`.
+4. Summary покажува `A4 close trigger: reached` и `Pass rate >=95%`.
 
 Преостанат formal evidence за close:
-1. Да се изгради clean delivery streak со зелени production commit run-ови до `>=95%` rolling pass-rate.
-2. Да нема регресии на `Typecheck + Unit + Build`.
-3. Дури потоа A4 се менува во `✅ closed`.
+1. Нема — N3 е формално затворен.
+2. Continuing guardrail: одржувај зелено `Typecheck + Unit + Build` на секој delivery commit.
 
-Operational close path (current `3/20`, 04.04.2026):
+Operational sustain path (post-close `20/20`, 04.04.2026):
 1. Секој feature чекор да оди како мал, проверлив commit со локална валидација пред push.
 2. По секој run, запиши `Window`, `Success`, `Pass rate`, `Remaining consecutive successes (est.)`.
-3. Користи automation estimate за planning на следниот batch (`16-18` моментално).
-4. Ако се појави нов `failure`, отвори root-cause review веднаш пред следен feature push.
-5. A4 се затвора кога summary ќе покаже `A4 close trigger: reached`.
+3. Ако се појави нов `failure`, отвори root-cause review веднаш пред следен feature push.
+4. Цел: да се одржи `A4 close trigger: reached` во rolling window.
 
 #### N4 (B2 formal close) — статус: CLOSED
 

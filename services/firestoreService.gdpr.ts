@@ -188,12 +188,39 @@ export function downloadUserDataAsJson(
   data: Record<string, unknown>,
   uid: string
 ): void {
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `ai-navigator-data-${uid.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  try {
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const fileName = `ai-navigator-data-${uid.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.json`;
+    const nav = window.navigator as Navigator & {
+      msSaveOrOpenBlob?: (blob: Blob, defaultName?: string) => boolean;
+    };
+
+    // Legacy Edge/IE fallback
+    if (typeof nav.msSaveOrOpenBlob === 'function') {
+      nav.msSaveOrOpenBlob(blob, fileName);
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (clickErr) {
+      // Some browsers/extensions block synthetic clicks in strict contexts.
+      try { window.open(url, '_blank', 'noopener'); } catch { /* ignore */ }
+      throw clickErr;
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`download_failed: ${message}`);
+  }
 }
