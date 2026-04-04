@@ -405,7 +405,7 @@ EOD формат (обврзен):
 | ID | Приоритет | Owner | KPI threshold | Exit evidence |
 |---|---|---|---|---|
 | X1 | E4 Vertex shadow path | @ai-core | >= 1 gated production-safe path зад feature flag | ✅ closed (feature flag + shadow log/report UI shipped on 04.04.2026) |
-| X2 | E4 go/no-go board | @pm + @ai-core | јасни launch thresholds и rollback trigger | signed decision note + rollout playbook |
+| X2 | E4 go/no-go board | @pm + @ai-core | јасни launch thresholds и rollback trigger | 🟨 in progress (threshold table + rollback protocol below) |
 | X3 | E5 outcome metrics | @product + @frontend | measurable uplift во task-completion и reuse | before/after KPI table по wave |
 
 ### 9.3 LATER (21-45 дена)
@@ -418,13 +418,11 @@ EOD формат (обврзен):
 
 ### 9.4 Start Today (оперативен старт)
 
-1. 09:30 — owners за N1-N4 се потврдени (види 9.0 и 9.1) и се сметаат за оперативно активни.
-2. 10:00 — отвори инфраструктурен ticket за N1 со точни ресурси: backup bucket, restore project, IAM roles.
-3. 12:00 — иницирај manual C4 drill run штом N1 е provisioned.
-4. 16:00 — запиши N1/N2/N3/N4 статус во оваа секција (не во kickoff log) за да има една канонска вистина.
-
-Execution asset:
-- C4 ticket-ready checklist: C4_EXECUTION_CHECKLIST.md
+1. Работи во dual-track: секоја feature задача мора да заврши со зелен `CI Quality Gate` run.
+2. За секој merge: локално `npx tsc --noEmit` + релевантни тестови, па push (без no-op commit-и).
+3. По секој completed run задолжително запиши: `Window`, `Success`, `Pass rate`, `Remaining consecutive successes (est.)`.
+4. Manual dispatch користи само за дијагностика; за baseline recovery примарно користи real delivery commit cadence.
+5. 16:00 EOD: запиши `Task completed`, `CI delta`, `Remaining est.`, `next action` во оваа секција.
 
 ### 9.5 World-Class Rule (non-negotiable)
 
@@ -432,6 +430,8 @@ Execution asset:
 - C4 нема верифициран restore evidence,
 - A4 нема формално затворен reliability baseline,
 - E4 нема shadow compare report со јасни go/no-go thresholds.
+
+Моментален статус (04.04.2026): C4 evidence = ✅, E4 shadow path/report = ✅, A4 = 🟨 in progress.
 
 ### 9.6 Кориснички сегменти (за KPI и rollout)
 
@@ -486,21 +486,21 @@ C4 се затвора кога:
 
 Што е потврдено:
 1. Reliability baseline automation е активна во `.github/workflows/ci-quality.yml` (`reliability-baseline` job, rolling window last 20 completed runs, threshold 95%).
-2. CI rule е веќе канонски дефинирана и enforced.
-3. Последен валиден summary (04.04.2026): `Window: last 8 completed runs`, `Success: 4/8`, `Pass rate: 50.00%`.
-4. Според тековниот rolling sequence, A4 не е closeable веднаш: потребни се уште `15` последователни successful `CI Quality Gate` runs за window-от да стигне `19/20 = 95%`, ако нема нов failure.
+2. Summary автоматски прикажува `Remaining consecutive successes (est.)` и `A4 close trigger`.
+3. Последен валиден summary (04.04.2026): `Window: last 20 completed runs`, `Success: 6/20`, `Pass rate: 30.00%`, `Remaining est.: 13-18`.
+4. A4 е formal closeable само кога summary ќе покаже `A4 close trigger: reached` и `Pass rate >=95%`.
 
 Преостанат formal evidence за close:
-1. Да се изгради success streak до `>=95%` rolling pass-rate.
-2. Да нема нов failure што ќе го ресетира потребниот streak window.
+1. Да се изгради clean delivery streak со зелени production commit run-ови до `>=95%` rolling pass-rate.
+2. Да нема регресии на `Typecheck + Unit + Build`.
 3. Дури потоа A4 се менува во `✅ closed`.
 
-Operational close path (starting from `4/8`, 04.04.2026):
-1. Користи `workflow_dispatch` на `CI Quality Gate` на тековниот `main` без code changes меѓу run-овите, за да се мери чиста stability baseline.
-2. По секој run, запиши ги 4 полиња од summary: `Window`, `Success`, `Pass rate`, `Target`.
-3. Ако run-от е `success`, продолжи со следниот manual run сè додека rolling window не стигне најмалку `19/20`.
-4. Ако се појави нов `failure`, A4 close attempt се паузира и се отвора root-cause review пред нов streak.
-5. A4 се затвора само кога summary експлицитно покаже `Pass rate >= 95%` на completed window и status check-овите се зелени.
+Operational close path (current `6/20`, 04.04.2026):
+1. Секој feature чекор да оди како мал, проверлив commit со локална валидација пред push.
+2. По секој run, запиши `Window`, `Success`, `Pass rate`, `Remaining consecutive successes (est.)`.
+3. Користи automation estimate за planning на следниот batch (`13-18` моментално).
+4. Ако се појави нов `failure`, отвори root-cause review веднаш пред следен feature push.
+5. A4 се затвора кога summary ќе покаже `A4 close trigger: reached`.
 
 #### N4 (B2 formal close) — статус: CLOSED
 
@@ -523,4 +523,27 @@ Final perf snapshot:
 | TBT | ~514ms | 40ms | -474ms |
 
 Резултат: route-level load improvement е јасно потврден без regression. B2 = CLOSED.
+
+### 9.9 Parallel Execution Playbook (active from 04.04.2026)
+
+Цел: да се испорачуваат roadmap задачи без пауза, и паралелно да се гради A4 reliability baseline.
+
+#### 9.9.1 Rule per completed task
+
+1. Finish task scope (feature/fix/doc) во еден логички commit.
+2. Локално провери минимум: `npx tsc --noEmit` + релевантни тестови за таа промена.
+3. Push на `main` само кога локално е зелено.
+4. По CI completion, логирај CI delta во 9.9.3 табелата.
+
+#### 9.9.2 Reliability-safe cadence
+
+1. 1-2 meaningful merges дневно (без no-op/empty commits).
+2. High-risk задачи дели ги на 2-3 помали commits за побрза изолација на евентуален fail.
+3. Manual dispatch користи само за дијагностика, не како primary recovery strategy.
+
+#### 9.9.3 Delivery + Reliability log template
+
+| Датум | Task ID | Commit | CI резултат | Reliability delta | Remaining est. | Следен чекор |
+|---|---|---|---|---|---|---|
+| 2026-04-04 | X2 kickoff | c0e33cd | ✅ quality-gate / ❌ reliability-baseline | 6/20, 30.00% | 13-18 | X2 thresholds draft |
 
