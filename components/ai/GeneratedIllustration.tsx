@@ -2,12 +2,26 @@ import React from 'react';
 import { Card } from '../common/Card';
 import { ICONS } from '../../constants';
 import type { AIGeneratedIllustration } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { firestoreService } from '../../services/firestoreService';
 
 interface GeneratedIllustrationProps {
   material: AIGeneratedIllustration;
 }
 
 export const GeneratedIllustration: React.FC<GeneratedIllustrationProps> = ({ material }) => {
+    const { firebaseUser } = useAuth();
+
+    const trackFeedback = (context: string) => {
+        if (!firebaseUser?.uid) return;
+        firestoreService.logAIMaterialFeedbackEvent({
+            teacherUid: firebaseUser.uid,
+            materialType: 'illustration',
+            action: 'accept_saved',
+            context,
+        }).catch(() => undefined);
+    };
+
     if (material.error) {
         return <p className="text-red-500">{material.error}</p>;
     }
@@ -19,6 +33,7 @@ export const GeneratedIllustration: React.FC<GeneratedIllustrationProps> = ({ ma
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        trackFeedback('export:image_download');
     };
 
     return (
@@ -31,7 +46,10 @@ export const GeneratedIllustration: React.FC<GeneratedIllustrationProps> = ({ ma
                 <div className="no-print flex items-center gap-2">
                     <button
                         type="button"
-                        onClick={() => window.print()}
+                        onClick={() => {
+                            trackFeedback('export:print');
+                            window.print();
+                        }}
                         className="flex items-center bg-gray-600 text-white px-3 py-2 rounded-lg shadow hover:bg-gray-700 transition-colors text-sm"
                         title="Печати/Сними како PDF"
                     >

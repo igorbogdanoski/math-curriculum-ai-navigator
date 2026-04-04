@@ -4,6 +4,7 @@ import { QuestionType, type DifferentiationLevel, type TeachingProfile, type Stu
 import { ICONS } from '../../constants';
 import { InfoTooltip } from '../common/InfoTooltip';
 import { educationalHints } from '../../data/educationalModelsInfo';
+import { fetchVideoPreview } from '../../utils/videoPreview';
 
 interface MaterialOptionsProps {
     state: GeneratorState;
@@ -471,6 +472,75 @@ const LearningPathOptions: React.FC<MaterialOptionsProps> = ({ state, dispatch, 
     </div>
 );
 
+const VideoExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispatch'>> = ({ state, dispatch }) => {
+    const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+    const [previewError, setPreviewError] = useState<string | null>(null);
+
+    const handlePreview = async () => {
+        if (!state.videoUrl.trim() || isLoadingPreview) return;
+        setIsLoadingPreview(true);
+        setPreviewError(null);
+        try {
+            const preview = await fetchVideoPreview(state.videoUrl);
+            dispatch({ type: 'SET_FIELD', payload: { field: 'videoPreview', value: preview } });
+            dispatch({ type: 'SET_FIELD', payload: { field: 'videoUrl', value: preview.normalizedUrl } });
+        } catch (error) {
+            dispatch({ type: 'SET_FIELD', payload: { field: 'videoPreview', value: null } });
+            setPreviewError(error instanceof Error ? error.message : 'Грешка при preview вчитување.');
+        } finally {
+            setIsLoadingPreview(false);
+        }
+    };
+
+    return (
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-5 mb-6">
+            <div className="animate-fade-in flex flex-col gap-4">
+                <div>
+                    <label htmlFor="videoUrl" className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                        <span className="bg-brand-primary/10 text-brand-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                        Видео URL (YouTube/Vimeo)
+                    </label>
+                    <div className="flex gap-2">
+                        <input
+                            id="videoUrl"
+                            type="url"
+                            value={state.videoUrl}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => dispatch({ type: 'SET_FIELD', payload: { field: 'videoUrl', value: e.target.value } })}
+                            className="block w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:ring-0 focus:border-brand-primary outline-none transition-all shadow-sm font-medium text-gray-800"
+                            placeholder="https://www.youtube.com/watch?v=..."
+                        />
+                        <button
+                            type="button"
+                            onClick={handlePreview}
+                            disabled={!state.videoUrl.trim() || isLoadingPreview}
+                            className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50"
+                        >
+                            {isLoadingPreview ? 'Вчитувам…' : 'Preview'}
+                        </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">MVP поддржува YouTube и Vimeo. По preview, кликнете Генерирај AI за извлекување на наставно сценарио.</p>
+                    {previewError && <p className="text-xs text-red-600 mt-2">{previewError}</p>}
+                </div>
+
+                {state.videoPreview && (
+                    <div className="rounded-xl border border-indigo-100 bg-white p-3 flex gap-3 items-start">
+                        {state.videoPreview.thumbnailUrl ? (
+                            <img src={state.videoPreview.thumbnailUrl} alt={state.videoPreview.title} className="w-28 h-20 object-cover rounded-lg border border-gray-200" />
+                        ) : (
+                            <div className="w-28 h-20 rounded-lg border border-gray-200 bg-gray-100" />
+                        )}
+                        <div className="min-w-0">
+                            <p className="text-sm font-bold text-gray-800 truncate">{state.videoPreview.title}</p>
+                            {state.videoPreview.authorName && <p className="text-xs text-gray-500 mt-0.5 truncate">{state.videoPreview.authorName}</p>}
+                            <p className="text-[11px] text-indigo-700 mt-2 font-semibold">✓ Preview потврден — подготвено за confirm/generate</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 
 export const MaterialOptions: React.FC<MaterialOptionsProps> = ({ state, dispatch, user }) => {
     const { materialType } = state;
@@ -494,6 +564,9 @@ export const MaterialOptions: React.FC<MaterialOptionsProps> = ({ state, dispatc
     }
      if (materialType === 'LEARNING_PATH') {
         return <LearningPathOptions state={state} dispatch={dispatch} user={user} />;
+    }
+    if (materialType === 'VIDEO_EXTRACTOR') {
+        return <VideoExtractorOptions state={state} dispatch={dispatch} />;
     }
 
     return null;

@@ -125,6 +125,18 @@ service cloud.firestore {
       allow delete: if isOwner(resource.data.teacherUid) || isAdmin();
     }
 
+    match /worksheet_approvals/{doc} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.teacherUid == request.auth.uid
+      );
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.teacherUid == request.auth.uid
+      );
+    }
+
     // ── Совладување на концепти (concept_mastery) ──
     match /concept_mastery/{doc} {
       allow read: if isAuthenticated() && (

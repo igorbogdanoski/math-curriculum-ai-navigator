@@ -6,11 +6,13 @@ import {
     XCircle, Clock, CheckCircle, Award,
 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
+import { FeedbackTaxonomyCard } from '../../components/analytics/FeedbackTaxonomyCard';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 import { ScoreBar, QuizRow, fmt, formatDate, type ConceptStat, type QuizAggregate } from './shared';
 import type { QuizResult } from '../../services/firestoreService';
+import type { FeedbackReasonBreakdown } from '../../types';
 
 interface MasteryStats {
     mastered: any[];
@@ -29,6 +31,9 @@ interface OverviewTabProps {
     aiRecs: any[] | null;
     isLoadingRecs: boolean;
     copiedName: string | null;
+    feedbackBreakdown: FeedbackReasonBreakdown | null;
+    isFeedbackBreakdownLoading: boolean;
+    showFeedbackTaxonomy: boolean;
     onGetRecommendations: () => void;
     onGenerateRemedial: (conceptId: string, title: string, avgPct: number) => void;
     onCopyName: (name: string) => void;
@@ -44,6 +49,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     aiRecs,
     isLoadingRecs,
     copiedName,
+    feedbackBreakdown,
+    isFeedbackBreakdownLoading,
+    showFeedbackTaxonomy,
     onGetRecommendations,
     onGenerateRemedial,
     onCopyName,
@@ -93,6 +101,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                         </div>
                     )}
                 </Card>
+            )}
+
+            {showFeedbackTaxonomy && (
+                <div className="mb-8">
+                    <FeedbackTaxonomyCard
+                        data={feedbackBreakdown}
+                        isLoading={isFeedbackBreakdownLoading}
+                    />
+                </div>
             )}
 
             {/* AI Class Recommendation Engine */}

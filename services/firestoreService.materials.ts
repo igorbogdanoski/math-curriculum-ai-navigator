@@ -2,7 +2,7 @@ import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, inc
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion } from '../types';
-import { type CachedMaterial, type Assignment } from './firestoreService.types';
+import { type CachedMaterial, type Assignment, type AIMaterialFeedbackEvent, type AIMaterialFeedbackSummary, type AIMaterialFeedbackSummaryRow, type AIMaterialType, type AIMaterialFeedbackAction, type RecoveryWorksheetApproval } from './firestoreService.types';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import { callEmbeddingProxy } from './gemini/core';
 import { NotFoundError, OfflineError, FirestoreError } from '../utils/errors';
@@ -224,6 +224,7 @@ export const saveQuestion = async (q: Omit<SavedQuestion, 'id'>): Promise<string
       ...q,
       options: q.options ?? [],      // Firestore rejects undefined
       solution: q.solution ?? '',
+      reviewStatus: q.reviewStatus ?? 'pending',
       savedAt: serverTimestamp(),
     });
     return ref.id;
@@ -237,7 +238,9 @@ export const fetchUnapprovedQuestions = async (): Promise<SavedQuestion[]> => {
         limit(200)
       );
       const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedQuestion));
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as SavedQuestion))
+        .filter(q => !q.reviewStatus || q.reviewStatus === 'pending');
     } catch (error) {
       console.error('Error fetching unapproved questions:', error);
       return [];
@@ -317,6 +320,83 @@ export const saveMaterialFeedback = async (
       ratedAt: serverTimestamp(),
     });
   };
+
+const AI_MATERIAL_FEEDBACK_COLLECTION = 'ai_material_feedback_events';
+
+export const logAIMaterialFeedbackEvent = async (payload: {
+  teacherUid: string;
+  materialType: AIMaterialType;
+  action: AIMaterialFeedbackAction;
+  materialId?: string;
+  context?: string;
+}): Promise<void> => {
+  await addDoc(collection(db, AI_MATERIAL_FEEDBACK_COLLECTION), {
+    teacherUid: payload.teacherUid,
+    materialType: payload.materialType,
+    action: payload.action,
+    ...(payload.materialId ? { materialId: payload.materialId } : {}),
+    ...(payload.context ? { context: payload.context } : {}),
+    occurredAt: serverTimestamp(),
+  });
+};
+
+export const buildAIMaterialFeedbackSummaryFromEvents = (
+  events: Array<Pick<AIMaterialFeedbackEvent, 'materialType' | 'action'>>,
+  windowDays = 30,
+): AIMaterialFeedbackSummary => {
+  const rows: Record<string, AIMaterialFeedbackSummaryRow> = {};
+
+  for (const e of events) {
+    const t = e.materialType || 'other';
+    if (!rows[t]) {
+      rows[t] = { materialType: t, total: 0, editEvents: 0, rejectEvents: 0, acceptEvents: 0 };
+    }
+
+    rows[t].total += 1;
+    if (e.action?.startsWith('edit_')) rows[t].editEvents += 1;
+    if (e.action?.startsWith('reject_')) rows[t].rejectEvents += 1;
+    if (e.action?.startsWith('accept_')) rows[t].acceptEvents += 1;
+  }
+
+  const byMaterialType = Object.values(rows).sort((a, b) => b.total - a.total);
+  return {
+    windowDays,
+    totalEvents: byMaterialType.reduce((s, r) => s + r.total, 0),
+    byMaterialType,
+  };
+};
+
+export const fetchAIMaterialFeedbackSummary = async (
+  teacherUid: string,
+  windowDays = 30,
+): Promise<AIMaterialFeedbackSummary> => {
+  const fallback: AIMaterialFeedbackSummary = {
+    windowDays,
+    totalEvents: 0,
+    byMaterialType: [],
+  };
+
+  try {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - windowDays);
+
+    const q = query(
+      collection(db, AI_MATERIAL_FEEDBACK_COLLECTION),
+      where('teacherUid', '==', teacherUid),
+      where('occurredAt', '>=', cutoff),
+      orderBy('occurredAt', 'desc'),
+      limit(2000),
+    );
+
+    const snap = await getDocs(q);
+    if (snap.empty) return fallback;
+    const events = snap.docs.map((d) => ({ id: d.id, ...d.data() } as AIMaterialFeedbackEvent));
+    return buildAIMaterialFeedbackSummaryFromEvents(events, windowDays);
+  } catch (error) {
+    console.error('Error fetching AI material feedback summary:', error);
+    return fallback;
+  }
+};
 
 export const saveToLibrary = async (content: any, meta: {
     title: string;
@@ -526,15 +606,29 @@ export const deleteAssignment = async (assignmentId: string): Promise<void> => {
     await deleteDoc(doc(db, 'assignments', assignmentId));
   };
 
-export const saveAssignmentMaterial = async (content: any, meta: { title: string; type: 'QUIZ' | 'ASSESSMENT'; conceptId?: string; gradeLevel?: number; teacherUid: string; isPublic?: boolean }): Promise<string> => {
+export const saveAssignmentMaterial = async (content: any, meta: { title: string; type: 'QUIZ' | 'ASSESSMENT'; conceptId?: string; topicId?: string; gradeLevel?: number; teacherUid: string; isPublic?: boolean; isRecoveryWorksheet?: boolean; reviewStatus?: 'draft' | 'approved' | 'rejected'; teacherNotes?: string; approvalRef?: string; removedQuestionIds?: number[] }): Promise<string> => {
     const ref = await addDoc(collection(db, 'cached_ai_materials'), {
       content,
       type: meta.type.toLowerCase(),
       title: meta.title,
       conceptId: meta.conceptId,
+      topicId: meta.topicId,
       gradeLevel: meta.gradeLevel,
       teacherUid: meta.teacherUid,
       isPublic: meta.isPublic !== false, // default true
+      ...(meta.isRecoveryWorksheet ? { isRecoveryWorksheet: true } : {}),
+      ...(meta.reviewStatus ? { reviewStatus: meta.reviewStatus } : {}),
+      ...(meta.teacherNotes ? { teacherNotes: meta.teacherNotes } : {}),
+      ...(meta.approvalRef ? { approvalRef: meta.approvalRef } : {}),
+      ...(meta.removedQuestionIds?.length ? { removedQuestionIds: meta.removedQuestionIds } : {}),
+      createdAt: serverTimestamp(),
+    });
+    return ref.id;
+  };
+
+export const saveRecoveryWorksheetApproval = async (approval: Omit<RecoveryWorksheetApproval, 'id' | 'createdAt'>): Promise<string> => {
+    const ref = await addDoc(collection(db, 'worksheet_approvals'), {
+      ...approval,
       createdAt: serverTimestamp(),
     });
     return ref.id;

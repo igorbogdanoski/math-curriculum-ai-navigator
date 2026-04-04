@@ -4,14 +4,34 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
 import { MathRenderer } from '../components/common/MathRenderer';
+import { MaterialFeedbackModal } from '../components/analytics/MaterialFeedbackModal';
+import { isFeedbackTaxonomyRolloutEnabled, logFeedbackTaxonomyRolloutEvent } from '../services/feedbackTaxonomyRollout';
 import { firestoreService } from '../services/firestoreService';
-import type { SavedQuestion } from '../types';
+import type { FeedbackReasonCode, SavedQuestion } from '../types';
 
 export const ContentReviewView: React.FC = () => {
-    const { user } = useAuth();
+    const { user, firebaseUser } = useAuth();
     const { t } = useLanguage();
     const [questions, setQuestions] = useState<SavedQuestion[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedQuestion, setSelectedQuestion] = useState<SavedQuestion | null>(null);
+    const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [feedbackTaxonomyEnabled, setFeedbackTaxonomyEnabled] = useState(() => isFeedbackTaxonomyRolloutEnabled());
+
+    useEffect(() => {
+        const syncRolloutFlag = () => setFeedbackTaxonomyEnabled(isFeedbackTaxonomyRolloutEnabled());
+
+        syncRolloutFlag();
+        window.addEventListener('storage', syncRolloutFlag);
+        window.addEventListener('focus', syncRolloutFlag);
+        document.addEventListener('visibilitychange', syncRolloutFlag);
+
+        return () => {
+            window.removeEventListener('storage', syncRolloutFlag);
+            window.removeEventListener('focus', syncRolloutFlag);
+            document.removeEventListener('visibilitychange', syncRolloutFlag);
+        };
+    }, []);
 
     const exportToCSV = () => {
         if (!questions.length) return;
@@ -55,15 +75,74 @@ export const ContentReviewView: React.FC = () => {
     }, [user]);
 
     const handleApprove = async (qId: string) => {
+        if (!firebaseUser?.uid) return;
         try {
+            if (feedbackTaxonomyEnabled) {
+                await firestoreService.recordMaterialFeedback(firebaseUser.uid, qId, {
+                    status: 'approved',
+                    reasonCodes: [],
+                    comments: 'Approved for publication.',
+                });
+                logFeedbackTaxonomyRolloutEvent('approved_logged');
+            }
             await firestoreService.updateSavedQuestion(qId, { 
                 isApproved: true, 
                 isVerified: true, 
-                isPublic: true 
+                isPublic: true,
+                reviewStatus: 'approved',
+                reviewedBy: firebaseUser.uid,
+                reviewedAt: new Date(),
             });
             setQuestions(prev => prev.filter(q => q.id !== qId));
+            setBanner({ type: 'success', message: 'Материјалот е одобрен и евидентиран во feedback analytics.' });
         } catch (e) {
             console.error('Error approving', e);
+            setBanner({ type: 'error', message: 'Не успеа одобрувањето на материјалот.' });
+        }
+    };
+
+    const handleSubmitFeedback = async (feedback: {
+        status: 'approved' | 'rejected' | 'revision_requested';
+        reasonCodes: FeedbackReasonCode[];
+        comments: string;
+    }) => {
+        if (!firebaseUser?.uid || !selectedQuestion?.id) return;
+
+        const questionId = selectedQuestion.id;
+
+        await firestoreService.recordMaterialFeedback(firebaseUser.uid, questionId, feedback);
+        logFeedbackTaxonomyRolloutEvent(feedback.status === 'rejected' ? 'rejected' : 'revision_requested');
+
+        if (feedback.status === 'rejected') {
+            await firestoreService.deleteQuestion(questionId);
+            setBanner({ type: 'success', message: 'Прашањето е отфрлено и причината е зачувана.' });
+        } else {
+            await firestoreService.updateSavedQuestion(questionId, {
+                isApproved: false,
+                isVerified: false,
+                isPublic: false,
+                reviewStatus: 'revision_requested',
+                reviewReasonCodes: feedback.reasonCodes,
+                reviewComments: feedback.comments,
+                reviewedBy: firebaseUser.uid,
+                reviewedAt: new Date(),
+            });
+            setBanner({ type: 'success', message: 'Барањето за ревизија е зачувано со структурирани reason codes.' });
+        }
+
+        setQuestions(prev => prev.filter(item => item.id !== questionId));
+        setSelectedQuestion(null);
+    };
+
+    const handleLegacyReject = async (question: SavedQuestion) => {
+        try {
+            await firestoreService.deleteQuestion(question.id);
+            setQuestions(prev => prev.filter(item => item.id !== question.id));
+            setBanner({ type: 'success', message: 'Прашањето е отфрлено преку legacy path. Вклучи rollout за structured analytics.' });
+            logFeedbackTaxonomyRolloutEvent('legacy_reject_fallback');
+        } catch (error) {
+            console.error('Error rejecting question', error);
+            setBanner({ type: 'error', message: 'Не успеа отфрлањето на прашањето.' });
         }
     };
 
@@ -96,6 +175,16 @@ export const ContentReviewView: React.FC = () => {
                           Експорт CSV
                       </button>
                   </div>
+
+                {banner && (
+                    <div className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
+                        banner.type === 'success'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                            : 'border-rose-200 bg-rose-50 text-rose-800'
+                    }`}>
+                        {banner.message}
+                    </div>
+                )}
                 
                 {isLoading ? (
                     <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>
@@ -136,13 +225,17 @@ export const ContentReviewView: React.FC = () => {
                                     </button>
                                     <button 
                                         onClick={() => {
-                                            // Optional: Handle rejection (delete or mark as rejected)
-                                            setQuestions(prev => prev.filter(item => item.id !== q.id));
+                                            if (!feedbackTaxonomyEnabled) {
+                                                void handleLegacyReject(q);
+                                                return;
+                                            }
+                                            logFeedbackTaxonomyRolloutEvent('modal_opened');
+                                            setSelectedQuestion(q);
                                         }}
                                         className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-rose-600 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 rounded-lg transition-colors font-medium"
                                     >
                                         <XCircle className="w-4 h-4" />
-                                        Отфрли
+                                        {feedbackTaxonomyEnabled ? 'Feedback / Отфрли' : 'Отфрли'}
                                     </button>
                                 </div>
                             </div>
@@ -150,6 +243,15 @@ export const ContentReviewView: React.FC = () => {
                     </div>
                 )}
             </Card>
+
+            {selectedQuestion && feedbackTaxonomyEnabled && (
+                <MaterialFeedbackModal
+                    materialId={selectedQuestion.id}
+                    materialTitle={selectedQuestion.conceptTitle || selectedQuestion.question}
+                    onSubmit={handleSubmitFeedback}
+                    onClose={() => setSelectedQuestion(null)}
+                />
+            )}
         </div>
     );
 };

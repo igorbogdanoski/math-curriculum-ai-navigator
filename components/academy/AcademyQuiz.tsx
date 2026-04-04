@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, XCircle, Brain, HelpCircle, ArrowRight, Loader2, Award } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
-import { callGeminiProxy } from '../../services/gemini/core';
+import { callGeminiProxy, sanitizePromptInput } from '../../services/gemini/core';
 import { useAcademyProgress } from '../../contexts/AcademyProgressContext';
 import confetti from 'canvas-confetti';
 
@@ -27,8 +27,10 @@ export const AcademyQuiz: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => 
   const generateQuiz = async () => {
     setIsGenerating(true);
     try {
-      const prompt = `Генерирај краток квиз од 3 прашања за наставник по математика базиран на лекцијата: "${lesson.title}".
-Лекцијата покрива: ${lesson.theory.join(' ')}
+      const safeLessonTitle = sanitizePromptInput(lesson.title, 120);
+      const safeLessonTheory = sanitizePromptInput(lesson.theory.join(' '), 1200);
+      const prompt = `Генерирај краток квиз од 3 прашања за наставник по математика базиран на лекцијата: "${safeLessonTitle}".
+Лекцијата покрива: ${safeLessonTheory}
 
 Форматот на одговорот МОРА да биде валиден JSON низа од објекти:
 [

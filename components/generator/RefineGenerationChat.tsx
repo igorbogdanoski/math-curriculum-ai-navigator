@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ICONS } from '../../constants';
 import { geminiService } from '../../services/geminiService';
+import { sanitizePromptInput } from '../../services/gemini/core';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface RefineGenerationChatProps {
@@ -24,9 +25,10 @@ export function RefineGenerationChat({ material, onUpdateMaterial, materialType 
         setError(null);
         
         try {
+            const safePrompt = sanitizePromptInput(prompt, 600);
             // Note: We're adding a generic refineMaterialJSON method to realGeminiService!
             // It will take the existing JSON and the user's prompt to update it.
-            const newMaterial = await geminiService.refineMaterialJSON(material, prompt.trim(), materialType);
+            const newMaterial = await geminiService.refineMaterialJSON(material, safePrompt, materialType);
             if (newMaterial) {
                 onUpdateMaterial(newMaterial);
                 setPrompt('');

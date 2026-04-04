@@ -25,6 +25,7 @@ const MATERIAL_DISPLAY: Partial<Record<string, { emoji: string; name: string }>>
   ILLUSTRATION:  { emoji: '🖼️', name: 'AI Илустрација' },
   WORKED_EXAMPLE:{ emoji: '✍️', name: 'Работен Пример' },
   PRESENTATION:  { emoji: '📽️', name: 'Презентација' },
+  VIDEO_EXTRACTOR: { emoji: '🎬', name: 'Video Extractor (MVP)' },
 };
 
 const EXAMPLE_PROMPTS = [
@@ -66,6 +67,7 @@ Available types and when to use each:
 - ILLUSTRATION: AI-generated diagram or visual for a concept
 - WORKED_EXAMPLE: step-by-step solved example with explanation per step
 - PRESENTATION: slides with content, activities, AI elements (PRO)
+- VIDEO_EXTRACTOR: teacher pastes video URL, gets preview + extracted lesson scenario
 
 Teacher's request: "${safeInput}"
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { firestoreService, type QuizResult, type Announcement } from '../services/firestoreService';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import { useNotification } from '../contexts/NotificationContext';
-import { geminiService } from '../services/geminiService';
+import { geminiService, isRecoveryWorksheetEnabled } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
@@ -12,6 +12,8 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { useTeacherAnalytics } from '../hooks/useTeacherAnalytics';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useAnalyticsAggregations } from '../hooks/useAnalyticsAggregations';
+import { useFeedbackBreakdown } from '../hooks/useFeedbackBreakdown';
+import { isFeedbackTaxonomyRolloutEnabled, logFeedbackTaxonomyRolloutEvent } from '../services/feedbackTaxonomyRollout';
 import { StatCard, fmt } from './analytics/shared';
 import { AnnouncementBoard } from '../components/analytics/AnnouncementBoard';
 import { AnalyticsTabNav, type AnalyticsTab } from '../components/analytics/AnalyticsTabNav';
@@ -37,12 +39,16 @@ import type { DifficultyLevel } from '../services/firestoreService.adaptiveDiffi
 import { useReactToPrint } from 'react-to-print';
 import { PrintableEDnevnikReport } from '../components/analytics/PrintableEDnevnikReport';
 import type { SchoolClass } from '../services/firestoreService';
+import type { AIMaterialFeedbackSummary } from '../services/firestoreService';
 import { AssignRemedialModal } from '../components/analytics/AssignRemedialModal';
+import { RecoveryWorksheetPreviewModal } from '../components/analytics/RecoveryWorksheetPreviewModal';
 import { TabErrorBoundary } from '../components/common/TabErrorBoundary';
 
 
 export const TeacherAnalyticsView: React.FC = () => {
   const { t } = useLanguage();
+  const recoveryWorksheetEnabled = isRecoveryWorksheetEnabled();
+  const feedbackTaxonomyEnabled = isFeedbackTaxonomyRolloutEnabled();
   const { firebaseUser } = useAuth();
 const { addNotification } = useNotification();
   const { data: analyticsData, isLoading, error, refetch: loadResults } = useTeacherAnalytics(firebaseUser?.uid);
@@ -55,6 +61,7 @@ const { addNotification } = useNotification();
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(Date.now()); // updated on manual refresh
+  const [aiFeedbackSummary, setAiFeedbackSummary] = useState<AIMaterialFeedbackSummary | null>(null);
 
   useEffect(() => {
     if (analyticsData) {
@@ -63,6 +70,24 @@ const { addNotification } = useNotification();
       setHasMore(analyticsData.lastDoc !== null);
     }
   }, [analyticsData]);
+
+  useEffect(() => {
+    if (!firebaseUser?.uid) {
+      setAiFeedbackSummary(null);
+      return;
+    }
+    let active = true;
+    firestoreService.fetchAIMaterialFeedbackSummary(firebaseUser.uid, 30)
+      .then(summary => {
+        if (active) setAiFeedbackSummary(summary);
+      })
+      .catch(() => {
+        if (active) setAiFeedbackSummary(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [firebaseUser?.uid, lastRefresh]);
 
   const { getConceptDetails, allConcepts, allNationalStandards } = useCurriculum();
   const { openGeneratorPanel } = useGeneratorPanel();
@@ -77,6 +102,18 @@ const { addNotification } = useNotification();
   const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview');
   const [isExportingXlsx, setIsExportingXlsx] = useState(false);
   const [showMoreTabs, setShowMoreTabs] = useState(false);
+  const { data: feedbackBreakdown, isLoading: isFeedbackBreakdownLoading } = useFeedbackBreakdown({
+    uid: firebaseUser?.uid,
+    periodDays: 30,
+    enabled: Boolean(firebaseUser?.uid) && feedbackTaxonomyEnabled,
+    refreshKey: lastRefresh,
+  });
+
+  useEffect(() => {
+    if (feedbackTaxonomyEnabled && activeTab === 'overview' && feedbackBreakdown) {
+      logFeedbackTaxonomyRolloutEvent('analytics_card_viewed');
+    }
+  }, [activeTab, feedbackBreakdown, feedbackTaxonomyEnabled]);
 
   // ── Announcements ───────────────────────────────────────────────────────────
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -460,8 +497,43 @@ const { addNotification } = useNotification();
           </div>
         )}
 
+        {activeTab === 'overview' && aiFeedbackSummary && aiFeedbackSummary.totalEvents > 0 && (
+          <Card className="mb-8 border-indigo-200 bg-indigo-50/40">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <h3 className="text-lg font-bold text-indigo-900">D4: Teacher Feedback Loop (30 дена)</h3>
+              <span className="text-xs text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full">
+                {aiFeedbackSummary.totalEvents} настани
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-indigo-900 border-b border-indigo-200">
+                    <th className="py-2 pr-2">Material type</th>
+                    <th className="py-2 pr-2">Вкупно</th>
+                    <th className="py-2 pr-2">Edit</th>
+                    <th className="py-2 pr-2">Reject</th>
+                    <th className="py-2 pr-2">Accept</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {aiFeedbackSummary.byMaterialType.map(row => (
+                    <tr key={row.materialType} className="border-b border-indigo-100 last:border-0">
+                      <td className="py-2 pr-2 font-medium text-indigo-900">{row.materialType}</td>
+                      <td className="py-2 pr-2 text-gray-800">{row.total}</td>
+                      <td className="py-2 pr-2 text-gray-800">{row.editEvents}</td>
+                      <td className="py-2 pr-2 text-gray-800">{row.rejectEvents}</td>
+                      <td className="py-2 pr-2 text-gray-800">{row.acceptEvents}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+
         <TabErrorBoundary key={activeTab} tabName={activeTab}>
-        {localResults.length === 0 && ['overview', 'trend', 'students', 'standards', 'concepts', 'grades', 'alerts', 'groups', 'coverage', 'league', 'cohort'].includes(activeTab) ? (
+        {localResults.length === 0 && !(feedbackTaxonomyEnabled && feedbackBreakdown?.totalFeedback) && ['overview', 'trend', 'students', 'standards', 'concepts', 'grades', 'alerts', 'groups', 'coverage', 'league', 'cohort'].includes(activeTab) ? (
           <Card className="text-center py-16">
             <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-500">{t('analytics.noResultsTitle')}</h2>
@@ -480,6 +552,9 @@ const { addNotification } = useNotification();
                 aiRecs={aiRecs}
                 isLoadingRecs={isLoadingRecs}
                 copiedName={copiedName}
+                feedbackBreakdown={feedbackBreakdown}
+                isFeedbackBreakdownLoading={isFeedbackBreakdownLoading}
+                showFeedbackTaxonomy={feedbackTaxonomyEnabled}
                 onGetRecommendations={handleGetRecommendations}
                 onGenerateRemedial={handleGenerateRemedial}
                 onCopyName={name => { setCopiedName(name); setTimeout(() => setCopiedName(null), 2000); }}
@@ -580,7 +655,24 @@ const { addNotification } = useNotification();
         <PrintableEDnevnikReport ref={printRef} results={localResults} />
       </div>
 
-      {assignRemedialState && (
+      {assignRemedialState && recoveryWorksheetEnabled && (
+        <RecoveryWorksheetPreviewModal
+          conceptId={assignRemedialState.conceptId}
+          conceptTitle={assignRemedialState.title}
+          misconceptions={assignRemedialState.misconceptions}
+          strugglingStudents={assignRemedialState.students}
+          classes={classes}
+          teacherUid={firebaseUser!.uid}
+          gradeLevel={assignRemedialState.gradeLevel}
+          topicId={assignRemedialState.topicId}
+          onClose={() => setAssignRemedialState(null)}
+          onSuccess={count => {
+            addNotification(`✅ Recovery worksheet е одобрен и доделен на ${count} ученик${count === 1 ? '' : 'и'}!`, 'success');
+            setAssignRemedialState(null);
+          }}
+        />
+      )}
+      {assignRemedialState && !recoveryWorksheetEnabled && (
         <AssignRemedialModal
           conceptId={assignRemedialState.conceptId}
           conceptTitle={assignRemedialState.title}

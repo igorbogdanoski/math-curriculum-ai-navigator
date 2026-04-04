@@ -176,7 +176,7 @@ export function useGeneratorContext({
 
   const isGenerateDisabled = useMemo(() => {
     const { contextType, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile,
-      materialType, questionTypes, useStudentProfiles, selectedStudentProfileIds, activityTitle, illustrationPrompt,
+      materialType, questionTypes, useStudentProfiles, selectedStudentProfileIds, activityTitle, illustrationPrompt, videoUrl,
       bloomDistribution } = state;
     if (isGenerating || isGeneratingBulk || isGeneratingVariants || !isOnline) return true;
     let contextIsValid = false;
@@ -199,6 +199,7 @@ export function useGeneratorContext({
     if (materialType === 'LEARNING_PATH' && selectedStudentProfileIds.length === 0) return true;
     if (materialType === 'RUBRIC' && !activityTitle) return true;
     if (materialType === 'ILLUSTRATION' && !illustrationPrompt.trim() && !imageFile) return true;
+    if (materialType === 'VIDEO_EXTRACTOR' && !videoUrl.trim()) return true;
     return false;
   }, [isGenerating, isGeneratingBulk, isGeneratingVariants, isOnline, state]);
 

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, X, Bot, Loader2, Sparkles } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
-import { callGeminiProxy } from '../../services/gemini/core';
+import { callGeminiProxy, sanitizePromptInput } from '../../services/gemini/core';
 import { useAcademyProgress } from '../../contexts/AcademyProgressContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -35,19 +35,23 @@ export const AcademyMentor: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) =
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage = input.trim();
+    const userMessage = sanitizePromptInput(input.trim(), 800);
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
     try {
+      const safeLessonTitle = sanitizePromptInput(lesson.title, 120);
+      const safeTheory = sanitizePromptInput(lesson.theory.join(' '), 1200);
+      const safeBenefit = sanitizePromptInput(lesson.cognitiveBenefit, 300);
+      const safeExample = sanitizePromptInput(lesson.mathExample, 500);
       const systemPrompt = `Ти си AI Ментор во "Едукативниот Центар" на апликацијата Math Navigator. 
-Твоја задача е да му помогнеш на наставникот по математика подлабоко да ја разбере тековната лекција: "${lesson.title}".
+Твоја задача е да му помогнеш на наставникот по математика подлабоко да ја разбере тековната лекција: "${safeLessonTitle}".
 
 Клучни информации за лекцијата:
-Теорија: ${lesson.theory.join(' ')}
-Когнитивна придобивка: ${lesson.cognitiveBenefit}
-Пример: ${lesson.mathExample}
+Теорија: ${safeTheory}
+Когнитивна придобивка: ${safeBenefit}
+Пример: ${safeExample}
 
 Твојот стил треба да биде охрабрувачки, професионален и практичен. Давај конкретни идеи како овој модел/тон може да се искористи за конкретни математички теми. Ако наставникот те праша нешто надвор од контекстот на лекцијата, нежно врати го на темата.
 
@@ -55,7 +59,7 @@ export const AcademyMentor: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) =
 
       const contents = messages.concat({ role: 'user', content: userMessage }).map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
-        parts: [{ text: m.content }]
+        parts: [{ text: sanitizePromptInput(m.content, 1000) }]
       }));
 
       const response = await callGeminiProxy({

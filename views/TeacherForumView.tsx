@@ -56,6 +56,7 @@ import {
   type ReactionField,
 } from '../services/firestoreService.forum';
 import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
+import { AppError, ErrorCode } from '../utils/errors';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -896,7 +897,14 @@ export const TeacherForumView: React.FC = () => {
       });
       const raw = resp.text ?? '';
       const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error('No JSON');
+      if (!match) {
+        throw new AppError(
+          'AI did not return valid JSON',
+          ErrorCode.AI_PARSE_FAILED,
+          'Генериањето на предизвик не успеа. Обидете се повторно.',
+          true,
+        );
+      }
       const parsed = JSON.parse(match[0]) as { title: string; body: string };
       const threadId = await createForumThread({
         authorUid: myUid,

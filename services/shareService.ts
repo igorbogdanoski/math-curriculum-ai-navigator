@@ -1,5 +1,6 @@
 import type { LessonPlan, SharedAnnualPlan } from '../types';
 import { z } from 'zod';
+import { AppError, ErrorCode } from '../utils/errors';
 
 declare const pako: any; // pako is loaded from a script tag in index.html
 
@@ -82,7 +83,12 @@ export const shareService = {
   generateAnnualShareData(planData: SharedAnnualPlan): string {
     try {
       if (typeof pako === 'undefined') {
-        throw new Error("Pako compression library is not loaded.");
+        throw new AppError(
+          'Pako compression library is not loaded.',
+          ErrorCode.AI_UNAVAILABLE,
+          'Сервисот за компресија моментално не е достапен. Обидете се повторно.',
+          true,
+        );
       }
       const jsonString = JSON.stringify(planData);
       const compressed = pako.deflate(jsonString, { to: 'string' });
@@ -96,7 +102,12 @@ export const shareService = {
   decodeAnnualShareData(data: string): SharedAnnualPlan | null {
     try {
       if (typeof pako === 'undefined') {
-        throw new Error("Pako compression library is not loaded.");
+        throw new AppError(
+          'Pako compression library is not loaded.',
+          ErrorCode.AI_UNAVAILABLE,
+          'Сервисот за компресија моментално не е достапен. Обидете се повторно.',
+          true,
+        );
       }
       const compressedString = atob(data);
       const jsonString = pako.inflate(compressedString, { to: 'string' });

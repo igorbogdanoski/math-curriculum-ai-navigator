@@ -308,27 +308,45 @@ export default defineConfig(({ mode }) => {
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
           output: {
-            // manualChunks — vendor-only splitting for truly independent heavy packages.
+            // manualChunks — targeted vendor splitting for large libraries.
             //
-            // View-based splitting is intentionally removed: manually grouping views
-            // creates Rollup TDZ (Temporal Dead Zone) errors when circular imports exist
-            // between shared components and view modules ("Cannot access 'x' before
-            // initialization"). Vite's automatic code-splitting handles views correctly
-            // via React.lazy() dynamic imports in the router.
+            // View-based manual grouping remains disabled to avoid TDZ runtime errors
+            // when circular imports appear across views and shared modules.
             //
-            // Node-module splitting is limited to packages with ZERO React peer-deps.
-            // All React-ecosystem packages (react, react-dom, zustand, @dnd-kit, etc.)
-            // share one vendor chunk to prevent chunk-load-order races that produce
-            // "Cannot read properties of undefined (reading 'useLayoutEffect/createContext')".
+            // Strategy:
+            // 1) Keep React core in a dedicated stable chunk.
+            // 2) Split known heavy libraries into dedicated chunks.
+            // 3) Leave small/medium deps in a generic vendor fallback chunk.
             manualChunks: (id) => {
               if (!id.includes('node_modules')) return undefined;
+              // Keep React core in generic vendor chunk to avoid vendor <-> react-core
+              // circular runtime references (TDZ in production).
               if (id.includes('@react-pdf')) return 'vendor-pdf';     // has its own React copy
               if (id.includes('firebase')) return 'vendor-firebase';
               if (id.includes('pptxgenjs')) return 'vendor-pptx';
-              if (id.includes('mathjs') || id.includes('mathlive')) return 'vendor-math';
+              if (id.includes('mathjs')) return 'vendor-mathjs';
+              if (id.includes('mathlive')) return 'vendor-mathlive';
               if (id.includes('docx')) return 'vendor-docx';
               if (id.includes('/xlsx/') || id.includes('\\xlsx\\')) return 'vendor-xlsx';
-              return 'vendor'; // React + entire React ecosystem + all other deps
+              if (id.includes('recharts')) return 'vendor-charts';
+              if (id.includes('/d3-') || id.includes('\\d3-') || id.includes('d3-array') || id.includes('d3-scale') || id.includes('d3-shape') || id.includes('d3-color')) return 'vendor-d3';
+              if (id.includes('three')) return 'vendor-three';
+              if (id.includes('lucide-react')) return 'vendor-icons';
+              if (id.includes('@tanstack/react-query')) return 'vendor-query';
+              if (id.includes('@dnd-kit') || id.includes('react-joyride') || id.includes('react-router-dom') || id.includes('zustand')) return 'vendor-react-ui';
+              if (id.includes('@sentry')) return 'vendor-sentry';
+              if (id.includes('html2canvas') || id.includes('jspdf')) return 'vendor-capture';
+              if (id.includes('dompurify')) return 'vendor-sanitize';
+              if (id.includes('zod')) return 'vendor-zod';
+              if (id.includes('idb')) return 'vendor-storage';
+              // Keep Sentry in the generic vendor chunk to avoid TDZ runtime errors
+              // from circular dependencies between vendor-react-core/vendor chunks.
+              if (id.includes('qrcode.react') || id.includes('react-qr-code')) return 'vendor-qr';
+              if (id.includes('canvas-confetti')) return 'vendor-effects';
+              if (id.includes('file-saver')) return 'vendor-files';
+              if (id.includes('@google/generative-ai')) return 'vendor-gemini-client';
+              if (id.includes('satori') || id.includes('@resvg')) return 'vendor-svg';
+              return 'vendor';
             }
           }
         }

@@ -9,7 +9,9 @@
  */
 
 import { callGeminiProxy, DEFAULT_MODEL } from './core';
+import { AIServiceError } from '../../utils/errors';
 
+// @prompt-start: SVG_SYSTEM_PROMPT
 const SYSTEM_PROMPT = `You are a mathematical SVG diagram generator for educational presentations.
 Generate MINIMAL, CLEAN SVG code for math illustrations.
 
@@ -26,6 +28,7 @@ Strict rules:
 6. Keep stroke-width between 1.5 and 2.5
 7. Max 50 SVG elements — stay minimal
 8. Include only safe tags: svg, g, circle, ellipse, rect, line, polyline, polygon, path, defs, marker`;
+// @prompt-end: SVG_SYSTEM_PROMPT
 
 /**
  * Generate a dark-mode SVG illustration for a presentation slide.
@@ -50,5 +53,5 @@ Return ONLY the SVG code.`;
   if (svgMatch) return svgMatch[0];
   if (raw.startsWith('<svg')) return raw;
 
-  throw new Error('No valid SVG returned');
+  throw new AIServiceError('No valid SVG returned');
 }

@@ -227,6 +227,19 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
   const [isGeneratingFromContent, setIsGeneratingFromContent] = useState(false);
   const { addNotification } = useNotification();
 
+  const trackFeedback = (
+    action: 'edit_regenerated' | 'reject_visual' | 'accept_saved',
+    context?: string,
+  ) => {
+    if (!firebaseUser?.uid) return;
+    firestoreService.logAIMaterialFeedbackEvent({
+      teacherUid: firebaseUser.uid,
+      materialType: 'presentation',
+      action,
+      context,
+    }).catch(() => undefined);
+  };
+
   const updateSlideTitle = (idx: number, title: string) =>
     setEditedSlides(prev => prev.map((s, i) => i === idx ? { ...s, title } : s));
   const updateSlideBullet = (slideIdx: number, bulletIdx: number, text: string) =>
@@ -278,6 +291,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
       setCurrentSlide(0);
       setShowAiContentModal(false);
       setAiContentText('');
+      trackFeedback('edit_regenerated', 'source:ai_content_modal');
       addNotification('Слајдовите се генерирани од содржината!', 'success');
     } catch {
       addNotification('Грешка при генерирање на слајдови.', 'error');
@@ -302,6 +316,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
         ),
       });
       setIsSaved(true);
+      trackFeedback('accept_saved', 'target:saved_presentation');
     } catch (err) {
       console.error('[save-presentation]', err);
     } finally {
@@ -393,6 +408,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
       }
 
       setVisuals(prev => ({ ...prev, [idx]: { loading: false, url: result.imageUrl } }));
+      trackFeedback('edit_regenerated', `slide_index:${idx}`);
       addNotification('Сликата за слајдот е генерирана!', 'success');
     } catch (error) {
       console.error('Slide visual error:', error);
@@ -704,7 +720,13 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             {visual?.url ? (
               <div className="rounded-2xl overflow-hidden shadow-xl border border-white/20 relative group/img">
                 <img src={visual.url} alt="Slide Visual" className="w-full h-auto object-cover aspect-square" />
-                <button type="button" title="Избриши слика" onClick={() => setVisuals(prev => ({ ...prev, [slideIdx]: { loading: false } }))}
+                <button
+                  type="button"
+                  title="Избриши слика"
+                  onClick={() => {
+                    setVisuals(prev => ({ ...prev, [slideIdx]: { loading: false } }));
+                    trackFeedback('reject_visual', `slide_index:${slideIdx}`);
+                  }}
                   className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity shadow">
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -886,7 +908,11 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                                     {/* Delete button */}
                                     <button
                                         type="button"
-                                        onClick={() => { setVisuals(prev => ({ ...prev, [currentSlide]: { loading: false } })); setOpenVisualPrompt(false); }}
+                                      onClick={() => {
+                                        setVisuals(prev => ({ ...prev, [currentSlide]: { loading: false } }));
+                                        trackFeedback('reject_visual', `slide_index:${currentSlide}`);
+                                        setOpenVisualPrompt(false);
+                                      }}
                                         title="Избриши слика"
                                         className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity shadow hover:bg-red-600"
                                     >
@@ -1256,7 +1282,13 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
                 {visuals[currentSlide]?.url ? (
                   <div className="relative group/img rounded-xl overflow-hidden">
                     <img src={visuals[currentSlide].url} alt="Visual" className="w-full rounded-xl" />
-                    <button type="button" title="Избриши слика" onClick={() => setVisuals(prev => ({ ...prev, [currentSlide]: { loading: false } }))}
+                    <button
+                      type="button"
+                      title="Избриши слика"
+                      onClick={() => {
+                        setVisuals(prev => ({ ...prev, [currentSlide]: { loading: false } }));
+                        trackFeedback('reject_visual', `slide_index:${currentSlide}`);
+                      }}
                       className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity shadow">
                       <X className="w-3 h-3" />
                     </button>

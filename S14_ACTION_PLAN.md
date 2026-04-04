@@ -107,7 +107,7 @@
 | F1 | Целосен TSC check (`npx tsc --noEmit`) — 0 грешки | ✅ |
 | F2 | Bug fixes: html2canvas error UI, shape3dShape null guard, C1.4 | ✅ |
 | F3 | `git push` — деплој на Vercel | ✅ |
-| F4 | Ажурирај MEMORY.md со S14 метрики | ⬜ |
+| F4 | Ажурирај MEMORY.md со S14 метрики | ✅ |
 
 ---
 

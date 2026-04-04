@@ -10,6 +10,7 @@ import { getAICache, saveAICache } from '../indexedDBService';
 
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
+export const LITE_MODEL = 'gemini-2.0-flash-lite';   // E3 — Intent Router: ultra-fast for trivial tasks
 export const DEFAULT_MODEL = 'gemini-2.5-flash';
 export const PRO_MODEL = 'gemini-2.5-pro';
 export const ULTIMATE_MODEL = 'gemini-3.1-pro-preview';
@@ -288,6 +289,8 @@ export async function callGeminiProxy(params: {
   systemInstruction?: string;
   safetySettings?: any;
   userTier?: string;
+  /** E3 — Intent Router: when true, `model` is used as-is without tier-based override. */
+  skipTierOverride?: boolean;
   /** Pass `[{ googleSearch: {} }]` to enable Gemini Grounding with real-time internet search */
   tools?: unknown[];
 }, signal?: AbortSignal): Promise<{ text: string; candidates: any[]; groundingMetadata?: unknown }> {
@@ -302,9 +305,12 @@ export async function callGeminiProxy(params: {
     try {
       const token = await getAuthToken();
 
-      // Select model based on user tier if tier is provided
+      // Select model based on task complexity (E3) or user tier
       let modelToUse = params.model;
-      if (params.userTier === 'Pro' || params.userTier === 'Unlimited') {
+      if (params.skipTierOverride) {
+        // E3 Intent Router: honour the caller's model choice without tier override
+        modelToUse = params.model;
+      } else if (params.userTier === 'Pro' || params.userTier === 'Unlimited') {
           modelToUse = ULTIMATE_MODEL;
       } else if (params.userTier === 'Standard') {
           modelToUse = PRO_MODEL;
@@ -396,7 +402,12 @@ export async function callImagenProxy(params: {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error: ${response.status}`);
+        throw new AppError(
+          errorData.error || `Server error: ${response.status}`,
+          ErrorCode.AI_UNAVAILABLE,
+          'AI сервисот моментално не е достапен. Обидете се повторно.',
+          true,
+        );
       }
 
       return await response.json();
@@ -427,7 +438,12 @@ export async function callEmbeddingProxy(text: string, signal?: AbortSignal): Pr
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error: ${response.status}`);
+        throw new AppError(
+          errorData.error || `Server error: ${response.status}`,
+          ErrorCode.AI_UNAVAILABLE,
+          'AI сервисот моментално не е достапен. Обидете се повторно.',
+          true,
+        );
       }
 
       const data = await response.json();
@@ -461,7 +477,12 @@ export async function callGeminiEmbed(params: {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error: ${response.status}`);
+        throw new AppError(
+          errorData.error || `Server error: ${response.status}`,
+          ErrorCode.AI_UNAVAILABLE,
+          'AI сервисот моментално не е достапен. Обидете се повторно.',
+          true,
+        );
       }
 
       return await response.json();
@@ -519,11 +540,16 @@ export async function* streamGeminiProxy(params: {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `Server error: ${response.status}`);
+    throw new AppError(
+      errorData.error || `Server error: ${response.status}`,
+      ErrorCode.AI_UNAVAILABLE,
+      'AI сервисот моментално не е достапен. Обидете се повторно.',
+      true,
+    );
   }
 
   const reader = response.body?.getReader();
-  if (!reader) throw new Error("No response body");
+  if (!reader) throw new AIServiceError('No response body');
 
   const decoder = new TextDecoder();
   let buffer = '';
@@ -545,7 +571,7 @@ export async function* streamGeminiProxy(params: {
         try {
           const data = JSON.parse(dataStr);
           if (data.text) yield data.text;
-          if (data.error) throw new Error(data.error);
+          if (data.error) throw new AIServiceError(data.error);
         } catch (e) {
           console.error("Error parsing stream chunk:", e);
         }
@@ -607,11 +633,16 @@ export async function* streamGeminiProxyRich(params: {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `Server error: ${response.status}`);
+    throw new AppError(
+      errorData.error || `Server error: ${response.status}`,
+      ErrorCode.AI_UNAVAILABLE,
+      'AI сервисот моментално не е достапен. Обидете се повторно.',
+      true,
+    );
   }
 
   const reader = response.body?.getReader();
-  if (!reader) throw new Error("No response body");
+  if (!reader) throw new AIServiceError('No response body');
 
   const decoder = new TextDecoder();
   let buffer = '';
@@ -633,7 +664,7 @@ export async function* streamGeminiProxyRich(params: {
           const data = JSON.parse(dataStr);
           if (data.thinking) yield { kind: 'thinking', text: data.thinking };
           else if (data.text) yield { kind: 'text', text: data.text };
-          if (data.error) throw new Error(data.error);
+          if (data.error) throw new AIServiceError(data.error);
         } catch (e) {
           console.error("Error parsing rich stream chunk:", e);
         }
@@ -756,6 +787,7 @@ export function minifyContext(context: GenerationContext): any {
 }
 
 // --- SYSTEM INSTRUCTIONS ---
+// @prompt-start: TEXT_SYSTEM_INSTRUCTION
 export const TEXT_SYSTEM_INSTRUCTION = `
 Ти си врвен експерт за методика на наставата по математика во Македонија.
 Твојата цел е да генерираш креативни, ангажирачки и педагошки издржани содржини.
@@ -772,17 +804,29 @@ export const TEXT_SYSTEM_INSTRUCTION = `
 - prerequisiteConcepts: листа на концепти кои учениците мора да ги знаат однапред — ако не е празна, вклучи кратка 'Активирање предзнаење' секција (5 мин) со конкретна активност за тие концепти.
 `;
 
+// @prompt-end: TEXT_SYSTEM_INSTRUCTION
+
+// @prompt-start: JSON_SYSTEM_INSTRUCTION
 export const JSON_SYSTEM_INSTRUCTION = `Ти си API кое генерира строго валиден JSON за наставни материјали по математика. 
 ОДГОВОРИ ИСКЛУЧИВО СО RAW JSON ОБЈЕКТ. БЕЗ MARKDOWN (\`\`\`json) И БЕЗ ДОПОЛНИТЕЛЕН ТЕКСТ.`;
+// @prompt-end: JSON_SYSTEM_INSTRUCTION
 
 // --- MACEDONIAN LOCAL CONTEXT ---
 export const MK_LOCAL_CONTEXT_KEY = 'mk_local_context_enabled';
+export const RECOVERY_WORKSHEET_KEY = 'recovery_worksheet_enabled';
 
 export function isMacedonianContextEnabled(): boolean {
     try { return localStorage.getItem(MK_LOCAL_CONTEXT_KEY) !== 'false'; } catch { return true; }
 }
 export function setMacedonianContextEnabled(val: boolean): void {
     try { localStorage.setItem(MK_LOCAL_CONTEXT_KEY, String(val)); } catch { /* ignore */ }
+}
+
+export function isRecoveryWorksheetEnabled(): boolean {
+  try { return localStorage.getItem(RECOVERY_WORKSHEET_KEY) === 'true'; } catch { return false; }
+}
+export function setRecoveryWorksheetEnabled(val: boolean): void {
+  try { localStorage.setItem(RECOVERY_WORKSHEET_KEY, String(val)); } catch { /* ignore */ }
 }
 
 export const MACEDONIAN_CONTEXT_SNIPPET = `

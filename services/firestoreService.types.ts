@@ -167,4 +167,59 @@ export interface CachedMaterial {
   sourceAuthor?: string;
   /** PRO feature: false = private (only visible to owning teacher); default true = public library */
   isPublic?: boolean;
+  isRecoveryWorksheet?: boolean;
+  reviewStatus?: 'draft' | 'approved' | 'rejected';
+  teacherNotes?: string;
+  approvalRef?: string;
+  removedQuestionIds?: number[];
+  sourceQuizId?: string;
+}
+
+export interface RecoveryWorksheetApproval {
+  id: string;
+  teacherUid: string;
+  conceptId?: string;
+  topicId?: string;
+  gradeLevel?: number;
+  title: string;
+  approvedQuestionCount: number;
+  removedQuestionIds?: number[];
+  teacherNotes?: string;
+  classId?: string;
+  assignedStudentCount?: number;
+  createdAt?: Timestamp;
+}
+
+export type AIMaterialType = 'assessment' | 'ideas' | 'presentation' | 'lesson_plan' | 'rubric' | 'annual_plan' | 'learning_paths' | 'illustration' | 'other';
+
+export type AIMaterialFeedbackAction =
+  | 'edit_started'
+  | 'edit_saved'
+  | 'edit_regenerated'
+  | 'reject_edit'
+  | 'reject_visual'
+  | 'accept_saved';
+
+export interface AIMaterialFeedbackEvent {
+  id: string;
+  teacherUid: string;
+  materialType: AIMaterialType;
+  action: AIMaterialFeedbackAction;
+  materialId?: string;
+  context?: string;
+  occurredAt?: Timestamp;
+}
+
+export interface AIMaterialFeedbackSummaryRow {
+  materialType: AIMaterialType;
+  total: number;
+  editEvents: number;
+  rejectEvents: number;
+  acceptEvents: number;
+}
+
+export interface AIMaterialFeedbackSummary {
+  windowDays: number;
+  totalEvents: number;
+  byMaterialType: AIMaterialFeedbackSummaryRow[];
 }

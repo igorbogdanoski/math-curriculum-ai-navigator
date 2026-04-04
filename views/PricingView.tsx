@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 
 import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -84,24 +84,28 @@ function useStripeCheckout() {
 
 // ── FeatureCell ────────────────────────────────────────────────────────────
 const FeatureCell: React.FC<{ value: string | boolean }> = ({ value }) => {
-  if (value === true) return <Check className="w-5 h-5 text-emerald-500 mx-auto" />;
-  if (value === false) return <span className="text-slate-300 text-lg mx-auto block text-center">—</span>;
+  if (value === true) return <Check className="w-5 h-5 text-emerald-600 mx-auto" aria-hidden="true" />;
+  if (value === false) return <span className="text-slate-500 text-lg mx-auto block text-center">—</span>;
   return <span className="text-sm text-slate-700 text-center block">{value}</span>;
 };
 
 // ── FAQ Item ───────────────────────────────────────────────────────────────
 const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
   const [open, setOpen] = useState(false);
+  const answerId = useId();
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={answerId}
         className="w-full flex items-center justify-between px-5 py-4 text-left font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
       >
         {q}
-        {open ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
+        {open ? <ChevronUp className="w-5 h-5 text-slate-500 flex-shrink-0" aria-hidden="true" /> : <ChevronDown className="w-5 h-5 text-slate-500 flex-shrink-0" aria-hidden="true" />}
       </button>
-      {open && <div className="px-5 pb-4 text-sm text-slate-600 leading-relaxed">{a}</div>}
+      {open && <div id={answerId} className="px-5 pb-4 text-sm text-slate-700 leading-relaxed">{a}</div>}
     </div>
   );
 };
@@ -139,9 +143,9 @@ export const PricingView: React.FC = () => {
         </div>
         <h1 className="text-5xl font-black text-slate-900 mb-4 leading-tight">
           Инвестирајте во<br />
-          <span className="text-indigo-600">квалитетна настава.</span>
+          <span className="text-indigo-700">квалитетна настава.</span>
         </h1>
-        <p className="text-lg text-slate-500 max-w-xl mx-auto mb-2">
+        <p className="text-lg text-slate-600 max-w-xl mx-auto mb-2">
           {PRO_PRICE_MONTHLY} денари месечно е сè што чини неограничен AI асистент за вашите часови.
         </p>
         {isPro && (
@@ -161,15 +165,15 @@ export const PricingView: React.FC = () => {
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <BookOpen className="w-5 h-5 text-slate-500" />
-                <h3 className="text-lg font-bold text-slate-700">Бесплатно</h3>
+                <h2 className="text-lg font-bold text-slate-800">Бесплатно</h2>
               </div>
               <div className="text-4xl font-black text-slate-900 mb-1">0 МКД</div>
-              <p className="text-slate-400 text-sm">Засекогаш бесплатно</p>
+              <p className="text-slate-600 text-sm">Засекогаш бесплатно</p>
             </div>
             <ul className="space-y-2.5 mb-8 flex-1">
               {['50 почетни AI кредити', 'Квизови и тестови', 'Планови за часови', 'Офлајн PWA', 'Родителски портал'].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                  <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" aria-hidden="true" />
                   {f}
                 </li>
               ))}
@@ -191,13 +195,13 @@ export const PricingView: React.FC = () => {
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Crown className="w-5 h-5 text-yellow-300" />
-                <h3 className="text-lg font-bold text-white">Pro Наставник</h3>
+                <h2 className="text-lg font-bold text-white">Pro Наставник</h2>
               </div>
               <div className="flex items-end gap-2 mb-1">
                 <span className="text-4xl font-black text-white">{PRO_PRICE_MKD}</span>
-                <span className="text-purple-200 text-sm mb-1.5">МКД / год.</span>
+                <span className="text-indigo-100 text-sm mb-1.5">МКД / год.</span>
               </div>
-              <p className="text-purple-200 text-sm">
+              <p className="text-indigo-100 text-sm">
                 = {PRO_PRICE_MONTHLY} МКД / месечно
               </p>
             </div>
@@ -212,8 +216,8 @@ export const PricingView: React.FC = () => {
                 'IEP поддршка',
                 'Приоритетна поддршка',
               ].map(f => (
-                <li key={f} className="flex items-center gap-2 text-sm text-white/90">
-                  <Check className="w-4 h-4 text-emerald-300 flex-shrink-0" />
+                <li key={f} className="flex items-center gap-2 text-sm text-white">
+                  <Check className="w-4 h-4 text-emerald-200 flex-shrink-0" aria-hidden="true" />
                   {f}
                 </li>
               ))}
@@ -232,15 +236,15 @@ export const PricingView: React.FC = () => {
                   {loading ? 'Се подготвува...' : '💳 Плати со картичка'}
                 </button>
                 {!isAuthenticated && (
-                  <p className="text-purple-200 text-xs text-center">
+                  <p className="text-indigo-100 text-xs text-center">
                     <a href="#/" className="underline">Најавете се</a> пред плаќање
                   </p>
                 )}
                 {error && <p className="text-red-300 text-xs text-center">{error}</p>}
                 <div className="border-t border-white/20 pt-2">
-                  <p className="text-purple-200 text-xs text-center mb-1">или банкарски трансфер:</p>
-                  <p className="text-white/80 text-xs text-center font-mono">NLB 210501596102457</p>
-                  <a href="mailto:bogdanoskiigor@gmail.com" className="text-purple-200 text-xs text-center block hover:text-white">
+                  <p className="text-indigo-100 text-xs text-center mb-1">или банкарски трансфер:</p>
+                  <p className="text-white text-xs text-center font-mono">NLB 210501596102457</p>
+                  <a href="mailto:bogdanoskiigor@gmail.com" className="text-indigo-100 text-xs text-center block hover:text-white">
                     bogdanoskiigor@gmail.com
                   </a>
                 </div>
@@ -253,10 +257,10 @@ export const PricingView: React.FC = () => {
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Users className="w-5 h-5 text-purple-600" />
-                <h3 className="text-lg font-bold text-slate-700">Училишна лиценца</h3>
+                <h2 className="text-lg font-bold text-slate-800">Училишна лиценца</h2>
               </div>
               <div className="text-2xl font-black text-slate-900 mb-1">По договор</div>
-              <p className="text-slate-400 text-sm">За сите наставници преку фактура</p>
+              <p className="text-slate-600 text-sm">За сите наставници преку фактура</p>
             </div>
             <ul className="space-y-2.5 mb-8 flex-1">
               {[
@@ -269,7 +273,7 @@ export const PricingView: React.FC = () => {
                 'Обука и onboarding',
               ].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <Check className="w-4 h-4 text-purple-600 flex-shrink-0" aria-hidden="true" />
                   {f}
                 </li>
               ))}
@@ -289,6 +293,7 @@ export const PricingView: React.FC = () => {
         <h2 className="text-2xl font-bold text-slate-800 text-center mb-8">Детална споредба на планови</h2>
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
           <table className="w-full text-sm">
+            <caption className="sr-only">Споредба на функционалности меѓу Бесплатно, Pro и Школско ниво</caption>
             <thead>
               <tr className="border-b border-slate-100">
                 <th className="text-left px-5 py-4 text-slate-500 font-medium w-1/2">Функционалност</th>
@@ -323,7 +328,7 @@ export const PricingView: React.FC = () => {
             <div key={text} className="bg-white border border-slate-200 rounded-xl p-4 text-center">
               <Icon className="w-6 h-6 text-indigo-500 mx-auto mb-2" />
               <p className="font-semibold text-slate-800 text-sm">{text}</p>
-              <p className="text-slate-400 text-xs mt-0.5">{sub}</p>
+              <p className="text-slate-600 text-xs mt-0.5">{sub}</p>
             </div>
           ))}
         </div>
@@ -340,7 +345,7 @@ export const PricingView: React.FC = () => {
       {/* ── Footer CTA ── */}
       <div className="bg-indigo-600 py-16 text-center px-4">
         <h2 className="text-3xl font-black text-white mb-3">Подготвени да почнете?</h2>
-        <p className="text-indigo-200 mb-6">Придружете се на наставниците кои веќе ја користат платформата.</p>
+        <p className="text-indigo-100 mb-6">Придружете се на наставниците кои веќе ја користат платформата.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {!isPro && (
             <button
@@ -353,7 +358,7 @@ export const PricingView: React.FC = () => {
           )}
           <a
             href="#/"
-            className="px-8 py-3.5 border-2 border-white/40 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors"
+            className="px-8 py-3.5 border-2 border-white/70 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors"
           >
             Продолжи бесплатно
           </a>

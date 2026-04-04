@@ -67,7 +67,35 @@ export function captureException(
   context?: Record<string, unknown>
 ): void {
   if (!import.meta.env.VITE_SENTRY_DSN) return;
-  Sentry.captureException(error, context ? { extra: context } : undefined);
+
+  const isTypedAppError =
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    'retryable' in error;
+
+  const appError = isTypedAppError
+    ? (error as { code: string; retryable: boolean; name?: string; userMessage?: string })
+    : null;
+
+  const tags: Record<string, string> = {
+    error_type: appError ? 'app_error' : 'untyped_error',
+  };
+
+  if (appError) {
+    tags.app_error_code = appError.code;
+    tags.app_error_retryable = String(appError.retryable);
+    if (appError.name) {
+      tags.app_error_name = appError.name;
+    }
+  }
+
+  const extra = {
+    ...(context ?? {}),
+    ...(appError?.userMessage ? { appErrorUserMessage: appError.userMessage } : {}),
+  };
+
+  Sentry.captureException(error, { tags, extra });
 }
 
 /**

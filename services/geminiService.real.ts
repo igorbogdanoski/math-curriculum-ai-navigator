@@ -1,21 +1,22 @@
 import { assessmentAPI } from './gemini/assessment';
 import { plansAPI } from './gemini/plans';
 import {
-    Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, streamGeminiProxy,
+    Type, Part, Content, getCached, setCached, DEFAULT_MODEL, LITE_MODEL, MAX_RETRIES, generateAndParseJSON, streamGeminiProxy,
     checkDailyQuotaGuard, SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
     CACHE_COLLECTION, minifyContext, callEmbeddingProxy, sanitizePromptInput,
     streamGeminiProxyRich, type StreamChunk, type ImagenProxyResponse,
     withLangRule, getResolvedTextSystemInstruction,
 } from './gemini/core';
+import { shouldUseLiteModel, logRouterDecision } from './gemini/intentRouter';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { AIServiceError } from '../utils/errors';
 import { db, auth, storage } from '../firebaseConfig';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, ProGeneratedTest, DifferentiatedLevel, AssessmentQuestion, AIGeneratedWorkedExample, AdaptiveHomework , AIGeneratedAnnualPlan, AIGeneratedPresentation } from '../types';
+import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGeneratedLearningPaths, GenerationContext, StudentProfile, AIGeneratedRubric, LessonPlan, AIPedagogicalAnalysis, CoverageAnalysisReport, NationalStandard, AIRecommendation, GeneratedTest, ProGeneratedTest, DifferentiatedLevel, AssessmentQuestion, AIGeneratedWorkedExample, AdaptiveHomework , AIGeneratedAnnualPlan, AIGeneratedPresentation, AIGeneratedAssessment } from '../types';
 import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalAnalysisSchema, CoverageAnalysisSchema, AIRecommendationSchema, GeneratedTestSchema, DailyBriefSchema, WorkedExampleSchema, ReflectionSummarySchema } from '../utils/schemas';
 
 // Core exports
-export { scheduleQuotaNotification, isDailyQuotaKnownExhausted, clearDailyQuotaFlag, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, buildDynamicSystemInstruction } from './gemini/core';
+export { scheduleQuotaNotification, isDailyQuotaKnownExhausted, clearDailyQuotaFlag, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, buildDynamicSystemInstruction } from './gemini/core';
 
 export const realGeminiService = {
   ...assessmentAPI,
@@ -62,22 +63,22 @@ async *getChatResponseStreamWithThinking(history: ChatMessage[], profile?: Teach
   },
 
 async generateIllustration(prompt: string, image?: { base64: string, mimeType: string }, _profile?: TeachingProfile): Promise<AIGeneratedIllustration> {
+    const safePrompt = sanitizePromptInput(prompt, 500);
     // Prompt-hash cache — skip re-calling Imagen for identical prompts (no image upload)
     if (!image) {
-      const cacheKey = `img_cache_${prompt.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 120)}`;
+      const cacheKey = `img_cache_${safePrompt.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 120)}`;
       try {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           const parsed = JSON.parse(cached) as { imageUrl: string; ts: number };
           // Cache TTL: 7 days
           if (Date.now() - parsed.ts < 7 * 24 * 60 * 60 * 1000) {
-            return { imageUrl: parsed.imageUrl, prompt };
+            return { imageUrl: parsed.imageUrl, prompt: safePrompt };
           }
           localStorage.removeItem(cacheKey);
         }
       } catch { /* ignore storage errors */ }
 
-      const safePrompt = sanitizePromptInput(prompt, 500);
       const response: ImagenProxyResponse = await callImagenProxy({ model: IMAGEN_MODEL, prompt: safePrompt });
       if (response.inlineData) {
         const { data: base64Data, mimeType } = response.inlineData;
@@ -90,19 +91,19 @@ async generateIllustration(prompt: string, image?: { base64: string, mimeType: s
         const imageUrl = await getDownloadURL(storageRef);
 
         try { localStorage.setItem(cacheKey, JSON.stringify({ imageUrl, ts: Date.now() })); } catch { /* quota exceeded — skip */ }
-        return { imageUrl, prompt };
+        return { imageUrl, prompt: safePrompt };
       }
       throw new AIServiceError("AI did not return image data (Gemini Flash path)");
     }
 
-    const response: ImagenProxyResponse = await callImagenProxy({ model: IMAGEN_MODEL, prompt });
+    const response: ImagenProxyResponse = await callImagenProxy({ model: IMAGEN_MODEL, prompt: safePrompt });
     if (response.inlineData) {
         const data = response.inlineData;
         const storagePath = `ai_illustrations/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.png`;
         const storageRef = ref(storage, storagePath);
         await uploadString(storageRef, data.data, 'base64', { contentType: data.mimeType });
         const imageUrl = await getDownloadURL(storageRef);
-        return { imageUrl, prompt };
+        return { imageUrl, prompt: safePrompt };
     }
     throw new AIServiceError("AI did not return image (Imagen path)");
   },
@@ -187,12 +188,17 @@ async generateAnalogy(concept: Concept, gradeLevel: number, profile?: TeachingPr
     } catch (e) { console.warn(e); }
 
     const prompt = `Објасни го поимот "${concept.title}" за ${gradeLevel} одделение преку аналогија.`;
+    // E3 Intent Router
+    const useLiteAnalogy = shouldUseLiteModel('analogy');
+    const analogyModel = useLiteAnalogy ? LITE_MODEL : DEFAULT_MODEL;
+    logRouterDecision('analogy', analogyModel);
     const response = await callGeminiProxy({ 
-        model: DEFAULT_MODEL, 
+        model: analogyModel, 
         contents: [{ parts: [{ text: prompt }] }], 
         systemInstruction: getResolvedTextSystemInstruction(),
         safetySettings: SAFETY_SETTINGS,
-        userTier: profile?.tier
+        userTier: profile?.tier,
+        skipTierOverride: useLiteAnalogy
     });
     const text = response.text || "";
     await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: text, type: 'analogy', conceptId: concept.id, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
@@ -200,8 +206,10 @@ async generateAnalogy(concept: Concept, gradeLevel: number, profile?: TeachingPr
   },
 
 async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, customInstruction?: string): Promise<{ problem: string; strategy?: string; steps: Array<{ explanation: string; expression: string }> }> {
+  const safeConceptTitle = sanitizePromptInput(conceptTitle, 120);
+  const safeCustomInstruction = sanitizePromptInput(customInstruction, 800);
     // Cache is skipped when customInstruction is provided (user wants specific problem)
-    const cacheKey = `solver_thinking_${conceptTitle.replace(/\s+/g, '_')}_g${gradeLevel}`;
+  const cacheKey = `solver_thinking_${safeConceptTitle.replace(/\s+/g, '_')}_g${gradeLevel}`;
     if (!customInstruction) {
       try {
           const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
@@ -210,12 +218,12 @@ async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, custo
     }
 
     const prompt = `
-      Ти си експерт за математичка педагогија. Креирај една типична задача за "${conceptTitle}" за ${gradeLevel} одделение.
+      Ти си експерт за математичка педагогија. Креирај една типична задача за "${safeConceptTitle}" за ${gradeLevel} одделение.
       Користи Tree of Thoughts (ToT) пристап: размисли за 2 различни методи на решавање и избери ја онаа која е најјасна за ученик.
       Реши ја задачата детално преку Chain of Thought (CoT) — секој чекор мора да биде логично поврзан.
 
       Внимавај на математичката точност! Направи само-проверка пред финалниот одговор.
-      ${customInstruction ? `\nКонтекст од курикулумот:\n${customInstruction}` : ''}
+      ${safeCustomInstruction ? `\nКонтекст од курикулумот:\n${safeCustomInstruction}` : ''}
 
       Врати JSON точно по овој формат:
       {
@@ -251,7 +259,7 @@ async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, custo
       await setDoc(doc(db, CACHE_COLLECTION, cacheKey), {
           content: result,
           type: 'solver',
-          conceptTitle,
+          conceptTitle: safeConceptTitle,
           gradeLevel,
           createdAt: serverTimestamp()
       }).catch(console.error);
@@ -260,9 +268,10 @@ async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, custo
   },
 
 async solveSpecificProblemStepByStep(problemText: string): Promise<{ problem: string; strategy?: string; steps: Array<{ explanation: string; expression: string }> }> {
+    const safeProblemText = sanitizePromptInput(problemText, 500);
     const prompt = `
       Ти си експерт за математичка педагогија. Ученикот не успеа да ја реши следнава задача:
-      ЗАДАЧА: "${problemText}"
+      ЗАДАЧА: "${safeProblemText}"
 
       За да му помогнеш:
       1. Реши ја задачата детално преку Chain of Thought (CoT) — секој чекор мора да биде логично поврзан и едноставен за следење.
@@ -272,7 +281,7 @@ async solveSpecificProblemStepByStep(problemText: string): Promise<{ problem: st
       
       Врати JSON точно по овој формат:
       {
-        "problem": "${problemText.replace(/"/g, '\\"')}",
+        "problem": "${safeProblemText.replace(/"/g, '\\"')}",
         "strategy": "почетна стратегија или охрабрување",
         "steps": [{"explanation": "зошто го правиме овој чекор", "expression": "LaTeX или чист текст"}]
       }
@@ -303,12 +312,15 @@ async solveSpecificProblemStepByStep(problemText: string): Promise<{ problem: st
   },
 
 async diagnoseMisconception(question: string, correctAnswer: string, studentAnswer: string): Promise<string> {
+    const safeQuestion = sanitizePromptInput(question, 500);
+    const safeCorrectAnswer = sanitizePromptInput(correctAnswer, 250);
+    const safeStudentAnswer = sanitizePromptInput(studentAnswer, 250);
     const prompt = `
       Ти си искусен наставник по математика кој се обидува да ја разбере логиката зад грешката на ученикот.
       
-      Прашање: "${question}"
-      Точен одговор: "${correctAnswer}"
-      Одговор на ученикот: "${studentAnswer}"
+      Прашање: "${safeQuestion}"
+      Точен одговор: "${safeCorrectAnswer}"
+      Одговор на ученикот: "${safeStudentAnswer}"
 
       Твоја задача:
       Дијагностицирај каква концептуална или пресметковна грешка направил ученикот. 
@@ -320,22 +332,20 @@ async diagnoseMisconception(question: string, correctAnswer: string, studentAnsw
     `;
 
     try {
-        const response = await fetch('/api/gemini', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                config: {
-                    systemInstruction: "Врати само една кратка реченица со дијагноза на грешката.",
-                    temperature: 0.1
-                }
-            })
+        // E3 Intent Router
+        const useLiteMisconception = shouldUseLiteModel('misconception');
+        const misconceptionModel = useLiteMisconception ? LITE_MODEL : DEFAULT_MODEL;
+        logRouterDecision('misconception', misconceptionModel);
+        const response = await callGeminiProxy({
+            model: misconceptionModel,
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            systemInstruction: "Врати само една кратка реченица со дијагноза на грешката.",
+            generationConfig: { temperature: 0.1 },
+            safetySettings: SAFETY_SETTINGS,
+            skipTierOverride: useLiteMisconception
         });
 
-        if (!response.ok) return "Непозната грешка";
-        
-        const data = await response.json();
-        return data.text ? data.text.trim().replace(/^"|"$/g, '') : "Непозната грешка";
+        return response.text ? response.text.trim().replace(/^"|"$/g, '') : "Непозната грешка";
     } catch (e) {
         console.error("Грешка при дијагностицирање:", e);
         return "Непозната грешка";
@@ -343,10 +353,13 @@ async diagnoseMisconception(question: string, correctAnswer: string, studentAnsw
   },
 
 async explainSpecificStep(problem: string, stepExplanation: string, stepExpression: string, profile?: TeachingProfile): Promise<string> {
+    const safeProblem = sanitizePromptInput(problem, 500);
+    const safeStepExplanation = sanitizePromptInput(stepExplanation, 500);
+    const safeStepExpression = sanitizePromptInput(stepExpression, 300);
     const prompt = `
       Како наставник по математика, објасни му на ученик ЗОШТО го направивме овој чекор во контекст на задачата.
-      Задача: ${problem}
-      Чекор: ${stepExplanation} (${stepExpression})
+      Задача: ${safeProblem}
+      Чекор: ${safeStepExplanation} (${safeStepExpression})
       Објасни го математичкото правило во 2 кратки реченици на македонски јазик.
     `;
     const response = await callGeminiProxy({ 
@@ -394,24 +407,27 @@ async generatePresentationOutline(concept: Concept, gradeLevel: number, profile?
   },
 
 async enhanceText(textToEnhance: string, action: string, fieldType: string, gradeLevel: number, profile?: TeachingProfile): Promise<string> {
-    let promptText = `Подобри го текстот за '${fieldType}' (${gradeLevel} одд). Оригинален текст: "${textToEnhance}"`;
+  const safeText = sanitizePromptInput(textToEnhance, 1500);
+  const safeFieldType = sanitizePromptInput(fieldType, 60);
+  const safeAction = sanitizePromptInput(action, 30).toLowerCase();
+  let promptText = `Подобри го текстот за '${safeFieldType}' (${gradeLevel} одд). Оригинален текст: "${safeText}"`;
     
-    switch(action) {
+  switch(safeAction) {
         case 'simplify':
-            promptText = `Поедностави го следниот текст за '${fieldType}' (${gradeLevel} одд) за да биде полесен за разбирање: "${textToEnhance}"`;
+      promptText = `Поедностави го следниот текст за '${safeFieldType}' (${gradeLevel} одд) за да биде полесен за разбирање: "${safeText}"`;
             break;
         case 'shorten':
-            promptText = `Скрати го и сумирај го следниот текст за '${fieldType}' (${gradeLevel} одд), задржувајќи ја клучната поента: "${textToEnhance}"`;
+      promptText = `Скрати го и сумирај го следниот текст за '${safeFieldType}' (${gradeLevel} одд), задржувајќи ја клучната поента: "${safeText}"`;
             break;
         case 'expand':
-            promptText = `Направи го поинтересен, поопширен и подетален следниот текст за '${fieldType}' (${gradeLevel} одд): "${textToEnhance}"`;
+      promptText = `Направи го поинтересен, поопширен и подетален следниот текст за '${safeFieldType}' (${gradeLevel} одд): "${safeText}"`;
             break;
         case 'inclusion':
-            promptText = `Прилагоди го следниот текст за '${fieldType}' (${gradeLevel} одд) за ученици со попреченост (инклузија), додавајќи соодветни лесни чекори: "${textToEnhance}"`;
+      promptText = `Прилагоди го следниот текст за '${safeFieldType}' (${gradeLevel} одд) за ученици со попреченост (инклузија), додавајќи соодветни лесни чекори: "${safeText}"`;
             break;
         case 'auto':
         default:
-            promptText = `Професионализирај го и подобри го следниот текст за '${fieldType}' (${gradeLevel} одд) во контекст на наставна подготовка: "${textToEnhance}"`;
+      promptText = `Професионализирај го и подобри го следниот текст за '${safeFieldType}' (${gradeLevel} одд) во контекст на наставна подготовка: "${safeText}"`;
             break;
     }
     
@@ -488,7 +504,9 @@ async generateProactiveSuggestion(concept: Concept, _profile?: TeachingProfile):
   },
 
 async analyzeReflection(wentWell: string, challenges: string, _profile?: TeachingProfile): Promise<string> {
-      const prompt = `Анализирај рефлексија: "${wentWell}". Предизвици: "${challenges}".`;
+  const safeWentWell = sanitizePromptInput(wentWell, 800);
+  const safeChallenges = sanitizePromptInput(challenges, 800);
+  const prompt = `Анализирај рефлексија: "${safeWentWell}". Предизвици: "${safeChallenges}".`;
       const response = await callGeminiProxy({ 
           model: DEFAULT_MODEL, 
           contents: [{ parts: [{ text: prompt }] }], 
@@ -499,7 +517,9 @@ async analyzeReflection(wentWell: string, challenges: string, _profile?: Teachin
   },
 
 async generateReflectionQuestions(lessonTitle: string, grade: number, theme: string): Promise<{ wentWell: string; challenges: string; nextSteps: string }> {
-      const prompt = `Наставникот штотуку одржа час "${lessonTitle}" (${grade} одд., тема: ${theme}).
+  const safeLessonTitle = sanitizePromptInput(lessonTitle, 160);
+  const safeTheme = sanitizePromptInput(theme, 160);
+  const prompt = `Наставникот штотуку одржа час "${safeLessonTitle}" (${grade} одд., тема: ${safeTheme}).
 Генерирај конкретни рефлексивни прашања кои ќе му помогнат да размисли за часот.
 Секое поле треба да биде 1-2 насочувачки прашања (не одговори).
 Врати JSON: { "wentWell": "Кои активности беа успешни?...", "challenges": "Кај кои концепти учениците имаа потешкотии?...", "nextSteps": "Кои конкретни промени би ги направиле следниот пат?..." }`;
@@ -520,9 +540,13 @@ async getPersonalizedRecommendations(_profile: TeachingProfile, _lessonPlans: Le
   },
 
 async parsePlannerInput(input: string): Promise<{ title: string; date: string; type: string; description: string }> {
-    const prompt = `Extract details: "${input}".`;
+  const safeInput = sanitizePromptInput(input, 600);
+  const prompt = `Extract details: "${safeInput}".`;
     const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, date: { type: Type.STRING }, type: { type: Type.STRING }, description: { type: Type.STRING } }, required: ["title", "date", "type"] };
-    return generateAndParseJSON<{ title: string; date: string; type: string; description: string }>([{ text: prompt }], schema);
+    // E3 Intent Router: planner_parse is a lite extraction task
+    const plannerModel = shouldUseLiteModel('planner_parse') ? LITE_MODEL : DEFAULT_MODEL;
+    logRouterDecision('planner_parse', plannerModel);
+    return generateAndParseJSON<{ title: string; date: string; type: string; description: string }>([{ text: prompt }], schema, plannerModel);
   },
 
 async generateClassRecommendations(analyticsData: {
@@ -638,21 +662,27 @@ ${lessonsText}
   },
 
 async explainConcept(conceptTitle: string, gradeLevel?: number): Promise<string> {
-    const cacheKey = `explanation_${conceptTitle.replace(/\s+/g, '_').toLowerCase()}_${gradeLevel || 'gen'}`;
+  const safeConceptTitle = sanitizePromptInput(conceptTitle, 120);
+  const cacheKey = `explanation_${safeConceptTitle.replace(/\s+/g, '_').toLowerCase()}_${gradeLevel || 'gen'}`;
     const cached = await getCached<string>(cacheKey);
     if (cached) return cached;
 
-    const prompt = `Објасни го математичкиот концепт „${conceptTitle}"${gradeLevel ? ` за ученик во ${gradeLevel}. одделение` : ''} на едноставен, детски македонски јазик. Максимум 3 кратки реченици. Без математички формули — само со зборови и секојдневни примери.`;
+  const prompt = `Објасни го математичкиот концепт „${safeConceptTitle}"${gradeLevel ? ` за ученик во ${gradeLevel}. одделение` : ''} на едноставен, детски македонски јазик. Максимум 3 кратки реченици. Без математички формули — само со зборови и секојдневни примери.`;
 
     try {
+      // E3 Intent Router
+      const useLiteExplain = shouldUseLiteModel('concept_explain');
+      const explainModel = useLiteExplain ? LITE_MODEL : DEFAULT_MODEL;
+      logRouterDecision('concept_explain', explainModel);
       const result = await callGeminiProxy({
-        model: DEFAULT_MODEL,
+        model: explainModel,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: 200, temperature: 0.7 },
+        skipTierOverride: useLiteExplain,
       });
       const text = result.text?.trim() ?? '';
       if (text) {
-        await setCached(cacheKey, text, { type: 'explanation', conceptTitle, gradeLevel });
+        await setCached(cacheKey, text, { type: 'explanation', conceptTitle: safeConceptTitle, gradeLevel });
       }
       return text;
     } catch {
@@ -666,7 +696,8 @@ async generateParallelTest(
     questionCount: number,
     difficulty: 'easy' | 'medium' | 'hard'
   ): Promise<GeneratedTest> {
-    const cacheKey = `test_parallel_${topic.replace(/\s+/g, '_').toLowerCase()}_g${gradeLevel}_n${questionCount}_${difficulty}`;
+    const safeTopic = sanitizePromptInput(topic, 160);
+    const cacheKey = `test_parallel_${safeTopic.replace(/\s+/g, '_').toLowerCase()}_g${gradeLevel}_n${questionCount}_${difficulty}`;
     const cached = await getCached<GeneratedTest>(cacheKey);
     if (cached) return cached;
 
@@ -674,7 +705,7 @@ async generateParallelTest(
       ? 'ЗАБЕЛЕШКА: Ова е за рана училишна возраст (1-3 одд). Користи многу едноставни зборови и секојдневни предмети во текстуалните задачи.' 
       : 'Вклучи и текстуални задачи.';
 
-    const prompt = `Генерирај тест по математика за "${topic}" (одделение ${gradeLevel}).
+    const prompt = `Генерирај тест по математика за "${safeTopic}" (одделение ${gradeLevel}).
 Тестот треба да има ДВЕ ГРУПИ (Група А и Група Б).
   Вкупно прашања по група: ТОЧНО ${questionCount} прашања. СТРОГО ГЕНЕРИРАЈ ${questionCount} ПРАШАЊА ВО СЕКОЈА ГРУПА!
 ВАЖНО:
@@ -686,7 +717,7 @@ async generateParallelTest(
 
 Врати JSON:
 {
-  "title": "Тест по Математика: ${topic}",
+  "title": "Тест по Математика: ${safeTopic}",
   "groups": [
     { "groupName": "Group A", "questions": [ ... ] },
     { "groupName": "Group B", "questions": [ ... ] }
@@ -732,7 +763,7 @@ async generateParallelTest(
     // Enrich with metadata not returned by AI
     const enrichedResult: GeneratedTest = {
         ...result,
-        topic,
+      topic: safeTopic,
         gradeLevel,
         createdAt: new Date().toISOString(),
         groups: result.groups.map((g: GeneratedTest['groups'][number]) => ({
@@ -745,7 +776,7 @@ async generateParallelTest(
         }))
     };
 
-    await setCached(cacheKey, enrichedResult, { type: 'test_parallel', gradeLevel, topic });
+    await setCached(cacheKey, enrichedResult, { type: 'test_parallel', gradeLevel, topic: safeTopic });
     return enrichedResult;
   },
 
@@ -792,9 +823,9 @@ async askTutor(message: string, history: Array<{role: string, content: string}>)
     const contents = [
       ...history.map(msg => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
+        parts: [{ text: sanitizePromptInput(msg.content, 1000) }]
       })),
-      { role: 'user' as const, parts: [{ text: message }] },
+      { role: 'user' as const, parts: [{ text: sanitizePromptInput(message, 1000) }] },
     ];
 
     try {
@@ -812,6 +843,7 @@ async askTutor(message: string, history: Array<{role: string, content: string}>)
   },
 
 async refineMaterialJSON(originalMaterial: Record<string, unknown>, tweakInstruction: string, _materialType?: string): Promise<Record<string, unknown>> {
+  const safeInstruction = sanitizePromptInput(tweakInstruction, 700);
     const prompt = `You are an expert educational AI assistant.
 
 The teacher has already generated the following educational material (in JSON format):
@@ -820,7 +852,7 @@ ${JSON.stringify(originalMaterial, null, 2)}
 \`\`\`
 
 The teacher wants to modify/refine this material with the following instructional request:
-"${tweakInstruction}"
+"${safeInstruction}"
 
 Please modify the JSON to incorporate exactly what the teacher requested.
 IMPORTANT: You must return the updated material EXACTLY in the same generic JSON schema/structure as the input. Do not add any conversational text or markdown wrappers outside of the JSON block if it can be avoided. Return ONLY the raw JSON object.`;
@@ -1283,10 +1315,15 @@ ${customInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НА
       const snippet = questions.slice(0, 3).join(' | ');
       const prompt = `Дадени се прашања од квиз за математика:\n${snippet}\n\nНапиши само кус наслов (максимум 8 зборови) на македонски, кој го опишува темата на квизот. НЕ пишувај ништо друго — само насловот.`;
 
+      // E3 Intent Router: quiz_title is a lite task — use LITE_MODEL when router is enabled
+      const useLite = shouldUseLiteModel('quiz_title');
+      const titleModel = useLite ? LITE_MODEL : DEFAULT_MODEL;
+      logRouterDecision('quiz_title', titleModel);
       const response = await callGeminiProxy({
-        model: DEFAULT_MODEL,
+        model: titleModel,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: 30 },
+        skipTierOverride: useLite,
       });
       const title = response.text.trim().replace(/^["'„]|["'"]$/g, '').trim();
       return title.length > 3 ? title : '';
@@ -1349,6 +1386,71 @@ ${topMisc}
     );
 
     return { title: result.title || `Ремедијација: ${conceptTitle}`, type: 'QUIZ', questions: result.questions };
+  },
+
+  async generateRecoveryWorksheet(
+    conceptTitle: string,
+    misconceptions: { text: string; count: number }[],
+    gradeLevel: number,
+  ): Promise<AIGeneratedAssessment> {
+    checkDailyQuotaGuard();
+
+    const topMisc = misconceptions.slice(0, 5)
+      .map((m, i) => `${i + 1}. „${m.text}" (${m.count} ученик${m.count === 1 ? '' : 'и'})`)
+      .join('\n');
+
+    const prompt = `Си искусен наставник по математика. Генерирај recovery worksheet за ${gradeLevel}. одделение за концептот „${conceptTitle}".
+
+Идентификувани концептуални грешки кај учениците:
+${topMisc}
+
+Барања:
+- Генерирај точно 6 прашања.
+- Формат: работен лист со поддршка, не класичен тест.
+- Прашањата да бидат постепени: од препознавање грешка, преку водена корекција, до самостојна примена.
+- За секое прашање врати и кратко решение или насока во полето solution.
+- Користи јасна македонска терминологија и математички точна нотација.
+- Прашањата да се директно врзани со погрешните сфаќања, а не генерички.`;
+
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING },
+        questions: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.INTEGER },
+              type: { type: Type.STRING },
+              question: { type: Type.STRING },
+              options: { type: Type.ARRAY, items: { type: Type.STRING } },
+              answer: { type: Type.STRING },
+              solution: { type: Type.STRING },
+              cognitiveLevel: { type: Type.STRING },
+              difficulty_level: { type: Type.STRING },
+            },
+            required: ['id', 'type', 'question', 'answer', 'cognitiveLevel'],
+          },
+        },
+      },
+      required: ['title', 'questions'],
+    };
+
+    const result = await generateAndParseJSON<{ title: string; questions: AssessmentQuestion[] }>(
+      [{ text: prompt }],
+      schema,
+      DEFAULT_MODEL,
+      undefined,
+      MAX_RETRIES,
+      false,
+    );
+
+    return {
+      title: result.title || `Recovery Worksheet: ${conceptTitle}`,
+      type: 'WORKSHEET',
+      questions: result.questions,
+    };
   },
 
   // ── PRO: Differentiated / Mastery / CBE test generation ────────────────────

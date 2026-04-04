@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Add sitemap URL when available in production.
+Sitemap: https://ai.mismath.net/sitemap.xml

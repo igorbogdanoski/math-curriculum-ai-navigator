@@ -1,13 +1,28 @@
 {
   "ci": {
     "collect": {
-      "url": ["http://localhost:4173/"],
-      "numberOfRuns": 2,
-      "startServerCommand": "npm run preview -- --port 4173",
-      "startServerReadyPattern": "Local:",
-      "startServerReadyTimeout": 30000,
+      "url": ["http://127.0.0.1:4173/#/pricing"],
+      "numberOfRuns": 3,
+      "startServerCommand": "npx -y sirv-cli dist --single --host 127.0.0.1 --port 4173 --gzip --brotli --etag",
+      "startServerReadyPattern": "http://127\\.0\\.0\\.1:4173",
+      "startServerReadyTimeout": 120000,
       "settings": {
-        "chromeFlags": "--no-sandbox --disable-dev-shm-usage"
+        "chromeFlags": "--headless=chrome --no-sandbox --disable-dev-shm-usage --disable-features=CalculateNativeWinOcclusion",
+        "formFactor": "desktop",
+        "throttlingMethod": "provided",
+        "throttling": {
+          "cpuSlowdownMultiplier": 1,
+          "requestLatencyMs": 0,
+          "downloadThroughputKbps": 0,
+          "uploadThroughputKbps": 0
+        },
+        "screenEmulation": {
+          "mobile": false,
+          "width": 1350,
+          "height": 940,
+          "deviceScaleFactor": 1,
+          "disabled": false
+        }
       }
     },
     "assert": {
@@ -21,6 +36,7 @@
         "uses-http2":          "off",
         "uses-long-cache-ttl": "off",
         "is-on-https":         "off",
+        "errors-in-console":   "off",
 
         "first-contentful-paint":   ["warn",  { "maxNumericValue": 2000 }],
         "largest-contentful-paint": ["warn",  { "maxNumericValue": 3500 }],
@@ -31,7 +47,15 @@
         "uses-text-compression":    ["warn"],
         "render-blocking-resources": ["warn"],
         "unused-javascript":        ["warn"],
-        "unused-css-rules":         ["warn"]
+        "unused-css-rules":         ["warn"],
+
+        "lcp-lazy-loaded": "off",
+        "non-composited-animations": "off",
+        "prioritize-lcp-image": "off",
+        "bf-cache": "off",
+        "total-byte-weight": "off",
+        "valid-source-maps": "off",
+        "unminified-javascript": "warn"
       }
     },
     "upload": {

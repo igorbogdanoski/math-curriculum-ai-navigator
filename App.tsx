@@ -33,12 +33,9 @@ import { Card } from './components/common/Card';
 import { OfflineBanner } from './components/common/OfflineBanner';
 import { QuotaBanner } from './components/common/QuotaBanner';
 import { ContextualFAB } from './components/common/ContextualFAB';
-import { AIGeneratorPanel } from './components/ai/AIGeneratorPanel';
-import { AIChatPanel } from './components/ai/AIChatPanel';
 import { UpgradeModal } from './components/common/UpgradeModal';
 import { CookieConsent } from './components/common/CookieConsent';
 import { DemoBanner } from './components/common/DemoBanner';
-import { CommandPalette } from './components/common/CommandPalette';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -153,6 +150,9 @@ const CurriculumEditorView = safeLazy(() => import('./views/CurriculumEditorView
 const SchoolOnboardingView = safeLazy(() => import('./views/SchoolOnboardingView').then(module => ({ default: module.SchoolOnboardingView })));
 const TeacherProfileView = safeLazy(() => import('./views/TeacherProfileView').then(module => ({ default: module.TeacherProfileView })));
 const MaturaSimulationView = safeLazy(() => import('./views/MaturaSimulationView').then(module => ({ default: module.MaturaSimulationView })));
+const AIGeneratorPanel = safeLazy(() => import('./components/ai/AIGeneratorPanel').then(module => ({ default: module.AIGeneratorPanel })));
+const AIChatPanel = safeLazy(() => import('./components/ai/AIChatPanel').then(module => ({ default: module.AIChatPanel })));
+const CommandPalette = safeLazy(() => import('./components/common/CommandPalette').then(module => ({ default: module.CommandPalette })));
 
 const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     const { openGeneratorPanel } = useGeneratorPanel();
@@ -165,6 +165,24 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
 
     return <AppSkeleton />; // Show a skeleton while the panel opens and redirects
 };
+
+  const PUBLIC_HASH_ROUTE_PREFIXES = [
+    '#/play/',
+    '#/my-progress',
+    '#/live',
+    '#/tutor',
+    '#/portfolio',
+    '#/parent',
+    '#/pricing',
+    '#/privacy',
+    '#/terms',
+    '#/share/',
+    '#/quiz/',
+    '#/school/register',
+  ];
+
+  const isPublicHashRoute = (hash: string): boolean =>
+    PUBLIC_HASH_ROUTE_PREFIXES.some((prefix) => hash.startsWith(prefix));
 
 const routes = [      { path: '/privacy', component: PrivacyPolicy },
       { path: '/terms', component: TermsOfUse },    { path: '/play/:id', component: StudentPlayView }, // Student Mode route
@@ -277,12 +295,16 @@ const AppContent: React.FC = () => {
                     <ContextualFAB path={path} params={params} />
                 </SilentErrorBoundary>
             </div>
-            <SilentErrorBoundary name="AIGeneratorPanel" fallback={<AIGeneratorPanelFallback />}>
+            <Suspense fallback={null}>
+              <SilentErrorBoundary name="AIGeneratorPanel" fallback={<AIGeneratorPanelFallback />}>
                 <AIGeneratorPanel />
-            </SilentErrorBoundary>
-            <SilentErrorBoundary name="AIChatPanel">
+              </SilentErrorBoundary>
+            </Suspense>
+            <Suspense fallback={null}>
+              <SilentErrorBoundary name="AIChatPanel">
                 <AIChatPanel />
-            </SilentErrorBoundary>
+              </SilentErrorBoundary>
+            </Suspense>
 
             <UpgradeModal 
               isOpen={upgradeModalOpen} 
@@ -343,15 +365,7 @@ const AppCore: React.FC = () => {
         return <AppSkeleton />;
     }
 
-    // Allow student play mode and student progress without authentication
-    const isPublicRoute =
-      window.location.hash.startsWith('#/play/') ||
-      window.location.hash.startsWith('#/my-progress') ||
-      window.location.hash.startsWith('#/live') ||
-      window.location.hash.startsWith('#/tutor') ||
-      window.location.hash.startsWith('#/portfolio') ||
-      window.location.hash.startsWith('#/parent') ||
-      window.location.hash.startsWith('#/pricing');
+    const isPublicRoute = isPublicHashRoute(window.location.hash);
 
     // School self-registration is always standalone (no sidebar/auth required)
     if (window.location.hash.startsWith('#/school/register')) {
@@ -394,7 +408,9 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                           <OnboardingGate />
                           <CookieConsent />
                           <DemoBanner />
-                          <CommandPalette />
+                          <Suspense fallback={null}>
+                            <CommandPalette />
+                          </Suspense>
                         </GeneratorPanelProvider>
                       </UIProvider>
                     </AcademyProgressProvider>

@@ -1,0 +1,132 @@
+{
+  "version": "1.0.0",
+  "registryCreatedAt": "2026-04-03",
+  "description": "Version manifest for all managed AI prompts. Updated automatically by `npm run prompts:update`.",
+  "prompts": {
+    "TEXT_SYSTEM_INSTRUCTION": {
+      "id": "TEXT_SYSTEM_INSTRUCTION",
+      "version": "1.0.1",
+      "description": "System persona for free-text generation (Markdown responses with LaTeX)",
+      "sourceFile": "services/gemini/core.ts",
+      "hash": "1ee37bedd40095d44bc70213ee9d6b4e3346da86c0581f0ab3d68afa36a38b3d",
+      "lastModified": "2026-04-03",
+      "history": [
+        {
+          "version": "1.0.0",
+          "hash": "",
+          "replacedAt": "2026-04-03"
+        }
+      ]
+    },
+    "JSON_SYSTEM_INSTRUCTION": {
+      "id": "JSON_SYSTEM_INSTRUCTION",
+      "version": "1.0.1",
+      "description": "System instruction enforcing raw JSON output only — no Markdown wrapper",
+      "sourceFile": "services/gemini/core.ts",
+      "hash": "959ef05205608c2a23a09758051125c183c89f26edfa914348495c557cc380ba",
+      "lastModified": "2026-04-03",
+      "history": [
+        {
+          "version": "1.0.0",
+          "hash": "",
+          "replacedAt": "2026-04-03"
+        }
+      ]
+    },
+    "SVG_SYSTEM_PROMPT": {
+      "id": "SVG_SYSTEM_PROMPT",
+      "version": "1.0.1",
+      "description": "System instruction for dark-mode SVG math diagram generation",
+      "sourceFile": "services/gemini/svg.ts",
+      "hash": "1f5d9867eda9c0a27b18f037407167b62e8edfdf900708dee2d05fcd5f297765",
+      "lastModified": "2026-04-03",
+      "history": [
+        {
+          "version": "1.0.0",
+          "hash": "",
+          "replacedAt": "2026-04-03"
+        }
+      ]
+    },
+    "lesson_ideas": {
+      "id": "lesson_ideas",
+      "version": "1.0.1",
+      "description": "Chain-of-Thought + Tree-of-Thoughts lesson scenario ideas with Bloom taxonomy scaffolding",
+      "sourceFile": "services/gemini/plans.ts",
+      "hash": "384e89180b61a0222bdb36d4ac3d8ab7acdb0a46a2374f9c6faadc158ae06e42",
+      "lastModified": "2026-04-03",
+      "history": [
+        {
+          "version": "1.0.0",
+          "hash": "",
+          "replacedAt": "2026-04-03"
+        }
+      ]
+    },
+    "lesson_plan": {
+      "id": "lesson_plan",
+      "version": "1.0.1",
+      "description": "Detailed 40-minute lesson plan with Bloom laddering, materials, and progress monitoring",
+      "sourceFile": "services/gemini/plans.ts",
+      "hash": "e681d81805c2303173bd43118410f1744ee6fe0525fe3458dbf51e68bd88c050",
+      "lastModified": "2026-04-03",
+      "history": [
+        {
+          "version": "1.0.0",
+          "hash": "",
+          "replacedAt": "2026-04-03"
+        }
+      ]
+    },
+    "annual_plan": {
+      "id": "annual_plan",
+      "version": "1.0.1",
+      "description": "Annual teaching calendar with holiday-aware scheduling and vertical progression",
+      "sourceFile": "services/gemini/plans.ts",
+      "hash": "8441a947a03a7b7ead3a192d0a42a72e93006d323c6eaf80bc8186422309822e",
+      "lastModified": "2026-04-03",
+      "history": [
+        {
+          "version": "1.0.0",
+          "hash": "",
+          "replacedAt": "2026-04-03"
+        }
+      ]
+    },
+    "thematic_plan": {
+      "id": "thematic_plan",
+      "version": "1.0.2",
+      "description": "Thematic unit plan (Appendix 1 format) with 6-column pedagogical structure",
+      "sourceFile": "services/gemini/plans.ts",
+      "hash": "e42f12d49c2c8ae0c86c870ed0dfe2d3133b6dbec13170dc18b2a660841075d3",
+      "lastModified": "2026-04-03",
+      "history": [
+        {
+          "version": "1.0.1",
+          "hash": "180c84d25df019b7570d337e4ed6ced77a27a094816bde167504f0b46c19e950",
+          "replacedAt": "2026-04-03"
+        },
+        {
+          "version": "1.0.0",
+          "hash": "",
+          "replacedAt": "2026-04-03"
+        }
+      ]
+    },
+    "assessment_test": {
+      "id": "assessment_test",
+      "version": "1.0.1",
+      "description": "Assessment/quiz generation with DoK targeting, Bloom distribution, and differentiation levels",
+      "sourceFile": "services/gemini/assessment.ts",
+      "hash": "65da6e5e22e6ad4f278bc321eccfcfe037018b5c130ecf3dc1d5345e27e4cf50",
+      "lastModified": "2026-04-03",
+      "history": [
+        {
+          "version": "1.0.0",
+          "hash": "",
+          "replacedAt": "2026-04-03"
+        }
+      ]
+    }
+  }
+}

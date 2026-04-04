@@ -1,0 +1,760 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-04-03",
+  "description": "Golden evaluation set for AI-generated math content quality assessment (Macedonian K-9 curriculum).",
+  "totalCases": 105,
+  "generationTypes": ["assessment_question","lesson_ideas","step_by_step_solution","parallel_test","rubric","annual_plan"],
+  "gradeLevels": [5,6,7,8,9],
+  "bloomLevels": ["Remembering","Understanding","Applying","Analyzing","Evaluating","Creating"],
+  "dokLevels": [1,2,3,4],
+  "cases": [
+
+    {
+      "id": "case-001",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Дропки", "topicTitle": "Броеви", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["дропка","именател","броитател"] },
+      "tags": ["grade5","fractions","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-002",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Дропки", "topicTitle": "Броеви", "questionType": "short_answer", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 15, "maxDokDeviation": 1, "conceptKeywords": ["дропка","сведи","именател"] },
+      "tags": ["grade5","fractions","dok1","remembering","easy","short_answer"]
+    },
+    {
+      "id": "case-003",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Дропки", "topicTitle": "Броеви", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["дропка","споредба","поголема","помала"] },
+      "tags": ["grade5","fractions","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-004",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Дропки", "topicTitle": "Броеви", "questionType": "word_problem", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["дропка","собирање","одземање"] },
+      "tags": ["grade5","fractions","dok2","applying","medium","word_problem"]
+    },
+    {
+      "id": "case-005",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Дропки", "topicTitle": "Броеви", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["дропка","цела","мешана"] },
+      "tags": ["grade5","fractions","dok2","applying","medium","mc"]
+    },
+    {
+      "id": "case-006",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Дропки", "topicTitle": "Броеви", "questionType": "word_problem", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 60, "maxDokDeviation": 1, "conceptKeywords": ["дропка","целина","дел","истражи"] },
+      "tags": ["grade5","fractions","dok3","analyzing","hard","word_problem"]
+    },
+    {
+      "id": "case-007",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Дропки", "topicTitle": "Броеви", "questionType": "short_answer", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["дропка","грешка","образложи","анализа"] },
+      "tags": ["grade5","fractions","dok3","analyzing","hard","error_analysis"]
+    },
+    {
+      "id": "case-008",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Дропки", "topicTitle": "Броеви", "questionType": "open_ended", "targetDokLevel": 4, "targetBloomLevel": "Creating", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 4, "bloomLevel": "Creating", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 50, "maxDokDeviation": 1, "conceptKeywords": ["дропка","истражи","создај","докажи"] },
+      "tags": ["grade5","fractions","dok4","creating","hard","open_ended"]
+    },
+
+    {
+      "id": "case-009",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Децимални броеви", "topicTitle": "Броеви", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["децимал","деcимала","место"] },
+      "tags": ["grade5","decimals","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-010",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Децимални броеви", "topicTitle": "Броеви", "questionType": "short_answer", "targetDokLevel": 1, "targetBloomLevel": "Understanding", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 1, "bloomLevel": "Understanding", "difficultyLevel": "Easy", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["децимал","дропка","претвори"] },
+      "tags": ["grade5","decimals","dok1","understanding","easy","short_answer"]
+    },
+    {
+      "id": "case-011",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Децимални броеви", "topicTitle": "Броеви", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["децимал","споредба","поголем","помал"] },
+      "tags": ["grade5","decimals","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-012",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Децимални броеви", "topicTitle": "Броеви", "questionType": "word_problem", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["децимал","собира","купи","цена"] },
+      "tags": ["grade5","decimals","dok2","applying","medium","word_problem"]
+    },
+    {
+      "id": "case-013",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Децимални броеви", "topicTitle": "Броеви", "questionType": "word_problem", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["децимал","множи","производ"] },
+      "tags": ["grade5","decimals","dok2","applying","medium","word_problem"]
+    },
+    {
+      "id": "case-014",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Децимални броеви", "topicTitle": "Броеви", "questionType": "word_problem", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 60, "maxDokDeviation": 1, "conceptKeywords": ["децимал","пресмета","споредба","резултат"] },
+      "tags": ["grade5","decimals","dok3","analyzing","hard","word_problem"]
+    },
+    {
+      "id": "case-015",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Децимални броеви", "topicTitle": "Броеви", "questionType": "short_answer", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["децимал","закономерност","образложи"] },
+      "tags": ["grade5","decimals","dok3","analyzing","hard","pattern_analysis"]
+    },
+    {
+      "id": "case-016",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Децимални броеви", "topicTitle": "Броеви", "questionType": "open_ended", "targetDokLevel": 4, "targetBloomLevel": "Evaluating", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 4, "bloomLevel": "Evaluating", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 50, "maxDokDeviation": 1, "conceptKeywords": ["децимал","моделирај","одлука","евалуирај"] },
+      "tags": ["grade5","decimals","dok4","evaluating","hard","open_ended"]
+    },
+
+    {
+      "id": "case-017",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Цели броеви", "topicTitle": "Броеви и операции", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["цел број","позитивен","негативен"] },
+      "tags": ["grade6","integers","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-018",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Цели броеви", "topicTitle": "Броеви и операции", "questionType": "short_answer", "targetDokLevel": 1, "targetBloomLevel": "Understanding", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 1, "bloomLevel": "Understanding", "difficultyLevel": "Easy", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["апсолутна вредност","цел број"] },
+      "tags": ["grade6","integers","dok1","understanding","easy","short_answer"]
+    },
+    {
+      "id": "case-019",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Цели броеви", "topicTitle": "Броеви и операции", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["цел број","споредба","бројна права"] },
+      "tags": ["grade6","integers","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-020",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Цели броеви", "topicTitle": "Броеви и операции", "questionType": "word_problem", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["цел број","температура","должина","контекст"] },
+      "tags": ["grade6","integers","dok2","applying","medium","word_problem"]
+    },
+    {
+      "id": "case-021",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Размер и пропорционалност", "topicTitle": "Броеви и операции", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["размер","пропорција","однос"] },
+      "tags": ["grade6","ratio","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-022",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Размер и пропорционалност", "topicTitle": "Броеви и операции", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["размер","пресметај","дел"] },
+      "tags": ["grade6","ratio","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-023",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Размер и пропорционалност", "topicTitle": "Броеви и операции", "questionType": "word_problem", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["правапропорционалност","размер","брзина","рецепт"] },
+      "tags": ["grade6","ratio","dok2","applying","medium","word_problem"]
+    },
+    {
+      "id": "case-024",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Размер и пропорционалност", "topicTitle": "Броеви и операции", "questionType": "word_problem", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 60, "maxDokDeviation": 1, "conceptKeywords": ["размер","поделба","анализирај","план"] },
+      "tags": ["grade6","ratio","dok3","analyzing","hard","word_problem"]
+    },
+    {
+      "id": "case-025",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Алгебарски изрази", "topicTitle": "Алгебра", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["алгебарски израз","променлива","коефициент"] },
+      "tags": ["grade6","algebra","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-026",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Алгебарски изрази", "topicTitle": "Алгебра", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["израз","пресметај","замени","вредност"] },
+      "tags": ["grade6","algebra","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-027",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Алгебарски изрази", "topicTitle": "Алгебра", "questionType": "word_problem", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 50, "maxDokDeviation": 1, "conceptKeywords": ["равенка","составување","образложи"] },
+      "tags": ["grade6","algebra","dok3","analyzing","hard","word_problem"]
+    },
+    {
+      "id": "case-028",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Алгебарски изрази", "topicTitle": "Алгебра", "questionType": "open_ended", "targetDokLevel": 4, "targetBloomLevel": "Creating", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 4, "bloomLevel": "Creating", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 50, "maxDokDeviation": 1, "conceptKeywords": ["модел","создај","алгебра","истражи"] },
+      "tags": ["grade6","algebra","dok4","creating","hard","open_ended"]
+    },
+
+    {
+      "id": "case-029",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Линеарни равенки", "topicTitle": "Алгебра", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["линеарна равенка","непознат","решение"] },
+      "tags": ["grade7","linear-equations","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-030",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Линеарни равенки", "topicTitle": "Алгебра", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["равенка","реши","непознат"] },
+      "tags": ["grade7","linear-equations","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-031",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Линеарни равенки", "topicTitle": "Алгебра", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["равенка","провери","решение","задоволи"] },
+      "tags": ["grade7","linear-equations","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-032",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Линеарни равенки", "topicTitle": "Алгебра", "questionType": "word_problem", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 60, "maxDokDeviation": 1, "conceptKeywords": ["равенка","состав","возраст","задача"] },
+      "tags": ["grade7","linear-equations","dok3","analyzing","hard","word_problem"]
+    },
+    {
+      "id": "case-033",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Статистика", "topicTitle": "Статистика и веројатност", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["аритметичка средина","средна вредност","просек"] },
+      "tags": ["grade7","statistics","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-034",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Статистика", "topicTitle": "Статистика и веројатност", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 30, "maxDokDeviation": 1, "conceptKeywords": ["средина","медијана","мода","низа"] },
+      "tags": ["grade7","statistics","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-035",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Статистика", "topicTitle": "Статистика и веројатност", "questionType": "word_problem", "targetDokLevel": 2, "targetBloomLevel": "Analyzing", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Analyzing", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["табела","интерпретирај","податоци","дијаграм"] },
+      "tags": ["grade7","statistics","dok2","analyzing","medium","word_problem"]
+    },
+    {
+      "id": "case-036",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Статистика", "topicTitle": "Статистика и веројатност", "questionType": "open_ended", "targetDokLevel": 4, "targetBloomLevel": "Creating", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 4, "bloomLevel": "Creating", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 50, "maxDokDeviation": 1, "conceptKeywords": ["истражување","статистика","заклучок","анализирај"] },
+      "tags": ["grade7","statistics","dok4","creating","hard","open_ended"]
+    },
+    {
+      "id": "case-037",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Операции со множества", "topicTitle": "Броеви и операции", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["множество","пресек","унија","разлика"] },
+      "tags": ["grade7","sets","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-038",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Операции со множества", "topicTitle": "Броеви и операции", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 30, "maxDokDeviation": 1, "conceptKeywords": ["пресек","унија","множество","елементи"] },
+      "tags": ["grade7","sets","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-039",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Операции со множества", "topicTitle": "Броеви и операции", "questionType": "word_problem", "targetDokLevel": 2, "targetBloomLevel": "Analyzing", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Analyzing", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["Венов дијаграм","множество","заедничко","читачи"] },
+      "tags": ["grade7","sets","dok2","analyzing","medium","word_problem"]
+    },
+    {
+      "id": "case-040",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Операции со множества", "topicTitle": "Броеви и операции", "questionType": "short_answer", "targetDokLevel": 3, "targetBloomLevel": "Evaluating", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Evaluating", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["докажи","множество","тврдење","образложи"] },
+      "tags": ["grade7","sets","dok3","evaluating","hard","proof"]
+    },
+
+    {
+      "id": "case-041",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Линеарна функција", "topicTitle": "Функции", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["нагиб","линеарна функција","коефициент","правец"] },
+      "tags": ["grade8","linear-function","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-042",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Линеарна функција", "topicTitle": "Функции", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["f(x)","функција","пресметај","вредност"] },
+      "tags": ["grade8","linear-function","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-043",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Линеарна функција", "topicTitle": "Функции", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["график","функција","нагиб","пресечок"] },
+      "tags": ["grade8","linear-function","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-044",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Линеарна функција", "topicTitle": "Функции", "questionType": "word_problem", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 60, "maxDokDeviation": 1, "conceptKeywords": ["линеарна функција","контекст","пресметај","интерпретирај"] },
+      "tags": ["grade8","linear-function","dok3","analyzing","hard","word_problem"]
+    },
+    {
+      "id": "case-045",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Линеарна функција", "topicTitle": "Функции", "questionType": "short_answer", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["споредба","функции","нагиб","анализа"] },
+      "tags": ["grade8","linear-function","dok3","analyzing","hard","comparison"]
+    },
+    {
+      "id": "case-046",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Квадратна равенка", "topicTitle": "Алгебра", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["квадратна равенка","дискриминанта","корени"] },
+      "tags": ["grade8","quadratic-equation","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-047",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Квадратна равенка", "topicTitle": "Алгебра", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["квадратна равенка","дискриминанта","реши","x"] },
+      "tags": ["grade8","quadratic-equation","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-048",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Квадратна равенка", "topicTitle": "Алгебра", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["Вијет","корени","збир","производ"] },
+      "tags": ["grade8","quadratic-equation","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-049",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Квадратна равенка", "topicTitle": "Алгебра", "questionType": "word_problem", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 60, "maxDokDeviation": 1, "conceptKeywords": ["квадратна равенка","površina","страни","реши"] },
+      "tags": ["grade8","quadratic-equation","dok3","analyzing","hard","word_problem"]
+    },
+    {
+      "id": "case-050",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Квадратна равенка", "topicTitle": "Алгебра", "questionType": "open_ended", "targetDokLevel": 4, "targetBloomLevel": "Creating", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 4, "bloomLevel": "Creating", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 50, "maxDokDeviation": 1, "conceptKeywords": ["квадратна равенка","создај","контекст","истражи"] },
+      "tags": ["grade8","quadratic-equation","dok4","creating","hard","open_ended"]
+    },
+
+    {
+      "id": "case-051",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Кружница и круг", "topicTitle": "Геометрија", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["кружница","полупречник","дијаметар","центар"] },
+      "tags": ["grade9","circle","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-052",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Кружница и круг", "topicTitle": "Геометрија", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["периметар","плоштина","кружница","пресметај"] },
+      "tags": ["grade9","circle","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-053",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Кружница и круг", "topicTitle": "Геометрија", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["централен агол","лак","кружница","тетива"] },
+      "tags": ["grade9","circle","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-054",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Кружница и круг", "topicTitle": "Геометрија", "questionType": "word_problem", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 60, "maxDokDeviation": 1, "conceptKeywords": ["лак","тетива","кружница","должина"] },
+      "tags": ["grade9","circle","dok3","analyzing","hard","word_problem"]
+    },
+    {
+      "id": "case-055",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Кружница и круг", "topicTitle": "Геометрија", "questionType": "open_ended", "targetDokLevel": 4, "targetBloomLevel": "Evaluating", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 4, "bloomLevel": "Evaluating", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 50, "maxDokDeviation": 1, "conceptKeywords": ["кружница","теорема","поврзи","докажи"] },
+      "tags": ["grade9","circle","dok4","evaluating","hard","open_ended"]
+    },
+    {
+      "id": "case-056",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Квадратна функција", "topicTitle": "Функции", "questionType": "multiple_choice", "targetDokLevel": 1, "targetBloomLevel": "Remembering", "targetDifficulty": "Easy", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 1, "bloomLevel": "Remembering", "difficultyLevel": "Easy", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 20, "maxDokDeviation": 1, "conceptKeywords": ["квадратна функција","теме","парабола","осовина"] },
+      "tags": ["grade9","quadratic-function","dok1","remembering","easy","mc"]
+    },
+    {
+      "id": "case-057",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Квадратна функција", "topicTitle": "Функции", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["нули","квадратна функција","пресека","x-оска"] },
+      "tags": ["grade9","quadratic-function","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-058",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Квадратна функција", "topicTitle": "Функции", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["осовина на симетрија","парабола","теме","насоченост"] },
+      "tags": ["grade9","quadratic-function","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-059",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Квадратна функција", "topicTitle": "Функции", "questionType": "word_problem", "targetDokLevel": 3, "targetBloomLevel": "Analyzing", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Analyzing", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 60, "maxDokDeviation": 1, "conceptKeywords": ["квадратна функција","максимум","минимум","контекст"] },
+      "tags": ["grade9","quadratic-function","dok3","analyzing","hard","word_problem"]
+    },
+    {
+      "id": "case-060",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Квадратна функција", "topicTitle": "Функции", "questionType": "short_answer", "targetDokLevel": 3, "targetBloomLevel": "Evaluating", "targetDifficulty": "Hard", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 3, "bloomLevel": "Evaluating", "difficultyLevel": "Hard", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 50, "maxDokDeviation": 1, "conceptKeywords": ["квадратна функција","анализа","теме","нули","осовина"] },
+      "tags": ["grade9","quadratic-function","dok3","evaluating","hard","analysis"]
+    },
+
+    {
+      "id": "case-061",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 5, "conceptTitle": "Дропки - воведна лекција", "topicTitle": "Броеви", "focus": "discovery", "tone": "engaging", "learningDesign": "inquiry", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["дропка","именател","броитател"] },
+      "tags": ["grade5","fractions","lesson_ideas","discovery","engaging"]
+    },
+    {
+      "id": "case-062",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 5, "conceptTitle": "Геометрија - мерење", "topicTitle": "Геометрија", "focus": "visual", "tone": "hands_on", "learningDesign": "experiential", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["периметар","плоштина","мерење","форма"] },
+      "tags": ["grade5","geometry","lesson_ideas","visual","hands_on"]
+    },
+    {
+      "id": "case-063",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 5, "conceptTitle": "Децимални броеви - примена", "topicTitle": "Броеви", "focus": "real_world", "tone": "motivational", "learningDesign": "contextual", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["децимал","пари","купување","мерење"] },
+      "tags": ["grade5","decimals","lesson_ideas","real_world","motivational"]
+    },
+    {
+      "id": "case-064",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 6, "conceptTitle": "Цели броеви", "topicTitle": "Броеви и операции", "focus": "collaborative", "tone": "engaging", "learningDesign": "cooperative", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": "200", "conceptKeywords": ["цел број","позитивен","негативен","бројна права"] },
+      "tags": ["grade6","integers","lesson_ideas","collaborative","engaging"]
+    },
+    {
+      "id": "case-065",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 6, "conceptTitle": "Размер и пропорционалност", "topicTitle": "Броеви и операции", "focus": "problem_based", "tone": "formal", "learningDesign": "problem_solving", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["размер","пропорција","правапропорционалност"] },
+      "tags": ["grade6","ratio","lesson_ideas","problem_based"]
+    },
+    {
+      "id": "case-066",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 6, "conceptTitle": "Алгебарски изрази", "topicTitle": "Алгебра", "focus": "inquiry", "tone": "engaging", "learningDesign": "inquiry_based", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["алгебарски израз","променлива","равенка"] },
+      "tags": ["grade6","algebra","lesson_ideas","inquiry"]
+    },
+    {
+      "id": "case-067",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 7, "conceptTitle": "Линеарни равенки", "topicTitle": "Алгебра", "focus": "modeling", "tone": "formal", "learningDesign": "mathematical_modeling", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["линеарна равенка","непознат","решение"] },
+      "tags": ["grade7","linear-equations","lesson_ideas","modeling"]
+    },
+    {
+      "id": "case-068",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 7, "conceptTitle": "Статистика - истражување", "topicTitle": "Статистика и веројатност", "focus": "data_exploration", "tone": "motivational", "learningDesign": "project_based", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["статистика","податоци","средина","истражување"] },
+      "tags": ["grade7","statistics","lesson_ideas","data_exploration"]
+    },
+    {
+      "id": "case-069",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 7, "conceptTitle": "Геометриски трансформации", "topicTitle": "Геометрија", "focus": "visual", "tone": "engaging", "learningDesign": "technology_enhanced", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["трансформација","симетрија","транслација","ротација"] },
+      "tags": ["grade7","transformations","lesson_ideas","visual","geogebra"]
+    },
+    {
+      "id": "case-070",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 8, "conceptTitle": "Линеарна функција - графички пристап", "topicTitle": "Функции", "focus": "technology", "tone": "engaging", "learningDesign": "technology_enhanced", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["графика","функција","нагиб","GeoGebra","Desmos"] },
+      "tags": ["grade8","linear-function","lesson_ideas","technology"]
+    },
+    {
+      "id": "case-071",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 8, "conceptTitle": "Системи линеарни равенки", "topicTitle": "Алгебра", "focus": "collaborative", "tone": "formal", "learningDesign": "cooperative", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["систем равенки","замена","елиминација","решение"] },
+      "tags": ["grade8","systems","lesson_ideas","collaborative"]
+    },
+    {
+      "id": "case-072",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 9, "conceptTitle": "Кружница - теоремски пристап", "topicTitle": "Геометрија", "focus": "proof_based", "tone": "formal", "learningDesign": "deductive", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["кружница","теорема","доказ","агол"] },
+      "tags": ["grade9","circle","lesson_ideas","proof_based"]
+    },
+    {
+      "id": "case-073",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 9, "conceptTitle": "Тригонометрија - практична примена", "topicTitle": "Тригонометрија", "focus": "real_world", "tone": "motivational", "learningDesign": "project_based", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["sin","cos","tg","тригонометрија","агол"] },
+      "tags": ["grade9","trigonometry","lesson_ideas","real_world"]
+    },
+    {
+      "id": "case-074",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 6, "conceptTitle": "Агли и триаголници", "topicTitle": "Геометрија", "focus": "measurement", "tone": "hands_on", "learningDesign": "experiential", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["агол","триаголник","мерење","угломер"] },
+      "tags": ["grade6","geometry","lesson_ideas","measurement"]
+    },
+    {
+      "id": "case-075",
+      "type": "lesson_ideas",
+      "input": { "gradeLevel": 8, "conceptTitle": "Квадратна функција - истражување", "topicTitle": "Функции", "focus": "graphical_exploration", "tone": "engaging", "learningDesign": "inquiry_based", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["activities","objectives"], "minActivities": 3, "hasLearningObjectives": true, "languageCode": "mk", "minTotalLengthChars": 200, "conceptKeywords": ["квадратна функција","теме","парабола","а-коефициент"] },
+      "tags": ["grade8","quadratic-function","lesson_ideas","graphical_exploration"]
+    },
+
+    {
+      "id": "case-076",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 5, "conceptTitle": "Собирање дропки со различни именители", "problemDescription": "Пресметај: 1/3 + 1/4", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 3, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 8, "conceptKeywords": ["именател","НЗС","дропка"] },
+      "tags": ["grade5","fractions","step_by_step","addition"]
+    },
+    {
+      "id": "case-077",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 5, "conceptTitle": "Плоштина и периметар на правоаголник", "problemDescription": "Правоаголник со страни 6 cm и 4 cm. Пресметај ги плоштината и периметарот.", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 3, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 6, "conceptKeywords": ["плоштина","периметар","правоаголник","страна"] },
+      "tags": ["grade5","geometry","step_by_step","area_perimeter"]
+    },
+    {
+      "id": "case-078",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 6, "conceptTitle": "Решавање линеарна равенка", "problemDescription": "Реши ја равенката: 3x + 5 = 14", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 3, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 6, "conceptKeywords": ["равенка","x","изолирај","решение"] },
+      "tags": ["grade6","algebra","step_by_step","linear_equation"]
+    },
+    {
+      "id": "case-079",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 6, "conceptTitle": "Директна пропорционалност", "problemDescription": "Ако 5 метри ткаенина чинат 750 денари, колку чини 8 метри?", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 3, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 6, "conceptKeywords": ["пропорција","размер","единица","цена"] },
+      "tags": ["grade6","ratio","step_by_step","proportionality"]
+    },
+    {
+      "id": "case-080",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 7, "conceptTitle": "Линеарна равенка со загради", "problemDescription": "Реши: 2(x - 3) + 5 = 3(x + 1)", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 4, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 8, "conceptKeywords": ["равенка","дистрибутивност","загради","x"] },
+      "tags": ["grade7","linear-equations","step_by_step","brackets"]
+    },
+    {
+      "id": "case-081",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 7, "conceptTitle": "Аритметичка средина и медијана", "problemDescription": "За низата: 4, 7, 3, 9, 5, 6 — пресметај ги аритметичката средина и медијаната.", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 3, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 6, "conceptKeywords": ["средина","медијана","уреди","сорт"] },
+      "tags": ["grade7","statistics","step_by_step","mean_median"]
+    },
+    {
+      "id": "case-082",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 7, "conceptTitle": "Операции со множества", "problemDescription": "A = {1,2,3,4,5}, B = {3,4,5,6,7}. Одреди A∩B, A∪B и A\\B.", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 3, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 6, "conceptKeywords": ["пресек","унија","разлика","множество"] },
+      "tags": ["grade7","sets","step_by_step","operations"]
+    },
+    {
+      "id": "case-083",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 8, "conceptTitle": "Линеарна функција - цртање график", "problemDescription": "Нацртај го графикот на f(x) = 2x - 3 за x ∈ {-2, -1, 0, 1, 2}.", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 3, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 7, "conceptKeywords": ["функција","f(x)","график","вредности","табела"] },
+      "tags": ["grade8","linear-function","step_by_step","graph"]
+    },
+    {
+      "id": "case-084",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 8, "conceptTitle": "Квадратна равенка - формула", "problemDescription": "Реши ја квадратната равенка: x² - 5x + 6 = 0", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 4, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 7, "conceptKeywords": ["дискриминанта","квадратна равенка","корени","x"] },
+      "tags": ["grade8","quadratic-equation","step_by_step","formula"]
+    },
+    {
+      "id": "case-085",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 9, "conceptTitle": "Теорема на Питагора", "problemDescription": "Правоаголен триаголник со катети a = 3 и b = 4. Пресметај ја хипотенузата c.", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 3, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 5, "conceptKeywords": ["Питагора","хипотенуза","катет","квадрат","корен"] },
+      "tags": ["grade9","pythagorean","step_by_step","theorem"]
+    },
+    {
+      "id": "case-086",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 9, "conceptTitle": "Периметар и плоштина на круг", "problemDescription": "Пресметај ги периметарот и плоштината на круг со полупречник r = 7 cm.", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 3, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 5, "conceptKeywords": ["π","полупречник","периметар","плоштина","круг"] },
+      "tags": ["grade9","circle","step_by_step","circumference_area"]
+    },
+    {
+      "id": "case-087",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 9, "conceptTitle": "Квадратна функција - теме и нули", "problemDescription": "За f(x) = x² - 4x + 3, одреди: теме, осовина на симетрија, нули на функцијата.", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 4, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 8, "conceptKeywords": ["теме","нули","осовина","парабола","дискриминанта"] },
+      "tags": ["grade9","quadratic-function","step_by_step","vertex_zeros"]
+    },
+    {
+      "id": "case-088",
+      "type": "step_by_step_solution",
+      "input": { "gradeLevel": 6, "conceptTitle": "Пресметување со проценти", "problemDescription": "Колку е 35% од 240?", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["problem","steps"], "minSteps": 2, "hasAnswer": true, "hasMathExpressions": true, "languageCode": "mk", "maxSteps": 5, "conceptKeywords": ["процент","целина","дел","пресметај"] },
+      "tags": ["grade6","percentages","step_by_step","calculation"]
+    },
+
+    {
+      "id": "case-089",
+      "type": "parallel_test",
+      "input": { "gradeLevel": 5, "topicTitle": "Дропки", "questionCount": 10, "includeBloomLevels": ["Remembering","Understanding","Applying","Analyzing"], "includeDoKLevels": [1,2,3], "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["title","groups"], "minGroups": 2, "totalQuestionsMin": 10, "hasAnswerKey": true, "languageCode": "mk", "conceptKeywords": ["дропка","именател","броитател"] },
+      "tags": ["grade5","fractions","parallel_test","dok1-3"]
+    },
+    {
+      "id": "case-090",
+      "type": "parallel_test",
+      "input": { "gradeLevel": 6, "topicTitle": "Цели броеви и Пропорционалност", "questionCount": 10, "includeBloomLevels": ["Understanding","Applying","Analyzing"], "includeDoKLevels": [1,2,3], "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["title","groups"], "minGroups": 2, "totalQuestionsMin": 10, "hasAnswerKey": true, "languageCode": "mk", "conceptKeywords": ["цел број","пропорција","размер"] },
+      "tags": ["grade6","integers","ratio","parallel_test"]
+    },
+    {
+      "id": "case-091",
+      "type": "parallel_test",
+      "input": { "gradeLevel": 7, "topicTitle": "Линеарни равенки", "questionCount": 10, "includeBloomLevels": ["Understanding","Applying","Analyzing"], "includeDoKLevels": [2,3], "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["title","groups"], "minGroups": 2, "totalQuestionsMin": 10, "hasAnswerKey": true, "languageCode": "mk", "conceptKeywords": ["линеарна равенка","реши","непознат"] },
+      "tags": ["grade7","linear-equations","parallel_test"]
+    },
+    {
+      "id": "case-092",
+      "type": "parallel_test",
+      "input": { "gradeLevel": 7, "topicTitle": "Статистика", "questionCount": 8, "includeBloomLevels": ["Remembering","Applying","Analyzing"], "includeDoKLevels": [1,2,3], "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["title","groups"], "minGroups": 2, "totalQuestionsMin": 8, "hasAnswerKey": true, "languageCode": "mk", "conceptKeywords": ["статистика","средина","медијана","мода"] },
+      "tags": ["grade7","statistics","parallel_test"]
+    },
+    {
+      "id": "case-093",
+      "type": "parallel_test",
+      "input": { "gradeLevel": 8, "topicTitle": "Линеарна функција", "questionCount": 10, "includeBloomLevels": ["Understanding","Applying","Analyzing"], "includeDoKLevels": [2,3], "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["title","groups"], "minGroups": 2, "totalQuestionsMin": 10, "hasAnswerKey": true, "languageCode": "mk", "conceptKeywords": ["линеарна функција","нагиб","график"] },
+      "tags": ["grade8","linear-function","parallel_test"]
+    },
+    {
+      "id": "case-094",
+      "type": "parallel_test",
+      "input": { "gradeLevel": 8, "topicTitle": "Квадратна равенка", "questionCount": 10, "includeBloomLevels": ["Understanding","Applying","Analyzing"], "includeDoKLevels": [2,3], "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["title","groups"], "minGroups": 2, "totalQuestionsMin": 10, "hasAnswerKey": true, "languageCode": "mk", "conceptKeywords": ["квадратна равенка","дискриминанта","корени"] },
+      "tags": ["grade8","quadratic-equation","parallel_test"]
+    },
+    {
+      "id": "case-095",
+      "type": "parallel_test",
+      "input": { "gradeLevel": 9, "topicTitle": "Кружница и Квадратна функција", "questionCount": 10, "includeBloomLevels": ["Understanding","Applying","Analyzing","Evaluating"], "includeDoKLevels": [2,3], "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["title","groups"], "minGroups": 2, "totalQuestionsMin": 10, "hasAnswerKey": true, "languageCode": "mk", "conceptKeywords": ["кружница","квадратна функција","теме","полупречник"] },
+      "tags": ["grade9","circle","quadratic-function","parallel_test"]
+    },
+
+    {
+      "id": "case-096",
+      "type": "rubric",
+      "input": { "gradeLevel": 5, "activityType": "project", "activityTitle": "Истражување на дропки во секојдневниот живот", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["criteria","levels"], "minCriteria": 3, "minLevels": 3, "languageCode": "mk", "minTotalLengthChars": 300, "conceptKeywords": ["дропка","критериум","ниво","достигнување"] },
+      "tags": ["grade5","fractions","rubric","project"]
+    },
+    {
+      "id": "case-097",
+      "type": "rubric",
+      "input": { "gradeLevel": 7, "activityType": "presentation", "activityTitle": "Статистичко истражување - Презентација", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["criteria","levels"], "minCriteria": 3, "minLevels": 3, "languageCode": "mk", "minTotalLengthChars": 300, "conceptKeywords": ["статистика","презентација","критериум","бодови"] },
+      "tags": ["grade7","statistics","rubric","presentation"]
+    },
+    {
+      "id": "case-098",
+      "type": "rubric",
+      "input": { "gradeLevel": 8, "activityType": "portfolio", "activityTitle": "Портфолио — Функции", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["criteria","levels"], "minCriteria": 3, "minLevels": 3, "languageCode": "mk", "minTotalLengthChars": 300, "conceptKeywords": ["функција","портфолио","критериум","евалуација"] },
+      "tags": ["grade8","functions","rubric","portfolio"]
+    },
+
+    {
+      "id": "case-099",
+      "type": "annual_plan",
+      "input": { "grade": 7, "subject": "Математика", "academicYear": "2025/2026", "startDate": "2025-09-01", "endDate": "2026-06-15", "holidays": "Нова година, Božić, Велигден", "winterBreak": { "start": "2025-12-25", "end": "2026-01-08" }, "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["grade","subject","topics"], "minTopics": 8, "totalWeeksMin": 30, "languageCode": "mk", "conceptKeywords": ["теми","часови","наставна","план"] },
+      "tags": ["grade7","annual_plan","2025-2026"]
+    },
+    {
+      "id": "case-100",
+      "type": "annual_plan",
+      "input": { "grade": 9, "subject": "Математика", "academicYear": "2025/2026", "startDate": "2025-09-01", "endDate": "2026-06-15", "holidays": "Нова година, Božić, Велигден", "winterBreak": { "start": "2025-12-25", "end": "2026-01-08" }, "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["grade","subject","topics"], "minTopics": 8, "totalWeeksMin": 30, "languageCode": "mk", "conceptKeywords": ["теми","часови","наставна","план"] },
+      "tags": ["grade9","annual_plan","2025-2026"]
+    },
+
+    {
+      "id": "case-101",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 5, "conceptTitle": "Природни броеви", "topicTitle": "Броеви", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["природен број","решавање","пресметај"] },
+      "tags": ["grade5","natural-numbers","dok2","applying","medium","mc"]
+    },
+    {
+      "id": "case-102",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 6, "conceptTitle": "Делливост, НЗД и НЗС", "topicTitle": "Броеви и операции", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["НЗД","НЗС","делливост","заеднички делител"] },
+      "tags": ["grade6","divisibility","dok2","applying","medium","short_answer"]
+    },
+    {
+      "id": "case-103",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 7, "conceptTitle": "Рационални броеви", "topicTitle": "Броеви и операции", "questionType": "word_problem", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 40, "maxDokDeviation": 1, "conceptKeywords": ["рационален број","пресметај","операции"] },
+      "tags": ["grade7","rational-numbers","dok2","applying","medium","word_problem"]
+    },
+    {
+      "id": "case-104",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 8, "conceptTitle": "Квадратен корен и реални броеви", "topicTitle": "Броеви", "questionType": "multiple_choice", "targetDokLevel": 2, "targetBloomLevel": "Understanding", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel","options"], "dokLevel": 2, "bloomLevel": "Understanding", "difficultyLevel": "Medium", "minOptions": 4, "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["квадратен корен","реален број","ирационален"] },
+      "tags": ["grade8","real-numbers","dok2","understanding","medium","mc"]
+    },
+    {
+      "id": "case-105",
+      "type": "assessment_question",
+      "input": { "gradeLevel": 9, "conceptTitle": "Тригонометрија - основни функции", "topicTitle": "Тригонометрија", "questionType": "short_answer", "targetDokLevel": 2, "targetBloomLevel": "Applying", "targetDifficulty": "Medium", "language": "mk" },
+      "expectedCriteria": { "requiredFields": ["question","answer","cognitiveLevel","dokLevel"], "dokLevel": 2, "bloomLevel": "Applying", "difficultyLevel": "Medium", "hasAnswer": true, "languageCode": "mk", "minQuestionLengthChars": 25, "maxDokDeviation": 1, "conceptKeywords": ["sin","cos","агол","триаголник","tg"] },
+      "tags": ["grade9","trigonometry","dok2","applying","medium","short_answer"]
+    }
+
+  ]
+}

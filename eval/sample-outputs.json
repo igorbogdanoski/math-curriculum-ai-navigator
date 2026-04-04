@@ -1,0 +1,149 @@
+[
+  {
+    "caseId": "case-001",
+    "output": {
+      "question": "Кој е именателот на дропката 3/7?",
+      "options": ["3", "7", "1", "21"],
+      "answer": "7",
+      "cognitiveLevel": "Remembering",
+      "difficulty_level": "Easy",
+      "dokLevel": 1
+    }
+  },
+  {
+    "caseId": "case-002",
+    "output": {
+      "question": "Сведи ја дропката 6/9 на основна форма.",
+      "answer": "2/3",
+      "cognitiveLevel": "Remembering",
+      "difficulty_level": "Easy",
+      "dokLevel": 1
+    }
+  },
+  {
+    "caseId": "case-003",
+    "output": {
+      "question": "Која дропка е поголема: 3/5 или 4/7?",
+      "options": ["3/5", "4/7", "Се еднакви", "Не може да се спореди"],
+      "answer": "3/5",
+      "cognitiveLevel": "Understanding",
+      "difficulty_level": "Medium",
+      "dokLevel": 2
+    }
+  },
+  {
+    "caseId": "case-004",
+    "output": {
+      "question": "Марија изела 1/3 од пица, а Јана изела 1/4. Колку пица изеле заедно?",
+      "answer": "7/12",
+      "cognitiveLevel": "Applying",
+      "difficulty_level": "Medium",
+      "dokLevel": 2
+    }
+  },
+  {
+    "caseId": "case-005",
+    "output": {
+      "question": "Претвори ја мешаната дропка 2 и 3/4 во неправилна дропка.",
+      "options": ["11/4", "7/4", "9/4", "8/4"],
+      "answer": "11/4",
+      "cognitiveLevel": "Applying",
+      "difficulty_level": "Medium",
+      "dokLevel": 2
+    }
+  },
+  {
+    "caseId": "case-076",
+    "output": {
+      "problem": "Пресметај: 1/3 + 1/4",
+      "steps": [
+        { "explanation": "Бараме НЗС на именателите 3 и 4. НЗС(3,4) = 12.", "expression": "НЗС(3,4) = 12" },
+        { "explanation": "Претворуваме двете дропки на ист именател 12.", "expression": "1/3 = 4/12, 1/4 = 3/12" },
+        { "explanation": "Собираме броителите.", "expression": "4/12 + 3/12 = 7/12" },
+        { "explanation": "Резултатот е 7/12. Провери: дали може да се сведе? НЗД(7,12) = 1, па дропката е основна.", "expression": "1/3 + 1/4 = 7/12" }
+      ]
+    }
+  },
+  {
+    "caseId": "case-077",
+    "output": {
+      "problem": "Правоаголник со страни 6 cm и 4 cm. Пресметај ги плоштината и периметарот.",
+      "steps": [
+        { "explanation": "Формула за периметар на правоаголник: P = 2(a + b)", "expression": "P = 2(6 + 4)" },
+        { "explanation": "Пресметуваме", "expression": "P = 2 × 10 = 20 cm" },
+        { "explanation": "Формула за плоштина: A = a × b", "expression": "A = 6 × 4 = 24 cm²" },
+        { "explanation": "Периметарот е 20 cm, плоштината е 24 cm².", "expression": "P = 20 cm, A = 24 cm²" }
+      ]
+    }
+  },
+  {
+    "caseId": "case-061",
+    "output": {
+      "objectives": ["Учениците ќе разберат поимот именател и броител", "Ќе можат да ги споредуваат дропки со ист именател"],
+      "activities": [
+        { "title": "Питца-дропки", "description": "Наставникот донесува хартиени кругови. Учениците ги делат на еднакви делови и именуваат дропки.", "duration": "10 мин" },
+        { "title": "Корнер квиз", "description": "Во секој агол од учителница се поставува одговор. Наставникот чита прашање, учениците одат до точниот агол.", "duration": "10 мин" },
+        { "title": "Истражување со делење", "description": "Групи учат дека 1/2 = 2/4 = 4/8 преку делење ленти.", "duration": "15 мин" }
+      ]
+    }
+  },
+  {
+    "caseId": "case-089",
+    "output": {
+      "title": "Паралелен тест — Дропки (одд. 5)",
+      "groups": [
+        {
+          "label": "Група A",
+          "questions": [
+            { "question": "Кој е именателот на 2/5?", "answer": "5", "cognitiveLevel": "Remembering", "dokLevel": 1 },
+            { "question": "Собери: 1/4 + 1/4", "answer": "2/4 = 1/2", "cognitiveLevel": "Applying", "dokLevel": 2 },
+            { "question": "Споредби: која е поголема, 2/3 или 3/5?", "answer": "2/3", "cognitiveLevel": "Understanding", "dokLevel": 2 },
+            { "question": "Марко изел 1/3 од торта, Ана 2/6. Кој изел повеќе?", "answer": "Изеле подеднакво (1/3 = 2/6)", "cognitiveLevel": "Analyzing", "dokLevel": 3 },
+            { "question": "Следната низа: 1/8, 2/8, 3/8, ... Кој е следниот член?", "answer": "4/8", "cognitiveLevel": "Analyzing", "dokLevel": 3 }
+          ]
+        },
+        {
+          "label": "Група Б",
+          "questions": [
+            { "question": "Кој е броителот на 3/7?", "answer": "3", "cognitiveLevel": "Remembering", "dokLevel": 1 },
+            { "question": "Собери: 1/6 + 1/6", "answer": "2/6 = 1/3", "cognitiveLevel": "Applying", "dokLevel": 2 },
+            { "question": "Споредби: која е поголема, 3/4 или 2/3?", "answer": "3/4", "cognitiveLevel": "Understanding", "dokLevel": 2 },
+            { "question": "Тина изела 2/4 от колач, Пеце 3/6. Кој изел повеќе?", "answer": "Изеле подеднакво (2/4 = 3/6)", "cognitiveLevel": "Analyzing", "dokLevel": 3 },
+            { "question": "Следната низа: 2/9, 4/9, 6/9, ... Кој е следниот член?", "answer": "8/9", "cognitiveLevel": "Analyzing", "dokLevel": 3 }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "caseId": "case-096",
+    "output": {
+      "criteria": [
+        { "name": "Математичка точност", "description": "Точноста на прикажаните дропки" },
+        { "name": "Примената во контекст", "description": "Изборот на реалистични примери" },
+        { "name": "Презентација", "description": "Јасност и уредност на работата" }
+      ],
+      "levels": [
+        { "label": "Одличен (4)", "description": "Сите дропки точни, оригинален контекст, одлична презентација" },
+        { "label": "Многу добар (3)", "description": "Дропките точни со мали грешки, добар контекст" },
+        { "label": "Добар (2)", "description": "Повеќе дропки точни, контекстот е присутен" },
+        { "label": "Задоволителен (1)", "description": "Минимален напредок, потребна дополнителна поддршка" }
+      ]
+    }
+  },
+  {
+    "caseId": "case-099",
+    "output": {
+      "grade": "VII",
+      "subject": "Математика",
+      "totalWeeks": 36,
+      "topics": [
+        { "title": "Броеви и операции", "weeks": 10, "hoursPerWeek": 4, "standards": ["Цели броеви", "Рационални броеви", "Проценти"] },
+        { "title": "Алгебра", "weeks": 8, "hoursPerWeek": 4, "standards": ["Линеарни равенки", "Неравенки"] },
+        { "title": "Геометрија", "weeks": 9, "hoursPerWeek": 4, "standards": ["Многуаголници", "Периметар и плоштина"] },
+        { "title": "Статистика и веројатност", "weeks": 5, "hoursPerWeek": 4, "standards": ["Средини", "Дијаграми"] },
+        { "title": "Систематизација и оценување", "weeks": 4, "hoursPerWeek": 4, "standards": ["Повторување", "Финален тест"] }
+      ]
+    }
+  }
+]

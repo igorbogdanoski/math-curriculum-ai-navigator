@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "runAt": "2026-04-03 01:34:08Z",
+      "casesEvaluated": 105,
+      "avgScore": 10,
+      "perfectCount": 9,
+      "belowThresholdCount": 0,
+      "byType": {
+        "assessment_question": 8,
+        "lesson_ideas": 7,
+        "step_by_step_solution": 15,
+        "parallel_test": 14,
+        "rubric": 33,
+        "annual_plan": 42
+      }
+    }
+  ]
+}

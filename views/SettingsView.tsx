@@ -10,8 +10,9 @@ import { ICONS } from '../constants';
 import { InstallApp } from '../components/common/InstallApp';
 import { firestoreService } from '../services/firestoreService';
 import { exportUserData, downloadUserDataAsJson } from '../services/firestoreService.gdpr';
+import { isFeedbackTaxonomyRolloutEnabled, setFeedbackTaxonomyRolloutEnabled } from '../services/feedbackTaxonomyRollout';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
-import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled } from '../services/geminiService';
+import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, isIntentRouterEnabled, setIntentRouterEnabled } from '../services/geminiService';
 import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle, Crown, CreditCard, ExternalLink } from 'lucide-react';
 import { AppError, ErrorCode } from '../utils/errors';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -103,6 +104,9 @@ export const SettingsView: React.FC = () => {
         localStorage.getItem('auto_ai_suggestions') !== 'false'
     );
     const [mkContextEnabled, setMkContextEnabled] = useState(() => isMacedonianContextEnabled());
+    const [recoveryWorksheetEnabled, setRecoveryWorksheetState] = useState(() => isRecoveryWorksheetEnabled());
+    const [intentRouterEnabled, setIntentRouterState] = useState(() => isIntentRouterEnabled());
+    const [feedbackTaxonomyEnabled, setFeedbackTaxonomyState] = useState(() => isFeedbackTaxonomyRolloutEnabled());
     const [isMentorEnabled, setIsMentorEnabled] = useState(user?.isMentor ?? false);
     useEffect(() => { setIsMentorEnabled(user?.isMentor ?? false); }, [user?.isMentor]);
     // E2.2 — Global accessibility settings
@@ -158,6 +162,22 @@ export const SettingsView: React.FC = () => {
         const next = !mkContextEnabled;
         setMkContextEnabled(next);
         setMacedonianContextEnabled(next);
+    };
+
+    const toggleRecoveryWorksheet = () => {
+        const next = !recoveryWorksheetEnabled;
+        setRecoveryWorksheetState(next);
+        setRecoveryWorksheetEnabled(next);
+    };
+    const toggleIntentRouter = () => {
+        const next = !intentRouterEnabled;
+        setIntentRouterState(next);
+        setIntentRouterEnabled(next);
+    };
+    const toggleFeedbackTaxonomy = () => {
+        const next = !feedbackTaxonomyEnabled;
+        setFeedbackTaxonomyState(next);
+        setFeedbackTaxonomyRolloutEnabled(next);
     };
 
     const toggleMentor = async () => {
@@ -556,6 +576,51 @@ export const SettingsView: React.FC = () => {
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${mkContextEnabled ? 'bg-brand-primary' : 'bg-gray-300'}`}
                         >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${mkContextEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-t">
+                        <div>
+                            <p className="text-sm font-medium text-gray-700">⚡ Intent Router (E3)</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Рутира едноставни AI задачи (аналогии, наслови, мисконцепции) на побрз/поефтин Gemini Lite модел.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={toggleIntentRouter}
+                            title={intentRouterEnabled ? 'Исклучи Intent Router' : 'Вклучи Intent Router'}
+                            aria-label={intentRouterEnabled ? 'Исклучи Intent Router' : 'Вклучи Intent Router'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${intentRouterEnabled ? 'bg-violet-600' : 'bg-gray-300'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${intentRouterEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-t">
+                        <div>
+                            <p className="text-sm font-medium text-gray-700">🩹 Recovery Worksheet (E2)</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Analytics ќе отвори preview + teacher confirm flow за worksheet со одобрување пред доделување.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={toggleRecoveryWorksheet}
+                            title={recoveryWorksheetEnabled ? 'Исклучи recovery worksheet flow' : 'Вклучи recovery worksheet flow'}
+                            aria-label={recoveryWorksheetEnabled ? 'Исклучи recovery worksheet flow' : 'Вклучи recovery worksheet flow'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${recoveryWorksheetEnabled ? 'bg-emerald-600' : 'bg-gray-300'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${recoveryWorksheetEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-t">
+                        <div>
+                            <p className="text-sm font-medium text-gray-700">🧭 Feedback Taxonomy Rollout (E5-C3)</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Structured reject/revision reasons + analytics breakdown. OFF = legacy reject path без taxonomy analytics.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={toggleFeedbackTaxonomy}
+                            title={feedbackTaxonomyEnabled ? 'Исклучи feedback taxonomy rollout' : 'Вклучи feedback taxonomy rollout'}
+                            aria-label={feedbackTaxonomyEnabled ? 'Исклучи feedback taxonomy rollout' : 'Вклучи feedback taxonomy rollout'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${feedbackTaxonomyEnabled ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${feedbackTaxonomyEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
                     </div>
                     <div className="flex items-center justify-between py-3 border-t">

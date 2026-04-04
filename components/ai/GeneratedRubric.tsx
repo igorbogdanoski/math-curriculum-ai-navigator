@@ -4,6 +4,8 @@ import type { AIGeneratedRubric, RubricCriterion, RubricLevel } from '../../type
 import { ICONS } from '../../constants';
 import { useNotification } from '../../contexts/NotificationContext';
 import { downloadAsPdf } from '../../utils/pdfDownload';
+import { useAuth } from '../../contexts/AuthContext';
+import { firestoreService } from '../../services/firestoreService';
 
 interface GeneratedRubricProps {
   material: AIGeneratedRubric;
@@ -15,6 +17,17 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const { addNotification } = useNotification();
+    const { firebaseUser } = useAuth();
+
+    const trackFeedback = (context: string) => {
+        if (!firebaseUser?.uid) return;
+        firestoreService.logAIMaterialFeedbackEvent({
+            teacherUid: firebaseUser.uid,
+            materialType: 'rubric',
+            action: 'accept_saved',
+            context,
+        }).catch(() => undefined);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -35,6 +48,7 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
             setIsPdfLoading(true);
             try {
                 await downloadAsPdf(contentRef.current, material.title || 'рубрика');
+                trackFeedback('export:pdf');
             } finally {
                 setIsPdfLoading(false);
             }
@@ -52,6 +66,7 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
 
         if (format === 'clipboard') {
             navigator.clipboard.writeText(fullContent).then(() => addNotification('Рубриката е копирана како обичен текст.', 'success')).catch(() => addNotification('Грешка при копирање.', 'error'));
+            trackFeedback('export:clipboard_plain');
             return;
         }
         
@@ -121,6 +136,7 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
+                    trackFeedback('export:doc');
                     return;
                 }
 
@@ -128,6 +144,7 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
                     const blob = new Blob([fullHtml], { type: 'text/html' });
                     const clipboardItem = new ClipboardItem({ 'text/html': blob });
                     navigator.clipboard.write([clipboardItem]).then(() => addNotification('Рубриката е копирана со форматирање за Word.', 'success')).catch(() => addNotification('Грешка при копирање.', 'error'));
+                    trackFeedback('export:clipboard_word');
                 } catch (error) {
                     addNotification('Копирањето со форматирање не е поддржано.', 'error');
                 }
@@ -144,6 +161,7 @@ export const GeneratedRubric: React.FC<GeneratedRubricProps> = ({ material }) =>
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        trackFeedback(`export:${format}`);
     };
 
     if (material.error) {

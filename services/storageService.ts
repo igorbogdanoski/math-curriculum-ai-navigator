@@ -4,6 +4,7 @@
  */
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebaseConfig';
+import { AppError, ErrorCode } from '../utils/errors';
 
 /**
  * Uploads a teacher-supplied image file for a quiz question.
@@ -16,10 +17,20 @@ const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'im
 
 export const uploadQuestionImage = async (file: File, teacherUid: string): Promise<string> => {
   if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error(`Сликата е преголема (макс. 8 MB). Вашата слика е ${(file.size / 1024 / 1024).toFixed(1)} MB.`);
+    throw new AppError(
+      `Image size exceeds limit: ${(file.size / 1024 / 1024).toFixed(1)} MB`,
+      ErrorCode.VALIDATION_FAILED,
+      `Сликата е преголема (макс. 8 MB). Вашата слика е ${(file.size / 1024 / 1024).toFixed(1)} MB.`,
+      false,
+    );
   }
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    throw new Error(`Неподдржан формат на слика. Дозволени: JPEG, PNG, WebP, GIF.`);
+    throw new AppError(
+      `Unsupported image format: ${file.type || 'unknown'}`,
+      ErrorCode.VALIDATION_FAILED,
+      'Неподдржан формат на слика. Дозволени: JPEG, PNG, WebP, GIF.',
+      false,
+    );
   }
   const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
   const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;

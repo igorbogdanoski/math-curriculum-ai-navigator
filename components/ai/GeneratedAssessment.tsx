@@ -15,9 +15,11 @@ import { QuizViewer } from './QuizViewer';
 import { shareService } from '../../services/shareService';
 import { useNotification } from '../../contexts/NotificationContext';
 import { geminiService } from '../../services/geminiService';
+import { sanitizePromptInput } from '../../services/gemini/core';
 import { uploadQuestionImage } from '../../services/storageService';
 import { useAuth } from '../../contexts/AuthContext';
 import { ForumShareButton } from '../forum/ForumShareButton';
+import { firestoreService } from '../../services/firestoreService';
 
 const InteractiveQuizPlayer = React.lazy(() => import('./InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 
@@ -375,6 +377,16 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
     const { addNotification } = useNotification();
     const { firebaseUser } = useAuth();
 
+    const trackFeedback = (action: 'edit_started' | 'edit_saved' | 'edit_regenerated' | 'reject_edit' | 'reject_visual' | 'accept_saved', context?: string) => {
+        if (!firebaseUser?.uid) return;
+        firestoreService.logAIMaterialFeedbackEvent({
+            teacherUid: firebaseUser.uid,
+            materialType: 'assessment',
+            action,
+            context,
+        }).catch(() => undefined);
+    };
+
     const handleUploadImage = async (idx: number, file: File) => {
         if (!firebaseUser?.uid) {
             addNotification('Мора да бидете логирани за да прикачите слика.', 'warning');
@@ -451,12 +463,14 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 ) || [],
             };
         });
+            trackFeedback('reject_visual', `question_index:${idx}`);
     };
 
     const handleRegenerateImage = async (idx: number, customPrompt: string) => {
         setVisualizingIdx(idx);
         try {
-            const result = await geminiService.generateIllustration(customPrompt);
+            const safePrompt = sanitizePromptInput(customPrompt, 500);
+            const result = await geminiService.generateIllustration(safePrompt);
             setEditableMaterial(prev => {
                 const setImage = (qs: AssessmentQuestion[]) => {
                     const next = [...qs];
@@ -472,6 +486,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                 };
             });
             addNotification('Илустрацијата е успешно регенерирана!', 'success');
+            trackFeedback('edit_regenerated', `question_index:${idx}`);
         } catch {
             addNotification('Грешка при регенерирање на илустрацијата.', 'error');
         } finally {
@@ -604,11 +619,15 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         });
     };
     
-    const handleSaveEdit = () => setIsEditing(false);
+    const handleSaveEdit = () => {
+        setIsEditing(false);
+        trackFeedback('edit_saved');
+    };
 
     const handleCancelEdit = () => {
         setEditableMaterial(material);
         setIsEditing(false);
+        trackFeedback('reject_edit');
     };
 
     const handleExport = async (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
@@ -814,7 +833,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                             {isActionsMenuOpen && (
                                 <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 animate-fade-in-up">
                                     <div className="py-1">
-                                         <button type="button" onClick={() => { setIsEditing(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                         <button type="button" onClick={() => { setIsEditing(true); trackFeedback('edit_started'); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <ICONS.edit className="w-5 h-5 mr-3" /> Уреди го тестот
                                         </button>
                                         <button type="button" onClick={() => { setShowFlashcards(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">

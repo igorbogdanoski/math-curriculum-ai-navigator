@@ -9,7 +9,10 @@ import { usePlanner } from '../../contexts/PlannerContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { geminiService } from '../../services/geminiService';
+import { sanitizePromptInput } from '../../services/gemini/core';
 import { ForumShareButton } from '../forum/ForumShareButton';
+import { useAuth } from '../../contexts/AuthContext';
+import { firestoreService } from '../../services/firestoreService';
 
 interface GeneratedIdeasProps {
   material: AIGeneratedIdeas;
@@ -121,11 +124,22 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
     const { addLessonPlan } = usePlanner();
     const { navigate } = useNavigation();
     const { addNotification } = useNotification();
+    const { firebaseUser } = useAuth();
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [visualizations, setVisualizations] = useState<Record<string, { loading: boolean, url?: string }>>({});
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
+
+    const trackFeedback = (action: 'edit_regenerated' | 'reject_visual' | 'accept_saved', context?: string) => {
+        if (!firebaseUser?.uid) return;
+        firestoreService.logAIMaterialFeedbackEvent({
+            teacherUid: firebaseUser.uid,
+            materialType: 'ideas',
+            action,
+            context,
+        }).catch(() => undefined);
+    };
 
     const handleVisualize = async (section: string, promptText: string) => {
         setVisualizations(prev => ({ ...prev, [section]: { loading: true } }));
@@ -145,14 +159,17 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
 
     const handleDeleteVisualization = (section: string) => {
         setVisualizations(prev => ({ ...prev, [section]: { loading: false } }));
+        trackFeedback('reject_visual', `section:${section}`);
     };
 
     const handleRegenerateVisualization = async (section: string, customPrompt: string) => {
         setVisualizations(prev => ({ ...prev, [section]: { loading: true } }));
         try {
-            const result = await geminiService.generateIllustration(customPrompt);
+            const safePrompt = sanitizePromptInput(customPrompt, 500);
+            const result = await geminiService.generateIllustration(safePrompt);
             setVisualizations(prev => ({ ...prev, [section]: { loading: false, url: result.imageUrl } }));
             addNotification('Илустрацијата е успешно регенерирана!', 'success');
+            trackFeedback('edit_regenerated', `section:${section}`);
         } catch (error) {
             console.error('Regenerate visualization error:', error);
             setVisualizations(prev => ({ ...prev, [section]: { loading: false } }));
@@ -199,10 +216,16 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
         try {
             const newPlanId = await addLessonPlan(newPlan);
             addNotification('Подготовката е успешно зачувана! Сега можете да ја доуредите.', 'success');
+            trackFeedback('accept_saved', 'target:lesson_plan');
             navigate(`/planner/lesson/${newPlanId}`);
         } catch (error) {
             addNotification('Грешка при зачувување на подготовката.', 'error');
         }
+    };
+
+    const handleSaveAsNoteTracked = () => {
+        onSaveAsNote();
+        trackFeedback('accept_saved', 'target:teacher_note');
     };
     
     const handleExport = async (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
@@ -411,7 +434,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
             )}
              <div className="mt-4 flex flex-wrap gap-2 no-print">
                 <button type="button" onClick={handleSaveAsPlan} className="flex items-center text-sm bg-green-600 text-white px-3 py-1.5 rounded-lg shadow hover:bg-green-700"><ICONS.plus className="w-4 h-4 mr-1"/> Зачувај како подготовка</button>
-                <button type="button" onClick={onSaveAsNote} className="flex items-center text-sm bg-yellow-500 text-white px-3 py-1.5 rounded-lg shadow hover:bg-yellow-600"><ICONS.edit className="w-4 h-4 mr-1"/> Зачувај како белешка</button>
+                <button type="button" onClick={handleSaveAsNoteTracked} className="flex items-center text-sm bg-yellow-500 text-white px-3 py-1.5 rounded-lg shadow hover:bg-yellow-600"><ICONS.edit className="w-4 h-4 mr-1"/> Зачувај како белешка</button>
                 <ForumShareButton
                     prefillTitle={material.title}
                     prefillBody={`Споделувам сценарио за час: „${material.title}" — генерирано со AI. Мислења, подобрувања?`}

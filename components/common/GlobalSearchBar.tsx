@@ -278,6 +278,7 @@ export const GlobalSearchBar: React.FC = () => {
                 </span>
                 <input
                     ref={inputRef}
+                    role="combobox"
                     type="text"
                     value={query}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
@@ -288,6 +289,8 @@ export const GlobalSearchBar: React.FC = () => {
                     onKeyDown={handleKeyDown}
                     placeholder="Пребарај… (Ctrl+K)"
                     aria-label="Пребарај низ целата апликација"
+                    aria-autocomplete="list"
+                    aria-haspopup="listbox"
                     className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
                     aria-expanded={isOpen}
                     aria-controls="search-results"

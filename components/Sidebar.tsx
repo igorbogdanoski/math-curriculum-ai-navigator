@@ -56,7 +56,7 @@ const NavItem: React.FC<{
         </span>
       )}
       {!unreadCount && badge && (
-        <span className="ml-1 text-[10px] font-bold bg-brand-accent/20 text-brand-accent px-1.5 py-0.5 rounded-full">
+        <span className="ml-1 text-[10px] font-bold bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded-full">
           {badge}
         </span>
       )}
@@ -124,7 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           <button
             type="button"
             onClick={() => setShowMore(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50"
+            className="w-full flex items-center justify-between px-4 py-2 text-xs font-bold text-gray-600 uppercase tracking-widest hover:text-gray-800 transition-colors rounded-lg hover:bg-gray-50"
           >
             <span>{showMore ? t('sidebar.less') : t('sidebar.moreTools')}</span>
             {showMore ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}

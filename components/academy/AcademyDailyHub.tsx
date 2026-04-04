@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Flame, Zap, Brain, ArrowRight, Loader2, Sparkles, Trophy, Target, RefreshCw } from 'lucide-react';
-import { callGeminiProxy } from '../../services/gemini/core';
+import { callGeminiProxy, sanitizePromptInput } from '../../services/gemini/core';
 import { useNavigation } from '../../contexts/NavigationContext';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -247,7 +247,7 @@ export const AcademyDailyHub: React.FC<Props> = ({ modules, readLessons, applied
     setIsChallengeLoading(true);
     try {
       const allTopics = modules.flatMap(m => m.topics.map(t => t.title));
-      const randomTopics = allTopics.sort(() => 0.5 - Math.random()).slice(0, 3).join(', ');
+      const randomTopics = sanitizePromptInput(allTopics.sort(() => 0.5 - Math.random()).slice(0, 3).join(', '), 240);
       const prompt = `Ти си педагошки ментор. Генерирај еден краток (3-4 реченици) **дневен предизвик** за наставник по математика.
 
 Предизвикот треба да е практичен сценарио кој поврзува педагошки техники (${randomTopics}) со реален час по математика (VII одделение).

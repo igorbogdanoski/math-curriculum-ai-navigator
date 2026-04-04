@@ -12,6 +12,7 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { exportLessonPlanToWord } from '../utils/wordExport';
+import { AppError, ErrorCode } from '../utils/errors';
 const LessonPlanPDFButton = React.lazy(() =>
   import('../components/lesson-plan-editor/LessonPlanPDF').then(m => ({ default: m.LessonPlanPDFButton }))
 );
@@ -170,11 +171,23 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
             await ensurePdfLibs();
             
             if (!window.jspdf || !window.html2canvas) {
-                throw new Error("PDF libraries failed to load. Please check internet connection.");
+                throw new AppError(
+                    'PDF libraries failed to load',
+                    ErrorCode.AI_UNAVAILABLE,
+                    'Библиотеките за PDF не се вчитаа. Проверете ја интернет врската и обидете се повторно.',
+                    true,
+                );
             }
 
             const element = printableRef.current;
-            if (!element) throw new Error("Printable element not found");
+            if (!element) {
+                throw new AppError(
+                    'Printable element not found',
+                    ErrorCode.UNKNOWN,
+                    'Не можам да создам PDF. Освежете ја страницата и обидете се повторно.',
+                    false,
+                );
+            }
 
             // Wait for any potential images/math to render
             await new Promise(resolve => setTimeout(resolve, 500));

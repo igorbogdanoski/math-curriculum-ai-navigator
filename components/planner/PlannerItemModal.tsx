@@ -9,6 +9,7 @@ import { useModal } from '../../contexts/ModalContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { geminiService } from '../../services/geminiService';
+import { sanitizePromptInput } from '../../services/gemini/core';
 import { firestoreService, type QuizResult } from '../../services/firestoreService';
 import { Sparkles, TicketCheck, ExternalLink, Users, CheckCircle2, Copy, CheckCheck } from 'lucide-react';
 
@@ -92,11 +93,12 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
 
     recognition.onresult = async (event: any) => {
         const transcript = event.results[0][0].transcript;
+        const safeTranscript = sanitizePromptInput(transcript, 600);
         setIsListening(false);
         setIsProcessingVoice(true);
         
         try {
-            const parsedData = await geminiService.parsePlannerInput(transcript);
+            const parsedData = await geminiService.parsePlannerInput(safeTranscript);
             setFormData((prev: Partial<PlannerItem>) => ({
                 ...prev,
                 title: parsedData.title || prev.title,

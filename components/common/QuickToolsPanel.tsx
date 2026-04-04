@@ -37,7 +37,7 @@ const TOOLS: { emoji: string; label: string; materialType: MaterialType }[] = [
 const MATERIAL_EMOJI: Partial<Record<string, string>> = {
   QUIZ: '❓', ASSESSMENT: '📄', EXIT_TICKET: '🎟️',
   SCENARIO: '🎭', LEARNING_PATH: '🗺️', RUBRIC: '📊',
-  FLASHCARDS: '🃏', ILLUSTRATION: '🖼️', WORKED_EXAMPLE: '✍️', PRESENTATION: '📽️',
+  FLASHCARDS: '🃏', ILLUSTRATION: '🖼️', WORKED_EXAMPLE: '✍️', PRESENTATION: '📽️', VIDEO_EXTRACTOR: '🎬',
 };
 
 const STORAGE_KEY = 'quicktools_collapsed';
@@ -146,13 +146,14 @@ Respond ONLY with valid JSON (no markdown):
 
   const handleAIAccept = () => {
     if (!aiSuggestion) return;
+    const safeTeacherNote = sanitizePromptInput(aiText.trim(), 400);
     openGeneratorPanel({
       selectedGrade: gradeId,
       selectedTopic: topicId,
       selectedConcepts: conceptIds,
       materialType: aiSuggestion.materialType,
       contextType: conceptIds.length > 0 ? 'CONCEPT' : 'ACTIVITY',
-      customInstruction: aiText.trim() ? `${customInstruction}\n\nНаставник: ${aiText.trim()}`.trim() : customInstruction,
+      customInstruction: safeTeacherNote ? `${customInstruction}\n\nНаставник: ${safeTeacherNote}`.trim() : customInstruction,
     });
     setAiText('');
     setAiSuggestion(null);

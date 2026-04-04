@@ -1,0 +1,83 @@
+name: AI Generation Quality Evaluation (D2)
+
+on:
+  # Run weekly on Mondays to track quality trend
+  schedule:
+    - cron: '0 6 * * 1'
+  # Allow manual trigger with optional outputs file path
+  workflow_dispatch:
+    inputs:
+      outputs_file:
+        description: 'Path to AI outputs JSON file (relative to repo root)'
+        required: false
+        default: 'eval/sample-outputs.json'
+      filter_tag:
+        description: 'Optional: filter to a specific tag (e.g. grade7, dok3)'
+        required: false
+        default: ''
+      min_score:
+        description: 'Minimum acceptable average score % (0 = no gate)'
+        required: false
+        default: '0'
+      fail_below:
+        description: 'Fail the workflow if any case scores below min_score'
+        required: false
+        default: 'false'
+
+jobs:
+  eval-quality:
+    name: AI Quality Evaluation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate golden-set schema
+        run: npm run -s eval:validate-schema
+
+      - name: Run evaluation against sample outputs
+        id: eval
+        run: |
+          OUTPUTS_FILE="${{ github.event.inputs.outputs_file || 'eval/sample-outputs.json' }}"
+          FILTER_TAG="${{ github.event.inputs.filter_tag || '' }}"
+          MIN_SCORE="${{ github.event.inputs.min_score || '0' }}"
+          FAIL_BELOW="${{ github.event.inputs.fail_below || 'false' }}"
+
+          CMD="node scripts/run-eval.mjs --outputs $OUTPUTS_FILE --record-history"
+
+          if [ -n "$FILTER_TAG" ]; then
+            CMD="$CMD --filter-tag $FILTER_TAG"
+          fi
+
+          if [ "$MIN_SCORE" != "0" ]; then
+            CMD="$CMD --min-score $MIN_SCORE"
+          fi
+
+          if [ "$FAIL_BELOW" = "true" ]; then
+            CMD="$CMD --fail-below"
+          fi
+
+          eval "$CMD"
+
+      - name: Show quality score trend
+        if: always()
+        run: node scripts/run-eval.mjs --show-trend
+
+      - name: Commit updated score history
+        if: always()
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore(eval): update AI quality score history [skip ci]'
+          file_pattern: 'eval/score-history.json'
+          commit_user_name: 'github-actions[bot]'
+          commit_user_email: 'github-actions[bot]@users.noreply.github.com'

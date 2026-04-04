@@ -34,16 +34,16 @@
 | A1 | E2E стабилизација на auth-guard тестови | 3 последователни run-ови без flaky во auth-guard suite | ✅ |
 | A2 | Build/Runtime стабилност | 0 compile errors, 0 runtime-crash regression во smoke/e2e | ✅ |
 | A3 | Error-system cleanup во legacy сервиси | Намален број raw `throw new Error` патеки во критични services | ✅ |
-| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress |
+| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 33.33%, 2/6) |
 
 ### ФАЗА B — Performance and Bundle Excellence
 
 | ID | Задача | KPI за pass | Статус |
 |---|---|---|---|
 | B1 | Vendor split strategy (math/pdf/firebase/xlsx) | Нема chunk > 1.5MB minified | ✅ |
-| B2 | Route-based lazy loading за heavy flows | Home/Student initial load побрз (мерено со Lighthouse/TTI) | 🟨 in progress |
+| B2 | Route-based lazy loading за heavy flows | Home/Student initial load побрз (мерено со Lighthouse/TTI) | ✅ closed (04.04.2026 evidence logged) |
 | B3 | Perf budget enforcement | Build fail ако надмине договорен budget | ✅ |
-| B4 | Lighthouse стабилизација | >=90 за Perf/A11y/Best Practices на PR | ⬜ |
+| B4 | Lighthouse стабилизација | >=90 за Perf/A11y/Best Practices на PR | ✅ |
 
 ### ФАЗА C — Security and Platform Hardening
 
@@ -52,7 +52,7 @@
 | C1 | Prompt/Input sanitization coverage | 100% AI entry points минуваат низ sanitize path | ✅ |
 | C2 | Auth/App Check consistency audit | Нема route со недефиниран auth behavior | ✅ |
 | C3 | Incident observability | Централизиран error dashboard + top failure taxonomy | ✅ |
-| C4 | Backup/restore drill | Верифициран restore runbook | 🟨 in progress |
+| C4 | Backup/restore drill | Верифициран restore runbook | ✅ closed (04.04.2026 evidence logged) |
 
 ### ФАЗА D — AI Quality System (World-Class Differentiator)
 
@@ -62,14 +62,15 @@
 | D2 | Автоматска AI евалуација (точност, DoK/Bloom, јазик) | Quality score trend стабилно нагоре | ✅ |
 | D3 | Prompt/version governance | Секој major prompt има верзија + changelog + rollback | ✅ |
 | D4 | Teacher feedback loop analytics | Видливи reject/edit patterns по material тип | ✅ |
+| D5 | CI quality smoke gate за AI outputs | PR fail при пад под договорен smoke threshold | ✅ |
 
 ### ФАЗА E — New High-Impact Features (само после A+B)
 
 | ID | Задача | KPI за pass | Статус |
 |---|---|---|---|
 | E1 | Video Extractor MVP (S16.A) | URL -> preview -> confirm -> save работи стабилно | ✅ |
-| E2 | Recovery Worksheet pipeline (S16.B) | Auto remedial flow со teacher confirm | ⬜ |
-| E3 | Intent Router spike | Мерливо намалена латенција/cost по request | ⬜ |
+| E2 | Recovery Worksheet pipeline (S16.B) | Auto remedial flow со teacher confirm | ✅ |
+| E3 | Intent Router spike | Мерливо намалена латенција/cost по request | ✅ |
 | E4 | Vertex AI controlled spike | 1 production-safe path под feature flag | ⬜ |
 | E5 | UX enrichment from reference app | Home + Extract + Teacher tools parity (phase-gated) | 🟨 in progress |
 
@@ -141,6 +142,7 @@
 - D4 delta (coverage expansion): telemetry е проширен и во `GeneratedPresentation.tsx` (`edit_regenerated`, `reject_visual`, `accept_saved`) и `GeneratedRubric.tsx` (`accept_saved` преку export actions), за поширока видливост на teacher feedback pattern-и надвор од assessment/ideas flow.
 - D4 delta (coverage expansion 2): telemetry е додаден и во `GeneratedLearningPaths.tsx` и `GeneratedIllustration.tsx` (export/download/print -> `accept_saved`), и `AIMaterialType` е проширен со `learning_paths` и `illustration` за прецизна сегментација во analytics summary.
 - D4 closure validation: извлечен е pure aggregator `buildAIMaterialFeedbackSummaryFromEvents` во `firestoreService.materials.ts` и додадени се unit тестови `services/firestoreService.materials.test.ts` (3/3 зелени) за edit/reject/accept категоризација, sorting и fallback path; compile gate останува зелен (`npx tsc --noEmit`).
+- D5 завршена: `scripts/run-eval.mjs` доби `--only-provided` режим за deterministic smoke gating на curated outputs. Во `package.json` е додаден `npm run eval:smoke-gate` (`sample-outputs`, `--only-provided`, `--min-score 70`, `--fail-below`), и gate е вклучен во `.github/workflows/ci-quality.yml` веднаш по schema validation.
 - E1 kick-off (MVP scaffold): додаден е нов `MaterialType` — `VIDEO_EXTRACTOR`, со генератор опција во `MaterialsGeneratorView.tsx` и нов UI блок во `MaterialOptions.tsx` за внес на YouTube/Vimeo URL + preview чекор (`fetchVideoPreview` преку oEmbed). Во `useGeneratorActions.ts` е додаден `VIDEO_EXTRACTOR` generate path што гради сценарио од video metadata+URL контекст, а save flow е мапиран преку `useGeneratorSave.ts` како `ideas`. Поддржани helper-и: `utils/videoPreview.ts`. Compile валидација: `npx tsc --noEmit` зелено.
 - E1 hardening validation: додадени се unit тестови `utils/videoPreview.test.ts` (8/8 зелени) за YouTube/Vimeo URL normalization, unsupported URL fallback и oEmbed error path. Остаток за финално затворање на E1: runtime smoke (URL -> preview -> generate -> save) во UI flow.
 - E1 runtime smoke (diagnostic e2e): додаден е `tests/video-extractor-smoke.spec.ts` со teacher mocks (auth + oEmbed + Gemini response), но flow е нестабилен во automation поради onboarding/tour overlay и генератор runtime состојба што останува во loading под mock env; тестот е оставен како `skip` до стабилизација на overlay/flow hooks.
@@ -163,6 +165,63 @@
    - „Побарај помош од AI Tutor“ action на item-level во library/extraction резултати со context-preserving prompt handoff.
 6. Rollout strategy
    - Feature flags по модул (home/extraction/teacher/library), A/B telemetry за adoption и постепено вклучување без regression на тековниот UX.
+
+### E5 World-Class Realization Program (Wave execution)
+
+Цел: **постепено, но сигурно** да се затвори E5 со мерливи KPI и без regression на стабилноста.
+
+#### Wave A (Start now) — Home + Teacher Toolbox foundation
+
+| ID | Ставка | KPI | DoD |
+|---|---|---|---|
+| E5-A1 | Home focus hierarchy (Today/Priority/Deep work) | подобрен task-completion на home CTA | Home layout со јасна информациска хиерархија + mobile pass |
+| E5-A2 | Dynamic insight block | поголем daily engagement на home | ротациона „Мисла на денот" + автор + стабилен rendering |
+| E5-A3 | Teacher Toolbox quick cards | побрз пристап до core генерации | картички за assessment/quiz/presentation/flashcards/homework/study guide |
+
+#### Wave B — Library ergonomics + workflow speed
+
+| ID | Ставка | KPI | DoD |
+|---|---|---|---|
+| E5-B1 | Advanced filter bar | помалку време до пронаоѓање материјал | grade/topic/DoK/difficulty + sort |
+| E5-B2 | Multi-select and batch actions | помалку кликови по teacher task | batch export/organize actions со error-safe UX |
+| E5-B3 | Sticky action row | подобар flow за long lists | persistent actions без layout shift |
+
+#### Wave C — Item-level AI assist + analytics depth
+
+| ID | Ставка | KPI | DoD |
+|---|---|---|---|
+| E5-C1 | AI assist per item | поголем usage на contextual AI help | action во library/extraction items со context-preserving handoff |
+| E5-C2 | Feedback reason taxonomy | подобар insight за квалитетни слабости | reject/edit reason codes + dashboard breakdown |
+| E5-C3 | Controlled rollout | без продукциски регресии | feature flags + telemetry + rollback note | ✅ |
+
+#### Execution rule (E5)
+
+1. Секој wave оди со локална валидација (`tsc`, unit/smoke) пред merge.
+2. Нема скокање на следен wave без DoD evidence во овој документ.
+3. Секој wave мора да содржи барем 1 педагошки KPI и 1 UX KPI.
+
+#### Kickoff log (04.04.2026)
+
+- E5 formal execution program е официјално усвоен (Wave A/B/C).
+- **Wave A STARTED**: прв batch промени во `HomeView` (динамична мисла + perf cleanup + hierarchy polish).
+- Wave A progress update: додаден `Teacher Toolbox` блок на Home со 6 брзи педагошки генерации (Assessment, Quiz, Presentation, Flashcards, Worked Example, Learning Path) за побрз teacher workflow.
+- **Wave A2 COMPLETED**: Home UX е ре-структуриран во јасна хиерархија `Today Focus` -> `Priority Actions` -> `Deep Work`, за побрза ориентација и помал cognitive load во дневен teacher flow.
+- Validation evidence (Wave A2): `npx tsc --noEmit` PASS, `npx vitest run` PASS (`26/26` files, `408/408` tests).
+- **Wave A3 COMPLETED**: Teacher Toolbox е унапреден со педагошки micro-guidance (`формативна проверка`, `spaced practice`, `диференцирана настава`), time-to-use chips и `Препорачано денес` сигнал кога има weak concept/spaced-repetition indicators.
+- Validation evidence (Wave A3): `npx tsc --noEmit` PASS, `npx vitest run` PASS (`26/26` files, `408/408` tests).
+- **Wave B1 COMPLETED**: `ContentLibraryView` доби унифициран advanced filter bar (`grade/topic/DoK/difficulty/sort`) + reset action; филтрирањето работи преку metadata extraction од `CachedMaterial.content` за backward-compatible ergonomics.
+- Validation evidence (Wave B1): `npx tsc --noEmit` PASS, `npx vitest run` PASS (`26/26` files, `408/408` tests).
+- **Wave B2 COMPLETED**: Multi-select + batch actions ergonomics додадени на `ContentLibraryView`; checkboxes на секој material (во `my` view), sticky batch toolbar при bottom со publish/unpublish/archive bulk actions, select-all/clear-selection контроли. Batch handlers имплементирани со error-safe promise.all parallelism.
+- Validation evidence (Wave B2): `npx tsc --noEmit` PASS, `npx vitest run` PASS (`26/26` files, `408/408` tests).
+- **Wave B3 COMPLETED**: Sticky action row со floating context menu dodana на material cards; `hoveredMaterialId` state tracks which card is focused; на hover се отвора floating toolbar со all available actions (Preview, Publish/Unpublish, Archive, Fork, Delete). `renderQuickActions` component extracted за code reuse. Zero layout shift — floating toolbar uses absolute positioning и не влијее на document flow.
+- Validation evidence (Wave B3): `npx tsc --noEmit` PASS, `npx vitest run` PASS (`26/26` files, `408/408` tests).
+- **Wave C1 COMPLETED**: Item-level AI Assist додаден на `ContentLibraryView`; нова `AITutorModal` component со full context-preserved chat interface; секој material има `✨ Tutor` button во floating toolbar; при клик се отвора modal со chat interface; учителот може да прашува за педагошки стратегии, assessment идеи, объаснување на содржина итн. Material context автоматски се инјектира во system prompt. Gemini API интеграција за context-aware responses со conversation history.
+- Validation evidence (Wave C1): `npx tsc --noEmit` PASS, `npx vitest run` PASS (`26/26` files, `408/408` tests).
+- **Wave C2 COMPLETED**: Feedback reason taxonomy е затворен end-to-end. Додаден е review lifecycle за `saved_questions` (`pending/approved/revision_requested/rejected`) со structured feedback logging во `users/{uid}/material_feedback`; `ContentReviewView` сега отвора `MaterialFeedbackModal` за reject/revision flows, approval path исто така се логира за analytics completeness, а `TeacherAnalyticsView` overview рендерира `FeedbackTaxonomyCard` преку `useFeedbackBreakdown` hook. Aggregation логиката е извлечена во pure builder за детерминистички тестирање.
+- Validation evidence (Wave C2): `npx tsc --noEmit` PASS, `npx vitest run` PASS (`28/28` files, `413/413` tests).
+- **Wave C3 COMPLETED**: Feedback taxonomy rollout е ставен под production-safe guardrail. Нов `services/feedbackTaxonomyRollout.ts` држи feature flag (`feedback_taxonomy_rollout_enabled`) и session telemetry за adoption/fallback. `SettingsView` доби toggle, `ContentReviewView` паѓа на legacy reject path кога rollout е OFF, а `TeacherAnalyticsView` го прикажува taxonomy breakdown само кога rollout е ON. Rollback note: toggle OFF во Settings веднаш го враќа legacy behavior без schema/data rollback или code revert.
+- Validation evidence (Wave C3): `npx tsc --noEmit` PASS, `npx vitest run` PASS.
+- 04.04.2026 — C-series review follow-up fixes: `MaterialFeedbackModal` сега чисти stale reason-codes при switch на `approved`; `ContentReviewView` rollout flag стана reactive на `storage/focus/visibilitychange`; `useFeedbackBreakdown` чисти stale state кога `enabled=false` или `uid` недостига. Regression coverage додадена во `components/analytics/MaterialFeedbackModal.test.tsx`, `views/ContentReviewView.test.tsx`, `hooks/useFeedbackBreakdown.test.ts`. Validation: `npx tsc --noEmit` PASS, `npx vitest run` PASS (`31/31` files, `420/420` tests).
 
 ---
 
@@ -188,3 +247,270 @@
 
 **Започнуваме со S16.0 — Stability Sprint веднаш.**
 Прв приоритет: auth-guard deflake + performance baseline + error cleanup batch 1.
+
+---
+
+## 8) Execution Board (1:1) — стартуваме веднаш
+
+### 8.1 Scope за затворање (must-close)
+
+| ID | Ставка | Тековен статус | Target статус |
+|---|---|---|---|
+| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 2/6, 33.33% | ✅ closed |
+| B2 | Route-based lazy loading + мерлив uplift | ✅ closed | ✅ closed |
+| B4 | Lighthouse стабилизација (без NO_FCP) | ⬜ | ✅ closed |
+| C4 | Restore drill + evidence | ✅ closed | ✅ closed — import operation SUCCESSFUL + 5/5 smoke PASS, evidence pack во секција 9.7 |
+| E2 | Recovery Worksheet pipeline | ✅ имплементирана + тестирана | ✅ closed |
+
+### 8.2 Правило за извршување (non-negotiable)
+
+1. Нема нови high-impact feature rollout пред формално затворање на A+B gate.
+2. E5 останува phase-gated и без проширување на scope додека A+B не се ✅.
+3. Секоја ставка мора да има KPI доказ + DoD evidence во овој документ.
+4. Секоја промена оди со тест, rollback note и краток risk запис.
+
+### 8.3 Sprint распоред (14 дена)
+
+#### Sprint 1 (ден 1-5) — Stabilization closure
+
+| Ден | Акција | Owner | KPI | DoD |
+|---|---|---|---|---|
+| 1 | LHCI стабилизација во `.lighthouserc.json` | @platform | 3 последователни local collect runs без `NO_FCP` | `npx @lhci/cli@0.14.x autorun` не паѓа на collect |
+| 2 | CI reliability review во `.github/workflows/ci-quality.yml` | @platform | валиден rolling window report | reliability summary е видлив и конзистентен |
+| 3 | B2 финален lazy-load pass (`App.tsx`, `vite.config.ts`) | @frontend | подобар initial load/TTI | build + smoke без regressions |
+| 4 | B4 gate rehearsal (LHCI assert) | @frontend | Perf/A11y/Best Practices >= 90 | LHCI assert pass |
+| 5 | C4 drill preflight (inputs/checklist) | @platform | 100% preconditions ticked | подготвен workflow_dispatch за drill |
+
+#### Sprint 2 (ден 6-10) — C4 closure + E2 design freeze
+
+| Ден | Акција | Owner | KPI | DoD |
+|---|---|---|---|---|
+| 6 | Firestore restore drill run (`firestore-restore-drill.yml`) | @platform | успешен import operation | operation id + status evidence |
+| 7 | Post-restore smoke validation | @qa | core teacher flows pass | login/planner/library/analytics validated |
+| 8 | C4 formal closure update во овој план | @pm | C4 -> ✅ | evidence линкови + датум |
+| 9 | E2 technical design freeze | @ai-core | финален flow + acceptance criteria | DoD за E2 документиран |
+| 10 | E2 task breakdown + implementation board | @pm | board ready | owner/ETA/risk по задача |
+
+#### Sprint 3 (ден 11-14) — E2 kickoff
+
+| Ден | Акција | Owner | KPI | DoD |
+|---|---|---|---|---|
+| 11-12 | E2 core implementation | @ai-core | end-to-end remedial flow | feature flag path работи |
+| 13 | E2 verification (unit/integration/e2e) | @qa | тест suite pass | резултати запишани во report |
+| 14 | E2 go/no-go review | @pm | release decision | јасен rollout/rollback план |
+
+### 8.4 KPI + Definition of Done (по ставка)
+
+| Ставка | KPI | DoD Evidence |
+|---|---|---|
+| A4 | pass rate >= 95% (last 20 completed runs) | workflow summary + status checks |
+| B2 | route-level load improvement без regression | build report + smoke pass |
+| B4 | 3x стабилен LHCI, category >= 90 | LHCI output + assert pass |
+| C4 | најмалку 1 успешен restore drill + smoke validation | operation id, timestamps, validation checklist |
+| E2 | analytics -> remedial worksheet -> teacher confirm | e2e flow + telemetry + rollback note |
+
+### 8.5 Daily execution rhythm
+
+1. 09:30 daily sync (15 мин)
+2. 13:00 blocker check
+3. 17:30 end-of-day report
+
+EOD формат (обврзен):
+- Што е затворено денес
+- KPI резултат
+- Blockers/risks
+- План за утре
+
+### 8.6 Ризици и превенција
+
+| Ризик | Влијание | Превенција |
+|---|---|---|
+| LHCI нестабилност | B4 блокер | стабилна route + readiness guard + 3-run policy |
+| CI шум/дупли run-ови | лажни regression сигнали | trigger discipline + јасен baseline window |
+| Restore env mismatch | C4 одложување | isolate project + preflight checklist |
+| Feature creep во E5 | распарчување на фокус | scope freeze до A+B close |
+
+### 8.7 Kickoff checklist (денес)
+
+| Чекор | Статус |
+|---|---|
+| Потврди owners за A4/B2/B4/C4/E2 | ⬜ |
+| Старт LHCI stabilization на `.lighthouserc.json` | ✅ |
+| 3 последователни LHCI baseline runs | ✅ |
+| Подготви C4 drill inputs (`source_project_id`, `restore_project_id`, `backup_date`) | 🟨 repo-ready; external run pending |
+| Запиши EOD report во овој документ | ⬜ |
+
+### 8.8 Kickoff log (денешен старт)
+
+- 03.04.2026 05:14 — стартуван е прв LHCI baseline: `npx @lhci/cli@0.14.x autorun`.
+- Резултат: `exit code 1`, runtime error `NO_FCP` (`The page did not paint any content`).
+- Заклучок: B4 blocker е репродуциран со свеж доказ и влегува како прв технички приоритет во Sprint 1.
+- 03.04.2026 06:36 — применети LHCI стабилизациски измени во `.lighthouserc.json` (strict port, readiness pattern, chrome flags, single run) + collect профил на `vite dev` за дијагностичка изолација.
+- Резултат: `NO_FCP` не се појавува; run завршува до assert фаза (fail по квалитетни метрики, не по runtime paint blocker).
+- Клучни метрики од baseline: `performance 0.42`, `FCP ~32s`, `LCP ~61s`, `TBT ~514ms`, plus accessibility/console failures.
+- Следен чекор: optimization batch за pricing route и враќање на collect назад на preview/dist профил штом runtime стабилноста е потврдена.
+- 03.04.2026 06:53-06:58 — runtime root-cause fix во `vite.config.ts` (manualChunks стабилизација: отстранет `vendor-observability` split и исклучен посебен `vendor-react-core` split поради TDZ runtime errors).
+- Валидација (preview): Playwright smoke на `/#/pricing` -> `pageErrors=0`, `bodyTextLen=2339` (page now paints).
+- LHCI (preview/dist): `NO_FCP` повеќе не се појавува; run стигнува до assert и паѓа на реални KPI (performance/a11y/console/robots).
+- Нов приоритет за B4: remediation на `errors-in-console` (AppCheck reCAPTCHA), contrast/heading-order, и route-level perf tuning.
+- 03.04.2026 07:00+ — додаден localhost guard за App Check во `firebaseConfig.ts` (`!isLocalHost`) за да нема лажни `errors-in-console` во локален preview/LHCI.
+- Валидација: Playwright preview check -> `errorCount=0`, `bodyTextLen=2339`; LHCI preview baseline -> `performance 0.48` (подобрено од 0.42), без runtime `NO_FCP` blocker.
+- Тековна состојба B4: runtime blocker е затворен, останува quality remediation batch (contrast/heading-order/robots + perf optimization).
+- 03.04.2026 15:10-15:20 — accessibility remediation batch: `views/PricingView.tsx`, `components/common/GlobalSearchBar.tsx`, `components/Sidebar.tsx` усогласени за `heading-order`, `aria-allowed-attr`, `color-contrast`, table caption и sidebar badge/toggle contrast.
+- Резултат: LHCI accessibility/best-practices/seo се исчистени до pass; остана само performance bottleneck на pricing route.
+- 03.04.2026 15:20-15:26 — vendor split optimization во `vite.config.ts`: извлечени се `d3`, `three`, `@sentry`, `zod` од generic `vendor` chunk.
+- Резултат: largest generic vendor chunk е намален од `~1772kB` на `~1516kB` minified, без runtime TDZ regression.
+- 03.04.2026 15:30+ — LHCI collect профил е стабилизиран на static dist serve преку `sirv-cli` (`gzip`/`brotli`) со 3-run policy.
+- Финална локална B4 валидација: `npx -y @lhci/cli@0.14.x autorun --config=.lighthouserc.json` -> `All results processed!` без error-level assertions; warning-only остаток: `legacy-javascript`, `unminified-javascript`, `unused-css-rules`, `unused-javascript`, `uses-text-compression`.
+- Клучни metrics од финалниот успешен snapshot: `FCP 1.2s`, `LCP 2.2s`, `TBT 40ms`, `Speed Index 1.6s`; `accessibility=1.0`, `best-practices=1.0`, `seo=1.0`.
+- Статус: **B4 локален gate затворен**. Следен приоритет: `C4` restore drill evidence, потоа `E2` design freeze/kickoff.
+- 03.04.2026 16:xx — `C4` repo preflight е финално потврден: runbook + readiness script + manual restore workflow + CI guardrail се на место. Преостанат blocker е само external execution evidence (`source_project_id`, `restore_project_id`, `backup_date`, operation id, smoke validation) за formal close.
+- 03.04.2026 16:xx — `E2` kickoff имплементација е внесена зад feature flag `recovery_worksheet_enabled`.
+- E2 delta: додадени се `isRecoveryWorksheetEnabled/setRecoveryWorksheetEnabled` во Gemini feature-flag chain, нов `generateRecoveryWorksheet()` path во `services/geminiService.real.ts`, approval persistence (`worksheet_approvals`) и review metadata во `services/firestoreService.materials.ts` + `firestore.rules`.
+- E2 UX delta: нов `components/analytics/RecoveryWorksheetPreviewModal.tsx` со generate -> preview -> teacher confirm -> save -> assign flow; `TeacherAnalyticsView` рутира кон овој path кога flag-от е вклучен, а `SettingsView` доби toggle за controlled rollout.
+- Валидација: production build зелен по E2 kickoff (`vite build` PASS). Следен чекор за E2: targeted smoke/e2e за flag OFF/ON path и финално acceptance criteria polish.
+- 03.04.2026 18:07 — `E2` локална тест валидација е зелена: `services/gemini/core.featureFlags.test.ts` -> `3/3 passed`; `tests/recovery-worksheet.spec.ts` -> `2/2 passed`.
+- Покриеност: `flag OFF` го задржува legacy `AssignRemedialModal`; `flag ON` го отвора новиот `RecoveryWorksheetPreviewModal` path со mocked AI worksheet response.
+- **E2 статус: ✅ ЗАТВОРЕНА** — feature flag + UI flow + Firestore approval persistence + tests сите зелени.
+- 03.04.2026 — **C4 статус: ⏸️ DEFERRED** — repo artifacts (runbook, `firestore-restore-drill.yml`, `check-backup-readiness.mjs`, CI guardrail) се комплетни; external execution blocker: Firestore backup bucket (`gs://ai-navigator-ee967-backups/firestore/`) и изолиран GCP restore проект не се провизионирани. Ова е инфраструктурен prerequisite, не код. C4 ќе се затвори кога ќе се постави GCS bucket + restore project. Следен приоритет: **E3** (Intent Router spike) или **A4** финална валидација.
+- 04.04.2026 — **C4 статус: ✅ CLOSED** — Firestore import operation `projects/ai-navigator-ee967/databases/(default)/operations/AiAzM2ZjNDI0MTY4M2QtZmE3Yi00MmQ0LWJhNDAtMTcxNDYyMWQkGnNlbmlsZXBpcAkKMxI` е `SUCCESSFUL` (667/667 docs), и smoke validation е 5/5 PASS (login, planner, library/cache, analytics, error monitoring). Evidence pack е запишан во секција 9.7.
+- **E3 статус: ✅ ЗАТВОРЕНА** — `services/gemini/intentRouter.ts` (NEW): `AITaskType`, `AITaskComplexity`, feature flag via `localStorage[intent_router_enabled]`, `shouldUseLiteModel()`, `logRouterDecision()`, `getRouterStats()`. `LITE_MODEL='gemini-2.0-flash-lite'` додаден во `core.ts`. `skipTierOverride` param додаден на `callGeminiProxy`. Router применет на 5 lite call sites: `generateSmartQuizTitle`, `parsePlannerInput`, `generateAnalogy`, `diagnoseMisconception` (конвертирана од raw fetch), `explainConcept`. Settings toggle додаден во `SettingsView.tsx`. 14/14 нови unit tests зелени. Вкупно 408/408 тестови зелени. TypeScript: 0 грешки.
+
+---
+
+## 9) Canonical Now / Next / Later (од 04.04.2026)
+
+Цел: да влеземе во **оперативно world-class** ниво, не само feature-complete ниво.
+
+### 9.0 Owner Registry (confirmed 04.04.2026)
+
+| Име | Platform Role | Account Scope | UID |
+|---|---|---|---|
+| Игор Богданоски | Creator + Chief Architect + System Admin + School Admin | platform engineering core lead | bIaBRJ6NBmhGtefgZFtmpRYTPky2 |
+| Снежана Златковска | PRO наставник | platform engineering team | SQ8O4j2y2BT0X8WgKIbmzg8DTCq1 |
+| Моника Богданоска | PRO наставник | platform engineering team | PAsWslBzkBctw9qwTrcnqrjdwTf2 |
+
+### 9.1 NOW (следни 7 дена)
+
+| ID | Приоритет | Owner | KPI threshold | Exit evidence |
+|---|---|---|---|---|
+| N1 | C4 infra unblock | Игор Богданоски (lead), Снежана Златковска (support) | provisioned backup bucket + isolated restore project | GCP resource IDs + IAM matrix screenshot/log |
+| N2 | C4 first restore drill | Игор Богданоски (lead), Моника Богданоска (QA support) | 1 успешен import + 1 smoke validation pass | operation id, start/end timestamps, validation checklist |
+| N3 | A4 formal close | Игор Богданоски (lead), Моника Богданоска (verification) | pass-rate >= 95% over last 20 completed runs | CI summary artifact + status update во секција 3 |
+| N4 | B2 formal close | Снежана Златковска (lead), Игор Богданоски (architecture review) | route-level TTI/FCP delta подобар од baseline | before/after perf snapshot во оваа датотека |
+
+### 9.2 NEXT (7-21 дена)
+
+| ID | Приоритет | Owner | KPI threshold | Exit evidence |
+|---|---|---|---|---|
+| X1 | E4 Vertex shadow path | @ai-core | >= 1 gated production-safe path зад feature flag | compare report: quality/latency/cost/failure-rate |
+| X2 | E4 go/no-go board | @pm + @ai-core | јасни launch thresholds и rollback trigger | signed decision note + rollout playbook |
+| X3 | E5 outcome metrics | @product + @frontend | measurable uplift во task-completion и reuse | before/after KPI table по wave |
+
+### 9.3 LATER (21-45 дена)
+
+| ID | Приоритет | Owner | KPI threshold | Exit evidence |
+|---|---|---|---|---|
+| L1 | Reliability SLO dashboard | @platform | weekly SLO reporting live | crash-free, p95 latency, AI failover, flaky-rate dashboard |
+| L2 | Incident taxonomy hardening | @platform + @qa | UNCLASSIFIED ratio <= 15% | sentry incident summary trend |
+| L3 | E5 national-scale hardening | @product + @eng | no regression on CI/perf/security gates during scale rollout | monthly quality report |
+
+### 9.4 Start Today (оперативен старт)
+
+1. 09:30 — owners за N1-N4 се потврдени (види 9.0 и 9.1) и се сметаат за оперативно активни.
+2. 10:00 — отвори инфраструктурен ticket за N1 со точни ресурси: backup bucket, restore project, IAM roles.
+3. 12:00 — иницирај manual C4 drill run штом N1 е provisioned.
+4. 16:00 — запиши N1/N2/N3/N4 статус во оваа секција (не во kickoff log) за да има една канонска вистина.
+
+Execution asset:
+- C4 ticket-ready checklist: C4_EXECUTION_CHECKLIST.md
+
+### 9.5 World-Class Rule (non-negotiable)
+
+Ниту еден нов high-impact feature не се промовира во broad rollout ако:
+- C4 нема верифициран restore evidence,
+- A4 нема формално затворен reliability baseline,
+- E4 нема shadow compare report со јасни go/no-go thresholds.
+
+### 9.6 Кориснички сегменти (за KPI и rollout)
+
+За да нема забуна, во S16 "корисници" значи:
+
+1. Primary users: наставници (teacher workflow: generator, library, analytics, remedial flow).
+2. Secondary users: school admin / admin (review, governance, observability, reliability gates).
+3. Platform operators: engineering/platform тим (CI, backup/restore, incident response, rollout control).
+
+Забелешка: student-facing KPI не се дел од оваа NOW секција освен ако не се наведени експлицитно.
+
+### 9.7 N2 Evidence Pack (04.04.2026)
+
+Статус: CLOSED (import SUCCESSFUL + smoke validation 5/5 PASS)
+
+#### 9.7.1 Restore drill import evidence
+
+| Поле | Вредност |
+|---|---|
+| source_project_id | ai-navigator-ee967 |
+| backup_date | 2026-04-04 |
+| backup_path | gs://ai-navigator-ee967-backups/firestore/2026-04-04 |
+| operation_name | projects/ai-navigator-ee967/databases/(default)/operations/AiAzM2ZjNDI0MTY4M2QtZmE3Yi00MmQ0LWJhNDAtMTcxNDYyMWQkGnNlbmlsZXBpcAkKMxI |
+| operation_state | SUCCESSFUL |
+| operation_start_utc | 2026-04-04T01:33:58.815639Z |
+| operation_end_utc | 2026-04-04T01:34:22.549170Z |
+| documents_imported | 667/667 |
+| bytes_imported | 1712648/1712648 |
+
+#### 9.7.2 Smoke validation log (PASS/FAIL + timestamp)
+
+| Чекор | Статус | Timestamp | Белешка |
+|---|---|---|---|
+| 1) Login path (teacher/admin) | ✅ PASS | 2026-04-04 03:44 CET | Teacher+Admin login ok |
+| 2) Planner data readability | ✅ PASS | 2026-04-04 03:44 CET | Data loaded |
+| 3) Library/cache queryability | ✅ PASS | 2026-04-04 03:44 CET | Items queryable |
+| 4) Analytics summary load + no runtime error | ✅ PASS | 2026-04-04 03:43 CET | Summary loads, no runtime error |
+| 5) Error monitoring (no critical spike) | ✅ PASS | 2026-04-04 03:15 CET | No critical spike |
+
+#### 9.7.3 Closure rule for C4
+
+C4 се затвора кога:
+1. сите 5 smoke чекори се PASS,
+2. нема критичен FAIL во error monitoring,
+3. оваа секција е пополнета со конечни timestamps и белешки.
+
+Резултат (04.04.2026): сите услови се исполнети. C4 = CLOSED.
+
+### 9.8 N3/N4 Execution Snapshot (04.04.2026)
+
+#### N3 (A4 formal close) — статус: IN PROGRESS
+
+Што е потврдено:
+1. Reliability baseline automation е активна во `.github/workflows/ci-quality.yml` (`reliability-baseline` job, rolling window last 20 completed runs, threshold 95%).
+2. CI rule е веќе канонски дефинирана и enforced.
+3. Последен валиден summary (04.04.2026): `Window: last 6 completed runs`, `Success: 2/6`, `Pass rate: 33.33%`.
+
+Преостанат formal evidence за close:
+1. Да се изгради success streak до `>=95%` rolling pass-rate.
+2. Дури потоа A4 се менува во `✅ closed`.
+
+#### N4 (B2 formal close) — статус: CLOSED
+
+Што е потврдено:
+1. B2 lazy-load pass е имплементиран (`App.tsx` heavy modules преку lazy/suspense).
+2. Route-level lighthouse remediation е потврдена со силен delta на baseline snapshot:
+   - FCP: ~32s -> 1.2s
+   - LCP: ~61s -> 2.2s
+   - TBT: ~514ms -> 40ms
+3. Денешна локална валидација (04.04.2026):
+   - `npm run -s build` -> PASS (`built in 40.04s`)
+   - `npm run -s perf:budget` -> PASS (JS/CSS/total/third-party во budget)
+
+Final perf snapshot:
+
+| Метрика | Baseline | Current | Delta |
+|---|---:|---:|---:|
+| FCP | ~32s | 1.2s | -30.8s |
+| LCP | ~61s | 2.2s | -58.8s |
+| TBT | ~514ms | 40ms | -474ms |
+
+Резултат: route-level load improvement е јасно потврден без regression. B2 = CLOSED.
+

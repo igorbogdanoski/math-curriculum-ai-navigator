@@ -5,6 +5,8 @@ import { MathRenderer } from '../common/MathRenderer';
 import type { AIGeneratedLearningPaths, LearningPath, LearningPathStep } from '../../types';
 import { useNotification } from '../../contexts/NotificationContext';
 import { downloadAsPdf } from '../../utils/pdfDownload';
+import { useAuth } from '../../contexts/AuthContext';
+import { firestoreService } from '../../services/firestoreService';
 
 interface GeneratedLearningPathsProps {
   material: AIGeneratedLearningPaths;
@@ -20,10 +22,21 @@ const stepIcons: Record<string, React.ComponentType<{className?: string}>> = {
 
 export const GeneratedLearningPaths: React.FC<GeneratedLearningPathsProps> = ({ material }) => {
     const { addNotification } = useNotification();
+    const { firebaseUser } = useAuth();
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
+
+    const trackFeedback = (context: string) => {
+        if (!firebaseUser?.uid) return;
+        firestoreService.logAIMaterialFeedbackEvent({
+            teacherUid: firebaseUser.uid,
+            materialType: 'learning_paths',
+            action: 'accept_saved',
+            context,
+        }).catch(() => undefined);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -43,6 +56,7 @@ export const GeneratedLearningPaths: React.FC<GeneratedLearningPathsProps> = ({ 
             setIsPdfLoading(true);
             try {
                 await downloadAsPdf(contentRef.current, material.title || 'патеки-на-учење');
+                trackFeedback('export:pdf');
             } finally {
                 setIsPdfLoading(false);
             }
@@ -62,7 +76,10 @@ export const GeneratedLearningPaths: React.FC<GeneratedLearningPathsProps> = ({ 
 
         if (format === 'clipboard') {
             navigator.clipboard.writeText(text)
-                .then(() => addNotification('Патеките се копирани во clipboard.', 'success'))
+                .then(() => {
+                    addNotification('Патеките се копирани во clipboard.', 'success');
+                    trackFeedback('export:clipboard_plain');
+                })
                 .catch(() => addNotification('Грешка при копирање.', 'error'));
             return;
         }
@@ -78,6 +95,7 @@ export const GeneratedLearningPaths: React.FC<GeneratedLearningPathsProps> = ({ 
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        trackFeedback('export:md');
     };
 
     if (material.error) {

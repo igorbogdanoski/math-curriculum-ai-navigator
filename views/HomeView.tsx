@@ -1,5 +1,5 @@
 import { useTour } from '../hooks/useTour';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library, Camera, Zap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
@@ -41,6 +41,29 @@ const getQuickActions = (t: any) => [
   { label: t('home.quick.mylessons'), desc: t('home.quick.mylessonsDesc'), icon: Library, color: 'bg-emerald-600 hover:bg-emerald-700', action: 'my-lessons' },
   { label: t('home.quick.livequiz'), desc: t('home.quick.livequizDesc'), icon: Radio, color: 'bg-rose-600 hover:bg-rose-700', action: 'live' },
   { label: t('home.quick.vision'), desc: t('home.quick.visionDesc'), icon: Camera, color: 'bg-teal-600 hover:bg-teal-700', action: 'vision-assessment' },
+];
+
+const DAILY_QUOTES = [
+  {
+    text: 'Суштината на математиката не е да ги направи едноставните работи комплицирани, туку комплицираните работи едноставни.',
+    author: 'Стенли Гудер',
+  },
+  {
+    text: 'Математиката е јазикот со кој учиме да размислуваме јасно.',
+    author: 'Хуан Луна',
+  },
+  {
+    text: 'Секој тежок проблем станува полесен кога го поделиш на мали чекори.',
+    author: 'Џорџ Полиа',
+  },
+  {
+    text: 'Учењето не е трка; важно е секој ден да се движиш напред.',
+    author: 'Карол Двек',
+  },
+  {
+    text: 'Добро поставено прашање е половина од решението.',
+    author: 'Рене Декарт',
+  },
 ];
 
 
@@ -104,7 +127,10 @@ export const HomeView: React.FC = () => {
   const { monthlyActivity, topicCoverage, overallStats, isLoading: isStatsLoading } = useDashboardStats();
   // Lazy-load recommendations — not critical path, fetch after first render
   const [recsEnabled, setRecsEnabled] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setRecsEnabled(true), 800); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => setRecsEnabled(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
   const { recommendations, isLoading: isRecsLoading, error: recsError } = usePersonalizedRecommendations(recsEnabled);
   const isQuotaExhausted = isDailyQuotaKnownExhausted();
   useTour('dashboard', dashboardTourSteps, !isStatsLoading);
@@ -129,32 +155,59 @@ export const HomeView: React.FC = () => {
 
   const firstName = user?.name?.split(' ')[0] || 'Корисник';
 
-  const featuredTools = [
-    {
-      title: 'Екстракција од Видео',
-      description: 'Внеси YouTube/Vimeo линк и извлечи наставно сценарио со AI preview чекор.',
-      cta: 'Отвори алатка',
-      action: () => openGeneratorPanel({ materialType: 'VIDEO_EXTRACTOR', contextType: 'SCENARIO' }),
-      icon: ICONS.gallery,
-      accent: 'text-blue-700 bg-blue-50 border-blue-100',
-    },
-    {
-      title: 'Дигитална Библиотека',
-      description: 'Прегледај, филтрирај и организирај ги зачуваните материјали по тема, DoK и тежина.',
-      cta: 'Отвори библиотека',
-      action: () => navigate('/library'),
-      icon: ICONS.bookOpen,
-      accent: 'text-indigo-700 bg-indigo-50 border-indigo-100',
-    },
-    {
-      title: 'Генератор на Тестови',
-      description: 'Селектирај задачи од библиотека и генерирај печатлив тест со професионален изглед.',
-      cta: 'Креирај тест',
-      action: () => navigate('/test-generator'),
-      icon: ICONS.quiz,
-      accent: 'text-purple-700 bg-purple-50 border-purple-100',
-    },
-  ];
+  const quickActions = useMemo(() => getQuickActions(t), [t]);
+
+  const featuredTools = useMemo(
+    () => [
+      {
+        title: 'Екстракција од Видео',
+        description: 'Внеси YouTube/Vimeo линк и извлечи наставно сценарио со AI preview чекор.',
+        cta: 'Отвори алатка',
+        action: () => openGeneratorPanel({ materialType: 'VIDEO_EXTRACTOR', contextType: 'SCENARIO' }),
+        icon: ICONS.gallery,
+        accent: 'text-blue-700 bg-blue-50 border-blue-100',
+      },
+      {
+        title: 'Дигитална Библиотека',
+        description: 'Прегледај, филтрирај и организирај ги зачуваните материјали по тема, DoK и тежина.',
+        cta: 'Отвори библиотека',
+        action: () => navigate('/library'),
+        icon: ICONS.bookOpen,
+        accent: 'text-indigo-700 bg-indigo-50 border-indigo-100',
+      },
+      {
+        title: 'Генератор на Тестови',
+        description: 'Селектирај задачи од библиотека и генерирај печатлив тест со професионален изглед.',
+        cta: 'Креирај тест',
+        action: () => navigate('/test-generator'),
+        icon: ICONS.quiz,
+        accent: 'text-purple-700 bg-purple-50 border-purple-100',
+      },
+    ],
+    [navigate, openGeneratorPanel]
+  );
+
+  const teacherToolboxCards = useMemo(
+    () => [
+      { title: 'Assessment', subtitle: 'Прашања со DoK/Bloom', pedagogy: 'Формативна проверка', impact: '5-10 мин', icon: ICONS.assessment, action: () => openGeneratorPanel({ materialType: 'ASSESSMENT' }), accent: 'text-cyan-700 bg-cyan-50 border-cyan-100' },
+      { title: 'Quiz', subtitle: 'Брз квиз за час', pedagogy: 'Exit ticket', impact: '3-5 мин', icon: ICONS.quiz, action: () => openGeneratorPanel({ materialType: 'QUIZ' }), accent: 'text-blue-700 bg-blue-50 border-blue-100' },
+      { title: 'Presentation', subtitle: 'Слајдови за настава', pedagogy: 'Визуелно објаснување', impact: '10-15 мин', icon: ICONS.document, action: () => openGeneratorPanel({ materialType: 'PRESENTATION' }), accent: 'text-indigo-700 bg-indigo-50 border-indigo-100' },
+      { title: 'Flashcards', subtitle: 'Повторување и вежба', pedagogy: 'Spaced practice', impact: '5-8 мин', icon: ICONS.flashcards, action: () => openGeneratorPanel({ materialType: 'FLASHCARDS' }), accent: 'text-violet-700 bg-violet-50 border-violet-100' },
+      { title: 'Worked Example', subtitle: 'Чекор по чекор модел', pedagogy: 'I do → We do', impact: '8-12 мин', icon: ICONS.lightbulb, action: () => openGeneratorPanel({ materialType: 'WORKED_EXAMPLE' }), accent: 'text-amber-700 bg-amber-50 border-amber-100' },
+      { title: 'Learning Path', subtitle: 'Персонализирана патека', pedagogy: 'Диференцирана настава', impact: '15+ мин', icon: ICONS.mindmap, action: () => openGeneratorPanel({ materialType: 'LEARNING_PATH' }), accent: 'text-emerald-700 bg-emerald-50 border-emerald-100' },
+    ],
+    [openGeneratorPanel]
+  );
+
+  const hasWeakSignals = (weakConcepts?.length ?? 0) > 0 || (spacedRepDue?.length ?? 0) > 0;
+
+  const dailyQuote = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - start.getTime();
+    const dayOfYear = Math.floor(diff / 86400000);
+    return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
+  }, []);
 
   // Macedonian date, first letter capitalised
   const todayFormatted = new Date().toLocaleDateString('mk-MK', {
@@ -230,9 +283,9 @@ export const HomeView: React.FC = () => {
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-brand-primary/80 mb-2">Мисла на денот</p>
               <blockquote className="text-xl md:text-2xl leading-tight font-bold text-slate-800 max-w-3xl">
-                "Суштината на математиката не е да ги направи едноставните работи комплицирани, туку комплицираните работи едноставни."
+                "{dailyQuote.text}"
               </blockquote>
-              <p className="mt-4 text-sm text-slate-500 font-semibold">Стенли Гудер · познат математичар</p>
+              <p className="mt-4 text-sm text-slate-500 font-semibold">{dailyQuote.author} · инспиративна мисла за наставата</p>
             </div>
             <button
               type="button"
@@ -267,62 +320,119 @@ export const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── AI QUOTA BANNER ──────────────────────────────────────────── */}
-      {isQuotaExhausted && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-800 text-sm">
-          <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
-          <span><strong>Дневниот AI лимит е достигнат.</strong> Генерирањето ќе се обнови во <strong>09:00 часот</strong> (МКВ). Во меѓувреме можеш да ги прегледуваш зачуваните материјали.</span>
+      <section className="space-y-3" aria-label="Today Focus">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2.5 py-1">Today Focus</span>
+          <p className="text-xs text-slate-500">Најважните сигнали и обврски за денес.</p>
         </div>
-      )}
 
-      {/* ── П2: TEACHER DAILY BRIEF ──────────────────────────────────── */}
-      {(isBriefLoading || brief) && (
-        <DailyBriefCard brief={brief} isLoading={isBriefLoading} onRefresh={refreshBrief} />
-      )}
+        {/* ── AI QUOTA BANNER ──────────────────────────────────────────── */}
+        {isQuotaExhausted && (
+          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-800 text-sm">
+            <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <span><strong>Дневниот AI лимит е достигнат.</strong> Генерирањето ќе се обнови во <strong>09:00 часот</strong> (МКВ). Во меѓувреме можеш да ги прегледуваш зачуваните материјали.</span>
+          </div>
+        )}
 
-      {/* ── П-А: FORMATIVE NEXT STEP ─────────────────────────────────── */}
-      <FormativeNextStepCard weakConcepts={weakConcepts} />
+        {/* ── П2: TEACHER DAILY BRIEF ──────────────────────────────────── */}
+        {(isBriefLoading || brief) && (
+          <DailyBriefCard brief={brief} isLoading={isBriefLoading} onRefresh={refreshBrief} />
+        )}
 
-      {/* ── П-Д: SPACED REP DUE ──────────────────────────────────────── */}
-      <SpacedRepDueCard due={spacedRepDue} />
+        {/* ── П-А: FORMATIVE NEXT STEP ─────────────────────────────────── */}
+        <FormativeNextStepCard weakConcepts={weakConcepts} />
 
-      {/* ── QUICK ACTIONS STRIP ──────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {getQuickActions(t).map(({ label, desc, icon: Icon, color, action }) => (
-          <button
-            key={action}
-            type="button"
-            onClick={() => {
-              if (action === 'generator') openGeneratorPanel({});
-              else if (action === 'live') navigate('/live/host');
-              else navigate(`/${action}`);
-            }}
-            className={`${color} text-white rounded-xl p-4 text-left transition-all duration-300 ease-out shadow-sm hover:shadow-lg hover:-translate-y-1 active:scale-[0.97] group`}
-          >
-            <Icon className="w-5 h-5 mb-2 opacity-90 group-hover:scale-110 group-hover:opacity-100 transition-all duration-300" />
-            <p className="font-bold text-sm leading-tight">{label}</p>
-            <p className="text-white/70 text-xs mt-0.5">{desc}</p>
-          </button>
-        ))}
-      </div>
+        {/* ── П-Д: SPACED REP DUE ──────────────────────────────────────── */}
+        <SpacedRepDueCard due={spacedRepDue} />
+      </section>
 
-      {/* Proactive AI Suggestion */}
-      {!isSuggestionLoading && suggestion && (
-        <div className="animate-slide-in-from-right">
-            <ProactiveSuggestionCard
-                suggestionText={suggestion.text}
-                onDismiss={dismissSuggestion}
-                onGenerate={handleSuggestionGenerate}
-            />
+      <section className="space-y-3" aria-label="Priority Actions">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold px-2.5 py-1">Priority Actions</span>
+          <p className="text-xs text-slate-500">Најбрзи патеки до генерација, assignment и акција.</p>
         </div>
-      )}
-      
-      <div className="mb-6 animate-fade-in">
-        <WeakConceptsWidget />
-      </div>
 
-      {/* ── BENTO GRID ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+        {/* ── QUICK ACTIONS STRIP ──────────────────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {quickActions.map(({ label, desc, icon: Icon, color, action }) => (
+            <button
+              key={action}
+              type="button"
+              onClick={() => {
+                if (action === 'generator') openGeneratorPanel({});
+                else if (action === 'live') navigate('/live/host');
+                else navigate(`/${action}`);
+              }}
+              className={`${color} text-white rounded-xl p-4 text-left transition-all duration-300 ease-out shadow-sm hover:shadow-lg hover:-translate-y-1 active:scale-[0.97] group`}
+            >
+              <Icon className="w-5 h-5 mb-2 opacity-90 group-hover:scale-110 group-hover:opacity-100 transition-all duration-300" />
+              <p className="font-bold text-sm leading-tight">{label}</p>
+              <p className="text-white/70 text-xs mt-0.5">{desc}</p>
+            </button>
+          ))}
+        </div>
+
+        <section className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm md:text-base font-extrabold text-slate-800 tracking-tight">Teacher Toolbox</h2>
+            <span className="text-xs font-semibold text-slate-500">Wave A</span>
+          </div>
+          <p className="text-xs text-slate-500 mb-3">Избери алатка според педагошка цел: формативна проверка, повторување или диференцирана поддршка.</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+            {teacherToolboxCards.map((tool, index) => {
+              const ToolIcon = tool.icon;
+              const isRecommended = hasWeakSignals && index < 2;
+              return (
+                <button
+                  key={tool.title}
+                  type="button"
+                  onClick={tool.action}
+                  className={`group text-left rounded-xl border p-3.5 bg-white hover:shadow-md transition-all min-h-[128px] ${isRecommended ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200 hover:border-brand-primary/30'}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className={`inline-flex w-9 h-9 items-center justify-center rounded-lg border ${tool.accent}`}>
+                      <ToolIcon className="w-4 h-4" />
+                    </span>
+                    {isRecommended && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Препорачано денес</span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm font-bold text-slate-800 group-hover:text-brand-primary transition-colors">{tool.title}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500 leading-relaxed">{tool.subtitle}</p>
+                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500">
+                    <span className="px-1.5 py-0.5 rounded bg-slate-100 font-semibold">{tool.pedagogy}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-slate-100 font-semibold">{tool.impact}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Proactive AI Suggestion */}
+        {!isSuggestionLoading && suggestion && (
+          <div className="animate-slide-in-from-right">
+              <ProactiveSuggestionCard
+                  suggestionText={suggestion.text}
+                  onDismiss={dismissSuggestion}
+                  onGenerate={handleSuggestionGenerate}
+              />
+          </div>
+        )}
+
+        <div className="animate-fade-in">
+          <WeakConceptsWidget />
+        </div>
+      </section>
+
+      <section className="space-y-3" aria-label="Deep Work">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold px-2.5 py-1">Deep Work</span>
+          <p className="text-xs text-slate-500">Детална анализа, планирање и препораки.</p>
+        </div>
+
+        {/* ── BENTO GRID ───────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
 
         {/* CELL 1: Quick AI Start */}
         <div className="md:col-span-1 lg:col-span-1 row-span-2 h-full" data-tour="dashboard-quick-start">
@@ -407,7 +517,8 @@ export const HomeView: React.FC = () => {
             )}
         </div>
 
-      </div>
+        </div>
+      </section>
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { geminiService } from '../services/geminiService';
 import type { CoverageAnalysisReport, GradeCoverageAnalysis, NationalStandard, PartiallyCoveredStandard } from '../types';
 import { EmptyState } from '../components/common/EmptyState';
 import { useNavigation } from '../contexts/NavigationContext';
+import { AppError, ErrorCode } from '../utils/errors';
 
 const CoverageDashboard: React.FC<{ reports: GradeCoverageAnalysis[] }> = ({ reports }) => {
     return (
@@ -152,7 +153,12 @@ export const CoverageAnalyzerView: React.FC = () => {
         try {
             const analysisResult = await geminiService.analyzeCoverage(lessonPlans, allNationalStandards);
             if (analysisResult.error) {
-                throw new Error(analysisResult.error);
+                throw new AppError(
+                    analysisResult.error,
+                    ErrorCode.AI_PARSE_FAILED,
+                    'Анализата на покриеност не успеа. Проверете ја врската и обидете се повторно.',
+                    true,
+                );
             }
             setReport(analysisResult);
         } catch (error) {

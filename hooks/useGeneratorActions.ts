@@ -403,6 +403,31 @@ export function useGeneratorActions({
               user ?? undefined,
             );
             break;
+          case 'VIDEO_EXTRACTOR':
+            if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за Video Extractor');
+            if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за Video Extractor');
+            if (!state.videoUrl.trim()) throw new ValidationError('Видео URL', 'внесете валиден YouTube/Vimeo линк');
+            {
+              const safeVideoUrl = sanitizePromptInput(state.videoUrl, 300);
+              const preview = state.videoPreview;
+              const videoContext = [
+                'Видео извор за екстракција:',
+                `- URL: ${safeVideoUrl}`,
+                preview?.title ? `- Наслов: ${sanitizePromptInput(preview.title, 180)}` : '',
+                preview?.authorName ? `- Автор/канал: ${sanitizePromptInput(preview.authorName, 120)}` : '',
+                'Инструкција: извлечи главни наставни идеи, креирај практичен план за час и предложи активности што не зависат од директно пуштање на видеото.',
+              ].filter(Boolean).join('\n');
+              const combinedInstruction = [effectiveInstruction, videoContext].filter(Boolean).join('\n\n');
+              result = await geminiService.generateLessonPlanIdeas(
+                finalContext.concepts || [],
+                finalContext.topic,
+                finalContext.grade.level,
+                user ?? undefined,
+                { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel },
+                combinedInstruction,
+              );
+            }
+            break;
         }
       }
 

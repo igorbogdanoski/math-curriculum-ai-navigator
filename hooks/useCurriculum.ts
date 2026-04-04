@@ -8,6 +8,7 @@ import { fetchCurriculumOverrides, type CurriculumOverridesDoc } from '../servic
 import { getLocalizedTitle } from '../data/localeOverrides';
 import { useAuth } from '../contexts/AuthContext';
 import { secondaryCurriculumByTrack } from '../data/secondaryCurriculum';
+import { AppError, ErrorCode } from '../utils/errors';
 
 interface ConceptChainEntry { grade: Grade; topic: Topic; concept: Concept; }
 
@@ -31,7 +32,12 @@ const CurriculumContext = createContext<CurriculumContextType | undefined>(undef
 export const useCurriculum = () => {
   const context = useContext(CurriculumContext);
   if (!context) {
-    throw new Error('useCurriculum must be used within a CurriculumProvider');
+    throw new AppError(
+      'useCurriculum must be used within a CurriculumProvider',
+      ErrorCode.UNKNOWN,
+      'Се појави внатрешна грешка при вчитување на наставниот план. Освежете ја страницата.',
+      false,
+    );
   }
   return context;
 };

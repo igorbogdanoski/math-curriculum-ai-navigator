@@ -2,6 +2,7 @@
 import { useReducer, useEffect, useRef } from 'react';
 import { QuestionType, type MaterialType, type GenerationContextType, type StudentProfile, type DifferentiationLevel, type BloomDistribution, type DokLevel } from '../types';
 import { useCurriculum } from './useCurriculum';
+import type { VideoPreviewData } from '../utils/videoPreview';
 
 
 // State
@@ -33,6 +34,8 @@ export interface GeneratorState {
     activityType: string;
     criteriaHints: string;
     illustrationPrompt: string;
+    videoUrl: string;
+    videoPreview: VideoPreviewData | null;
     imageFile: { file: File, base64: string, previewUrl: string } | null;
     customInstruction: string;
     useMacedonianContext: boolean;
@@ -86,6 +89,8 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         activityType: 'Проект',
         criteriaHints: '',
         illustrationPrompt: '',
+        videoUrl: '',
+        videoPreview: null,
         imageFile: null,
         customInstruction: '',
         useMacedonianContext: true,

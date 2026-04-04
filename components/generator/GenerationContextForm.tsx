@@ -122,7 +122,7 @@ export const GenerationContextForm: React.FC<GenerationContextFormProps> = ({ st
         dispatch({ type: 'SET_FIELD', payload: { field: 'selectedConcepts', value: selectedOptions } });
     };
 
-    const shouldShowImageUpload = useMemo(() => materialType !== 'RUBRIC', [materialType]);
+    const shouldShowImageUpload = useMemo(() => !['RUBRIC', 'VIDEO_EXTRACTOR'].includes(materialType || ''), [materialType]);
 
     const toggleConcept = (conceptId: string) => {
         const newConcepts = selectedConcepts.includes(conceptId)
