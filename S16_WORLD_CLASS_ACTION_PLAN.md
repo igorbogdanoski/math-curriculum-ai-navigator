@@ -34,7 +34,7 @@
 | A1 | E2E стабилизација на auth-guard тестови | 3 последователни run-ови без flaky во auth-guard suite | ✅ |
 | A2 | Build/Runtime стабилност | 0 compile errors, 0 runtime-crash regression во smoke/e2e | ✅ |
 | A3 | Error-system cleanup во legacy сервиси | Намален број raw `throw new Error` патеки во критични services | ✅ |
-| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 33.33%, 6/18 — потребни 13 consecutive successes) |
+| A4 | CI reliability baseline | CI pass rate >= 95% на главни проверки | 🟨 in progress (current 15.00%, 3/20 — потребни 16-18 consecutive successes) |
 
 ### ФАЗА B — Performance and Bundle Excellence
 
@@ -256,7 +256,7 @@
 
 | ID | Ставка | Тековен статус | Target статус |
 |---|---|---|---|
-| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 6/18, 33.33% — потребни 13 consecutive successes | ✅ closed |
+| A4 | CI reliability baseline >= 95% | 🟨 in progress — current 3/20, 15.00% — потребни 16-18 consecutive successes | ✅ closed |
 | B2 | Route-based lazy loading + мерлив uplift | ✅ closed | ✅ closed |
 | B4 | Lighthouse стабилизација (без NO_FCP) | ⬜ | ✅ closed |
 | C4 | Restore drill + evidence | ✅ closed | ✅ closed — import operation SUCCESSFUL + 5/5 smoke PASS, evidence pack во секција 9.7 |
@@ -487,7 +487,7 @@ C4 се затвора кога:
 Што е потврдено:
 1. Reliability baseline automation е активна во `.github/workflows/ci-quality.yml` (`reliability-baseline` job, rolling window last 20 completed runs, threshold 95%).
 2. Summary автоматски прикажува `Remaining consecutive successes (est.)` и `A4 close trigger`.
-3. Последен валиден summary (04.04.2026): `Window: last 20 completed runs`, `Success: 6/20`, `Pass rate: 30.00%`, `Remaining est.: 13-18`.
+3. Последен валиден summary (04.04.2026): `Window: last 20 completed runs`, `Success: 3/20`, `Pass rate: 15.00%`, `Remaining est.: 16-18`.
 4. A4 е formal closeable само кога summary ќе покаже `A4 close trigger: reached` и `Pass rate >=95%`.
 
 Преостанат formal evidence за close:
@@ -495,10 +495,10 @@ C4 се затвора кога:
 2. Да нема регресии на `Typecheck + Unit + Build`.
 3. Дури потоа A4 се менува во `✅ closed`.
 
-Operational close path (current `6/20`, 04.04.2026):
+Operational close path (current `3/20`, 04.04.2026):
 1. Секој feature чекор да оди како мал, проверлив commit со локална валидација пред push.
 2. По секој run, запиши `Window`, `Success`, `Pass rate`, `Remaining consecutive successes (est.)`.
-3. Користи automation estimate за planning на следниот batch (`13-18` моментално).
+3. Користи automation estimate за planning на следниот batch (`16-18` моментално).
 4. Ако се појави нов `failure`, отвори root-cause review веднаш пред следен feature push.
 5. A4 се затвора кога summary ќе покаже `A4 close trigger: reached`.
 
@@ -546,4 +546,45 @@ Final perf snapshot:
 | Датум | Task ID | Commit | CI резултат | Reliability delta | Remaining est. | Следен чекор |
 |---|---|---|---|---|---|---|
 | 2026-04-04 | X2 kickoff | c0e33cd | ✅ quality-gate / ❌ reliability-baseline | 6/20, 30.00% | 13-18 | X2 thresholds draft |
+| 2026-04-04 | X2 plan sync | ba364ea | ✅ quality-gate / ❌ reliability-baseline | 3/20, 15.00% | 16-18 | finalize go/no-go board |
+
+### 9.10 X2 Go/No-Go Board (E4 Vertex shadow)
+
+Статус: ACTIVE (decision board ready, awaiting enough shadow samples for final sign-off)
+
+#### 9.10.1 Launch thresholds (go)
+
+| Метрика | Green (Go) | Yellow (Hold/monitor) | Red (No-Go/Rollback) |
+|---|---|---|---|
+| Eval quality score (golden set) | 100% | >= 98% | < 98% |
+| Vertex shadow success rate | >= 98% | 95% - 97.99% | < 95% |
+| Vertex shadow error rate | <= 1% | 1.01% - 3% | > 3% |
+| Vertex not_configured rate | <= 5% | 5.01% - 15% | > 15% |
+| Avg latency delta vs Gemini | <= +20% | +20.01% to +35% | > +35% |
+| CI reliability baseline (A4) | >= 95% | 90% - 94.99% | < 90% |
+
+Go одлука: дозволена само ако сите метрики се во Green минимум 3 последователни delivery run-ови.
+
+#### 9.10.2 Rollout stages
+
+| Stage | Shadow mode | Gate услов за промоција | Owner approval |
+|---|---|---|---|
+| S0 | OFF (default) | X2 board approved | @ai-core |
+| S1 | ON (internal pilot) | 3 зелени run-ови + Green thresholds | @ai-core + @pm |
+| S2 | ON (expanded pilot) | нема Red 48h + metrics stable | @pm |
+| S3 | ON (broad) | A4 close trigger reached + X3 baseline captured | @pm + @platform |
+
+#### 9.10.3 Rollback triggers (immediate)
+
+1. `Vertex shadow error rate > 3%` во било кој 24h прозорец.
+2. `Avg latency delta > +35%` за 2 последователни run-ови.
+3. Eval quality падне под 98%.
+4. Runtime regression во production smoke flow поврзана со E4 path.
+
+#### 9.10.4 Rollback protocol
+
+1. Immediate: toggle OFF `vertex_ai_shadow_enabled` во Settings.
+2. Verify: изврши `Typecheck + Unit + Build` и 1 smoke run.
+3. Record: запиши incident note (timestamp, trigger, impact, mitigation) во 9.9 log.
+4. Re-entry: повторен rollout е дозволен само со root-cause fix + 2 зелени run-ови.
 
