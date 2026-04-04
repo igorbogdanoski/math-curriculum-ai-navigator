@@ -114,7 +114,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
             </>
           )}
           {user?.role === 'admin' && (
-            <NavItem path="/system-admin" currentPath={currentPath} icon={ICONS.shieldAlert} label={t("nav.schools")} onClick={onClose} />
+            <>
+              <NavItem path="/system-admin" currentPath={currentPath} icon={ICONS.shieldAlert} label={t("nav.schools")} onClick={onClose} />
+              <NavItem path="/slo" currentPath={currentPath} icon={ICONS.activity} label="SLO Dashboard" onClick={onClose} badge="OPS" />
+            </>
           )}
           <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label={t("nav.settings")} onClick={onClose} />
         </div>

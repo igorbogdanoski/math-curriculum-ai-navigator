@@ -143,6 +143,7 @@ const MindMapView = safeLazy(() => import('./views/MindMapView').then(module => 
 const RoadmapView = safeLazy(() => import('./views/RoadmapView').then(module => ({ default: module.RoadmapView })));
 const TeacherAnalyticsView = safeLazy(() => import('./views/TeacherAnalyticsView').then(module => ({ default: module.TeacherAnalyticsView })));
 const SystemAdminView = safeLazy(() => import('./views/SystemAdminView').then(module => ({ default: module.SystemAdminView })));
+const SLODashboardView = safeLazy(() => import('./views/SLODashboardView').then(module => ({ default: module.SLODashboardView })));
 const TestGeneratorView = safeLazy(() => import('./views/TestGeneratorView').then(module => ({ default: module.TestGeneratorView })));
 const GradeBookView = safeLazy(() => import('./views/GradeBookView').then(module => ({ default: module.GradeBookView })));
 const WrittenTestReviewView = safeLazy(() => import('./views/WrittenTestReviewView').then(module => ({ default: module.WrittenTestReviewView })));
@@ -230,6 +231,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/test-review', component: WrittenTestReviewView },
     { path: '/my-profile', component: TeacherProfileView },
     { path: '/matura', component: MaturaSimulationView },
+    { path: '/slo', component: SLODashboardView }, // L1 — admin-only SLO dashboard
     { path: '/share/:data', component: SharedPlanView },
     { path: '/share/annual/:data', component: SharedAnnualPlanView },
     { path: '/share/visual', component: ShareVisualView }, // C2.4/C3.4 — AlgebraTiles + Shape3D shareable URLs
