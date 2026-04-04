@@ -115,6 +115,7 @@ jobs:
             const repo = context.repo.repo;
             const workflowId = 'ci-quality.yml';
             const currentResult = process.env.CURRENT_QUALITY_GATE_RESULT;
+            const qualityGateJobName = 'Typecheck + Unit + Build';
 
             const runsResp = await github.rest.actions.listWorkflowRuns({
               owner,
@@ -124,9 +125,30 @@ jobs:
               status: 'completed',
             });
 
-            const previousCompleted = runsResp.data.workflow_runs
-              .filter((r) => r.conclusion === 'success' || r.conclusion === 'failure')
-              .slice(0, 19);
+            // IMPORTANT: Use QUALITY-GATE JOB conclusions from previous runs, not workflow conclusion.
+            // Otherwise the metric self-locks because this reliability job intentionally fails the workflow.
+            const previousCompleted = [];
+            for (const run of runsResp.data.workflow_runs) {
+              if (run.id === context.runId) continue;
+              if (previousCompleted.length >= 19) break;
+
+              try {
+                const jobsResp = await github.rest.actions.listJobsForWorkflowRun({
+                  owner,
+                  repo,
+                  run_id: run.id,
+                  per_page: 100,
+                });
+
+                const qualityGateJob = jobsResp.data.jobs.find((j) => j.name === qualityGateJobName);
+                const conclusion = qualityGateJob?.conclusion;
+                if (conclusion === 'success' || conclusion === 'failure') {
+                  previousCompleted.push({ conclusion });
+                }
+              } catch (e) {
+                core.warning(`Could not inspect jobs for run ${run.id}; skipping.`);
+              }
+            }
 
             const completed = [];
 
@@ -167,6 +189,7 @@ jobs:
 
             core.summary
               .addHeading('CI Reliability Baseline')
+              .addRaw(`Basis: '${qualityGateJobName}' job conclusions (not workflow conclusion)\n\n`)
               .addRaw(`Window: last ${total} completed runs\n\n`)
               .addRaw(`Success: ${success}/${total}\n\n`)
               .addRaw(`Pass rate: ${passRate.toFixed(2)}%\n\n`)
