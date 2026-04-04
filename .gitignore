@@ -50,4 +50,13 @@ tsconfig.tsbuildinfo
 /playwright/.cache/
 /playwright/.auth/
 
+# Local diagnostics and credential artifacts
+/.lighthouseci/
+/lhci-pricing-debug.png
+/firebase-adminsdk-key.json
+/firebase-restore-adminsdk-key.json
+/firestore-restore-key.json
+/models.txt
+/--outputs
+
 .vercel
