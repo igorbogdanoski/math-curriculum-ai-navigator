@@ -414,7 +414,7 @@ EOD формат (обврзен):
 |---|---|---|---|---|
 | L1 | Reliability SLO dashboard | @platform | weekly SLO reporting live | ✅ closed (04.04.2026, commit `a5282ab`) — 5-panel RAG dashboard live, `/slo` route, admin nav |
 | L2 | Incident taxonomy hardening | @platform + @qa | UNCLASSIFIED ratio <= 15% | ✅ closed (04.04.2026, commit `a8d3c4f`) — classifyError() emits app_error_code на СЕКОЈ captureException; RENDER_ERROR за ErrorBoundary; ApiError subclasses mapped; threshold 30%→15% |
-| L3 | E5 national-scale hardening | @product + @eng | no regression on CI/perf/security gates during scale rollout | 🟨 in progress — started 04.04.2026, детали во секција 9.12 |
+| L3 | E5 national-scale hardening | @product + @eng | no regression on CI/perf/security gates during scale rollout | ✅ closed (04.04.2026) — L3-A: 9 missing Firestore indexes added (24→33); L3-B: perf budget green (JS 1480/1500 kB); L3-C: auth-guard 16/16 × 3 consecutive runs; L3-D: TSC+tests+build all pass |
 
 ### 9.4 Start Today (оперативен старт)
 
@@ -630,7 +630,9 @@ npm run -s x3:fill-t0 -- --baseline eval/x3-baseline-t1.json --plan S16_WORLD_CL
 
 ### 9.12 L3 — E5 National-Scale Hardening
 
-**Статус:** 🟨 IN PROGRESS — started 04.04.2026
+**Статус:** ✅ CLOSED — 04.04.2026
+
+**Outcome note:** Сите 4 столба затворени во еден ден. Клучниот наод: 9 composite Firestore indexes недостасуваа во production — `forum_threads`, `forum_replies`, `ai_material_feedback_events`, `cached_ai_materials` (archivedAt), `chat_sessions`, `material_feedback` (subcollection), и 2 defensive `national_library` combo-и. Без нив, при 1000+ records per teacher, Firestore би фрлал index-required errors во production. Perf budget и auth-guard стабилноста потврдени со мерливи докази.
 
 **Цел:** Да се обезбеди дека апликацијата издржува национален obim (повеќе училишта, повеќе наставници, повеќе паралелни класи) без регресија на CI/perf/security gate-ови. Не нови функции — само hardening на постоечките за scale.
 
@@ -682,4 +684,7 @@ npm run test:e2e -- --grep "teacher-analytics.*large-dataset"
 | --- | --- | --- | --- |
 | 2026-04-04 | L3 kicked off — scope и план дефинирани | — | план во 9.12 |
 | 2026-04-04 | L3-A Firestore index audit + 9 missing indexes | 53fa832 | indexes 24→33; forum_threads+conceptId/deleted/createdAt, forum_replies, ai_material_feedback_events, cached_ai_materials(archivedAt), chat_sessions, material_feedback, national_library combos ✅ |
+| 2026-04-04 | L3-B perf budget verification | — | npm run perf:budget → JS 1480/1500 kB, CSS 190/220 kB, total 9740/10000 kB — all green ✅ |
+| 2026-04-04 | L3-C auth-guard e2e 3× consecutive | — | 16/16 × 3 runs (19.7s / 16.2s / 32.6s) — zero flaky ✅ |
+| 2026-04-04 | L3-D CI gate non-regression | — | npx tsc --noEmit PASS, tests 420/420 PASS, build PASS — no regression ✅ |
 
