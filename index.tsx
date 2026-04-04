@@ -26,7 +26,7 @@ const updateSW = registerSW({
     updateSW(true);
   },
   onOfflineReady() {
-    console.log('App is ready to work offline');
+    if (import.meta.env.DEV) console.log('App is ready to work offline');
   },
 });
 

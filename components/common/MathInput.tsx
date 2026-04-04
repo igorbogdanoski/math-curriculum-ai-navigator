@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useRef } from 'react';
 import 'mathlive';
 
+
 interface MathInputProps {
   value: string;
   onChange: (latex: string) => void;
@@ -36,8 +37,7 @@ export const MathInput: React.FC<MathInputProps> = ({
 
   return (
     <div className={`p-3 border-2 border-indigo-100 rounded-xl focus-within:border-indigo-500 bg-white shadow-sm transition-all duration-200 min-h-[60px] flex items-center ${className}`}>
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {React.createElement('math-field' as any, {
+      {React.createElement('math-field', {
         ref: mfRef,
         'virtual-keyboard-mode': 'onfocus',
         placeholder,

@@ -207,7 +207,10 @@ Keep responses concise (2-3 sentences max), practical, and focused on teacher ne
 
 // ── Preview Modal ────────────────────────────────────────────────────────────
 const PreviewModal: React.FC<{ material: CachedMaterial; onClose: () => void }> = ({ material, onClose }) => {
-  const content = material.content as any;
+  // CachedMaterial.content is typed `unknown` — narrow to a usable shape here.
+  // The inner components (GeneratedAssessment, GenericContentRenderer) accept the
+  // concrete types they need; we do a single cast at the boundary.
+  const content = material.content as Record<string, unknown> | null | undefined;
   const isAssessment = material.type === 'quiz' || material.type === 'assessment';
 
   return (
@@ -228,7 +231,7 @@ const PreviewModal: React.FC<{ material: CachedMaterial; onClose: () => void }> 
         <div className="overflow-y-auto p-4 md:p-6">
           {isAssessment && content ? (
             <React.Suspense fallback={<div className="text-center py-10 text-gray-400">Вчитувам преглед…</div>}>
-              <GeneratedAssessment material={content as AIGeneratedAssessment} />
+              <GeneratedAssessment material={content as unknown as AIGeneratedAssessment} />
             </React.Suspense>
           ) : content ? (
             <GenericContentRenderer content={content} type={material.type} />

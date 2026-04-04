@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig } from "@google/generative-ai";
+import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig, type Tool } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -70,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const result = await modelInstance.generateContent({
         contents: normalizedContents,
         generationConfig: generationConfig as GenerationConfig,
-        ...(tools && tools.length > 0 ? { tools: tools as any } : {}),
+        ...(tools && tools.length > 0 ? { tools: tools as Tool[] } : {}),
       });
       const response = await result.response;
       if (!response.candidates || response.candidates.length === 0) {

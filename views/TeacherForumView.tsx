@@ -797,7 +797,8 @@ export const TeacherForumView: React.FC = () => {
   const concepts = (allConcepts ?? []) as EnrichedConcept[];
 
   // Mark forum as visited (clears unread badge in sidebar)
-  useEffect(() => { markForumVisited(); }, []);
+  // markForumVisited is a stable module-level function — safe in deps array
+  useEffect(() => { markForumVisited(); }, [markForumVisited]);
 
   // Check for Algebra Tiles image shared from TopicView
   useEffect(() => {
