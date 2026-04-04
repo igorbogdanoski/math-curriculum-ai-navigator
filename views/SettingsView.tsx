@@ -369,7 +369,12 @@ export const SettingsView: React.FC = () => {
         try {
             const data = await exportUserData(firebaseUser.uid);
             downloadUserDataAsJson(data, firebaseUser.uid);
-            addNotification('Вашите податоци се преземени успешно.', 'success');
+            const warnings = Array.isArray((data as any).exportWarnings) ? (data as any).exportWarnings : [];
+            if (warnings.length > 0) {
+                addNotification(`Податоците се преземени со ${warnings.length} предупредувања. Проверете го полето "exportWarnings" во JSON.`, 'warning');
+            } else {
+                addNotification('Вашите податоци се преземени успешно.', 'success');
+            }
         } catch {
             addNotification('Грешка при извоз на податоците. Обидете се повторно.', 'error');
         } finally {

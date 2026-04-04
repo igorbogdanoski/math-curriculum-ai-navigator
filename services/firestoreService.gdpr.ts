@@ -51,6 +51,21 @@ async function collectByField(
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
+async function collectByFieldSafe(
+  collectionName: string,
+  field: string,
+  uid: string,
+  warnings: string[]
+): Promise<Array<Record<string, unknown>>> {
+  try {
+    return await collectByField(collectionName, field, uid);
+  } catch (err: any) {
+    const msg = err?.message ? String(err.message) : 'unknown_error';
+    warnings.push(`${collectionName}: ${msg}`);
+    return [];
+  }
+}
+
 /**
  * Брише СИТЕ кориснички податоци од Firestore + Storage.
  * Не го брише Firebase Auth акаунтот — тоа е одговорност на повикувачот.
@@ -97,6 +112,8 @@ export async function deleteAllUserData(uid: string): Promise<void> {
 export async function exportUserData(
   uid: string
 ): Promise<Record<string, unknown>> {
+  const warnings: string[] = [];
+
   const [
     profileSnap,
     quizResults,
@@ -114,19 +131,19 @@ export async function exportUserData(
     nationalLibrary,
   ] = await Promise.all([
     getDoc(doc(db, 'users', uid)),
-    collectByField('quiz_results', 'teacherUid', uid),
-    collectByField('concept_mastery', 'teacherUid', uid),
-    collectByField('cached_ai_materials', 'teacherUid', uid),
-    collectByField('material_feedback', 'teacherUid', uid),
-    collectByField('ai_material_feedback_events', 'teacherUid', uid),
-    collectByField('worksheet_approvals', 'teacherUid', uid),
-    collectByField('classes', 'teacherUid', uid),
-    collectByField('assignments', 'teacherUid', uid),
-    collectByField('chat_sessions', 'teacherUid', uid),
-    collectByField('academic_annual_plans', 'userId', uid),
-    collectByField('saved_questions', 'teacherUid', uid),
-    collectByField('live_sessions', 'hostUid', uid),
-    collectByField('national_library', 'publishedByUid', uid),
+    collectByFieldSafe('quiz_results', 'teacherUid', uid, warnings),
+    collectByFieldSafe('concept_mastery', 'teacherUid', uid, warnings),
+    collectByFieldSafe('cached_ai_materials', 'teacherUid', uid, warnings),
+    collectByFieldSafe('material_feedback', 'teacherUid', uid, warnings),
+    collectByFieldSafe('ai_material_feedback_events', 'teacherUid', uid, warnings),
+    collectByFieldSafe('worksheet_approvals', 'teacherUid', uid, warnings),
+    collectByFieldSafe('classes', 'teacherUid', uid, warnings),
+    collectByFieldSafe('assignments', 'teacherUid', uid, warnings),
+    collectByFieldSafe('chat_sessions', 'teacherUid', uid, warnings),
+    collectByFieldSafe('academic_annual_plans', 'userId', uid, warnings),
+    collectByFieldSafe('saved_questions', 'teacherUid', uid, warnings),
+    collectByFieldSafe('live_sessions', 'hostUid', uid, warnings),
+    collectByFieldSafe('national_library', 'publishedByUid', uid, warnings),
   ]);
 
   return {
@@ -146,6 +163,7 @@ export async function exportUserData(
     savedQuestions,
     liveSessions,
     nationalLibrary,
+    ...(warnings.length > 0 ? { exportWarnings: warnings } : {}),
   };
 }
 

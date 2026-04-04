@@ -360,6 +360,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── AI feedback telemetry (ai_material_feedback_events) ──
+    // Events are written by the owning teacher and may be read by owner/admin for analytics + GDPR export.
+    match /ai_material_feedback_events/{doc} {
+      allow read:   if isAuthenticated() && (resource.data.teacherUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.teacherUid == request.auth.uid;
+      allow update: if false; // immutable event log
+      allow delete: if isAdmin();
+    }
+
     // ── Push нотификациски токени (user_tokens) ──
     // Doc ID = {uid}_web. Only the owning user may read/write their token.
     match /user_tokens/{tokenDoc} {
