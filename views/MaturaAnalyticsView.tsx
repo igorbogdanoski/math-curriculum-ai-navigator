@@ -42,7 +42,7 @@ const StatCard: React.FC<{
 
 const ProgressBar: React.FC<{ value: number; label: string; meta?: string }> = ({ value, label, meta }) => {
   const tone = statTone(value, 75, 55);
-  const barClass = tone === 'green' ? 'bg-emerald-500' : tone === 'amber' ? 'bg-amber-500' : 'bg-rose-500';
+  const barClass = tone === 'green' ? 'accent-emerald-500' : tone === 'amber' ? 'accent-amber-500' : 'accent-rose-500';
 
   return (
     <div className="space-y-1.5">

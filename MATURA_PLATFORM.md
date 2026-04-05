@@ -414,19 +414,27 @@ Field 2: questionNumber (Ascending)
 ## 13. Тековна состојба на Firestore (Април 2026)
 
 ```
-matura_exams:     5 docs
-  dim-gymnasium-2025-june-mk   (30q, 61pt, mk)
-  dim-gymnasium-2025-june-al   (30q, 61pt, al)
-  dim-gymnasium-2025-august-mk (30q, 61pt, mk)
-  dim-gymnasium-2025-august-al (30q, 61pt, al)
-  dim-gymnasium-2024-august-mk (30q, 63pt, mk)  ← Додадено Апр 2026
+matura_exams:     10 docs
+  dim-gymnasium-2025-june-mk    (30q, 61pt, mk)
+  dim-gymnasium-2025-june-al    (30q, 61pt, al)
+  dim-gymnasium-2025-august-mk  (30q, 61pt, mk)
+  dim-gymnasium-2025-august-al  (30q, 61pt, al)
+  dim-gymnasium-2024-august-mk  (30q, 63pt, mk)  ← 63pt (Part III поообемен)
+  dim-gymnasium-2024-august-al  (30q, 63pt, al)
+  dim-gymnasium-2024-june-mk    (30q, 61pt, mk)  ← aiSolution Q16–Q30
+  dim-gymnasium-2024-june-al    (30q, 61pt, al)  ← aiSolution Q16–Q30
+  dim-gymnasium-2024-june-tr    (30q, 61pt, tr)  ← aiSolution Q16–Q30
+  (+ users/{uid}/maturaResults, users/{uid}/maturaMissions subcollections)
 
-matura_questions: 150 docs
-  30 per exam × 5 exams
+matura_questions: 300 docs
+  30 per exam × 10 exams
 
-public/matura/images/:  2 PNG files
-  2025/june/q05-fig1.png    (Q5 парабола)
-  2025/august/q07-fig1.png  (Q7 линеарна)
+matura_ai_grades: grows dynamically (cache за Gemini оценување)
+
+public/matura/images/:  3 PNG files
+  2025/june/q05-fig1.png       (Q5 парабола)
+  2025/august/q07-fig1.png     (Q7 линеарна)
+  2024/august/q29-fig1.png     (Q29 пирамида — правилна четириаголна)
 
 Напомена: 2024 испитот има 63pt (наместо 61pt) — Part III е пообемен.
 ```

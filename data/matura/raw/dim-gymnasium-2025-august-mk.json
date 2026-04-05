@@ -8,7 +8,9 @@
     "language": "mk",
     "durationMinutes": 180,
     "title": "Државна матура — Гимназиско — Август 2025",
-    "hasOfficialKey": true
+    "hasOfficialKey": true,
+    "totalPoints": 61,
+    "questionCount": 30
   },
   "questions": [
     {
@@ -153,7 +155,9 @@
       "topic": "Линеарна функција",
       "topicArea": "analiza",
       "conceptIds": [],
-      "imageUrls": ["data/matura/images/2025/august/q07-fig1.png"],
+      "imageUrls": [
+        "data/matura/images/2025/august/q07-fig1.png"
+      ],
       "hasImage": true,
       "imageDescription": "Координатен систем (x: -2 до 4, y: -1 до 4). Црвена права со негативен наклон минува низ точките (0, 3) и (1, 0), претставувајќи ја функцијата y = -3x + 3.",
       "dokLevel": 2

@@ -8,7 +8,9 @@
     "language": "al",
     "durationMinutes": 180,
     "title": "Matura shtetërore — Gjimnaziale — qershor 2025",
-    "hasOfficialKey": true
+    "hasOfficialKey": true,
+    "totalPoints": 61,
+    "questionCount": 30
   },
   "questions": [
     {

@@ -8,7 +8,9 @@
     "language": "mk",
     "durationMinutes": 180,
     "title": "Државна матура — Гимназиско — јуни 2025",
-    "hasOfficialKey": true
+    "hasOfficialKey": true,
+    "totalPoints": 61,
+    "questionCount": 30
   },
   "questions": [
     {
