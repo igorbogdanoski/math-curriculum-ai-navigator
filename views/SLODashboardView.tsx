@@ -404,7 +404,7 @@ export const SLODashboardView: React.FC = () => {
           Operational summary degraded: {apiError}
           {apiServerBlocked && (
             <div className="mt-2 text-xs text-amber-900/90">
-              Серверска проверка е паузирана. Провери Firebase service account IAM (Firestore read for `users/{'{uid}'}`) и проект мапирање.
+              Серверска проверка е паузирана. Ако грешката е PERMISSION_DENIED, додади ја <code>roles/datastore.user</code> IAM улогата на service account — или постави ја <code>role: "admin"</code> custom claim во Firebase Auth за admin корисникот.
             </div>
           )}
           {apiAuthBlocked && (

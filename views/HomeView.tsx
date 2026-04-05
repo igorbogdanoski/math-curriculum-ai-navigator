@@ -160,6 +160,14 @@ export const HomeView: React.FC = () => {
   const featuredTools = useMemo(
     () => [
       {
+        title: 'Матура',
+        description: 'Симулирај го ДИМ испитот, вежбај адаптивно по концепти и следи го напредокот со M5 аналитика.',
+        cta: 'Отвори матура',
+        action: () => navigate('/matura'),
+        icon: ICONS.education,
+        accent: 'text-rose-700 bg-rose-50 border-rose-100',
+      },
+      {
         title: 'Екстракција од Видео',
         description: 'Внеси YouTube/Vimeo линк и извлечи наставно сценарио со AI preview чекор.',
         cta: 'Отвори алатка',
@@ -276,48 +284,41 @@ export const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── E5 PHASE-1: QUOTE + FEATURED TOOLS ─────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-5">
-        <Card className="xl:col-span-2 border-l-4 border-l-cyan-500 bg-gradient-to-br from-white to-slate-50">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-black uppercase tracking-widest text-brand-primary/80 mb-2">Мисла на денот</p>
-              <blockquote className="text-xl md:text-2xl leading-tight font-bold text-slate-800 max-w-3xl">
-                "{dailyQuote.text}"
-              </blockquote>
-              <p className="mt-4 text-sm text-slate-500 font-semibold">{dailyQuote.author} · инспиративна мисла за наставата</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate('/academy')}
-              className="w-11 h-11 rounded-full border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-center text-brand-primary"
-              title="Отвори Академија"
-            >
-              <ICONS.play className="w-4 h-4" />
-            </button>
-          </div>
-        </Card>
+      {/* ── COMPACT QUOTE STRIP ─────────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-cyan-50 border border-cyan-100 rounded-xl">
+        <span className="text-cyan-400 text-xl font-serif leading-none flex-shrink-0">"</span>
+        <p className="text-sm text-slate-700 italic flex-1 line-clamp-1">{dailyQuote.text}</p>
+        <span className="text-xs text-slate-400 font-semibold whitespace-nowrap flex-shrink-0">— {dailyQuote.author}</span>
+        <button
+          type="button"
+          onClick={() => navigate('/academy')}
+          className="w-7 h-7 rounded-full border border-cyan-200 bg-white flex items-center justify-center text-cyan-600 hover:bg-cyan-100 transition flex-shrink-0"
+          title="Отвори Академија"
+        >
+          <ICONS.play className="w-3 h-3" />
+        </button>
+      </div>
 
-        <div className="xl:col-span-1 grid grid-cols-1 gap-4">
-          {featuredTools.map((tool) => {
-            const ToolIcon = tool.icon;
-            return (
-              <button
-                key={tool.title}
-                type="button"
-                onClick={tool.action}
-                className="text-left p-4 rounded-2xl bg-white border border-slate-200 hover:border-brand-primary/30 hover:shadow-md transition-all group"
-              >
-                <div className={`inline-flex w-10 h-10 rounded-xl items-center justify-center border ${tool.accent}`}>
-                  <ToolIcon className="w-5 h-5" />
-                </div>
-                <p className="mt-3 font-bold text-slate-800 group-hover:text-brand-primary transition-colors">{tool.title}</p>
-                <p className="mt-1 text-xs text-slate-500 leading-relaxed">{tool.description}</p>
-                <p className="mt-3 text-sm font-bold text-brand-primary">{tool.cta} →</p>
-              </button>
-            );
-          })}
-        </div>
+      {/* ── FEATURED TOOLS ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {featuredTools.map((tool) => {
+          const ToolIcon = tool.icon;
+          return (
+            <button
+              key={tool.title}
+              type="button"
+              onClick={tool.action}
+              className="text-left p-4 rounded-2xl bg-white border border-slate-200 hover:border-brand-primary/30 hover:shadow-md transition-all group"
+            >
+              <div className={`inline-flex w-10 h-10 rounded-xl items-center justify-center border ${tool.accent}`}>
+                <ToolIcon className="w-5 h-5" />
+              </div>
+              <p className="mt-3 font-bold text-slate-800 group-hover:text-brand-primary transition-colors">{tool.title}</p>
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed line-clamp-2">{tool.description}</p>
+              <p className="mt-3 text-sm font-bold text-brand-primary">{tool.cta} →</p>
+            </button>
+          );
+        })}
       </div>
 
       <section className="space-y-3" aria-label="Today Focus">

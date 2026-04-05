@@ -65,8 +65,23 @@ async function authorizeAdmin(req: VercelRequest): Promise<{ ok: true } | { ok: 
 
   try {
     const decoded = await admin.auth.verifyIdToken(authHeader.slice(7), false);
-    const userSnap = await admin.db.collection('users').doc(decoded.uid).get();
-    const role = userSnap.data()?.role;
+
+    // Primary: Firestore role check (requires datastore.user IAM on the service account).
+    // Fallback: Firebase Auth custom claims (works even without Firestore IAM).
+    let role: string | undefined;
+    try {
+      const userSnap = await admin.db.collection('users').doc(decoded.uid).get();
+      role = userSnap.data()?.role;
+    } catch (fsErr: unknown) {
+      const fsCode = (fsErr as { code?: string })?.code ?? '';
+      if (fsCode === 'PERMISSION_DENIED' || fsCode === '7') {
+        // Firestore IAM not granted — fall back to custom claims
+        role = (decoded as unknown as { role?: string }).role;
+      } else {
+        throw fsErr;
+      }
+    }
+
     if (role !== 'admin') {
       return { ok: false, status: 403, error: 'Admin access required' };
     }

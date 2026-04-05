@@ -62,6 +62,8 @@ const SESSION_LABELS: Record<string, string> = {
   august: 'Августовска',
   march:  'Мартовска',
 };
+const SESSION_ORDER = ['june', 'august', 'march'];
+const LANG_ORDER    = ['mk', 'al', 'tr'];
 const LANG_FLAGS: Record<string, string> = { mk: 'МК', al: 'АЛ', tr: 'ТР' };
 const DURATION_SECONDS = 180 * 60; // 3 hours
 
@@ -287,6 +289,30 @@ export const MaturaSimulationView: React.FC = () => {
     } catch { return null; }
   }, []);
 
+  // ── Group exams by year → session → language ──────────────────────────────
+  const examsByYear = useMemo(() => {
+    const yearMap = new Map<number, Map<string, MaturaExamMeta[]>>();
+    for (const exam of exams) {
+      if (!yearMap.has(exam.year)) yearMap.set(exam.year, new Map());
+      const sessMap = yearMap.get(exam.year)!;
+      if (!sessMap.has(exam.session)) sessMap.set(exam.session, []);
+      sessMap.get(exam.session)!.push(exam);
+    }
+    return Array.from(yearMap.entries())
+      .sort(([a], [b]) => b - a)
+      .map(([year, sessMap]) => ({
+        year,
+        sessions: Array.from(sessMap.entries())
+          .sort(([a], [b]) => SESSION_ORDER.indexOf(a) - SESSION_ORDER.indexOf(b))
+          .map(([session, variants]) => ({
+            session,
+            variants: variants.sort(
+              (a, b) => LANG_ORDER.indexOf(a.language) - LANG_ORDER.indexOf(b.language)
+            ),
+          })),
+      }));
+  }, [exams]);
+
   // ── Timer ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'exam') return;
@@ -478,9 +504,9 @@ export const MaturaSimulationView: React.FC = () => {
         </div>
 
         {examsLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-3">
             {[1,2,3].map(i => (
-              <div key={i} className="h-44 bg-gray-100 rounded-2xl animate-pulse" />
+              <div key={i} className="h-16 bg-gray-100 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : exams.length === 0 ? (
@@ -490,14 +516,61 @@ export const MaturaSimulationView: React.FC = () => {
             <p className="text-sm text-gray-400 mt-2">Увезете ДИМ тестови за да започнете.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {exams.map(exam => (
-              <ExamCard
-                key={exam.id}
-                exam={exam}
-                pastResult={getPastResult(exam.id)}
-                onStart={() => startExam(exam)}
-              />
+          <div className="space-y-6">
+            {examsByYear.map(({ year, sessions }) => (
+              <div key={year} className="space-y-2">
+                {/* Year header */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-500">{year}</span>
+                  <div className="flex-1 h-px bg-slate-200" />
+                  <span className="text-xs text-slate-400">{sessions.reduce((n, s) => n + s.variants.length, 0)} верзии</span>
+                </div>
+                {/* Session rows */}
+                <div className="space-y-2">
+                  {sessions.map(({ session, variants }) => {
+                    const meta = variants[0];
+                    return (
+                      <div key={session} className="bg-white rounded-2xl border border-slate-200 px-4 py-3 flex items-center gap-4 hover:border-slate-300 transition-all">
+                        {/* Session label */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-800 text-sm">{SESSION_LABELS[session] ?? session} сесија</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{meta.questionCount} пр. · {meta.totalPoints} поени · 180 мин</p>
+                        </div>
+                        {/* Language variant pills */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {variants.map(exam => {
+                            const past = getPastResult(exam.id);
+                            const pct  = past ? Math.round((past.totalScore / past.maxScore) * 100) : null;
+                            const grade = pct !== null ? gradeFromPercent(pct) : null;
+                            return (
+                              <button
+                                key={exam.id}
+                                type="button"
+                                onClick={() => startExam(exam)}
+                                title={`Започни ${LANG_FLAGS[exam.language] ?? exam.language.toUpperCase()} верзија`}
+                                className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border transition group ${
+                                  grade
+                                    ? 'border-emerald-200 bg-emerald-50 hover:border-emerald-400'
+                                    : 'border-slate-200 bg-white hover:border-brand-primary hover:bg-brand-primary/5'
+                                }`}
+                              >
+                                <span className={`text-xs font-black ${grade ? 'text-emerald-700' : 'text-slate-700 group-hover:text-brand-primary'}`}>
+                                  {LANG_FLAGS[exam.language] ?? exam.language.toUpperCase()}
+                                </span>
+                                {pct !== null ? (
+                                  <span className="text-[10px] font-bold text-emerald-600">{pct}%</span>
+                                ) : (
+                                  <Play className="w-2.5 h-2.5 text-slate-400 group-hover:text-brand-primary" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </div>
         )}
