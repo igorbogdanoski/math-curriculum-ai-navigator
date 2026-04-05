@@ -20,6 +20,7 @@
       "prompts:list": "node scripts/hash-prompts.mjs --list",
     "matura:validate": "node scripts/validate-matura.mjs",
     "matura:import": "node scripts/import-matura.mjs",
+    "matura:import-all": "GOOGLE_APPLICATION_CREDENTIALS=./firebase-adminsdk-key.json node scripts/import-matura-all.mjs",
     "matura:enrich": "node scripts/enrich-matura.mjs",
     "preview": "vite preview",
     "test": "vitest run --reporter=verbose",
