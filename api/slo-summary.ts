@@ -77,11 +77,14 @@ async function authorizeAdmin(req: VercelRequest): Promise<{ ok: true } | { ok: 
     if (code === 'auth/id-token-expired') {
       return { ok: false, status: 401, error: 'Session expired — reload the page and try again' };
     }
+    if (code === 'auth/id-token-revoked' || code === 'auth/invalid-id-token') {
+      return { ok: false, status: 401, error: 'Authentication token is invalid — please sign in again' };
+    }
     if (code === 'auth/argument-error' || code === 'auth/invalid-credential') {
-      return { ok: false, status: 401, error: `Token validation failed (${code}) — check Firebase project ID matches service account` };
+      return { ok: false, status: 500, error: `Server token verification misconfigured (${code}) — check Firebase project ID and service account` };
     }
     const detail = err?.message ? ` — ${err.message.slice(0, 120)}` : '';
-    return { ok: false, status: 401, error: `Firebase token verification failed${detail}` };
+    return { ok: false, status: 500, error: `Firebase token verification failed${detail}` };
   }
 }
 

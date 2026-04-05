@@ -172,6 +172,7 @@ export const SLODashboardView: React.FC = () => {
   const [apiData, setApiData] = useState<SloAPISummary | null>(null);
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [apiAuthBlocked, setApiAuthBlocked] = useState(false);
   const [refreshedAt, setRefreshedAt] = useState<string>(new Date().toISOString());
   const [copied, setCopied] = useState(false);
 
@@ -218,16 +219,36 @@ export const SLODashboardView: React.FC = () => {
     setApiLoading(true);
     setApiError(null);
     try {
-      const token = await firebaseUser.getIdToken();
-      const res = await fetch('/api/slo-summary', {
+      let token = await firebaseUser.getIdToken();
+      let res = await fetch('/api/slo-summary', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => null);
-        throw new Error(payload?.error ?? `HTTP ${res.status}`);
+
+      // Retry once with a forced token refresh if the first request is unauthorized.
+      if (res.status === 401) {
+        token = await firebaseUser.getIdToken(true);
+        res = await fetch('/api/slo-summary', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
       }
+
+      if (!res.ok) {
+        const payload = await res.json().catch(async () => {
+          const text = await res.text().catch(() => '');
+          return text ? { error: text } : null;
+        });
+        const errMsg = typeof payload?.error === 'string' ? payload.error : `HTTP ${res.status}`;
+        if (res.status === 401 || res.status === 403) {
+          setApiAuthBlocked(true);
+        }
+        throw new Error(errMsg);
+      }
+
+      setApiAuthBlocked(false);
       const json: SloAPISummary = await res.json();
       setApiData(json);
     } catch (e) {
@@ -250,7 +271,7 @@ export const SLODashboardView: React.FC = () => {
   }, [authLoading, user, fetchApiData]);
 
   useEffect(() => {
-    if (authLoading || user?.role !== 'admin') return;
+    if (authLoading || user?.role !== 'admin' || apiAuthBlocked) return;
 
     const interval = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
@@ -260,9 +281,10 @@ export const SLODashboardView: React.FC = () => {
     }, 60000);
 
     return () => window.clearInterval(interval);
-  }, [authLoading, user, fetchApiData]);
+  }, [authLoading, user, fetchApiData, apiAuthBlocked]);
 
   const refresh = () => {
+    setApiAuthBlocked(false);
     setRefreshedAt(new Date().toISOString());
     void fetchApiData();
   };
@@ -375,6 +397,14 @@ export const SLODashboardView: React.FC = () => {
       {apiError && (
         <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Operational summary degraded: {apiError}
+          {apiAuthBlocked && (
+            <button
+              onClick={refresh}
+              className="ml-3 inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+            >
+              Повтори најава / refresh token
+            </button>
+          )}
         </div>
       )}
 
