@@ -376,6 +376,12 @@ Field 2: questionNumber (Ascending)
 - Додаден `Преземи PDF` action во `MaturaAnalyticsView`.
 - Export се генерира преку постоечкиот `downloadAsPdf()` helper (`html2canvas + jsPDF`) за конзистентен output.
 - PDF template вклучува KPI summary, weak concepts со recovery delta, mission status и recommended next steps.
+
+### M5.8 — Public Recovery Share Link ✅ [05.04.2026]
+- Додаден action `Копирај public линк` во `MaturaAnalyticsView`.
+- Link формат: `#/share/matura/:data` со encoded payload (read-only summary view).
+- Нов `SharedMaturaRecoveryView` прикажува KPI, weak concepts и mission status без најава.
+- Payload е валидиран преку Zod schema во `shareService` (`generate/decodeMaturaRecoveryShareData`).
 - UI за upload + валидирање на нов испит без CLI
 - Прикажи статистики по испит (успешност, топ-3 тешки прашања)
 - Editable correctAnswer / topic за грешки после публикација

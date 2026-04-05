@@ -1,11 +1,12 @@
 import React from 'react';
-import { BarChart3, CalendarDays, GraduationCap, Timer, Trophy, TrendingUp, BookOpen, Network, Share2, Download, Copy, CheckCheck } from 'lucide-react';
+import { BarChart3, CalendarDays, GraduationCap, Timer, Trophy, TrendingUp, BookOpen, Network, Share2, Download, Copy, CheckCheck, Link2 } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { Card } from '../components/common/Card';
 import { useMaturaStats } from '../hooks/useMaturaStats';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
 import { MissionPanel } from '../components/matura/MissionPanel';
 import { downloadAsPdf } from '../utils/pdfDownload';
+import { shareService } from '../services/shareService';
 
 function statTone(value: number, good: number, warn: number): 'green' | 'amber' | 'red' {
   if (value >= good) return 'green';
@@ -65,8 +66,34 @@ export const MaturaAnalyticsView: React.FC = () => {
   const stats = useMaturaStats();
   const missions = useMaturaMissions();
   const [copied, setCopied] = React.useState(false);
+  const [linkCopied, setLinkCopied] = React.useState(false);
   const [isPdfLoading, setIsPdfLoading] = React.useState(false);
   const pdfExportRef = React.useRef<HTMLDivElement>(null);
+
+  const buildRecoverySharePayload = React.useCallback(() => ({
+    generatedAt: new Date().toISOString(),
+    attempts: stats.attempts,
+    avgPct: stats.avgPct,
+    bestPct: stats.bestPct,
+    passRatePct: stats.passRatePct,
+    weakConcepts: stats.weakConcepts.slice(0, 8).map((item) => ({
+      title: item.concept.title,
+      pct: item.pct,
+      questions: item.questions,
+      delta: item.delta && item.delta.pctBefore !== null
+        ? item.delta.pctAfter - item.delta.pctBefore
+        : null,
+    })),
+    mission: missions.mission
+      ? {
+        sourceConceptTitle: missions.mission.sourceConceptTitle,
+        progressCompleted: missions.mission.days.filter((d) => d.status === 'completed').length,
+        progressTotal: missions.mission.days.length,
+        streakCount: missions.mission.streakCount,
+        badgeEarned: missions.mission.badgeEarned,
+      }
+      : null,
+  }), [stats, missions.mission]);
 
   const buildRecoverySummary = React.useCallback((): string => {
     const lines: string[] = [];
@@ -160,6 +187,16 @@ export const MaturaAnalyticsView: React.FC = () => {
     }
     handleCopySummary();
   }, [buildRecoverySummary, handleCopySummary]);
+
+  const handleCopyPublicLink = React.useCallback(() => {
+    const encoded = shareService.generateMaturaRecoveryShareData(buildRecoverySharePayload());
+    if (!encoded) return;
+    const link = `${window.location.origin}/#/share/matura/${encoded}`;
+    void navigator.clipboard.writeText(link).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2500);
+    });
+  }, [buildRecoverySharePayload]);
 
   const startRecoverySession = (payload: { topicArea?: string; dokLevel?: number; conceptId: string; conceptTitle: string; pctBefore: number }) => {
     // Snapshot current score so the practice session can compute delta
@@ -295,6 +332,13 @@ export const MaturaAnalyticsView: React.FC = () => {
             className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition inline-flex items-center gap-1.5 disabled:opacity-60"
           >
             <Download className="w-3.5 h-3.5" /> {isPdfLoading ? 'Се генерира PDF…' : 'Преземи PDF'}
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyPublicLink}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition inline-flex items-center gap-1.5"
+          >
+            {linkCopied ? <CheckCheck className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />} {linkCopied ? 'Линк копиран' : 'Копирај public линк'}
           </button>
         </div>
       </Card>

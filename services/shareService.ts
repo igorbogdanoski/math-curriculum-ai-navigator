@@ -50,6 +50,48 @@ const SharedQuizSchema = z.object({
   }))
 });
 
+const SharedMaturaRecoverySchema = z.object({
+  generatedAt: z.string(),
+  attempts: z.number(),
+  avgPct: z.number(),
+  bestPct: z.number(),
+  passRatePct: z.number(),
+  weakConcepts: z.array(z.object({
+    title: z.string(),
+    pct: z.number(),
+    questions: z.number(),
+    delta: z.number().nullable().optional(),
+  })),
+  mission: z.object({
+    sourceConceptTitle: z.string(),
+    progressCompleted: z.number(),
+    progressTotal: z.number(),
+    streakCount: z.number(),
+    badgeEarned: z.boolean(),
+  }).nullable().optional(),
+});
+
+export interface SharedMaturaRecoveryData {
+  generatedAt: string;
+  attempts: number;
+  avgPct: number;
+  bestPct: number;
+  passRatePct: number;
+  weakConcepts: Array<{
+    title: string;
+    pct: number;
+    questions: number;
+    delta?: number | null;
+  }>;
+  mission?: {
+    sourceConceptTitle: string;
+    progressCompleted: number;
+    progressTotal: number;
+    streakCount: number;
+    badgeEarned: boolean;
+  } | null;
+}
+
 export const shareService = {
   generateShareData(lessonPlan: LessonPlan): string {
     try {
@@ -161,6 +203,31 @@ export const shareService = {
       return parsed.data;
     } catch (error) {
       console.error("Error decoding quiz share data:", error);
+      return null;
+    }
+  },
+
+  generateMaturaRecoveryShareData(payload: SharedMaturaRecoveryData): string {
+    try {
+      const jsonString = JSON.stringify(payload);
+      return btoa(encodeURIComponent(jsonString));
+    } catch (error) {
+      console.error('Error generating matura recovery share data:', error);
+      return '';
+    }
+  },
+
+  decodeMaturaRecoveryShareData(data: string): SharedMaturaRecoveryData | null {
+    try {
+      const jsonString = decodeURIComponent(atob(data));
+      const parsed = SharedMaturaRecoverySchema.safeParse(JSON.parse(jsonString));
+      if (!parsed.success) {
+        console.error('Invalid matura recovery share data schema:', parsed.error.issues);
+        return null;
+      }
+      return parsed.data as SharedMaturaRecoveryData;
+    } catch (error) {
+      console.error('Error decoding matura recovery share data:', error);
       return null;
     }
   }
