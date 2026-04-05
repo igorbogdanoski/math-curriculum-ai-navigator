@@ -5,6 +5,18 @@ export interface VideoPreviewData {
   thumbnailUrl?: string;
   embedUrl: string;
   normalizedUrl: string;
+  videoId?: string;
+}
+
+export interface VideoCaptionsResult {
+  available: boolean;
+  transcript?: string;
+  lang?: string;
+  source?: 'auto' | 'manual';
+  charCount?: number;
+  truncated?: boolean;
+  availableLangs?: Array<{ lang: string; kind: string }>;
+  reason?: string;
 }
 
 function parseUrl(raw: string): URL | null {
@@ -47,7 +59,7 @@ function extractVimeoId(url: URL): string | null {
   return /^\d+$/.test(id) ? id : null;
 }
 
-export function normalizeSupportedVideoUrl(rawUrl: string): { provider: 'youtube' | 'vimeo'; normalizedUrl: string; embedUrl: string } | null {
+export function normalizeSupportedVideoUrl(rawUrl: string): { provider: 'youtube' | 'vimeo'; normalizedUrl: string; embedUrl: string; videoId?: string } | null {
   const parsed = parseUrl(rawUrl);
   if (!parsed) return null;
 
@@ -57,6 +69,7 @@ export function normalizeSupportedVideoUrl(rawUrl: string): { provider: 'youtube
       provider: 'youtube',
       normalizedUrl: `https://www.youtube.com/watch?v=${ytId}`,
       embedUrl: `https://www.youtube.com/embed/${ytId}`,
+      videoId: ytId,
     };
   }
 
@@ -95,5 +108,26 @@ export async function fetchVideoPreview(rawUrl: string): Promise<VideoPreviewDat
     thumbnailUrl: data.thumbnail_url,
     embedUrl: normalized.embedUrl,
     normalizedUrl: normalized.normalizedUrl,
+    videoId: 'videoId' in normalized ? (normalized as { videoId?: string }).videoId : undefined,
   };
+}
+
+/**
+ * Fetches the real transcript/captions for a YouTube video via our server
+ * endpoint /api/youtube-captions (no API key required on the client).
+ * Gracefully returns { available: false } on any failure.
+ */
+export async function fetchYouTubeCaptions(
+  videoId: string,
+  lang = 'mk',
+): Promise<VideoCaptionsResult> {
+  try {
+    const res = await fetch(
+      `/api/youtube-captions?videoId=${encodeURIComponent(videoId)}&lang=${encodeURIComponent(lang)}`,
+    );
+    if (!res.ok) return { available: false, reason: `HTTP ${res.status}` };
+    return (await res.json()) as VideoCaptionsResult;
+  } catch (err) {
+    return { available: false, reason: err instanceof Error ? err.message : 'Network error' };
+  }
 }

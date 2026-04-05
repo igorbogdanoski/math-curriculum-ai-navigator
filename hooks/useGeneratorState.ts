@@ -36,6 +36,7 @@ export interface GeneratorState {
     illustrationPrompt: string;
     videoUrl: string;
     videoPreview: VideoPreviewData | null;
+    videoTranscript: string | null;
     imageFile: { file: File, base64: string, previewUrl: string } | null;
     customInstruction: string;
     useMacedonianContext: boolean;
@@ -91,6 +92,7 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         illustrationPrompt: '',
         videoUrl: '',
         videoPreview: null,
+        videoTranscript: null,
         imageFile: null,
         customInstruction: '',
         useMacedonianContext: true,

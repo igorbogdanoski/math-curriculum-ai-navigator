@@ -408,15 +408,25 @@ export function useGeneratorActions({
             if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за Video Extractor');
             if (!state.videoUrl.trim()) throw new ValidationError('Видео URL', 'внесете валиден YouTube/Vimeo линк');
             {
-              const safeVideoUrl = sanitizePromptInput(state.videoUrl, 300);
-              const preview = state.videoPreview;
+              const safeVideoUrl   = sanitizePromptInput(state.videoUrl, 300);
+              const preview        = state.videoPreview;
+              const rawTranscript  = state.videoTranscript;
+
+              // Truncate transcript to fit safely in context (~6000 chars → ~1500 tokens)
+              const safeTranscript = rawTranscript
+                ? sanitizePromptInput(rawTranscript.slice(0, 6000), 6000)
+                : null;
+
               const videoContext = [
-                'Видео извор за екстракција:',
-                `- URL: ${safeVideoUrl}`,
-                preview?.title ? `- Наслов: ${sanitizePromptInput(preview.title, 180)}` : '',
-                preview?.authorName ? `- Автор/канал: ${sanitizePromptInput(preview.authorName, 120)}` : '',
-                'Инструкција: извлечи главни наставни идеи, креирај практичен план за час и предложи активности што не зависат од директно пуштање на видеото.',
+                '=== ВИДЕО ИЗВОР ===',
+                `URL: ${safeVideoUrl}`,
+                preview?.title     ? `Наслов: ${sanitizePromptInput(preview.title, 180)}`       : '',
+                preview?.authorName? `Канал:  ${sanitizePromptInput(preview.authorName, 120)}`  : '',
+                safeTranscript
+                  ? `\n=== ВИСТИНСКИ ТРАНСКРИПТ (извлечен од субтитли) ===\n${safeTranscript}\n=== КРАЈ НА ТРАНСКРИПТ ===\n\nИнструкција: анализирај го транскриптот погоре и извлечи ги математичките концепти, примери и чекори. Креирај детален план за час базиран на ВИСТИНСКАТА содржина на видеото.`
+                  : '\nИнструкција: нема достапен транскрипт — извлечи наставни идеи врз основа на наслов и тема.',
               ].filter(Boolean).join('\n');
+
               const combinedInstruction = [effectiveInstruction, videoContext].filter(Boolean).join('\n\n');
               result = await geminiService.generateLessonPlanIdeas(
                 finalContext.concepts || [],
