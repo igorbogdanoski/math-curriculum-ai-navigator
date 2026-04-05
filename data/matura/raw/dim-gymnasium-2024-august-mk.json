@@ -31,7 +31,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -55,7 +57,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -79,7 +83,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -103,7 +109,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -127,7 +135,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -151,7 +161,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -175,7 +187,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -199,7 +213,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -223,7 +239,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -247,7 +265,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -271,7 +292,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -295,7 +319,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -319,7 +346,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -343,7 +372,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -367,7 +399,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -386,7 +420,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -405,7 +441,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -424,7 +462,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -443,7 +483,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -462,7 +505,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -481,7 +526,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": "Воведува ознаки A, B, C. Користи формула |A∪B∪C| = |A|+|B|+|C|-|A∩B|-|A∩C|-|B∩C|+|A∩B∩C|. Добива 58 = 35+20+15-|A∩B|-|A∩C|-|B∩C|+3, односно |A∩B|+|A∩C|+|B∩C| = 15. Бројот на ученици со точно две петки е T = 15 - 3×3 = 6.",
       "successRatePercent": null
@@ -500,7 +547,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "hints": [],
       "aiSolution": "Пресметува z1·z2 = (2-i)(-2+i) = -3+4i. Одредува ō(z2) = -2-i. Пресметува (z1·z2)/ō(z2) = (-3+4i)/(-2-i) = (2-11i)/5. Заклучува Im = -11/5.",
       "successRatePercent": null
@@ -519,7 +568,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": "А. A(x) = 2x²-3x = x(2x-3). B(x) = (4x+7)(2x-3). Б. B(x)/A(x) = (4x+7)/x. В. A(-2)/B(-2) = (-2)/(-1) = 2.",
       "successRatePercent": null
@@ -538,7 +589,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": "Ја запишува равенката [(x - x/5)·3 - 0.4x] : (2/5) = 80. Добива (12x/5 - 2x/5) : (2/5) = 80, односно 2x = 32, x = 16.",
       "successRatePercent": null
@@ -557,7 +610,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": "Од Виетови формули: x1+x2 = 10/a, x1·x2 = 24/a. Од x1/x2 = 2/3 добива x1 = 4/a, x2 = 6/a. Заменува: (4/a)(6/a) = 24/a → a = 1.",
       "successRatePercent": null
@@ -576,7 +631,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "hints": [],
       "aiSolution": "Множи со 12: 4x²-3x-7 ≤ 0. Корени: x₁=-1, x₂=7/4. Решение: x ∈ [-1, 7/4]. Целобројни: {-1, 0, 1}.",
       "successRatePercent": null
@@ -595,7 +652,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": "a=2k, b=3k, c=4k. s=9k/2. По Херон: P = 3k²√15/4. r = P/s = k√15/6 = √15/2 → k=3. Страни: a=6, b=9, c=12 cm.",
       "successRatePercent": null
@@ -614,7 +674,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "V1 = 4R1³π/3 = 36π → R1 = 3 dm = 30 cm. P2 = 4R2²π = 400π → R2 = 10 cm. Однос: 30/10 = 3.",
       "successRatePercent": null
@@ -635,7 +698,10 @@
         "/matura/images/2024/august/q29-fig1.png"
       ],
       "imageDescription": "Правилна четириаголна пирамида со означена апотема h и агол 60° меѓу апотемата и основата.",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "cos60° = (a/2)/h → a=h. P = a²+2ah = 3a² = 108 → a=6, h=6 cm. H = √(h²-(a/2)²) = 3√3 cm. V = a²H/3 = 36√3 cm³.",
       "successRatePercent": null
@@ -654,7 +720,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "hints": [],
       "aiSolution": "L = sinα(1-2sin²α) / [cosα(2cos²α-1)]. Со 1=sin²α+cos²α: L = sinα(cos²α-sin²α) / [cosα(cos²α-sin²α)] = sinα/cosα = tgα. □",
       "successRatePercent": null

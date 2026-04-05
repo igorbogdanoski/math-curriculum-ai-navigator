@@ -31,7 +31,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -55,7 +57,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -79,7 +83,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -103,7 +109,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -127,7 +135,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -151,7 +161,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -175,7 +187,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -199,7 +213,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -223,7 +239,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -247,7 +265,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -271,7 +292,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -295,7 +319,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -319,7 +346,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -343,7 +372,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -367,7 +399,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -386,7 +420,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -405,7 +441,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -424,7 +462,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -443,7 +483,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -462,7 +505,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -481,7 +526,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -500,7 +547,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -519,7 +568,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -538,7 +589,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -557,7 +610,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -576,7 +631,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -595,7 +652,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -614,7 +674,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -633,7 +696,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -652,7 +718,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null

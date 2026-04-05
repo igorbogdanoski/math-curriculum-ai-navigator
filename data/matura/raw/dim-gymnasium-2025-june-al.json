@@ -28,7 +28,9 @@
       "correctAnswer": "Б",
       "topic": "Iskaze",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -49,7 +51,9 @@
       "correctAnswer": "В",
       "topic": "Shprehje numerike",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -70,7 +74,9 @@
       "correctAnswer": "В",
       "topic": "Proporcione",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -91,7 +97,9 @@
       "correctAnswer": "Г",
       "topic": "Polinome",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -112,7 +120,9 @@
       "correctAnswer": "Б",
       "topic": "Funksioni katror",
       "topicArea": "analiza",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "imageUrls": [
         "/matura/images/2025/june/q05-fig1.png"
       ],
@@ -135,7 +145,9 @@
       "correctAnswer": "В",
       "topic": "SHMPB i polinomeve",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -156,7 +168,9 @@
       "correctAnswer": "А",
       "topic": "Sistem barazimesh lineare",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -177,7 +191,9 @@
       "correctAnswer": "Г",
       "topic": "Barazime katrore (formulat e Vietës)",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -198,7 +214,9 @@
       "correctAnswer": "Б",
       "topic": "Jobarazime katrore",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -219,7 +237,9 @@
       "correctAnswer": "А",
       "topic": "Segmente",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -240,7 +260,10 @@
       "correctAnswer": "В",
       "topic": "Planimetri - Trekëndëshi barabrinjës",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -261,7 +284,9 @@
       "correctAnswer": "Г",
       "topic": "Këndet në rreth",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -282,7 +307,10 @@
       "correctAnswer": "Б",
       "topic": "Stereometri - Cilindri",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -303,7 +331,10 @@
       "correctAnswer": "Б",
       "topic": "Stereometri - Prizmi",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -324,7 +355,9 @@
       "correctAnswer": "А",
       "topic": "Shprehje trigonometrike",
       "topicArea": "trigonometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -340,7 +373,9 @@
       "correctAnswer": "A. $M=\\{3,5,7,9\\}$, B. $B=\\{3,5,6,8\\}$",
       "topic": "Bashkësi",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -356,7 +391,9 @@
       "correctAnswer": "A. $z=-3-2i$, B. $11+2\\sqrt{2}-i$",
       "topic": "Numra kompleks",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -372,7 +409,9 @@
       "correctAnswer": "A. $64$, B. $-\\frac{27}{20}$",
       "topic": "Fuqi dhe funksione",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -388,7 +427,9 @@
       "correctAnswer": "A. $200$, B. $16$",
       "topic": "Planimetri - Katërkëndësha",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -404,7 +445,9 @@
       "correctAnswer": "A. $\\alpha = 62^{\\circ}$, B. $\\text{ctg}\\,\\alpha = \\frac{8}{15}$",
       "topic": "Trigonometria e trekëndëshit kënddrejtë",
       "topicArea": "trigonometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -420,7 +463,9 @@
       "correctAnswer": "Tautologji. (Kolona e fundit e tabelës së vërtetësisë është $\\top,\\top,\\top,\\top$.)",
       "topic": "Logjika e gjykimeve",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -436,7 +481,9 @@
       "correctAnswer": "$M=2000$",
       "topic": "Shprehje numerike dhe përqindje",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -452,7 +499,9 @@
       "correctAnswer": "$x \\in (-\\infty, 1) \\cup \\left[\\frac{4}{3}, +\\infty\\right)$",
       "topic": "Jobarazime me thyesa",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -468,7 +517,9 @@
       "correctAnswer": "$\\dfrac{a-x}{8x^2}$",
       "topic": "Thyesa algjebrike",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -484,7 +535,9 @@
       "correctAnswer": "$864$",
       "topic": "Barazime lineare me një të panjohur",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -500,7 +553,9 @@
       "correctAnswer": "$k_1=3,\\quad k_2=\\dfrac{1}{2}$",
       "topic": "Barazime katrore dhe diskriminanti",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -516,7 +571,10 @@
       "correctAnswer": "$160\\text{ cm}^2$",
       "topic": "Planimetri - Drejtkëndëshi",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -532,7 +590,10 @@
       "correctAnswer": "$800\\text{ cm}^2$",
       "topic": "Stereometri - Piramida",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -548,7 +609,10 @@
       "correctAnswer": "$72\\text{ cm}$",
       "topic": "Stereometri - Cilindri dhe koni",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -564,7 +628,9 @@
       "correctAnswer": "E vërtetuar: numëruesi $= 2(1-\\sin\\alpha)$, emëruesi $= -2\\sin\\alpha(1-\\sin\\alpha)$, pra thyesa $= -\\frac{1}{\\sin\\alpha}$.",
       "topic": "Identitete trigonometrike",
       "topicArea": "trigonometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,

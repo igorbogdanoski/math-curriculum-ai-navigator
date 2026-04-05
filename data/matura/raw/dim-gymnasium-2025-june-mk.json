@@ -28,7 +28,9 @@
       "correctAnswer": "Б",
       "topic": "Искази",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -49,7 +51,9 @@
       "correctAnswer": "В",
       "topic": "Бројни изрази",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -70,7 +74,9 @@
       "correctAnswer": "В",
       "topic": "Пропорции",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -91,7 +97,9 @@
       "correctAnswer": "Г",
       "topic": "Полиноми",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -112,7 +120,9 @@
       "correctAnswer": "Б",
       "topic": "Квадратна функција",
       "topicArea": "analiza",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "imageUrls": [
         "/matura/images/2025/june/q05-fig1.png"
       ],
@@ -135,7 +145,9 @@
       "correctAnswer": "В",
       "topic": "НЗД на полиноми",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -156,7 +168,9 @@
       "correctAnswer": "А",
       "topic": "Систем линеарни равенки",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -177,7 +191,9 @@
       "correctAnswer": "Г",
       "topic": "Квадратни равенки (Виетови формули)",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -198,7 +214,9 @@
       "correctAnswer": "Б",
       "topic": "Квадратни неравенки",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -219,7 +237,9 @@
       "correctAnswer": "А",
       "topic": "Отсечки",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -240,7 +260,10 @@
       "correctAnswer": "В",
       "topic": "Планиметрија - Рамностран триаголник",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -261,7 +284,9 @@
       "correctAnswer": "Г",
       "topic": "Агли во кружница",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -282,7 +307,10 @@
       "correctAnswer": "Б",
       "topic": "Стереометрија - Цилиндар",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -303,7 +331,10 @@
       "correctAnswer": "Б",
       "topic": "Стереометрија - Призма",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -324,7 +355,9 @@
       "correctAnswer": "А",
       "topic": "Тригонометриски изрази",
       "topicArea": "trigonometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -340,7 +373,9 @@
       "correctAnswer": "А. $M=\\{3,5,7,9\\}$, Б. $B=\\{3,5,6,8\\}$",
       "topic": "Множества",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -356,7 +391,9 @@
       "correctAnswer": "А. $z=-3-2i$, Б. $11+2\\sqrt{2}-i$",
       "topic": "Комплексни броеви",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -372,7 +409,9 @@
       "correctAnswer": "А. $64$, Б. $-\\frac{27}{20}$",
       "topic": "Степени и функции",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -388,7 +427,9 @@
       "correctAnswer": "А. $200$, Б. $16$",
       "topic": "Планиметрија - Четириаголници",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -404,7 +445,9 @@
       "correctAnswer": "А. $\\alpha = 62^{\\circ}$, Б. $\\text{ctg}\\,\\alpha = \\frac{8}{15}$",
       "topic": "Тригонометрија на правоаголен триаголник",
       "topicArea": "trigonometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -420,7 +463,9 @@
       "correctAnswer": "Тавтологија. (Крајната колона во вистинитосната таблица е $\\top,\\top,\\top,\\top$.)",
       "topic": "Исказна логика",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -436,7 +481,9 @@
       "correctAnswer": "$M=2000$",
       "topic": "Бројни изрази и проценти",
       "topicArea": "broevi",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -452,7 +499,9 @@
       "correctAnswer": "$x \\in (-\\infty, 1) \\cup \\left[\\frac{4}{3}, +\\infty\\right)$",
       "topic": "Неравенки со дропки",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -468,7 +517,9 @@
       "correctAnswer": "$\\dfrac{a-x}{8x^2}$",
       "topic": "Алгебарски дропки",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -484,7 +535,9 @@
       "correctAnswer": "$864$",
       "topic": "Линеарни равенки со една непозната",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -500,7 +553,9 @@
       "correctAnswer": "$k_1=3,\\quad k_2=\\dfrac{1}{2}$",
       "topic": "Квадратни равенки и дискриминанта",
       "topicArea": "algebra",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -516,7 +571,10 @@
       "correctAnswer": "$160\\text{ cm}^2$",
       "topic": "Планиметрија - Правоаголник",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -532,7 +590,10 @@
       "correctAnswer": "$800\\text{ cm}^2$",
       "topic": "Стереометрија - Пирамида",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -548,7 +609,10 @@
       "correctAnswer": "$72\\text{ cm}$",
       "topic": "Стереометрија - Цилиндар и конус",
       "topicArea": "geometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -564,7 +628,9 @@
       "correctAnswer": "Докажано: броителот = $2(1-\\sin\\alpha)$, именителот = $-2\\sin\\alpha(1-\\sin\\alpha)$, па дропката = $-\\frac{1}{\\sin\\alpha}$.",
       "topic": "Тригонометриски идентитети",
       "topicArea": "trigonometrija",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,

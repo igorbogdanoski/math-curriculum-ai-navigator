@@ -31,7 +31,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -55,7 +57,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -79,7 +83,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -103,7 +109,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -127,7 +135,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -151,7 +161,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -175,7 +187,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -199,7 +213,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -223,7 +239,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -247,7 +265,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -271,7 +292,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -295,7 +318,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -319,7 +344,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -343,7 +371,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -367,7 +398,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -386,7 +419,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": "А. Од формулата $|A \\cup B| = |A| + |B| - |A \\cap B|$ добиваме $50 = 28 + 32 - |A \\cap B|$, од каде $|A \\cap B| = 10$. Б. Прво намалување: $200 - 0.10 \\cdot 200 = 180$. Потоа зголемување: $180 + 0.10 \\cdot 180 = 180 + 18 = 198$ денари.",
       "successRatePercent": null
@@ -405,7 +440,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "hints": [],
       "aiSolution": "А. $f(-1) = 0 \\Rightarrow 2k(-1)^2 - 3(-1) + 8k = 0 \\Rightarrow 2k + 3 + 8k = 0 \\Rightarrow 10k = -3 \\Rightarrow k = -\\frac{3}{10}$. Б. Темето на параболата е во $x = -\\frac{b}{2a} = \\frac{3}{4k}$. За да биде монотоно опаѓачка за $x \\ge 2$, темето мора да биде во $x=2$, па $\\frac{3}{4k} = 2 \\Rightarrow k = \\frac{3}{8}$. Но, бидејќи е опаѓачка, параболата е свртена надолу ($k<0$), па $k = -\\frac{3}{8}$. Условот допира $x$-оска значи $D=0 \\Rightarrow 9 - 64k^2 = 0$, што не се совпаѓа. Според клучот, $x_T = 2 \\Rightarrow -\\frac{-3}{4k} = 2 \\Rightarrow k = \\frac{3}{8}$? Не, клучот вели $k = -\\frac{3}{8}$. Да провериме: $D=0 \\Rightarrow 9 - 4(2k)(8k) = 0 \\Rightarrow 9 - 64k^2 = 0 \\Rightarrow k^2 = \\frac{9}{64} \\Rightarrow k = \\pm \\frac{3}{8}$. За да биде опаѓачка за $x \\ge 2$, $a < 0 \\Rightarrow k < 0$. Значи $k = -\\frac{3}{8}$.",
       "successRatePercent": null
@@ -424,7 +461,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": "А. $xy(y-1)(y+1) + (x-y)^2 = xy(y^2-1) + x^2 - 2xy + y^2 = xy^3 - xy + x^2 - 2xy + y^2 = xy^3 - 3xy + x^2 + y^2$. Коефициентот пред $xy$ е $-3$. Б. $\\frac{a-b}{a+b} = \\frac{1}{2} \\Rightarrow 2a - 2b = a + b \\Rightarrow a = 3b$. Бараме $\\frac{a}{b} + \\frac{b}{a} = \\frac{3b}{b} + \\frac{b}{3b} = 3 + \\frac{1}{3} = \\frac{10}{3}$.",
       "successRatePercent": null
@@ -443,7 +482,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "А. $P = r \\cdot s$, каде $s = \\frac{L}{2} = \\frac{16}{2} = 8$. $48 = r \\cdot 8 \\Rightarrow r = 6\\text{ cm}$. Б. Со ротација се добиваат два споени конуси со заедничка основа. Радиусот на основата е $r = \\frac{16}{2} = 8\\text{ cm}$, а висините се $H_1 + H_2 = 6\\text{ cm}$. Волуменот е $V = \\frac{1}{3}r^2\\pi H_1 + \\frac{1}{3}r^2\\pi H_2 = \\frac{1}{3}r^2\\pi(H_1+H_2) = \\frac{1}{3} \\cdot 8^2 \\pi \\cdot 6 = 128\\pi\\text{ cm}^3$.",
       "successRatePercent": null
@@ -462,7 +504,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
       "hints": [],
       "aiSolution": "А. Триаголникот формиран од дијаметарот и тетивата е правоаголен (аголот над дијаметарот е $90^\\circ$). Тетивата е $R$, хипотенузата е $2R$. $\\sin\\alpha = \\frac{R}{2R} = \\frac{1}{2} \\Rightarrow \\alpha = 30^\\circ$. Аголот меѓу дијаметарот и тетивата е $\\cos\\beta = \\frac{R}{2R} = \\frac{1}{2} \\Rightarrow \\beta = 60^\\circ$. Б. $\\cos 38^\\circ \\cos 52^\\circ - \\sin 38^\\circ \\sin 52^\\circ = \\cos(38^\\circ + 52^\\circ) = \\cos 90^\\circ = 0$.",
       "successRatePercent": null
@@ -481,7 +525,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": "А. $p: (2 - \\frac{1}{3})^{-2} = (\\frac{5}{3})^{-2} = \\frac{9}{25} \\neq -\\frac{25}{9}$, па $\\tau(p) = \\bot$. $q: 2$ е прост број, па $\\tau(q) = \\bot$. Б. $\\tau(\\neg p \\Rightarrow q \\lor p) = \\tau(\\top \\Rightarrow \\bot \\lor \\bot) = \\tau(\\top \\Rightarrow \\bot) = \\bot$.",
       "successRatePercent": null
@@ -500,7 +546,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "hints": [],
       "aiSolution": "Прв начин: $a+bi = \\frac{x^2-1+2xi}{2x^2+1} = \\frac{x^2-1}{2x^2+1} + i\\frac{2x}{2x^2+1}$. $a^2+b^2 = \\left(\\frac{x^2-1}{2x^2+1}\\right)^2 + \\left(\\frac{2x}{2x^2+1}\\right)^2 = \\frac{x^4-2x^2+1+4x^2}{(2x^2+1)^2} = \\frac{(x^2+1)^2}{(2x^2+1)^2}$. Втор начин: $a^2+b^2 = |a+bi|^2 = \\left| \\frac{(x+i)^2}{2x^2+1} \\right|^2 = \\frac{|x+i|^4}{(2x^2+1)^2} = \\frac{(\\sqrt{x^2+1})^4}{(2x^2+1)^2} = \\frac{(x^2+1)^2}{(2x^2+1)^2}$.",
       "successRatePercent": null
@@ -519,7 +567,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": "Изразот во заградата: $\\frac{a^2+a+1}{(a-1)(a+1)} \\cdot \\frac{a^3+1}{a(a^3-1)} + \\frac{1}{a-1} = \\frac{a^2+a+1}{(a-1)(a+1)} \\cdot \\frac{(a+1)(a^2-a+1)}{a(a-1)(a^2+a+1)} + \\frac{1}{a-1} = \\frac{a^2-a+1}{a(a-1)^2} + \\frac{1}{a-1} = \\frac{a^2-a+1+a(a-1)}{a(a-1)^2} = \\frac{2a^2-2a+1}{a(a-1)^2}$. Множиме со втората дропка: $\\frac{2a^2-2a+1}{a(a-1)^2} \\cdot \\frac{a(a-1)^2}{2a^2-2a+1} = 1$.",
       "successRatePercent": null
@@ -538,7 +588,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "hints": [],
       "aiSolution": "Оска на симетрија $x=2 \\Rightarrow -\\frac{p}{2} = 2 \\Rightarrow p = -4$. Множество вредности $V_f = [-1, \\infty) \\Rightarrow y_T = -1$. $f(2) = -1 \\Rightarrow 2^2 - 4(2) + q = -1 \\Rightarrow 4 - 8 + q = -1 \\Rightarrow q = 3$. Функцијата е $f(x) = x^2 - 4x + 3$.",
       "successRatePercent": null
@@ -557,7 +609,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": "Прва неравенка: $\\frac{3x-1}{2} \\le 1-x \\Rightarrow 3x-1 \\le 2-2x \\Rightarrow 5x \\le 3 \\Rightarrow x \\le \\frac{3}{5}$. Втора неравенка: $x < 2x - \\frac{1}{3} \\Rightarrow -x < -\\frac{1}{3} \\Rightarrow x > \\frac{1}{3}$. Решение на системот е пресекот: $x \\in (\\frac{1}{3}, \\frac{3}{5}]$.",
       "successRatePercent": null
@@ -576,7 +630,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": "Нека $x$ е бројот на работници. Равенката е $\\frac{200}{x} + 15 = \\frac{200}{x-3}$. Множиме со $x(x-3)$: $200(x-3) + 15x(x-3) = 200x \\Rightarrow 200x - 600 + 15x^2 - 45x = 200x \\Rightarrow 15x^2 - 45x - 600 = 0 \\Rightarrow x^2 - 3x - 40 = 0$. Корени се $x_1 = 8, x_2 = -5$. Бидејќи бројот на работници мора да е позитивен, $x = 8$.",
       "successRatePercent": null
@@ -595,7 +651,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": "Рамнокрак триаголник со крак $b=25$ и периметар $L=64$. Основата е $a = L - 2b = 64 - 50 = 14\\text{ cm}$. Висината кон основата е $h = \\sqrt{b^2 - (a/2)^2} = \\sqrt{25^2 - 7^2} = \\sqrt{625 - 49} = \\sqrt{576} = 24\\text{ cm}$. Плоштината е $P = \\frac{a \\cdot h}{2} = \\frac{14 \\cdot 24}{2} = 168\\text{ cm}^2$.",
       "successRatePercent": null
@@ -614,7 +673,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Плоштина на основата $B = \\frac{a^2\\sqrt{3}}{4} = \\frac{64\\sqrt{3}}{4} = 16\\sqrt{3}$. Плоштина на призмата $P = 2B + M \\Rightarrow 560\\sqrt{3} = 32\\sqrt{3} + M \\Rightarrow M = 528\\sqrt{3}$. Бочната плоштина е $M = 3aH \\Rightarrow 528\\sqrt{3} = 24H \\Rightarrow H = 22\\sqrt{3}$. Волуменот е $V = B \\cdot H = 16\\sqrt{3} \\cdot 22\\sqrt{3} = 16 \\cdot 22 \\cdot 3 = 1056$.",
       "successRatePercent": null
@@ -633,7 +695,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Рамностран цилиндар: $H = 2R = 20$. Плоштина $P_{cil} = 2R^2\\pi + 2R\\pi H = 2(100)\\pi + 2(10)\\pi(20) = 200\\pi + 400\\pi = 600\\pi$. Рамностран конус: $s = 2r$. Плоштина $P_{kon} = r^2\\pi + r\\pi s = r^2\\pi + 2r^2\\pi = 3r^2\\pi$. Од $P_{cil} = P_{kon}$ следи $600\\pi = 3r^2\\pi \\Rightarrow r^2 = 200 \\Rightarrow r = 10\\sqrt{2}\\text{ cm}$. Изводницата е $s = 2r = 20\\sqrt{2}\\text{ cm}$.",
       "successRatePercent": null
@@ -652,7 +717,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "hints": [],
       "aiSolution": "$L = 1 - \\frac{\\sin^2\\alpha}{1+\\frac{\\cos\\alpha}{\\sin\\alpha}} - \\frac{\\cos^2\\alpha}{1+\\frac{\\sin\\alpha}{\\cos\\alpha}} = 1 - \\frac{\\sin^3\\alpha}{\\sin\\alpha+\\cos\\alpha} - \\frac{\\cos^3\\alpha}{\\cos\\alpha+\\sin\\alpha} = 1 - \\frac{\\sin^3\\alpha+\\cos^3\\alpha}{\\sin\\alpha+\\cos\\alpha} = 1 - \\frac{(\\sin\\alpha+\\cos\\alpha)(\\sin^2\\alpha-\\sin\\alpha\\cos\\alpha+\\cos^2\\alpha)}{\\sin\\alpha+\\cos\\alpha} = 1 - (1 - \\sin\\alpha\\cos\\alpha) = \\sin\\alpha\\cos\\alpha = D$.",
       "successRatePercent": null
