@@ -196,6 +196,7 @@ export const SettingsView: React.FC = () => {
     const handleClearShadowLog = () => {
         clearShadowLog();
         setShadowReport(null);
+        addNotification('Shadow log е исчистен.', 'success');
     };
 
     const toggleMentor = async () => {

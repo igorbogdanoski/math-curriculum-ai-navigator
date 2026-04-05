@@ -129,13 +129,19 @@ export function getShadowCompareReport(): ShadowCompareReport {
   // This is a rough heuristic for the spike report; actual billing requires server-side data.
   const vertexRelativeCost = successEntries.length > 0 ? 1.10 : null;
 
+  // Configured calls = calls where the endpoint was reachable (excludes not_configured stubs).
+  // Error rate and success rate are computed only against configured calls so that
+  // a 501 stub response (not_configured) does not inflate the error ratio.
+  const configuredCalls = log.filter(e => e.vertexStatus !== 'not_configured');
+  const configuredCount = configuredCalls.length;
+
   return {
     sampleSize: log.length,
     geminiAvgLatencyMs: geminiAvg,
     vertexAvgLatencyMs: vertexAvg,
-    vertexSuccessRate: successEntries.length / log.length,
+    vertexSuccessRate: configuredCount > 0 ? successEntries.length / configuredCount : 0,
     vertexNotConfiguredRate: notConfigured.length / log.length,
-    vertexErrorRate: errorEntries.length / log.length,
+    vertexErrorRate: configuredCount > 0 ? errorEntries.length / configuredCount : 0,
     vertexRelativeCost,
   };
 }

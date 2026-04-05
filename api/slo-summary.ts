@@ -2,16 +2,78 @@
  * /api/slo-summary — L1 SLO data aggregation endpoint.
  *
  * Returns CI reliability data (GitHub Actions) + production health (Sentry).
- * Gracefully degrades when tokens are not configured — returns { available: false }.
+ * Protected: admin-only via Firebase ID token + Firestore role check.
+ * Gracefully degrades when vendor tokens are not configured — returns { available: false }.
  *
- * Response is cached for 1 hour via Cache-Control.
+ * Response is cached briefly for ops freshness.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
-function setCors(res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+function getAllowedOrigins(): string[] {
+  const configured = (process.env.ALLOWED_ORIGIN ?? '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set([
+    'https://ai.mismath.net',
+    'https://math-curriculum-ai-navigator.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:4173',
+    ...configured,
+  ]));
+}
+
+function setCors(req: VercelRequest, res: VercelResponse) {
+  const origin = req.headers.origin;
+  if (origin && getAllowedOrigins().includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
+function getFirebaseAdmin() {
+  if (getApps().length === 0) {
+    const sa = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
+    if (!sa) return null;
+    try {
+      const decoded = sa.trim().startsWith('{') ? sa : Buffer.from(sa, 'base64').toString('utf8');
+      initializeApp({ credential: cert(JSON.parse(decoded)) });
+    } catch {
+      return null;
+    }
+  }
+
+  return { auth: getAuth(), db: getFirestore() };
+}
+
+async function authorizeAdmin(req: VercelRequest): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { ok: false, status: 401, error: 'Missing Authorization header' };
+  }
+
+  const admin = getFirebaseAdmin();
+  if (!admin) {
+    return { ok: false, status: 500, error: 'Server authentication configuration error' };
+  }
+
+  try {
+    const decoded = await admin.auth.verifyIdToken(authHeader.slice(7), false);
+    const userSnap = await admin.db.collection('users').doc(decoded.uid).get();
+    const role = userSnap.data()?.role;
+    if (role !== 'admin') {
+      return { ok: false, status: 403, error: 'Admin access required' };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, status: 401, error: 'Invalid or expired authentication token' };
+  }
 }
 
 // ─── GitHub Actions CI data ───────────────────────────────────────────────────
@@ -95,62 +157,66 @@ async function fetchSentryHealth(): Promise<SentryHealthData> {
 
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const base = `https://sentry.io/api/0/projects/${org}/${project}`;
+  const emptyResult = { available: false, unresolvedIssues: null, totalEvents: null, unclassifiedRatio: null, topErrors: [], periodDays: 14 } as const;
 
   try {
-    const issuesRes = await fetch(
-      `${base}/issues/?query=is:unresolved&statsPeriod=${period}&limit=100`,
-      { headers }
-    );
-    if (!issuesRes.ok) return { available: false, unresolvedIssues: null, totalEvents: null, unclassifiedRatio: null, topErrors: [], periodDays: 14 };
+    // Parallel: all unresolved + unclassified (no app_error_code tag) + tag value breakdown
+    // NOTE: The Sentry Issues list API returns tags as {key, totalValues} WITHOUT value — so we
+    // must use Sentry's query engine (!has:) for the ratio and the Tags Values API for topErrors.
+    const [allRes, unclassRes, tagValRes] = await Promise.all([
+      fetch(`${base}/issues/?query=is%3Aunresolved&statsPeriod=${period}&limit=100`, { headers }),
+      fetch(`${base}/issues/?query=is%3Aunresolved%20%21has%3Aapp_error_code&statsPeriod=${period}&limit=100`, { headers }),
+      fetch(`${base}/tags/app_error_code/values/?statsPeriod=${period}&limit=20`, { headers }),
+    ]);
 
-    const issues = await issuesRes.json() as { title: string; count: string; tags?: { key: string; value: string }[] }[];
+    if (!allRes.ok) return emptyResult;
 
-    const unresolvedIssues = issues.length;
-    const totalEvents = issues.reduce((s, i) => s + parseInt(i.count ?? '0', 10), 0);
+    const allIssues = await allRes.json() as { count: string }[];
+    const unresolvedIssues = allIssues.length;
+    const totalEvents = allIssues.reduce((s, i) => s + parseInt(i.count ?? '0', 10), 0);
 
-    // Count UNCLASSIFIED (no app_error_code tag or tag = 'UNKNOWN')
-    let classifiedCount = 0;
+    // Unclassified: events from issues that have NO app_error_code tag at all
     let unclassifiedCount = 0;
-    for (const issue of issues) {
-      const count = parseInt(issue.count ?? '0', 10);
-      const hasCode = Array.isArray(issue.tags) && issue.tags.some(
-        t => t.key === 'app_error_code' && t.value && t.value !== 'UNKNOWN'
-      );
-      if (hasCode) classifiedCount += count;
-      else unclassifiedCount += count;
+    if (unclassRes.ok) {
+      const unclassIssues = await unclassRes.json() as { count: string }[];
+      unclassifiedCount = unclassIssues.reduce((s, i) => s + parseInt(i.count ?? '0', 10), 0);
     }
+
     const unclassifiedRatio = totalEvents > 0 ? unclassifiedCount / totalEvents : null;
 
-    // Top errors by count
-    const errorMap = new Map<string, number>();
-    for (const issue of issues) {
-      const count = parseInt(issue.count ?? '0', 10);
-      const codeTag = Array.isArray(issue.tags) ? issue.tags.find(t => t.key === 'app_error_code') : undefined;
-      const code = codeTag?.value ?? 'UNKNOWN';
-      errorMap.set(code, (errorMap.get(code) ?? 0) + count);
+    // Top errors from the tag-values endpoint (accurate per-value counts)
+    let topErrors: { code: string; count: number }[] = [];
+    if (tagValRes.ok) {
+      const tagValues = await tagValRes.json() as { value: string; count: number }[];
+      topErrors = (Array.isArray(tagValues) ? tagValues : [])
+        .filter(v => v.value && v.value !== 'UNKNOWN')
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+        .map(v => ({ code: v.value, count: v.count }));
     }
-    const topErrors = Array.from(errorMap.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([code, count]) => ({ code, count }));
 
     const periodDays = parseInt(period.replace('d', ''), 10) || 14;
     return { available: true, unresolvedIssues, totalEvents, unclassifiedRatio, topErrors, periodDays };
   } catch {
-    return { available: false, unresolvedIssues: null, totalEvents: null, unclassifiedRatio: null, topErrors: [], periodDays: 14 };
+    return emptyResult;
   }
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
+  const authz = await authorizeAdmin(req);
+  if (!authz.ok) {
+    return res.status(authz.status).json({ error: authz.error });
+  }
+
   const [ci, sentry] = await Promise.all([fetchCIReliability(), fetchSentryHealth()]);
 
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=300');
+  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
   return res.status(200).json({
     generatedAt: new Date().toISOString(),
     ci,

@@ -20,6 +20,8 @@ import {
   Activity, RefreshCw, Download, CheckCircle2, AlertTriangle, XCircle,
   Zap, ShieldCheck, GitMerge, Server, Clock, TrendingUp,
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigation } from '../contexts/NavigationContext';
 import { getShadowLog, getShadowCompareReport } from '../services/gemini/vertexShadow';
 import { getRouterStats } from '../services/gemini/intentRouter';
 import { getQuotaDiagnostics } from '../services/gemini/core';
@@ -52,7 +54,7 @@ interface SloAPISummary {
 
 const SLO_THRESHOLDS = {
   aiP95LatencyMs:   { green: 3000,  amber: 6000  }, // p95 <3s green, <6s amber
-  aiErrorRatePct:   { green: 2,     amber: 5     }, // <2% green, <5% amber
+  aiErrorRatePct:   { green: 1,     amber: 3     }, // <=1% green, <=3% amber
   ciPassRatePct:    { green: 95,    amber: 80    }, // ≥95% green, ≥80% amber
   unclassifiedPct:  { green: 15,    amber: 30    }, // <15% green, <30% amber
 } as const;
@@ -165,6 +167,8 @@ const Metric: React.FC<{
 // ─── Main View ────────────────────────────────────────────────────────────────
 
 export const SLODashboardView: React.FC = () => {
+  const { user, firebaseUser, isLoading: authLoading } = useAuth();
+  const { navigate } = useNavigation();
   const [apiData, setApiData] = useState<SloAPISummary | null>(null);
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -205,11 +209,25 @@ export const SLODashboardView: React.FC = () => {
 
   // ── Server-side metrics ──────────────────────────────────────────────────────
   const fetchApiData = useCallback(async () => {
+    if (!firebaseUser) {
+      setApiError('Потребна е најава за operational summary.');
+      setApiLoading(false);
+      return;
+    }
+
     setApiLoading(true);
     setApiError(null);
     try {
-      const res = await fetch('/api/slo-summary');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch('/api/slo-summary', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error ?? `HTTP ${res.status}`);
+      }
       const json: SloAPISummary = await res.json();
       setApiData(json);
     } catch (e) {
@@ -217,14 +235,50 @@ export const SLODashboardView: React.FC = () => {
     } finally {
       setApiLoading(false);
     }
-  }, []);
+  }, [firebaseUser]);
 
-  useEffect(() => { void fetchApiData(); }, [fetchApiData]);
+  useEffect(() => {
+    if (!authLoading && user?.role !== 'admin') {
+      navigate('/');
+    }
+  }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (!authLoading && user?.role === 'admin') {
+      void fetchApiData();
+    }
+  }, [authLoading, user, fetchApiData]);
+
+  useEffect(() => {
+    if (authLoading || user?.role !== 'admin') return;
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        setRefreshedAt(new Date().toISOString());
+        void fetchApiData();
+      }
+    }, 60000);
+
+    return () => window.clearInterval(interval);
+  }, [authLoading, user, fetchApiData]);
 
   const refresh = () => {
     setRefreshedAt(new Date().toISOString());
     void fetchApiData();
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+        <p className="text-sm font-medium text-gray-500">Се проверува operational пристап…</p>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'admin') {
+    return null;
+  }
 
   // CI Reliability derived
   const ciPassRate   = apiData?.ci.passRate ?? null;
@@ -282,7 +336,7 @@ export const SLODashboardView: React.FC = () => {
         <Activity className="w-6 h-6 text-indigo-600" />
         <div>
           <h1 className="text-xl font-black text-gray-900">SLO Dashboard</h1>
-          <p className="text-xs text-gray-500">Reliability Service Level Objectives — Admin only</p>
+          <p className="text-xs text-gray-500">Reliability Service Level Objectives — Admin only · auto-refresh 60s</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -317,6 +371,12 @@ export const SLODashboardView: React.FC = () => {
           </div>
         );
       })()}
+
+      {apiError && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Operational summary degraded: {apiError}
+        </div>
+      )}
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -355,7 +415,7 @@ export const SLODashboardView: React.FC = () => {
             label="Shadow error rate"
             value={fmt(aiErrorRatePct, 1, '%')}
             status={aiErrorStatus}
-            sub={`SLO: <${SLO_THRESHOLDS.aiErrorRatePct.green}%`}
+            sub={`SLO: ≤${SLO_THRESHOLDS.aiErrorRatePct.green}%`}
           />
           <Metric label="Shadow success rate" value={fmt(shadowReport.vertexSuccessRate * 100, 1, '%')} />
           <Metric label="Not configured rate" value={fmt(shadowReport.vertexNotConfiguredRate * 100, 1, '%')} />
@@ -457,7 +517,7 @@ export const SLODashboardView: React.FC = () => {
           <div className="space-y-1.5 text-[11px]">
             {[
               { label: 'AI p95 латенција', green: '<3s', amber: '<6s' },
-              { label: 'AI error rate',    green: '<2%', amber: '<5%' },
+              { label: 'AI shadow error rate', green: '≤1%', amber: '≤3%' },
               { label: 'CI pass rate',     green: '≥95%', amber: '≥80%' },
               { label: 'UNCLASSIFIED %',   green: '<15%', amber: '<30%' },
             ].map(t => (
