@@ -140,10 +140,10 @@ useMaturaQuestions(examIds: string[], filters?, enabled?)
 
 | ID | View | Рута | Статус |
 |----|------|------|--------|
-| M1 | MaturaSimulationView | `/matura` | ✅ Постои (стар) |
+| M1 | MaturaSimulationView | `/matura` | ✅ Firestore + сите 3 дела (Апр 2026) |
 | M2 | MaturaLibraryView | `/matura-library` | ✅ Firestore (Апр 2026) |
 | M3 | MaturaPracticeView | `/matura-practice` | ✅ Firestore (Апр 2026) |
-| M4 | MaturaExamSimView | `/matura-sim` | ⏳ Наредно |
+| M4 | (=M1 реимплементиран) | `/matura` | ✅ 180мин, AI grade, resume, part breakdown |
 | M5 | MaturaAnalyticsView | `/matura-stats` | ⏳ Планирано |
 | M6 | MaturaAdminView | `/matura-admin` | ⏳ Планирано |
 
@@ -332,18 +332,21 @@ Field 2: questionNumber (Ascending)
 ## 13. Тековна состојба на Firestore (Април 2026)
 
 ```
-matura_exams:     4 docs
+matura_exams:     5 docs
   dim-gymnasium-2025-june-mk   (30q, 61pt, mk)
   dim-gymnasium-2025-june-al   (30q, 61pt, al)
   dim-gymnasium-2025-august-mk (30q, 61pt, mk)
   dim-gymnasium-2025-august-al (30q, 61pt, al)
+  dim-gymnasium-2024-august-mk (30q, 63pt, mk)  ← Додадено Апр 2026
 
-matura_questions: 120 docs
-  30 per exam × 4 exams
+matura_questions: 150 docs
+  30 per exam × 5 exams
 
 public/matura/images/:  2 PNG files
   2025/june/q05-fig1.png    (Q5 парабола)
   2025/august/q07-fig1.png  (Q7 линеарна)
+
+Напомена: 2024 испитот има 63pt (наместо 61pt) — Part III е пообемен.
 ```
 
 **Очекувана состојба со 13 години историски тестови:**
