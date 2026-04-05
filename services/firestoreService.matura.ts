@@ -15,10 +15,14 @@
 
 import {
   collection,
+  doc,
+  getDoc,
   getDocs,
+  setDoc,
   query,
   where,
   orderBy,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { OfflineError, FirestoreError } from '../utils/errors';
@@ -59,6 +63,17 @@ export interface MaturaQuestion {
   hints?: string[];
   aiSolution?: string | null;
   successRatePercent?: number | null;
+}
+
+/** Cached AI grade result stored in `matura_ai_grades/{cacheKey}`. */
+export interface AIGradeCache {
+  examId: string;
+  questionNumber: number;
+  inputHash: string;
+  score: number;
+  maxPoints: number;
+  feedback: string;
+  cachedAt?: unknown; // Firestore serverTimestamp
 }
 
 export interface MaturaQueryFilters {
@@ -170,3 +185,55 @@ export const maturaService = {
     _questionCache.clear();
   },
 };
+
+// ─── AI Grade Cache ───────────────────────────────────────────────────────────
+
+/**
+ * Simple djb2 hash — produces a short alphanumeric key from an answer string.
+ * Not cryptographic; used only as a cache discriminator.
+ */
+function hashAnswer(text: string): string {
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) {
+    h = ((h << 5) + h) ^ text.charCodeAt(i);
+    h = h >>> 0; // keep unsigned 32-bit
+  }
+  return h.toString(36); // base-36 → compact
+}
+
+/**
+ * Build a Firestore-safe document ID for an AI grade cache entry.
+ * Format: `{examId}_q{questionNumber}_{answerHash}`
+ */
+export function buildGradeCacheKey(
+  examId: string,
+  questionNumber: number,
+  studentAnswer: string,
+): string {
+  return `${examId}_q${questionNumber}_${hashAnswer(studentAnswer.trim().toLowerCase())}`;
+}
+
+/**
+ * Look up a previously cached AI grade. Returns null on cache miss.
+ * Silently swallows errors — grading must never fail due to cache issues.
+ */
+export async function getCachedAIGrade(cacheKey: string): Promise<AIGradeCache | null> {
+  try {
+    const snap = await getDoc(doc(db, 'matura_ai_grades', cacheKey));
+    if (!snap.exists()) return null;
+    return snap.data() as AIGradeCache;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist an AI grade result. Fire-and-forget; failures are silently ignored
+ * so a Firestore write error never blocks the student from seeing their grade.
+ */
+export function saveAIGrade(cacheKey: string, grade: Omit<AIGradeCache, 'cachedAt'>): void {
+  setDoc(doc(db, 'matura_ai_grades', cacheKey), {
+    ...grade,
+    cachedAt: serverTimestamp(),
+  }).catch(() => {/* non-critical */});
+}

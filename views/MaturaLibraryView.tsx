@@ -16,6 +16,11 @@ import { MathRenderer }    from '../components/common/MathRenderer';
 import { DokBadge }        from '../components/common/DokBadge';
 import { callGeminiProxy } from '../services/gemini/core';
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
+import {
+  buildGradeCacheKey,
+  getCachedAIGrade,
+  saveAIGrade,
+} from '../services/firestoreService.matura';
 import type { MaturaQuestion, MaturaExamMeta } from '../services/firestoreService.matura';
 import type { MaturaChoice, DokLevel } from '../types';
 
@@ -71,6 +76,20 @@ function examLabel(e: MaturaExamMeta): string {
 
 // ─── AI grading ──────────────────────────────────────────────────────────────
 async function gradePart2(q: MaturaQuestion, answerA: string, answerB: string): Promise<AIGrade> {
+  const cacheInput = `${answerA}|||${answerB}`;
+  const cacheKey   = buildGradeCacheKey(q.examId, q.questionNumber, cacheInput);
+
+  // Cache hit — skip Gemini call entirely
+  const cached = await getCachedAIGrade(cacheKey);
+  if (cached) {
+    return {
+      score: cached.score, maxScore: cached.maxPoints,
+      feedback: cached.feedback,
+      partA: undefined, partB: undefined,
+      commentA: undefined, commentB: undefined,
+    };
+  }
+
   const prompt = `Ти си асистент за оценување матура на македонски јазик.
 Задача Q${q.questionNumber}: ${q.questionText}
 Точен одговор: ${q.correctAnswer}
@@ -88,14 +107,27 @@ async function gradePart2(q: MaturaQuestion, answerA: string, answerB: string): 
   });
   const p = safeParseJSON(resp.text);
   if (!p) throw new Error('Parse error');
-  return {
+  const grade: AIGrade = {
     score: Number(p.score ?? 0), maxScore: 2, feedback: p.feedback ?? '',
     partA: Boolean(p.partA), partB: Boolean(p.partB),
     commentA: p.commentA, commentB: p.commentB,
   };
+
+  saveAIGrade(cacheKey, {
+    examId: q.examId, questionNumber: q.questionNumber,
+    inputHash: cacheKey, score: grade.score, maxPoints: 2, feedback: grade.feedback,
+  });
+  return grade;
 }
 
 async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGrade> {
+  const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, desc);
+
+  const cached = await getCachedAIGrade(cacheKey);
+  if (cached) {
+    return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
+  }
+
   const prompt = `Ти си асистент за оценување матура на македонски јазик.
 Задача Q${q.questionNumber} (${q.points} поени): ${q.questionText}
 Точен одговор: ${q.correctAnswer}
@@ -111,7 +143,14 @@ async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGrade> {
   });
   const p = safeParseJSON(resp.text);
   if (!p) throw new Error('Parse error');
-  return { score: Math.min(Number(p.score ?? 0), q.points), maxScore: q.points, feedback: p.feedback ?? '' };
+  const score = Math.min(Number(p.score ?? 0), q.points);
+  const feedback = p.feedback ?? '';
+
+  saveAIGrade(cacheKey, {
+    examId: q.examId, questionNumber: q.questionNumber,
+    inputHash: cacheKey, score, maxPoints: q.points, feedback,
+  });
+  return { score, maxScore: q.points, feedback };
 }
 
 // ─── Skeleton loader ──────────────────────────────────────────────────────────

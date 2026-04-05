@@ -1,6 +1,88 @@
 {
     "indexes":  [
                     {
+                        "collectionGroup":  "matura_questions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "examId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "questionNumber",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "matura_questions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "examId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "topicArea",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "questionNumber",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "matura_questions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "examId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "part",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "questionNumber",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "matura_questions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "examId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "dokLevel",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "questionNumber",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "matura_ai_grades",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "examId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "questionNumber",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
                         "collectionGroup":  "quiz_results",
                         "queryScope":  "COLLECTION",
                         "fields":  [
