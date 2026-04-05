@@ -371,6 +371,11 @@ Field 2: questionNumber (Ascending)
   - `Преземи .txt` (offline-ready export)
 - Summary содржи: attempts, average/best/pass rate, top weak concepts (со delta каде што постои), mission status и кратки next-step препораки.
 - Цел: побрзо споделување на доказлив напредок и јасни follow-up чекори без рачно препишување.
+
+### M5.7 — Recovery Summary PDF Export ✅ [05.04.2026]
+- Додаден `Преземи PDF` action во `MaturaAnalyticsView`.
+- Export се генерира преку постоечкиот `downloadAsPdf()` helper (`html2canvas + jsPDF`) за конзистентен output.
+- PDF template вклучува KPI summary, weak concepts со recovery delta, mission status и recommended next steps.
 - UI за upload + валидирање на нов испит без CLI
 - Прикажи статистики по испит (успешност, топ-3 тешки прашања)
 - Editable correctAnswer / topic за грешки после публикација

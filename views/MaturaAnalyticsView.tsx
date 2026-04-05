@@ -5,6 +5,7 @@ import { Card } from '../components/common/Card';
 import { useMaturaStats } from '../hooks/useMaturaStats';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
 import { MissionPanel } from '../components/matura/MissionPanel';
+import { downloadAsPdf } from '../utils/pdfDownload';
 
 function statTone(value: number, good: number, warn: number): 'green' | 'amber' | 'red' {
   if (value >= good) return 'green';
@@ -64,6 +65,8 @@ export const MaturaAnalyticsView: React.FC = () => {
   const stats = useMaturaStats();
   const missions = useMaturaMissions();
   const [copied, setCopied] = React.useState(false);
+  const [isPdfLoading, setIsPdfLoading] = React.useState(false);
+  const pdfExportRef = React.useRef<HTMLDivElement>(null);
 
   const buildRecoverySummary = React.useCallback((): string => {
     const lines: string[] = [];
@@ -134,6 +137,17 @@ export const MaturaAnalyticsView: React.FC = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, [buildRecoverySummary]);
+
+  const handleDownloadPdf = React.useCallback(async () => {
+    if (!pdfExportRef.current || isPdfLoading) return;
+    setIsPdfLoading(true);
+    try {
+      const date = new Date().toISOString().slice(0, 10);
+      await downloadAsPdf(pdfExportRef.current, `matura-recovery-summary-${date}`);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  }, [isPdfLoading]);
 
   const handleNativeShare = React.useCallback(() => {
     const text = buildRecoverySummary();
@@ -274,8 +288,63 @@ export const MaturaAnalyticsView: React.FC = () => {
           >
             <Download className="w-3.5 h-3.5" /> Преземи .txt
           </button>
+          <button
+            type="button"
+            onClick={() => void handleDownloadPdf()}
+            disabled={isPdfLoading}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition inline-flex items-center gap-1.5 disabled:opacity-60"
+          >
+            <Download className="w-3.5 h-3.5" /> {isPdfLoading ? 'Се генерира PDF…' : 'Преземи PDF'}
+          </button>
         </div>
       </Card>
+
+      {/* Off-screen export template used by html2canvas/jsPDF */}
+      <div className="fixed top-0 -left-[9999px] w-[820px] pointer-events-none opacity-0">
+        <div ref={pdfExportRef} className="bg-white text-black p-8">
+          <h1 className="text-2xl font-black">Matura Recovery Summary</h1>
+          <p className="text-xs text-gray-600 mt-1">Generated: {new Date().toLocaleString('mk-MK')}</p>
+
+          <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+            <div className="border border-gray-200 rounded-lg p-3"><strong>Attempts:</strong> {stats.attempts}</div>
+            <div className="border border-gray-200 rounded-lg p-3"><strong>Average:</strong> {stats.avgPct.toFixed(1)}%</div>
+            <div className="border border-gray-200 rounded-lg p-3"><strong>Best:</strong> {stats.bestPct.toFixed(1)}%</div>
+            <div className="border border-gray-200 rounded-lg p-3"><strong>Pass rate:</strong> {stats.passRatePct.toFixed(1)}%</div>
+          </div>
+
+          <h2 className="text-lg font-black mt-6">Weak Concepts</h2>
+          <ul className="mt-2 text-sm space-y-1">
+            {stats.weakConcepts.slice(0, 8).map((item) => (
+              <li key={item.concept.id}>
+                • {item.concept.title} — {item.pct.toFixed(1)}% ({item.questions} questions)
+                {item.delta && item.delta.pctBefore !== null
+                  ? ` | recovery ${(item.delta.pctAfter - item.delta.pctBefore >= 0 ? '+' : '')}${(item.delta.pctAfter - item.delta.pctBefore).toFixed(1)}%`
+                  : ''}
+              </li>
+            ))}
+            {stats.weakConcepts.length === 0 && <li>• No weak concepts detected.</li>}
+          </ul>
+
+          <h2 className="text-lg font-black mt-6">Mission Status</h2>
+          {missions.mission ? (
+            <div className="text-sm mt-2 space-y-1">
+              <p><strong>Plan:</strong> 7-day mission for {missions.mission.sourceConceptTitle}</p>
+              <p><strong>Progress:</strong> {missions.mission.days.filter((d) => d.status === 'completed').length}/{missions.mission.days.length}</p>
+              <p><strong>Streak:</strong> {missions.mission.streakCount}</p>
+              <p><strong>Badge:</strong> {missions.mission.badgeEarned ? 'earned' : 'not yet'}</p>
+            </div>
+          ) : (
+            <p className="text-sm mt-2">No active mission.</p>
+          )}
+
+          <h2 className="text-lg font-black mt-6">Recommended Next Steps</h2>
+          <ol className="text-sm mt-2 space-y-1 list-decimal pl-5">
+            <li>Daily 5-10 minute targeted recovery session</li>
+            <li>Focus on the top 1-2 weak concepts first</li>
+            <li>Re-run one full simulation after 7 days</li>
+          </ol>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <Card className="p-5">
