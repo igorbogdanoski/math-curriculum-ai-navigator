@@ -42,7 +42,10 @@ from matplotlib.patches import FancyArrowPatch
 # ── Paths ─────────────────────────────────────────────────────────────────────
 SCRIPT_DIR  = Path(__file__).parent
 PROJECT_DIR = SCRIPT_DIR.parent
-IMAGE_BASE  = PROJECT_DIR / "data" / "matura" / "images"
+# Images go in public/ so Vite/Vercel serves them as static assets at /matura/images/...
+# URL in browser:  /matura/images/2025/june/q05-fig1.png
+# URL in Firestore: /matura/images/2025/june/q05-fig1.png  (absolute path)
+IMAGE_BASE  = PROJECT_DIR / "public" / "matura" / "images"
 
 # ── Matplotlib style ──────────────────────────────────────────────────────────
 matplotlib.rcParams.update({
@@ -423,7 +426,7 @@ IMAGE_REGISTRY = [
     {
         "id":   "q05-june-2025",
         "exam": "Јуни 2025 Q5 — Квадратна функција",
-        "file": "data/matura/images/2025/june/q05-fig1.png",
+        "file": "public/matura/images/2025/june/q05-fig1.png",
         "type": "quadratic",
         "params": {
             # f(x) = (x - 2)^2 + 1  →  vertex (2, 1), opens up
@@ -444,7 +447,7 @@ IMAGE_REGISTRY = [
     {
         "id":   "q07-august-2025",
         "exam": "Август 2025 Q7 — Линеарна функција",
-        "file": "data/matura/images/2025/august/q07-fig1.png",
+        "file": "public/matura/images/2025/august/q07-fig1.png",
         "type": "linear",
         "params": {
             # y = -3x + 3,  passes through (0, 3) and (1, 0)
@@ -467,7 +470,7 @@ IMAGE_REGISTRY = [
     # {
     #     "id":   "q19-june-2025",
     #     "exam": "Јуни 2025 Q19 — Рамнокрак трапез",
-    #     "file": "data/matura/images/2025/june/q19-fig1.png",
+    #     "file": "public/matura/images/2025/june/q19-fig1.png",
     #     "type": "geometry",
     #     "params": {
     #         # Isosceles trapezoid: longer base split into 16+6=22, shorter base=10

@@ -111,7 +111,9 @@
       "topic": "Квадратна функција",
       "topicArea": "analiza",
       "conceptIds": [],
-      "imageUrls": ["data/matura/images/2025/june/q05-fig1.png"],
+      "imageUrls": [
+        "/matura/images/2025/june/q05-fig1.png"
+      ],
       "hasImage": true,
       "imageDescription": "Парабола отворена нагоре со теме во точката (2, 1).",
       "dokLevel": 2

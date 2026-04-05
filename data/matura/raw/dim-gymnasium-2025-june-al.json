@@ -111,7 +111,9 @@
       "topic": "Funksioni katror",
       "topicArea": "analiza",
       "conceptIds": [],
-      "imageUrls": ["data/matura/images/2025/june/q05-fig1.png"],
+      "imageUrls": [
+        "/matura/images/2025/june/q05-fig1.png"
+      ],
       "hasImage": true,
       "imageDescription": "Parabolë e hapur lart me kulm në pikën (2, 1).",
       "dokLevel": 2
