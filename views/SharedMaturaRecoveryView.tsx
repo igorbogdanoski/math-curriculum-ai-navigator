@@ -11,7 +11,8 @@ export const SharedMaturaRecoveryView: React.FC<SharedMaturaRecoveryViewProps> =
   const { navigate } = useNavigation();
   const [copied, setCopied] = useState(false);
 
-  const summary = useMemo(() => shareService.decodeMaturaRecoveryShareData(data), [data]);
+  const decoded = useMemo(() => shareService.decodeMaturaRecoveryShareDataWithStatus(data), [data]);
+  const summary = decoded.data;
 
   const copyLink = () => {
     void navigator.clipboard.writeText(window.location.href).then(() => {
@@ -25,8 +26,14 @@ export const SharedMaturaRecoveryView: React.FC<SharedMaturaRecoveryViewProps> =
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 p-6 flex items-center justify-center">
         <div className="max-w-xl w-full bg-white rounded-2xl border border-rose-200 shadow-md p-6 text-center">
           <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-          <h1 className="text-xl font-black text-rose-900">Невалиден recovery линк</h1>
-          <p className="text-sm text-gray-600 mt-2">Линкот е оштетен или невалиден.</p>
+          <h1 className="text-xl font-black text-rose-900">
+            {decoded.error === 'expired' ? 'Recovery линкот е истечен' : 'Невалиден recovery линк'}
+          </h1>
+          <p className="text-sm text-gray-600 mt-2">
+            {decoded.error === 'expired'
+              ? 'Линкот има поминато рок на важност. Побарај нов извештај од изворот.'
+              : 'Линкот е оштетен или невалиден.'}
+          </p>
           <button
             type="button"
             onClick={() => navigate('/')}

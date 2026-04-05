@@ -51,6 +51,8 @@ const SharedQuizSchema = z.object({
 });
 
 const SharedMaturaRecoverySchema = z.object({
+  v: z.literal(1).optional(),
+  expiresAt: z.string().optional(),
   generatedAt: z.string(),
   attempts: z.number(),
   avgPct: z.number(),
@@ -72,6 +74,8 @@ const SharedMaturaRecoverySchema = z.object({
 });
 
 export interface SharedMaturaRecoveryData {
+  v?: 1;
+  expiresAt?: string;
   generatedAt: string;
   attempts: number;
   avgPct: number;
@@ -91,6 +95,10 @@ export interface SharedMaturaRecoveryData {
     badgeEarned: boolean;
   } | null;
 }
+
+export type MaturaRecoveryShareDecodeError = 'invalid' | 'expired';
+
+const MAX_MATURA_SHARE_B64_LENGTH = 12000;
 
 export const shareService = {
   generateShareData(lessonPlan: LessonPlan): string {
@@ -207,28 +215,76 @@ export const shareService = {
     }
   },
 
-  generateMaturaRecoveryShareData(payload: SharedMaturaRecoveryData): string {
+  generateMaturaRecoveryShareData(payload: SharedMaturaRecoveryData, options?: { expiresInDays?: number }): string {
     try {
-      const jsonString = JSON.stringify(payload);
-      return btoa(encodeURIComponent(jsonString));
+      const expiresInDays = options?.expiresInDays ?? 30;
+      const withMeta: SharedMaturaRecoveryData = {
+        ...payload,
+        v: 1,
+        expiresAt: payload.expiresAt ?? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
+      const jsonString = JSON.stringify(withMeta);
+
+      // Prefer compressed payload for shorter URLs when pako is available.
+      if (typeof pako !== 'undefined') {
+        const compressed = pako.deflate(jsonString, { to: 'string' });
+        return `z:${btoa(compressed)}`;
+      }
+
+      return `u:${btoa(encodeURIComponent(jsonString))}`;
     } catch (error) {
       console.error('Error generating matura recovery share data:', error);
       return '';
     }
   },
 
-  decodeMaturaRecoveryShareData(data: string): SharedMaturaRecoveryData | null {
+  decodeMaturaRecoveryShareDataWithStatus(data: string): { data: SharedMaturaRecoveryData | null; error?: MaturaRecoveryShareDecodeError } {
     try {
-      const jsonString = decodeURIComponent(atob(data));
+      if (!data || data.length > MAX_MATURA_SHARE_B64_LENGTH) {
+        return { data: null, error: 'invalid' };
+      }
+
+      let encoded = data;
+      let mode: 'z' | 'u' | 'legacy' = 'legacy';
+
+      if (data.startsWith('z:')) {
+        mode = 'z';
+        encoded = data.slice(2);
+      } else if (data.startsWith('u:')) {
+        mode = 'u';
+        encoded = data.slice(2);
+      }
+
+      let jsonString = '';
+      if (mode === 'z') {
+        if (typeof pako === 'undefined') {
+          return { data: null, error: 'invalid' };
+        }
+        jsonString = pako.inflate(atob(encoded), { to: 'string' });
+      } else {
+        jsonString = decodeURIComponent(atob(encoded));
+      }
+
       const parsed = SharedMaturaRecoverySchema.safeParse(JSON.parse(jsonString));
       if (!parsed.success) {
         console.error('Invalid matura recovery share data schema:', parsed.error.issues);
-        return null;
+        return { data: null, error: 'invalid' };
       }
-      return parsed.data as SharedMaturaRecoveryData;
+
+      const payload = parsed.data as SharedMaturaRecoveryData;
+      if (payload.expiresAt && new Date(payload.expiresAt).getTime() < Date.now()) {
+        return { data: null, error: 'expired' };
+      }
+
+      return { data: payload };
     } catch (error) {
       console.error('Error decoding matura recovery share data:', error);
-      return null;
+      return { data: null, error: 'invalid' };
     }
+  },
+
+  decodeMaturaRecoveryShareData(data: string): SharedMaturaRecoveryData | null {
+    return this.decodeMaturaRecoveryShareDataWithStatus(data).data;
   }
 };

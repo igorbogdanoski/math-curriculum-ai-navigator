@@ -189,7 +189,7 @@ export const MaturaAnalyticsView: React.FC = () => {
   }, [buildRecoverySummary, handleCopySummary]);
 
   const handleCopyPublicLink = React.useCallback(() => {
-    const encoded = shareService.generateMaturaRecoveryShareData(buildRecoverySharePayload());
+    const encoded = shareService.generateMaturaRecoveryShareData(buildRecoverySharePayload(), { expiresInDays: 30 });
     if (!encoded) return;
     const link = `${window.location.origin}/#/share/matura/${encoded}`;
     void navigator.clipboard.writeText(link).then(() => {

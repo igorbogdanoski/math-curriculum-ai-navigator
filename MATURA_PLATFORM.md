@@ -382,6 +382,12 @@ Field 2: questionNumber (Ascending)
 - Link формат: `#/share/matura/:data` со encoded payload (read-only summary view).
 - Нов `SharedMaturaRecoveryView` прикажува KPI, weak concepts и mission status без најава.
 - Payload е валидиран преку Zod schema во `shareService` (`generate/decodeMaturaRecoveryShareData`).
+
+### M5.9 — Share Link Hardening (TTL + Validation) ✅ [05.04.2026]
+- Matura share payload сега има metadata: `v=1` и `expiresAt` (default TTL: 30 дена).
+- Воведени се size guard + decode status (`invalid` / `expired`) за појасни failure состојби.
+- Поддржан е покомпактен линк формат со компресија кога `pako` е достапен (`z:` prefix), со fallback `u:`.
+- `SharedMaturaRecoveryView` прикажува посебна порака за истечен линк наместо generic невалиден статус.
 - UI за upload + валидирање на нов испит без CLI
 - Прикажи статистики по испит (успешност, топ-3 тешки прашања)
 - Editable correctAnswer / topic за грешки после публикација
