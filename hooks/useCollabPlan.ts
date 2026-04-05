@@ -90,7 +90,8 @@ export function useCollabPlan(
     refreshViewers();
     const viewerPoll = setInterval(refreshViewers, 15_000);
 
-    // Also clean up on browser close / tab unload (best-effort via sendBeacon)
+    // Also clean up on page hide (best-effort via sendBeacon).
+    // pagehide is more lifecycle-friendly than beforeunload in modern browsers.
     const handleUnload = () => {
       // sendBeacon keeps the request alive after page unload
       // Firestore REST delete endpoint
@@ -102,13 +103,13 @@ export function useCollabPlan(
         );
       }
     };
-    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handleUnload);
 
     return () => {
       unsubPlan();
       clearInterval(heartbeatRef.current!);
       clearInterval(viewerPoll);
-      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
       // Remove own presence on unmount
       deleteDoc(selfViewerRef).catch(() => {});
     };

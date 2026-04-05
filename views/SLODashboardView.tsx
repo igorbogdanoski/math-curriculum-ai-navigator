@@ -173,6 +173,7 @@ export const SLODashboardView: React.FC = () => {
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [apiAuthBlocked, setApiAuthBlocked] = useState(false);
+  const [apiServerBlocked, setApiServerBlocked] = useState(false);
   const [refreshedAt, setRefreshedAt] = useState<string>(new Date().toISOString());
   const [copied, setCopied] = useState(false);
 
@@ -244,11 +245,14 @@ export const SLODashboardView: React.FC = () => {
         const errMsg = typeof payload?.error === 'string' ? payload.error : `HTTP ${res.status}`;
         if (res.status === 401 || res.status === 403) {
           setApiAuthBlocked(true);
+        } else if (res.status >= 500) {
+          setApiServerBlocked(true);
         }
         throw new Error(errMsg);
       }
 
       setApiAuthBlocked(false);
+      setApiServerBlocked(false);
       const json: SloAPISummary = await res.json();
       setApiData(json);
     } catch (e) {
@@ -271,7 +275,7 @@ export const SLODashboardView: React.FC = () => {
   }, [authLoading, user, fetchApiData]);
 
   useEffect(() => {
-    if (authLoading || user?.role !== 'admin' || apiAuthBlocked) return;
+    if (authLoading || user?.role !== 'admin' || apiAuthBlocked || apiServerBlocked) return;
 
     const interval = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
@@ -281,10 +285,11 @@ export const SLODashboardView: React.FC = () => {
     }, 60000);
 
     return () => window.clearInterval(interval);
-  }, [authLoading, user, fetchApiData, apiAuthBlocked]);
+  }, [authLoading, user, fetchApiData, apiAuthBlocked, apiServerBlocked]);
 
   const refresh = () => {
     setApiAuthBlocked(false);
+    setApiServerBlocked(false);
     setRefreshedAt(new Date().toISOString());
     void fetchApiData();
   };
@@ -397,12 +402,25 @@ export const SLODashboardView: React.FC = () => {
       {apiError && (
         <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Operational summary degraded: {apiError}
+          {apiServerBlocked && (
+            <div className="mt-2 text-xs text-amber-900/90">
+              Серверска проверка е паузирана. Провери Firebase service account IAM (Firestore read for `users/{'{uid}'}`) и проект мапирање.
+            </div>
+          )}
           {apiAuthBlocked && (
             <button
               onClick={refresh}
               className="ml-3 inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100"
             >
               Повтори најава / refresh token
+            </button>
+          )}
+          {apiServerBlocked && (
+            <button
+              onClick={refresh}
+              className="ml-3 inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+            >
+              Повтори по серверска корекција
             </button>
           )}
         </div>
