@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BarChart3, Copy, CheckCheck, AlertTriangle, Trophy, Flame } from 'lucide-react';
-import { shareService } from '../services/shareService';
+import { shareService, type SharedMaturaRecoveryData } from '../services/shareService';
 import { useNavigation } from '../contexts/NavigationContext';
 
 interface SharedMaturaRecoveryViewProps {
@@ -10,9 +10,63 @@ interface SharedMaturaRecoveryViewProps {
 export const SharedMaturaRecoveryView: React.FC<SharedMaturaRecoveryViewProps> = ({ data }) => {
   const { navigate } = useNavigation();
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<SharedMaturaRecoveryData | null>(null);
+  const [decodeError, setDecodeError] = useState<'invalid' | 'expired' | 'server'>('invalid');
 
-  const decoded = useMemo(() => shareService.decodeMaturaRecoveryShareDataWithStatus(data), [data]);
-  const summary = decoded.data;
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      setLoading(true);
+
+      // New secure format: server-signed token
+      if (shareService.isSignedMaturaRecoveryToken(data)) {
+        try {
+          const res = await fetch(`/api/matura-share-verify?token=${encodeURIComponent(data)}`);
+          const payload = await res.json().catch(() => null) as { payload?: SharedMaturaRecoveryData; error?: string } | null;
+
+          if (cancelled) return;
+
+          if (res.ok && payload?.payload) {
+            setSummary(payload.payload);
+            setLoading(false);
+            return;
+          }
+
+          if (payload?.error === 'expired' || res.status === 410) {
+            setDecodeError('expired');
+          } else if (res.status >= 500) {
+            setDecodeError('server');
+          } else {
+            setDecodeError('invalid');
+          }
+          setSummary(null);
+          setLoading(false);
+          return;
+        } catch {
+          if (cancelled) return;
+          setDecodeError('server');
+          setSummary(null);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Legacy format fallback (client-decoded)
+      const decoded = shareService.decodeMaturaRecoveryShareDataWithStatus(data);
+      if (cancelled) return;
+      setSummary(decoded.data);
+      setDecodeError(decoded.error ?? 'invalid');
+      setLoading(false);
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
 
   const copyLink = () => {
     void navigator.clipboard.writeText(window.location.href).then(() => {
@@ -21,18 +75,30 @@ export const SharedMaturaRecoveryView: React.FC<SharedMaturaRecoveryViewProps> =
     });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6 flex items-center justify-center">
+        <div className="max-w-xl w-full bg-white rounded-2xl border border-indigo-200 shadow-md p-6 text-center">
+          <p className="text-sm text-indigo-700 font-semibold animate-pulse">Се вчитува споделениот recovery извештај…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!summary) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 p-6 flex items-center justify-center">
         <div className="max-w-xl w-full bg-white rounded-2xl border border-rose-200 shadow-md p-6 text-center">
           <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
           <h1 className="text-xl font-black text-rose-900">
-            {decoded.error === 'expired' ? 'Recovery линкот е истечен' : 'Невалиден recovery линк'}
+            {decodeError === 'expired' ? 'Recovery линкот е истечен' : decodeError === 'server' ? 'Recovery сервисот моментално не е достапен' : 'Невалиден recovery линк'}
           </h1>
           <p className="text-sm text-gray-600 mt-2">
-            {decoded.error === 'expired'
+            {decodeError === 'expired'
               ? 'Линкот има поминато рок на важност. Побарај нов извештај од изворот.'
-              : 'Линкот е оштетен или невалиден.'}
+              : decodeError === 'server'
+                ? 'Проверете повторно за неколку минути.'
+                : 'Линкот е оштетен или невалиден.'}
           </p>
           <button
             type="button"

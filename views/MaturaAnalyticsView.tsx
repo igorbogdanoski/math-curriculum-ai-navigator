@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart3, CalendarDays, GraduationCap, Timer, Trophy, TrendingUp, BookOpen, Network, Share2, Download, Copy, CheckCheck, Link2 } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { useMaturaStats } from '../hooks/useMaturaStats';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
@@ -63,6 +64,7 @@ const ProgressBar: React.FC<{ value: number; label: string; meta?: string }> = (
 
 export const MaturaAnalyticsView: React.FC = () => {
   const { navigate } = useNavigation();
+  const { firebaseUser } = useAuth();
   const stats = useMaturaStats();
   const missions = useMaturaMissions();
   const [copied, setCopied] = React.useState(false);
@@ -188,15 +190,42 @@ export const MaturaAnalyticsView: React.FC = () => {
     handleCopySummary();
   }, [buildRecoverySummary, handleCopySummary]);
 
-  const handleCopyPublicLink = React.useCallback(() => {
-    const encoded = shareService.generateMaturaRecoveryShareData(buildRecoverySharePayload(), { expiresInDays: 30 });
-    if (!encoded) return;
-    const link = `${window.location.origin}/#/share/matura/${encoded}`;
+  const handleCopyPublicLink = React.useCallback(async () => {
+    const payload = buildRecoverySharePayload();
+
+    let token = '';
+
+    if (firebaseUser) {
+      try {
+        const idToken = await firebaseUser.getIdToken();
+        const res = await fetch('/api/matura-share-sign', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ payload, ttlDays: 30 }),
+        });
+        if (res.ok) {
+          const signed = await res.json() as { token?: string };
+          token = signed.token ?? '';
+        }
+      } catch {
+        // Fallback below keeps sharing available even if signing endpoint is unavailable.
+      }
+    }
+
+    if (!token) {
+      token = shareService.generateMaturaRecoveryShareData(payload, { expiresInDays: 30 });
+    }
+    if (!token) return;
+
+    const link = `${window.location.origin}/#/share/matura/${encodeURIComponent(token)}`;
     void navigator.clipboard.writeText(link).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2500);
     });
-  }, [buildRecoverySharePayload]);
+  }, [buildRecoverySharePayload, firebaseUser]);
 
   const startRecoverySession = (payload: { topicArea?: string; dokLevel?: number; conceptId: string; conceptTitle: string; pctBefore: number }) => {
     // Snapshot current score so the practice session can compute delta

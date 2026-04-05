@@ -388,6 +388,14 @@ Field 2: questionNumber (Ascending)
 - Воведени се size guard + decode status (`invalid` / `expired`) за појасни failure состојби.
 - Поддржан е покомпактен линк формат со компресија кога `pako` е достапен (`z:` prefix), со fallback `u:`.
 - `SharedMaturaRecoveryView` прикажува посебна порака за истечен линк наместо generic невалиден статус.
+
+### M5.10 — Server-Signed Recovery Links ✅ [05.04.2026]
+- Нови API endpoint-и:
+  - `POST /api/matura-share-sign` (auth required) → издава signed token `v1.payload.signature`
+  - `GET /api/matura-share-verify?token=...` → валидација на потпис + expiry
+- Подпишувањето користи `SHARE_SIGNING_SECRET` (HMAC SHA-256), со max TTL clamp до 90 дена.
+- `MaturaAnalyticsView` преферира server-signed link и автоматски паѓа на локален encoded fallback ако API е недостапен.
+- `SharedMaturaRecoveryView` има secure verify flow со loading state и јасна `expired/invalid/server` деградација.
 - UI за upload + валидирање на нов испит без CLI
 - Прикажи статистики по испит (успешност, топ-3 тешки прашања)
 - Editable correctAnswer / topic за грешки после публикација

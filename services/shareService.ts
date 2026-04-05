@@ -101,6 +101,10 @@ export type MaturaRecoveryShareDecodeError = 'invalid' | 'expired';
 const MAX_MATURA_SHARE_B64_LENGTH = 12000;
 
 export const shareService = {
+  isSignedMaturaRecoveryToken(token: string): boolean {
+    return /^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token);
+  },
+
   generateShareData(lessonPlan: LessonPlan): string {
     try {
       const jsonString = JSON.stringify(lessonPlan);
