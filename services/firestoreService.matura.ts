@@ -26,6 +26,42 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { OfflineError, FirestoreError } from '../utils/errors';
+import type { MaturaCurriculumRefs } from '../types';
+
+interface LocalMaturaRawQuestion {
+  questionNumber: number;
+  part: 1 | 2 | 3;
+  points: number;
+  questionType?: 'mc' | 'open';
+  questionText: string;
+  choices?: Record<string, string> | null;
+  correctAnswer: string;
+  topic?: string;
+  topicArea?: string;
+  dokLevel?: number;
+  hasImage?: boolean;
+  imageUrls?: string[];
+  imageDescription?: string | null;
+  hints?: string[];
+  aiSolution?: string | null;
+  successRatePercent?: number | null;
+  curriculumRefs?: MaturaCurriculumRefs;
+}
+
+interface LocalMaturaRawExam {
+  id: string;
+  year: number;
+  session: string;
+  language: string;
+  title: string;
+  track?: string;
+  gradeLevel?: number;
+}
+
+interface LocalMaturaRawDoc {
+  exam: LocalMaturaRawExam;
+  questions: LocalMaturaRawQuestion[];
+}
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -63,6 +99,7 @@ export interface MaturaQuestion {
   hints?: string[];
   aiSolution?: string | null;
   successRatePercent?: number | null;
+  curriculumRefs?: MaturaCurriculumRefs;
 }
 
 /** Cached AI grade result stored in `matura_ai_grades/{cacheKey}`. */
@@ -83,10 +120,29 @@ export interface MaturaQueryFilters {
   questionType?: 'mc' | 'open';
 }
 
+export interface MaturaStoredGrade {
+  score: number;
+  maxPoints: number;
+  feedback?: string;
+}
+
+export interface MaturaStoredResult {
+  examId: string;
+  examTitle: string;
+  grades: Record<number, MaturaStoredGrade>;
+  totalScore: number;
+  maxScore: number;
+  durationSeconds: number;
+  completedAt: string;
+  completedAtTs: number;
+  source?: 'local' | 'firestore';
+}
+
 // ─── Module-level cache ───────────────────────────────────────────────────────
 
 let _examCache: MaturaExamMeta[] | null = null;
 const _questionCache = new Map<string, MaturaQuestion[]>();
+let _localCache: { exams: MaturaExamMeta[]; byExam: Map<string, MaturaQuestion[]> } | null = null;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -110,6 +166,81 @@ function applyFilters(qs: MaturaQuestion[], f: MaturaQueryFilters): MaturaQuesti
   });
 }
 
+function normalizeImageUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('/')) return url;
+  if (url.startsWith('data/matura/images/')) {
+    return `/${url.slice('data/'.length)}`;
+  }
+  return url;
+}
+
+function sortExams(exams: MaturaExamMeta[]): MaturaExamMeta[] {
+  return exams.sort((a, b) =>
+    b.year - a.year ||
+    a.session.localeCompare(b.session) ||
+    a.language.localeCompare(b.language),
+  );
+}
+
+function getLocalMaturaData(): { exams: MaturaExamMeta[]; byExam: Map<string, MaturaQuestion[]> } {
+  if (_localCache) return _localCache;
+
+  const modules = import.meta.glob('../data/matura/raw/*.json', { eager: true });
+  const exams: MaturaExamMeta[] = [];
+  const byExam = new Map<string, MaturaQuestion[]>();
+
+  Object.values(modules).forEach((mod) => {
+    const parsed = (mod as { default?: LocalMaturaRawDoc }).default ?? (mod as LocalMaturaRawDoc);
+    if (!parsed?.exam?.id || !Array.isArray(parsed?.questions)) return;
+
+    const totalPoints = parsed.questions.reduce((sum, q) => sum + (q.points || 0), 0);
+    exams.push({
+      id: parsed.exam.id,
+      year: parsed.exam.year,
+      session: parsed.exam.session,
+      language: parsed.exam.language,
+      title: parsed.exam.title,
+      track: parsed.exam.track,
+      gradeLevel: parsed.exam.gradeLevel,
+      questionCount: parsed.questions.length,
+      totalPoints,
+      importedAt: 'local-fallback',
+    });
+
+    const questions: MaturaQuestion[] = parsed.questions
+      .map((q) => ({
+        examId: parsed.exam.id,
+        year: parsed.exam.year,
+        session: parsed.exam.session,
+        language: parsed.exam.language,
+        questionNumber: q.questionNumber,
+        part: q.part,
+        points: q.points,
+        questionType: q.questionType,
+        questionText: q.questionText,
+        choices: q.choices,
+        correctAnswer: q.correctAnswer,
+        topic: q.topic,
+        topicArea: q.topicArea,
+        dokLevel: q.dokLevel,
+        hasImage: q.hasImage,
+        imageUrls: (q.imageUrls ?? []).map(normalizeImageUrl),
+        imageDescription: q.imageDescription,
+        hints: q.hints,
+        aiSolution: q.aiSolution,
+        successRatePercent: q.successRatePercent,
+        curriculumRefs: q.curriculumRefs,
+      }))
+      .sort((a, b) => a.questionNumber - b.questionNumber);
+
+    byExam.set(parsed.exam.id, questions);
+  });
+
+  _localCache = { exams: sortExams(exams), byExam };
+  return _localCache;
+}
+
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 export const maturaService = {
@@ -122,15 +253,22 @@ export const maturaService = {
     if (_examCache) return _examCache;
     try {
       const snap = await getDocs(collection(db, 'matura_exams'));
-      _examCache = snap.docs
+      const firestoreExams = snap.docs
         .map(d => ({ id: d.id, ...d.data() } as MaturaExamMeta))
-        .sort((a, b) =>
-          b.year - a.year ||
-          a.session.localeCompare(b.session) ||
-          a.language.localeCompare(b.language),
-        );
+      if (firestoreExams.length > 0) {
+        _examCache = sortExams(firestoreExams);
+        return _examCache;
+      }
+
+      const local = getLocalMaturaData();
+      _examCache = local.exams;
       return _examCache;
     } catch (e) {
+      const local = getLocalMaturaData();
+      if (local.exams.length > 0) {
+        _examCache = local.exams;
+        return _examCache;
+      }
       wrapFirestoreError(e, 'read');
     }
   },
@@ -148,10 +286,24 @@ export const maturaService = {
         orderBy('questionNumber'),
       );
       const snap = await getDocs(q);
-      const questions = snap.docs.map(d => d.data() as MaturaQuestion);
+      const questions = snap.docs
+        .map(d => d.data() as MaturaQuestion)
+        .sort((a, b) => a.questionNumber - b.questionNumber);
+
+      if (!questions.length) {
+        const local = getLocalMaturaData().byExam.get(examId) ?? [];
+        _questionCache.set(examId, local);
+        return local;
+      }
+
       _questionCache.set(examId, questions);
       return questions;
     } catch (e) {
+      const local = getLocalMaturaData().byExam.get(examId);
+      if (local) {
+        _questionCache.set(examId, local);
+        return local;
+      }
       wrapFirestoreError(e, 'read');
     }
   },
@@ -236,4 +388,160 @@ export function saveAIGrade(cacheKey: string, grade: Omit<AIGradeCache, 'cachedA
     ...grade,
     cachedAt: serverTimestamp(),
   }).catch(() => {/* non-critical */});
+}
+
+// ─── User Matura Results (Phase 2) ──────────────────────────────────────────
+
+function userResultDocId(examId: string, completedAt: string): string {
+  const ts = Number.isFinite(new Date(completedAt).getTime())
+    ? new Date(completedAt).getTime()
+    : Date.now();
+  return `${examId}_${ts}`;
+}
+
+export async function saveUserMaturaResult(
+  uid: string,
+  result: Omit<MaturaStoredResult, 'completedAtTs' | 'source'>,
+): Promise<void> {
+  try {
+    const completedAtTs = Number.isFinite(new Date(result.completedAt).getTime())
+      ? new Date(result.completedAt).getTime()
+      : Date.now();
+
+    const docId = userResultDocId(result.examId, result.completedAt);
+    await setDoc(doc(db, 'users', uid, 'maturaResults', docId), {
+      ...result,
+      completedAtTs,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (e) {
+    // Non-critical: local result remains source-of-truth fallback for immediate UX.
+    console.warn('saveUserMaturaResult failed', e);
+  }
+}
+
+export async function getUserMaturaResults(uid: string): Promise<MaturaStoredResult[]> {
+  try {
+    const q = query(
+      collection(db, 'users', uid, 'maturaResults'),
+      orderBy('completedAtTs', 'desc'),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => {
+      const data = d.data() as MaturaStoredResult;
+      return { ...data, source: 'firestore' as const };
+    });
+  } catch (e) {
+    console.warn('getUserMaturaResults failed', e);
+    return [];
+  }
+}
+
+// ─── Recovery Missions (M5.5) ─────────────────────────────────────────────────
+
+export type MissionStatus = 'pending' | 'completed' | 'skipped';
+
+export interface MaturaMissionDay {
+  day: number;             // 1–7
+  topicArea: string;
+  dokLevel: number;
+  label: string;          // display label e.g. "Алгебра DoK 2"
+  status: MissionStatus;
+  completedAt?: string;
+  pctAfter?: number;
+}
+
+export interface MaturaMissionPlan {
+  id: string;              // Firestore doc id: uid_createdAtTs
+  uid: string;
+  sourceConceptId: string;
+  sourceConceptTitle: string;
+  createdAt: string;
+  endsAt: string;          // createdAt + 7 days
+  days: MaturaMissionDay[];
+  streakCount: number;     // consecutive completed days
+  badgeEarned: boolean;    // true when all 7 days completed
+}
+
+function missionDocId(uid: string, createdAt: string): string {
+  const ts = Number.isFinite(new Date(createdAt).getTime())
+    ? new Date(createdAt).getTime()
+    : Date.now();
+  return `${uid}_${ts}`;
+}
+
+/** Create (or overwrite) a new 7-day mission plan for the user. */
+export async function saveMaturaMissionPlan(uid: string, plan: MaturaMissionPlan): Promise<void> {
+  try {
+    await setDoc(
+      doc(db, 'users', uid, 'maturaMissions', plan.id),
+      { ...plan, updatedAt: serverTimestamp() },
+      { merge: true },
+    );
+  } catch (e) {
+    console.warn('saveMaturaMissionPlan failed', e);
+  }
+}
+
+/** Fetch the most-recent active (non-expired, not fully badged) mission plan. */
+export async function getActiveMaturaMission(uid: string): Promise<MaturaMissionPlan | null> {
+  try {
+    const q = query(
+      collection(db, 'users', uid, 'maturaMissions'),
+      orderBy('createdAt', 'desc'),
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const all = snap.docs.map((d) => d.data() as MaturaMissionPlan);
+    // Return the newest plan that is not expired (within 7 days)
+    const now = Date.now();
+    const active = all.find((p) => new Date(p.endsAt).getTime() > now);
+    return active ?? all[0]; // fall back to newest if all expired
+  } catch (e) {
+    console.warn('getActiveMaturaMission failed', e);
+    return null;
+  }
+}
+
+/**
+ * Build a fresh 7-day mission plan from a single source concept.
+ * Topic areas cycle across the week to maintain variety.
+ */
+export function buildMissionPlan(
+  uid: string,
+  sourceConceptId: string,
+  sourceConceptTitle: string,
+  primaryTopicArea: string,
+): MaturaMissionPlan {
+  const createdAt = new Date().toISOString();
+  const endsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const id = missionDocId(uid, createdAt);
+
+  const topicVariants = [primaryTopicArea, 'algebra', 'analiza', 'geometrija', 'trigonometrija'].filter(
+    (v, i, arr) => arr.indexOf(v) === i,
+  );
+
+  const DOK_SEQUENCE = [1, 2, 2, 3, 2, 3, 3];
+  const TOPIC_LABELS: Record<string, string> = {
+    algebra: 'Алгебра', analiza: 'Анализа', geometrija: 'Геометрија',
+    trigonometrija: 'Тригонометрија', 'matrici-vektori': 'Матрици/Вектори',
+    broevi: 'Броеви', statistika: 'Статистика', kombinatorika: 'Комбинаторика',
+  };
+
+  const days: MaturaMissionDay[] = DOK_SEQUENCE.map((dokLevel, i) => {
+    const topicArea = topicVariants[i % topicVariants.length];
+    return {
+      day: i + 1,
+      topicArea,
+      dokLevel,
+      label: `${TOPIC_LABELS[topicArea] ?? topicArea} · DoK ${dokLevel}`,
+      status: 'pending',
+    };
+  });
+
+  // Day 1 always focuses on the source concept's primary topic
+  days[0].topicArea = primaryTopicArea;
+  days[0].label = `${TOPIC_LABELS[primaryTopicArea] ?? primaryTopicArea} · DoK ${days[0].dokLevel}`;
+
+  return { id, uid, sourceConceptId, sourceConceptTitle, createdAt, endsAt, days, streakCount: 0, badgeEarned: false };
 }

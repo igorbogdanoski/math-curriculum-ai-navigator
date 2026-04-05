@@ -147,6 +147,14 @@ useMaturaQuestions(examIds: string[], filters?, enabled?)
 | M5 | MaturaAnalyticsView | `/matura-stats` | ⏳ Планирано |
 | M6 | MaturaAdminView | `/matura-admin` | ⏳ Планирано |
 
+### Foundation Gate — Curriculum Alignment (пред целосен M5 rollout)
+
+- Матура прашањата мора да се врзат со постојниот гимназиски курикулум преку стабилен `curriculumRefs` модел.
+- Оваа врска треба да поддржи `Истражи програма`, curriculum graph, planner/generator flows и remediation препораки.
+- Alignment слојот мора да биде reusable utility/hook, а не логика закована во еден view.
+- M5 analytics ќе користи истата foundation оска за topic mastery, DoK insights и препораки кон постојните алатки.
+- Целта е брзо проширување со минимални промени по клучните места и без дуплирање на curriculum state.
+
 ### M2 — Библиотека (MaturaLibraryView)
 - Динамички exam picker (сите испити од Firestore)
 - Browse режим: прелистувај, филтрирај по Дел/Тема/DoK/Тип/Пребарај
@@ -313,7 +321,48 @@ Field 2: questionNumber (Ascending)
 - Предиктивен скор: „врз основа на практиката, очекуваш ~45/61"
 - Тренд на тежина: „Алгебра DoK 3 се зголемува 7% годишно"
 
-### M6 — Admin панел (import + управување)
+### M5.1 — Curriculum-connected analytics foundation
+- `curriculumRefs` на ниво на прашање: `conceptIds`, `topicIds`, `gradeIds`, `secondaryTrack`, опционално `standardIds`
+- derive/fallback strategy кога историски испит нема рачно внесени refs
+- bridge кон curriculum goals и activities преку постојните `Concept.assessmentStandards` и `Concept.activities`
+- deep-link preparation за Explore и Graph, така што analytics резултатот да води кон учење и акција, не само кон приказ
+
+### M5.2 — Врска со остатокот од платформата
+- Matura Library: прикажи поврзани curriculum concepts за прашање/тема
+- Matura Practice: после грешка предложи релевантни concepts, активности и follow-up practice
+- Matura Simulation: results screen да изведува weak-concept remediation препораки
+- M5 Analytics: topic/DoK insight + „next best action" кон Explore, Graph, Planner и Generator
+
+### M5.3 — Recovery Session Loop ✅ [05.04.2026]
+- `startRecoverySession()` во `MaturaAnalyticsView` пишува prefill во sessionStorage
+- `MaturaPracticeView` ги чита prefill параметрите при mount и ги применува (topicArea, dokLevels, maxQ)
+- Зелен Recovery banner во Setup screen потврдува дека сесијата е насочена кон weak concept
+- По `handleStart` prefill се брише и сесијата продолжува нормално
+
+### M5.4 — Improvement Delta Tracking ✅ [05.04.2026]
+- `ConceptDelta` интерфејс во `useMaturaStats.ts`: `{ pctBefore, pctAfter, deltaAt }`
+- При клик на Recovery: `MaturaAnalyticsView` запишува `matura_concept_snap_{id}` во localStorage со `pctBefore` (тековниот % во M5)
+- По завршување на practice сесија: `saveConceptProgress()` во `MaturaPracticeView` го пресметува `pctAfter` по топик или overall, ги споредува и зачувува во `matura_concept_progress[]` во localStorage
+- `useMaturaStats` ги чита entries при mount и ги меригрира со weak concepts преку `conceptDeltas` Map
+- `MaturaAnalyticsView` прикажува `+X.X% recovery` / `−X.X% recovery` badge до секој слаб концепт
+- Feedback loop — корисникот го гледа конкретниот напредок по recovery сесија, не само апстрактни %
+
+### M5.5 — 7-Day Recovery Mission Plan ✅ [05.04.2026]
+- `MaturaMissionPlan` и `MaturaMissionDay` типови во `firestoreService.matura.ts`
+- Firestore CRUD: `saveMaturaMissionPlan()`, `getActiveMaturaMission()`, `buildMissionPlan()`
+  - Колекција: `users/{uid}/maturaMissions/{uid_ts}`
+  - Планот трае 7 дена; DoK секвенца: [1, 2, 2, 3, 2, 3, 3]; topic варијанти за разновидност
+- `useMaturaMissions` hook: `startMission`, `completeDay`, `skipDay`, `todayDay`, `streakLabel`
+  - Streak се пресметува backward по ред на завршени денови
+  - Badge се заработува кога сите 7 дена се completed/skipped (со мин. 1 completed)
+- `MissionPanel` компонент (`components/matura/MissionPanel.tsx`):
+  - 7 редови (Д1–Д7) со статус иконки (✓/→/○), денешна задача хајлајтована
+  - "Вежбај" копче → пишува sessionStorage prefill + localStorage snapshot → навигира кон Practice
+  - Progress bar (X/7 денови), Flame streak брои, Trophy badge celebrate при завршување
+  - Nudge порака "Денешната сесија трае само ~5 минути"
+- Wiring во `MaturaAnalyticsView`: ако нема активен план → 3 копчиња "План за: {concept}" за брзо стартување; ако постои план → рендерира `MissionPanel`
+- `MaturaPracticeView`: `useMaturaMissions().completeDay(missionDay, pctAfter)` се вика при крај на сесија ако prefill содржи `missionDay` поле
+- `Sidebar`: M5 nav item добива `badge="🔥N"` кога постои активен streak (N = број денови), иначе `badge="M5"`
 - UI за upload + валидирање на нов испит без CLI
 - Прикажи статистики по испит (успешност, топ-3 тешки прашања)
 - Editable correctAnswer / topic за грешки после публикација

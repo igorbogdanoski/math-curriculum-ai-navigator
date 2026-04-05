@@ -23,11 +23,14 @@ import { Card } from '../components/common/Card';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { DokBadge } from '../components/common/DokBadge';
 import { useNotification } from '../contexts/NotificationContext';
+import { useNavigation } from '../contexts/NavigationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { callGeminiProxy } from '../services/gemini/core';
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
 import {
   buildGradeCacheKey,
   getCachedAIGrade,
+  saveUserMaturaResult,
   saveAIGrade,
 } from '../services/firestoreService.matura';
 import type { MaturaQuestion, MaturaExamMeta } from '../services/firestoreService.matura';
@@ -246,6 +249,8 @@ const ExamCard: React.FC<{
 
 export const MaturaSimulationView: React.FC = () => {
   const { addNotification } = useNotification();
+  const { navigate } = useNavigation();
+  const { firebaseUser } = useAuth();
 
   // ── Phase & exam selection ────────────────────────────────────────────────
   const [phase,        setPhase]        = useState<Phase>('select');
@@ -387,9 +392,22 @@ export const MaturaSimulationView: React.FC = () => {
       completedAt: new Date().toISOString(),
     };
     localStorage.setItem(resultKey(selectedExam.id), JSON.stringify(simResult));
+
+    if (firebaseUser?.uid) {
+      void saveUserMaturaResult(firebaseUser.uid, {
+        examId: simResult.examId,
+        examTitle: simResult.examTitle,
+        grades: simResult.grades,
+        totalScore: simResult.totalScore,
+        maxScore: simResult.maxScore,
+        durationSeconds: simResult.durationSeconds,
+        completedAt: simResult.completedAt,
+      });
+    }
+
     setResult(simResult);
     setPhase('results');
-  }, [selectedExam, phase, questions, answers]);
+  }, [selectedExam, phase, questions, answers, firebaseUser]);
 
   // ── AI analysis of results ────────────────────────────────────────────────
   const requestAiAnalysis = useCallback(async () => {
@@ -557,8 +575,11 @@ export const MaturaSimulationView: React.FC = () => {
 
         {/* Timer bar */}
         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-          <div className={`h-full w-full ${timerColor} origin-left transition-transform duration-1000`}
-            style={{ transform: `scaleX(${timerPct / 100})` }} />
+          <progress
+            className={`w-full h-full ${timerColor.includes('red') ? 'accent-red-500' : 'accent-emerald-500'}`}
+            max={100}
+            value={timerPct}
+          />
         </div>
 
         {/* Low-time warning */}
@@ -755,9 +776,10 @@ export const MaturaSimulationView: React.FC = () => {
         </div>
         <div className="w-full max-w-xs">
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full w-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full origin-left transition-transform duration-500"
-              style={{ transform: `scaleX(${(gradingProgress.total > 0 ? pct : 30) / 100})` }}
+            <progress
+              className="w-full h-full accent-indigo-600"
+              max={100}
+              value={gradingProgress.total > 0 ? pct : 30}
             />
           </div>
           {gradingProgress.total > 0 && (
@@ -845,8 +867,11 @@ export const MaturaSimulationView: React.FC = () => {
                     </span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full w-full ${barClr} rounded-full origin-left transition-transform`}
-                      style={{ transform: `scaleX(${tPct / 100})` }} />
+                    <progress
+                      className={`w-full h-full ${barClr === 'bg-emerald-500' ? 'accent-emerald-500' : barClr === 'bg-amber-500' ? 'accent-amber-500' : 'accent-red-500'}`}
+                      max={100}
+                      value={tPct}
+                    />
                   </div>
                 </div>
               );
@@ -923,12 +948,19 @@ export const MaturaSimulationView: React.FC = () => {
           </div>
         </Card>
 
-        {/* Retry */}
-        <button type="button" onClick={() => startExam(selectedExam)}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-brand-primary to-blue-700 text-white font-bold hover:opacity-90 transition shadow-md"
-        >
-          <RotateCcw className="w-4 h-4" /> Обиди се повторно
-        </button>
+        {/* Next actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button type="button" onClick={() => startExam(selectedExam)}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-brand-primary to-blue-700 text-white font-bold hover:opacity-90 transition shadow-md"
+          >
+            <RotateCcw className="w-4 h-4" /> Обиди се повторно
+          </button>
+          <button type="button" onClick={() => navigate('/matura-stats')}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-white border border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition"
+          >
+            <BarChart2 className="w-4 h-4" /> Отвори M5 Аналитика
+          </button>
+        </div>
       </div>
     );
   }

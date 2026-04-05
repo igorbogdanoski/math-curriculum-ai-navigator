@@ -119,6 +119,18 @@ export type MaturaTopicArea =
  */
 export type MaturaQuestionType = 'mc' | 'open';
 
+export interface MaturaCurriculumRefs {
+  secondaryTrack?: SecondaryTrack;
+  gradeIds?: string[];
+  topicIds?: string[];
+  conceptIds?: string[];
+  standardIds?: string[];
+  objectiveKeywords?: string[];
+  activityKeywords?: string[];
+  source?: 'manual' | 'derived';
+  confidence?: 'high' | 'medium' | 'low';
+}
+
 export interface MaturaQuestion {
   id: string;
   questionNumber: number;
@@ -146,6 +158,7 @@ export interface MaturaQuestion {
   hints?: string[];                       // [hint1, hint2, full solution]
   // Open-ended student submission (matura_submissions collection)
   rubric?: MaturaRubricItem[];            // точки по чекор за отворени задачи
+  curriculumRefs?: MaturaCurriculumRefs;  // bridge to curriculum/explore/graph/planner ecosystem
 }
 
 /** Грубрика за оценување отворени задачи */

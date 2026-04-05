@@ -71,23 +71,36 @@ export function useMaturaQuestions(
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState<string | null>(null);
 
-  // Stable key so we only refetch when the actual IDs change
-  const prevKey = useRef<string>('');
+  const filterKey = useRef('');
+  const examKey = [...new Set(examIds)].sort().join(',');
+
+  // Build a stable key to avoid missing reloads when logical filters change.
+  const nextFilterKey = JSON.stringify({
+    topicAreas: [...(filters?.topicAreas ?? [])].sort(),
+    parts: [...(filters?.parts ?? [])].sort(),
+    dokLevels: [...(filters?.dokLevels ?? [])].sort(),
+    questionType: filters?.questionType ?? null,
+  });
 
   useEffect(() => {
-    if (!enabled || !examIds.length) {
+    if (!enabled || !examKey) {
       setQuestions([]);
+      setLoading(false);
+      setError(null);
       return;
     }
-    const key = [...examIds].sort().join(',');
-    if (key === prevKey.current) return;
-    prevKey.current = key;
+
+    const shouldRefetch = filterKey.current !== `${examKey}::${nextFilterKey}`;
+    filterKey.current = `${examKey}::${nextFilterKey}`;
+    if (!shouldRefetch) return;
 
     setLoading(true);
     setError(null);
 
+    const ids = examKey.split(',').filter(Boolean);
+
     maturaService
-      .getMultiExamQuestions(examIds, filters)
+      .getMultiExamQuestions(ids, filters)
       .then(qs => {
         setQuestions(qs);
         setLoading(false);
@@ -96,9 +109,7 @@ export function useMaturaQuestions(
         setError(e.userMessage ?? e.message ?? 'Грешка при вчитување на прашањата.');
         setLoading(false);
       });
-  // filters intentionally excluded — apply them client-side via useMemo after load
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [examIds, enabled]);
+  }, [enabled, examKey, filters, nextFilterKey]);
 
   return { questions, loading, error };
 }

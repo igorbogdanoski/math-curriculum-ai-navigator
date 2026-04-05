@@ -8,6 +8,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useForumUnreadCount } from '../hooks/useForumUnreadCount';
+import { useMaturaMissions } from '../hooks/useMaturaMissions';
 
 interface SidebarProps {
   currentPath: string;
@@ -69,6 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     const { user, logout, firebaseUser } = useAuth();
     const { navigate } = useNavigation();
     const forumUnread = useForumUnreadCount(firebaseUser?.uid ?? null);
+    const { mission, streakLabel } = useMaturaMissions();
 
     // Progressive disclosure — secondary nav collapsed by default, auto-opens when on a secondary path
     const [showMore, setShowMore] = useState(() => {
@@ -76,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         '/explore', '/graph', '/roadmap',
         '/planner', '/annual-planner', '/annual-gallery',
         '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
-        '/matura', '/matura-library', '/matura-practice', '/test-review', '/live', '/data-viz',
+        '/matura', '/matura-library', '/matura-practice', '/matura-stats', '/test-review', '/live', '/data-viz',
         '/academy', '/my-profile', '/my-progress', '/portfolio',
         '/national-library', '/gallery', '/favorites', '/reports/coverage',
       ];
@@ -159,6 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/matura-library" currentPath={currentPath} icon={ICONS.education} label="Библиотека матура" onClick={onClose} badge="ДИМ" />
               <NavItem path="/matura-practice" currentPath={currentPath} icon={ICONS.assessment} label="Практика матура" onClick={onClose} badge="AI" />
               <NavItem path="/matura" currentPath={currentPath} icon={ICONS.assessment} label="Симулација матура" onClick={onClose} />
+              <NavItem path="/matura-stats" currentPath={currentPath} icon={ICONS.analytics} label="Аналитика матура" onClick={onClose} badge={mission?.streakCount ? `🔥${mission.streakCount}` : 'M5'} />
               <NavItem path="/test-review" currentPath={currentPath} icon={ICONS.camera} label="AI Прегледувач" onClick={onClose} badge="NEW" />
               <NavItem path="/live/host" currentPath={currentPath} icon={ICONS.live} label="Час во живо" onClick={onClose} badge="LIVE" />
               <NavItem path="/data-viz" currentPath={currentPath} icon={ICONS.chart} label="DataViz Studio" onClick={onClose} badge="NEW" />

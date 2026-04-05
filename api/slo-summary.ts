@@ -71,8 +71,17 @@ async function authorizeAdmin(req: VercelRequest): Promise<{ ok: true } | { ok: 
       return { ok: false, status: 403, error: 'Admin access required' };
     }
     return { ok: true };
-  } catch {
-    return { ok: false, status: 401, error: 'Invalid or expired authentication token' };
+  } catch (e: unknown) {
+    const err = e as { code?: string; message?: string };
+    const code = err?.code ?? '';
+    if (code === 'auth/id-token-expired') {
+      return { ok: false, status: 401, error: 'Session expired — reload the page and try again' };
+    }
+    if (code === 'auth/argument-error' || code === 'auth/invalid-credential') {
+      return { ok: false, status: 401, error: `Token validation failed (${code}) — check Firebase project ID matches service account` };
+    }
+    const detail = err?.message ? ` — ${err.message.slice(0, 120)}` : '';
+    return { ok: false, status: 401, error: `Firebase token verification failed${detail}` };
   }
 }
 
@@ -157,7 +166,14 @@ async function fetchSentryHealth(): Promise<SentryHealthData> {
 
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const base = `https://sentry.io/api/0/projects/${org}/${project}`;
-  const emptyResult = { available: false, unresolvedIssues: null, totalEvents: null, unclassifiedRatio: null, topErrors: [], periodDays: 14 } as const;
+  const emptyResult: SentryHealthData = {
+    available: false,
+    unresolvedIssues: null,
+    totalEvents: null,
+    unclassifiedRatio: null,
+    topErrors: [],
+    periodDays: 14,
+  };
 
   try {
     // Parallel: all unresolved + unclassified (no app_error_code tag) + tag value breakdown
@@ -210,7 +226,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const authz = await authorizeAdmin(req);
-  if (!authz.ok) {
+  if (authz.ok === false) {
     return res.status(authz.status).json({ error: authz.error });
   }
 

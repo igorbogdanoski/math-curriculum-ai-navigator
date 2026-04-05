@@ -42,6 +42,12 @@
 - Секој blocker да има owner и next action.
 - EOD report да може да се извезе и користи како официјален ops запис.
 
+### W4 — Curriculum-Matura Integration Foundation
+
+- Матура модулот не смее да остане изолиран од `Истражи програма`, curriculum graph и generator/planner алатките.
+- Секоја M5/M6 capability мора да се гради врз стабилен alignment layer, не врз ad-hoc string matching по view-и.
+- Врската меѓу матура прашањата и гимназискиот курикулум мора да биде reusable во practice, simulation, analytics и remediation flows.
+
 ## 4. Immediate Sprint (Start Now)
 
 ### P1 — SLO Hardening
@@ -74,12 +80,31 @@ Definition of done:
 - MATURA docs остануваат канонски усогласени со имплементацијата
 - следниот модул за имплементација е M5 analytics
 
+### P4 — Matura-Curriculum Alignment Sprint
+
+Цел: матурата да стане first-class дел од екосистемот на курикулум, цели, активности и алатки.
+
+Definition of done:
+
+- `MaturaQuestion` моделот има стабилни `curriculumRefs`
+- постои foundation utility/hook за curriculum alignment со gymnasium track
+- alignment логиката е reusable за M5 analytics, practice remediation и simulation results
+- не се воведува дуплиран curriculum state или hardcoded coupling меѓу view-и
+- секоја промена е validated со `tsc` + build и без регресии во постојните matura flows
+
 ## 5. Evidence Log
 
 | Датум | Workstream | Промена | Evidence | Статус |
 | --- | --- | --- | --- | --- |
 | 2026-04-05 | P1 | Start of SLO hardening program | plan formalized in this document | ACTIVE |
 | 2026-04-05 | P2 | Local env audit completed | core app keys present; SLO/GitHub/Sentry ops secrets still require manual setup | ACTIVE |
+| 2026-04-05 | P4 | Curriculum-Matura integration formalized | W4/P4 added as gating foundation before full M5 rollout | ACTIVE |
+| 2026-04-05 | P4/M5 | Curriculum-Matura Foundation Layer implemented | `MaturaCurriculumRefs` in `types.ts`; `maturaCurriculum.ts` utility; `useMaturaCurriculumAlignment` hook; tsc + build PASS | DONE |
+| 2026-04-05 | M5.1 | M5 Analytics View (Phase 1) launched | `useMaturaStats` hook; `MaturaAnalyticsView`; route `/matura-stats`; sidebar entry; simulation → M5 CTA button; tsc + build PASS | DONE |
+| 2026-04-05 | M5.2 | M5 Cloud Persistence (Phase 2) implemented | `MaturaStoredResult`; `saveUserMaturaResult()`; `getUserMaturaResults()`; stats hook merges Firestore + localStorage; tsc + build PASS | DONE |
+| 2026-04-05 | M5.3 | Recovery Session Loop implemented | `startRecoverySession()` in M5 → sessionStorage prefill → `MaturaPracticeView` auto-init; Recovery banner UI; tsc + build PASS | DONE |
+| 2026-04-05 | M5.4 | Improvement Delta Tracking implemented | `ConceptDelta` type; localStorage snapshot on recovery start; `saveConceptProgress` in practice results; `+X% recovery` badge in M5 weak concepts panel; tsc + build PASS | DONE |
+| 2026-04-05 | M5.5 | 7-Day Recovery Mission Plan implemented | `MaturaMissionPlan/Day` types + Firestore CRUD in service; `useMaturaMissions` hook; `MissionPanel` component; wired into M5 Analytics + MaturaPractice (completeDay on last question); Sidebar streak badge (🔥N); tsc + build PASS | DONE |
 
 ## 5.1 Env Audit Summary
 
@@ -158,4 +183,5 @@ Definition of done:
 2. SLO threshold alignment
 3. SLO auto-refresh + freshness
 4. production env readiness for observability
-5. Matura M5 analytics implementation
+5. Matura-curriculum foundation layer
+6. Matura M5 analytics implementation

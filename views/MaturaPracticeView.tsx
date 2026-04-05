@@ -12,11 +12,12 @@
  *   Part 3 open → self-assess чекбокси + опционален AI опис
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { MathRenderer }    from '../components/common/MathRenderer';
 import { DokBadge }        from '../components/common/DokBadge';
 import { callGeminiProxy } from '../services/gemini/core';
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
+import { useMaturaMissions } from '../hooks/useMaturaMissions';
 import {
   buildGradeCacheKey,
   getCachedAIGrade,
@@ -211,9 +212,10 @@ function ProgressBar({ current, total, score, maxScore }: { current: number; tot
   return (
     <div className="flex items-center gap-3 mb-6">
       <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
-        <div
-          className="h-full bg-brand-primary rounded-full transition-all duration-500"
-          style={{ width: `${pct}%` }}
+        <progress
+          className="w-full h-full accent-indigo-600"
+          max={100}
+          value={pct}
         />
       </div>
       <span className="text-sm font-bold text-gray-600 shrink-0">{current}/{total}</span>
@@ -246,12 +248,23 @@ interface SetupConfig {
   maxQ: number;
 }
 
-function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart }: {
+interface RecoveryPrefill {
+  topicArea?: string | null;
+  dokLevels?: number[];
+  maxQ?: number;
+  sourceConceptId?: string;
+  sourceConceptTitle?: string;
+  missionDay?: number;
+}
+
+function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, prefill, onDismissPrefill }: {
   allTopics: string[];
   exams: MaturaExamMeta[];
   examsLoading: boolean;
   examsError: string | null;
   onStart: (cfg: SetupConfig) => void;
+  prefill: RecoveryPrefill | null;
+  onDismissPrefill: () => void;
 }) {
   // Derive available sessions/langs from actual Firestore exam list
   const availableSessions = useMemo(() => [...new Set(exams.map(e => e.session))].sort() as ('june'|'august')[], [exams]);
@@ -259,11 +272,20 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart }: {
 
   const [langs, setLangs]       = useState<('mk'|'al')[]>(['mk']);
   const [sessions, setSessions] = useState<('june'|'august')[]>(['june', 'august']);
-  const [topics, setTopics]     = useState<string[]>([]);
+  const [topics, setTopics]     = useState<string[]>(() => prefill?.topicArea ? [prefill.topicArea] : []);
   const [parts, setParts]       = useState<number[]>([1, 2, 3]);
-  const [dokLevels, setDok]     = useState<number[]>([1, 2, 3, 4]);
+  const [dokLevels, setDok]     = useState<number[]>(() => prefill?.dokLevels?.length ? prefill.dokLevels : [1, 2, 3, 4]);
   const [doShuffle, setShuffle] = useState(true);
-  const [maxQ, setMaxQ]         = useState(20);
+  const [maxQ, setMaxQ]         = useState(prefill?.maxQ ?? 20);
+
+  useEffect(() => {
+    if (!prefill) return;
+    if (prefill.topicArea && allTopics.includes(prefill.topicArea)) {
+      setTopics([prefill.topicArea]);
+    }
+    if (prefill.dokLevels?.length) setDok(prefill.dokLevels);
+    if (typeof prefill.maxQ === 'number') setMaxQ(prefill.maxQ);
+  }, [prefill, allTopics]);
 
   // Preview count: estimate based on exam count × avg questions per exam
   const matchingExams = useMemo(
@@ -296,6 +318,26 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart }: {
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 space-y-6">
+
+        {prefill && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-black text-emerald-700 uppercase tracking-wide">Recovery Session</p>
+                <p className="text-sm text-emerald-800 mt-0.5">
+                  Препорачан фокус од M5 аналитика{prefill.sourceConceptTitle ? `: ${prefill.sourceConceptTitle}` : ''}.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onDismissPrefill}
+                className="text-xs font-bold text-emerald-700 hover:text-emerald-900"
+              >
+                Сокриј
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Language */}
         <section>
@@ -413,6 +455,8 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart }: {
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">Прашања:</label>
             <select
+              title="Изберете број на прашања"
+              aria-label="Изберете број на прашања"
               value={maxQ}
               onChange={e => setMaxQ(Number(e.target.value))}
               className="text-sm border border-gray-200 rounded-lg px-2 py-1 font-semibold text-gray-700 focus:ring-brand-primary focus:border-brand-primary"
@@ -783,7 +827,11 @@ function ResultsScreen({
                   <span className="text-xs font-bold text-gray-600">{t.scored}/{t.max}pt ({tPct}%)</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${tPct}%` }} />
+                  <progress
+                    className={`w-full h-full ${barColor === 'bg-emerald-400' ? 'accent-emerald-500' : barColor === 'bg-amber-400' ? 'accent-amber-500' : 'accent-rose-500'}`}
+                    max={100}
+                    value={tPct}
+                  />
                 </div>
               </div>
             );
@@ -876,6 +924,16 @@ export function MaturaPracticeView() {
   const [queue, setQueue]     = useState<PracticeItem[]>([]);
   const [current, setCurrent] = useState(0);
   const [states, setStates]   = useState<QuestionState[]>([]);
+  const [recoveryPrefill, setRecoveryPrefill] = useState<RecoveryPrefill | null>(() => {
+    try {
+      const raw = sessionStorage.getItem('matura_recovery_prefill');
+      return raw ? (JSON.parse(raw) as RecoveryPrefill) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const { completeDay } = useMaturaMissions();
 
   // ── Firestore: exam list (needed by setup screen) ──
   const { exams, loading: examsLoading, error: examsError } = useMaturaExams();
@@ -929,6 +987,8 @@ export function MaturaPracticeView() {
     setActiveExamIds(ids);
     // Store cfg for when questions arrive — handled in effect below
     setPendingCfg(cfg);
+    setRecoveryPrefill(null);
+    try { sessionStorage.removeItem('matura_recovery_prefill'); } catch { /* ignore */ }
   }, [exams]);
 
   // Pending cfg: applied once questions finish loading
@@ -985,18 +1045,102 @@ export function MaturaPracticeView() {
   const canNext      = currentState?.submitted || currentState?.skipped;
   const isLast       = current === queue.length - 1;
 
+  // Save concept-level practice delta to localStorage for M5 delta tracking
+  const saveConceptProgress = useCallback(() => {
+    if (!recoveryPrefill?.sourceConceptId) return;
+    const topicArea = recoveryPrefill.topicArea ?? null;
+
+    let scored = 0;
+    let max = 0;
+    let matched = 0;
+
+    queue.forEach((item, i) => {
+      const s = states[i];
+      if (topicArea && item.topicArea !== topicArea) return;
+      matched++;
+      if (!isOpen(item)) {
+        max += 1;
+        if (s.submitted && s.mcPick === item.correctAnswer.trim()) scored += 1;
+      } else if (item.part === 2 && s.aiGrade) {
+        max += s.aiGrade.maxScore;
+        scored += s.aiGrade.score;
+      } else if (item.part === 3) {
+        max += item.points;
+        scored += s.aiGradeP3 ? s.aiGradeP3.score : (s.selfChecks ?? []).filter(Boolean).length;
+      } else {
+        max += item.points;
+      }
+    });
+
+    // Fallback to overall session score if no topic-specific questions matched
+    if (matched === 0) {
+      queue.forEach((item, i) => {
+        const s = states[i];
+        if (!isOpen(item)) {
+          max += 1;
+          if (s.submitted && s.mcPick === item.correctAnswer.trim()) scored += 1;
+        } else if (item.part === 2 && s.aiGrade) {
+          max += s.aiGrade.maxScore;
+          scored += s.aiGrade.score;
+        } else if (item.part === 3) {
+          max += item.points;
+          scored += s.aiGradeP3 ? s.aiGradeP3.score : (s.selfChecks ?? []).filter(Boolean).length;
+        } else {
+          max += item.points;
+        }
+      });
+    }
+
+    const pctAfter = max > 0 ? Math.round((scored / max) * 1000) / 10 : 0;
+
+    try {
+      const snapshotRaw = localStorage.getItem(`matura_concept_snap_${recoveryPrefill.sourceConceptId}`);
+      const pctBefore: number | null = snapshotRaw
+        ? ((JSON.parse(snapshotRaw) as { pctBefore: number }).pctBefore ?? null)
+        : null;
+
+      const entry = {
+        conceptId: recoveryPrefill.sourceConceptId,
+        topicArea,
+        pctBefore,
+        pctAfter,
+        practiceAt: new Date().toISOString(),
+      };
+
+      const existing: typeof entry[] = (() => {
+        try {
+          const raw = localStorage.getItem('matura_concept_progress');
+          return raw ? (JSON.parse(raw) as typeof entry[]) : [];
+        } catch { return []; }
+      })();
+
+      const updated = [
+        ...existing.filter((e) => e.conceptId !== entry.conceptId),
+        entry,
+      ].slice(-50);
+      localStorage.setItem('matura_concept_progress', JSON.stringify(updated));
+    } catch {
+      // ignore storage errors
+    }
+
+    // Mark mission day as completed if this practice was started from a mission plan
+    if (recoveryPrefill.missionDay !== undefined) {
+      void completeDay(recoveryPrefill.missionDay, pctAfter);
+    }
+  }, [recoveryPrefill, queue, states, completeDay]);
+
   const handleNext = useCallback(() => {
-    if (isLast) { setPhase('results'); return; }
+    if (isLast) { saveConceptProgress(); setPhase('results'); return; }
     setCurrent(c => c + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [isLast]);
+  }, [isLast, saveConceptProgress]);
 
   const handleSkip = useCallback(() => {
     updateState(current, { skipped: true, submitted: false });
-    if (isLast) { setPhase('results'); return; }
+    if (isLast) { saveConceptProgress(); setPhase('results'); return; }
     setCurrent(c => c + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [current, isLast, updateState]);
+  }, [current, isLast, updateState, saveConceptProgress]);
 
   // Loading overlay while fetching questions after "Започни"
   if (pendingCfg && (qLoading || !firestoreQuestions.length)) {
@@ -1017,6 +1161,11 @@ export function MaturaPracticeView() {
         examsLoading={examsLoading}
         examsError={examsError}
         onStart={handleStart}
+        prefill={recoveryPrefill}
+        onDismissPrefill={() => {
+          setRecoveryPrefill(null);
+          try { sessionStorage.removeItem('matura_recovery_prefill'); } catch { /* ignore */ }
+        }}
       />
     );
   }

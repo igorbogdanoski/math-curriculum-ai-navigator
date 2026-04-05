@@ -445,8 +445,8 @@ export const SLODashboardView: React.FC = () => {
         {/* ── Panel 4: CI Reliability ───────────────────────────────────────── */}
         <Panel title="CI Reliability" icon={<GitMerge className="w-4 h-4" />} status={ciStatus} refreshedAt={apiData?.generatedAt ?? null}>
           {apiLoading && <p className="text-xs text-gray-400 animate-pulse">Вчитување…</p>}
-          {apiError && !apiLoading && (
-            <p className="text-xs text-red-500">{apiError}</p>
+          {!apiLoading && !apiData && (
+            <p className="text-xs text-amber-600 font-medium">Серверот не е достапен — провери ги конфигурациските параметри.</p>
           )}
           {!apiLoading && apiData && !apiData.ci.available && (
             <p className="text-xs text-gray-400">
@@ -481,6 +481,9 @@ export const SLODashboardView: React.FC = () => {
         {/* ── Panel 5: Production Health (Sentry) ───────────────────────────── */}
         <Panel title="Production Health" icon={<Server className="w-4 h-4" />} status={sentryStatus} refreshedAt={apiData?.generatedAt ?? null}>
           {apiLoading && <p className="text-xs text-gray-400 animate-pulse">Вчитување…</p>}
+          {!apiLoading && !apiData && (
+            <p className="text-xs text-amber-600 font-medium">Серверот не е достапен — провери ги конфигурациските параметри.</p>
+          )}
           {!apiLoading && apiData && !apiData.sentry.available && (
             <p className="text-xs text-gray-400">
               SENTRY_AUTH_TOKEN не е конфигуриран. Провери го{' '}
