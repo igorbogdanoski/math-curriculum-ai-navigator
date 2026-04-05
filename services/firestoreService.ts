@@ -20,6 +20,7 @@ export * from './firestoreService.chat';
 export * from './firestoreService.studentAccount';
 export * from './firestoreService.gdpr';
 export * from './firestoreService.materialFeedback';
+export * from './firestoreService.matura';
 
 export const firestoreService = {
   ...schoolService,

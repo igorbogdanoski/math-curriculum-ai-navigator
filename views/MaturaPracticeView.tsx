@@ -16,37 +16,16 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { MathRenderer }    from '../components/common/MathRenderer';
 import { DokBadge }        from '../components/common/DokBadge';
 import { callGeminiProxy } from '../services/gemini/core';
+import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
+import type { MaturaQuestion, MaturaExamMeta } from '../services/firestoreService.matura';
 import type { MaturaChoice, DokLevel } from '../types';
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
-// ─── Raw JSON imports ────────────────────────────────────────────────────────
-import augustMK from '../data/matura/raw/dim-gymnasium-2025-august-mk.json';
-import augustAL from '../data/matura/raw/dim-gymnasium-2025-august-al.json';
-import juneMK   from '../data/matura/raw/dim-gymnasium-2025-june-mk.json';
-import juneAL   from '../data/matura/raw/dim-gymnasium-2025-june-al.json';
-
 // ─── Types ──────────────────────────────────────────────────────────────────
-interface RawExamFile {
-  exam: { id: string; year: number; session: string; language: string; title: string };
-  questions: RawQuestion[];
-}
-interface RawQuestion {
-  questionNumber: number;
-  part: 1 | 2 | 3;
-  points: number;
-  questionType?: 'mc' | 'open';
-  questionText: string;
-  choices?: Record<string, string> | null;
-  correctAnswer: string;
-  topic?: string;
-  topicArea?: string;
-  dokLevel?: number;
-  hasImage?: boolean;
-  imageUrls?: string[];
-}
-interface PracticeItem extends RawQuestion {
-  examId: string;
+// MaturaQuestion is imported from the service — replaces the old RawQuestion.
+// PracticeItem adds display metadata on top.
+interface PracticeItem extends MaturaQuestion {
   examLabel: string;
 }
 interface AIGrade {
@@ -74,13 +53,12 @@ interface QuestionState {
 }
 type Phase = 'setup' | 'practice' | 'results';
 
-// ─── Exam registry ───────────────────────────────────────────────────────────
-const EXAMS = [
-  { id: 'june-mk',   label: 'Јуни 2025 МК',   session: 'june'   as const, lang: 'mk' as const, data: juneMK   as RawExamFile },
-  { id: 'june-al',   label: 'Јуни 2025 АЛ',   session: 'june'   as const, lang: 'al' as const, data: juneAL   as RawExamFile },
-  { id: 'august-mk', label: 'Август 2025 МК', session: 'august' as const, lang: 'mk' as const, data: augustMK as RawExamFile },
-  { id: 'august-al', label: 'Август 2025 АЛ', session: 'august' as const, lang: 'al' as const, data: augustAL as RawExamFile },
-];
+// ─── Display helpers ──────────────────────────────────────────────────────────
+const SESSION_LABELS: Record<string, string> = { june: 'Јуни', august: 'Август', march: 'Март' };
+const LANG_FLAGS:     Record<string, string> = { mk: '🇲🇰 МК', al: '🇦🇱 АЛ', tr: '🇹🇷 ТР' };
+function examDisplayLabel(e: MaturaExamMeta): string {
+  return `${SESSION_LABELS[e.session] ?? e.session} ${e.year} ${LANG_FLAGS[e.language] ?? e.language.toUpperCase()}`;
+}
 
 const CHOICES: MaturaChoice[] = ['А', 'Б', 'В', 'Г'];
 const TOPIC_LABELS: Record<string, string> = {
@@ -100,7 +78,7 @@ const TOPIC_COLORS: Record<string, string> = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function isOpen(q: RawQuestion): boolean {
+function isOpen(q: MaturaQuestion): boolean {
   if (q.questionType === 'open') return true;
   if (q.questionType === 'mc')   return false;
   return !q.choices || Object.keys(q.choices).length === 0;
@@ -124,7 +102,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 // ─── AI grading ──────────────────────────────────────────────────────────────
-async function gradePart2(q: RawQuestion, answerA: string, answerB: string): Promise<AIGrade> {
+async function gradePart2(q: MaturaQuestion, answerA: string, answerB: string): Promise<AIGrade> {
   const prompt = `Ти си асистент за оценување матура на македонски јазик.
 
 Задача Q${q.questionNumber}: ${q.questionText}
@@ -152,7 +130,7 @@ async function gradePart2(q: RawQuestion, answerA: string, answerB: string): Pro
   };
 }
 
-async function gradePart3(q: RawQuestion, desc: string): Promise<AIGrade> {
+async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGrade> {
   const prompt = `Ти си асистент за оценување матура на македонски јазик.
 
 Задача Q${q.questionNumber} (${q.points} поени): ${q.questionText}
@@ -232,10 +210,17 @@ interface SetupConfig {
   maxQ: number;
 }
 
-function SetupScreen({ allTopics, onStart }: {
+function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart }: {
   allTopics: string[];
+  exams: MaturaExamMeta[];
+  examsLoading: boolean;
+  examsError: string | null;
   onStart: (cfg: SetupConfig) => void;
 }) {
+  // Derive available sessions/langs from actual Firestore exam list
+  const availableSessions = useMemo(() => [...new Set(exams.map(e => e.session))].sort() as ('june'|'august')[], [exams]);
+  const availableLangs    = useMemo(() => [...new Set(exams.map(e => e.language))].sort() as ('mk'|'al')[], [exams]);
+
   const [langs, setLangs]       = useState<('mk'|'al')[]>(['mk']);
   const [sessions, setSessions] = useState<('june'|'august')[]>(['june', 'august']);
   const [topics, setTopics]     = useState<string[]>([]);
@@ -244,21 +229,18 @@ function SetupScreen({ allTopics, onStart }: {
   const [doShuffle, setShuffle] = useState(true);
   const [maxQ, setMaxQ]         = useState(20);
 
-  // Compute preview count
+  // Preview count: estimate based on exam count × avg questions per exam
+  const matchingExams = useMemo(
+    () => exams.filter(e => langs.includes(e.language as 'mk'|'al') && sessions.includes(e.session as 'june'|'august')),
+    [exams, langs, sessions],
+  );
   const previewCount = useMemo(() => {
-    let items: RawQuestion[] = [];
-    EXAMS.forEach(ex => {
-      if (!langs.includes(ex.lang)) return;
-      if (!sessions.includes(ex.session)) return;
-      ex.data.questions.forEach(q => {
-        if (topics.length && !topics.includes(q.topicArea ?? '')) return;
-        if (parts.length && !parts.includes(q.part)) return;
-        if (dokLevels.length && !dokLevels.includes(q.dokLevel ?? 1)) return;
-        items.push(q);
-      });
-    });
-    return Math.min(items.length, maxQ);
-  }, [langs, sessions, topics, parts, dokLevels, maxQ]);
+    // Each exam has ~30 questions; we can't filter by topic without loading questions,
+    // so give an optimistic estimate capped at maxQ.
+    const total = matchingExams.reduce((s, e) => s + e.questionCount, 0);
+    const topicFactor = topics.length ? 0.4 : 1; // rough: topics cut ~60%
+    return Math.min(Math.round(total * topicFactor), maxQ);
+  }, [matchingExams, topics, maxQ]);
 
   function toggle<T>(arr: T[], val: T, min = 1): T[] {
     if (arr.includes(val)) {
@@ -282,37 +264,37 @@ function SetupScreen({ allTopics, onStart }: {
         {/* Language */}
         <section>
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Јазик</h3>
-          <div className="flex gap-2">
-            {(['mk','al'] as const).map(l => (
-              <button
-                key={l} type="button"
-                onClick={() => setLangs(prev => toggle(prev, l))}
-                className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
-                  langs.includes(l) ? 'bg-brand-primary text-white border-brand-primary shadow' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                {l === 'mk' ? '🇲🇰 Македонски' : '🇦🇱 Shqip'}
-              </button>
-            ))}
-          </div>
+          {examsLoading ? (
+            <div className="flex gap-2">{[1,2].map(i=><div key={i} className="h-10 w-36 bg-gray-100 animate-pulse rounded-lg"/>)}</div>
+          ) : examsError ? (
+            <p className="text-xs text-red-600">{examsError}</p>
+          ) : (
+            <div className="flex gap-2 flex-wrap">
+              {availableLangs.map(l => (
+                <button key={l} type="button" onClick={() => setLangs(prev => toggle(prev, l))}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${langs.includes(l)?'bg-brand-primary text-white border-brand-primary shadow':'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                  {LANG_FLAGS[l] ?? l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Session */}
         <section>
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Испитна сесија</h3>
-          <div className="flex gap-2">
-            {(['june','august'] as const).map(s => (
-              <button
-                key={s} type="button"
-                onClick={() => setSessions(prev => toggle(prev, s))}
-                className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
-                  sessions.includes(s) ? 'bg-brand-primary text-white border-brand-primary shadow' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                {s === 'june' ? 'Јуни 2025' : 'Август 2025'}
-              </button>
-            ))}
-          </div>
+          {examsLoading ? (
+            <div className="flex gap-2">{[1,2].map(i=><div key={i} className="h-10 w-36 bg-gray-100 animate-pulse rounded-lg"/>)}</div>
+          ) : (
+            <div className="flex gap-2 flex-wrap">
+              {availableSessions.map(s => (
+                <button key={s} type="button" onClick={() => setSessions(prev => toggle(prev, s))}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${sessions.includes(s)?'bg-brand-primary text-white border-brand-primary shadow':'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                  {SESSION_LABELS[s] ?? s} {exams.find(e=>e.session===s)?.year ?? ''}
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Topics */}
@@ -854,41 +836,84 @@ function ResultsScreen({
 
 // ─── Main View ────────────────────────────────────────────────────────────────
 export function MaturaPracticeView() {
-  const [phase, setPhase]   = useState<Phase>('setup');
-  const [queue, setQueue]   = useState<PracticeItem[]>([]);
+  const [phase, setPhase]     = useState<Phase>('setup');
+  const [queue, setQueue]     = useState<PracticeItem[]>([]);
   const [current, setCurrent] = useState(0);
-  const [states, setStates] = useState<QuestionState[]>([]);
+  const [states, setStates]   = useState<QuestionState[]>([]);
 
-  // All unique topics across exams
+  // ── Firestore: exam list (needed by setup screen) ──
+  const { exams, loading: examsLoading, error: examsError } = useMaturaExams();
+
+  // ── Firestore: questions for selected exams (loaded when practice starts) ──
+  const [activeExamIds, setActiveExamIds] = useState<string[]>([]);
+  const { questions: firestoreQuestions, loading: qLoading } = useMaturaQuestions(activeExamIds, undefined, activeExamIds.length > 0);
+
+  // Unique topics across ALL loaded exams (for setup screen chips)
   const allTopics = useMemo<string[]>(() => {
     const set = new Set<string>();
-    EXAMS.forEach(ex => ex.data.questions.forEach(q => { if (q.topicArea) set.add(q.topicArea); }));
+    firestoreQuestions.forEach(q => { if (q.topicArea) set.add(q.topicArea); });
+    // Also use topics from the exam list while questions aren't loaded yet
+    if (!firestoreQuestions.length) {
+      // Best-effort from known topic areas
+      ['algebra','analiza','geometrija','trigonometrija','matrici-vektori','broevi'].forEach(t => set.add(t));
+    }
     return [...set].sort();
-  }, []);
+  }, [firestoreQuestions]);
 
-  const buildQueue = useCallback((cfg: SetupConfig): PracticeItem[] => {
-    let items: PracticeItem[] = [];
-    EXAMS.forEach(ex => {
-      if (!cfg.langs.includes(ex.lang)) return;
-      if (!cfg.sessions.includes(ex.session)) return;
-      ex.data.questions.forEach(q => {
-        if (cfg.topics.length && !cfg.topics.includes(q.topicArea ?? '')) return;
-        if (cfg.parts.length && !cfg.parts.includes(q.part)) return;
-        if (cfg.dokLevels.length && !cfg.dokLevels.includes(q.dokLevel ?? 1)) return;
-        items.push({ ...q, examId: ex.id, examLabel: ex.label });
-      });
-    });
+  // ── SetupConfig holds which exams the user picked ──
+  // buildQueue is called after questions are already fetched
+  const buildQueueFromFirestore = useCallback((
+    questions: MaturaQuestion[],
+    cfg: SetupConfig,
+    examMap: Map<string, MaturaExamMeta>,
+  ): PracticeItem[] => {
+    let items: PracticeItem[] = questions
+      .filter(q => {
+        const exam = examMap.get(q.examId);
+        if (!exam) return false;
+        if (!cfg.langs.includes(exam.language as 'mk'|'al')) return false;
+        if (!cfg.sessions.includes(exam.session as 'june'|'august')) return false;
+        if (cfg.topics.length && !cfg.topics.includes(q.topicArea ?? '')) return false;
+        if (cfg.parts.length && !cfg.parts.includes(q.part)) return false;
+        if (cfg.dokLevels.length && !cfg.dokLevels.includes(q.dokLevel ?? 1)) return false;
+        return true;
+      })
+      .map(q => ({ ...q, examLabel: examDisplayLabel(examMap.get(q.examId)!) }));
+
     if (cfg.doShuffle) items = shuffle(items);
     return items.slice(0, cfg.maxQ);
   }, []);
 
+  // Called when user clicks "Започни" in SetupScreen
   const handleStart = useCallback((cfg: SetupConfig) => {
-    const q = buildQueue(cfg);
+    // Determine which exam IDs match the config
+    const ids = exams
+      .filter(e => cfg.langs.includes(e.language as 'mk'|'al') && cfg.sessions.includes(e.session as 'june'|'august'))
+      .map(e => e.id);
+    setActiveExamIds(ids);
+    // Store cfg for when questions arrive — handled in effect below
+    setPendingCfg(cfg);
+  }, [exams]);
+
+  // Pending cfg: applied once questions finish loading
+  const [pendingCfg, setPendingCfg] = useState<SetupConfig | null>(null);
+
+  // When firestoreQuestions updates and we have a pending config → build queue → start
+  const prevQKey = React.useRef('');
+  React.useEffect(() => {
+    if (!pendingCfg || qLoading || !firestoreQuestions.length) return;
+    const key = activeExamIds.slice().sort().join(',');
+    if (key === prevQKey.current) return;
+    prevQKey.current = key;
+
+    const examMap = new Map(exams.map(e => [e.id, e]));
+    const q = buildQueueFromFirestore(firestoreQuestions, pendingCfg, examMap);
     setQueue(q);
     setCurrent(0);
     setStates(q.map(() => ({ submitted: false })));
+    setPendingCfg(null);
     setPhase('practice');
-  }, [buildQueue]);
+  }, [firestoreQuestions, qLoading, pendingCfg, activeExamIds, exams, buildQueueFromFirestore]);
 
   const handleRetryWrong = useCallback((wrongItems: PracticeItem[]) => {
     const shuffled = shuffle(wrongItems);
@@ -906,7 +931,6 @@ export function MaturaPracticeView() {
     });
   }, []);
 
-  // Compute running score for progress bar
   const { runningScore, runningMax } = useMemo(() => {
     let scored = 0, max = 0;
     states.slice(0, current).forEach((s, i) => {
@@ -920,15 +944,14 @@ export function MaturaPracticeView() {
     return { runningScore: scored, runningMax: max };
   }, [states, current, queue]);
 
-  const currentState   = states[current];
-  const currentItem    = queue[current];
-  const canNext        = currentState?.submitted || currentState?.skipped;
-  const isLast         = current === queue.length - 1;
+  const currentState = states[current];
+  const currentItem  = queue[current];
+  const canNext      = currentState?.submitted || currentState?.skipped;
+  const isLast       = current === queue.length - 1;
 
   const handleNext = useCallback(() => {
     if (isLast) { setPhase('results'); return; }
     setCurrent(c => c + 1);
-    // scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [isLast]);
 
@@ -939,9 +962,27 @@ export function MaturaPracticeView() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [current, isLast, updateState]);
 
+  // Loading overlay while fetching questions after "Започни"
+  if (pendingCfg && (qLoading || !firestoreQuestions.length)) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 rounded-full border-4 border-brand-primary border-t-transparent animate-spin" />
+        <p className="text-gray-500 font-medium">Се вчитуваат прашањата…</p>
+      </div>
+    );
+  }
+
   // ── Render ──
   if (phase === 'setup') {
-    return <SetupScreen allTopics={allTopics} onStart={handleStart} />;
+    return (
+      <SetupScreen
+        allTopics={allTopics}
+        exams={exams}
+        examsLoading={examsLoading}
+        examsError={examsError}
+        onStart={handleStart}
+      />
+    );
   }
 
   if (phase === 'results') {
