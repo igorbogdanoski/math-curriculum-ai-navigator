@@ -465,6 +465,49 @@ IMAGE_REGISTRY = [
         },
     },
 
+    # ── Август 2024 ────────────────────────────────────────────────────────────
+    {
+        "id":   "q29-august-2024",
+        "exam": "Август 2024 Q29 — Правилна четириаголна пирамида",
+        "file": "public/matura/images/2024/august/q29-fig1.png",
+        "type": "geometry",
+        "params": {
+            # Regular quadrilateral pyramid: a = h = 6 cm, angle 60° between apothem and base
+            # Drawn in oblique projection: base as rhombus, apex above center
+            "xlim": (-1.5, 5.5),
+            "ylim": (-1.0, 6.5),
+            "axes": False,
+            "figsize": (5.0, 5.0),
+            "shapes": [
+                # Base: square drawn as parallelogram (oblique projection)
+                # front-left (0,0), front-right (4,0), back-right (4.8,1.2), back-left (0.8,1.2)
+                {"type": "polygon",
+                 "pts": [[0,0],[4,0],[4.8,1.2],[0.8,1.2]],
+                 "color": "#1e40af", "fill": "#dbeafe", "alpha": 0.4, "lw": 1.5},
+                # Apex at (2.4, 6.0)
+                # Front edges (solid)
+                {"type": "line", "pts": [[0,0],[2.4,6.0]],   "color": "#1e40af", "lw": 1.5},
+                {"type": "line", "pts": [[4,0],[2.4,6.0]],   "color": "#1e40af", "lw": 1.5},
+                {"type": "line", "pts": [[0.8,1.2],[2.4,6.0]],"color":"#1e40af","lw":1.5,"linestyle":"--"},
+                {"type": "line", "pts": [[4.8,1.2],[2.4,6.0]],"color":"#1e40af","lw":1.5,"linestyle":"--"},
+                # Apothem from midpoint of front base to apex (solid red)
+                {"type": "line", "pts": [[2.0,0],[2.4,6.0]],  "color": "#dc2626", "lw": 2.0},
+                # Apothem foot to center of base (dashed red)
+                {"type": "line", "pts": [[2.0,0],[2.4,0.6]],  "color": "#dc2626", "lw": 1.5, "linestyle": "--"},
+                # Right angle marker at base midpoint
+                {"type": "text", "x": 2.25, "y": 0.3,  "text": "·",            "fontsize": 14, "color": "#dc2626"},
+                # Angle arc label 60° at base midpoint of apothem
+                {"type": "text", "x": 1.55, "y": 0.55, "text": "60°",           "fontsize": 11, "color": "#dc2626"},
+                # Dimension label for base
+                {"type": "dim",  "p1": [0,0], "p2": [4,0], "label": "a",        "offset": [0, -0.5], "color": "#1e40af"},
+                # Apothem label
+                {"type": "text", "x": 2.85, "y": 3.2,  "text": "h",             "fontsize": 11, "color": "#dc2626"},
+                # Apex label
+                {"type": "text", "x": 2.55, "y": 6.15, "text": "S",             "fontsize": 12, "color": "#1e40af"},
+            ],
+        },
+    },
+
     # ── Add future entries below ────────────────────────────────────────────────
     # Example geometry entry (commented out):
     # {

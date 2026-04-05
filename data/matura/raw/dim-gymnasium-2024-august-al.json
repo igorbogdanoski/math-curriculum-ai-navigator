@@ -1,10 +1,10 @@
 {
   "exam": {
-    "id": "dim-gymnasium-2024-august-mk",
+    "id": "dim-gymnasium-2024-august-al",
     "year": 2024,
     "session": "august",
-    "language": "mk",
-    "title": "ДИМ Гимназиско — Август 2024 (МК)",
+    "language": "al",
+    "title": "ДИМ Гимназиско — Август 2024 (АЛ)",
     "durationMinutes": 180,
     "track": "gymnasium",
     "gradeLevel": 12,
@@ -17,7 +17,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Ако $\\tau(p \\lor \\neg q) = \\bot$, која од следниве исказни формули е невистинита?",
+      "questionText": "Në qoftë se $\\tau(p \\lor \\neg q) = \\bot$, cila nga formulat pohuese në vijim është jo e vërtetë?",
       "choices": {
         "А": "$p \\lor q$",
         "Б": "$\\neg p \\lor \\neg q$",
@@ -41,7 +41,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Бројот $0,000001$ запишан како степен со основа $0,1$ е:",
+      "questionText": "Numri $0,000001$ i shkruar si shkallë me bazë $0,1$ është:",
       "choices": {
         "А": "$0,1^6$",
         "Б": "$0,1^5$",
@@ -65,7 +65,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "На географска карта, работена во размер $1:150\\ 000$, растојанието меѓу две места е $6\\text{ cm}$. Растојанието меѓу тие две места во реалноста изнесува:",
+      "questionText": "Në hartën gjeografike, të punuar me përpjesëtim $1:150\\ 000$, largësia mes dy vendeve është $6\\text{ cm}$. Largësia mes atyre dy vendeve në realitet është:",
       "choices": {
         "А": "$90\\ 000\\text{ cm}$",
         "Б": "$9\\text{ km}$",
@@ -89,7 +89,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Кој од дадените изрази е полином?",
+      "questionText": "Cila nga shprehjet e dhëna është polinom?",
       "choices": {
         "А": "$\\frac{1}{2x} + xy^2$",
         "Б": "$\\sqrt{2}xy^2 - 1$",
@@ -113,7 +113,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Една третина од $27^n \\cdot \\left(\\frac{1}{3}\\right)^n : 3^n$ е:",
+      "questionText": "Një e treta e $27^n \\cdot \\left(\\frac{1}{3}\\right)^n : 3^n$ është:",
       "choices": {
         "А": "$3^{2n}$",
         "Б": "$3^n$",
@@ -137,7 +137,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Областа на дефинираност на изразот $\\frac{2x+3}{x^2+1}$ е:",
+      "questionText": "Fusha e përkufizimit të shprehjes $\\frac{2x+3}{x^2+1}$ është:",
       "choices": {
         "А": "$(-\\infty, -1) \\cup (1, \\infty)$",
         "Б": "$(-\\infty, \\infty) \\setminus \\{-1, 1\\}$",
@@ -161,7 +161,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Функцијата $f(x) = (k+3)x + 4 - k$ е монотоно опаѓачка ако:",
+      "questionText": "Funksioni $f(x) = (k+3)x + 4 - k$ është monoton rënës në qoftë se:",
       "choices": {
         "А": "$k < -3$",
         "Б": "$k = -3$",
@@ -185,12 +185,12 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Квадратната функција $f(x) = (1-x)^2 + 3$ има:",
+      "questionText": "Funksioni katror $f(x) = (1-x)^2 + 3$ ka:",
       "choices": {
-        "А": "максимум еднаков на 3",
-        "Б": "минимум еднаков на 3",
-        "В": "теме во $T(-1, 3)$",
-        "Г": "теме во $T(1, -3)$"
+        "А": "maksimumin të barabartë me 3",
+        "Б": "minimumin të barabartë me 3",
+        "В": "kulm në $T(-1, 3)$",
+        "Г": "kulm në $T(1, -3)$"
       },
       "correctAnswer": "Б",
       "topic": "Квадратни функции",
@@ -209,7 +209,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Решението на системот линеарни неравенки $\\begin{cases} x - 2 \\le 0 \\\\ 7 - 2x \\le 0 \\end{cases}$ е:",
+      "questionText": "Zgjidhja e sistemit të jobarazimeve lineare $\\begin{cases} x - 2 \\le 0 \\\\ 7 - 2x \\le 0 \\end{cases}$ është:",
       "choices": {
         "А": "$\\left[2, \\frac{7}{2}\\right]$",
         "Б": "$\\left[\\frac{7}{2}, \\infty\\right)$",
@@ -233,7 +233,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Должината на висината кај рамностран триаголник со страна $a$ е:",
+      "questionText": "Gjatësia e lartësisë të trekëndëshit barabrinjës me brinjën $a$ është:",
       "choices": {
         "А": "$\\frac{a\\sqrt{3}}{2}$",
         "Б": "$\\frac{a\\sqrt{3}}{3}$",
@@ -257,7 +257,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Ромб со страна $6\\text{ cm}$ има плоштина $60\\text{ cm}^2$. Колкав е радиусот на кружницата впишана во ромбот?",
+      "questionText": "Rombi me brinjën $6\\text{ cm}$ ka syprinën $60\\text{ cm}^2$. Sa është rrezja e vijës rrethore të brendashkruar në romb?",
       "choices": {
         "А": "$20\\text{ cm}$",
         "Б": "$10\\text{ cm}$",
@@ -281,7 +281,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Призма и пирамида за основи имаат еднакви многуаголници. Колку вкупно рабови има пирамидата, ако призмата има вкупно 18 рабови?",
+      "questionText": "Prizmi dhe piramida për baza kanë numër të njëjtë shumëkëndëshash. Gjithsej sa tehe ka piramida, nëse prizmi ka gjithsej 18 tehe?",
       "choices": {
         "А": "18",
         "Б": "12",
@@ -305,7 +305,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Колкав е периферниот агол што одговара на кружен лак кој е $\\frac{1}{6}$ од должината на кружницата?",
+      "questionText": "Sa është këndi periferik që i përgjigjet harkut rrethor i cili është $\\frac{1}{6}$ e gjatësisë së vijës rrethore?",
       "choices": {
         "А": "$30^\\circ$",
         "Б": "$60^\\circ$",
@@ -329,7 +329,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Четири метални коцки, со волумени $31\\text{ cm}^3$, $15\\text{ cm}^3$, $11\\text{ cm}^3$ и $7\\text{ cm}^3$, се претопени во нова коцка. Колкава е плоштината на новодобиената коцка?",
+      "questionText": "Katër kube metalike, me vëllim $31\\text{ cm}^3$, $15\\text{ cm}^3$, $11\\text{ cm}^3$ dhe $7\\text{ cm}^3$, janë bashkuar në një kub të ri. Sa është syprina e kubit të fituar?",
       "choices": {
         "А": "$16\\text{ cm}^2$",
         "Б": "$64\\text{ cm}^2$",
@@ -353,7 +353,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Количникот $\\frac{2\\text{tg}30^\\circ}{1+\\text{ctg}^2 60^\\circ}$ е еднаков на:",
+      "questionText": "Herësi $\\frac{2\\text{tg}30^\\circ}{1+\\text{ctg}^2 60^\\circ}$ është i barabartë me:",
       "choices": {
         "А": "$\\sin 60^\\circ$",
         "Б": "$\\cos 60^\\circ$",
@@ -377,7 +377,7 @@
       "part": 2,
       "points": 2,
       "questionType": "open",
-      "questionText": "А. Пресекот на множествата $A=\\{1,4,9,16,25,36,49\\}$ и $B=\\{x \\mid x \\in \\mathbb{N} \\land 1 < x \\le 25\\}$ е множеството ____________________.\nБ. Двајца велосипедисти возат по затворена кружна патека во спротивна насока еден со друг. Првиот велосипедист ја поминува патеката за $60$ секунди, а вториот за $75$ секунди. Колку минути ќе поминат од првата до втората средба на велосипедистите?",
+      "questionText": "А. Prerja e bashkësive $A=\\{1,4,9,16,25,36,49\\}$ dhe $B=\\{x \\mid x \\in \\mathbb{N} \\land 1 < x \\le 25\\}$ është bashkësia ____________________.\nБ. Dy biçiklistë ngasin në një shteg rrethor të mbyllur në drejtim të kundërt me njëri-tjetrin. Biçiklisti i parë e kalon shtegun për $60$ sekonda, kurse i dyti për $75$ sekonda. Sa minuta do të kalojnë nga takimi i parë dhe takimi i dytë i biçiklistëve?",
       "choices": null,
       "correctAnswer": "А. $A \\cap B = \\{4,9,16,25\\}$, Б. 5",
       "topic": "Множества и НЗС",
@@ -396,7 +396,7 @@
       "part": 2,
       "points": 2,
       "questionType": "open",
-      "questionText": "Дадена е равенката $2x - ax = 4 - a^2$.\nА. За која вредност на параметарот $a$ равенката има бесконечно многу решенија?\nБ. Кое е решението на равенката, ако $a = -2$?",
+      "questionText": "Është dhënë barazimi $2x - ax = 4 - a^2$.\nА. Për cilën vlerë të parametrit $a$ barazimi ka pafundësisht shumë zgjidhje?\nБ. Cila është zgjidhje e barazimit, nëse $a = -2$?",
       "choices": null,
       "correctAnswer": "А. $a = 2$, Б. $x = 0$",
       "topic": "Линеарни равенки",
@@ -415,7 +415,7 @@
       "part": 2,
       "points": 2,
       "questionType": "open",
-      "questionText": "Дадена е функцијата $f(x) = (k+2)x + k - 3$.\nА. Графиците на функциите $f(x)$ и $g(x) = (2k-3)x + 2k - 1$ се паралелни прави, ако $k = $ ____________________.\nБ. Графикот на функцијата $f(x)$ нема пресек со $x$-оската, ако $k = $ ____________________.",
+      "questionText": "Është dhënë funksioni $f(x) = (k+2)x + k - 3$.\nА. Grafikët e funksioneve $f(x)$ dhe $g(x) = (2k-3)x + 2k - 1$ janë drejtëza paralele, nëse $k = $ ____________________.\nБ. Grafiku i funksionit $f(x)$ nuk pritet me boshtin $x$, nëse $k = $ ____________________.",
       "choices": null,
       "correctAnswer": "А. $k = 5$, Б. $k = -2$",
       "topic": "Линеарни функции",
@@ -434,7 +434,7 @@
       "part": 2,
       "points": 2,
       "questionType": "open",
-      "questionText": "Цилиндар и конус имаат еднакви радиуси на основите и еднакви висини. Волуменот на цилиндрот е $18\\pi\\text{ cm}^3$.\nА. Волуменот на конусот е ____________________ $\\text{cm}^3$.\nБ. Ако висината на цилиндрот е $2\\text{ cm}$, тогаш плоштината на основата на конусот е ____________________ $\\text{cm}^2$.",
+      "questionText": "Një cilindër dhe një kon kanë rreze të barabarta të bazave dhe lartësi të barabarta. Vëllimi i cilindrit është $18\\pi\\text{ cm}^3$.\nА. Vëllimi i konit është ____________________ $\\text{cm}^3$.\nБ. Nëse lartësia e cilindrit është $2\\text{ cm}$, atëherë syprina e bazës së konit është ____________________ $\\text{cm}^2$.",
       "choices": null,
       "correctAnswer": "А. $6\\pi$, Б. $9\\pi$",
       "topic": "Цилиндар и конус",
@@ -453,7 +453,7 @@
       "part": 2,
       "points": 2,
       "questionType": "open",
-      "questionText": "Даден е аголот $\\alpha = 75^\\circ$.\nА. Колкав е аголот добиен како збир од комплементниот и суплементниот агол на аголот $\\alpha$?\nБ. Колку радијани има аголот $\\alpha$?",
+      "questionText": "Është dhënë këndi $\\alpha = 75^\\circ$.\nА. Sa është këndi i fituar si shumë e këndit komplementar dhe suplementar të këndit $\\alpha$?\nБ. Sa radianë ka këndi $\\alpha$?",
       "choices": null,
       "correctAnswer": "А. $120^\\circ$, Б. $\\frac{5\\pi}{12}$",
       "topic": "Агли",
@@ -472,7 +472,7 @@
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "Анализата на резултатите што ги постигнале учениците од еден клас на државната матура, покажала дека учениците добиле 58 петки од предметите: мајчин јазик, странски јазик и математика. Притоа, 35 ученика добиле оценка 5 по предметот мајчин јазик, 20 ученика добиле оценка 5 по предметот странски јазик и 15 ученика добиле оценка 5 по предметот математика. Три ученика добиле оценка 5 по сите три предмети. Колку ученици добиле оценка 5 на точно два од трите предмети?",
+      "questionText": "Analiza e rezultateve, që kanë arritur nxënësit e një klase në maturën shtetërore, tregoi se nxënësit kanë marrë 58 pesëshe në lëndët: gjuhë amtare, gjuhë e huaj dhe matematikë. Në të njëjtën kohë, 35 nxënës kanë marrë notën 5 në lëndën gjuhë amtare, 20 nxënës kanë marrë notën 5 në lëndën gjuhë e huaj dhe 15 nxënës kanë marrë notën 5 në lëndën matematikë. Tre nxënës kanë marrë notën 5 në të tria lëndët. Sa nxënës kanë marrë notën 5 në saktë dy nga tri lëndët?",
       "choices": null,
       "correctAnswer": "6",
       "topic": "Множества",
@@ -483,7 +483,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "Воведува ознаки A, B, C. Користи формула |A∪B∪C| = |A|+|B|+|C|-|A∩B|-|A∩C|-|B∩C|+|A∩B∩C|. Добива 58 = 35+20+15-|A∩B|-|A∩C|-|B∩C|+3, односно |A∩B|+|A∩C|+|B∩C| = 15. Бројот на ученици со точно две петки е T = 15 - 3×3 = 6.",
+      "aiSolution": null,
       "successRatePercent": null
     },
     {
@@ -491,7 +491,7 @@
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "Нека $z_1 = 2 - i$, $z_2 = -2 + i$. Одреди ја вредноста на $\\text{Im}\\left(\\frac{z_1 \\cdot z_2}{\\overline{z_2}}\\right)$.",
+      "questionText": "Le të jetë $z_1 = 2 - i$, $z_2 = -2 + i$. Përcakto vlerën e $\\text{Im}\\left(\\frac{z_1 \\cdot z_2}{\\overline{z_2}}\\right)$.",
       "choices": null,
       "correctAnswer": "$-\\frac{11}{5}$",
       "topic": "Комплексни броеви",
@@ -502,7 +502,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "Пресметува z1·z2 = (2-i)(-2+i) = -3+4i. Одредува ō(z2) = -2-i. Пресметува (z1·z2)/ō(z2) = (-3+4i)/(-2-i) = (2-11i)/5. Заклучува Im = -11/5.",
+      "aiSolution": null,
       "successRatePercent": null
     },
     {
@@ -510,7 +510,7 @@
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "Дадени се полиномите $A(x) = (4x^2 - 12x + 9) - 3x(2x - 3) + 4x^2 - 9$ и $B(x) = (3x + 2)^2 - (x + 5)^2$.\nА. Разложи ги полиномите $A(x)$ и $B(x)$ на прости множители.\nБ. Ако е можно, скрати ја дропката $\\frac{B(x)}{A(x)}$.\nВ. Одреди ја вредноста на дропката $\\frac{A(x)}{B(x)}$ за $x = -2$.",
+      "questionText": "Janë dhënë polinomet $A(x) = (4x^2 - 12x + 9) - 3x(2x - 3) + 4x^2 - 9$ dhe $B(x) = (3x + 2)^2 - (x + 5)^2$.\nА. Zbërtheji polinomet $A(x)$ dhe $B(x)$ në shumëzues të thjeshtë.\nБ. Në qoftë se është e mundur, shkurtoje thyesën $\\frac{B(x)}{A(x)}$.\nВ. Përcakto vlerën e thyesës $\\frac{A(x)}{B(x)}$ për $x = -2$.",
       "choices": null,
       "correctAnswer": "А. $A(x)=x(2x-3)$, $B(x)=(4x+7)(2x-3)$, Б. $\\frac{4x+7}{x}$, В. 2",
       "topic": "Полиноми",
@@ -521,7 +521,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "А. A(x) = 2x²-3x = x(2x-3). B(x) = (4x+7)(2x-3). Б. B(x)/A(x) = (4x+7)/x. В. A(-2)/B(-2) = (-2)/(-1) = 2.",
+      "aiSolution": null,
       "successRatePercent": null
     },
     {
@@ -529,7 +529,7 @@
       "part": 3,
       "points": 3,
       "questionType": "open",
-      "questionText": "Ана замислила број. Бројот го намалила за една негова петина, па добиениот резултат го помножила со 3. Од добиениот производ одзела 40 проценти од замислениот број. Добиената разлика ја поделила со $\\frac{2}{5}$ и го добила бројот 80. Кој број го замислила Ана?",
+      "questionText": "Hana ka imagjinuar një numër. Numrin e ka zvogëluar për një të pestën e tij, e rezultatin e fituar e ka shumëzuar me 3. Nga prodhimi i fituar ka zbritur 40 për qind nga numri i imagjinuar. Ndryshimin e fituar e ka pjesëtuar me $\\frac{2}{5}$ dhe e ka fituar numrin 80. Cilin numër e ka imagjinuar Hana?",
       "choices": null,
       "correctAnswer": "16",
       "topic": "Линеарни равенки",
@@ -540,7 +540,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "Ја запишува равенката [(x - x/5)·3 - 0.4x] : (2/5) = 80. Добива (12x/5 - 2x/5) : (2/5) = 80, односно 2x = 32, x = 16.",
+      "aiSolution": null,
       "successRatePercent": null
     },
     {
@@ -548,7 +548,7 @@
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "Дадена е квадратната равенка $ax^2 - 10x + 24 = 0$. Одреди ја вредноста на параметарот $a$, така што за корените $x_1$ и $x_2$ на равенката важи $\\frac{x_1}{x_2} = \\frac{2}{3}$.",
+      "questionText": "Është dhënë barazimi katror $ax^2 - 10x + 24 = 0$. Përcaktoje vlerën e parametrit $a$, ashtu që për rrënjët $x_1$ dhe $x_2$ të barazimeve vlen $\\frac{x_1}{x_2} = \\frac{2}{3}$.",
       "choices": null,
       "correctAnswer": "$a=1$",
       "topic": "Квадратни равенки",
@@ -559,7 +559,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "Од Виетови формули: x1+x2 = 10/a, x1·x2 = 24/a. Од x1/x2 = 2/3 добива x1 = 4/a, x2 = 6/a. Заменува: (4/a)(6/a) = 24/a → a = 1.",
+      "aiSolution": null,
       "successRatePercent": null
     },
     {
@@ -567,7 +567,7 @@
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "Определи ги сите целобројни решенија на неравенката $\\frac{3x - 1}{4} + \\frac{x^2 - 1}{3} \\le x$.",
+      "questionText": "Përcaktoji të gjitha zgjidhjet me numra të plotë të jobarazimit $\\frac{3x - 1}{4} + \\frac{x^2 - 1}{3} \\le x$.",
       "choices": null,
       "correctAnswer": "$x \\in \\{-1, 0, 1\\}$",
       "topic": "Квадратни неравенки",
@@ -578,7 +578,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "Множи со 12: 4x²-3x-7 ≤ 0. Корени: x₁=-1, x₂=7/4. Решение: x ∈ [-1, 7/4]. Целобројни: {-1, 0, 1}.",
+      "aiSolution": null,
       "successRatePercent": null
     },
     {
@@ -586,7 +586,7 @@
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "Страните на еден триаголник се однесуваат како $2:3:4$, а радиусот на впишаната кружница е $r = \\frac{\\sqrt{15}}{2}\\text{ cm}$. Пресметај ги страните на триаголникот.",
+      "questionText": "Brinjët e trekëndëshit sillen si $2:3:4$, dhe rrezja e vijës rrethore të brendashkruar është $r = \\frac{\\sqrt{15}}{2}\\text{ cm}$. Përllogariti brinjët e trekëndëshit.",
       "choices": null,
       "correctAnswer": "$a=6\\text{ cm}, b=9\\text{ cm}, c=12\\text{ cm}$",
       "topic": "Триаголник",
@@ -597,7 +597,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "a=2k, b=3k, c=4k. s=9k/2. По Херон: P = 3k²√15/4. r = P/s = k√15/6 = √15/2 → k=3. Страни: a=6, b=9, c=12 cm.",
+      "aiSolution": null,
       "successRatePercent": null
     },
     {
@@ -605,7 +605,7 @@
       "part": 3,
       "points": 3,
       "questionType": "open",
-      "questionText": "Дадени се две топки. Волуменот на првата топка е $36\\pi\\text{ dm}^3$, а плоштината на втората топка е $400\\pi\\text{ cm}^2$. Определи го односот на радиусите на поголемата и помалата топка.",
+      "questionText": "Janë dhënë dy topa. Vëllimi i topit të parë është $36\\pi\\text{ dm}^3$, kurse syprina e topit të dytë është $400\\pi\\text{ cm}^2$. Përcakto raportin e rrezeve të topit më të madh dhe topit më të vogël.",
       "choices": null,
       "correctAnswer": "3",
       "topic": "Топка",
@@ -616,7 +616,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "V1 = 4R1³π/3 = 36π → R1 = 3 dm = 30 cm. P2 = 4R2²π = 400π → R2 = 10 cm. Однос: 30/10 = 3.",
+      "aiSolution": null,
       "successRatePercent": null
     },
     {
@@ -624,20 +624,18 @@
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "Плоштината на правилна четириаголна пирамида е $108\\text{ cm}^2$, а аголот меѓу рамнината на основата и бочниот ѕид е $60^\\circ$. Пресметај го волуменот на пирамидата.",
+      "questionText": "Sypina e një piramide të rregullt me katër brinjë është $108\\text{ cm}^2$, kurse këndi ndërmjet rrafshit të bazës dhe murit anësor është $60^\\circ$. Llogarite vëllimin e piramidës.",
       "choices": null,
       "correctAnswer": "$36\\sqrt{3}\\text{ cm}^3$",
       "topic": "Пирамида",
       "topicArea": "geometrija",
       "dokLevel": 3,
-      "hasImage": true,
-      "imageUrls": [
-        "/matura/images/2024/august/q29-fig1.png"
-      ],
-      "imageDescription": "Правилна четириаголна пирамида со означена апотема h и агол 60° меѓу апотемата и основата.",
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "cos60° = (a/2)/h → a=h. P = a²+2ah = 3a² = 108 → a=6, h=6 cm. H = √(h²-(a/2)²) = 3√3 cm. V = a²H/3 = 36√3 cm³.",
+      "aiSolution": null,
       "successRatePercent": null
     },
     {
@@ -645,9 +643,9 @@
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "Докажи дека ако $0^\\circ < \\alpha < 90^\\circ$ и $\\alpha \\neq 45^\\circ$, тогаш $\\frac{\\sin\\alpha - 2\\sin^3\\alpha}{2\\cos^3\\alpha - \\cos\\alpha} = \\text{tg}\\alpha$.",
+      "questionText": "Vërteto që nëse $0^\\circ < \\alpha < 90^\\circ$ dhe $\\alpha \\neq 45^\\circ$, atëherë $\\frac{\\sin\\alpha - 2\\sin^3\\alpha}{2\\cos^3\\alpha - \\cos\\alpha} = \\text{tg}\\alpha$.",
       "choices": null,
-      "correctAnswer": "Доказ",
+      "correctAnswer": "Vërtetim",
       "topic": "Тригонометриски идентитети",
       "topicArea": "trigonometrija",
       "dokLevel": 3,
@@ -656,7 +654,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": "L = sinα(1-2sin²α) / [cosα(2cos²α-1)]. Со 1=sin²α+cos²α: L = sinα(cos²α-sin²α) / [cosα(cos²α-sin²α)] = sinα/cosα = tgα. □",
+      "aiSolution": null,
       "successRatePercent": null
     }
   ]
