@@ -16,6 +16,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { useLastVisited } from '../contexts/LastVisitedContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { CachedResourcesBrowser } from '../components/common/CachedResourcesBrowser';
+import { ForumCTA } from '../components/common/ForumCTA';
 import { StepByStepSolver } from '../components/StepByStepSolver';
 import { GeometryExplorer } from '../components/GeometryExplorer';
 import { useReactToPrint } from 'react-to-print';
@@ -262,6 +263,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                   <button type="button" onClick={handleShare} aria-label="Сподели со ученици" className="text-blue-500 hover:scale-110 transition p-2 rounded-full hover:bg-blue-50">
                     <Share2 className="w-8 h-8" />
                   </button>
+                  <ForumCTA context={concept.title} variant="inline" />
                   <button
                     onClick={handleOpenGenerator}
                     className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-xl font-bold text-sm shadow-md hover:bg-brand-secondary transition active:scale-95"

@@ -17,6 +17,7 @@ import { MathRenderer }    from '../components/common/MathRenderer';
 import { DokBadge }        from '../components/common/DokBadge';
 import { callGeminiProxy } from '../services/gemini/core';
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
+import { ForumCTA } from '../components/common/ForumCTA';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
 import {
   buildGradeCacheKey,
@@ -589,9 +590,17 @@ function QuestionCard({
             );
           })}
           {state.submitted && (
-            <p className={`text-sm font-bold mt-1 ${mcCorrect ? 'text-emerald-600' : 'text-rose-600'}`}>
-              {mcCorrect ? '✓ Точно!' : `✗ Точен одговор: ${item.correctAnswer.trim()}`}
-            </p>
+            <div className="flex items-center gap-3 mt-1">
+              <p className={`text-sm font-bold flex-1 ${mcCorrect ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {mcCorrect ? '✓ Точно!' : `✗ Точен одговор: ${item.correctAnswer.trim()}`}
+              </p>
+              {mcWrong && (
+                <ForumCTA
+                  context={TOPIC_LABELS[item.topicArea ?? ''] ?? item.topicArea ?? 'Матура'}
+                  variant="inline"
+                />
+              )}
+            </div>
           )}
         </div>
       )}

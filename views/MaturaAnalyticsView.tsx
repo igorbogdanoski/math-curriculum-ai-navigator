@@ -6,6 +6,7 @@ import { Card } from '../components/common/Card';
 import { useMaturaStats } from '../hooks/useMaturaStats';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
 import { MissionPanel } from '../components/matura/MissionPanel';
+import { ForumCTA } from '../components/common/ForumCTA';
 import { downloadAsPdf } from '../utils/pdfDownload';
 import { shareService } from '../services/shareService';
 
@@ -522,9 +523,12 @@ export const MaturaAnalyticsView: React.FC = () => {
               ))}
             </div>
           )}
-          <div className="mt-3 text-xs text-rose-700/90 flex items-start gap-1.5">
-            <BookOpen className="w-3.5 h-3.5 mt-0.5" />
-            Овие концепти се пресметани преку matura-curriculum alignment foundation layer.
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="text-xs text-rose-700/90 flex items-start gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+              Овие концепти се пресметани преку matura-curriculum alignment foundation layer.
+            </div>
+            <ForumCTA context="Матура — слаби концепти" variant="inline" />
           </div>
         </Card>
       </div>

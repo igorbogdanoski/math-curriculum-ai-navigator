@@ -46,6 +46,15 @@ const PART_COLORS: Record<number, string> = {
 };
 const LANG_FLAGS: Record<string, string> = { mk: '🇲🇰 МК', al: '🇦🇱 АЛ', tr: '🇹🇷 ТР' };
 const SESSION_LABELS: Record<string, string> = { june: 'Јуни', august: 'Август', march: 'Март' };
+const TRACK_LABELS: Record<string, string> = {
+  'gymnasium':            'Гимназиско',
+  'vocational-it':        'Стручно — ИТ',
+  'vocational-economics': 'Стручно — Економија',
+  'vocational-electro':   'Стручно — Електро',
+  'vocational-mechanical':'Стручно — Машинство',
+  'vocational-health':    'Стручно — Здравство',
+  'vocational-civil':     'Стручно — Градежништво',
+};
 
 // ─── AI grade type ───────────────────────────────────────────────────────────
 interface AIGrade {
@@ -580,23 +589,36 @@ export function MaturaLibraryView() {
             </button>
 
             {/* Exam picker */}
-            <div className="ml-auto flex flex-wrap gap-1">
+            <div className="ml-auto">
               {examsLoading ? (
                 <div className="flex gap-1">
-                  {[1,2,3,4].map(i => <div key={i} className="h-9 w-28 bg-gray-100 animate-pulse rounded-xl" />)}
+                  {[1,2,3].map(i => <div key={i} className="h-9 w-28 bg-gray-100 animate-pulse rounded-xl" />)}
                 </div>
-              ) : exams.map(e => (
-                <button key={e.id} type="button"
-                  onClick={() => switchExam(e.id)}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all border ${
-                    resolvedId === e.id
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-700'
-                  }`}
+              ) : (
+                <select
+                  title="Избери испит"
+                  aria-label="Избери испит"
+                  value={resolvedId}
+                  onChange={e => switchExam(e.target.value)}
+                  className="text-sm border border-gray-200 rounded-xl px-3 py-2 font-semibold text-gray-700 bg-white focus:ring-indigo-300 focus:border-indigo-400 max-w-xs"
                 >
-                  {examLabel(e)}
-                </button>
-              ))}
+                  {(() => {
+                    const trackMap = new Map<string, MaturaExamMeta[]>();
+                    for (const e of exams) {
+                      const t = e.track ?? 'gymnasium';
+                      if (!trackMap.has(t)) trackMap.set(t, []);
+                      trackMap.get(t)!.push(e);
+                    }
+                    return Array.from(trackMap.entries()).map(([track, trackExams]) => (
+                      <optgroup key={track} label={TRACK_LABELS[track] ?? track}>
+                        {trackExams.map(e => (
+                          <option key={e.id} value={e.id}>{examLabel(e)}</option>
+                        ))}
+                      </optgroup>
+                    ));
+                  })()}
+                </select>
+              )}
             </div>
           </div>
         </div>

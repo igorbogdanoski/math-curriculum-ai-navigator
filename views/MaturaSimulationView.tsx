@@ -65,6 +65,29 @@ const SESSION_LABELS: Record<string, string> = {
 const SESSION_ORDER = ['june', 'august', 'march'];
 const LANG_ORDER    = ['mk', 'al', 'tr'];
 const LANG_FLAGS: Record<string, string> = { mk: 'МК', al: 'АЛ', tr: 'ТР' };
+const TRACK_LABELS: Record<string, string> = {
+  'gymnasium':           'Гимназиско образование',
+  'vocational-it':       'Средно стручно — Информатика',
+  'vocational-economics':'Средно стручно — Економија',
+  'vocational-electro':  'Средно стручно — Електротехника',
+  'vocational-mechanical':'Средно стручно — Машинство',
+  'vocational-health':   'Средно стручно — Здравство',
+  'vocational-civil':    'Средно стручно — Градежништво',
+};
+const TRACK_ORDER = [
+  'gymnasium',
+  'vocational-it','vocational-economics','vocational-electro',
+  'vocational-mechanical','vocational-health','vocational-civil',
+];
+const TRACK_ACCENT: Record<string, { pill: string; header: string }> = {
+  'gymnasium':            { pill: 'bg-indigo-100 text-indigo-800', header: 'text-indigo-700' },
+  'vocational-it':        { pill: 'bg-teal-100 text-teal-800',     header: 'text-teal-700'   },
+  'vocational-economics': { pill: 'bg-amber-100 text-amber-800',   header: 'text-amber-700'  },
+  'vocational-electro':   { pill: 'bg-blue-100 text-blue-800',     header: 'text-blue-700'   },
+  'vocational-mechanical':{ pill: 'bg-slate-100 text-slate-800',   header: 'text-slate-700'  },
+  'vocational-health':    { pill: 'bg-rose-100 text-rose-800',     header: 'text-rose-700'   },
+  'vocational-civil':     { pill: 'bg-orange-100 text-orange-800', header: 'text-orange-700' },
+};
 const DURATION_SECONDS = 180 * 60; // 3 hours
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -289,26 +312,36 @@ export const MaturaSimulationView: React.FC = () => {
     } catch { return null; }
   }, []);
 
-  // ── Group exams by year → session → language ──────────────────────────────
-  const examsByYear = useMemo(() => {
-    const yearMap = new Map<number, Map<string, MaturaExamMeta[]>>();
+  // ── Group exams by track → year → session → language ─────────────────────
+  const examsByTrack = useMemo(() => {
+    const trackMap = new Map<string, Map<number, Map<string, MaturaExamMeta[]>>>();
     for (const exam of exams) {
+      const track = exam.track ?? 'gymnasium';
+      if (!trackMap.has(track)) trackMap.set(track, new Map());
+      const yearMap = trackMap.get(track)!;
       if (!yearMap.has(exam.year)) yearMap.set(exam.year, new Map());
       const sessMap = yearMap.get(exam.year)!;
       if (!sessMap.has(exam.session)) sessMap.set(exam.session, []);
       sessMap.get(exam.session)!.push(exam);
     }
-    return Array.from(yearMap.entries())
-      .sort(([a], [b]) => b - a)
-      .map(([year, sessMap]) => ({
-        year,
-        sessions: Array.from(sessMap.entries())
-          .sort(([a], [b]) => SESSION_ORDER.indexOf(a) - SESSION_ORDER.indexOf(b))
-          .map(([session, variants]) => ({
-            session,
-            variants: variants.sort(
-              (a, b) => LANG_ORDER.indexOf(a.language) - LANG_ORDER.indexOf(b.language)
-            ),
+    return Array.from(trackMap.entries())
+      .sort(([a], [b]) => TRACK_ORDER.indexOf(a) - TRACK_ORDER.indexOf(b))
+      .map(([track, yearMap]) => ({
+        track,
+        label: TRACK_LABELS[track] ?? track,
+        accent: TRACK_ACCENT[track] ?? TRACK_ACCENT['gymnasium'],
+        years: Array.from(yearMap.entries())
+          .sort(([a], [b]) => b - a)
+          .map(([year, sessMap]) => ({
+            year,
+            sessions: Array.from(sessMap.entries())
+              .sort(([a], [b]) => SESSION_ORDER.indexOf(a) - SESSION_ORDER.indexOf(b))
+              .map(([session, variants]) => ({
+                session,
+                variants: variants.sort(
+                  (a, b) => LANG_ORDER.indexOf(a.language) - LANG_ORDER.indexOf(b.language)
+                ),
+              })),
           })),
       }));
   }, [exams]);
@@ -516,59 +549,76 @@ export const MaturaSimulationView: React.FC = () => {
             <p className="text-sm text-gray-400 mt-2">Увезете ДИМ тестови за да започнете.</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {examsByYear.map(({ year, sessions }) => (
-              <div key={year} className="space-y-2">
-                {/* Year header */}
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-500">{year}</span>
+          <div className="space-y-8">
+            {examsByTrack.map(({ track, label, accent, years }) => (
+              <div key={track}>
+                {/* Track header */}
+                <div className="flex items-center gap-3 mb-3">
+                  <span className={`text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${accent.pill}`}>
+                    {label}
+                  </span>
                   <div className="flex-1 h-px bg-slate-200" />
-                  <span className="text-xs text-slate-400">{sessions.reduce((n, s) => n + s.variants.length, 0)} верзии</span>
+                  <span className="text-xs text-slate-400">
+                    {years.reduce((t, y) => t + y.sessions.reduce((s, ses) => s + ses.variants.length, 0), 0)} верзии
+                  </span>
                 </div>
-                {/* Session rows */}
-                <div className="space-y-2">
-                  {sessions.map(({ session, variants }) => {
-                    const meta = variants[0];
-                    return (
-                      <div key={session} className="bg-white rounded-2xl border border-slate-200 px-4 py-3 flex items-center gap-4 hover:border-slate-300 transition-all">
-                        {/* Session label */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-slate-800 text-sm">{SESSION_LABELS[session] ?? session} сесија</p>
-                          <p className="text-xs text-slate-400 mt-0.5">{meta.questionCount} пр. · {meta.totalPoints} поени · 180 мин</p>
-                        </div>
-                        {/* Language variant pills */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {variants.map(exam => {
-                            const past = getPastResult(exam.id);
-                            const pct  = past ? Math.round((past.totalScore / past.maxScore) * 100) : null;
-                            const grade = pct !== null ? gradeFromPercent(pct) : null;
-                            return (
-                              <button
-                                key={exam.id}
-                                type="button"
-                                onClick={() => startExam(exam)}
-                                title={`Започни ${LANG_FLAGS[exam.language] ?? exam.language.toUpperCase()} верзија`}
-                                className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border transition group ${
-                                  grade
-                                    ? 'border-emerald-200 bg-emerald-50 hover:border-emerald-400'
-                                    : 'border-slate-200 bg-white hover:border-brand-primary hover:bg-brand-primary/5'
-                                }`}
-                              >
-                                <span className={`text-xs font-black ${grade ? 'text-emerald-700' : 'text-slate-700 group-hover:text-brand-primary'}`}>
-                                  {LANG_FLAGS[exam.language] ?? exam.language.toUpperCase()}
-                                </span>
-                                {pct !== null ? (
-                                  <span className="text-[10px] font-bold text-emerald-600">{pct}%</span>
-                                ) : (
-                                  <Play className="w-2.5 h-2.5 text-slate-400 group-hover:text-brand-primary" />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
+
+                {/* Years within this track */}
+                <div className="space-y-4">
+                  {years.map(({ year, sessions }) => (
+                    <div key={year} className="space-y-1.5">
+                      {/* Year sub-header */}
+                      <div className="flex items-center gap-2 pl-1">
+                        <span className={`text-xs font-black tracking-widest ${accent.header}`}>{year}</span>
+                        <div className="flex-1 h-px bg-slate-100" />
+                        <span className="text-xs text-slate-400">
+                          {sessions.reduce((n: number, s: { variants: MaturaExamMeta[] }) => n + s.variants.length, 0)} верзии
+                        </span>
                       </div>
-                    );
-                  })}
+
+                      {/* Session rows */}
+                      {sessions.map(({ session, variants }: { session: string; variants: MaturaExamMeta[] }) => {
+                        const meta = variants[0];
+                        return (
+                          <div key={session} className="bg-white rounded-2xl border border-slate-200 px-4 py-3 flex items-center gap-4 hover:border-slate-300 transition-all">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-slate-800 text-sm">{SESSION_LABELS[session] ?? session} сесија</p>
+                              <p className="text-xs text-slate-400 mt-0.5">{meta.questionCount} пр. · {meta.totalPoints} поени · 180 мин</p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {variants.map((exam: MaturaExamMeta) => {
+                                const past  = getPastResult(exam.id);
+                                const pct   = past ? Math.round((past.totalScore / past.maxScore) * 100) : null;
+                                const grade = pct !== null ? gradeFromPercent(pct) : null;
+                                return (
+                                  <button
+                                    key={exam.id}
+                                    type="button"
+                                    onClick={() => startExam(exam)}
+                                    title={`Започни ${LANG_FLAGS[exam.language] ?? exam.language.toUpperCase()} верзија`}
+                                    className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border transition group ${
+                                      grade
+                                        ? 'border-emerald-200 bg-emerald-50 hover:border-emerald-400'
+                                        : 'border-slate-200 bg-white hover:border-brand-primary hover:bg-brand-primary/5'
+                                    }`}
+                                  >
+                                    <span className={`text-xs font-black ${grade ? 'text-emerald-700' : 'text-slate-700 group-hover:text-brand-primary'}`}>
+                                      {LANG_FLAGS[exam.language] ?? exam.language.toUpperCase()}
+                                    </span>
+                                    {pct !== null ? (
+                                      <span className="text-[10px] font-bold text-emerald-600">{pct}%</span>
+                                    ) : (
+                                      <Play className="w-2.5 h-2.5 text-slate-400 group-hover:text-brand-primary" />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}

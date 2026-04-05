@@ -7,6 +7,7 @@ import { firestoreService } from '../services/firestoreService';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { DokBadge } from '../components/common/DokBadge';
 import type { DokLevel } from '../types';
+import { ForumCTA } from '../components/common/ForumCTA';
 
 const DOK_TUTOR_HINTS: Record<DokLevel, string> = {
   1: 'Се потсетуваме на дефиниции и факти',
@@ -166,8 +167,13 @@ export const StudentTutorView: React.FC = () => {
                 {msg.role === 'user' ? (
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                 ) : (
-                  <div className="prose prose-sm md:prose-base max-w-none">
-                    <MathRenderer text={msg.content} />
+                  <div>
+                    <div className="prose prose-sm md:prose-base max-w-none">
+                      <MathRenderer text={msg.content} />
+                    </div>
+                    <div className="mt-2 flex justify-end">
+                      <ForumCTA context="AI Тутор" variant="inline" />
+                    </div>
                   </div>
                 )}
               </div>
