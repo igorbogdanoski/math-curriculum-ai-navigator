@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, CalendarDays, GraduationCap, Timer, Trophy, TrendingUp, BookOpen, Network } from 'lucide-react';
+import { BarChart3, CalendarDays, GraduationCap, Timer, Trophy, TrendingUp, BookOpen, Network, Share2, Download, Copy, CheckCheck } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { Card } from '../components/common/Card';
 import { useMaturaStats } from '../hooks/useMaturaStats';
@@ -63,6 +63,89 @@ export const MaturaAnalyticsView: React.FC = () => {
   const { navigate } = useNavigation();
   const stats = useMaturaStats();
   const missions = useMaturaMissions();
+  const [copied, setCopied] = React.useState(false);
+
+  const buildRecoverySummary = React.useCallback((): string => {
+    const lines: string[] = [];
+    lines.push('Matura Recovery Summary');
+    lines.push('=======================');
+    lines.push(`Generated: ${new Date().toLocaleString('mk-MK')}`);
+    lines.push(`Attempts: ${stats.attempts}`);
+    lines.push(`Average score: ${stats.avgPct.toFixed(1)}%`);
+    lines.push(`Best score: ${stats.bestPct.toFixed(1)}%`);
+    lines.push(`Pass rate: ${stats.passRatePct.toFixed(1)}%`);
+    lines.push('');
+    lines.push('Weak Concepts (Top 5)');
+    lines.push('---------------------');
+
+    if (stats.weakConcepts.length === 0) {
+      lines.push('No weak concepts detected.');
+    } else {
+      for (const item of stats.weakConcepts.slice(0, 5)) {
+        const base = `- ${item.concept.title}: ${item.pct.toFixed(1)}% (${item.questions} q)`;
+        const delta = item.delta && item.delta.pctBefore !== null
+          ? ` | recovery ${item.delta.pctAfter >= item.delta.pctBefore ? '+' : ''}${(item.delta.pctAfter - item.delta.pctBefore).toFixed(1)}%`
+          : '';
+        lines.push(`${base}${delta}`);
+      }
+    }
+
+    lines.push('');
+    lines.push('Mission Status');
+    lines.push('--------------');
+    if (missions.mission) {
+      const completed = missions.mission.days.filter((d) => d.status === 'completed').length;
+      lines.push(`Plan: 7-day mission for ${missions.mission.sourceConceptTitle}`);
+      lines.push(`Progress: ${completed}/${missions.mission.days.length}`);
+      lines.push(`Streak: ${missions.mission.streakCount}`);
+      lines.push(`Badge: ${missions.mission.badgeEarned ? 'earned' : 'not yet'}`);
+    } else {
+      lines.push('No active mission.');
+    }
+
+    lines.push('');
+    lines.push('Recommended Next Steps');
+    lines.push('----------------------');
+    lines.push('1) Daily 5-10 minute targeted recovery session');
+    lines.push('2) Focus on the top 1-2 weak concepts first');
+    lines.push('3) Re-run one full simulation after 7 days');
+
+    return lines.join('\n');
+  }, [stats, missions.mission]);
+
+  const handleCopySummary = React.useCallback(() => {
+    const text = buildRecoverySummary();
+    void navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  }, [buildRecoverySummary]);
+
+  const handleDownloadSummary = React.useCallback(() => {
+    const text = buildRecoverySummary();
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `matura-recovery-summary-${date}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [buildRecoverySummary]);
+
+  const handleNativeShare = React.useCallback(() => {
+    const text = buildRecoverySummary();
+    if (navigator.share) {
+      void navigator.share({
+        title: 'Matura Recovery Summary',
+        text,
+      });
+      return;
+    }
+    handleCopySummary();
+  }, [buildRecoverySummary, handleCopySummary]);
 
   const startRecoverySession = (payload: { topicArea?: string; dokLevel?: number; conceptId: string; conceptTitle: string; pctBefore: number }) => {
     // Snapshot current score so the practice session can compute delta
@@ -167,6 +250,30 @@ export const MaturaAnalyticsView: React.FC = () => {
           <StatCard title="Average Score" value={`${stats.avgPct.toFixed(1)}%`} subtitle="Сите завршени симулации" tone={avgTone} icon={<TrendingUp className="w-5 h-5" />} />
           <StatCard title="Best Score" value={`${stats.bestPct.toFixed(1)}%`} subtitle="Најдобар забележан резултат" tone={statTone(stats.bestPct, 80, 60)} icon={<Trophy className="w-5 h-5" />} />
           <StatCard title="Pass Rate" value={`${stats.passRatePct.toFixed(1)}%`} subtitle="Праг: 35/61" tone={passTone} icon={<Timer className="w-5 h-5" />} />
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleNativeShare}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition inline-flex items-center gap-1.5"
+          >
+            <Share2 className="w-3.5 h-3.5" /> Сподели Recovery Summary
+          </button>
+          <button
+            type="button"
+            onClick={handleCopySummary}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition inline-flex items-center gap-1.5"
+          >
+            {copied ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {copied ? 'Копирано' : 'Копирај текст'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadSummary}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition inline-flex items-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" /> Преземи .txt
+          </button>
         </div>
       </Card>
 

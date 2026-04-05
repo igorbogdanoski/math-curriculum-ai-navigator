@@ -363,6 +363,14 @@ Field 2: questionNumber (Ascending)
 - Wiring во `MaturaAnalyticsView`: ако нема активен план → 3 копчиња "План за: {concept}" за брзо стартување; ако постои план → рендерира `MissionPanel`
 - `MaturaPracticeView`: `useMaturaMissions().completeDay(missionDay, pctAfter)` се вика при крај на сесија ако prefill содржи `missionDay` поле
 - `Sidebar`: M5 nav item добива `badge="🔥N"` кога постои активен streak (N = број денови), иначе `badge="M5"`
+
+### M5.6 — Recovery Summary Export/Share ✅ [05.04.2026]
+- Во `MaturaAnalyticsView` додадени 3 action копчиња за наставник/родител комуникација:
+  - `Сподели Recovery Summary` (native share ако е поддржано)
+  - `Копирај текст` (clipboard fallback)
+  - `Преземи .txt` (offline-ready export)
+- Summary содржи: attempts, average/best/pass rate, top weak concepts (со delta каде што постои), mission status и кратки next-step препораки.
+- Цел: побрзо споделување на доказлив напредок и јасни follow-up чекори без рачно препишување.
 - UI за upload + валидирање на нов испит без CLI
 - Прикажи статистики по испит (успешност, топ-3 тешки прашања)
 - Editable correctAnswer / topic за грешки после публикација
