@@ -362,6 +362,8 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-06 | UI | Home compact quote, Matura featured tool, Simulation year-grouped, Practice redesign | DONE |
 | 2026-04-06 | SLO | PERMISSION_DENIED fallback на custom claims | DONE |
 | 2026-04-06 | PLAN | Стратешки roadmap составен (овој документ) | DONE |
+| 2026-04-06 | S16-A1 | track grouping во MaturaSimulation + MaturaLibrary; TRACK_LABELS/ACCENT/ORDER constants | DONE |
+| 2026-04-06 | S16-V1 | ForumCTA компонент (inline/banner/float); вграден во ConceptDetail, MaturaAnalytics, MaturaPractice, StudentTutor | DONE |
 
 ---
 
