@@ -288,13 +288,16 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 
 ## 6. Редослед на следните спринтови
 
-### Sprint S16 — Мatura Scale + Extraction Foundation
+### Sprint S16 — Мatura Scale + Extraction Foundation ✅ ЗАВРШЕНА
+
 ```
-П1. track поле активација во UI (блокер за средно стручно)
-П2. B1: YouTube captions → реална екстракција
-П3. B2: Слики → задачи (Gemini Vision, 1-2 дена)
-П4. V1: ForumCTA компонент во сите главни views
-П5. G1: Gamma брендирање (watermark + pro school logo)
+П1. ✅ track поле активација во UI (MaturaSimulation + Library)
+П2. ✅ V1: ForumCTA компонент — ConceptDetail, MaturaAnalytics, MaturaPractice, StudentTutor
+П3. ✅ B1: YouTube captions → реална екстракција (api/youtube-captions.ts, no API key)
+П4. ✅ B2: Image Extractor (Gemini Vision, drag+drop, 3 режими)
+П5. ✅ G1: Gamma брендирање (watermark free/pro, schoolLogoUrl)
+П6. ✅ G3: Gamma PPTX export (lazy pptxgenjs, dark theme, 9 slide типови)
+П7. ✅ B3: Web Extractor (api/webpage-extract.ts, SSRF-safe, full pipeline)
 ```
 
 ### Sprint S17 — M6 + Generator Integration
@@ -344,9 +347,12 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 |---|---|---|---|
 | Испити во базата | 10 | 30+ | 60+ |
 | Концепти со conceptIds | 270/270 | 270/270 | 400+ (voc) |
-| Video extraction реалност | 0% (само oEmbed) | YouTube captions | + Слики + Веб |
-| Forum entry points | 1 (TopicView) | 5+ views | 8+ views |
-| Gamma export formats | 0 | PPTX | PPTX + PDF |
+| Video extraction реалност | 0% (само oEmbed) | ✅ YouTube captions | + Долги видеа |
+| Image extraction | ❌ | ✅ Gemini Vision | + Batch + OCR |
+| Web extraction | ❌ | ✅ HTML→text Vercel fn | + JS-rendered pages |
+| Forum entry points | 1 (TopicView) | ✅ 5+ views | 8+ views |
+| Gamma watermark/branding | ❌ | ✅ Free+Pro tier | Custom color schemes |
+| Gamma export formats | ❌ | ✅ PPTX (dark theme) | PPTX + PDF |
 | M6 coverage | 0% | Worksheet PDF | Teacher assignment |
 | UI translation coverage | MK: 100%, EN/AL/TR: 5% | MK: 100% | EN: 60%, AL: 40% |
 | TSC грешки | 0 | 0 | 0 |
@@ -364,6 +370,11 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-06 | PLAN | Стратешки roadmap составен (овој документ) | DONE |
 | 2026-04-06 | S16-A1 | track grouping во MaturaSimulation + MaturaLibrary; TRACK_LABELS/ACCENT/ORDER constants | DONE |
 | 2026-04-06 | S16-V1 | ForumCTA компонент (inline/banner/float); вграден во ConceptDetail, MaturaAnalytics, MaturaPractice, StudentTutor | DONE |
+| 2026-04-06 | S16-P3 | YouTube real transcript extraction — api/youtube-captions.ts (no API key); auto-fetch on preview; transcript → Gemini prompt | DONE |
+| 2026-04-06 | S16-P4 | Image Extractor — ImageExtractorOptions (drag+drop, 3 modes); Gemini Vision inlineData; registered in all UI entry points | DONE |
+| 2026-04-06 | S16-P5 | Gamma Branding — watermark overlay (free: ai.mismath.net, pro: schoolName/logo); schoolLogoUrl field in TeachingProfile | DONE |
+| 2026-04-06 | S16-P6 | Gamma PPTX export — lazy pptxgenjs; dark theme; all 9 slide types; speaker notes; footer watermark per slide | DONE |
+| 2026-04-06 | S16-B3 | Web Extractor — api/webpage-extract.ts (SSRF-safe, HTML→text); WEB_EXTRACTOR type; WebExtractorOptions; full generator pipeline | DONE |
 
 ---
 
