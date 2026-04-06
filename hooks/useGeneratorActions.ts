@@ -403,6 +403,50 @@ export function useGeneratorActions({
               user ?? undefined,
             );
             break;
+          case 'IMAGE_EXTRACTOR': {
+            if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за Image Extractor');
+            if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за Image Extractor');
+            if (!state.imageFile) throw new ValidationError('Слика', 'прикачете слика за извлекување');
+            {
+              const { base64, file } = state.imageFile;
+              const mimeType = file.type || 'image/jpeg';
+              const topicTitle = sanitizePromptInput(finalContext.topic?.title ?? 'Математика', 120);
+              const gradeLevel = finalContext.grade?.level ?? 1;
+              const conceptsList = finalContext.concepts?.map(c => c.title).join(', ') || '';
+
+              const extractionContext = [
+                `РЕЖИМ: Извлекување на задачи (не оценување)`,
+                `Тема: ${topicTitle}`,
+                conceptsList ? `Концепти: ${conceptsList}` : '',
+                `Одделение: ${gradeLevel}`,
+                `ЗАДАЧА: Извлечи ги ТОЧНО сите математички задачи, формули и теорија од сликата. Потоа генерирај структуриран наставен план со: цел на часот, клучни концепти, чекор-по-чекор решавање на 1-2 задачи, и 3 нови вежби на исто ниво.`,
+              ].filter(Boolean).join('\n');
+
+              const rawAnalysis = await geminiService.analyzeHandwriting(base64, mimeType, extractionContext);
+
+              // Wrap raw vision analysis into a GeneratedMaterial shape (AIGeneratedIdeas)
+              result = {
+                type: 'ideas',
+                title: `Извлечен материјал: ${topicTitle}`,
+                ideas: [
+                  {
+                    title: 'Извлечена содржина од слика',
+                    description: rawAnalysis,
+                    duration: 45,
+                    materials: ['Оригинална слика', 'Работни листови'],
+                    bloomLevel: 'Applying',
+                  }
+                ],
+                metadata: {
+                  topic: topicTitle,
+                  grade: gradeLevel,
+                  generatedAt: new Date().toISOString(),
+                  source: 'image_extractor',
+                },
+              } as unknown as GeneratedMaterial;
+            }
+            break;
+          }
           case 'VIDEO_EXTRACTOR':
             if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за Video Extractor');
             if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за Video Extractor');

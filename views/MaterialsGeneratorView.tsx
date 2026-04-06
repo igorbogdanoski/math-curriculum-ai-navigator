@@ -89,6 +89,7 @@ const MATERIAL_META: Record<string, {
   EXIT_TICKET:   { emoji: '🎟️', description: '2–3 брзи прашања за проверка на разбирањето пред крај на часот', timeEst: '~3 мин', tags: ['⚡ Брзо', 'Крај на час'], badge: 'БРЗО', badgeColor: 'bg-blue-100 text-blue-700 border-blue-200' },
   ILLUSTRATION:  { emoji: '🖼️', description: 'AI генерирана слика или дијаграм за визуелно претставување на концепт', timeEst: '~2 мин', tags: ['Визуелно', 'Презентација'] },
     VIDEO_EXTRACTOR:{ emoji: '🎬', description: 'Внеси видео URL, потврди preview и генерирај наставно сценарио од содржината', timeEst: '~3 мин', tags: ['URL', 'Preview', 'MVP'], badge: 'MVP', badgeColor: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
+  IMAGE_EXTRACTOR:{ emoji: '📸', description: 'Прикачи слика од учебник, табла или ракопис — AI ги извлекува задачите и генерира наставен план', timeEst: '~2 мин', tags: ['Vision', 'Слика'], badge: 'НОВО', badgeColor: 'bg-violet-100 text-violet-700 border-violet-200' },
   WORKED_EXAMPLE:{ emoji: '✍️', description: 'Детален чекор-по-чекор решен пример со образложение за секој чекор', timeEst: '~5 мин', tags: ['Пример', 'Моделирање'], badge: 'НОВО', badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' },
 };
 
@@ -122,6 +123,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     { id: 'EXIT_TICKET', label: t('generator.types.exitTicket'), icon: 'quiz' },
     { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' },
         { id: 'VIDEO_EXTRACTOR', label: 'Video Extractor (MVP)', icon: 'gallery' },
+        { id: 'IMAGE_EXTRACTOR', label: 'Image Extractor (НОВО)', icon: 'gallery' },
     { id: 'WORKED_EXAMPLE', label: 'Работен Пример', icon: 'lightbulb' }
   ];
 
