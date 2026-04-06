@@ -90,6 +90,7 @@ const MATERIAL_META: Record<string, {
   ILLUSTRATION:  { emoji: '🖼️', description: 'AI генерирана слика или дијаграм за визуелно претставување на концепт', timeEst: '~2 мин', tags: ['Визуелно', 'Презентација'] },
     VIDEO_EXTRACTOR:{ emoji: '🎬', description: 'Внеси видео URL, потврди preview и генерирај наставно сценарио од содржината', timeEst: '~3 мин', tags: ['URL', 'Preview', 'MVP'], badge: 'MVP', badgeColor: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
   IMAGE_EXTRACTOR:{ emoji: '📸', description: 'Прикачи слика од учебник, табла или ракопис — AI ги извлекува задачите и генерира наставен план', timeEst: '~2 мин', tags: ['Vision', 'Слика'], badge: 'НОВО', badgeColor: 'bg-violet-100 text-violet-700 border-violet-200' },
+  WEB_EXTRACTOR:  { emoji: '🌐', description: 'Внеси URL на математичка страна — AI ја чита, анализира и генерира наставен материјал', timeEst: '~3 мин', tags: ['URL', 'Веб'], badge: 'НОВО', badgeColor: 'bg-teal-100 text-teal-700 border-teal-200' },
   WORKED_EXAMPLE:{ emoji: '✍️', description: 'Детален чекор-по-чекор решен пример со образложение за секој чекор', timeEst: '~5 мин', tags: ['Пример', 'Моделирање'], badge: 'НОВО', badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' },
 };
 
@@ -124,6 +125,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     { id: 'ILLUSTRATION', label: t('generator.types.illustration'), icon: 'gallery' },
         { id: 'VIDEO_EXTRACTOR', label: 'Video Extractor (MVP)', icon: 'gallery' },
         { id: 'IMAGE_EXTRACTOR', label: 'Image Extractor (НОВО)', icon: 'gallery' },
+        { id: 'WEB_EXTRACTOR', label: 'Web Extractor (НОВО)', icon: 'gallery' },
     { id: 'WORKED_EXAMPLE', label: 'Работен Пример', icon: 'lightbulb' }
   ];
 

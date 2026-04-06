@@ -38,6 +38,8 @@ export interface GeneratorState {
     videoPreview: VideoPreviewData | null;
     videoTranscript: string | null;
     imageFile: { file: File, base64: string, previewUrl: string } | null;
+    webpageUrl: string;
+    webpageText: string | null;
     customInstruction: string;
     useMacedonianContext: boolean;
     aiTone: 'creative' | 'formal' | 'friendly' | 'expert' | 'playful';
@@ -94,6 +96,8 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         videoPreview: null,
         videoTranscript: null,
         imageFile: null,
+        webpageUrl: '',
+        webpageText: null,
         customInstruction: '',
         useMacedonianContext: true,
         aiTone: 'creative',

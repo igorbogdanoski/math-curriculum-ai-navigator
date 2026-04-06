@@ -227,7 +227,7 @@ export enum PlannerItemType {
   HOLIDAY = 'HOLIDAY',
 }
 
-export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH' | 'WORKED_EXAMPLE' | 'PRESENTATION' | 'VIDEO_EXTRACTOR' | 'IMAGE_EXTRACTOR';
+export type MaterialType = 'SCENARIO' | 'ASSESSMENT' | 'RUBRIC' | 'FLASHCARDS' | 'QUIZ' | 'ILLUSTRATION' | 'EXIT_TICKET' | 'LEARNING_PATH' | 'WORKED_EXAMPLE' | 'PRESENTATION' | 'VIDEO_EXTRACTOR' | 'IMAGE_EXTRACTOR' | 'WEB_EXTRACTOR';
 
 export interface PresentationSlide {
   title: string;
@@ -416,6 +416,7 @@ export interface TeachingProfile {
   hasUnlimitedCredits?: boolean;
   tier?: 'Free' | 'Pro' | 'Unlimited';
 
+  schoolLogoUrl?: string; // Pro: uploaded school logo, shown as watermark in Gamma + PPTX footer
   isMentor?: boolean; // П-Д: voluntary mentor flag — shown as badge on shared materials
 
   /** Н4 — if set, teacher works in secondary education (not primary grades 1–9) */

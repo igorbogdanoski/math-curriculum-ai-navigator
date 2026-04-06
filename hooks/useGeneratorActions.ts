@@ -447,6 +447,43 @@ export function useGeneratorActions({
             }
             break;
           }
+          case 'WEB_EXTRACTOR': {
+            if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за Web Extractor');
+            if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за Web Extractor');
+            if (!state.webpageUrl.trim()) throw new ValidationError('URL', 'внесете URL на веб страна');
+            {
+              const safeUrl     = sanitizePromptInput(state.webpageUrl, 300);
+              const rawWebText  = state.webpageText;
+              const topicTitle  = sanitizePromptInput(finalContext.topic?.title ?? 'Математика', 120);
+              const gradeLevel  = finalContext.grade?.level ?? 1;
+              const conceptsList = finalContext.concepts?.map(c => c.title).join(', ') || '';
+
+              const safeWebText = rawWebText
+                ? sanitizePromptInput(rawWebText.slice(0, 6000), 6000)
+                : null;
+
+              const webContext = [
+                '=== ВЕБ ИЗВОР ===',
+                `URL: ${safeUrl}`,
+                `Тема: ${topicTitle}`,
+                conceptsList ? `Концепти: ${conceptsList}` : '',
+                safeWebText
+                  ? `\n=== ИЗВЛЕЧЕНА СОДРЖИНА ОД ВЕБ СТРАНА ===\n${safeWebText}\n=== КРАЈ НА СОДРЖИНА ===\n\nИнструкција: анализирај ја извлечената содржина погоре и идентификувај ги математичките концепти, задачи и теорија. Креирај детален наставен материјал базиран на ВИСТИНСКАТА содржина.`
+                  : '\nИнструкција: нема извлечена содржина — генерирај материјал врз основа на темата и URL.',
+              ].filter(Boolean).join('\n');
+
+              const combinedInstruction = [effectiveInstruction, webContext].filter(Boolean).join('\n\n');
+              result = await geminiService.generateLessonPlanIdeas(
+                finalContext.concepts || [],
+                finalContext.topic,
+                gradeLevel,
+                user ?? undefined,
+                { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel },
+                combinedInstruction,
+              );
+            }
+            break;
+          }
           case 'VIDEO_EXTRACTOR':
             if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за Video Extractor');
             if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за Video Extractor');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown } from 'lucide-react';
 import { Shape3DViewer, Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
@@ -8,6 +8,8 @@ import type { ChartConfig } from '../dataviz/ChartPreview';
 import type { TableData } from '../dataviz/DataTable';
 import { SlideSVGRenderer } from './SlideSVGRenderer';
 import { generateMathSVG } from '../../services/gemini/svg';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNotification } from '../../contexts/NotificationContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -33,6 +35,8 @@ const SLIDE_META: Record<PresentationSlide['type'], { label: string; color: stri
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
 export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose }) => {
+  const { user }                = useAuth();
+  const { addNotification }     = useNotification();
   const [idx, setIdx]           = useState(startIndex);
   const [revealed, setRevealed] = useState(false);
   const [stepIdx, setStepIdx]   = useState(0);
@@ -49,7 +53,173 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   // ── Speaker notes ─────────────────────────────────────────────────────────
   const [notesOpen, setNotesOpen]     = useState(false);
 
-  // ── Annotation tools ──────────────────────────────────────────────────────
+  // ── PPTX export ───────────────────────────────────────────────────────────
+  const [isExportingPptx, setIsExportingPptx] = useState(false);
+
+  const exportGammaPPTX = useCallback(async () => {
+    if (isExportingPptx) return;
+    setIsExportingPptx(true);
+    addNotification('Генерирам PPTX презентација…', 'info');
+    try {
+      const { default: pptxgen } = await import('pptxgenjs');
+      const pptx = new pptxgen();
+      pptx.layout = 'LAYOUT_16x9';
+      const W = 10; // inches
+
+      // Dark Gamma theme
+      const BG    = '0F172A'; // slate-950
+      const TITLE = 'A5B4FC'; // indigo-300
+      const BODY  = 'CBD5E1'; // slate-300
+      const LINE  = '3730A3'; // indigo-800
+      const ACCT  = '818CF8'; // indigo-400
+
+      const isPro = !!(user?.isPremium);
+      const logoUrl = user?.schoolLogoUrl ?? null;
+      const footerText = isPro && user?.schoolName
+        ? user.schoolName
+        : 'ai.mismath.net';
+
+      for (let i = 0; i < data.slides.length; i++) {
+        const slide = data.slides[i];
+        const pptSlide = pptx.addSlide();
+        pptSlide.background = { color: BG };
+
+        // ── Slide header bar ──
+        pptSlide.addShape('rect', { x: 0, y: 0, w: W, h: 0.55, fill: { color: '1E1B4B' } });
+        pptSlide.addText(slide.title ?? '', {
+          x: 0.3, y: 0.05, w: W - 2, h: 0.45,
+          fontSize: 14, bold: true, color: TITLE, fontFace: 'Arial',
+        });
+        pptSlide.addText(`${i + 1} / ${data.slides.length}`, {
+          x: W - 1.5, y: 0.05, w: 1.2, h: 0.45,
+          fontSize: 11, color: '6366F1', align: 'right', fontFace: 'Arial',
+        });
+
+        // ── Slide body by type ──
+        const contentY = 0.75;
+        const contentH = 4.35;
+        const lineH = 0.44;
+
+        if (slide.type === 'title') {
+          pptSlide.addText(slide.title ?? '', {
+            x: 0.5, y: 1.5, w: W - 1, h: 1.4,
+            fontSize: 40, bold: true, color: TITLE, align: 'center', fontFace: 'Arial',
+          });
+          if (slide.content.length > 0) {
+            pptSlide.addText(slide.content.join('\n'), {
+              x: 0.5, y: 3.1, w: W - 1, h: 1.2,
+              fontSize: 18, color: BODY, align: 'center', fontFace: 'Arial',
+            });
+          }
+          pptSlide.addText(`${data.topic} · ${data.gradeLevel}. одделение`, {
+            x: 0.5, y: 4.4, w: W - 1, h: 0.4,
+            fontSize: 12, color: ACCT, align: 'center', fontFace: 'Arial',
+          });
+
+        } else if (slide.type === 'formula-centered') {
+          pptSlide.addShape('roundRect', {
+            x: 1.0, y: contentY + 0.4, w: W - 2, h: 1.6,
+            fill: { color: '1E1B4B' },
+            line: { color: LINE, width: 2 },
+          });
+          pptSlide.addText(slide.content[0] ?? slide.title ?? '', {
+            x: 1.0, y: contentY + 0.6, w: W - 2, h: 1.2,
+            fontSize: 24, bold: true, color: TITLE, align: 'center', fontFace: 'Courier New',
+          });
+          let noteY = contentY + 2.3;
+          for (const note of slide.content.slice(1)) {
+            pptSlide.addText(`• ${note}`, { x: 1.0, y: noteY, w: W - 2, h: lineH, fontSize: 14, color: BODY, fontFace: 'Arial' });
+            noteY += lineH;
+            if (noteY > contentY + contentH) break;
+          }
+
+        } else if (slide.type === 'step-by-step' || slide.type === 'proof') {
+          let curY = contentY;
+          slide.content.forEach((step, si) => {
+            pptSlide.addShape('roundRect', {
+              x: 0.4, y: curY, w: 0.5, h: 0.36,
+              fill: { color: si === 0 ? '4F46E5' : '1E1B4B' },
+              line: { color: LINE, width: 1 },
+            });
+            pptSlide.addText(String(si + 1), { x: 0.4, y: curY + 0.02, w: 0.5, h: 0.32, fontSize: 11, bold: true, color: 'FFFFFF', align: 'center' });
+            pptSlide.addText(step, { x: 1.1, y: curY, w: W - 1.5, h: lineH, fontSize: 14, color: BODY, fontFace: 'Arial' });
+            curY += lineH + 0.04;
+            if (curY > contentY + contentH) return;
+          });
+
+        } else if (slide.type === 'task' || slide.type === 'example') {
+          const isTask = slide.type === 'task';
+          const boxColor = isTask ? '451A03' : '052E16';
+          const labelColor = isTask ? 'FCD34D' : '6EE7B7';
+          pptSlide.addShape('roundRect', {
+            x: 0.5, y: contentY, w: W - 1, h: 2.2,
+            fill: { color: boxColor }, line: { color: isTask ? '92400E' : '065F46', width: 1.5 },
+          });
+          pptSlide.addText(isTask ? '📝 Задача' : '💡 Пример', {
+            x: 0.8, y: contentY + 0.15, w: 3, h: 0.35, fontSize: 11, bold: true, color: labelColor,
+          });
+          pptSlide.addText(slide.content[0] ?? '', {
+            x: 0.8, y: contentY + 0.55, w: W - 1.6, h: 1.5, fontSize: 15, color: '#E2E8F0', fontFace: 'Arial', wrap: true,
+          });
+          if (slide.solution && slide.solution.length > 0) {
+            let solY = contentY + 2.45;
+            pptSlide.addText('Решение:', { x: 0.5, y: solY, w: 2, h: 0.32, fontSize: 11, bold: true, color: '6EE7B7' });
+            solY += 0.34;
+            for (const sol of slide.solution) {
+              pptSlide.addText(`• ${sol}`, { x: 0.5, y: solY, w: W - 1, h: lineH, fontSize: 13, color: BODY, fontFace: 'Arial' });
+              solY += lineH;
+              if (solY > 5.1) break;
+            }
+          }
+
+        } else {
+          // content / summary / comparison / proof fallback
+          let curY = contentY;
+          for (const line of slide.content) {
+            pptSlide.addShape('ellipse', { x: 0.4, y: curY + 0.14, w: 0.12, h: 0.12, fill: { color: ACCT } });
+            pptSlide.addText(line, { x: 0.65, y: curY, w: W - 1.1, h: lineH, fontSize: 15, color: BODY, fontFace: 'Arial' });
+            curY += lineH + 0.04;
+            if (curY > contentY + contentH) break;
+          }
+        }
+
+        // ── Speaker notes ──
+        pptSlide.addNotes([
+          `Слајд ${i + 1}/${data.slides.length}: ${slide.title ?? ''}`,
+          slide.speakerNotes ?? '',
+          `Тема: ${data.topic} | Генерирано со Math Navigator AI (Gamma Mode)`,
+        ].filter(Boolean).join('\n'));
+
+        // ── Footer ──
+        pptSlide.addShape('line', { x: 0, y: 5.38, w: W, h: 0, line: { color: LINE, width: 0.75 } });
+        if (isPro && logoUrl) {
+          try {
+            pptSlide.addImage({ path: logoUrl, x: 0.2, y: 5.41, w: 0.6, h: 0.18 });
+          } catch { /* logo load fail — fall through to text */ }
+        }
+        pptSlide.addText(footerText, {
+          x: isPro && logoUrl ? 0.9 : 0.3, y: 5.41, w: W - 1, h: 0.2,
+          fontSize: 8, color: isPro ? ACCT : '475569', fontFace: 'Arial',
+          italic: !isPro,
+        });
+        pptSlide.addText(`${data.topic} · ${data.gradeLevel}. одд.`, {
+          x: W - 3.5, y: 5.41, w: 3.2, h: 0.2,
+          fontSize: 8, color: '475569', align: 'right',
+        });
+      }
+
+      const safeTitle = data.title.replace(/\s+/g, '_').replace(/[<>:"/\\|?*\x00-\x1f]/g, '').slice(0, 80) || 'gamma';
+      await pptx.writeFile({ fileName: `${safeTitle}_gamma.pptx` });
+      addNotification('PPTX успешно зачуван! ✅', 'success');
+    } catch (err) {
+      console.error('[Gamma PPTX]', err);
+      addNotification('Грешка при генерирање на PPTX.', 'error');
+    } finally {
+      setIsExportingPptx(false);
+    }
+  }, [data, user, isExportingPptx, addNotification]);
+
+  // ── Annotation tools ───────────────────────────────────────────────────────
   type AnnotMode = 'draw' | 'highlight' | 'laser' | null;
   const [annotMode, setAnnotMode]       = useState<AnnotMode>(null);
   const [hasAnnotations, setHasAnnot]   = useState(false);
@@ -755,10 +925,23 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             )}
           </div>
 
-          {/* Print / Fullscreen */}
+          {/* Print / PPTX / Fullscreen */}
           <button type="button" onClick={() => window.print()} title="Печати / Зачувај PDF (P)"
             className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
             <Printer className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={exportGammaPPTX}
+            disabled={isExportingPptx}
+            title="Зачувај PPTX (PowerPoint)"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition text-[11px] font-semibold"
+          >
+            {isExportingPptx
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <FileDown className="w-3.5 h-3.5" />
+            }
+            <span className="hidden sm:inline">PPTX</span>
           </button>
           <button type="button" onClick={toggleFullscreen} title={isFullscreen ? 'Излези од цел екран (F)' : 'Цел екран (F)'}
             className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
@@ -792,6 +975,16 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         )}
 
         {renderBody()}
+
+        {/* ── Watermark / school logo ─────────────────────────────────────── */}
+        <div className="absolute bottom-3 right-4 z-10 pointer-events-none select-none flex items-center gap-2 opacity-40">
+          {user?.isPremium && user?.schoolLogoUrl ? (
+            <img src={user.schoolLogoUrl} alt="лого" className="h-5 w-auto object-contain" />
+          ) : null}
+          <span className={`text-[10px] font-bold tracking-wide ${user?.isPremium && user?.schoolName ? 'text-indigo-300' : 'text-slate-500'}`}>
+            {user?.isPremium && user?.schoolName ? user.schoolName : 'ai.mismath.net'}
+          </span>
+        </div>
 
         {/* Annotation canvas overlay */}
         <canvas

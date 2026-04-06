@@ -37,7 +37,7 @@ const TOOLS: { emoji: string; label: string; materialType: MaterialType }[] = [
 const MATERIAL_EMOJI: Partial<Record<string, string>> = {
   QUIZ: '❓', ASSESSMENT: '📄', EXIT_TICKET: '🎟️',
   SCENARIO: '🎭', LEARNING_PATH: '🗺️', RUBRIC: '📊',
-  FLASHCARDS: '🃏', ILLUSTRATION: '🖼️', WORKED_EXAMPLE: '✍️', PRESENTATION: '📽️', VIDEO_EXTRACTOR: '🎬', IMAGE_EXTRACTOR: '📸',
+  FLASHCARDS: '🃏', ILLUSTRATION: '🖼️', WORKED_EXAMPLE: '✍️', PRESENTATION: '📽️', VIDEO_EXTRACTOR: '🎬', IMAGE_EXTRACTOR: '📸', WEB_EXTRACTOR: '🌐',
 };
 
 const STORAGE_KEY = 'quicktools_collapsed';

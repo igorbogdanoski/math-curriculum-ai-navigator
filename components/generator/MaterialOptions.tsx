@@ -623,6 +623,159 @@ const VideoExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'disp
 };
 
 
+// ── WEB_EXTRACTOR ────────────────────────────────────────────────────────────
+
+interface WebExtractResult {
+    available: boolean;
+    text?: string;
+    title?: string;
+    charCount?: number;
+    truncated?: boolean;
+    sourceUrl?: string;
+    reason?: string;
+}
+
+const WebExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispatch'>> = ({ state, dispatch }) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [result, setResult] = useState<WebExtractResult | null>(null);
+    const [showPreview, setShowPreview] = useState(false);
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    const hasText = !!(state.webpageText);
+
+    const handleFetch = async () => {
+        const url = state.webpageUrl.trim();
+        if (!url) return;
+        setIsLoading(true);
+        setResult(null);
+        dispatch({ type: 'SET_FIELD', payload: { field: 'webpageText', value: null } });
+        try {
+            const params = new URLSearchParams({ url });
+            const res = await fetch(`/api/webpage-extract?${params.toString()}`);
+            const data: WebExtractResult = await res.json();
+            setResult(data);
+            if (data.available && data.text) {
+                dispatch({ type: 'SET_FIELD', payload: { field: 'webpageText', value: data.text } });
+            }
+        } catch {
+            setResult({ available: false, reason: 'Не може да се поврзе со серверот' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleClear = () => {
+        dispatch({ type: 'SET_FIELD', payload: { field: 'webpageUrl', value: '' } });
+        dispatch({ type: 'SET_FIELD', payload: { field: 'webpageText', value: null } });
+        setResult(null);
+        setShowPreview(false);
+        inputRef.current?.focus();
+    };
+
+    return (
+        <div className="space-y-4">
+            {/* URL input */}
+            <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">URL на веб страна</label>
+                <div className="flex gap-2">
+                    <input
+                        ref={inputRef}
+                        type="url"
+                        value={state.webpageUrl}
+                        onChange={(e) => {
+                            dispatch({ type: 'SET_FIELD', payload: { field: 'webpageUrl', value: e.target.value } });
+                            if (result) { setResult(null); dispatch({ type: 'SET_FIELD', payload: { field: 'webpageText', value: null } }); }
+                        }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleFetch(); }}
+                        placeholder="https://math.com/lesson/fractii"
+                        className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleFetch}
+                        disabled={!state.webpageUrl.trim() || isLoading}
+                        className="flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-bold text-white transition active:scale-95"
+                    >
+                        {isLoading ? (
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                            </svg>
+                        ) : '🌐'}
+                        {isLoading ? 'Преземам…' : 'Извлечи'}
+                    </button>
+                    {(state.webpageUrl || result) && (
+                        <button type="button" onClick={handleClear}
+                            className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-500 hover:bg-slate-100 transition">
+                            ✕
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Result status */}
+            {result && !isLoading && (
+                <>
+                    {result.available ? (
+                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-emerald-800 truncate">
+                                        ✅ {result.title || 'Страна извлечена'}
+                                    </p>
+                                    <p className="text-xs text-emerald-700 mt-0.5">
+                                        {result.charCount?.toLocaleString()} знаци
+                                        {result.truncated && ' (скратено)'}
+                                        {' · '}
+                                        <span className="font-medium">Текстот е подготвен за AI</span>
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPreview(v => !v)}
+                                    className="shrink-0 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 underline"
+                                >
+                                    {showPreview ? 'Скриј' : 'Прегледај'}
+                                </button>
+                            </div>
+                            {showPreview && (
+                                <div className="rounded-lg bg-white border border-emerald-100 p-2.5 max-h-40 overflow-y-auto">
+                                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap font-mono">
+                                        {result.text!.slice(0, 1200)}
+                                        {result.text!.length > 1200 ? '…' : ''}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
+                            <p className="text-xs font-bold text-rose-800">⚠ Не може да се извлече содржина</p>
+                            <p className="text-xs text-rose-700 mt-0.5">{result.reason ?? 'Непозната грешка'}</p>
+                            <p className="text-xs text-rose-600 mt-1.5">
+                                Забелешка: JavaScript-рендерирани страни (React/Angular) не се поддржани. Обиди со друга страна.
+                            </p>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* Quality banner */}
+            <div className={`rounded-xl p-3 border text-xs font-semibold flex items-center gap-2 ${
+                hasText
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-violet-50 border-violet-200 text-violet-800'
+            }`}>
+                <span className="text-base">{hasText ? '🎯' : '💡'}</span>
+                {hasText
+                    ? 'Содржината е извлечена — AI ќе генерира материјал базиран на вистинскиот текст од страната.'
+                    : 'Внеси URL на математичка страна (учебник, статија, задачи) и кликни Извлечи.'
+                }
+            </div>
+        </div>
+    );
+};
+
+
 // ── IMAGE_EXTRACTOR ──────────────────────────────────────────────────────────
 
 const IMAGE_MODES = [
@@ -785,6 +938,9 @@ export const MaterialOptions: React.FC<MaterialOptionsProps> = ({ state, dispatc
     }
     if (materialType === 'IMAGE_EXTRACTOR') {
         return <ImageExtractorOptions state={state} dispatch={dispatch} />;
+    }
+    if (materialType === 'WEB_EXTRACTOR') {
+        return <WebExtractorOptions state={state} dispatch={dispatch} />;
     }
 
     return null;
