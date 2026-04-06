@@ -53,6 +53,8 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const { addNotification } = useNotification();
     const { user } = useAuth();
     const secondaryTrack = user?.secondaryTrack;
+    // Admins see ALL secondary tracks regardless of their profile setting
+    const isAdmin = user?.role === 'admin';
 
     // Keep uiLang in sync when user changes language in Settings
     useEffect(() => {
@@ -92,10 +94,18 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         const needsOverrides = overrides && (overrides.addedConcepts.length > 0 || overrides.addedTopics.length > 0);
         const needsLocale = uiLang !== 'mk';
-        const secondaryModule = secondaryTrack ? (secondaryCurriculumByTrack[secondaryTrack] ?? null) : null;
+
+        // Admin sees all secondary tracks; regular users see their own secondaryTrack
+        const secondaryModules: ReturnType<typeof Object.values<typeof secondaryCurriculumByTrack[keyof typeof secondaryCurriculumByTrack]>> =
+            isAdmin
+                ? Object.values(secondaryCurriculumByTrack)
+                : secondaryTrack
+                    ? [secondaryCurriculumByTrack[secondaryTrack]].filter(Boolean)
+                    : [];
+        const hasSecondary = secondaryModules.length > 0;
 
         // Fast path: no modifications needed and no secondary curriculum
-        if (!needsOverrides && !needsLocale && !secondaryModule) return data.curriculumData;
+        if (!needsOverrides && !needsLocale && !hasSecondary) return data.curriculumData;
 
         // Deep-clone grades to avoid mutating static data
         const grades = data.curriculumData.grades.map(grade => ({
@@ -138,8 +148,8 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         // Append secondary curriculum grades (gymnasium / vocational) after primary grades
-        if (secondaryModule) {
-            for (const secGrade of secondaryModule.curriculum.grades) {
+        for (const secModule of secondaryModules) {
+            for (const secGrade of secModule.curriculum.grades) {
                 if (!grades.find(g => g.id === secGrade.id)) {
                     grades.push(secGrade);
                 }
@@ -147,7 +157,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         return { grades };
-    }, [data, overrides, uiLang, secondaryTrack]);
+    }, [data, overrides, uiLang, secondaryTrack, isAdmin]);
     const verticalProgression = useMemo(() => data?.verticalProgressionData, [data]);
     const allNationalStandards = useMemo(() => {
         if (!data) return undefined;

@@ -753,7 +753,20 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
             {!isGenerating && generatedMaterial && (
                 <div className="mt-6 flex flex-col gap-4">
                     {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
-                    {'openingActivity' in generatedMaterial && <GeneratedIdeas material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />}
+                    {'openingActivity' in generatedMaterial && (
+                      <>
+                        <GeneratedIdeas material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />
+                        <div className="flex justify-end gap-2">
+                          <button type="button"
+                            onClick={() => handleSaveToLibrary(generatedMaterial, 'main')}
+                            disabled={savedToLibrary.has('main')}
+                            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm ${savedToLibrary.has('main') ? 'bg-green-100 text-green-700' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                            {savedToLibrary.has('main') ? <CheckCircle className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
+                            {savedToLibrary.has('main') ? 'Зачувано' : 'Зачувај во библиотека'}
+                          </button>
+                        </div>
+                      </>
+                    )}
                     {'questions' in generatedMaterial && (state.materialType === 'QUIZ' || state.materialType === 'ASSESSMENT') && (
                       <div className="bg-white border border-indigo-100 rounded-2xl p-4">
                         <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3">Webb's DoK — Распределба на генерираните прашања</p>

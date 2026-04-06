@@ -907,6 +907,7 @@ export const TeacherForumView: React.FC = () => {
         );
       }
       const parsed = JSON.parse(match[0]) as { title: string; body: string };
+      if (!myUid) throw new Error('Не сте логирани — освежете ја страната.');
       const threadId = await createForumThread({
         authorUid: myUid,
         authorName: 'DoK Предизвик 📌',
@@ -917,8 +918,15 @@ export const TeacherForumView: React.FC = () => {
       });
       await pinThread(threadId, true);
       addNotification('DoK Предизвик создаден и прикачен!', 'success');
-    } catch {
-      addNotification('Грешка при генерирање на предизвикот.', 'error');
+    } catch (err) {
+      console.error('[DoK Challenge]', err);
+      const msg = err instanceof Error ? err.message : '';
+      addNotification(
+        msg.includes('permission') || msg.includes('PERMISSION')
+          ? 'Нема Firestore право за пинирање. Проверете admin custom claims.'
+          : msg || 'Грешка при генерирање на предизвикот.',
+        'error',
+      );
     } finally {
       setGeneratingChallenge(false);
     }

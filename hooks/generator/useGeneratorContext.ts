@@ -177,17 +177,25 @@ export function useGeneratorContext({
   const isGenerateDisabled = useMemo(() => {
     const { contextType, selectedConcepts, selectedStandard, scenarioText, selectedActivity, imageFile,
       materialType, questionTypes, useStudentProfiles, selectedStudentProfileIds, activityTitle, illustrationPrompt, videoUrl,
-      bloomDistribution } = state;
+      webpageUrl, bloomDistribution } = state;
     if (isGenerating || isGeneratingBulk || isGeneratingVariants || !isOnline) return true;
-    let contextIsValid = false;
-    switch (contextType) {
-      case 'CONCEPT': case 'TOPIC': contextIsValid = selectedConcepts.length > 0; break;
-      case 'STANDARD': contextIsValid = !!selectedStandard; break;
-      case 'SCENARIO': contextIsValid = scenarioText.trim().length > 0 || !!imageFile; break;
-      case 'ACTIVITY': contextIsValid = selectedConcepts.length > 0 && !!selectedActivity; break;
-      default: contextIsValid = false;
+
+    // Extractor types (VIDEO/IMAGE/WEB) only need grade+topic, not selectedConcepts
+    const EXTRACTOR_TYPES = ['VIDEO_EXTRACTOR', 'IMAGE_EXTRACTOR', 'WEB_EXTRACTOR'] as const;
+    const isExtractorType = EXTRACTOR_TYPES.includes(materialType as typeof EXTRACTOR_TYPES[number]);
+
+    if (!isExtractorType) {
+      let contextIsValid = false;
+      switch (contextType) {
+        case 'CONCEPT': case 'TOPIC': contextIsValid = selectedConcepts.length > 0; break;
+        case 'STANDARD': contextIsValid = !!selectedStandard; break;
+        case 'SCENARIO': contextIsValid = scenarioText.trim().length > 0 || !!imageFile; break;
+        case 'ACTIVITY': contextIsValid = selectedConcepts.length > 0 && !!selectedActivity; break;
+        default: contextIsValid = false;
+      }
+      if (!contextIsValid) return true;
     }
-    if (!contextIsValid) return true;
+
     if (['ASSESSMENT', 'FLASHCARDS', 'QUIZ'].includes(materialType || '')) {
       if (questionTypes.length === 0) return true;
       if (useStudentProfiles && selectedStudentProfileIds.length === 0) return true;
@@ -200,6 +208,8 @@ export function useGeneratorContext({
     if (materialType === 'RUBRIC' && !activityTitle) return true;
     if (materialType === 'ILLUSTRATION' && !illustrationPrompt.trim() && !imageFile) return true;
     if (materialType === 'VIDEO_EXTRACTOR' && !videoUrl.trim()) return true;
+    if (materialType === 'IMAGE_EXTRACTOR' && !imageFile) return true;
+    if (materialType === 'WEB_EXTRACTOR' && !webpageUrl.trim()) return true;
     return false;
   }, [isGenerating, isGeneratingBulk, isGeneratingVariants, isOnline, state]);
 

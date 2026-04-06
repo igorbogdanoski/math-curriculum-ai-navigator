@@ -78,12 +78,14 @@ export function useGeneratorSave({
     if (!material) return;
     if (savedToLibrary.has(keyHint)) return;
     try {
-      const conceptId = state.selectedConcepts[0];
+      const conceptId = state.selectedConcepts[0] ?? null;
       const gradeLevel = curriculum?.grades.find((g: Grade) => g.id === state.selectedGrade)?.level;
       const materialTypeToLibType: Record<string, 'quiz' | 'assessment' | 'rubric' | 'ideas' | 'analogy'> = {
-        QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric', SCENARIO: 'ideas', VIDEO_EXTRACTOR: 'ideas',
+        QUIZ: 'quiz', ASSESSMENT: 'assessment', RUBRIC: 'rubric',
+        SCENARIO: 'ideas', VIDEO_EXTRACTOR: 'ideas', IMAGE_EXTRACTOR: 'ideas', WEB_EXTRACTOR: 'ideas',
+        LEARNING_PATH: 'ideas', WORKED_EXAMPLE: 'ideas',
       };
-      const libType = materialTypeToLibType[state.materialType ?? ''] ?? 'quiz';
+      const libType = materialTypeToLibType[state.materialType ?? ''] ?? 'assessment';
       let title = (material as { title?: string })?.title || '';
       if (!title && (libType === 'quiz' || libType === 'assessment')) {
         title = await geminiService.generateSmartQuizTitle(material as unknown as Record<string, unknown>).catch(() => '');
@@ -102,8 +104,15 @@ export function useGeneratorSave({
       const newAchievements = trackMaterialSaved(libType);
       const achievementMsg = newAchievements.length ? ` Ново достигнување: ${newAchievements.join(', ')}` : '';
       addNotification(`Зачувано во библиотека! Прегледај и публикувај во „Библиотека". 📚${achievementMsg}`, 'success');
-    } catch {
-      addNotification('Грешка при зачувување.', 'error');
+    } catch (err) {
+      console.error('[Save to library]', err);
+      const msg = err instanceof Error ? err.message : '';
+      addNotification(
+        msg.includes('permission') || msg.includes('PERMISSION')
+          ? 'Нема право за зачувување. Проверете дали сте логирани.'
+          : 'Грешка при зачувување. Обидете се повторно.',
+        'error',
+      );
     }
   };
 
