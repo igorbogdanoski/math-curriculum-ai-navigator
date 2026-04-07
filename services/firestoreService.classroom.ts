@@ -5,6 +5,7 @@ import { type DifferentiationLevel, type SavedQuestion } from '../types';
 import { type StudentGroup, type SchoolClass, type ClassMembership, type Announcement } from './firestoreService.types';
 import { parseFirestoreDoc, SchoolClassSchema, ClassMembershipSchema } from '../schemas/firestoreSchemas';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
+import { getE2EMockClasses } from './e2eTesting';
 
 export const fetchStudentGroups = async (teacherUid?: string): Promise<StudentGroup[]> => {
     try {
@@ -39,6 +40,9 @@ export const deleteStudentGroup = async (groupId: string): Promise<void> => {
   };
 
 export const fetchClasses = async (teacherUid: string): Promise<SchoolClass[]> => {
+    const e2eClasses = getE2EMockClasses(teacherUid);
+    if (e2eClasses) return e2eClasses;
+
     try {
       const q = query(collection(db, 'classes'), where('teacherUid', '==', teacherUid), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);

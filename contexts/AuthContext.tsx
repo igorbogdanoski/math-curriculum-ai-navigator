@@ -80,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             profile: {
                 name: 'Тест Наставник',
                 role: 'teacher',
+                secondaryTrack: 'gymnasium',
                 aiCreditsBalance: 500,
                 isPremium: true,
                 tier: 'Premium',

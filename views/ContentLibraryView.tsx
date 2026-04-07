@@ -271,9 +271,47 @@ const GenericContentRenderer: React.FC<{ content: any; type: string }> = ({ cont
   }
 
   if (type === 'ideas') {
-    const sections: [string, any][] = Object.entries(content ?? {}).filter(([, v]) => v);
+        const extractionBundle = content?.extractionBundle;
+        const sourceMeta = content?.sourceMeta;
+    const sections: [string, any][] = Object.entries(content ?? {}).filter(([k, v]) => v && k !== 'extractionBundle' && k !== 'sourceMeta');
     return (
       <div className="space-y-4">
+                {sourceMeta && (
+                    <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-3 text-xs text-cyan-800">
+                        <p className="font-bold mb-1">Извор на екстракција</p>
+                        <p>
+                            Тип: {sourceMeta?.sourceType ?? '—'}
+                            {sourceMeta?.gradeLevel ? ` · Одделение: ${sourceMeta.gradeLevel}` : ''}
+                            {sourceMeta?.topicId ? ` · Тема: ${sourceMeta.topicId}` : ''}
+                        </p>
+                        {Array.isArray(sourceMeta?.conceptIds) && sourceMeta.conceptIds.length > 0 && (
+                            <p className="mt-1">Концепти: {sourceMeta.conceptIds.join(', ')}</p>
+                        )}
+                    </div>
+                )}
+                {extractionBundle && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-600">Extraction Bundle</p>
+                        {Array.isArray(extractionBundle.formulas) && extractionBundle.formulas.length > 0 && (
+                            <div>
+                                <p className="text-xs font-semibold text-slate-700 mb-1">Формули</p>
+                                <div className="text-xs text-slate-700 whitespace-pre-wrap">{extractionBundle.formulas.join('\n')}</div>
+                            </div>
+                        )}
+                        {Array.isArray(extractionBundle.theories) && extractionBundle.theories.length > 0 && (
+                            <div>
+                                <p className="text-xs font-semibold text-slate-700 mb-1">Теорија</p>
+                                <div className="text-xs text-slate-700 whitespace-pre-wrap">{extractionBundle.theories.join('\n')}</div>
+                            </div>
+                        )}
+                        {Array.isArray(extractionBundle.tasks) && extractionBundle.tasks.length > 0 && (
+                            <div>
+                                <p className="text-xs font-semibold text-slate-700 mb-1">Задачи</p>
+                                <div className="text-xs text-slate-700 whitespace-pre-wrap">{extractionBundle.tasks.join('\n')}</div>
+                            </div>
+                        )}
+                    </div>
+                )}
         {sections.map(([key, val]) => (
           <div key={key}>
             <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-1">{key.replace(/_/g, ' ')}</h3>
@@ -364,6 +402,44 @@ const extractMaterialDifficulties = (m: CachedMaterial): string[] => {
     return [...values].sort();
 };
 
+type ExtractionSource = 'video' | 'image' | 'web';
+
+const getExtractionSource = (m: CachedMaterial): ExtractionSource | null => {
+    const c: any = m.content ?? {};
+    const sourceType = c?.sourceMeta?.sourceType;
+    if (sourceType === 'video' || sourceType === 'image' || sourceType === 'web') return sourceType;
+    return null;
+};
+
+const getExtractionBundleStats = (m: CachedMaterial): { formulas: number; theories: number; tasks: number } | null => {
+    const c: any = m.content ?? {};
+    const bundle = c?.extractionBundle;
+    if (!bundle) return null;
+    return {
+        formulas: Array.isArray(bundle.formulas) ? bundle.formulas.length : 0,
+        theories: Array.isArray(bundle.theories) ? bundle.theories.length : 0,
+        tasks: Array.isArray(bundle.tasks) ? bundle.tasks.length : 0,
+    };
+};
+
+const getExtractionSearchSnippet = (m: CachedMaterial): string => {
+    const c: any = m.content ?? {};
+    const bundle = c?.extractionBundle;
+    if (!bundle) return '';
+    return [
+        Array.isArray(bundle.formulas) ? bundle.formulas.join(' ') : '',
+        Array.isArray(bundle.theories) ? bundle.theories.join(' ') : '',
+        Array.isArray(bundle.tasks) ? bundle.tasks.join(' ') : '',
+        typeof bundle.rawSnippet === 'string' ? bundle.rawSnippet : '',
+    ].filter(Boolean).join(' ');
+};
+
+const sourceLabel: Record<ExtractionSource, string> = {
+    video: 'Видео',
+    image: 'Слика',
+    web: 'Веб',
+};
+
 const StarDisplay: React.FC<{ avg: number | null; count: number }> = ({ avg, count }) => {
     if (avg === null) return <span className="text-xs text-gray-400 italic">Без оценки</span>;
     return (
@@ -421,6 +497,7 @@ export const ContentLibraryView: React.FC = () => {
     const [topicFilter, setTopicFilter] = useState('all');
     const [dokFilter, setDokFilter] = useState<'all' | number>('all');
     const [difficultyFilter, setDifficultyFilter] = useState('all');
+    const [sourceFilter, setSourceFilter] = useState<'all' | ExtractionSource>('all');
 
     // Wave B2 — multi-select batch actions
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -502,7 +579,7 @@ export const ContentLibraryView: React.FC = () => {
                 // Hybrid ranking: 60% cosine semantic + 40% BM25 keyword
                 results = (results
                     .map(m => {
-                        const docText = `${m.title || ''} ${m.conceptId || ''} ${m.topicId || ''} ${typeLabel[m.type] || m.type || ''}`;
+                        const docText = `${m.title || ''} ${m.conceptId || ''} ${m.topicId || ''} ${typeLabel[m.type] || m.type || ''} ${getExtractionSearchSnippet(m)}`;
                         const cosine = m.embedding ? cosineSimilarity(queryEmbedding, m.embedding) : 0;
                         const bm25 = bm25Score(searchQuery, docText);
                         const score = hybridScore(cosine, bm25);
@@ -514,7 +591,7 @@ export const ContentLibraryView: React.FC = () => {
                 // BM25 keyword ranking (exact + partial term matching)
                 results = (results
                     .map(m => {
-                        const docText = `${m.title || ''} ${m.conceptId || ''} ${m.topicId || ''} ${typeLabel[m.type] || m.type || ''}`;
+                        const docText = `${m.title || ''} ${m.conceptId || ''} ${m.topicId || ''} ${typeLabel[m.type] || m.type || ''} ${getExtractionSearchSnippet(m)}`;
                         return { ...m, score: bm25Score(searchQuery, docText) } as ScoredMaterial;
                     })
                     .filter((m: ScoredMaterial) => m.score > 0)
@@ -540,6 +617,9 @@ export const ContentLibraryView: React.FC = () => {
         }
         if (difficultyFilter !== 'all') {
             results = results.filter(m => extractMaterialDifficulties(m).includes(difficultyFilter));
+        }
+        if (sourceFilter !== 'all') {
+            results = results.filter(m => getExtractionSource(m) === sourceFilter);
         }
 
         // 4. И3: Min rating filter (national view)
@@ -577,6 +657,7 @@ export const ContentLibraryView: React.FC = () => {
         topicFilter,
         dokFilter,
         difficultyFilter,
+        sourceFilter,
     ]);
 
     const handlePublish = async (m: CachedMaterial) => {
@@ -769,6 +850,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
         setTopicFilter('all');
         setDokFilter('all');
         setDifficultyFilter('all');
+        setSourceFilter('all');
         setSortBy('newest');
         setMinRating(0);
     };
@@ -923,7 +1005,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
                         Ресет
                     </button>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2">
                     <select
                         title="Филтер по одделение"
                         value={gradeFilter}
@@ -974,6 +1056,18 @@ const handleUnpublish = async (m: CachedMaterial) => {
                         <option value="oldest">Сортирај: Најстари</option>
                         <option value="title">Сортирај: Наслов A-Z</option>
                         {viewMode === 'national' && <option value="rating">Сортирај: Оценка</option>}
+                    </select>
+
+                    <select
+                        title="Филтер по extraction извор"
+                        value={sourceFilter}
+                        onChange={(e) => setSourceFilter(e.target.value as 'all' | ExtractionSource)}
+                        className="px-2.5 py-2 text-xs rounded-lg border border-slate-200 bg-white"
+                    >
+                        <option value="all">Извор: Сите</option>
+                        <option value="video">Извор: Видео</option>
+                        <option value="image">Извор: Слика</option>
+                        <option value="web">Извор: Веб</option>
                     </select>
 
                     <div className="flex items-center gap-1 overflow-x-auto">
@@ -1116,6 +1210,8 @@ const handleUnpublish = async (m: CachedMaterial) => {
                         const isPublished = m.status === 'published';
                         const isEditing = editingId === m.id;
                         const isSelected = selectedIds.has(m.id);
+                        const extractionSource = getExtractionSource(m);
+                        const extractionStats = getExtractionBundleStats(m);
 
                         return (
                             <div 
@@ -1177,6 +1273,16 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                             {m.isForked && m.sourceAuthor && (
                                                 <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-violet-50 text-violet-600 font-semibold rounded-full border border-violet-100">
                                                     🍴 Форк од {m.sourceAuthor}
+                                                </span>
+                                            )}
+                                            {extractionSource && (
+                                                <span className="px-1.5 py-0.5 bg-cyan-50 text-cyan-700 font-semibold rounded-full border border-cyan-200">
+                                                    📎 {sourceLabel[extractionSource]} extract
+                                                </span>
+                                            )}
+                                            {extractionStats && (
+                                                <span className="px-1.5 py-0.5 bg-slate-50 text-slate-600 font-medium rounded-full border border-slate-200">
+                                                    F:{extractionStats.formulas} · T:{extractionStats.theories} · Z:{extractionStats.tasks}
                                                 </span>
                                             )}
                                             {useSemanticSearch && typeof (m as ScoredMaterial).score === 'number' && (

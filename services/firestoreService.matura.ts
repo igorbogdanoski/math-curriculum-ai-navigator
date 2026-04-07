@@ -46,6 +46,7 @@ interface LocalMaturaRawQuestion {
   aiSolution?: string | null;
   solutionImageUrl?: string | null;
   successRatePercent?: number | null;
+  conceptIds?: string[];
   curriculumRefs?: MaturaCurriculumRefs;
 }
 
@@ -268,6 +269,7 @@ function getLocalMaturaData(): { exams: MaturaExamMeta[]; byExam: Map<string, Ma
           hasImage: q.hasImage,
           imageUrls: (q.imageUrls ?? []).map(normalizeImageUrl),
           imageDescription: q.imageDescription,
+          conceptIds: q.conceptIds,
           hints: q.hints,
           // Own aiSolution takes priority; fall back to key file solution
           aiSolution: q.aiSolution ?? keySol?.aiSolution ?? null,

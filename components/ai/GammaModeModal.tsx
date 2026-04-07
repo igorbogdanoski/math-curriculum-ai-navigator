@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown } from 'lucide-react';
 import { Shape3DViewer, Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
@@ -10,6 +10,7 @@ import { SlideSVGRenderer } from './SlideSVGRenderer';
 import { generateMathSVG } from '../../services/gemini/svg';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
+import { deriveContextualFormulas, resolveSlideConcept } from '../../utils/gammaContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -42,7 +43,10 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [stepIdx, setStepIdx]   = useState(0);
   const [visible, setVisible]   = useState(true);
   const [dir, setDir]           = useState<'fwd' | 'back'>('fwd');
+  const [transitionTick, setTransitionTick] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const containerRef            = useRef<HTMLDivElement>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // ── SVG illustration cache: slideIdx → svg string ─────────────────────────
@@ -229,6 +233,23 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const lastPosRef                      = useRef({ x: 0, y: 0 });
   const undoStackRef                    = useRef<ImageData[]>([]);
   const [undoCount, setUndoCount]       = useState(0);
+
+  useEffect(() => {
+    previousActiveElementRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    containerRef.current?.focus({ preventScroll: true });
+    return () => {
+      previousActiveElementRef.current?.focus({ preventScroll: true });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
 
   // Size canvas to match its CSS size whenever layout changes
   useEffect(() => {
@@ -442,12 +463,28 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   // ── Directional slide transition ──────────────────────────────────────────
   const animateTransition = useCallback((fn: () => void, direction: 'fwd' | 'back') => {
     setDir(direction);
+    if (reducedMotion) {
+      fn();
+      setTransitionTick(t => t + 1);
+      setVisible(true);
+      return;
+    }
     setVisible(false);
     setTimeout(() => {
       fn();
+      setTransitionTick(t => t + 1);
       requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
-    }, 160);
-  }, []);
+    }, 170);
+  }, [reducedMotion]);
+
+  const jumpToSlide = useCallback((targetIndex: number) => {
+    if (targetIndex === idx) return;
+    animateTransition(() => {
+      setIdx(targetIndex);
+      setRevealed(false);
+      setStepIdx(0);
+    }, targetIndex > idx ? 'fwd' : 'back');
+  }, [animateTransition, idx]);
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const goNext = useCallback(() => {
@@ -513,6 +550,24 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       : idx < total - 1
         ? 'Space → следен слајд'
         : '';
+
+  const contextualFormulas = useMemo(() => {
+    return deriveContextualFormulas(slides, slide, idx);
+  }, [slides, slide, idx]);
+
+  const slideConcept = useMemo(() => {
+    return resolveSlideConcept(slide, data.topic);
+  }, [slide, data.topic]);
+
+  const showContextStrip = slide.type === 'step-by-step' || slide.type === 'example';
+
+  const entryAnimationClass = useMemo(() => {
+    if (reducedMotion) return '';
+    if (!visible) return '';
+    if (slide.type === 'step-by-step' || slide.type === 'proof') return 'gamma-enter-up';
+    if (slide.type === 'summary') return 'gamma-enter-fade-scale';
+    return dir === 'fwd' ? 'gamma-enter-right' : 'gamma-enter-left';
+  }, [reducedMotion, visible, slide.type, dir]);
 
   // ── Slide body ────────────────────────────────────────────────────────────
   const renderBody = () => {
@@ -845,7 +900,14 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const dots = Array.from({ length: Math.ceil(total / step) }, (_, i) => i * step);
 
   return (
-    <div ref={containerRef} className="gamma-mode-container fixed inset-0 z-[200] flex flex-col bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 select-none">
+    <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Gamma Mode презентација"
+      tabIndex={-1}
+      className="gamma-mode-container fixed inset-0 z-[200] flex flex-col bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 select-none"
+    >
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="gamma-controls flex items-center justify-between px-6 py-3 border-b border-white/5 flex-shrink-0">
@@ -948,7 +1010,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
           </button>
 
-          <span className="text-xs font-bold text-slate-500 ml-1">
+          <span aria-live="polite" className="text-xs font-bold text-slate-500 ml-1">
             {idx + 1} / {total}
           </span>
           <button type="button" onClick={onClose} title="Излези од Gamma Mode (Esc)"
@@ -959,7 +1021,9 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       </div>
 
       {/* ── Slide canvas ───────────────────────────────────────────────────── */}
-      <div className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-200 ${
+      <div
+        key={`${idx}-${transitionTick}`}
+        className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-200 ${entryAnimationClass} ${
         !visible
           ? dir === 'fwd' ? 'opacity-0 translate-x-8' : 'opacity-0 -translate-x-8'
           : 'opacity-100 translate-x-0'
@@ -971,6 +1035,31 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             <h2 className="text-2xl md:text-4xl font-black text-white leading-tight">
               <MathRenderer text={slide.title} />
             </h2>
+          </div>
+        )}
+
+        {showContextStrip && (
+          <div className="px-8 md:px-16 pb-2 flex-shrink-0">
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-indigo-400/20 bg-indigo-950/25 px-3 py-2">
+              {slideConcept && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/20 text-indigo-200 px-2.5 py-1 text-[11px] font-semibold">
+                  <BookOpen className="w-3 h-3" />
+                  Концепт: {slideConcept}
+                </span>
+              )}
+              {contextualFormulas.length > 0 ? (
+                contextualFormulas.slice(0, 3).map((formula, fi) => (
+                  <span key={`${formula}-${fi}`} className="inline-flex items-center rounded-full bg-cyan-500/15 text-cyan-100 px-2.5 py-1 text-[11px] font-medium">
+                    <MathRenderer text={formula} />
+                  </span>
+                ))
+              ) : (
+                <span className="text-[11px] text-slate-400 font-medium">Нема претходни формули за поврзување.</span>
+              )}
+              {contextualFormulas.length > 3 && (
+                <span className="text-[11px] text-slate-400 font-semibold">+{contextualFormulas.length - 3} формули</span>
+              )}
+            </div>
           </div>
         )}
 
@@ -1036,7 +1125,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       {/* ── Footer: progress + navigation ─────────────────────────────────── */}
       <div className="gamma-controls flex flex-col gap-3 px-6 py-4 border-t border-white/5 flex-shrink-0">
         {/* Progress dots */}
-        <div className="flex items-center justify-center gap-1.5">
+        <div role="group" aria-label="Навигација по слајдови" className="flex items-center justify-center gap-1.5">
           {dots.map((dotSlideIdx, di) => {
             const isActive = idx >= dotSlideIdx && (di === dots.length - 1 || idx < dots[di + 1]);
             return (
@@ -1044,7 +1133,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
                 title={`Оди на слајд ${dotSlideIdx + 1}`}
                 aria-label={`Слајд ${dotSlideIdx + 1} од ${total}`}
                 aria-current={isActive ? 'step' : undefined}
-                onClick={() => { setIdx(dotSlideIdx); setRevealed(false); setStepIdx(0); }}
+                onClick={() => jumpToSlide(dotSlideIdx)}
                 className={`rounded-full transition-all ${
                   isActive ? 'w-5 h-2.5 bg-indigo-400' : 'w-2 h-2 bg-slate-700 hover:bg-slate-500'
                 }`}
@@ -1095,6 +1184,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         <p className="text-center text-[10px] text-slate-600 hidden md:block">
           ← → навигација · Space следен · R решение · D/H/L аннотации · Ctrl+Z врати · F цел екран · P печати · Esc излез
         </p>
+        <p aria-live="polite" className="sr-only">{spaceHint}</p>
       </div>
     </div>
   );

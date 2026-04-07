@@ -6,6 +6,7 @@ import { type CachedMaterial, type Assignment, type AIMaterialFeedbackEvent, typ
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import { callEmbeddingProxy } from './gemini/core';
 import { NotFoundError, OfflineError, FirestoreError } from '../utils/errors';
+import { recordE2EAssignmentWrite } from './e2eTesting';
 
 export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
     // Проверка на конекцијата пред да се вчита новиот курикулум.
@@ -568,6 +569,9 @@ export const forkCachedMaterial = async (
 };
 
 export const saveAssignment = async (a: Omit<Assignment, 'id' | 'createdAt'>): Promise<string> => {
+    const e2eId = recordE2EAssignmentWrite(a);
+    if (e2eId) return e2eId;
+
     const ref = await addDoc(collection(db, 'assignments'), { ...a, createdAt: serverTimestamp() });
     return ref.id;
   };

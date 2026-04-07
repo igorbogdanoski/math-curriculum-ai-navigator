@@ -384,8 +384,20 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-07 | S17-P5 | Forum thread permalink — ?thread=<id> sharable URL; TeacherForumView deep-link; history.replaceState; Copy link button | DONE |
 | 2026-04-07 | S18-B1 | Test quality: 429/429 passing — fix stale videoPreview tests + sanitizeWorksheetHtml utility + 9 new security tests | DONE |
 | 2026-04-07 | S18-B2 | M6-P2 Teacher Recovery Assignment — send worksheet to class; saveAssignment(); Assignment type + RECOVERY_WORKSHEET; ActivityFeed deep-link | DONE |
+| 2026-04-07 | S18-B3 | M6 E2E hardening — Playwright recovery suite: assignment submit path, Recovery→MaturaPractice prefill, 7-day plan start path (3 tests passing) | DONE |
+| 2026-04-07 | S18-B4 | Matura local fallback fix — preserve conceptIds in local import path so M5 weak-concept analytics works without Firestore | DONE |
+| 2026-04-07 | S17-H1 | Gamma hardening — extracted context inference utilities + 7 unit tests; reduced-motion aware transitions for accessibility and lower motion sensitivity | DONE |
+| 2026-04-07 | S17-H2 | Gamma modal regression tests — context strip (explicit + inferred formulas), keyboard navigation, progress-dot jump, reduced-motion no-animation assertions (RTL/Vitest) | DONE |
+| 2026-04-07 | S17-H3 | Gamma accessibility hardening — modal `role=dialog` + `aria-modal`, focus restore on close, live-region slide/status hints, grouped slide-dot navigation semantics | DONE |
+| 2026-04-07 | S17-H4 | Gamma integration guard test — `generatePresentation` prompt/schema validated for `concept/formulas/priorFormulas` continuity fields | DONE |
+| 2026-04-07 | S18-B5 | Extraction structuring foundation — `extractionBundle` (formulas/theory/tasks) persisted in extractor-generated materials with `sourceMeta` (conceptIds/topicId/grade/track) for curriculum linkage | DONE |
+| 2026-04-07 | S18-P2 | Gamma transitions (G2) — directional keyframe animations (`gamma-enter-right/left/up`, `gamma-enter-fade-scale`), transition tick remount, animated dot-jump navigation | DONE |
+| 2026-04-07 | S18-P3 | Contextual slide awareness (G4) — slide `concept/formulas/priorFormulas` metadata; generator prompt/schema continuity rules; Gamma context strip with concept + prior formulas fallback inference | DONE |
 | 2026-04-07 | S18-PWA | PWA skipWaiting fix — skipWaiting:true + clientsClaim:true in workbox config; stale bundle issue resolved | DONE |
 | 2026-04-07 | S18-M1 | Matura pipeline: legacy 40Q validator; AL/TR Cyrillic normalization script; 2021+2022 full import (11 exams); conceptIds enrichment 410/788 | DONE |
+| 2026-04-07 | S18-B6 | Extraction robustness — `api/webpage-extract.ts` upgraded with PDF native text extraction (`pdf-parse`) and JS-rendered reader fallback path; returns `sourceType/extractionMode` metadata | DONE |
+| 2026-04-07 | S18-B7 | Library extraction intelligence — Content Library adds source filter (video/image/web), extraction-aware search ranking, source/bundle chips, and structured preview panels for formulas/theory/tasks | DONE |
+| 2026-04-07 | S18-B8 | Curriculum linkage depth — extractor outputs now auto-map inferred conceptIds from extracted bundle text (utility + unit tests), merged with teacher-selected concepts | DONE |
 
 ---
 

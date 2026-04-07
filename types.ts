@@ -235,6 +235,9 @@ export interface PresentationSlide {
   content: string[];
   solution?: string[];       // Revealed on demand (task/example)
   rightContent?: string[];   // Second column for comparison slides
+  concept?: string;          // Teaching concept focus for contextual continuity
+  formulas?: string[];       // Explicit formulas introduced on this slide
+  priorFormulas?: string[];  // Formula references from previous slide(s)
   visualPrompt?: string;     // English prompt for AI SVG illustration
   speakerNotes?: string;     // Hidden notes visible only in speaker mode
   estimatedSeconds?: number; // Suggested time on this slide (default: 60)
@@ -579,6 +582,20 @@ export interface AIGeneratedIdeas {
   error?: string;
   levelDescription?: string;
   generationContext?: GenerationContext;
+  extractionBundle?: {
+    formulas: string[];
+    theories: string[];
+    tasks: string[];
+    rawSnippet: string;
+  };
+  sourceMeta?: {
+    sourceType: 'video' | 'image' | 'web';
+    sourceUrl?: string;
+    conceptIds?: string[];
+    topicId?: string;
+    gradeLevel?: number;
+    secondaryTrack?: string;
+  };
 }
 
 export interface AIGeneratedPracticeMaterial {

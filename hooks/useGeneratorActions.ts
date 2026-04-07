@@ -5,6 +5,8 @@ import { AI_COSTS, sanitizePromptInput } from '../services/gemini/core';
 import { RateLimitError } from '../services/apiErrors';
 import { ValidationError } from '../utils/errors';
 import { useLanguage } from '../i18n/LanguageContext';
+import { buildExtractionBundle } from '../utils/extractionBundle';
+import { inferConceptIdsFromExtraction } from '../utils/extractionConceptMap';
 import type {
   AIGeneratedAssessment, AIGeneratedRubric, AIGeneratedIdeas,
   Topic, Concept, Grade, NationalStandard,
@@ -423,28 +425,36 @@ export function useGeneratorActions({
               ].filter(Boolean).join('\n');
 
               const rawAnalysis = await geminiService.analyzeHandwriting(base64, mimeType, extractionContext);
+              const extractionBundle = buildExtractionBundle(rawAnalysis);
+              const mappedConceptIds = inferConceptIdsFromExtraction(
+                extractionBundle,
+                allConcepts,
+                finalContext.concepts?.map(c => c.id) ?? [],
+              );
 
               // Store raw analysis for pre-fill pipeline (B5)
               dispatch({ type: 'SET_FIELD', payload: { field: 'extractedText', value: rawAnalysis } });
 
               // Wrap raw vision analysis into a GeneratedMaterial shape (AIGeneratedIdeas)
               result = {
-                type: 'ideas',
                 title: `Извлечен материјал: ${topicTitle}`,
-                ideas: [
+                openingActivity: 'Прочитај ја извлечената содржина и означи ги клучните поими.',
+                mainActivity: [
                   {
-                    title: 'Извлечена содржина од слика',
-                    description: rawAnalysis,
-                    duration: 45,
-                    materials: ['Оригинална слика', 'Работни листови'],
-                    bloomLevel: 'Applying',
+                    text: rawAnalysis,
+                    bloomsLevel: 'Applying',
                   }
                 ],
-                metadata: {
-                  topic: topicTitle,
-                  grade: gradeLevel,
-                  generatedAt: new Date().toISOString(),
-                  source: 'image_extractor',
+                differentiation: 'Понуди дополнителни примери за ученици што побрзо решаваат.',
+                assessmentIdea: 'Кратка усна проверка за формули и чекори.',
+                concepts: finalContext.concepts?.map(c => c.title) ?? [],
+                extractionBundle,
+                sourceMeta: {
+                  sourceType: 'image',
+                  conceptIds: mappedConceptIds,
+                  topicId: finalContext.topic?.id,
+                  gradeLevel,
+                  secondaryTrack: user?.secondaryTrack,
                 },
               } as unknown as GeneratedMaterial;
             }
@@ -484,6 +494,23 @@ export function useGeneratorActions({
                 { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel },
                 combinedInstruction,
               );
+              if (result && 'openingActivity' in result) {
+                const extractionBundle = buildExtractionBundle(safeWebText ?? '');
+                const mappedConceptIds = inferConceptIdsFromExtraction(
+                  extractionBundle,
+                  allConcepts,
+                  finalContext.concepts?.map(c => c.id) ?? [],
+                );
+                (result as AIGeneratedIdeas).extractionBundle = extractionBundle;
+                (result as AIGeneratedIdeas).sourceMeta = {
+                  sourceType: 'web',
+                  sourceUrl: safeUrl,
+                  conceptIds: mappedConceptIds,
+                  topicId: finalContext.topic?.id,
+                  gradeLevel,
+                  secondaryTrack: user?.secondaryTrack,
+                };
+              }
             }
             break;
           }
@@ -520,6 +547,23 @@ export function useGeneratorActions({
                 { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel },
                 combinedInstruction,
               );
+              if (result && 'openingActivity' in result) {
+                const extractionBundle = buildExtractionBundle(safeTranscript ?? '');
+                const mappedConceptIds = inferConceptIdsFromExtraction(
+                  extractionBundle,
+                  allConcepts,
+                  finalContext.concepts?.map(c => c.id) ?? [],
+                );
+                (result as AIGeneratedIdeas).extractionBundle = extractionBundle;
+                (result as AIGeneratedIdeas).sourceMeta = {
+                  sourceType: 'video',
+                  sourceUrl: safeVideoUrl,
+                  conceptIds: mappedConceptIds,
+                  topicId: finalContext.topic?.id,
+                  gradeLevel: finalContext.grade.level,
+                  secondaryTrack: user?.secondaryTrack,
+                };
+              }
             }
             break;
         }

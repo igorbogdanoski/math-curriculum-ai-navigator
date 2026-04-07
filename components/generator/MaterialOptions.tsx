@@ -632,6 +632,8 @@ interface WebExtractResult {
     charCount?: number;
     truncated?: boolean;
     sourceUrl?: string;
+    sourceType?: 'webpage' | 'pdf';
+    extractionMode?: 'html-static' | 'html-reader-fallback' | 'pdf-native';
     reason?: string;
 }
 
@@ -729,6 +731,11 @@ const WebExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispat
                                         {' · '}
                                         <span className="font-medium">Текстот е подготвен за AI</span>
                                     </p>
+                                    <p className="text-[11px] text-emerald-700/90 mt-1">
+                                        Извор: {result.sourceType === 'pdf' ? 'PDF документ' : 'Веб страна'}
+                                        {result.extractionMode === 'html-reader-fallback' && ' · Reader fallback (динамичка содржина)'}
+                                        {result.extractionMode === 'pdf-native' && ' · PDF text extraction'}
+                                    </p>
                                 </div>
                                 <button
                                     type="button"
@@ -752,7 +759,7 @@ const WebExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispat
                             <p className="text-xs font-bold text-rose-800">⚠ Не може да се извлече содржина</p>
                             <p className="text-xs text-rose-700 mt-0.5">{result.reason ?? 'Непозната грешка'}</p>
                             <p className="text-xs text-rose-600 mt-1.5">
-                                Забелешка: JavaScript-рендерирани страни (React/Angular) не се поддржани. Обиди со друга страна.
+                                Совет: ако страницата е динамичка, системот автоматски пробува reader fallback. За учебници, внеси директен PDF линк.
                             </p>
                         </div>
                     )}

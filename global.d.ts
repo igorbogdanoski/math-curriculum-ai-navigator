@@ -11,6 +11,10 @@ interface Window {
   __E2E_MOCK_QUIZ_RESULTS__?: import('./services/firestoreService.types').QuizResult[];
   /** Mock mastery data injected by Playwright */
   __E2E_MOCK_MASTERY__?: import('./services/firestoreService.types').ConceptMastery[];
+  /** Mock class list injected by Playwright for teacher flows */
+  __E2E_MOCK_CLASSES__?: import('./services/firestoreService.types').SchoolClass[];
+  /** Captured assignment payloads injected/read by Playwright teacher tests */
+  __E2E_ASSIGNMENT_WRITES__?: Array<Omit<import('./services/firestoreService.types').Assignment, 'id' | 'createdAt'>>;
   /** When true, only load quizzes from IndexedDB cache (no Firestore read) */
   __E2E_USE_CACHE_ONLY__?: boolean;
   /** Mock quiz content injected by Playwright */

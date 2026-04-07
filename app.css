@@ -322,6 +322,47 @@ html.high-contrast {
   animation: slide-up 0.3s ease-out forwards;
 }
 
+/* Gamma Mode transitions (S18-P2) */
+@keyframes gamma-slide-in-right {
+  from { opacity: 0; transform: translate3d(56px, 0, 0) scale(0.995); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes gamma-slide-in-left {
+  from { opacity: 0; transform: translate3d(-56px, 0, 0) scale(0.995); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes gamma-slide-in-up {
+  from { opacity: 0; transform: translate3d(0, 38px, 0) scale(0.992); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes gamma-fade-scale {
+  from { opacity: 0; transform: scale(0.97); filter: blur(2px); }
+  to   { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+.gamma-enter-right {
+  animation: gamma-slide-in-right 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+.gamma-enter-left {
+  animation: gamma-slide-in-left 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+.gamma-enter-up {
+  animation: gamma-slide-in-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  will-change: transform, opacity;
+}
+
+.gamma-enter-fade-scale {
+  animation: gamma-fade-scale 0.26s ease-out both;
+  will-change: transform, opacity;
+}
+
 @keyframes pulse-bg-blue {
   0%, 100% { background-color: #EFF6FF; }
   50%      { background-color: #DBEAFE; }

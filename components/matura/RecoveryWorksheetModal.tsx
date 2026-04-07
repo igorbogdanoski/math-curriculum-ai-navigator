@@ -7,7 +7,7 @@
  * Влезни податоци: weakConcepts од useMaturaStats (концепт, %, прашања, тема)
  */
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Sparkles, Printer, Loader2, AlertTriangle, BookOpen, RefreshCcw, Send, ChevronDown, ChevronUp, CheckSquare, Square } from 'lucide-react';
+import { X, Sparkles, Printer, Loader2, AlertTriangle, BookOpen, RefreshCcw, Send, ChevronDown, ChevronUp, CheckSquare } from 'lucide-react';
 import { callGeminiProxy } from '../../services/gemini/core';
 import { sanitizeWorksheetHtml } from '../../utils/sanitizeHtml';
 import { fetchClasses } from '../../services/firestoreService.classroom';
@@ -170,6 +170,15 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
   const [sendDone, setSendDone] = useState(false);
 
   useEffect(() => {
+    return () => {
+      if (styleRef.current?.parentNode) {
+        styleRef.current.parentNode.removeChild(styleRef.current);
+      }
+      styleRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!teacherUid || !sendOpen || classes.length > 0) return;
     fetchClasses(teacherUid).then(setClasses);
   }, [teacherUid, sendOpen, classes.length]);
@@ -179,6 +188,7 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
   const handleSend = async () => {
     if (!teacherUid || !selectedClass) return;
     setSending(true);
+    setError('');
     try {
       const title = `Recovery Worksheet — ${concepts.map(c => c.conceptTitle).join(', ').slice(0, 80)}`;
       await saveAssignment({
@@ -194,6 +204,8 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
       });
       setSendDone(true);
       setSendOpen(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Неуспешно праќање assignment. Обиди се повторно.');
     } finally {
       setSending(false);
     }
@@ -203,6 +215,11 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
   const concepts = weakConcepts.slice(0, 5);
 
   const generate = useCallback(async () => {
+    if (concepts.length === 0) {
+      setError('Нема слаби концепти за worksheet.');
+      setPhase('error');
+      return;
+    }
     setPhase('generating');
     setError('');
     try {
@@ -273,7 +290,11 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
                 <p className="text-xs text-gray-500">{concepts.length} слаби концепти · персонализиран</p>
               </div>
             </div>
-            <button type="button" onClick={onClose}
+            <button
+              type="button"
+              onClick={onClose}
+              title="Затвори"
+              aria-label="Затвори Recovery Worksheet"
               className="p-2 rounded-xl hover:bg-gray-100 transition">
               <X className="w-5 h-5 text-gray-400" />
             </button>

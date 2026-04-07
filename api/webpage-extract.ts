@@ -11,17 +11,26 @@
  *   5. Client sends the text to Gemini for lesson material generation
  *
  * Request:  GET /api/webpage-extract?url=<encoded-url>
- * Response: { available: true; text: string; title: string; charCount: number; truncated: boolean }
+ * Response: {
+ *   available: true;
+ *   text: string;
+ *   title: string;
+ *   charCount: number;
+ *   truncated: boolean;
+ *   sourceType: 'webpage' | 'pdf';
+ *   extractionMode: 'html-static' | 'html-reader-fallback' | 'pdf-native';
+ * }
  *         | { available: false; reason: string }
  *
  * Security: CORS restricted to known origins. URL is validated (must be http/https).
- *           JavaScript-rendered pages are NOT supported (no headless browser).
+ *           Internal/private hosts are blocked to reduce SSRF risk.
  * Cache:    1 hour (s-maxage=3600) — most educational pages are static.
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const MAX_CHARS = 12000;
+const MIN_HTML_TEXT_CHARS = 350;
 
 function getAllowedOrigins(): string[] {
   const configured = (process.env.ALLOWED_ORIGIN ?? '')
@@ -106,6 +115,38 @@ function htmlToText(html: string): string {
   return cleanWhitespace(text);
 }
 
+function truncate(text: string): { text: string; truncated: boolean } {
+  const truncated = text.length > MAX_CHARS;
+  return {
+    text: truncated ? text.slice(0, MAX_CHARS) : text,
+    truncated,
+  };
+}
+
+async function extractPdfText(arrayBuffer: ArrayBuffer): Promise<{ text: string; title: string }> {
+  const pdfParseModule = await import('pdf-parse');
+  const pdfParse = (pdfParseModule as { default?: (buffer: Buffer) => Promise<{ text?: string; info?: { Title?: string } }> }).default
+    ?? (pdfParseModule as unknown as (buffer: Buffer) => Promise<{ text?: string; info?: { Title?: string } }>);
+
+  const parsed = await pdfParse(Buffer.from(arrayBuffer));
+  const text = cleanWhitespace(parsed.text ?? '');
+  const title = (parsed.info?.Title ?? '').trim().slice(0, 200);
+  return { text, title };
+}
+
+async function fetchReaderFallback(url: string): Promise<string> {
+  const readerUrl = `https://r.jina.ai/http://${url.replace(/^https?:\/\//i, '')}`;
+  const response = await fetch(readerUrl, {
+    headers: {
+      'User-Agent': 'MathNavigatorBot/1.0 (reader-fallback)',
+      'Accept': 'text/plain;q=0.9,*/*;q=0.5',
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!response.ok) return '';
+  return cleanWhitespace(await response.text());
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -153,27 +194,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const contentType = response.headers.get('content-type') ?? '';
+    const contentType = (response.headers.get('content-type') ?? '').toLowerCase();
+    const isPdf = contentType.includes('application/pdf') || parsedUrl.pathname.toLowerCase().endsWith('.pdf');
+
+    if (isPdf) {
+      const pdfBytes = await response.arrayBuffer();
+      const extracted = await extractPdfText(pdfBytes);
+      if (!extracted.text) {
+        res.status(200).json({ available: false, reason: 'PDF е достапен, но не може да се извлече читлив текст.' });
+        return;
+      }
+
+      const truncatedPdf = truncate(extracted.text);
+      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+      res.status(200).json({
+        available: true,
+        text: truncatedPdf.text,
+        title: extracted.title || parsedUrl.pathname.split('/').pop() || 'PDF документ',
+        charCount: truncatedPdf.text.length,
+        truncated: truncatedPdf.truncated,
+        sourceUrl: rawUrl,
+        sourceType: 'pdf',
+        extractionMode: 'pdf-native',
+      });
+      return;
+    }
+
     if (!contentType.includes('text/html') && !contentType.includes('text/plain') && !contentType.includes('xml')) {
-      res.status(200).json({ available: false, reason: 'URL не е HTML страница (можеби PDF или медиа)' });
+      res.status(200).json({ available: false, reason: 'URL не е поддржан текстуален формат (HTML/TXT/XML/PDF).' });
       return;
     }
 
     const html = await response.text();
     const title = extractTitle(html);
-    const fullText = htmlToText(html);
+    let fullText = htmlToText(html);
+    let extractionMode: 'html-static' | 'html-reader-fallback' = 'html-static';
 
-    const truncated = fullText.length > MAX_CHARS;
-    const text = truncated ? fullText.slice(0, MAX_CHARS) : fullText;
+    // JS-rendered pages often return low-text shells; try a reader fallback when content is too short.
+    if (fullText.length < MIN_HTML_TEXT_CHARS) {
+      const readerText = await fetchReaderFallback(rawUrl);
+      if (readerText.length > fullText.length + 120) {
+        fullText = readerText;
+        extractionMode = 'html-reader-fallback';
+      }
+    }
+
+    if (!fullText) {
+      res.status(200).json({ available: false, reason: 'Не е пронајдена читлива текстуална содржина на страницата.' });
+      return;
+    }
+
+    const truncatedResult = truncate(fullText);
 
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
     res.status(200).json({
       available: true,
-      text,
+      text: truncatedResult.text,
       title,
-      charCount: text.length,
-      truncated,
+      charCount: truncatedResult.text.length,
+      truncated: truncatedResult.truncated,
       sourceUrl: rawUrl,
+      sourceType: 'webpage',
+      extractionMode,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';

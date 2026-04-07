@@ -361,6 +361,9 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
 - title: краток, привлечен наслов
 - content: низа кратки точки (max 6); за 'formula-centered' content[0] е главната формула; за 'step-by-step' секоја точка е нумериран чекор; за 'proof' секоја точка е еден чекор на доказот
 - rightContent: САМО за type='comparison' — паралелна листа за десна колона
+- concept: краток назив на концептот што се предава на слајдот (на македонски)
+- formulas: листа со формули што се воведуваат/користат на слајдот (може празно ако нема)
+- priorFormulas: листа со формули од претходни слајдови на кои се потпира овој слајд (особено за type='step-by-step' и type='example')
 - type: 'title'|'content'|'formula-centered'|'step-by-step'|'proof'|'comparison'|'example'|'task'|'summary'
 - visualPrompt: English description of a simple math diagram (no text, dark background) for AI SVG generation
 - solution: ЗАДОЛЖИТЕЛНО за type='task' и type='example' — детални чекори; НЕ вклучувај за останатите
@@ -370,6 +373,11 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
 ВАЖНО — нови типови:
 - type='proof': content[] ги листа чекорите на доказот (секоја точка = 1 чекор); visualPrompt = геометриска фигура или дијаграм
 - type='comparison': content[] = листа за ЛЕВАТА колона; rightContent[] = листа за ДЕСНАТА колона; title = "Концепт А vs Концепт Б"
+
+КОНТЕКСТУАЛНА КОНТИНУИТЕТНОСТ (задолжително):
+- Секој 'step-by-step' и 'example' мора да има valid 'concept'.
+- За секој следен слајд, пополни 'priorFormulas' со формули од претходните релевантни слајдови.
+- Не измислувај нови ознаки; користи конзистентни формулации меѓу слајдовите.
 `;
 
 
@@ -387,6 +395,9 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
               title: { type: Type.STRING },
               content: { type: Type.ARRAY, items: { type: Type.STRING } },
               rightContent: { type: Type.ARRAY, items: { type: Type.STRING } },
+              concept: { type: Type.STRING },
+              formulas: { type: Type.ARRAY, items: { type: Type.STRING } },
+              priorFormulas: { type: Type.ARRAY, items: { type: Type.STRING } },
               solution: { type: Type.ARRAY, items: { type: Type.STRING } },
               visualPrompt: { type: Type.STRING },
               speakerNotes: { type: Type.STRING },
