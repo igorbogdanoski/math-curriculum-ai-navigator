@@ -296,7 +296,7 @@ export function useGeneratorActions({
     setIsGeneratingBulk(false);
 
     if (typeof deductCredits === 'function' && Object.keys(acc).length > 0) {
-      await deductCredits(cost);
+      try { await deductCredits(cost); } catch (e) { console.error('[Bulk] deductCredits failed:', e); }
     }
   };
 

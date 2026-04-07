@@ -39,8 +39,9 @@ const isE2E = typeof window !== 'undefined' && (window.__E2E_TEACHER_MODE__ || w
 
 const firestoreSettings = {
   ignoreUndefinedProperties: true,
-  experimentalForceLongPolling: true,
-  useFetchStreams: false,
+  // forceLongPolling only in E2E to avoid slowing real-time listeners for real users
+  experimentalForceLongPolling: isE2E,
+  useFetchStreams: !isE2E,
 };
 
 // Ensure we only initialize once and with the correct settings

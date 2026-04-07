@@ -148,7 +148,7 @@ export type GeminiRequest = z.infer<typeof GeminiRequestSchema>;
 // CORS helper
 // ---------------------------------------------------------------------------
 export function setCorsHeaders(res: VercelResponse): void {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://math-curriculum-ai-navigator.vercel.app';
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || process.env.VITE_APP_URL || 'https://mismath.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
