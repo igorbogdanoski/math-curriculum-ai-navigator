@@ -70,7 +70,7 @@
       "topic": "Бројни изрази",
       "topicArea": "broevi",
       "conceptIds": [
-        "gym10-c2-1"
+        "gym10-c1-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -92,7 +92,7 @@
       "topic": "Степени и корени",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c2-2"
+        "gym10-c2-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -114,7 +114,7 @@
       "topic": "Линеарни равенки со параметар",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c3-1"
+        "gym10-c3-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -136,7 +136,7 @@
       "topic": "Квадратни равенки (Виетови формули)",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym11-c1-1"
+        "gym11-c3-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -158,7 +158,7 @@
       "topic": "Систем линеарни равенки",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c3-2"
+        "gym10-c3-4"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -180,7 +180,7 @@
       "topic": "Дефинициона област",
       "topicArea": "analiza",
       "conceptIds": [
-        "gym11-c3-1"
+        "gym13-c2-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -202,7 +202,7 @@
       "topic": "Агли",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym10-c4-1"
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -224,7 +224,7 @@
       "topic": "Вектори",
       "topicArea": "matrici-vektori",
       "conceptIds": [
-        "gym10-c5-1"
+        "gym10-c4-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -246,7 +246,8 @@
       "topic": "Планиметрија - Ромб",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym10-c4-2"
+        "gym10-c5-1",
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -269,6 +270,7 @@
       "topic": "Планиметрија - Трапез",
       "topicArea": "geometrija",
       "conceptIds": [
+        "gym10-c5-1",
         "gym10-c4-3"
       ],
       "imageUrls": [],
@@ -292,7 +294,8 @@
       "topic": "Стереометрија - Конус",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c4-1"
+        "gym10-c5-2",
+        "gym11-c7-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -315,7 +318,8 @@
       "topic": "Стереометрија - Цилиндар",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c4-2"
+        "gym10-c5-2",
+        "gym11-c7-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -338,7 +342,8 @@
       "topic": "Стереометрија - Призма",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c4-3"
+        "gym10-c5-2",
+        "gym11-c7-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -361,7 +366,7 @@
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym12-c1-1"
+        "gym12-c4-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -384,7 +389,7 @@
       "topic": "Равенка на права",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym12-c1-2"
+        "gym12-c4-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -407,7 +412,8 @@
       "topic": "Нормалност на прави",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym12-c1-3"
+        "gym10-c4-3",
+        "gym12-c4-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -430,7 +436,7 @@
       "topic": "Аритметичка прогресија",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym12-c2-1"
+        "gym13-c1-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -453,7 +459,7 @@
       "topic": "Геометриска прогресија",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym12-c2-2"
+        "gym13-c1-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -471,7 +477,7 @@
       "topic": "Полиноми",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c2-3"
+        "gym10-c2-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -489,7 +495,7 @@
       "topic": "Линеарни функции со параметар",
       "topicArea": "analiza",
       "conceptIds": [
-        "gym10-c3-3"
+        "gym10-c3-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -507,7 +513,7 @@
       "topic": "Линеарни неравенки",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c3-4"
+        "gym10-c3-5"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -525,7 +531,8 @@
       "topic": "Аритметичка средина",
       "topicArea": "broevi",
       "conceptIds": [
-        "gym10-c1-3"
+        "gym10-c6-2",
+        "gym11-c8-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -543,7 +550,7 @@
       "topic": "Многуаголници и агли",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym10-c4-4"
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -561,7 +568,8 @@
       "topic": "Планиметрија - Триаголник",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym10-c4-5"
+        "gym10-c5-1",
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -579,7 +587,8 @@
       "topic": "Стереометрија - Коцка",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c4-4"
+        "gym10-c5-2",
+        "gym11-c7-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -597,7 +606,8 @@
       "topic": "Стереометрија - Сфера и топка",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c4-5"
+        "gym10-c5-2",
+        "gym11-c7-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -615,7 +625,7 @@
       "topic": "Аналитичка геометрија - Права",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym12-c1-4"
+        "gym12-c4-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -633,7 +643,8 @@
       "topic": "Аритметичка и геометриска прогресија",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym12-c2-3"
+        "gym13-c1-2",
+        "gym13-c1-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -651,7 +662,7 @@
       "topic": "Рационални алгебарски изрази",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c2-4"
+        "gym10-c2-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -687,7 +698,7 @@
       "topic": "Проблемски задачи со системи",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c3-6"
+        "gym10-c3-4"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -705,7 +716,7 @@
       "topic": "Квадратни равенки со параметар",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym11-c1-2"
+        "gym11-c3-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -723,7 +734,8 @@
       "topic": "Планиметрија - Круг и многуаголници",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym10-c4-6"
+        "gym10-c5-1",
+        "gym11-c6-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -741,7 +753,8 @@
       "topic": "Стереометрија - Пирамида",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c4-6"
+        "gym10-c5-2",
+        "gym11-c7-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -759,7 +772,8 @@
       "topic": "Стереометрија - Ротациони тела",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c4-7"
+        "gym10-c5-2",
+        "gym11-c7-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -777,7 +791,7 @@
       "topic": "Аналитичка геометрија - Растојание",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym12-c1-5"
+        "gym12-c4-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -795,7 +809,7 @@
       "topic": "Аналитичка геометрија - Trekëndëshi",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym12-c1-6"
+        "gym12-c4-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -813,7 +827,7 @@
       "topic": "Аритметичка прогресија",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym12-c2-4"
+        "gym13-c1-2"
       ],
       "imageUrls": [],
       "hasImage": false,

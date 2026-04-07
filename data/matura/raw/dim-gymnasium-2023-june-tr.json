@@ -31,7 +31,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -55,7 +57,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -79,7 +83,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -103,7 +109,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -127,7 +135,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -151,7 +161,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -175,7 +187,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -199,7 +213,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -223,7 +239,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -247,7 +265,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -271,7 +292,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -295,7 +318,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -319,7 +344,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -343,7 +371,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -367,7 +398,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -386,7 +419,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": "A. İlk olarak, $A$ kümesinin elemanlarını belirleyelim: $A = \\{x \\mid x \\in \\mathbb{N} \\land x \\mid 8\\}$. Bu",
       "successRatePercent": null
@@ -405,7 +440,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": "Önce polinomları çarpanlarına ayıralım:\n$P(x) = x^3 - x^2 = x^2(x - 1)$\n$Q(x)",
       "successRatePercent": null
@@ -424,7 +461,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": "A. $(k^2 + k)x = k^2 - 2k - 3$ denkleminin sonsuz sayıda çözümü olması için, $x$'in katsayısı ve sabit terim aynı anda sıfır olmalıdır.\n$k^2 + k = 0 \\implies k(k+1) = 0 \\implies k=0$ veya $k=-1$.\n$k^2 - 2k - 3 = 0 \\implies (k-3)(k+1) = 0 \\implies k=3$ veya $k=-1$.\nHer iki koşulu da sağlayan ortak $k$ değeri $k=-",
       "successRatePercent": null
@@ -443,7 +482,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": "A. Düzgün bir çokgenin karakteristik üçgeni eşkenar ise, merkezdeki açısı $60^\\circ$ olmalıdır. Düzgün bir $n$-genin",
       "successRatePercent": null
@@ -462,7 +503,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "**A.**\nDik dairesel koninin taban yarıçapı $r$ ve yüksekliği $h$ olsun.\nTaban alanı $A_t = \\pi",
       "successRatePercent": null
@@ -481,7 +525,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": "$|U| = 400, |A| = 100, |B| = 150, |A \\cap B| = 75$. $|A \\cup B| = 100 + 150 - 75 = 175$. $|(A \\cup B)'| = 400 - 175 = 225$.",
       "successRatePercent": null
@@ -500,7 +546,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "hints": [],
       "aiSolution": "$A = -2(-3) - |5(-3)+3| = 6 - |-12| = -6$. $B = \\frac{7}{4} - \\frac{9}{4} = -\\frac{2}{4} = -\\frac{1}{2}$. $\\frac{A}{B} = \\frac{-6}{-1/2} = 12$. $12 \\cdot 0.30 = 3.6$.",
       "successRatePercent": null
@@ -519,7 +567,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": "$\\left( \\frac{1-2x}{3(1+2x)} + \\frac{(2x-1)3(1+2x)}{3(1+2x)} \\right) \\cdot \\frac{1+2x}{1-2x} - \\frac{2x(3x-1)}{3x} = \\frac{1-2x + 3(4x^2-1)}{3(1+2x)} \\cdot \\frac{1+2x}{1-2x} - \\frac{2(3x-1)}{3} = \\frac{12x^2-2x-2}{3(1-2x)} - \\frac{6x-2}{3} = \\frac{-2(1-2x)(3x+1)}{3(1-2x)} - \\frac{6x-2}{3} = \\frac{-6x-2-6x+2}{3} = -4x$.",
       "successRatePercent": null
@@ -538,7 +588,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": "$\\frac{3x-5}{x+1} - 1 \\ge 0 \\implies \\frac{3x-5-x-1}{x+1} \\ge 0 \\implies \\frac{2x-6}{x+1} \\ge 0$. Kökler $x=3, x=-1$. Çözüm: $x \\in (-\\infty, -1) \\cup [3, \\infty)$.",
       "successRatePercent": null
@@ -557,7 +609,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": "$x_1+x_2 = 1$, $x_1x_2 = m-1$. $x_1^3+x_2^3 = (x_1+x_2)^3 - 3x_1x_2(x_1+x_2) = 1^3 - 3(m-1)(1) = 1 - 3m + 3 = 4 - 3m$. $4 - 3m = 7 \\implies -3m = 3 \\implies m = -1$.",
       "successRatePercent": null
@@ -576,7 +630,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "hints": [],
       "aiSolution": "$f(0)=3 \\implies c=3$. Ekstremum $x=2 \\implies -b/2a = 2 \\implies b = -4a$. $f(-1)=8 \\implies a - b + 3 = 8 \\implies a - b = 5$. $a - (-4a) = 5 \\implies 5a = 5 \\implies a=1, b=-4$.",
       "successRatePercent": null
@@ -595,7 +651,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": "$s = (50+58+72)/2 = 90$. $P = \\sqrt{90(90-50)(90-58)(90-72)} = \\sqrt{90 \\cdot 40 \\cdot 32 \\cdot 18} = 1440$. En küçük yükseklik en uzun kenara aittir: $h = 2P/72 = 2880/72 = 40$. İç teğet çemberin yarıçapı $r = P/s = 1440/90 = 16$.",
       "successRatePercent": null
@@ -614,7 +673,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Taban ayrıtı $a=8$. Yan yüz yüksekliği $h = (a/2) / \\cos 60^\\circ = 4 / (1/2) = 8$. Yanal alan $M = 4 \\cdot \\frac{ah}{2} = 4 \\cdot \\frac{8 \\cdot 8}{2} = 128$. Taban alanı $B = a^2 = 64$. Toplam alan $P = B + M = 64 + 128 = 192$.",
       "successRatePercent": null
@@ -635,7 +697,10 @@
         "/matura/images/2023/june/q29-fig1.png"
       ],
       "imageDescription": "İkizkenar yamuk tabanlı prizma ve içine çizilmiş silindir. Yamuğun tabanları a=8cm ve b=2cm, prizmanın yüksekliği H.",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Yamuğun yüksekliği $h = \\sqrt{c^2 - (\\frac{a-b}{2})^2}$. İçten teğet çember olduğu için $a+b = 2c \\implies 10 = 2c \\implies c=5$. $h = \\sqrt{5^2 - 3^2} = 4$. Prizmanın hacmi $V_P = \\frac{a+b}{2}h \\cdot H = \\frac{10}{2} \\cdot 4 \\cdot 5 = 100$. Silindirin yarıçapı $r = h/2 = 2$. Silindirin hacmi $V_C = \\pi r^2 H = \\pi \\cdot 4 \\cdot 5 = 20\\pi$. Oran $V_P / V_C = 100 / 20\\pi = 5/\\pi$.",
       "successRatePercent": null
@@ -654,7 +719,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "hints": [],
       "aiSolution": "$\\frac{2\\sin^2\\alpha\\cos\\alpha}{1-\\cos^2\\alpha} = \\frac{2\\sin^2\\alpha\\cos\\alpha}{\\sin^2\\alpha} = 2\\cos\\alpha$.",
       "successRatePercent": null

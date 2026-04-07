@@ -31,7 +31,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -55,7 +57,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -79,7 +83,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -103,7 +109,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -127,7 +135,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -151,7 +161,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -175,7 +187,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -199,7 +213,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -223,7 +239,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -247,7 +265,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -271,7 +291,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -295,7 +318,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -319,7 +344,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -343,7 +371,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -367,7 +398,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -391,7 +425,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -415,7 +451,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -439,7 +477,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -463,7 +503,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -487,7 +529,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -506,7 +550,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": "Прво, ги факторизираме дадените изрази:\n1. $(1+a)^2$\n2. $1-a^2 = (1-",
       "successRatePercent": null
@@ -525,7 +571,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "hints": [],
       "aiSolution": "А. Ако $x = \\frac{3}{5}$, тогаш вредноста на изразот е:\n$\\left| \\frac{1}{3} - x \\right",
       "successRatePercent": null
@@ -544,7 +592,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "hints": [],
       "aiSolution": "А. Првичната цена на еден билет е $150$ денари. За $1000$ денари, бројот на билети што",
       "successRatePercent": null
@@ -563,7 +613,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "hints": [],
       "aiSolution": "А. Графикот на линеарна функција е права паралелна со $x$-оската ако нејзиниот коефициент пред $x$ (на",
       "successRatePercent": null
@@ -582,7 +634,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym11-c6-1"
+      ],
       "hints": [],
       "aiSolution": "А. Нека $L$ е периметарот, $a$ е должината на кракот, а $b$ е должината на основата.\nЗа рамнокрак триаголник, периметарот е $L = 2a + b$.\nДадени ни се $L = 71$ и $a = 23$.\nЗаменуваме во формулата:\n$71 = 2 \\cdot 23 + b$\n$71 = 46 + b$\n$b = 71 - 46$\n$b = 25$\n\nБ. Во правоаголен триаголник, радиусот на опишаната кружница $R$ е половина од должината на хипотенузата $c$, т.е. $R = \\frac{c}{2}$.\nДаден ни е остар агол од $30^\\circ$ и катета наспроти тој агол со должина 8.\nКористиме тригонометриска функција синус:",
       "successRatePercent": null
@@ -601,7 +656,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym11-c6-1"
+      ],
       "hints": [],
       "aiSolution": "А. Формулата за должина $l$ на кружен лак, кој одговара на централен агол $\\alpha$ (изразен во степени) во кру",
       "successRatePercent": null
@@ -620,7 +678,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "А. Нека должините на рабовите на квадарот се $a$, $b$ и $c$. Дадени ни се $a=2\\text{dm}$",
       "successRatePercent": null
@@ -639,7 +700,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "А. За рамностран конус, изводницата $l$ е еднаква на дијаметарот $2r$.\nОд $l = 16\\text{cm}$,",
       "successRatePercent": null
@@ -658,7 +722,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
       "hints": [],
       "aiSolution": "А. За да ги најдеме координатите на точката $C$ што ја преполовува отсечката $AB$, ја користиме формулата за средина на",
       "successRatePercent": null
@@ -677,7 +743,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2"
+      ],
       "hints": [],
       "aiSolution": "А.\nНека првиот број од низата е $a_1$. Низата има $n=30$ последователни цели броеви, па раз",
       "successRatePercent": null
@@ -696,7 +764,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": "Прво, ги факторизираме именителите во првата заграда:\n$a^2 - 4 = (a - 2)(a + 2)$\n$a^",
       "successRatePercent": null
@@ -715,7 +785,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": "А. Прво, ќе ја решиме секоја неравенка посебно:\n\n1.  Прва неравенка:\n    $2(x-1) \\le 7$\n    $2x - 2 \\le 7$\n    $2x \\le 9$\n    $x \\le \\frac{9}{2}$\n    $x \\le 4.5$\n\n2.  Втора неравенка:\n    $3(2-x) < 2(x+5)$\n    $6 - 3x < 2x + 10$\n    $6 - 10 < 2x + 3x$",
       "successRatePercent": null
@@ -734,7 +806,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "hints": [],
       "aiSolution": "Нека должините на четирите дела се $L_1, L_2, L_3, L_4$.\nОд дадените односи ги изразуваме дол",
       "successRatePercent": null
@@ -753,7 +827,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": "Дадената равенка ја трансформираме во општ облик $ax^2+bx+c=0$:\n$(m-2)x - m = 8(x^",
       "successRatePercent": null
@@ -774,7 +850,9 @@
         "/matura/images/2022/june/q35-fig1.png"
       ],
       "imageDescription": "Триаголник ABC со впишан паралелограм DBEF, каде D лежи на AB, E на BC, F на AC.",
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c4-4"
+      ],
       "hints": [],
       "aiSolution": "Нека $h$ е висината на триаголникот $ABC$ спуштена од темето $C$ кон страната $AB$.\nНека $h_",
       "successRatePercent": null
@@ -793,7 +871,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Страната на ромбот е $a=5\\text{cm}$, а едната дијагонала е $d_1=8\\text{cm}$.\nЗа да ја",
       "successRatePercent": null
@@ -812,7 +893,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "За да го пресметаме волуменот на пирамидата, прво треба да ја најдеме плоштината на нејзината основа, која е рамнокрак тра",
       "successRatePercent": null
@@ -831,7 +915,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
       "hints": [],
       "aiSolution": "**А.** За да правата $(p+2)x - y - 2p + 3 = 0$ ја сече правата $6x + 3y -",
       "successRatePercent": null
@@ -850,7 +936,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
       "hints": [],
       "aiSolution": "Прво, го наоѓаме коефициентот на правец на страната $AB$.\nЗа точките $A(4, 6)$ и $B",
       "successRatePercent": null
@@ -869,7 +957,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": [],
+      "conceptIds": [
+        "gym13-c1-2",
+        "gym13-c1-3"
+      ],
       "hints": [],
       "aiSolution": "Нека трите броја на аритметичката прогресија се $a-d$, $a$, $a+d$.\nНивниот збир е 9:",
       "successRatePercent": null

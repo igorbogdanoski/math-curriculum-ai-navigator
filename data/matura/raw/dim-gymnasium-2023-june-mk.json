@@ -26,7 +26,7 @@
       "topic": "Искази",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c1-1"
+        "gym10-c3-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -114,7 +114,7 @@
       "topic": "Дефинициона област",
       "topicArea": "analiza",
       "conceptIds": [
-        "gym10-c2-3"
+        "gym13-c2-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -136,7 +136,7 @@
       "topic": "Проблемски задачи",
       "topicArea": "broevi",
       "conceptIds": [
-        "gym10-c1-2"
+        "gym10-c3-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -202,6 +202,7 @@
       "topic": "Трансформација на изрази",
       "topicArea": "algebra",
       "conceptIds": [
+        "gym10-c2-2",
         "gym10-c2-3"
       ],
       "imageUrls": [],
@@ -224,7 +225,8 @@
       "topic": "Планиметрија - Квадрат",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c6-1"
+        "gym10-c5-1",
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -246,7 +248,7 @@
       "topic": "Агли во кружница",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c6-1"
+        "gym12-c2-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -290,7 +292,8 @@
       "topic": "Планиметрија - Делтоид",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c6-1"
+        "gym10-c5-1",
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -312,6 +315,7 @@
       "topic": "Стереометрија - Цилиндар и конус",
       "topicArea": "geometrija",
       "conceptIds": [
+        "gym10-c5-2",
         "gym11-c7-1"
       ],
       "imageUrls": [],
@@ -334,7 +338,7 @@
       "topic": "Агли (Радијани и степени)",
       "topicArea": "trigonometrija",
       "conceptIds": [
-        "gym11-c1-1"
+        "gym10-c2-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -387,7 +391,7 @@
       "topic": "Линеарни и квадратни равенки со параметар",
       "topicArea": "algebra",
       "conceptIds": [
-        "gym10-c3-3"
+        "gym11-c3-1"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -405,7 +409,7 @@
       "topic": "Правилни многуаголници",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c6-1"
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -423,6 +427,7 @@
       "topic": "Стереометрија и тригонометрија",
       "topicArea": "geometrija",
       "conceptIds": [
+        "gym10-c5-2",
         "gym11-c7-1"
       ],
       "imageUrls": [],
@@ -459,7 +464,7 @@
       "topic": "Бројни изрази и проценти",
       "topicArea": "broevi",
       "conceptIds": [
-        "gym10-c1-3"
+        "gym10-c1-2"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -549,7 +554,8 @@
       "topic": "Планиметрија - Триаголник",
       "topicArea": "geometrija",
       "conceptIds": [
-        "gym11-c6-1"
+        "gym10-c5-1",
+        "gym10-c4-3"
       ],
       "imageUrls": [],
       "hasImage": false,
@@ -567,6 +573,7 @@
       "topic": "Стереометрија - Пирамида",
       "topicArea": "geometrija",
       "conceptIds": [
+        "gym10-c5-2",
         "gym11-c7-1"
       ],
       "imageUrls": [],
@@ -585,6 +592,7 @@
       "topic": "Стереометрија - Призма и цилиндар",
       "topicArea": "geometrija",
       "conceptIds": [
+        "gym10-c5-2",
         "gym11-c7-1"
       ],
       "imageUrls": [
@@ -605,7 +613,7 @@
       "topic": "Тригонометриски изрази",
       "topicArea": "trigonometrija",
       "conceptIds": [
-        "gym11-c1-1"
+        "gym12-c2-3"
       ],
       "imageUrls": [],
       "hasImage": false,
