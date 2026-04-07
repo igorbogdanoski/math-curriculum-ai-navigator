@@ -173,11 +173,18 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
     setError('');
     try {
       const prompt = buildPrompt(concepts);
-      const resp = await callGeminiProxy({
-        model: MODEL,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 4096 },
-      });
+      // 45-second timeout — worksheet generation is longer than typical calls
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Генерирањето траеше премногу долго. Обиди се повторно.')), 45_000)
+      );
+      const resp = await Promise.race([
+        callGeminiProxy({
+          model: MODEL,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: 4096 },
+        }),
+        timeout,
+      ]);
       const raw = resp.text?.trim() ?? '';
       // Strip any accidental markdown code fences
       const cleaned = raw.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();

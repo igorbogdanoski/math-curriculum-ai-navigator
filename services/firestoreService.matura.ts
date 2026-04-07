@@ -212,7 +212,8 @@ function getLocalMaturaData(): { exams: MaturaExamMeta[]; byExam: Map<string, Ma
   // Helper: given an exam id like "dim-gymnasium-2022-june-mk", get the base key
   function baseKeyFor(examId: string): string {
     // Remove language suffix: -mk, -al, -tr (last segment after final -)
-    return examId.replace(/-[a-z]{2}$/, '');
+    // Only strip known language codes — prevents corrupting IDs that legitimately end with two letters
+    return examId.replace(/-(mk|al|tr)$/, '');
   }
 
   // Build solution lookup from key files: baseKey → Map<questionNumber, {aiSolution, solutionImageUrl}>

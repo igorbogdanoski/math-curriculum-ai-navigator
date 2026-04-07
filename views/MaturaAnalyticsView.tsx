@@ -592,10 +592,10 @@ export const MaturaAnalyticsView: React.FC = () => {
             conceptId: item.concept.id,
             conceptTitle: item.concept.title,
             gradeTitle: item.concept.gradeTitle ?? `Grade ${item.concept.gradeLevel}`,
-            topicTitle: item.concept.topicTitle ?? item.concept.topicId,
+            topicTitle: item.concept.topicTitle ?? item.concept.topicId ?? 'Математика',
             pct: item.pct,
             questions: item.questions,
-            topicArea: item.topicArea,
+            topicArea: item.topicArea ?? item.concept.topicTitle ?? 'Математика',
           }))}
           onClose={() => setShowWorksheet(false)}
         />

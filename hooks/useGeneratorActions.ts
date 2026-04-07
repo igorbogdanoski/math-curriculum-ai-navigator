@@ -586,6 +586,7 @@ export function useGeneratorActions({
         : '';
     }
 
+    // Validate BEFORE mutating state — prevents UI desync if context is incomplete
     const built = buildContext();
     if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
     const { context: finalContext, studentProfilesToPass } = built;
@@ -595,7 +596,7 @@ export function useGeneratorActions({
       : '';
     const effectiveInstruction = buildEffectiveInstruction() + extractionSnippet;
 
-    // Switch UI to target type and clear previous result
+    // Switch UI only after validation passes
     dispatch({ type: 'SET_FIELD', payload: { field: 'materialType', value: targetType } });
     setIsLoading(true);
     setGeneratedMaterial(null);
