@@ -69,10 +69,34 @@ if (exam) {
     errors.push(`exam.session must be one of: ${VALID_SESSIONS.join(', ')}`);
 }
 
+// ─── Detect exam format ───────────────────────────────────────────────────────
+// Legacy (pre-reform, ≤2022): 40 questions, 5 parts
+//   Part 1: MC ×1pt, Part 2: MC ×1pt, Part 3: MC ×1pt, Part 4: open ×2pt, Part 5: open ×3-5pt
+// Current (post-reform): 30 questions, 3 parts
+//   Part 1: 15 MC ×1pt, Part 2: 5 open ×2pt, Part 3: 10 open ×3-5pt
+const maxPart = Array.isArray(questions)
+  ? Math.max(0, ...questions.map(q => q.part ?? 0))
+  : 0;
+const declaredCount = exam?.questionCount;
+const isLegacy40 = maxPart > 3 || declaredCount === 40 ||
+  (Array.isArray(questions) && questions.length === 40);
+
+const VALID_PARTS = isLegacy40 ? [1, 2, 3, 4, 5] : [1, 2, 3];
+
+if (isLegacy40) {
+  warnings.push('Legacy 40-question format detected (pre-reform exam)');
+}
+
 // ─── Validate questions ───────────────────────────────────────────────────────
 if (Array.isArray(questions)) {
-  if (questions.length !== 30) {
-    warnings.push(`Expected 30 questions, got ${questions.length}`);
+  const expectedCount = isLegacy40 ? 40 : 30;
+  if (questions.length !== expectedCount) {
+    // For legacy, only warn if we have the header declaring 40 but got fewer (incomplete data)
+    if (isLegacy40 && questions.length < 40) {
+      warnings.push(`Legacy exam declares ${declaredCount ?? 40} questions but only ${questions.length} are present — data may be incomplete`);
+    } else {
+      warnings.push(`Expected ${expectedCount} questions, got ${questions.length}`);
+    }
   }
 
   const nums = new Set();
@@ -125,8 +149,8 @@ if (Array.isArray(questions)) {
 
     if (!q.topic) warnings.push(`${loc}: missing topic (recommended)`);
 
-    if (q.part !== undefined && ![1, 2, 3].includes(q.part))
-      errors.push(`${loc}: part must be 1, 2, or 3`);
+    if (q.part !== undefined && !VALID_PARTS.includes(q.part))
+      errors.push(`${loc}: part must be ${VALID_PARTS.join(', ')}`);
 
     if (q.topicArea && !VALID_TOPIC_AREAS.includes(q.topicArea))
       errors.push(`${loc}: topicArea "${q.topicArea}" invalid`);
@@ -137,40 +161,59 @@ if (Array.isArray(questions)) {
     if (q.hasImage && !q.imageDescription)
       warnings.push(`${loc}: hasImage=true but imageDescription is empty`);
 
-    // ── Part/points consistency ────────────────────────────────────────────────
-    if (q.part === 1 && q.points !== 1)
-      warnings.push(`${loc}: part=1 but points=${q.points} (expected 1)`);
-    if (q.part === 2 && q.points !== 2)
-      warnings.push(`${loc}: part=2 but points=${q.points} (expected 2)`);
-    if (q.part === 3 && (q.points < 3 || q.points > 5))
-      warnings.push(`${loc}: part=3 but points=${q.points} (expected 3-5)`);
-
-    // ── Part/type consistency ──────────────────────────────────────────────────
-    if (q.part === 1 && isOpen)
-      warnings.push(`${loc}: part=1 question detected as open-ended (expected MC)`);
-    if ((q.part === 2 || q.part === 3) && !isOpen)
-      warnings.push(`${loc}: part=${q.part} question detected as MC (expected open)`);
+    // ── Part/points + type consistency (format-aware) ──────────────────────────
+    if (!isLegacy40) {
+      // Current 30Q format
+      if (q.part === 1 && q.points !== 1)
+        warnings.push(`${loc}: part=1 but points=${q.points} (expected 1)`);
+      if (q.part === 2 && q.points !== 2)
+        warnings.push(`${loc}: part=2 but points=${q.points} (expected 2)`);
+      if (q.part === 3 && (q.points < 3 || q.points > 5))
+        warnings.push(`${loc}: part=3 but points=${q.points} (expected 3-5)`);
+      if (q.part === 1 && isOpen)
+        warnings.push(`${loc}: part=1 question detected as open-ended (expected MC)`);
+      if ((q.part === 2 || q.part === 3) && !isOpen)
+        warnings.push(`${loc}: part=${q.part} question detected as MC (expected open)`);
+    } else {
+      // Legacy 40Q format: parts 1-3 MC, parts 4-5 open
+      if ([1, 2, 3].includes(q.part) && q.points !== 1)
+        warnings.push(`${loc}: legacy part=${q.part} but points=${q.points} (expected 1)`);
+      if (q.part === 4 && q.points !== 2)
+        warnings.push(`${loc}: legacy part=4 but points=${q.points} (expected 2)`);
+      if (q.part === 5 && (q.points < 3 || q.points > 5))
+        warnings.push(`${loc}: legacy part=5 but points=${q.points} (expected 3-5)`);
+      if ([1, 2, 3].includes(q.part) && isOpen)
+        warnings.push(`${loc}: legacy part=${q.part} should be MC`);
+      if ([4, 5].includes(q.part) && !isOpen)
+        warnings.push(`${loc}: legacy part=${q.part} should be open-ended`);
+    }
   });
 
   // ── Part distribution ────────────────────────────────────────────────────────
-  const byPart = { 1: 0, 2: 0, 3: 0 };
+  const byPart = {};
+  VALID_PARTS.forEach(p => { byPart[p] = 0; });
   questions.forEach(q => {
     if (q.part) byPart[q.part] = (byPart[q.part] || 0) + 1;
   });
-  if (byPart[1] !== 15) warnings.push(`Part 1 should have 15 questions, has ${byPart[1]}`);
-  if (byPart[2] !== 5)  warnings.push(`Part 2 should have 5 questions, has ${byPart[2]}`);
-  if (byPart[3] !== 10) warnings.push(`Part 3 should have 10 questions, has ${byPart[3]}`);
+
+  if (!isLegacy40) {
+    if (byPart[1] !== 15) warnings.push(`Part 1 should have 15 questions, has ${byPart[1]}`);
+    if (byPart[2] !== 5)  warnings.push(`Part 2 should have 5 questions, has ${byPart[2]}`);
+    if (byPart[3] !== 10) warnings.push(`Part 3 should have 10 questions, has ${byPart[3]}`);
+  }
+  // Legacy: distribution varies by year — no strict count check
 
   // ── Total points ─────────────────────────────────────────────────────────────
   const totalPoints = questions.reduce((s, q) => s + (q.points || 0), 0);
-  const part1pts = byPart[1] * 1;  // 15
-  const part2pts = byPart[2] * 2;  // 10
-  const minTotal = part1pts + part2pts + byPart[3] * 3;  // min if all Part 3 = 3pts
-  const maxTotal = part1pts + part2pts + byPart[3] * 5;  // max if all Part 3 = 5pts
-  if (totalPoints < minTotal || totalPoints > maxTotal) {
-    warnings.push(
-      `Total points ${totalPoints} outside expected range [${minTotal}, ${maxTotal}]`
-    );
+
+  if (!isLegacy40) {
+    const part1pts = byPart[1] * 1;
+    const part2pts = byPart[2] * 2;
+    const minTotal = part1pts + part2pts + byPart[3] * 3;
+    const maxTotal = part1pts + part2pts + byPart[3] * 5;
+    if (totalPoints < minTotal || totalPoints > maxTotal) {
+      warnings.push(`Total points ${totalPoints} outside expected range [${minTotal}, ${maxTotal}]`);
+    }
   }
 
   // ── MC questions count ────────────────────────────────────────────────────────
@@ -179,10 +222,13 @@ if (Array.isArray(questions)) {
     (q.choices && typeof q.choices === 'object' && Object.keys(q.choices).length > 0)
   ).length;
   const openCount = questions.length - mcCount;
-  if (mcCount !== 15)
-    warnings.push(`Expected 15 MC questions, got ${mcCount}`);
-  if (openCount !== 15)
-    warnings.push(`Expected 15 open questions, got ${openCount}`);
+
+  if (!isLegacy40) {
+    if (mcCount !== 15)
+      warnings.push(`Expected 15 MC questions, got ${mcCount}`);
+    if (openCount !== 15)
+      warnings.push(`Expected 15 open questions, got ${openCount}`);
+  }
 }
 
 // ─── Report ───────────────────────────────────────────────────────────────────

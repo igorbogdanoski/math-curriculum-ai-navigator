@@ -336,7 +336,7 @@
         "В": "$P(\\frac{5}{3}, -\\frac{8}{3})$",
         "Г": "$P(\\frac{7}{3}, -1)$"
       },
-      "correctAnswer": "се отфрла поради постоење на два точни одговори",
+      "correctAnswer": "X",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,

@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Vlera e shprehjes $4 - 3 \\cdot (-2) - 10 : 2 \\cdot 5$ është e barabartë me:",
       "choices": {
-        "A": "-15",
-        "B": "-3",
-        "C": "9",
-        "Ç": "27"
+        "А": "-15",
+        "Б": "-3",
+        "В": "9",
+        "Г": "27"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Бројни изрази",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Numri $2^{12} + 2^{10}$ nuk është i pjestueshëm me:",
       "choices": {
-        "A": "2",
-        "B": "5",
-        "C": "10",
-        "Ç": "6"
+        "А": "2",
+        "Б": "5",
+        "В": "10",
+        "Г": "6"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Деливост",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Nëse $M = \\{x \\mid x \\in \\mathbb{R}, |x| \\le 3\\}$ atëherë:",
       "choices": {
-        "A": "$M = \\emptyset$",
-        "B": "$M = (-\\infty, 3]$",
-        "C": "$M = [3, +\\infty)$",
-        "Ç": "$[-3, 3]$"
+        "А": "$M = \\emptyset$",
+        "Б": "$M = (-\\infty, 3]$",
+        "В": "$M = [3, +\\infty)$",
+        "Г": "$[-3, 3]$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Множества и интервали",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "Zgjidhje e barazimit $\\frac{5x + 5}{x + 1} = 5$ nuk mund të jetë numri:",
       "choices": {
-        "A": "-5",
-        "B": "1",
-        "C": "-2",
-        "Ç": "-1"
+        "А": "-5",
+        "Б": "1",
+        "В": "-2",
+        "Г": "-1"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Рационални равенки",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Është dhënë funksioni i cili numrit $x$ i shoqëron numrin $y$ dhe vlen $3x + 5y = 6$. Zero e funksionit është:",
       "choices": {
-        "A": "numër natyror.",
-        "B": "numër i plotë negative.",
-        "C": "numër iracional.",
-        "Ç": "numri zero."
+        "А": "numër natyror.",
+        "Б": "numër i plotë negative.",
+        "В": "numër iracional.",
+        "Г": "numri zero."
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Линеарна функција",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Trinomi katror $-x^2 + 10x - 25$ është i barabartë me:",
       "choices": {
-        "A": "$(x-5)^2$",
-        "B": "$-(x+5)^2$",
-        "C": "$-(x-5)^2$",
-        "Ç": "$(5-x)^2$"
+        "А": "$(x-5)^2$",
+        "Б": "$-(x+5)^2$",
+        "В": "$-(x-5)^2$",
+        "Г": "$(5-x)^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Полиноми",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Polinomi $x^3 + x^2y - x^2z - xyz$ i zbërthyer në shumëzues të thjeshtë është:",
       "choices": {
-        "A": "$x(x-y)(x-z)$",
-        "B": "$x(x-y)(x+z)$",
-        "C": "$x(x+y)(y-z)$",
-        "Ç": "$x(x+y)(x-z)$"
+        "А": "$x(x-y)(x-z)$",
+        "Б": "$x(x-y)(x+z)$",
+        "В": "$x(x+y)(y-z)$",
+        "Г": "$x(x+y)(x-z)$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Полиноми",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Zgjidhje e jobarazimit $-\\frac{1}{2} < 3x + 4 < 5$ është intervali:",
       "choices": {
-        "A": "$(-\\frac{1}{2}, 5)$",
-        "B": "$(\\frac{7}{6}, 3)$",
-        "C": "$(-\\frac{3}{2}, \\frac{1}{3})$",
-        "Ç": "$(-\\frac{3}{2}, 3)$"
+        "А": "$(-\\frac{1}{2}, 5)$",
+        "Б": "$(\\frac{7}{6}, 3)$",
+        "В": "$(-\\frac{3}{2}, \\frac{1}{3})$",
+        "Г": "$(-\\frac{3}{2}, 3)$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Këndi I cili është pesë herë më i madh prej këndit të tij suplementar është i barabartë me:",
       "choices": {
-        "A": "$36^\\circ$",
-        "B": "$30^\\circ$",
-        "C": "$150^\\circ$",
-        "Ç": "$180^\\circ$"
+        "А": "$36^\\circ$",
+        "Б": "$30^\\circ$",
+        "В": "$150^\\circ$",
+        "Г": "$180^\\circ$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Nëse $a$ dhe $b$ janë brinjët e një drejtkëndëshi, ashtuqë $a:b=3:2$, kurse syprina e tij është $24\\text{ cm}^2$, atëherë sa është $a+b$?",
       "choices": {
-        "A": "$40\\text{ cm}$",
-        "B": "$30\\text{ cm}$",
-        "C": "$20\\text{ cm}$",
-        "Ç": "$10\\text{ cm}$"
+        "А": "$40\\text{ cm}$",
+        "Б": "$30\\text{ cm}$",
+        "В": "$20\\text{ cm}$",
+        "Г": "$10\\text{ cm}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Правоаголник",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Trekëndëshi barabrinjës ka syprinën e barabartë me $4\\sqrt{3}$. Rrezja e vijës rrethore të jashtashkruar rreth trekëndëshit është:",
       "choices": {
-        "A": "$\\frac{4\\sqrt{3}}{3}$",
-        "B": "$\\frac{8\\sqrt{3}}{3}$",
-        "C": "$6\\sqrt{3}$",
-        "Ç": "$\\frac{\\sqrt{3}}{4}$"
+        "А": "$\\frac{4\\sqrt{3}}{3}$",
+        "Б": "$\\frac{8\\sqrt{3}}{3}$",
+        "В": "$6\\sqrt{3}$",
+        "Г": "$\\frac{\\sqrt{3}}{4}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Триаголник и кружница",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "Në një kub me teh $a$ është mbrendashkruar topi. Raporti I vëllimeve të kubit dhe topit është i barabartë me:",
       "choices": {
-        "A": "$\\frac{4\\pi}{3}$",
-        "B": "$\\frac{3\\pi}{4}$",
-        "C": "$\\frac{6}{\\pi}$",
-        "Ç": "$\\frac{\\pi}{6}$"
+        "А": "$\\frac{4\\pi}{3}$",
+        "Б": "$\\frac{3\\pi}{4}$",
+        "В": "$\\frac{6}{\\pi}$",
+        "Г": "$\\frac{\\pi}{6}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Коцка и топка",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "Tehu i bazës i një piramide gjashtëkëndore të rregullt është $2\\text{ cm}$, kurse lartësia e piramidës e $H = 4\\sqrt{3}\\text{ cm}$. Vëllimi i piramidës është:",
       "choices": {
-        "A": "$8\\text{ cm}^3$",
-        "B": "$12\\text{ cm}^3$",
-        "C": "$24\\text{ cm}^3$",
-        "Ç": "$36\\text{ cm}^3$"
+        "А": "$8\\text{ cm}^3$",
+        "Б": "$12\\text{ cm}^3$",
+        "В": "$24\\text{ cm}^3$",
+        "Г": "$36\\text{ cm}^3$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Пирамида",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "Nëse segmenti $MN \\left[ M(3, -1), N(-5, 2) \\right]$ me pikat $P$ dhe $Q$ është ndarë në tre pjesë të barabarta, atëherë kordinatat e pikës $P$ janë:",
       "choices": {
-        "A": "$P(-\\frac{7}{3}, 1)$",
-        "B": "$P(\\frac{1}{3}, 0)$",
-        "C": "$P(\\frac{5}{3}, -\\frac{8}{3})$",
-        "Ç": "$P(\\frac{7}{3}, -1)$"
+        "А": "$P(-\\frac{7}{3}, 1)$",
+        "Б": "$P(\\frac{1}{3}, 0)$",
+        "В": "$P(\\frac{5}{3}, -\\frac{8}{3})$",
+        "Г": "$P(\\frac{7}{3}, -1)$"
       },
-      "correctAnswer": "anulohet për shkak të dy përgjigjeve të sakta",
+      "correctAnswer": "X",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Janë dhënë pikat $A(-4, 3)$ dhe $B(-4, 7)$. Drejtëza, e cila është simetrale e segmentit $AB$ e ka barazimin:",
       "choices": {
-        "A": "$y = 5$",
-        "B": "$y = 10$",
-        "C": "$y = -4$",
-        "Ç": "$y = -4x$"
+        "А": "$y = 5$",
+        "Б": "$y = 10$",
+        "В": "$y = -4$",
+        "Г": "$y = -4x$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Drejtëza e cila me pjesën pozitive të boshtit të $x$-it formon kënd prej $135^\\circ$ është:",
       "choices": {
-        "A": "$x + 2y + 1 = 0$",
-        "B": "$x - 2y - 2 = 0$",
-        "C": "$2x + y + 1 = 0$",
-        "Ç": "$x + y + 2 = 0$"
+        "А": "$x + 2y + 1 = 0$",
+        "Б": "$x - 2y - 2 = 0$",
+        "В": "$2x + y + 1 = 0$",
+        "Г": "$x + y + 2 = 0$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,

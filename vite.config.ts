@@ -233,6 +233,10 @@ export default defineConfig(({ mode }) => {
             background_color: "#F9FAFB"
           },
           workbox: {
+            // skipWaiting: immediately activate new SW without waiting for
+            // the user to close all tabs. Ensures updates are visible on next reload.
+            skipWaiting: true,
+            clientsClaim: true,
             maximumFileSizeToCacheInBytes: 5000000,
             globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
             // Show offline page when navigation request fails

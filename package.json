@@ -18,6 +18,7 @@
       "prompts:check": "node scripts/hash-prompts.mjs --check",
       "prompts:update": "node scripts/hash-prompts.mjs --update",
       "prompts:list": "node scripts/hash-prompts.mjs --list",
+    "matura:normalize": "node scripts/normalize-matura-choices.mjs",
     "matura:validate": "node scripts/validate-matura.mjs",
     "matura:import": "node scripts/import-matura.mjs",
     "matura:import-all": "GOOGLE_APPLICATION_CREDENTIALS=./firebase-adminsdk-key.json node scripts/import-matura-all.mjs",

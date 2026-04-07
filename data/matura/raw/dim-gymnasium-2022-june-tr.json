@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Verilen önermelerden hangisi doğrudur?",
       "choices": {
-        "A": "$\\mathbb{Z} \\subseteq \\mathbb{N}$",
-        "B": "$\\mathbb{Q} \\cup \\mathbb{N} = \\mathbb{Z}$",
-        "C": "$\\mathbb{Q} \\cap \\mathbb{Z} = \\emptyset$",
-        "D": "$\\mathbb{N} \\subseteq \\mathbb{R}$"
+        "А": "$\\mathbb{Z} \\subseteq \\mathbb{N}$",
+        "Б": "$\\mathbb{Q} \\cup \\mathbb{N} = \\mathbb{Z}$",
+        "В": "$\\mathbb{Q} \\cap \\mathbb{Z} = \\emptyset$",
+        "Г": "$\\mathbb{N} \\subseteq \\mathbb{R}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Множества",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "$12:6 \\cdot 2 + 10 - 8 \\cdot 2$ ifadesinin değeri aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "8",
-        "B": "-2",
-        "C": "5",
-        "D": "-5"
+        "А": "8",
+        "Б": "-2",
+        "В": "5",
+        "Г": "-5"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Бројни изрази",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "$y \\neq 0$ olmak üzere $\\frac{((-y)^{12})^{\\frac{1}{6}}}{y^{-4} \\cdot y^2}$ ifadesini sadeleştiriniz.",
       "choices": {
-        "A": "$\\frac{1}{y}$",
-        "B": "$y^4$",
-        "C": "$y^{12}$",
-        "D": "$\\frac{1}{y^4}$"
+        "А": "$\\frac{1}{y}$",
+        "Б": "$y^4$",
+        "В": "$y^{12}$",
+        "Г": "$\\frac{1}{y^4}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Степени",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "$5abc - (2a^2b - 3abc + 4ab^2 - a^2b)$ ifadesi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$2abc - a^2b + 4ab^2$",
-        "B": "$2abc - a^2b - 4ab^2$",
-        "C": "$8abc - a^2b - 4ab^2$",
-        "D": "$8abc - a^2b + 4ab^2$"
+        "А": "$2abc - a^2b + 4ab^2$",
+        "Б": "$2abc - a^2b - 4ab^2$",
+        "В": "$8abc - a^2b - 4ab^2$",
+        "Г": "$8abc - a^2b + 4ab^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Полиноми",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Verilen değerlerden hangsi $f(x) = \\frac{1}{2}x - 3$ fonksiyonun sıfırıdır?",
       "choices": {
-        "A": "0",
-        "B": "-3",
-        "C": "$\\frac{1}{2}$",
-        "D": "6"
+        "А": "0",
+        "Б": "-3",
+        "В": "$\\frac{1}{2}$",
+        "Г": "6"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Линеарна функција",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "$4x - 1 < 11$ eşitsizliğin çözümü olacak en büyük sayı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "2",
-        "B": "1",
-        "C": "3",
-        "D": "4"
+        "А": "2",
+        "Б": "1",
+        "В": "3",
+        "Г": "4"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "$2x^2 + 4x - 6 = 0$ ikinci derece denklemin diskriminantı hangisidir:",
       "choices": {
-        "A": "$\\sqrt{64}$",
-        "B": "$\\sqrt{-64}$",
-        "C": "64",
-        "D": "-64"
+        "А": "$\\sqrt{64}$",
+        "Б": "$\\sqrt{-64}$",
+        "В": "64",
+        "Г": "-64"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Квадратна равенка",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Ardışık üç çift sayının toplamı 72 dir. Bunlardan en büyüğü hangisidir:",
       "choices": {
-        "A": "24",
-        "B": "26",
-        "C": "28",
-        "D": "30"
+        "А": "24",
+        "Б": "26",
+        "В": "28",
+        "Г": "30"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Текстуални задачи",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "$\\vec{AB}$, $\\vec{BC}$ ve $\\vec{EC}$ vektörler olduğuna göre $\\vec{AB} + \\vec{BC} - \\vec{EC}$ aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$\\vec{AC}$",
-        "B": "$\\vec{AE}$",
-        "C": "$\\vec{BE}$",
-        "D": "$\\vec{0}$"
+        "А": "$\\vec{AC}$",
+        "Б": "$\\vec{AE}$",
+        "В": "$\\vec{BE}$",
+        "Г": "$\\vec{0}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Вектори",
       "topicArea": "matrici-vektori",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Tümleyeninden iki kat daha büyük olan $\\alpha$ açısı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$40^\\circ$",
-        "B": "$45^\\circ$",
-        "C": "$30^\\circ$",
-        "D": "$60^\\circ$"
+        "А": "$40^\\circ$",
+        "Б": "$45^\\circ$",
+        "В": "$30^\\circ$",
+        "Г": "$60^\\circ$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Alanı $4\\sqrt{3} \\text{ cm}^2$ olan eşkenar üçgenin kenarının uzunluğu aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$4 \\text{ cm}$",
-        "B": "$8 \\text{ cm}$",
-        "C": "$\\frac{\\sqrt{3}}{2} \\text{ cm}$",
-        "D": "$\\frac{\\sqrt{3}}{4} \\text{ cm}$"
+        "А": "$4 \\text{ cm}$",
+        "Б": "$8 \\text{ cm}$",
+        "В": "$\\frac{\\sqrt{3}}{2} \\text{ cm}$",
+        "Г": "$\\frac{\\sqrt{3}}{4} \\text{ cm}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Триаголник",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "Bir beşgenin iç açılarının toplamı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$180^\\circ$",
-        "B": "$360^\\circ$",
-        "C": "$540^\\circ$",
-        "D": "$720^\\circ$"
+        "А": "$180^\\circ$",
+        "Б": "$360^\\circ$",
+        "В": "$540^\\circ$",
+        "Г": "$720^\\circ$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Многуаголници",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "Bir kürenin yarıçapı 2 defa artarsa, onun hacmi kaç defa artacaktır:",
       "choices": {
-        "A": "2 defa",
-        "B": "4 defa",
-        "C": "6 defa",
-        "D": "8 defa"
+        "А": "2 defa",
+        "Б": "4 defa",
+        "В": "6 defa",
+        "Г": "8 defa"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Топка",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "Bir ikizkenar silindirin tabanının alanı $4\\pi \\text{ cm}^2$ ise, onun eksen kesitinin alanı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$4 \\text{ cm}^2$",
-        "B": "$4\\pi \\text{ cm}^2$",
-        "C": "$16 \\text{ cm}^2$",
-        "D": "$16\\pi \\text{ cm}^2$"
+        "А": "$4 \\text{ cm}^2$",
+        "Б": "$4\\pi \\text{ cm}^2$",
+        "В": "$16 \\text{ cm}^2$",
+        "Г": "$16\\pi \\text{ cm}^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Цилиндар",
       "topicArea": "geometrija",
       "dokLevel": 3,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Bir piramit ve prizmanın tabanları ve yükseklikleri birbirine eşittir. Piramidin hacmi, prizmanın hacmine oranı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$\\frac{1}{3}$",
-        "B": "3",
-        "C": "$\\frac{1}{2}$",
-        "D": "4"
+        "А": "$\\frac{1}{3}$",
+        "Б": "3",
+        "В": "$\\frac{1}{2}$",
+        "Г": "4"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Пирамида и призма",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Koordinat başlangıcına göre $M(2, -3)$ noktasına simetrik olan $M_1$ noktasının koordinatları aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$(-2, -3)$",
-        "B": "$(-2, 3)$",
-        "C": "$(2, 3)$",
-        "D": "$C(2, -3)$"
+        "А": "$(-2, -3)$",
+        "Б": "$(-2, 3)$",
+        "В": "$(2, 3)$",
+        "Г": "$C(2, -3)$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -403,12 +403,12 @@
       "questionType": "mc",
       "questionText": "$y = \\frac{2}{3}x + 2$ doğrusunun eksen parçaları cinsinden denklemi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$2x - 3y + 6 = 0$",
-        "B": "$\\frac{2x}{-3} + \\frac{y}{1} = 3$",
-        "C": "$\\frac{x}{2} + \\frac{y}{-3} = 1$",
-        "D": "$\\frac{x}{-3} + \\frac{y}{2} = 1$"
+        "А": "$2x - 3y + 6 = 0$",
+        "Б": "$\\frac{2x}{-3} + \\frac{y}{1} = 3$",
+        "В": "$\\frac{x}{2} + \\frac{y}{-3} = 1$",
+        "Г": "$\\frac{x}{-3} + \\frac{y}{2} = 1$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -427,12 +427,12 @@
       "questionType": "mc",
       "questionText": "Verilen doğrulardan hangisi $A(2, -1)$ noktasından geçer?",
       "choices": {
-        "A": "$2x + 3y - 5 = 0$",
-        "B": "$-x + 2y + 4 = 0$",
-        "C": "$x + 2y + 4 = 0$",
-        "D": "$2x - 3y - 5 = 0$"
+        "А": "$2x + 3y - 5 = 0$",
+        "Б": "$-x + 2y + 4 = 0$",
+        "В": "$x + 2y + 4 = 0$",
+        "Г": "$2x - 3y - 5 = 0$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -451,12 +451,12 @@
       "questionType": "mc",
       "questionText": "Bir aritmetik dizisinin ilk terimi $a_1$ ve ortak farkı $d$ ise, dizinin yedinci terimi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$a_1 + 7d$",
-        "B": "$a_1 - 7d$",
-        "C": "$a_1 + 6d$",
-        "D": "$a_1 - 6d$"
+        "А": "$a_1 + 7d$",
+        "Б": "$a_1 - 7d$",
+        "В": "$a_1 + 6d$",
+        "Г": "$a_1 - 6d$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Аритметичка прогресија",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -475,12 +475,12 @@
       "questionType": "mc",
       "questionText": "Bir geometrik dizisinin ortak böleni $-\\frac{1}{2}$, ilk dört teriminin toplamı $\\frac{5}{16}$ dir. Bu dizinin ilk terimi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "2",
-        "B": "-2",
-        "C": "$-\\frac{1}{2}$",
-        "D": "$\\frac{1}{2}$"
+        "А": "2",
+        "Б": "-2",
+        "В": "$-\\frac{1}{2}$",
+        "Г": "$\\frac{1}{2}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Геометриска прогресија",
       "topicArea": "analiza",
       "dokLevel": 3,

@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Verilen sayılardan hangileri irasyonel sayıdır?",
       "choices": {
-        "A": "$-\\sqrt{1}$",
-        "B": "$0,323223222...$",
-        "C": "$-0,3(2)$",
-        "D": "$\\frac{2}{5}$"
+        "А": "$-\\sqrt{1}$",
+        "Б": "$0,323223222...$",
+        "В": "$-0,3(2)$",
+        "Г": "$\\frac{2}{5}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Реални броеви",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "$A = -\\frac{3}{5} + \\frac{3}{5} : \\frac{2}{5}$ ise, $(0,1 + A)^3$ ifadesi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "-8",
-        "B": "0",
-        "C": "1",
-        "D": "3"
+        "А": "-8",
+        "Б": "0",
+        "В": "1",
+        "Г": "3"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Операции со рационални броеви",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "$2^{20} \\cdot 5^{21}$ ifadesi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$10^{41}$",
-        "B": "$5 \\cdot 10^{20}$",
-        "C": "$10^{420}$",
-        "D": "$5 + 10^{20}$"
+        "А": "$10^{41}$",
+        "Б": "$5 \\cdot 10^{20}$",
+        "В": "$10^{420}$",
+        "Г": "$5 + 10^{20}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Степени",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "$M = \\{x | x \\in \\mathbb{Z}, -3 \\le x < 4\\}$ kümesi veriliyor. Hangisi doğrudur:",
       "choices": {
-        "A": "$-3 \\notin M$",
-        "B": "$0 \\notin M$",
-        "C": "$4 \\notin M$",
-        "D": "$4 \\in M$"
+        "А": "$-3 \\notin M$",
+        "Б": "$0 \\notin M$",
+        "В": "$4 \\notin M$",
+        "Г": "$4 \\in M$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Множества",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "$f(x) = 3x - ax + 1$ lineer fonksiyonu monoton artandır. O halde $a$ için aşağıdakilerden hangisi geçerlidir:",
       "choices": {
-        "A": "$a < 3$",
-        "B": "$a > 3$",
-        "C": "$a = 3,1$",
-        "D": "$a \\le 3,1$"
+        "А": "$a < 3$",
+        "Б": "$a > 3$",
+        "В": "$a = 3,1$",
+        "Г": "$a \\le 3,1$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Линеарни функции",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Bir yamuğun her tabanı $\\%50$ azaldığında alanı ne kadar azalacaktır:",
       "choices": {
-        "A": "$\\%50$",
-        "B": "$\\%25$",
-        "C": "$\\%75$",
-        "D": "$\\%90$"
+        "А": "$\\%50$",
+        "Б": "$\\%25$",
+        "В": "$\\%75$",
+        "Г": "$\\%90$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Плоштина на рамнински фигури",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "$a$ parametresinin hangi değeri için $ax^2 + (2a-3)x + a - 1 = 0$ ikinci derece denkleminin reel kökleri yoktur?",
       "choices": {
-        "A": "$(-\\infty, -1)$",
-        "B": "$(1, \\infty)$",
-        "C": "$(-\\infty, \\frac{9}{8})$",
-        "D": "$(\\frac{9}{8}, \\infty)$"
+        "А": "$(-\\infty, -1)$",
+        "Б": "$(1, \\infty)$",
+        "В": "$(-\\infty, \\frac{9}{8})$",
+        "Г": "$(\\frac{9}{8}, \\infty)$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Квадратни равенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "$12 - 0,2x > 10$ eşitsizliğinin çözümü şu aralıklardan hangisidir:",
       "choices": {
-        "A": "$(2, \\infty)$",
-        "B": "$(10, \\infty)$",
-        "C": "$(-\\infty, 2)$",
-        "D": "$(-\\infty, 10)$"
+        "А": "$(2, \\infty)$",
+        "Б": "$(10, \\infty)$",
+        "В": "$(-\\infty, 2)$",
+        "Г": "$(-\\infty, 10)$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Merkezi $O$ noktasında olan çember veriliyor. $\\alpha = 15^\\circ$ ise aşağıdakilerden hangisi doğrudur",
       "choices": {
-        "A": "$\\beta = 7,5^\\circ$",
-        "B": "$\\beta = 15^\\circ$",
-        "C": "$\\beta = 30^\\circ$",
-        "D": "$\\beta = 45^\\circ$"
+        "А": "$\\beta = 7,5^\\circ$",
+        "Б": "$\\beta = 15^\\circ$",
+        "В": "$\\beta = 30^\\circ$",
+        "Г": "$\\beta = 45^\\circ$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Агли во кружница",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -237,12 +237,12 @@
       "questionType": "mc",
       "questionText": "Bir üçgenin kenar uzunlukları $4cm$, $6cm$ ve $9cm$ dir. Bu üçgene benzer olan bir üçgenin en küçük kenarı $2cm$ ise, en büyük kenarı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$4cm$",
-        "B": "$4,5cm$",
-        "C": "$6cm$",
-        "D": "$6,5cm$"
+        "А": "$4cm$",
+        "Б": "$4,5cm$",
+        "В": "$6cm$",
+        "Г": "$6,5cm$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Сличност на триаголници",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -261,12 +261,12 @@
       "questionType": "mc",
       "questionText": "Bir bisiklet tekirleğinin çevresi $\\frac{\\pi}{2} m$ olduğuna göre, yarıçapı ne kadardır:",
       "choices": {
-        "A": "$25m$",
-        "B": "$0,25dm$",
-        "C": "$25cm$",
-        "D": "$\\pi m$"
+        "А": "$25m$",
+        "Б": "$0,25dm$",
+        "В": "$25cm$",
+        "Г": "$\\pi m$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Кружница и круг",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -285,12 +285,12 @@
       "questionType": "mc",
       "questionText": "Bir dik üçgenin katetleri $5$ ve $12$ dir. Dik açının köşesinden hipotenüsünün orta noktasına uzaklığı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$5$",
-        "B": "$6,5$",
-        "C": "$8,5$",
-        "D": "$2\\sqrt{15}$"
+        "А": "$5$",
+        "Б": "$6,5$",
+        "В": "$8,5$",
+        "Г": "$2\\sqrt{15}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Правоаголен триаголник",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -309,12 +309,12 @@
       "questionType": "mc",
       "questionText": "Bir silindirin eksen kesiti, alanı $12$ olan bir karedir. Bu silindirin hacmi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$6\\sqrt{3}\\pi$",
-        "B": "$24\\pi$",
-        "C": "$24\\sqrt{3}\\pi$",
-        "D": "$54\\pi$"
+        "А": "$6\\sqrt{3}\\pi$",
+        "Б": "$24\\pi$",
+        "В": "$24\\sqrt{3}\\pi$",
+        "Г": "$54\\pi$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Цилиндар",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -333,12 +333,12 @@
       "questionType": "mc",
       "questionText": "Koordinat başlangıcından ve $a \\in \\mathbb{N}, a < 2$ olmak üzere $A(6, a-2)$ noktasından geçen doğrunun eğimi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$-6$",
-        "B": "$-\\frac{1}{6}$",
-        "C": "$\\frac{1}{6}$",
-        "D": "$6$"
+        "А": "$-6$",
+        "Б": "$-\\frac{1}{6}$",
+        "В": "$\\frac{1}{6}$",
+        "Г": "$6$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Аналитичка геометрија - Права",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -357,12 +357,12 @@
       "questionType": "mc",
       "questionText": "$M(-2, 5)$ noktası, $S$ noktasında merkezi olan merkez simetrisiyle $M'(2, -7)$ noktasıyla eşleşiyor. Bu durumda $S$ noktasının koordinatları aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$S(0, 1)$",
-        "B": "$S(-2, -1)$",
-        "C": "$S(0, -1)$",
-        "D": "$S\\left(0, -\\frac{1}{2}\\right)$"
+        "А": "$S(0, 1)$",
+        "Б": "$S(-2, -1)$",
+        "В": "$S(0, -1)$",
+        "Г": "$S\\left(0, -\\frac{1}{2}\\right)$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Трансформации во рамнина",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -381,12 +381,12 @@
       "questionType": "mc",
       "questionText": "$4\\lambda x + 3y - 36 = 0$ doğrusu $x$-ekseninden $2$ birim uzunlukta doğru parçası kesiyorsa, $\\lambda$ parametresi aşağıdakilerden hangisine eşittir:",
       "choices": {
-        "A": "$9$",
-        "B": "$2$",
-        "C": "$\\frac{9}{2}$",
-        "D": "$\\frac{2}{9}$"
+        "А": "$9$",
+        "Б": "$2$",
+        "В": "$\\frac{9}{2}$",
+        "Г": "$\\frac{2}{9}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Аналитичка геометрија - Права",
       "topicArea": "analiza",
       "dokLevel": 2,

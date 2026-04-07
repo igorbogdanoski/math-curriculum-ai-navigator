@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Verilen önermelerden hangisi doğrudur?",
       "choices": {
-        "A": "$\\neg(p \\lor q) \\Leftrightarrow \\neg p \\lor \\neg q$",
-        "B": "$\\neg(p \\lor q) \\Leftrightarrow \\neg p \\lor q$",
-        "C": "$\\neg(p \\lor q) \\Leftrightarrow \\neg p \\land \\neg q$",
-        "D": "$\\neg(p \\lor q) \\Leftrightarrow \\neg p \\land q$"
+        "А": "$\\neg(p \\lor q) \\Leftrightarrow \\neg p \\lor \\neg q$",
+        "Б": "$\\neg(p \\lor q) \\Leftrightarrow \\neg p \\lor q$",
+        "В": "$\\neg(p \\lor q) \\Leftrightarrow \\neg p \\land \\neg q$",
+        "Г": "$\\neg(p \\lor q) \\Leftrightarrow \\neg p \\land q$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Искази",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Hangisi verilen karmaşık sayının $z = 5i - 3$ imajiner (sanal) kısmıdır?",
       "choices": {
-        "A": "$-3$",
-        "B": "$5$",
-        "C": "$-3i$",
-        "D": "$5i$"
+        "А": "$-3$",
+        "Б": "$5$",
+        "В": "$-3i$",
+        "Г": "$5i$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Комплексни броеви",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Hangisi verilen denklemin çözüm kümesidir $|3x+1| = -3x-1$?",
       "choices": {
-        "A": "$x \\in \\mathbb{R}$",
-        "B": "$x \\in \\left[-\\frac{1}{3}, +\\infty\\right)$",
-        "C": "$x \\in \\left(-\\infty, -\\frac{1}{3}\\right)$",
-        "D": "$x \\in \\left(-\\infty, -\\frac{1}{3}\\right]$"
+        "А": "$x \\in \\mathbb{R}$",
+        "Б": "$x \\in \\left[-\\frac{1}{3}, +\\infty\\right)$",
+        "В": "$x \\in \\left(-\\infty, -\\frac{1}{3}\\right)$",
+        "Г": "$x \\in \\left(-\\infty, -\\frac{1}{3}\\right]$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Равенки со апсолутна вредност",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "$\\frac{4^3 \\cdot 25^3}{10^6}$ ifadesinin değeri hangisidir?",
       "choices": {
-        "A": "$\\frac{1}{10^2}$",
-        "B": "$\\frac{1}{10}$",
-        "C": "$1$",
-        "D": "$10$"
+        "А": "$\\frac{1}{10^2}$",
+        "Б": "$\\frac{1}{10}$",
+        "В": "$1$",
+        "Г": "$10$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Степени",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "$x$ değişkeninin hangi değeri için $\\frac{x-3}{2x+6}$ ifadesinin değeri reel (gerçek) sayı değildir?",
       "choices": {
-        "A": "$x=-3$",
-        "B": "$x=-\\frac{1}{2}$",
-        "C": "$x=\\frac{1}{2}$",
-        "D": "$x=3$"
+        "А": "$x=-3$",
+        "Б": "$x=-\\frac{1}{2}$",
+        "В": "$x=\\frac{1}{2}$",
+        "Г": "$x=3$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Рационални изрази",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Bir kekin fiyatı $55$ denardır. $800$ denarla satın alınabilecek en fazla kek sayısı aşağıdakilerden hangisidir?",
       "choices": {
-        "A": "13 kek",
-        "B": "14 kek",
-        "C": "15 kek",
-        "D": "16 kek"
+        "А": "13 kek",
+        "Б": "14 kek",
+        "В": "15 kek",
+        "Г": "16 kek"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Текстуални задачи",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "$p(x) = x^2 - kx - 2$ polinomunun bir asal çarpanı $(x-2)$ ise o zaman $k$'nın değeri aşağıdakilerden hangisidir?",
       "choices": {
-        "A": "$-1$",
-        "B": "$0$",
-        "C": "$1$",
-        "D": "$2$"
+        "А": "$-1$",
+        "Б": "$0$",
+        "В": "$1$",
+        "Г": "$2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Полиноми",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Eğer $(x,y)$, $\\begin{cases} 5x+3y=11 \\\\ 3x+5y=13 \\end{cases}$ sisteminin çözümüyse o zaman $x+y=$ ne kadardır?",
       "choices": {
-        "A": "$1$",
-        "B": "$2$",
-        "C": "$3$",
-        "D": "$4$"
+        "А": "$1$",
+        "Б": "$2$",
+        "В": "$3$",
+        "Г": "$4$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Системи линеарни равенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Eğer $\\frac{1}{f} + \\frac{1}{g} = m$ ise $g$'yi aşağıdakilerden hangisi ile ifade edebiliriz?",
       "choices": {
-        "A": "$\\frac{1}{f} + \\frac{1}{g} = m$",
-        "B": "$g = \\frac{fm-1}{f}$",
-        "C": "$g = \\frac{f}{fm+1}$",
-        "D": "$g = \\frac{f}{fm-1}$"
+        "А": "$\\frac{1}{f} + \\frac{1}{g} = m$",
+        "Б": "$g = \\frac{fm-1}{f}$",
+        "В": "$g = \\frac{f}{fm+1}$",
+        "Г": "$g = \\frac{f}{fm-1}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Рационални изрази",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Bir karenin köşegeni $10\\text{ cm}$'dir. Karenin alanı aşağıdakilerden hangisine eşittir?",
       "choices": {
-        "A": "$25\\text{ cm}^2$",
-        "B": "$50\\text{ cm}^2$",
-        "C": "$100\\text{ cm}^2$",
-        "D": "$200\\text{ cm}^2$"
+        "А": "$25\\text{ cm}^2$",
+        "Б": "$50\\text{ cm}^2$",
+        "В": "$100\\text{ cm}^2$",
+        "Г": "$200\\text{ cm}^2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Четириаголници",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Bir dairede merkez açı $\\alpha$ ve onun çevresel açısının toplamı $150^\\circ$'dir. Merkez açısı $\\alpha$'nın büyüklüğü ne kadardır?",
       "choices": {
-        "A": "$50^\\circ$",
-        "B": "$75^\\circ$",
-        "C": "$100^\\circ$",
-        "D": "$150^\\circ$"
+        "А": "$50^\\circ$",
+        "Б": "$75^\\circ$",
+        "В": "$100^\\circ$",
+        "Г": "$150^\\circ$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Агли во кружница",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "$\\vec{a} = 2\\vec{p} - 3\\vec{q}$ ve $\\vec{b} = \\vec{p} + 2\\vec{q}$ vektörleri verilmiştir. Aşağıdaki vektörlerden hangisi $\\vec{a}$ ve $\\vec{b}$ vektörleriyle bir üçgen oluşturur?",
       "choices": {
-        "A": "$\\vec{c} = -3\\vec{p} + \\vec{q}$",
-        "B": "$\\vec{c} = -3\\vec{p} - \\vec{q}$",
-        "C": "$\\vec{c} = 3\\vec{p} + \\vec{q}$",
-        "D": "$\\vec{c} = 3\\vec{p} - \\vec{q}$"
+        "А": "$\\vec{c} = -3\\vec{p} + \\vec{q}$",
+        "Б": "$\\vec{c} = -3\\vec{p} - \\vec{q}$",
+        "В": "$\\vec{c} = 3\\vec{p} + \\vec{q}$",
+        "Г": "$\\vec{c} = 3\\vec{p} - \\vec{q}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Вектори",
       "topicArea": "matrici-vektori",
       "dokLevel": 2,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "Bir deltoidin köşegenlerinin uzunluğu $2\\text{ dm}$ ve $30\\text{ cm}$ ise deltoidin alanı aşağıdakilerden hangisidir?",
       "choices": {
-        "A": "$30\\text{ dm}^2$",
-        "B": "$300\\text{ dm}^2$",
-        "C": "$300\\text{ cm}^2$",
-        "D": "$600\\text{ cm}^2$"
+        "А": "$30\\text{ dm}^2$",
+        "Б": "$300\\text{ dm}^2$",
+        "В": "$300\\text{ cm}^2$",
+        "Г": "$600\\text{ cm}^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Четириаголници",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "Bir silindir ve koninin tabanlarının yarıçapı birbirine eşittir, yükseklikleri ise $1:2$ oranındadır. Silindir ve koninin hacimlerinin oranı aşağıdakilerden hangisidir?",
       "choices": {
-        "A": "$1:2$",
-        "B": "$2:1$",
-        "C": "$2:3$",
-        "D": "$3:2$"
+        "А": "$1:2$",
+        "Б": "$2:1$",
+        "В": "$2:3$",
+        "Г": "$3:2$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Цилиндар и конус",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "$135^\\circ$ açıyı radyan olarak nasıl ifade edebiliriz?",
       "choices": {
-        "A": "$\\frac{2\\pi}{3}$",
-        "B": "$\\frac{3\\pi}{4}$",
-        "C": "$\\frac{5\\pi}{6}$",
-        "D": "$\\frac{3\\pi}{2}$"
+        "А": "$\\frac{2\\pi}{3}$",
+        "Б": "$\\frac{3\\pi}{4}$",
+        "В": "$\\frac{5\\pi}{6}$",
+        "Г": "$\\frac{3\\pi}{2}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 1,
