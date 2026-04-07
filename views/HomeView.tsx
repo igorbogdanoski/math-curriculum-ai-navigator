@@ -285,10 +285,10 @@ export const HomeView: React.FC = () => {
       </div>
 
       {/* ── МИСЛА НА ДЕНОТ + FEATURED TOOLS ────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
 
-        {/* Quote bubble — 2/5 width on lg+ */}
-        <div className="lg:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 p-5 shadow-md text-white flex flex-col justify-between min-h-[130px]">
+        {/* Quote bubble — 1/4 width on lg+ */}
+        <div className="lg:col-span-1 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 p-5 shadow-md text-white flex flex-col justify-between min-h-[220px]">
           {/* decorative circles */}
           <div className="pointer-events-none absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
           <div className="pointer-events-none absolute bottom-2 -left-6 w-20 h-20 rounded-full bg-white/5" />
@@ -297,16 +297,16 @@ export const HomeView: React.FC = () => {
           {/* big quote mark */}
           <span className="absolute top-4 right-5 text-7xl font-serif text-white/10 leading-none select-none" aria-hidden="true">"</span>
           {/* quote text */}
-          <p className="relative text-sm font-semibold leading-relaxed text-white/95 italic flex-1">
+          <p className="relative text-sm font-semibold leading-relaxed text-white/95 italic flex-1 min-h-[80px]">
             {dailyQuote.text}
           </p>
           {/* tail bubble */}
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs font-bold text-white/70">— {dailyQuote.author}</span>
+          <div className="mt-3 flex flex-col items-start gap-2">
+            <span className="text-xs font-bold text-white/70 leading-tight">— {dailyQuote.author}</span>
             <button
               type="button"
               onClick={() => navigate('/academy')}
-              className="flex items-center gap-1.5 text-[11px] font-bold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition"
+              className="w-full flex items-center justify-center gap-1.5 text-[11px] font-bold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-2 rounded-full transition"
             >
               <ICONS.play className="w-3 h-3" />
               Академија
@@ -316,28 +316,32 @@ export const HomeView: React.FC = () => {
           <div className="absolute -bottom-2.5 left-8 w-4 h-4 bg-cyan-500 rotate-45 rounded-sm" />
         </div>
 
-        {/* Featured tools compact list — 3/5 width on lg+ */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-100">
-          {featuredTools.map((tool) => {
-            const ToolIcon = tool.icon;
-            return (
-              <button
-                key={tool.title}
-                type="button"
-                onClick={tool.action}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors group"
-              >
-                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border ${tool.accent}`}>
-                  <ToolIcon className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-800 group-hover:text-brand-primary transition-colors leading-tight">{tool.title}</p>
-                  <p className="text-xs text-slate-400 truncate">{tool.description}</p>
-                </div>
-                <span className="flex-shrink-0 text-xs font-bold text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity">→</span>
-              </button>
-            );
-          })}
+        {/* Featured tools grid — 3/4 width on lg+ */}
+        <div className="lg:col-span-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {featuredTools.map((tool) => {
+              const ToolIcon = tool.icon;
+              return (
+                <button
+                  key={tool.title}
+                  type="button"
+                  onClick={tool.action}
+                  className={`group flex flex-col gap-3 p-4 bg-white border rounded-xl hover:shadow-md hover:border-brand-primary/30 transition-all duration-200 text-left min-h-[140px] ${tool.accent}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border ${tool.accent}`}>
+                      <ToolIcon className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-800 group-hover:text-brand-primary transition-colors leading-tight mb-1">{tool.title}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{tool.description}</p>
+                  </div>
+                  <span className="text-xs font-bold text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity">→ {t('common.learn_more') || 'Отвори'}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

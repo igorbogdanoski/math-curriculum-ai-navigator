@@ -4,435 +4,53 @@
     "year": 2021,
     "session": "june",
     "language": "mk",
-    "title": "ДИМ Гимназиско — Јуни 2021 (МК)",
+    "title": "ДИМ Гимназиско — Јуни 2021 (МК) — Само Клуч",
     "durationMinutes": 180,
     "track": "gymnasium",
     "gradeLevel": 12,
     "questionCount": 40,
-    "totalPoints": 76
+    "totalPoints": 80
   },
   "questions": [
-    {
-      "questionNumber": 1,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Кој од дадените броеви е ирационален број?",
-      "choices": {
-        "А": "$-\\sqrt{1}$",
-        "Б": "$0,323223222...$",
-        "В": "$-0,3(2)$",
-        "Г": "$\\frac{2}{5}$"
-      },
-      "correctAnswer": "Б",
-      "topic": "Реални броеви",
-      "topicArea": "broevi",
-      "dokLevel": 1,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c1-2"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 2,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Ако $A = -\\frac{3}{5} + \\frac{3}{5} : \\frac{2}{5}$, тогаш $(0,1 + A)^3$ ќе биде еднакво на:",
-      "choices": {
-        "А": "-8",
-        "Б": "0",
-        "В": "1",
-        "Г": "3"
-      },
-      "correctAnswer": "В",
-      "topic": "Операции со рационални броеви",
-      "topicArea": "broevi",
-      "dokLevel": 2,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c1-2"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 3,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Изразот $2^{20} \\cdot 5^{21}$ е еднаков на:",
-      "choices": {
-        "А": "$10^{41}$",
-        "Б": "$5 \\cdot 10^{20}$",
-        "В": "$10^{420}$",
-        "Г": "$5 + 10^{20}$"
-      },
-      "correctAnswer": "Б",
-      "topic": "Степени",
-      "topicArea": "broevi",
-      "dokLevel": 1,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c2-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 4,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Дадено е множеството $M = \\{x | x \\in \\mathbb{Z}, -3 \\le x < 4\\}$. Точно е:",
-      "choices": {
-        "А": "$-3 \\notin M$",
-        "Б": "$0 \\notin M$",
-        "В": "$4 \\notin M$",
-        "Г": "$4 \\in M$"
-      },
-      "correctAnswer": "В",
-      "topic": "Множества",
-      "topicArea": "algebra",
-      "dokLevel": 1,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c1-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 5,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Линеарната функција $f(x) = 3x - ax + 1$ е монотоно растечка. Тогаш за $a$ важи:",
-      "choices": {
-        "А": "$a < 3$",
-        "Б": "$a > 3$",
-        "В": "$a = 3,1$",
-        "Г": "$a \\le 3,1$"
-      },
-      "correctAnswer": "А",
-      "topic": "Линеарни функции",
-      "topicArea": "analiza",
-      "dokLevel": 2,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c3-2"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 6,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Секоја основа и висината на еден трапез се намалени за $50\\%$. Плоштината на тој трапез е намалена за:",
-      "choices": {
-        "А": "$50\\%$",
-        "Б": "$25\\%$",
-        "В": "$75\\%$",
-        "Г": "$90\\%$"
-      },
-      "correctAnswer": "В",
-      "topic": "Плоштина на рамнински фигури",
-      "topicArea": "geometrija",
-      "dokLevel": 2,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym11-c6-1",
-        "gym10-c5-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 7,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "За кои вредности на параметарот $a$ квадратната равенка $ax^2 + (2a-3)x + a - 1 = 0$ нема да има реални корени?",
-      "choices": {
-        "А": "$(-\\infty, -1)$",
-        "Б": "$(1, \\infty)$",
-        "В": "$(-\\infty, \\frac{9}{8})$",
-        "Г": "$(\\frac{9}{8}, \\infty)$"
-      },
-      "correctAnswer": "Г",
-      "topic": "Квадратни равенки",
-      "topicArea": "algebra",
-      "dokLevel": 2,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym11-c3-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 8,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Решение на неравенката $12 - 0,2x > 10$ е интервалот:",
-      "choices": {
-        "А": "$(2, \\infty)$",
-        "Б": "$(10, \\infty)$",
-        "В": "$(-\\infty, 2)$",
-        "Г": "$(-\\infty, 10)$"
-      },
-      "correctAnswer": "Г",
-      "topic": "Линеарни неравенки",
-      "topicArea": "algebra",
-      "dokLevel": 1,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c3-5"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 9,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Дадена е кружница со центар во точката $O$. Ако $\\alpha = 15^\\circ$, тогаш",
-      "choices": {
-        "А": "$\\beta = 7,5^\\circ$",
-        "Б": "$\\beta = 15^\\circ$",
-        "В": "$\\beta = 30^\\circ$",
-        "Г": "$\\beta = 45^\\circ$"
-      },
-      "correctAnswer": "Б",
-      "topic": "Агли во кружница",
-      "topicArea": "geometrija",
-      "dokLevel": 2,
-      "hasImage": true,
-      "imageUrls": [
-        "/matura/images/2021/june/q09-fig1.png"
-      ],
-      "imageDescription": "Кружница со центар O и впишани агли $\\alpha$ и $\\beta$ кои тетивата ја гледаат од ист кружен лак.",
-      "conceptIds": [
-        "gym12-c2-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 10,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Должините на страните на еден триаголник се $4cm$, $6cm$ и $9cm$. Ако сличниот триаголник на дадениот има најмала страна еднаква на $2cm$, тогаш најголемата страна изнесува:",
-      "choices": {
-        "А": "$4cm$",
-        "Б": "$4,5cm$",
-        "В": "$6cm$",
-        "Г": "$6,5cm$"
-      },
-      "correctAnswer": "Б",
-      "topic": "Сличност на триаголници",
-      "topicArea": "geometrija",
-      "dokLevel": 2,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c4-4"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 11,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Велосипедско тркало има периметар $\\frac{\\pi}{2} m$. Радиусот на тркалото е:",
-      "choices": {
-        "А": "$25m$",
-        "Б": "$0,25dm$",
-        "В": "$25cm$",
-        "Г": "$\\pi m$"
-      },
-      "correctAnswer": "В",
-      "topic": "Кружница и круг",
-      "topicArea": "geometrija",
-      "dokLevel": 1,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c5-1",
-        "gym11-c6-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 12,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Правоаголен триаголник има катети $5$ и $12$. Растојанието од темето на правиот агол до средината на хипотенузата изнесува:",
-      "choices": {
-        "А": "$5$",
-        "Б": "$6,5$",
-        "В": "$8,5$",
-        "Г": "$2\\sqrt{15}$"
-      },
-      "correctAnswer": "Б",
-      "topic": "Правоаголен триаголник",
-      "topicArea": "geometrija",
-      "dokLevel": 2,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym11-c1-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 13,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Оскиниот пресек на цилиндар е квадрат со плоштина $12$. Волуменот на цилиндарот изнесува:",
-      "choices": {
-        "А": "$6\\sqrt{3}\\pi$",
-        "Б": "$24\\pi$",
-        "В": "$24\\sqrt{3}\\pi$",
-        "Г": "$54\\pi$"
-      },
-      "correctAnswer": "А",
-      "topic": "Цилиндар",
-      "topicArea": "geometrija",
-      "dokLevel": 2,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c5-2",
-        "gym11-c7-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 14,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Правата што минува низ координатниот почеток и низ точката $A(6, a-2)$ така што $a \\in \\mathbb{N}, a < 2$, има коефициент на правец еднаков на:",
-      "choices": {
-        "А": "$-6$",
-        "Б": "$-\\frac{1}{6}$",
-        "В": "$\\frac{1}{6}$",
-        "Г": "$6$"
-      },
-      "correctAnswer": "Б",
-      "topic": "Аналитичка геометрија - Права",
-      "topicArea": "analiza",
-      "dokLevel": 2,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym12-c4-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 15,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Точката $M(-2, 5)$ при централна симетрија со центар во точката $S$ се пресликува во точката $M'(2, -7)$. Тогаш важи:",
-      "choices": {
-        "А": "$S(0, 1)$",
-        "Б": "$S(-2, -1)$",
-        "В": "$S(0, -1)$",
-        "Г": "$S\\left(0, -\\frac{1}{2}\\right)$"
-      },
-      "correctAnswer": "В",
-      "topic": "Трансформации во рамнина",
-      "topicArea": "geometrija",
-      "dokLevel": 1,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym10-c4-3",
-        "gym10-c4-4"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    },
-    {
-      "questionNumber": 16,
-      "part": 1,
-      "points": 1,
-      "questionType": "mc",
-      "questionText": "Ако правата $4\\lambda x + 3y - 36 = 0$ на $x$-оската отсекува отсечка со должина $2$ тогаш вредноста на параметарот $\\lambda$ е еднаква на:",
-      "choices": {
-        "А": "$9$",
-        "Б": "$2$",
-        "В": "$\\frac{9}{2}$",
-        "Г": "$\\frac{2}{9}$"
-      },
-      "correctAnswer": "В",
-      "topic": "Аналитичка геометрија - Права",
-      "topicArea": "analiza",
-      "dokLevel": 2,
-      "hasImage": false,
-      "imageUrls": [],
-      "imageDescription": null,
-      "conceptIds": [
-        "gym12-c4-1"
-      ],
-      "hints": [],
-      "aiSolution": null,
-      "successRatePercent": null
-    }
+    { "questionNumber": 1, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "В", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 2, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "Б", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 3, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "Г", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 4, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "В", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 5, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "А", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 6, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "Б", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 7, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "В", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 8, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "Б", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 9, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "Г", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 10, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "Б", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 11, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "А", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 12, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "В", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 13, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "Г", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 14, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "В", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 15, "part": 1, "points": 1, "questionType": "mc", "questionText": "[Текстот недостасува — само клуч]", "choices": { "А": "", "Б": "", "В": "", "Г": "" }, "correctAnswer": "А", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 1, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 16, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. \\{5, 6, 7\\}, Б. \\{1, 2, 3\\}", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 17, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. НЗД = x^2(x-1), Б. НЗС = x^4(x-1)^2(x+1)", "topic": "Полиноми", "topicArea": "algebra", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 18, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. k = -1, Б. k = 4", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 19, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. шестаголник, Б. \\sqrt{3}", "topic": "Непознато", "topicArea": "geometrija", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 20, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. 45, Б. \\frac{7}{4}", "topic": "Непознато", "topicArea": "geometrija", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 21, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. НЗД = 1, Б. НЗС = (1-a)^2(1+a)^2", "topic": "Полиноми", "topicArea": "algebra", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 22, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. \\frac{4}{15}, Б. x \\ge \\frac{1}{3}", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 23, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. 6, Б. 5", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 24, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. k = \\pm 1, Б. k \\in (-1, 1)", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 25, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. 25, Б. 8", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 26, "part": 2, "points": 1, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "l = \\frac{r\\pi\\alpha}{180^\\circ}", "topic": "Непознато", "topicArea": "geometrija", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 27, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. 4, Б. 32", "topic": "Непознато", "topicArea": "geometrija", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 28, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. 8\\sqrt{3}, Б. 192\\pi", "topic": "Непознато", "topicArea": "geometrija", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 29, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. (1/2, -1), Б. 13", "topic": "Непознато", "topicArea": "geometrija", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 30, "part": 2, "points": 2, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. -4, Б. 4", "topic": "Непознато", "topicArea": "algebra", "dokLevel": 2, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null },
+    { "questionNumber": 31, "part": 3, "points": 4, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "2", "topic": "Рационални изрази", "topicArea": "algebra", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "Ги разложува броителите и именителите на дропките на прости множители. Ги сведува дропките во заградата на заеднички именител и одзема. Го запишува броителот на првата дропка како бином на квадрат, а потоа крати. Ги собира добиените дропки, извлекува пред заграда во броителот и крати, со што го добива резултатот 2.", "successRatePercent": null },
+    { "questionNumber": 32, "part": 3, "points": 4, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "C = \\{1,2,3,4\\}", "topic": "Линеарни неравенки", "topicArea": "algebra", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "Ја трансформира првата неравенка до облик $x \\le 9/2$. Ја трансформира втората неравенка до облик $x > -4/5$. Го определува пресекот: $x \\in (-4/5, 9/2]$. Множеството $C = \\{1,2,3,4\\}$.", "successRatePercent": null },
+    { "questionNumber": 33, "part": 3, "points": 4, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "c = 40", "topic": "Пропорции", "topicArea": "algebra", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "Ги означува деловите $a=2t, b=3t, c=5t, d=6t$. Од $a+b+c+d=128$ добива $t=8$. Па $c=40$.", "successRatePercent": null },
+    { "questionNumber": 34, "part": 3, "points": 5, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. m=26, m=10; Б. m=2; В. m=16", "topic": "Квадратни равенки", "topicArea": "algebra", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "Трансформира во $8x^2-(m-2)x+m-8=0$. А. $D=0 \\Rightarrow m_1=26, m_2=10$. Б. $x_1=-x_2 \\Rightarrow m=2$. В. $x_1 x_2=1 \\Rightarrow m=16$.", "successRatePercent": null },
+    { "questionNumber": 35, "part": 3, "points": 3, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "H = 108", "topic": "Сличност на триаголници", "topicArea": "geometrija", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "Покажува сличност на триаголниците и користи пропорционалност на страни и висини → $H=108$.", "successRatePercent": null },
+    { "questionNumber": 36, "part": 3, "points": 4, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "P = 248\\text{ cm}^2", "topic": "Призма", "topicArea": "geometrija", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "Питагорова теорема → $d_2=6$. $B=24$, $M=200$, $P=248\\text{ cm}^2$.", "successRatePercent": null },
+    { "questionNumber": 37, "part": 3, "points": 5, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "V = 9600\\text{ cm}^3", "topic": "Пирамида", "topicArea": "geometrija", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "Хероновата формула → $P=630$, $h=20$, $b=33$, $B=960$, $V=9600\\text{ cm}^3$.", "successRatePercent": null },
+    { "questionNumber": 38, "part": 3, "points": 3, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "А. p=-2, Б. p=-4, В. (1,3)", "topic": "Аналитичка геометрија", "topicArea": "geometrija", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "А. $p=-2$ (точка на права). Б. Паралелност → $p=-4$. В. Пресечна точка $(1,3)$.", "successRatePercent": null },
+    { "questionNumber": 39, "part": 3, "points": 4, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "4x+3y+16=0", "topic": "Аналитичка геометрија", "topicArea": "geometrija", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "Права низ $A,B$: $k_1=3/4$. Нормала: $k_2=-4/3$. Висина низ $C(-1,-4)$: $4x+3y+16=0$.", "successRatePercent": null },
+    { "questionNumber": 40, "part": 3, "points": 4, "questionType": "open", "questionText": "[Текстот недостасува — само клуч]", "choices": null, "correctAnswer": "1, 3, 9", "topic": "Низи и прогресии", "topicArea": "analiza", "dokLevel": 3, "hasImage": false, "imageUrls": [], "imageDescription": null, "conceptIds": [], "hints": [], "aiSolution": "Аритметичка + геометриска прогресија. $d=6, a_1=-3$ → членови 1, 3, 9.", "successRatePercent": null }
   ]
 }
