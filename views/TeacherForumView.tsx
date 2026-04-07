@@ -13,7 +13,7 @@ import { markForumVisited } from '../hooks/useForumUnreadCount';
 import {
   MessageSquare, Plus, ThumbsUp, Award, ChevronLeft,
   Send, Loader2, Search, Tag, X, CheckCircle2, Pin,
-  TrendingUp, Clock, Sparkles, Users, Box,
+  TrendingUp, Clock, Sparkles, Users, Box, Link,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -582,13 +582,35 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
   const hasUpvotedThread = thread.upvotedBy.includes(myUid);
   const catCfg = CATEGORY_CONFIG[thread.category ?? 'question'];
 
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}${window.location.pathname}#/forum?thread=${thread.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
     <div className="space-y-4">
-      {/* Back */}
-      <button type="button" onClick={onBack}
-              className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 transition font-medium">
-        <ChevronLeft className="w-4 h-4" /> Назад кон форумот
-      </button>
+      {/* Back + Copy link */}
+      <div className="flex items-center justify-between">
+        <button type="button" onClick={onBack}
+                className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 transition font-medium">
+          <ChevronLeft className="w-4 h-4" /> Назад кон форумот
+        </button>
+        <button type="button" onClick={handleCopyLink}
+                title="Копирај линк за оваа нишка"
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${
+                  copied
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                    : 'bg-white border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600'
+                }`}>
+          <Link className="w-3.5 h-3.5" />
+          {copied ? 'Копирано!' : 'Копирај линк'}
+        </button>
+      </div>
 
       {/* Thread body — border-l colour comes from Tailwind class, not inline style */}
       <div className={`bg-white rounded-xl border-l-4 shadow-sm p-5 ${catCfg.border}`}>
@@ -776,7 +798,7 @@ const ALL_CATEGORIES: Array<{ id: ThreadCategory | ''; label: string; emoji: str
 
 // ── Main view ─────────────────────────────────────────────────────────────────
 
-export const TeacherForumView: React.FC = () => {
+export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: threadIdProp }) => {
   const { firebaseUser, user } = useAuth();
   const { addNotification } = useNotification();
   const { allConcepts } = useCurriculum();
@@ -793,8 +815,21 @@ export const TeacherForumView: React.FC = () => {
   const [draftImageUrl, setDraftImageUrl] = useState<string | null>(null);
   const [generatingChallenge, setGeneratingChallenge] = useState(false);
   const unsubRef = useRef<(() => void) | null>(null);
+  const didDeepLink = useRef(false);
 
   const concepts = (allConcepts ?? []) as EnrichedConcept[];
+
+  // ── Permalink helper ───────────────────────────────────────────────────────
+  /** Opens a thread and updates the URL so the link is shareable. */
+  const openThread = (t: ForumThread) => {
+    setActiveThread(t);
+    window.history.replaceState(null, '', `${window.location.pathname}#/forum?thread=${t.id}`);
+  };
+
+  const closeThread = () => {
+    setActiveThread(null);
+    window.history.replaceState(null, '', `${window.location.pathname}#/forum`);
+  };
 
   // Mark forum as visited (clears unread badge in sidebar)
   // markForumVisited is a stable module-level function — safe in deps array
@@ -809,6 +844,19 @@ export const TeacherForumView: React.FC = () => {
       setShowNewModal(true);
     }
   }, []);
+
+  // Deep-link: open thread from URL ?thread=<id> once threads load
+  useEffect(() => {
+    if (!threadIdProp || loading || didDeepLink.current) return;
+    didDeepLink.current = true;
+    const found = threads.find(t => t.id === threadIdProp);
+    if (found) {
+      setActiveThread(found);
+    } else {
+      // Thread may not be in subscription window — fetch directly
+      fetchForumThread(threadIdProp).then(t => { if (t) setActiveThread(t); });
+    }
+  }, [threadIdProp, loading, threads]);
 
   // ── Real-time subscription ─────────────────────────────────────────────────
   useEffect(() => {
@@ -876,7 +924,7 @@ export const TeacherForumView: React.FC = () => {
 
   const handleThreadCreated = (thread: ForumThread) => {
     // onSnapshot will update threads automatically; just navigate into the new thread
-    setActiveThread(thread);
+    openThread(thread);
   };
 
   const handleGenerateDokChallenge = async () => {
@@ -994,7 +1042,7 @@ export const TeacherForumView: React.FC = () => {
           thread={activeThread}
           myUid={myUid}
           myName={myName}
-          onBack={() => setActiveThread(null)}
+          onBack={closeThread}
           onUpvoteThread={() => handleUpvoteThread(activeThread)}
           onReactThread={(field) => handleReactThread(activeThread, field)}
         />
@@ -1124,7 +1172,7 @@ export const TeacherForumView: React.FC = () => {
                   key={thread.id}
                   thread={thread}
                   myUid={myUid}
-                  onClick={() => setActiveThread(thread)}
+                  onClick={() => openThread(thread)}
                   onUpvote={() => handleUpvoteThread(thread)}
                   onDelete={() => handleDelete(thread)}
                 />
@@ -1161,7 +1209,7 @@ export const TeacherForumView: React.FC = () => {
                   key={thread.id}
                   thread={thread}
                   myUid={myUid}
-                  onClick={() => setActiveThread(thread)}
+                  onClick={() => openThread(thread)}
                   onUpvote={() => handleUpvoteThread(thread)}
                   onDelete={() => handleDelete(thread)}
                 />
