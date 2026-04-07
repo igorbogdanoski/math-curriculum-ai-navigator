@@ -47,6 +47,8 @@ export interface GeneratorState {
     aiStyle: 'standard' | 'socratic' | 'direct' | 'inquiry' | 'problem';
     /** Webb's DoK target: specific level 1-4, 'mixed' for balanced distribution, undefined = auto */
     dokTarget?: DokLevel | 'mixed';
+    /** Raw text extracted by IMAGE_EXTRACTOR (vision analysis result) — used for pre-fill pipeline */
+    extractedText: string | null;
 }
 
 // Actions
@@ -104,6 +106,7 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         aiVocabLevel: 'standard',
         aiStyle: 'standard',
         dokTarget: undefined,
+        extractedText: null,
     };
 };
 

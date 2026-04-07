@@ -8,7 +8,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import type {
   AIGeneratedAssessment, AIGeneratedRubric, AIGeneratedIdeas,
   Topic, Concept, Grade, NationalStandard,
-  TeachingProfile, PlannerItem, Curriculum, ConceptProgression,
+  TeachingProfile, PlannerItem, Curriculum, ConceptProgression, MaterialType,
 } from '../types';
 import { ModalType, QuestionType } from '../types';
 import type { GeneratorState, GeneratorAction } from './useGeneratorState';
@@ -424,6 +424,9 @@ export function useGeneratorActions({
 
               const rawAnalysis = await geminiService.analyzeHandwriting(base64, mimeType, extractionContext);
 
+              // Store raw analysis for pre-fill pipeline (B5)
+              dispatch({ type: 'SET_FIELD', payload: { field: 'extractedText', value: rawAnalysis } });
+
               // Wrap raw vision analysis into a GeneratedMaterial shape (AIGeneratedIdeas)
               result = {
                 type: 'ideas',
@@ -558,6 +561,91 @@ export function useGeneratorActions({
     }
   };
 
+  // B5: Extraction → Generator pre-fill pipeline
+  // Generates a real material using the content already extracted (video/web/image).
+  // Receives the target material type; reads extraction content from state.
+  const handleGenerateFromExtraction = async (targetType: MaterialType) => {
+    if (isGenerating || isGeneratingBulk || variantHook.isGeneratingVariants) return;
+    if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
+    if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
+
+    // Gather extracted content from whichever extractor was used
+    const sourceType = state.materialType;
+    let extractionContent = '';
+    if (sourceType === 'VIDEO_EXTRACTOR') {
+      extractionContent = state.videoTranscript
+        ? sanitizePromptInput(state.videoTranscript.slice(0, 6000), 6000)
+        : (state.videoPreview?.title ?? '');
+    } else if (sourceType === 'WEB_EXTRACTOR') {
+      extractionContent = state.webpageText
+        ? sanitizePromptInput(state.webpageText.slice(0, 6000), 6000)
+        : '';
+    } else if (sourceType === 'IMAGE_EXTRACTOR') {
+      extractionContent = state.extractedText
+        ? sanitizePromptInput(state.extractedText.slice(0, 6000), 6000)
+        : '';
+    }
+
+    const built = buildContext();
+    if (!built) { addNotification('Ве молиме пополнете ги сите задолжителни полиња.', 'error'); return; }
+    const { context: finalContext, studentProfilesToPass } = built;
+
+    const extractionSnippet = extractionContent
+      ? `\n\n=== ИЗВЛЕЧЕНА СОДРЖИНА (извор за генерирање) ===\n${extractionContent}\n=== КРАЈ НА ИЗВОРОТ ===\n\nГенерирај го материјалот врз основа на оваа изворна содржина.`
+      : '';
+    const effectiveInstruction = buildEffectiveInstruction() + extractionSnippet;
+
+    // Switch UI to target type and clear previous result
+    dispatch({ type: 'SET_FIELD', payload: { field: 'materialType', value: targetType } });
+    setIsLoading(true);
+    setGeneratedMaterial(null);
+
+    const { questionTypes, numQuestions, differentiationLevel, exitTicketQuestions, exitTicketFocus, activityFocus, scenarioTone, learningDesignModel } = state;
+
+    try {
+      let result: GeneratedMaterial = null;
+
+      switch (targetType) {
+        case 'QUIZ':
+        case 'ASSESSMENT':
+        case 'FLASHCARDS':
+          result = await geminiService.generateAssessment(
+            targetType, questionTypes, numQuestions, finalContext,
+            user ?? undefined, differentiationLevel, studentProfilesToPass, undefined, effectiveInstruction,
+          );
+          break;
+        case 'SCENARIO':
+          if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за генерирање на сценарио');
+          result = await geminiService.generateLessonPlanIdeas(
+            finalContext.concepts || [], finalContext.topic, finalContext.grade.level,
+            user ?? undefined, { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel },
+            effectiveInstruction,
+          );
+          break;
+        case 'EXIT_TICKET':
+          result = await geminiService.generateExitTicket(
+            exitTicketQuestions, exitTicketFocus, finalContext, user ?? undefined, effectiveInstruction,
+          );
+          break;
+        default:
+          throw new Error(`Unsupported target type: ${targetType}`);
+      }
+
+      if (deductCredits && result) await deductCredits(AI_COSTS.TEXT_BASIC);
+      setGeneratedMaterial(result);
+    } catch (error) {
+      if (error instanceof RateLimitError) {
+        setQuotaBannerFromStorage();
+      } else {
+        const msg = error instanceof Error ? error.message : 'Грешка при генерирање.';
+        addNotification(msg, 'error');
+      }
+      setGeneratedMaterial(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     // Derived lists
     filteredTopics,
@@ -605,6 +693,7 @@ export function useGeneratorActions({
     handleSavePackage,
     handleMaterialRate,
     handleGenerateFromBank,
+    handleGenerateFromExtraction,
     handleClearQuota,
   };
 }

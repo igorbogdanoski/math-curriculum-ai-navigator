@@ -244,6 +244,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         handleSavePackage,
         handleMaterialRate,
         handleGenerateFromBank,
+        handleGenerateFromExtraction,
         handleClearQuota,
     } = useGeneratorActions({
         state,
@@ -752,6 +753,33 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
 
             {!isGenerating && generatedMaterial && (
                 <div className="mt-6 flex flex-col gap-4">
+
+                    {/* B5: Extraction → Generator pre-fill panel */}
+                    {(state.materialType === 'VIDEO_EXTRACTOR' || state.materialType === 'IMAGE_EXTRACTOR' || state.materialType === 'WEB_EXTRACTOR') && (
+                      <div className="p-4 bg-gradient-to-r from-cyan-50 to-teal-50 border border-cyan-200 rounded-2xl">
+                        <p className="text-xs font-black text-cyan-800 uppercase tracking-widest mb-1">Содржината е извлечена!</p>
+                        <p className="text-sm text-cyan-700 mb-3">Избери тип на материјал за да генерираш врз основа на оваа содржина:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {([
+                            { type: 'QUIZ' as MaterialType,        emoji: '❓', label: 'Квиз' },
+                            { type: 'ASSESSMENT' as MaterialType,   emoji: '📄', label: 'Тест' },
+                            { type: 'SCENARIO' as MaterialType,     emoji: '🎭', label: 'Сценарио' },
+                            { type: 'FLASHCARDS' as MaterialType,   emoji: '🃏', label: 'Картички' },
+                            { type: 'EXIT_TICKET' as MaterialType,  emoji: '🎟️', label: 'Exit Ticket' },
+                          ] as const).map(({ type, emoji, label }) => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => handleGenerateFromExtraction(type)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-white border-2 border-cyan-300 text-cyan-800 rounded-xl text-sm font-bold hover:bg-cyan-100 hover:border-cyan-500 transition-all shadow-sm"
+                            >
+                              <span>{emoji}</span>{label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
                     {'openingActivity' in generatedMaterial && (
                       <>
