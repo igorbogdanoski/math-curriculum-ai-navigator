@@ -379,7 +379,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "**А.**\nЗа множеството $M=\\{2n+1 \\mid n \\in \\mathbb{N}, n<5\\}$, природните броеви $n$ помали"
     },
     {
       "questionNumber": 17,
@@ -397,7 +398,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Даден е комплексниот број $\\overline{z}=2i-3$.\nЗнаеме дека ако $z=a+bi$, тогаш $\\overline{z}=a-"
     },
     {
       "questionNumber": 18,
@@ -415,7 +417,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Прво, го поедноставуваме изразот користејќи ги правилата за експоненти:\n$\\frac{a^{-14} \\cdot a^{-3}}{a^{-20}} = \\frac{a^{-14-3}}{a^{-20}} = \\frac{a^{-17}}{a^{-20}} = a^{-17 - (-20)} = a^{-17+20} = a^3$.\nПотоа, ја заменуваме вредноста $a=4$:\n$a^3 = 4^3 = 4 \\cdot 4 \\cdot 4 = 64$.\n\nБ. Прво, го пресметуваме $f(2)$:\n$f(2) = \\frac{2}{2} + \\frac{3}{2} = 1 + \\frac{3}{2} = \\frac{2}{2} +"
     },
     {
       "questionNumber": 19,
@@ -433,7 +436,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Плоштината на ромб $P$ со страна $a$ и остар агол $\\alpha$ се пресметува со формулата $P = a^2"
     },
     {
       "questionNumber": 20,
@@ -451,7 +455,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Користиме го идентитетот $\\cos x = \\sin(90^{\\circ} - x)$.\nОд $\\cos 28^{\\circ} = \\"
     },
     {
       "questionNumber": 21,
@@ -469,7 +474,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "За да провериме дали дадената исказна формула е тавтологија, ќе конструираме вистинитосна таблица:\n\n\\begin{tabular}{|c"
     },
     {
       "questionNumber": 22,
@@ -487,7 +493,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Прво, да ја пресметаме вредноста на броителот:\n$3+4\\dfrac{1}{5}:\\dfrac{1}{10} = 3"
     },
     {
       "questionNumber": 23,
@@ -505,7 +512,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Ја трансформираме неравенката:\n$\\frac{1}{1-x} \\ge -3$\n$\\frac{1}{1-x} + 3 \\ge 0"
     },
     {
       "questionNumber": 24,
@@ -523,7 +531,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Прво, го упростуваме првиот израз во заградата:\n$\\left[\\dfrac{a^2+ax}{2x}:\\left(a^2"
     },
     {
       "questionNumber": 25,
@@ -541,7 +550,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Нека трицифрениот број е $abc$, каде $a$ е цифрата на стотките, $b$ на десетките, а $c$ на еди"
     },
     {
       "questionNumber": 26,
@@ -559,7 +569,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Ја запишуваме равенката во стандардна форма $ax^2+bx+c=0$:\n$x^2-2(k-1)x-(k^"
     },
     {
       "questionNumber": 27,
@@ -578,7 +589,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Нека страните на правоаголникот се $a$ и $b$, каде $a$ е поголемата, а $b$ е помалата страна.\nРа"
     },
     {
       "questionNumber": 28,
@@ -597,7 +609,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "1. Од формулата за волумен на пирамида $V = \\frac{1}{3} B H$, ја наоѓаме плоштината на основата $"
     },
     {
       "questionNumber": 29,
@@ -616,7 +629,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Пресметување на волуменот на конусот:\nДадени се радиусот на основата $R_k = 15\\text{ cm}$"
     },
     {
       "questionNumber": 30,
@@ -634,7 +648,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Ја поедноставуваме изразот во броителот:\n$(1-\\sin\\alpha)^2+\\cos^2\\alpha = 1 - 2\\sin"
     }
   ]
 }

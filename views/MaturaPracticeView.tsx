@@ -560,9 +560,10 @@ function QuestionCard({
         <div className="text-base font-medium text-gray-800 leading-relaxed">
           <MathRenderer text={item.questionText} />
         </div>
-        {item.hasImage && item.imageUrls?.[0] && (
-          <img src={item.imageUrls[0]} alt="Слика кон задача" className="mt-3 max-h-48 rounded-lg border" />
-        )}
+        {item.imageUrls?.map((url, i) => (
+          <img key={i} src={url} alt={item.imageDescription ?? `Слика ${i + 1} кон задача`}
+            className="mt-3 max-h-56 rounded-lg border" />
+        ))}
       </div>
 
       {/* ── Part 1 MC ── */}
@@ -602,6 +603,22 @@ function QuestionCard({
               )}
             </div>
           )}
+          {/* ── Solution (after MC answer) ── */}
+          {state.submitted && item.aiSolution && (
+            <div className="mt-2 bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-1.5">
+              <p className="text-xs font-black text-blue-700">Решение:</p>
+              <div className="text-xs text-blue-800 leading-relaxed">
+                <MathRenderer text={item.aiSolution} />
+              </div>
+              {item.solutionImageUrl && (
+                <img
+                  src={item.solutionImageUrl}
+                  alt="Илустрација кон решението"
+                  className="mt-2 max-h-56 rounded-lg border border-blue-200"
+                />
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -632,15 +649,30 @@ function QuestionCard({
             );
           })}
           {state.aiGrade ? (
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-              <p className="text-xs font-bold text-blue-700 mb-1">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-bold text-blue-700">
                 Резултат: {state.aiGrade.score}/{state.aiGrade.maxScore}pt
               </p>
               <p className="text-xs text-blue-600">{state.aiGrade.feedback}</p>
-              <div className="mt-2 pt-2 border-t border-blue-100">
+              <div className="pt-2 border-t border-blue-100">
                 <p className="text-xs text-gray-500 font-medium">Точен одговор:</p>
                 <div className="text-xs text-gray-700"><MathRenderer text={item.correctAnswer} /></div>
               </div>
+              {item.aiSolution && (
+                <div className="pt-2 border-t border-blue-100 space-y-1">
+                  <p className="text-xs font-black text-blue-700">Решение:</p>
+                  <div className="text-xs text-blue-800 leading-relaxed">
+                    <MathRenderer text={item.aiSolution} />
+                  </div>
+                  {item.solutionImageUrl && (
+                    <img
+                      src={item.solutionImageUrl}
+                      alt="Илустрација кон решението"
+                      className="mt-2 max-h-56 rounded-lg border border-blue-200"
+                    />
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <button
@@ -692,12 +724,29 @@ function QuestionCard({
           ) : (
             <>
               {/* Self-assess result */}
-              <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                <p className="text-xs font-bold text-gray-600 mb-2">
+              <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-2">
+                <p className="text-xs font-bold text-gray-600">
                   Самооценка: {(state.selfChecks ?? []).filter(Boolean).length}/{item.points}pt
                 </p>
-                <p className="text-xs text-gray-500 font-semibold mb-1">Точен одговор / модел:</p>
-                <div className="text-xs text-gray-700"><MathRenderer text={item.correctAnswer} /></div>
+                <div>
+                  <p className="text-xs text-gray-500 font-semibold mb-1">Точен одговор / модел:</p>
+                  <div className="text-xs text-gray-700"><MathRenderer text={item.correctAnswer} /></div>
+                </div>
+                {item.aiSolution && (
+                  <div className="pt-2 border-t border-gray-200 space-y-1">
+                    <p className="text-xs font-black text-blue-700">Решение:</p>
+                    <div className="text-xs text-gray-700 leading-relaxed">
+                      <MathRenderer text={item.aiSolution} />
+                    </div>
+                    {item.solutionImageUrl && (
+                      <img
+                        src={item.solutionImageUrl}
+                        alt="Илустрација кон решението"
+                        className="mt-2 max-h-56 rounded-lg border border-gray-200"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
               {/* Opt-in AI */}
               {!state.aiGradeP3 && (

@@ -380,7 +380,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Për të gjetur bashkësinë $C$, do të shqyrtojmë çdo element $x \\in A$ dhe do të gjejmë elementet"
     },
     {
       "questionNumber": 17,
@@ -398,7 +399,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "A. Për barazimin $(k-1)x = k^2 - 1$ të ketë pakufi shumë zgjidhje, duhet që koeficienti"
     },
     {
       "questionNumber": 18,
@@ -416,7 +418,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Zbërthejmë polinomin $P(x,y) = 2x^2 + 3xy + y^2 - 2x - y$.\nGrupojme"
     },
     {
       "questionNumber": 19,
@@ -435,7 +438,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Syprina e mbështjellësit $M$ të piramidës së rregullt katërkëndore llogaritet si shuma e"
     },
     {
       "questionNumber": 20,
@@ -454,7 +458,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "A. Le të jenë këndet e trekëndëshit $\\alpha$, $\\beta$ dhe $\\gamma$.\nJepet $\\alpha = 36^{\\circ}$. Kë"
     },
     {
       "questionNumber": 21,
@@ -472,7 +477,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Duke ditur se $\\tau(p)=\\top$ dhe $\\tau(q)=\\bot$, përcaktojmë vlerën e saktësisë së formulës hap pas h"
     },
     {
       "questionNumber": 22,
@@ -490,7 +496,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Jepet numri kompleks $z = 1 - i$.\nSë pari, gjejmë konjuguarin e $z$: $\\bar{z} = 1 +"
     },
     {
       "questionNumber": 23,
@@ -508,7 +515,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Zgjidhim secilën jobarazim veçmas:\n\nPër jobarazimin e parë:\n$4x - 5 \\geq 5$\n$4x"
     },
     {
       "questionNumber": 24,
@@ -526,7 +534,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "A. Për të qenë shprehja numër real, të gjithë emëruesit duhet të jenë të ndryshëm nga zero.\nK"
     },
     {
       "questionNumber": 25,
@@ -544,7 +553,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Le të jetë numri dyshifror $10d + n$, ku $d$ është shifra e dhjetësheve dhe $n$ është shifra e një"
     },
     {
       "questionNumber": 26,
@@ -562,7 +572,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Për barazimin katror $x^2 - (p+1)x + p^2 - 1 = 0$, koeficientët janë $a=1$,"
     },
     {
       "questionNumber": 27,
@@ -581,7 +592,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Le të shënojmë katetet me $a$ dhe $b$, dhe hipotenuzën me $c$.\nPerimetri i trekëndëshit kënddre"
     },
     {
       "questionNumber": 28,
@@ -600,7 +612,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Lartësia e cilindrit është $H=4\\text{ cm}$.\nPrerja boshtore e cilindrit është një drejtkëndësh me brinj"
     },
     {
       "questionNumber": 29,
@@ -619,7 +632,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Për të njehsuar syprinën e trapezit, na duhet lartësia $h$.\nLe të shënojmë bazat $a=20\\"
     },
     {
       "questionNumber": 30,
@@ -637,7 +651,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Për të njehsuar vlerën e shprehjes $A$, fillimisht gjejmë $\\cos\\alpha$ dhe $\\text{tg}\\alpha$."
     }
   ]
 }

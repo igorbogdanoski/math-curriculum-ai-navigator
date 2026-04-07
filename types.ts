@@ -155,6 +155,7 @@ export interface MaturaQuestion {
   questionGroupId?: string;               // поврзува МК+АЛ+ТР верзии
   successRatePercent?: number;            // агрегирано од matura_results
   aiSolution?: string;                    // Gemini чекор-по-чекор (cached)
+  solutionImageUrl?: string;              // илустрација кон решението (PNG)
   hints?: string[];                       // [hint1, hint2, full solution]
   // Open-ended student submission (matura_submissions collection)
   rubric?: MaturaRubricItem[];            // точки по чекор за отворени задачи

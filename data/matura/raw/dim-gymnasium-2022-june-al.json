@@ -508,7 +508,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Së pari, faktorizojmë secilën shprehje:\n$(1+a)^2 = (1+a)(1+a)$\n$1-a",
       "successRatePercent": null
     },
     {
@@ -527,7 +527,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Zëvendësojmë $x = \\frac{3}{5}$ në shprehje:\n$\\left| \\frac{1}{3} - \\frac{3",
       "successRatePercent": null
     },
     {
@@ -546,7 +546,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Për të gjetur numrin maksimal të biletave që mund të blihen me 1000 denarë, pjesëtojmë shumën totale me",
       "successRatePercent": null
     },
     {
@@ -565,7 +565,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Grafiku i funksionit linear $f(x) = mx + c$ është drejtëz paralele me $x$-boshtin nëse koeficienti",
       "successRatePercent": null
     },
     {
@@ -584,7 +584,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Perimetri i trekëndëshit barakrahas jepet nga formula $P = 2a + b$, ku $a$ është gjatësia e krahut dhe $b$ është gjatësia e bazës.\nZëvendësojmë vlerat e dhëna: $71 = 2 \\cdot 23 + b$.\n$71 = 46 + b$.\nPër të gjetur bazën $b$, zbresim 46 nga 71:\n$b = 71 - 46$.\n$b = 25$.\n\nB. Në një trekëndësh kënddrejtë, hipotenuza është diametri i vijës rrethore të jashtashkruar.\nLe të jetë $c$ hipotenuza. Këndi i ngushtë është $30^\\circ$ dhe kateta përballë atij këndi është 8.\nPërdorim funksionin sinus: $\\sin(30^\\circ) = \\frac{\\text{kateta përballë}}{\\text{hipotenuza}}$.\nDimë që $\\sin(30^\\circ) = \\frac{1",
       "successRatePercent": null
     },
     {
@@ -603,7 +603,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Formula për gjatësinë e harkut rrethor $l$, që i përgjigjet këndit qendror $\\alpha$ (në shkallë) dhe rrezes $r$, është:\n$l = \\frac{2\\pi r \\alpha}{360^\\circ} = \\frac{r \\pi \\alpha}{180^\\circ}$.\n\nБ. Për të gjetur këndin qendror $\\alpha$, përdorim formulën e syprinës së prerjes rrethore:\n$S = \\frac{\\pi r^2 \\alpha}{360^\\circ}$.\nZëvendësojmë vlerat e dhëna $S = 2\\pi \\text{ cm}^2$ dhe $r = 3\\text{ cm}$:\n$2\\pi = \\frac{\\pi (3)^2 \\alpha}{360^\\circ}$\n$2\\pi",
       "successRatePercent": null
     },
     {
@@ -622,7 +622,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Le të jenë $a, b, c$ gjatësitë e teheve të kuadrit. Gjatësitë e dy teheve janë $a=",
       "successRatePercent": null
     },
     {
@@ -641,7 +641,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Për një kon barabrinjës, gjatësia e gjeneratrisës $l$ është e barabartë me diametrin e bazës $2r$.\nNga $l = 16\\text{cm}$, kemi $2r = 16\\text{cm}$, pra $r = 8\\text{cm}$.\nLartësia $h$, rrezja $r$ dhe gjeneratrisa $l$ formojnë një trekëndësh kënddrejtë, prandaj zbatojmë Teoremën e Pitagorës: $h^2 + r^2 = l^2$.\n$h^2 + 8^2 = 16^2$\n$h^2 + 64 = 256$\n$h^2 = 256 - 64$\n$h^2 = 192$\n$h = \\sqrt{192} = \\sqrt{64 \\cdot 3} = 8\\sqrt{3}\\text{cm}$.\n\nБ. Syprina e përgjithshme e konit $S$ jepet nga formula $S = S_b + S_l = \\pi r^2 + \\pi r l$, ku $S_b$ është syprina e bazës dhe $S_l$ është syprina anësore.\nDuke zëvendësuar vlerat e $r = 8\\text{cm",
       "successRatePercent": null
     },
     {
@@ -660,7 +660,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Për të gjetur koordinatat e pikës $C$ që përgjysmon segmentin $AB$, përdorim formulat e pikës së mes",
       "successRatePercent": null
     },
     {
@@ -679,7 +679,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Le të jetë $a_1$ numri i parë i vargut dhe $n=30$ numri i termave. Meqenëse",
       "successRatePercent": null
     },
     {
@@ -698,7 +698,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Fillimisht, thjeshtojmë shprehjen brenda kllapave.\nFaktorizojmë emëruesit: $a^2 -",
       "successRatePercent": null
     },
     {
@@ -717,7 +717,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "**Pjesa A:** Zgjidhhim secilën jobarazi veçmas.\n\nJobarazia e parë:\n$2(x-1) \\le 7",
       "successRatePercent": null
     },
     {
@@ -736,7 +736,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Le të shënojmë gjatësitë e katër pjesëve me $L_1, L_2, L_3, L_4$. Gjatësia totale",
       "successRatePercent": null
     },
     {
@@ -755,7 +755,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Barazimi i dhënë është $(m-2)x - m = 8(x-1)(x+1)$.\nE thjeshtojmë në formën standarde",
       "successRatePercent": null
     },
     {
@@ -776,7 +776,7 @@
       "imageDescription": "Триаголник ABC со впишан паралелограм DBEF, каде D лежи на AB, E на BC, F на AC.",
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Le të shënojmë lartësinë e $\\triangle ABC$ nga kulmi $C$ mbi brinjën $AB$ me $h_C$.\nLe të sh",
       "successRatePercent": null
     },
     {
@@ -795,7 +795,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Për të njehsuar syprinën e prizmit, $S = 2B + M$, fillimisht gjejmë elementet e bazës dhe lartësin",
       "successRatePercent": null
     },
     {
@@ -814,7 +814,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Për të njehsuar vëllimin e piramidës, na duhet sipërfaqja e bazës $B$ dhe lartësia $H$. Lart",
       "successRatePercent": null
     },
     {
@@ -833,7 +833,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Për të gjetur vlerën e $p$ kur drejtëza kalon nëpër pikën $(-1, 7)$, zëvendësojmë koordin",
       "successRatePercent": null
     },
     {
@@ -852,7 +852,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Së pari, gjejmë koeficientin këndor të brinjës $AB$.\n$m_{AB} = \\frac{y_B - y_A",
       "successRatePercent": null
     },
     {
@@ -871,7 +871,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Le të jenë $a-d, a, a+d$ tre antarët e njëpasnjëshëm të progresionit aritmetik.\nShuma e tyre është 9:",
       "successRatePercent": null
     }
   ]

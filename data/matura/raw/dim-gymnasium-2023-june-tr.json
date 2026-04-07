@@ -388,7 +388,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. İlk olarak, $A$ kümesinin elemanlarını belirleyelim: $A = \\{x \\mid x \\in \\mathbb{N} \\land x \\mid 8\\}$. Bu",
       "successRatePercent": null
     },
     {
@@ -407,7 +407,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Önce polinomları çarpanlarına ayıralım:\n$P(x) = x^3 - x^2 = x^2(x - 1)$\n$Q(x)",
       "successRatePercent": null
     },
     {
@@ -426,7 +426,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. $(k^2 + k)x = k^2 - 2k - 3$ denkleminin sonsuz sayıda çözümü olması için, $x$'in katsayısı ve sabit terim aynı anda sıfır olmalıdır.\n$k^2 + k = 0 \\implies k(k+1) = 0 \\implies k=0$ veya $k=-1$.\n$k^2 - 2k - 3 = 0 \\implies (k-3)(k+1) = 0 \\implies k=3$ veya $k=-1$.\nHer iki koşulu da sağlayan ortak $k$ değeri $k=-",
       "successRatePercent": null
     },
     {
@@ -445,7 +445,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Düzgün bir çokgenin karakteristik üçgeni eşkenar ise, merkezdeki açısı $60^\\circ$ olmalıdır. Düzgün bir $n$-genin",
       "successRatePercent": null
     },
     {
@@ -464,7 +464,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "**A.**\nDik dairesel koninin taban yarıçapı $r$ ve yüksekliği $h$ olsun.\nTaban alanı $A_t = \\pi",
       "successRatePercent": null
     },
     {

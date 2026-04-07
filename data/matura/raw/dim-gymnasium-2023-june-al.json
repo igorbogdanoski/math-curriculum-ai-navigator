@@ -356,7 +356,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "**A.**\nSë pari, përcaktojmë elementet e bashkësive $A$ dhe $B$.\n$A=\\{x \\mid x \\in \\"
     },
     {
       "questionNumber": 17,
@@ -373,7 +374,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Faktorizojmë secilin polinom:\n$P(x)=x^3-x^2 = x^2(x-1)$\n$Q(x)=x^"
     },
     {
       "questionNumber": 18,
@@ -390,7 +392,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "А. Për pafund shumë zgjidhje, koeficienti i $x$-it dhe ana e djathtë e barazimit duhet të jenë zero.\n1"
     },
     {
       "questionNumber": 19,
@@ -407,7 +410,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Trekëndëshi karakteristik i një shumëkëndëshi të rregullt formohet nga dy rreze dhe një brinjë. Nëse ky trek"
     },
     {
       "questionNumber": 20,
@@ -424,7 +428,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А.\n1.  Syprina e bazës së konit është $S_B = \\pi r^2$, ku $r$ është rrezja e bazës"
     },
     {
       "questionNumber": 21,
@@ -441,7 +446,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Për të përcaktuar numrin e nxënësve që nuk pinë as lëng molle dhe as lëng vishnjash, fillimisht gjejmë num"
     },
     {
       "questionNumber": 22,
@@ -458,7 +464,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Së pari, llogarisim vlerën e $A$:\n$A = -2a - |5a+3|$ për $a = -3$\nZëvendësojmë $a = -3$:\n$A = -2(-3) - |5(-3)+3|$\n$A = 6 - |-15+3|$\n$A = 6 - |-12|$\n$A = 6 - 12$\n$A = -6$\n\nSë dyti, llogarisim vlerën e $B$:\n$B = (\\frac{3}{4} + 1) + (-\\frac{9}{4})$\n$B = (\\frac{3}{4} + \\frac{4}{4}) - \\frac{9}{4}$\n$B = \\"
     },
     {
       "questionNumber": 23,
@@ -475,7 +482,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Fillojmë me thjeshtimin e shprehjes.\n\nSë pari, thjeshtojmë shprehjen brenda kllapave të mëdha"
     },
     {
       "questionNumber": 24,
@@ -492,7 +500,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Së pari, zhvendosim të gjithë termat në njërën anë të jobarazimit:\n$\\frac{3x-5}{x+1} -"
     },
     {
       "questionNumber": 25,
@@ -509,7 +518,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Nga barazimi $x^2-x+m-1=0$, kemi koeficientët $a=1$, $b=-1$, $c=m-1"
     },
     {
       "questionNumber": 26,
@@ -526,7 +536,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Për të gjetur koeficientët $a$, $b$ dhe $c$, përdorim kushtet e dhëna:\n\n1.  **Grafiku"
     },
     {
       "questionNumber": 27,
@@ -543,7 +554,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Përllogarisim gjysmëperimetrin $s$:\n$s = \\frac{50+58+72}{2} = \\frac{1"
     },
     {
       "questionNumber": 28,
@@ -560,7 +572,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Baza është katror me teh $a=8$. Syprina e bazës është $B = a^2 = 8^2 = 64$.\n\nApotema e"
     },
     {
       "questionNumber": 29,
@@ -579,7 +592,8 @@
       ],
       "hasImage": true,
       "imageDescription": "Prizëm i drejtë me bazë trapez barakrahës, në të cilin është brendashkruar një cilindër.",
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Së pari, përcaktojmë lartësinë e trapezit dhe gjatësinë e krahut. Meqenëse cilindri është brendashk"
     },
     {
       "questionNumber": 30,
@@ -596,7 +610,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Për të thjeshtuar shprehjen, fillimisht gjejmë emëruesin e përbashkët:\n$$ \\frac{\\sin^2\\alpha}{"
     }
   ]
 }

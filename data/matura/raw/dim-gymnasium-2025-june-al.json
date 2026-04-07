@@ -379,7 +379,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Për të përcaktuar bashkësinë $M=\\{2n+1 \\mid n \\in \\mathbb{N}, n<5\\}$, zëvend"
     },
     {
       "questionNumber": 17,
@@ -397,7 +398,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Përcaktojmë numrin kompleks $z$.\nNëse $\\overline{z} = 2i-3$, atëherë $\\overline{z} = -3+2i$.\nDuke ditur se nëse $z=a+bi$, atëherë $\\overline{z}=a-bi$, kemi $a=-3$ dhe $-b=2$, pra $b=-2$."
     },
     {
       "questionNumber": 18,
@@ -415,7 +417,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Së pari, thjeshtojmë shprehjen duke përdorur vetitë e fuqive:\n$\\frac{a^{-14} \\cdot a^{-3}}{a^{-20}} = \\frac{a^{-14-3}}{a^{-20}} = \\frac{a^{-17}}{a^{-20}}$\nTani, zbatojmë rregullin $\\frac{a^m}{a^n} = a^{m-n}$:\n$a^{-17 - (-20)} = a^{-17+20} = a^3$\nZëvendësojmë $a=4$:\n$4^3 = 4 \\cdot 4 \\cdot 4 = 64$.\n\nБ. Së pari, njehsojmë $f(2)$:\n$f(2) = \\frac{2}{2} + \\frac{3}{2} = 1 + \\frac{3}{2} = \\frac{2}{2} + \\frac{3}{2} = \\frac{5}{2}$\nPastaj, njehsojmë $\\frac{1}{f(2)}$:\n$\\frac{1}{f(2)} = \\frac{1}{\\frac{5}{2}} = \\frac{2}{5}$\nTani, njehsojmë $f\\!\\left(\\frac{1}{2}\\right)$:\n$f\\!\\left(\\"
     },
     {
       "questionNumber": 19,
@@ -433,7 +436,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "**A.**\nSyprina e rombit llogaritet me formulën $S = a^2 \\sin \\alpha$.\nMe brinjë $a = 2"
     },
     {
       "questionNumber": 20,
@@ -451,7 +455,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "**A.** Përdorim identitetin $\\cos x = \\sin (90^{\\circ} - x)$.\nNga kjo rrjedh $\\cos 2"
     },
     {
       "questionNumber": 21,
@@ -469,7 +474,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Për të provuar nëse formula gjykimore $(\\neg p \\to q) \\land (\\neg p \\to \\neg q) \\to p$ është tautologji"
     },
     {
       "questionNumber": 22,
@@ -487,7 +493,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Së pari, llogarisim vlerën e numëruesit të shprehjes:\n$4\\dfrac{1}{5} = \\dfrac{4 \\cdot"
     },
     {
       "questionNumber": 23,
@@ -505,7 +512,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Për të zgjidhur jobarazimin $\\frac{1}{1-x} \\ge -3$, fillimisht përcaktojmë kushtin e ek"
     },
     {
       "questionNumber": 24,
@@ -523,7 +531,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Hapi 1: Thjeshtojmë shprehjen e parë brenda kllapave katrore.\n$\\dfrac{a^2+ax}{2x}:\\"
     },
     {
       "questionNumber": 25,
@@ -541,7 +550,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Le të shënojmë shifrat e numrit treshifror me $a$, $b$ dhe $c$, ku $a$ është shifra e qindësheve"
     },
     {
       "questionNumber": 26,
@@ -559,7 +569,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Barazimi i dhënë është $x^2-2(k-1)x=k^2-5k+2$.\nPër të pasur dy zgjidhje"
     },
     {
       "questionNumber": 27,
@@ -578,7 +589,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Le të jenë $a$ dhe $b$ gjatësitë e brinjëve të drejtkëndëshit, ku $a > b$.\nPik"
     },
     {
       "questionNumber": 28,
@@ -597,7 +609,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Nga formula e vëllimit të piramidës $V = \\frac{1}{3} B h$, ku $B$ është syprina e bazës dhe $h"
     },
     {
       "questionNumber": 29,
@@ -616,7 +629,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Së pari, llogarisim vëllimin e konit ($V_K$).\nRrezja e bazës së konit është $r_K = 15\\text"
     },
     {
       "questionNumber": 30,
@@ -634,7 +648,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Zgjidhim anën e majtë të barazimit:\n\nNumëruesi:\n$(1-\\sin\\alpha)^2+\\cos^2\\alpha = 1 -"
     }
   ]
 }

@@ -44,6 +44,7 @@ interface LocalMaturaRawQuestion {
   imageDescription?: string | null;
   hints?: string[];
   aiSolution?: string | null;
+  solutionImageUrl?: string | null;
   successRatePercent?: number | null;
   curriculumRefs?: MaturaCurriculumRefs;
 }
@@ -98,6 +99,7 @@ export interface MaturaQuestion {
   imageDescription?: string | null;
   hints?: string[];
   aiSolution?: string | null;
+  solutionImageUrl?: string | null;
   successRatePercent?: number | null;
   curriculumRefs?: MaturaCurriculumRefs;
 }
@@ -190,10 +192,43 @@ function getLocalMaturaData(): { exams: MaturaExamMeta[]; byExam: Map<string, Ma
   const exams: MaturaExamMeta[] = [];
   const byExam = new Map<string, MaturaQuestion[]>();
 
+  // First pass: separate key files from regular exam files
+  const keyFiles = new Map<string, LocalMaturaRawDoc>(); // e.g. "dim-gymnasium-2022-june" → doc
+  const examDocs: LocalMaturaRawDoc[] = [];
+
   Object.values(modules).forEach((mod) => {
     const parsed = (mod as { default?: LocalMaturaRawDoc }).default ?? (mod as LocalMaturaRawDoc);
     if (!parsed?.exam?.id || !Array.isArray(parsed?.questions)) return;
 
+    if (parsed.exam.id.endsWith('-key')) {
+      // Strip "-key" suffix to get the base exam id (e.g. "dim-gymnasium-2022-june")
+      const baseKey = parsed.exam.id.slice(0, -4);
+      keyFiles.set(baseKey, parsed);
+    } else {
+      examDocs.push(parsed);
+    }
+  });
+
+  // Helper: given an exam id like "dim-gymnasium-2022-june-mk", get the base key
+  function baseKeyFor(examId: string): string {
+    // Remove language suffix: -mk, -al, -tr (last segment after final -)
+    return examId.replace(/-[a-z]{2}$/, '');
+  }
+
+  // Build solution lookup from key files: baseKey → Map<questionNumber, {aiSolution, solutionImageUrl}>
+  const keySolutions = new Map<string, Map<number, { aiSolution?: string | null; solutionImageUrl?: string | null }>>();
+  keyFiles.forEach((doc, baseKey) => {
+    const solMap = new Map<number, { aiSolution?: string | null; solutionImageUrl?: string | null }>();
+    doc.questions.forEach(q => {
+      if (q.aiSolution || q.solutionImageUrl) {
+        solMap.set(q.questionNumber, { aiSolution: q.aiSolution, solutionImageUrl: q.solutionImageUrl });
+      }
+    });
+    keySolutions.set(baseKey, solMap);
+  });
+
+  // Second pass: build exams and merge key solutions
+  examDocs.forEach((parsed) => {
     const totalPoints = parsed.questions.reduce((sum, q) => sum + (q.points || 0), 0);
     exams.push({
       id: parsed.exam.id,
@@ -208,30 +243,38 @@ function getLocalMaturaData(): { exams: MaturaExamMeta[]; byExam: Map<string, Ma
       importedAt: 'local-fallback',
     });
 
+    const baseKey = baseKeyFor(parsed.exam.id);
+    const solMap = keySolutions.get(baseKey);
+
     const questions: MaturaQuestion[] = parsed.questions
-      .map((q) => ({
-        examId: parsed.exam.id,
-        year: parsed.exam.year,
-        session: parsed.exam.session,
-        language: parsed.exam.language,
-        questionNumber: q.questionNumber,
-        part: q.part,
-        points: q.points,
-        questionType: q.questionType,
-        questionText: q.questionText,
-        choices: q.choices,
-        correctAnswer: q.correctAnswer,
-        topic: q.topic,
-        topicArea: q.topicArea,
-        dokLevel: q.dokLevel,
-        hasImage: q.hasImage,
-        imageUrls: (q.imageUrls ?? []).map(normalizeImageUrl),
-        imageDescription: q.imageDescription,
-        hints: q.hints,
-        aiSolution: q.aiSolution,
-        successRatePercent: q.successRatePercent,
-        curriculumRefs: q.curriculumRefs,
-      }))
+      .map((q) => {
+        const keySol = solMap?.get(q.questionNumber);
+        return {
+          examId: parsed.exam.id,
+          year: parsed.exam.year,
+          session: parsed.exam.session,
+          language: parsed.exam.language,
+          questionNumber: q.questionNumber,
+          part: q.part,
+          points: q.points,
+          questionType: q.questionType,
+          questionText: q.questionText,
+          choices: q.choices,
+          correctAnswer: q.correctAnswer,
+          topic: q.topic,
+          topicArea: q.topicArea,
+          dokLevel: q.dokLevel,
+          hasImage: q.hasImage,
+          imageUrls: (q.imageUrls ?? []).map(normalizeImageUrl),
+          imageDescription: q.imageDescription,
+          hints: q.hints,
+          // Own aiSolution takes priority; fall back to key file solution
+          aiSolution: q.aiSolution ?? keySol?.aiSolution ?? null,
+          solutionImageUrl: q.solutionImageUrl ?? keySol?.solutionImageUrl ?? null,
+          successRatePercent: q.successRatePercent,
+          curriculumRefs: q.curriculumRefs,
+        };
+      })
       .sort((a, b) => a.questionNumber - b.questionNumber);
 
     byExam.set(parsed.exam.id, questions);

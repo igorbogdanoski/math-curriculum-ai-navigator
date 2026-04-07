@@ -508,7 +508,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Verilen ifadeleri çarpanlarına ayıralım:\n$(1+a)^2 = (1+a)(1+a)$\n$1-a^2 = (1-a)(1+a)$\n$1-2a+a^2 = (1-a)^2 = (1-a)(1-a)$\nÜç ifadenin de ortak çarpanı sadece $1$'dir. Bu nedenle, EBOB $1$'dir.\n\nB. EKOK'u bulmak için, tüm farklı çarpanları en",
       "successRatePercent": null
     },
     {
@@ -527,7 +527,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. $x = \\frac{3}{5}$ değerini ifadeye yerine yazalım:\n$\\left| \\frac{1}{3} - \\frac{3}{5} \\right|$\nOrtak payda $15$ olduğundan, kesirleri genişletelim:",
       "successRatePercent": null
     },
     {
@@ -546,7 +546,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Başlangıçtaki bilet fiyatı 150 denardır. 1000 denar ile alınabilecek bilet sayısı:\n$\\frac{1000}{",
       "successRatePercent": null
     },
     {
@@ -565,7 +565,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Bir lineer fonksiyonun grafiği $x$-eksenine paralel ise, bu fonksiyonun eğimi $0$ olmalıdır.\nVerilen $f(x) = 7 - (k^2 - 1)x$ fonksiyonu için eğim $m = -(k^2 - 1)$'dir.\nEğimin $0$ olması için:\n$-(k^2 - 1) = 0$\n$k^2 - 1 = 0$\n$k^2 = 1$\n$k = \\pm 1$\n\nБ. Bir lineer fonksiyonun monoton artan olması için eğiminin pozitif ($m > 0$) olması gerekir.\nFonksiyonun eğimi $m = -(k^2 - 1)$ olduğundan:\n$-(k^2 - 1) > 0$\nEşitsizliğin her iki tarafını $-1$ ile çarparsak eşitsizlik yön değiştirir:\n$k^2 - 1 < 0$\n$k^2 < 1$\nBu eşitsizliği sağlayan $k$ değerleri $-1 < k < 1$ aralığındadır.\nYani $k \\in (-1, 1)$.\n\nCevap: A. $k = \\pm 1$, B. $k \\in (-1",
       "successRatePercent": null
     },
     {
@@ -584,7 +584,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. İkizkenar üçgenin çevresi, iki yan kenar ve tabanın toplamıdır. Yan kenarlar eşit uzunluktadır.\nÇevre $= \\text{yan kenar} + \\text{yan kenar} + \\text{taban}$\n$71 = 23 + 23 + \\text{taban}$\n$71 = 46 + \\text{taban}$\n$\\text{taban} = 71 - 46$\n$\\text{taban} = 25$\n\nB. Bir dik üçgende $30^\\circ$ açının karşısındaki kenar $a$ ise, hipotenüs $2a$ uzunluğundadır.\nVerilen: $30^\\circ$ karşısındaki katet $= 8$.\nHipotenüs $= 2 \\times 8 = 16$.\nBir dik üçgenin çevrel çemberinin yarıçapı, hipotenüsün yarısına eşittir.\nYarıçap $R = \\frac{\\text{hipotenüs}}{2} = \\frac{16}{2} = 8$.\n\n**A. 25**\n**B. 8**",
       "successRatePercent": null
     },
     {
@@ -603,7 +603,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "**A.** Yarıçapı $r$ olan bir çemberde, derecelerle ifade edilmiş $\\alpha$ merkez açısına karşılık gelen çember yayının uzunluğu $l",
       "successRatePercent": null
     },
     {
@@ -622,7 +622,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Dikdörtgenler prizmasının iç köşegeninin uzunluğu $D$, ayrıtları $a, b, c$ olmak üzere $D = \\sqrt{a^2 +",
       "successRatePercent": null
     },
     {
@@ -641,7 +641,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Eşkenar konide ana doğru ($l$) taban çapına ($2r$) eşittir. Ana doğru $l = 16\\text{cm}$ verildi",
       "successRatePercent": null
     },
     {
@@ -660,7 +660,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. $A(x_1, y_1) = (3, -7)$ ve $B(x_2, y_2) = (-2, 5)$ noktaları için $AB$ doğru parçasını yarıya bölen $C(x_C, y_C)$ noktasının koordinatları şu formülle bulunur:\n$x_C = \\frac{x_1 + x_2}{2} = \\frac{3 + (-2)}{2} = \\frac{1}{2}$\n$y_C = \\frac{y_1 + y_2}{2} = \\frac{-7 + 5}{2} = \\frac{-2}{2} = -1$\n$C$ noktasının koordinatları $\\left(\\frac{1}{2}, -1\\right)$ dir.\n\nБ. $A(x_1, y_1) = (3, -7)$ ve $B(x_2, y_2) = (-2, 5)$ noktaları arasındaki uzaklık (doğru parçasının uzunluğu) şu formülle bulunur:\n$AB = \\sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$\n$AB = \\sqrt{(-2 - 3)^2 + (5 - (-7))^2}$\n$AB = \\sqrt{(-5)^2 + (5 + 7)^2}$\n$AB = \\sqrt{(-5)^2 + (12)^2}$\n$AB = \\sqrt{25 + 144}$\n$AB = \\sqrt{169}$\n$AB = 13$ birimdir.\n\n**A. $\\left(\\frac{1}{2}, -1\\right)$**\n**B. $13$**",
       "successRatePercent": null
     },
     {
@@ -679,7 +679,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. İlk terim $a$ olsun. Ardışık tam sayılardan oluşan dizi $a, a+1, \\dots, a+29$ şeklindedir",
       "successRatePercent": null
     },
     {
@@ -698,7 +698,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Verilen ifadeyi sadeleştirelim:\n$$ \\left( \\frac{a}{a^2 - 4} - \\frac{8}{a^2 + 2a} \\",
       "successRatePercent": null
     },
     {
@@ -717,7 +717,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Eşitsizlik sistemini çözelim:\n1. İlk eşitsizliği çözüyoruz:\n   $2(x-1) \\le 7$",
       "successRatePercent": null
     },
     {
@@ -736,7 +736,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Doğru parçasının dört kısmını $P_1, P_2, P_3, P_4$ olarak adlandıralım. Verilen oranları birleştirelim",
       "successRatePercent": null
     },
     {
@@ -755,7 +755,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Denklemi standart $ax^2+bx+c=0$ formuna getirelim:\n$(m-2)x - m = 8(x^2-1)$",
       "successRatePercent": null
     },
     {
@@ -776,7 +776,7 @@
       "imageDescription": "Триаголник ABC со впишан паралелограм DBEF, каде D лежи на AB, E на BC, F на AC.",
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "$ABC$ üçgeninin $AB$ kenarına karşılık gelen yüksekliğini $h_{ABC}$ ile gösterelim.\n$DBEF$ bir paralelkenar olduğundan, $FE \\parallel",
       "successRatePercent": null
     },
     {
@@ -795,7 +795,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Taban eşkenar dörtgenin bir kenarı $a=5\\text{cm}$ ve bir köşegeni $d_1=8\\text{cm}$'dir. E",
       "successRatePercent": null
     },
     {
@@ -814,7 +814,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Piramidin tabanı ikizkenar yamuktur. Yamuğun büyük tabanı $a=63\\text{cm}$, yan kenarı $c=25\\text{cm",
       "successRatePercent": null
     },
     {
@@ -833,7 +833,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Doğruların $(-1, 7)$ noktasında kesişmesi için, bu noktanın her iki denklemi de sağlaması gerekir.\nBirinci doğru denklemi:",
       "successRatePercent": null
     },
     {
@@ -852,7 +852,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "$AB$ kenarının eğimi $m_{AB}$'yi bulalım: $A(4, 6)$, $B(-4, 0)$.\n$m_{AB}",
       "successRatePercent": null
     },
     {
@@ -871,7 +871,7 @@
       "imageDescription": null,
       "conceptIds": [],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Aritmetik dizinin terimleri $a-d, a, a+d$ olsun.\nToplamları 9 olduğundan: $(a-d) + a + (a+",
       "successRatePercent": null
     }
   ]

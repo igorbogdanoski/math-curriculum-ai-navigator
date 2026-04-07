@@ -251,7 +251,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Të dhënat janë: gjatësia e brinjës së rombit $a=12\\text{ cm}$ dhe largësia nga pikëprerja e"
     },
     {
       "questionNumber": 12,
@@ -273,7 +274,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Përcaktimi i gjatësisë së segmentit shtesë.\nNë një trapez barakrahas, nëse heqim lartësitë nga sk"
     },
     {
       "questionNumber": 13,
@@ -295,7 +297,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Për të gjetur vëllimin e konit të drejtë rrethor, përdorim formulën:\n$V = \\frac{1}{3}"
     },
     {
       "questionNumber": 14,
@@ -317,7 +320,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Për të gjetur syprinën e cilindrit, së pari duhet të gjejmë rrezen e bazës.\n\n1.  Gjejmë rrezen e"
     },
     {
       "questionNumber": 15,
@@ -339,7 +343,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Le të jetë $a$ tehu origjinal i bazës dhe $h$ lartësia origjinale e prizmit.\nVëllimi origjinal"
     },
     {
       "questionNumber": 16,
@@ -361,7 +366,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 1
+      "dokLevel": 1,
+      "aiSolution": "Pika e dhënë është $A(-2,-2)$.\nKoordinata $x$ e pikës është $-2$, që do të thotë $x < 0$."
     },
     {
       "questionNumber": 17,
@@ -383,7 +389,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Përdorim formën pikë-koeficient të ekuacionit të drejtëzës:\n$y - y_1 = k(x - x_1)$\n\nZëvendësojmë pikën $A(x_1, y_1) = (1,4)$ dhe koeficientin e drejtimit $k = -2$:\n$y - 4 = -2(x - 1)$\n\nThjeshtojmë ekuacionin:\n$y - 4 = -2x + 2$\n$y = -2x + 2 + 4$\n$y = -2x + 6$\n\nEkuacioni i drejtëzës që kalon nëpër pikën $A(1,4)$ dhe ka koeficient të drejtimit $k = -2$ është $y = -2x + 6$.\n\nPërgjigja përfundimtare: $\\boxed{y = -2x + 6}$"
     },
     {
       "questionNumber": 18,
@@ -405,7 +412,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Për të gjetur vlerën e $k$, duhet të përdorim kushtin e normalitetit (pingultësisë) së dy drejtë"
     },
     {
       "questionNumber": 19,
@@ -427,7 +435,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 1
+      "dokLevel": 1,
+      "aiSolution": "Një varg numrash realë është progresion aritmetik nëse diferenca ndërmjet çdo dy kufizave të njëpasnjëshme është konstante."
     },
     {
       "questionNumber": 20,
@@ -449,7 +458,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Shuma e $n$ antarëve të parë të progresionit gjeometrik jepet me formulën:\n$S_n = a_1 \\frac{1-r"
     },
     {
       "questionNumber": 21,
@@ -466,7 +476,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Zbërthejmë polinomin duke nxjerrë faktorin e përbashkët më të madh (FPM) nga të gjithë termat.\n\n1"
     },
     {
       "questionNumber": 22,
@@ -483,7 +494,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Për drejtëza paralele, koeficientët këndorë duhet të jenë të barabartë.\nKoeficienti këndor i $"
     },
     {
       "questionNumber": 23,
@@ -500,7 +512,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Për të zgjidhur inekuacionin $\\frac{1}{3x+2} > \\frac{1}{2x-3}$:\nSë pari,"
     },
     {
       "questionNumber": 24,
@@ -517,7 +530,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "**Zgjidhje:**\n\n**Pjesa A:**\nMesatarja aritmetike e dy numrave $a$ dhe $b$ përkufizohet si shuma e tyre pjestuar me dy.\nPra, mesatarja aritmetike është $\\frac{a+b}{2}$.\n\n**Pjesa B:**\nSipas kushtit, mesatarja aritmetike e numrave $a$ dhe $b$ është për dy më e madhe nga prodhimi i tyre. Kjo shprehet me ekuacionin:\n$\\frac{a+b}{2} = ab + 2$\n\nNa është dhënë $a=4$. Zëvendësojmë $a=4$ në ekuacion:\n$\\frac{4+b}{2} = 4b + 2$\n\nShumëzojmë të dy anët e ekuacionit me 2 për të hequr thyesën:\n$4+b = 2(4b+2)$\n$4+b = 8b+4$\n\nZhvendosim termat me $b$ në njërën anë dhe termat konstantë në anën tjetër. Zbresim $b$ nga të dy anët:\n$4 = 8b - b + 4$\n$4 = 7b + 4$\n\nZbresim 4 nga të dy anët:\n$4 - 4 = 7b$\n$0 = 7b$\n\nPjesëtojmë me 7 për të gjetur $b$:\n$b = \\frac{0}{7}$\n$b = 0$\n\n**Përgjigje përfundimtare:**\nA. $\\frac{a+b}{2}$\nB. $0$"
     },
     {
       "questionNumber": 25,
@@ -534,7 +548,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "A. Le të jetë $n$ numri i brinjëve të shumëkëndëshit. Numri i diagonaleve $D$ jepet nga formula $"
     },
     {
       "questionNumber": 26,
@@ -551,7 +566,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Kontrollojmë nëse trekëndëshi është i drejtë duke përdorur teoremën e Pitagorës:\n$8^2 + 15^2"
     },
     {
       "questionNumber": 27,
@@ -568,7 +584,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Le të jetë $a$ gjatësia e brinjës së kubit.\n\n**A. Vëllimi i kubit**\nSyprina e kubit"
     },
     {
       "questionNumber": 28,
@@ -585,7 +602,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Rrezja e dhënë është $r = 3\\text{ cm}$.\n\n**A. Syprina e sferës:**\nFormula për syprinën e sfer"
     },
     {
       "questionNumber": 29,
@@ -602,7 +620,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "**A.** Barazimi i drejtëzës në formë segmentare është $\\frac{x}{a} + \\frac{y}{b} = 1$."
     },
     {
       "questionNumber": 30,
@@ -619,7 +638,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "A. Le të jetë $x$ numri që shtohet. Anëtarët e progresionit aritmetik janë $20+x$, $50+x$ dhe $"
     },
     {
       "questionNumber": 31,
@@ -636,7 +656,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Fillimisht, thjeshtojmë shprehjen brenda kllapave të mëdha.\nPjesa e pjestimit:\n$\\frac{a^3"
     },
     {
       "questionNumber": 32,
@@ -653,7 +674,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Zgjidhje:\nShumëfishi më i vogël i përbashkët (SHVP) i emëruesve 7 dhe 2 është"
     },
     {
       "questionNumber": 33,
@@ -670,7 +692,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Le të shënojmë numrin dyshifror si $10a+b$, ku $a$ është shifra e dhjetësheve dhe $b$ është shifra"
     },
     {
       "questionNumber": 34,
@@ -687,7 +710,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "A. Barazimi është linear nëse koeficienti para $x^2$ është zero.\n$k-2 = 0 \\Rightarrow k=2$.\n\nB"
     },
     {
       "questionNumber": 35,
@@ -704,7 +728,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Hapi 1: Gjejmë rrezen e rrethit.\nSyprina e rrethit jepet me formulën $S_r = \\pi r^2"
     },
     {
       "questionNumber": 36,
@@ -721,7 +746,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Llogarisim syprinën e bazës ($B$):\n$B = a^2 = (5\\text{ dm})^2 = 25\\text{ dm}^"
     },
     {
       "questionNumber": 37,
@@ -738,7 +764,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "A. Skica: Cilindri i fituar ka lartësi $H$ të barabartë me brinjën më të gjatë të drejtkë"
     },
     {
       "questionNumber": 38,
@@ -755,7 +782,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Le të shënojmë koordinatat e pikës $N$ me $(x,y)$. Meqenëse pika $N$ shtrihet në drejtëzën $"
     },
     {
       "questionNumber": 39,
@@ -772,7 +800,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Për të gjetur barazimin e vijës mesatare nga kulmi $A$, fillimisht gjejmë pikën e mesit $M$ të br"
     },
     {
       "questionNumber": 40,
@@ -789,7 +818,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Le të jetë progresioni aritmetik $a_n = a_1 + (n-1)d$.\nNga kushtet e dhëna kemi:\n1. $"
     }
   ]
 }

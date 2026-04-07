@@ -421,7 +421,7 @@
         "gym10-c1-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "**A.**\nPër të zgjidhur inekuacionin $|a-2| < 3$, përdorim vetinë e vlerës absolute: $|x| < c",
       "successRatePercent": null
     },
     {
@@ -442,7 +442,7 @@
         "gym10-c2-2"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Fusha e definimit të një thyesë algjebrike përcaktohet nga kushti që emëruesi të jetë i ndryshëm nga zero.\nPër thyesën $\\frac{2x+1}{(x-1)(x+3)}$, emëruesi është $(x-1)(x+3)$.\nPrandaj, duhet të kemi $(x-1)(x+3) \\neq 0$.\nKjo do të thotë $x-1 \\neq 0$ dhe $x+3 \\neq 0$.\nNga këtu marrim $x \\neq 1$ dhe $x \\neq -3$.\nFusha e definimit është bashkësia e të gjithë numrave realë, përveç $-3$ dhe $1$.\n**Përgjigja: $\\mathbb{R} \\setminus \\{-3,1\\}$**\n\nБ. Një funksion",
       "successRatePercent": null
     },
     {
@@ -463,7 +463,7 @@
         "gym11-c3-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A.\nFillimisht, zgjidhim sistemin e barazimeve për të gjetur $x_1$ dhe $x_2$:\n$x_1+x_",
       "successRatePercent": null
     },
     {
@@ -485,7 +485,7 @@
         "gym11-c6-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "**А.**\nNë një gjashtëkëndësh të rregullt $ABCDEF$ me qendër $S$, vektori $\\overrightarrow{AS}$ është i bar",
       "successRatePercent": null
     },
     {
@@ -507,7 +507,7 @@
         "gym12-c2-4"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "**A.** Trupi i fituar nga rrotullimi i trapezit drejtkëndor rreth brinjës më të vogël (lartësisë) është një kon",
       "successRatePercent": null
     },
     {

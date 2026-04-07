@@ -356,7 +356,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Прво ги одредуваме елементите на множествата $A$ и $B$.\n$A=\\{x \\mid x \\in \\mathbb{N"
     },
     {
       "questionNumber": 17,
@@ -373,7 +374,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "Прво, ги факторизираме дадените полиноми:\n$P(x)=x^3-x^2=x^2(x-1)$\n$Q("
     },
     {
       "questionNumber": 18,
@@ -390,7 +392,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "А. Равенката од облик $Ax=B$ има бесконечно многу решенија ако $A=0$ и $B=0$.\nПрво, го"
     },
     {
       "questionNumber": 19,
@@ -407,7 +410,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Карактеристичниот триаголник на правилен многуаголник е формиран од два радиуси и една страна. Ако овој триаголник"
     },
     {
       "questionNumber": 20,
@@ -424,7 +428,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Нека $r$ е радиусот на основата, $h$ висината, а $l$ генератрисата на конусот.\nПлоштината на основа"
     },
     {
       "questionNumber": 21,
@@ -441,7 +446,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Нека $N$ е вкупниот број на средношколци, $N=400$.\nНека $S_J$ е множеството на средно"
     },
     {
       "questionNumber": 22,
@@ -458,7 +464,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Прво, ќе ја пресметаме вредноста на изразот $A$:\nЗа $a=-3$:\n$A = -2a - |5"
     },
     {
       "questionNumber": 23,
@@ -475,7 +482,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Прво, да го упростиме изразот во заградата:\n$$ \\frac{1-2x}{3+6x} + 2x - 1"
     },
     {
       "questionNumber": 24,
@@ -492,7 +500,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Прво, префрлете го бројот $1$ на левата страна на неравенката:\n$\\frac{3x-5}{x+1} - 1 \\"
     },
     {
       "questionNumber": 25,
@@ -509,7 +518,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Од дадената равенка $x^2-x+m-1=0$, ги одредуваме коефициентите: $a=1$, $b=-1"
     },
     {
       "questionNumber": 26,
@@ -526,7 +536,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Прво, ги користиме дадените услови за да формираме систем равенки за коефициентите $a$, $b$ и $c$.\n\n1."
     },
     {
       "questionNumber": 27,
@@ -543,7 +554,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Нека страните на триаголникот се $a=50$, $b=58$ и $c=72$.\n\nПрво, ќе го пре"
     },
     {
       "questionNumber": 28,
@@ -560,7 +572,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Пресметка на плоштината на основата $B$:\nОсновата е квадрат со страна $a=8$.\n$B = a^2 = 8^2"
     },
     {
       "questionNumber": 29,
@@ -579,7 +592,8 @@
       ],
       "hasImage": true,
       "imageDescription": "Права призма со основа рамнокрак трапез, во која е впишан цилиндар.",
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "За да го одредиме односот на волумените, прво ќе ги пресметаме волуменот на призмата и волуменот на цилинда"
     },
     {
       "questionNumber": 30,
@@ -596,7 +610,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "За да го упростиме изразот, прво ќе ги сведеме дропките на заеднички именител:\n$$ \\frac{\\sin^2\\"
     }
   ]
 }

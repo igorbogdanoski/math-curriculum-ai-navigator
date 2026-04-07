@@ -424,7 +424,7 @@
         "gym10-c1-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Për të gjetur prerjen e bashkësive $A$ dhe $B$, fillimisht shkruajmë elementet e bashkësisë $B",
       "successRatePercent": null
     },
     {
@@ -445,7 +445,7 @@
         "gym10-c3-3"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Për barazimin $2x - ax = 4 - a^2$:\n\nA. Për të gjetur vlerën e $a$ për të cilën",
       "successRatePercent": null
     },
     {
@@ -466,7 +466,7 @@
         "gym10-c3-2"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Për drejtëzat paralele, koeficientët këndorë duhet të jenë të barabartë.\nKoeficienti këndor i $",
       "successRatePercent": null
     },
     {
@@ -488,7 +488,7 @@
         "gym11-c7-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "**A.**\nVëllimi i cilindrit jepet nga formula $V_c = \\pi r^2 h$. Vëllimi i konit jepet nga formula",
       "successRatePercent": null
     },
     {
@@ -509,7 +509,7 @@
         "gym10-c4-3"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "А. Këndi i dhënë është $\\alpha = 75^\\circ$.\nKëndi komplementar i $\\alpha$ është $\\alpha_k = 90^\\circ - \\alpha$.\n$\\alpha_k = 90^\\",
       "successRatePercent": null
     },
     {
@@ -530,7 +530,7 @@
         "gym10-c1-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Le të shënojmë me $N_A$, $N_B$ dhe $N_C$ numrin e nxënësve që kanë marrë notën 5 në",
       "successRatePercent": null
     },
     {
@@ -551,7 +551,7 @@
         "gym11-c2-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Për të përcaktuar vlerën e $\\text{Im}\\left(\\frac{z_1 \\cdot z_2}{\\overline{z_2}}\\right)$, fillimisht g",
       "successRatePercent": null
     },
     {
@@ -572,7 +572,7 @@
         "gym10-c2-2"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "A. Zbërthejmë polinomet:\nPër $A(x)$:\n$A(x) = (4x^2 - 12x + 9",
       "successRatePercent": null
     },
     {
@@ -593,7 +593,7 @@
         "gym10-c3-3"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Zgjidhje:\nLe të jetë $x$ numri i imagjinuar nga Hana.\n\n1.  Numri i zvogëluar për një të",
       "successRatePercent": null
     },
     {
@@ -614,7 +614,7 @@
         "gym11-c3-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Nga barazimi $ax^2 - 10x + 24 = 0$, koeficientët janë $A=a$, $B=-10$, $C",
       "successRatePercent": null
     },
     {
@@ -635,7 +635,7 @@
         "gym11-c4-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Për të zgjidhur jobarazimin, fillimisht eleminojmë emëruesit duke shumëzuar të gjithë jobarazimin me 1",
       "successRatePercent": null
     },
     {
@@ -657,7 +657,7 @@
         "gym10-c4-3"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Le të jenë brinjët e trekëndëshit $a=2k$, $b=3k$, $c=4k$.\n\n1.  **Llog",
       "successRatePercent": null
     },
     {
@@ -679,7 +679,7 @@
         "gym11-c7-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Për topin e parë, vëllimi është $V_1 = 36\\pi\\text{ dm}^3$.\nDuke përdorur formulën e vë",
       "successRatePercent": null
     },
     {
@@ -701,7 +701,7 @@
         "gym11-c7-1"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "Le të shënojmë me $a$ gjatësinë e brinjës së bazës katrore, me $H$ lartësinë e pir",
       "successRatePercent": null
     },
     {
@@ -722,7 +722,7 @@
         "gym12-c2-3"
       ],
       "hints": [],
-      "aiSolution": null,
+      "aiSolution": "$\\frac{\\sin\\alpha - 2\\sin^3\\alpha}{2\\cos^3\\alpha - \\cos\\alpha} = \\frac{\\sin\\alpha(1 -",
       "successRatePercent": null
     }
   ]

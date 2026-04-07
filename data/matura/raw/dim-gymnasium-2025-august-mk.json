@@ -380,7 +380,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Дадени се множествата $A=\\{2,3,4\\}$ и $B=\\{4,6,8,9\\}$. Треба да ги најдеме сите"
     },
     {
       "questionNumber": 17,
@@ -398,7 +399,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "**А.** Равенката $(k-1)x = k^2 - 1$ има бесконечно многу решенија ако коефициентот пред $x$ е"
     },
     {
       "questionNumber": 18,
@@ -416,7 +418,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Полиномот $P(x,y) = 2x^2 + 3xy + y^2 - 2x - y$ ќе го раз"
     },
     {
       "questionNumber": 19,
@@ -435,7 +438,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 2
+      "dokLevel": 2,
+      "aiSolution": "А. Плоштината на обвивката $M$ на правилна четириаголна пирамида се пресметува со формулата $M = 2ah_a$,"
     },
     {
       "questionNumber": 20,
@@ -454,7 +458,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "А. Збирот на аглите во триаголник е $180^{\\circ}$. Ако еден агол е $36^{\\circ}$, збирот на други"
     },
     {
       "questionNumber": 21,
@@ -472,7 +477,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Дадени се $\\tau(p)=\\top$ и $\\tau(q)=\\bot$.\n\n1.  Прво, ги одредуваме вредностите на $\\neg"
     },
     {
       "questionNumber": 22,
@@ -490,7 +496,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Пресметуваме $z^2$:\n$z^2 = (1 - i)^2 = 1^2 - 2(1)(i) + i^2 ="
     },
     {
       "questionNumber": 23,
@@ -508,7 +515,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Решаваме ја првата неравенка:\n$4x - 5 \\geq 5$\n$4x \\geq 5 + 5$\n$4x \\"
     },
     {
       "questionNumber": 24,
@@ -526,7 +534,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "А. За да биде изразот реален број, сите именители мора да бидат различни од нула.\n$x^2-4x \\neq 0 \\implies"
     },
     {
       "questionNumber": 25,
@@ -544,7 +553,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Нека двоцифрениот број е $10d+e$, каде $d$ е цифрата на десетките, а $e$ е цифрата на еди"
     },
     {
       "questionNumber": 26,
@@ -562,7 +572,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "За да постојат реални корени, дискриминантата мора да е ненегативна:\n$\\Delta = (-(p+1))^2 - 4("
     },
     {
       "questionNumber": 27,
@@ -581,7 +592,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Нека $a$ и $b$ се катетите, а $c$ е хипотенузата на правоаголниот триаголник.\nДадено е"
     },
     {
       "questionNumber": 28,
@@ -600,7 +612,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Дадено е: $H=4\\text{ cm}$.\nАголот помеѓу дијагоналата на оскиниот пресек и основата е $30"
     },
     {
       "questionNumber": 29,
@@ -619,7 +632,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Нека трапезот има основи $a=20\\text{ cm}$ и $b=11\\text{ cm}$, и краци $c=17\\text"
     },
     {
       "questionNumber": 30,
@@ -637,7 +651,8 @@
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
-      "dokLevel": 3
+      "dokLevel": 3,
+      "aiSolution": "Прво, ќе го најдеме $\\cos\\alpha$ користејќи го основниот тригонометриски идентитет $\\sin^2"
     }
   ]
 }

@@ -560,6 +560,125 @@ IMAGE_REGISTRY = [
         },
     },
 
+    # ── Јуни 2021 ──────────────────────────────────────────────────────────────
+    {
+        "id":   "q09-june-2021",
+        "exam": "Јуни 2021 Q9 — Кружница, впишан и централен агол",
+        "file": "public/matura/images/2021/june/q09-fig1.png",
+        "type": "geometry",
+        "params": {
+            # Circle center O=(3.5,3.5), r=3.
+            # α = inscribed angle at point P (top, ~100°) subtending chord C1-C2.
+            # β = central angle at O subtending the same chord C1-C2.
+            # Chord endpoints computed from angles:
+            #   C1 at 215°: (3.5+3cos215°, 3.5+3sin215°) = (1.04, 1.78)
+            #   C2 at 330°: (3.5+3cos330°, 3.5+3sin330°) = (6.10, 2.00)
+            # Inscribed angle vertex P at 105°: (3.5+3cos105°, 3.5+3sin105°) = (2.72, 6.40)
+            "xlim": (-0.3, 7.3),
+            "ylim": (-0.3, 7.5),
+            "axes": False,
+            "figsize": (5.0, 5.2),
+            "shapes": [
+                # Circle
+                {"type": "circle", "cx": 3.5, "cy": 3.5, "r": 3.0,
+                 "color": "#374151", "lw": 1.8},
+                # Center O
+                {"type": "point", "x": 3.5, "y": 3.5,
+                 "color": "#374151", "label": "O", "offset": [0.22, -0.05]},
+                # Chord endpoint C1 at 215°
+                # C1 = (3.5 + 3*cos(215°), 3.5 + 3*sin(215°))
+                # cos(215°)=-0.8192, sin(215°)=-0.5736 → (1.04, 1.78)
+                {"type": "point", "x": 1.04, "y": 1.78, "color": "#374151", "label": ""},
+                # Chord endpoint C2 at 330°
+                # cos(330°)=0.866, sin(330°)=-0.5 → (6.10, 2.00)
+                {"type": "point", "x": 6.10, "y": 2.00, "color": "#374151", "label": ""},
+                # Inscribed angle vertex P at 105°
+                # cos(105°)=-0.2588, sin(105°)=0.9659 → (2.72, 6.40)
+                {"type": "point", "x": 2.72, "y": 6.40, "color": "#374151", "label": ""},
+                # Lines for inscribed angle α: P→C1, P→C2
+                {"type": "line", "pts": [[2.72, 6.40], [1.04, 1.78]],
+                 "color": "#374151", "lw": 1.5},
+                {"type": "line", "pts": [[2.72, 6.40], [6.10, 2.00]],
+                 "color": "#374151", "lw": 1.5},
+                # Lines for central angle β: O→C1, O→C2
+                {"type": "line", "pts": [[3.5, 3.5], [1.04, 1.78]],
+                 "color": "#374151", "lw": 1.5},
+                {"type": "line", "pts": [[3.5, 3.5], [6.10, 2.00]],
+                 "color": "#374151", "lw": 1.5},
+                # Label α near vertex P (slightly inside the angle)
+                {"type": "text", "x": 2.90, "y": 5.85, "text": "α",
+                 "fontsize": 13, "color": "#1d4ed8", "ha": "center", "va": "center"},
+                # Label β below O (inside the central angle)
+                {"type": "text", "x": 3.50, "y": 2.65, "text": "β",
+                 "fontsize": 13, "color": "#1d4ed8", "ha": "center", "va": "center"},
+            ],
+        },
+    },
+
+    # ── Јуни 2022 ──────────────────────────────────────────────────────────────
+    {
+        "id":   "q35-june-2022",
+        "exam": "Јуни 2022 Q35 — Триаголник со впишан паралелограм DBEF",
+        "file": "public/matura/images/2022/june/q35-fig1.png",
+        "type": "geometry",
+        "params": {
+            # Triangle ABC: C at top, A at bottom-left, B at bottom-right.
+            # Given: AB=18, DB=16, so AD=2.
+            # Parallelogram DBEF: D on AB, B vertex, E on BC, F on CA.
+            # Height of parallelogram h=12 (⊥ from E to AB), drawn from E down to D'.
+            #
+            # Coordinates (scaled to fit nicely):
+            #   A=(0,0), B=(18,0), C=(7,14)  — scalene triangle as in the exam
+            # Scale factor 0.6: A=(0,0), B=(10.8,0), C=(4.2,8.4)
+            # AD=2*0.6=1.2  → D=(1.2,0)
+            # DB=16*0.6=9.6 → D=(1.2,0), B=(10.8,0) ✓ (9.6 apart)
+            # h=12*0.6=7.2 → but parallelogram height = 7.2 is too tall; use scale 0.5:
+            # Scale 0.5: A=(0,0), B=(9,0), C=(3.5,7), D=(1,0), h=6
+            # E on BC: param t along BC from B. BE/BC = DB/AB = 16/18 = 8/9
+            # BC vector = C-B = (3.5-9, 7-0) = (-5.5, 7)
+            # E = B + (DB/AB)*(C-B) = (9,0) + (8/9)*(-5.5,7) = (9-4.889, 0+6.222) = (4.11, 6.22)
+            # F = A + (DB/AB)*(C-A) = (0,0) + (8/9)*(3.5,7) = (3.11, 6.22)
+            # Height foot D' on AB below E: D'=(4.11, 0)
+            "xlim": (-1.0, 11.0),
+            "ylim": (-1.2, 8.8),
+            "axes": False,
+            "figsize": (6.0, 5.5),
+            "shapes": [
+                # Triangle ABC (outline only — no fill so parallelogram fill shows)
+                {"type": "polygon", "pts": [[0, 0], [9, 0], [3.5, 7]],
+                 "color": "#374151", "fill": "none", "alpha": 0.0, "lw": 2.0},
+                # Parallelogram DBEF shaded: D=(1,0), B=(9,0), E=(4.11,6.22), F=(3.11,6.22)
+                # Order: F→D→B→E (as in figure: F top-left, D bottom-left, B bottom-right, E top-right)
+                {"type": "polygon",
+                 "pts": [[3.11, 6.22], [1.0, 0], [9.0, 0], [4.11, 6.22]],
+                 "color": "#374151", "fill": "#d1d5db", "alpha": 0.8, "lw": 1.5},
+                # Height line h from E=(4.11,6.22) to foot (4.11,0) — dashed
+                {"type": "line", "pts": [[4.11, 6.22], [4.11, 0.0]],
+                 "color": "#374151", "lw": 1.3, "linestyle": "--"},
+                # Right angle mark at foot of height (4.11, 0)
+                {"type": "text", "x": 4.40, "y": 0.30, "text": "·",
+                 "fontsize": 18, "color": "#374151"},
+                # h label
+                {"type": "text", "x": 4.45, "y": 3.10, "text": "h",
+                 "fontsize": 12, "color": "#374151", "ha": "left", "va": "center"},
+                # Vertex labels
+                {"type": "point", "x": 3.5, "y": 7.0,
+                 "color": "#374151", "label": "C", "offset": [-0.05, 0.28]},
+                {"type": "point", "x": 0.0, "y": 0.0,
+                 "color": "#374151", "label": "A", "offset": [-0.40, -0.30]},
+                {"type": "point", "x": 9.0, "y": 0.0,
+                 "color": "#374151", "label": "B", "offset": [0.18, -0.30]},
+                # Parallelogram vertex labels
+                {"type": "point", "x": 1.0,  "y": 0.0,
+                 "color": "#374151", "label": "D", "offset": [0.0, -0.38]},
+                {"type": "point", "x": 4.11, "y": 6.22,
+                 "color": "#374151", "label": "E", "offset": [0.22, 0.10]},
+                {"type": "point", "x": 3.11, "y": 6.22,
+                 "color": "#374151", "label": "F", "offset": [-0.38, 0.10]},
+            ],
+        },
+    },
+
     # ── Add future entries below ────────────────────────────────────────────────
     # Example geometry entry (commented out):
     # {
