@@ -575,7 +575,7 @@ export function MaturaLibraryView() {
           <div className="flex flex-wrap items-center gap-3">
             <div>
               <h1 className="text-lg font-bold text-gray-900">📚 Библиотека — Државна Матура</h1>
-              <p className="text-xs text-gray-500">Гимназиско образование · {exams.length > 0 ? `${exams.length} испити во базата` : 'Се вчитува…'}</p>
+              <p className="text-xs text-gray-500">Матура база (сите насоки) · {exams.length > 0 ? `${exams.length} испити во базата` : 'Се вчитува…'}</p>
             </div>
 
             {/* Practice toggle */}

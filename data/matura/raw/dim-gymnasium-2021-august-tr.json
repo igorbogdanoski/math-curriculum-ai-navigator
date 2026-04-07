@@ -18,11 +18,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$4 - 3 \\cdot (-2) - 10 : 2 \\cdot 5$ ifadesinin değeri aşağıdakilerden hangisidir:",
-      "choices": { "A": "-15", "B": "-3", "C": "9", "D": "27" },
-      "correctAnswer": "A",
-      "topic": "Бројни изрази", "topicArea": "broevi", "dokLevel": 1,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "-15",
+        "Б": "-3",
+        "В": "9",
+        "Г": "27"
+      },
+      "correctAnswer": "А",
+      "topic": "Бројни изрази",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 2,
@@ -30,11 +42,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$2^{12} + 2^{10}$ sayısı hangisi ile bölünemez:",
-      "choices": { "A": "2", "B": "5", "C": "10", "D": "6" },
-      "correctAnswer": "D",
-      "topic": "Деливост", "topicArea": "broevi", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "2",
+        "Б": "5",
+        "В": "10",
+        "Г": "6"
+      },
+      "correctAnswer": "Г",
+      "topic": "Деливост",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 3,
@@ -42,11 +66,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$M = \\{x \\mid x \\in \\mathbb{R}, |x| \\le 3\\}$ ise, aşağıdakilerden hangisi doğrudur:",
-      "choices": { "A": "$M = \\emptyset$", "B": "$M = (-\\infty, 3]$", "C": "$M = [3, +\\infty)$", "D": "$[-3, 3]$" },
-      "correctAnswer": "D",
-      "topic": "Множества и интервали", "topicArea": "broevi", "dokLevel": 1,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$M = \\emptyset$",
+        "Б": "$M = (-\\infty, 3]$",
+        "В": "$M = [3, +\\infty)$",
+        "Г": "$[-3, 3]$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Множества и интервали",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 4,
@@ -54,11 +90,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$\\frac{5x + 5}{x + 1} = 5$ denkleminin çözümü aşağıdakilerden hangisi olamaz:",
-      "choices": { "A": "-5", "B": "1", "C": "-2", "D": "-1" },
-      "correctAnswer": "D",
-      "topic": "Рационални равенки", "topicArea": "algebra", "dokLevel": 1,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "-5",
+        "Б": "1",
+        "В": "-2",
+        "Г": "-1"
+      },
+      "correctAnswer": "Г",
+      "topic": "Рационални равенки",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 5,
@@ -66,11 +114,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$x$ sayısına $y$ sayısını eşleyen ve $3x + 5y = 6$ denklemi geçerli olan fonksiyon verilmiştir. Bu fonksiyonun sıfırı:",
-      "choices": { "A": "doğal sayıdır.", "B": "negatif tam sayıdır.", "C": "irasyonel sayıdır.", "D": "sıfır sayısıdır." },
-      "correctAnswer": "A",
-      "topic": "Линеарна функција", "topicArea": "analiza", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "doğal sayıdır.",
+        "Б": "negatif tam sayıdır.",
+        "В": "irasyonel sayıdır.",
+        "Г": "sıfır sayısıdır."
+      },
+      "correctAnswer": "А",
+      "topic": "Линеарна функција",
+      "topicArea": "analiza",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 6,
@@ -78,11 +138,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$-x^2 + 10x - 25$ ikinci derece üçterimlisi aşağıdakilerden hangisine eşittir:",
-      "choices": { "A": "$(x-5)^2$", "B": "$-(x+5)^2$", "C": "$-(x-5)^2$", "D": "$(5-x)^2$" },
-      "correctAnswer": "C",
-      "topic": "Полиноми", "topicArea": "algebra", "dokLevel": 1,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$(x-5)^2$",
+        "Б": "$-(x+5)^2$",
+        "В": "$-(x-5)^2$",
+        "Г": "$(5-x)^2$"
+      },
+      "correctAnswer": "В",
+      "topic": "Полиноми",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 7,
@@ -90,11 +162,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$x^3 + x^2y - x^2z - xyz$ polinomunun asal çarpanlarının çarpımı biçiminde yazılışı aşağıdakilerden hangisidir:",
-      "choices": { "A": "$x(x-y)(x-z)$", "B": "$x(x-y)(x+z)$", "C": "$x(x+y)(y-z)$", "D": "$x(x+y)(x-z)$" },
-      "correctAnswer": "D",
-      "topic": "Полиноми", "topicArea": "algebra", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$x(x-y)(x-z)$",
+        "Б": "$x(x-y)(x+z)$",
+        "В": "$x(x+y)(y-z)$",
+        "Г": "$x(x+y)(x-z)$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Полиноми",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 8,
@@ -102,11 +186,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$-\\frac{1}{2} < 3x + 4 < 5$ eşitsizliğin çözümü verilen aralıklardan hangisidir:",
-      "choices": { "A": "$(-\\frac{1}{2}, 5)$", "B": "$(\\frac{7}{6}, 3)$", "C": "$(-\\frac{3}{2}, \\frac{1}{3})$", "D": "$(-\\frac{3}{2}, 3)$" },
-      "correctAnswer": "C",
-      "topic": "Линеарни неравенки", "topicArea": "algebra", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$(-\\frac{1}{2}, 5)$",
+        "Б": "$(\\frac{7}{6}, 3)$",
+        "В": "$(-\\frac{3}{2}, \\frac{1}{3})$",
+        "Г": "$(-\\frac{3}{2}, 3)$"
+      },
+      "correctAnswer": "В",
+      "topic": "Линеарни неравенки",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 9,
@@ -114,11 +210,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "Bütünleyeninin beş katı olan açı hangisidir:",
-      "choices": { "A": "$36^\\circ$", "B": "$30^\\circ$", "C": "$150^\\circ$", "D": "$180^\\circ$" },
-      "correctAnswer": "C",
-      "topic": "Агли", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$36^\\circ$",
+        "Б": "$30^\\circ$",
+        "В": "$150^\\circ$",
+        "Г": "$180^\\circ$"
+      },
+      "correctAnswer": "В",
+      "topic": "Агли",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 10,
@@ -126,11 +234,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "Kenarları $a$ ve $b$ olan bir dikdörtgende kenarlarının oranı $a:b=3:2$ ve alanı $24\\text{ cm}^2$ dir. $a+b$ kaçtır?",
-      "choices": { "A": "$40\\text{ cm}$", "B": "$30\\text{ cm}$", "C": "$20\\text{ cm}$", "D": "$10\\text{ cm}$" },
-      "correctAnswer": "D",
-      "topic": "Правоаголник", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$40\\text{ cm}$",
+        "Б": "$30\\text{ cm}$",
+        "В": "$20\\text{ cm}$",
+        "Г": "$10\\text{ cm}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Правоаголник",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 11,
@@ -138,11 +258,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "Bir eşkenar üçgenin alanı $4\\sqrt{3}$ tür. Üçgen etrafında çizilen çevrel çemberin yarıçapı ne kadardır?",
-      "choices": { "A": "$\\frac{4\\sqrt{3}}{3}$", "B": "$\\frac{8\\sqrt{3}}{3}$", "C": "$6\\sqrt{3}$", "D": "$\\frac{\\sqrt{3}}{4}$" },
-      "correctAnswer": "A",
-      "topic": "Триаголник и кружница", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$\\frac{4\\sqrt{3}}{3}$",
+        "Б": "$\\frac{8\\sqrt{3}}{3}$",
+        "В": "$6\\sqrt{3}$",
+        "Г": "$\\frac{\\sqrt{3}}{4}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Триаголник и кружница",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 12,
@@ -150,11 +282,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "Ayrıtı $a$ olan küpte içten teğet bir küre yerleştirilmiştir. Küpün ve kürenin hacımlarının oranı aşağıdakilerden hangisidir:",
-      "choices": { "A": "$\\frac{4\\pi}{3}$", "B": "$\\frac{3\\pi}{4}$", "C": "$\\frac{6}{\\pi}$", "D": "$\\frac{\\pi}{6}$" },
-      "correctAnswer": "C",
-      "topic": "Коцка и топка", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$\\frac{4\\pi}{3}$",
+        "Б": "$\\frac{3\\pi}{4}$",
+        "В": "$\\frac{6}{\\pi}$",
+        "Г": "$\\frac{\\pi}{6}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Коцка и топка",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 13,
@@ -162,11 +306,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "Bir düzgün altıgen piramidin taban ayrıtı $2\\text{ cm}$, piramidin yüksekliği ise $H = 4\\sqrt{3}\\text{ cm}$ dir. Piramidin hacmi ne kadardır?",
-      "choices": { "A": "$8\\text{ cm}^3$", "B": "$12\\text{ cm}^3$", "C": "$24\\text{ cm}^3$", "D": "$36\\text{ cm}^3$" },
-      "correctAnswer": "C",
-      "topic": "Пирамида", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$8\\text{ cm}^3$",
+        "Б": "$12\\text{ cm}^3$",
+        "В": "$24\\text{ cm}^3$",
+        "Г": "$36\\text{ cm}^3$"
+      },
+      "correctAnswer": "В",
+      "topic": "Пирамида",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 14,
@@ -174,11 +330,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$MN \\left[ M(3, -1), N(-5, 2) \\right]$ doğru parçası $P$ ve $Q$ noktalarıyla üç eşit parçaya ayrıldığına göre, $P$ noktasının koordinatları aşağıdakilerden hangisidir:",
-      "choices": { "A": "$P(-\\frac{7}{3}, 1)$", "B": "$P(\\frac{1}{3}, 0)$", "C": "$P(\\frac{5}{3}, -\\frac{8}{3})$", "D": "$P(\\frac{7}{3}, -1)$" },
+      "choices": {
+        "А": "$P(-\\frac{7}{3}, 1)$",
+        "Б": "$P(\\frac{1}{3}, 0)$",
+        "В": "$P(\\frac{5}{3}, -\\frac{8}{3})$",
+        "Г": "$P(\\frac{7}{3}, -1)$"
+      },
       "correctAnswer": "X",
-      "topic": "Аналитичка геометрија", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 15,
@@ -186,11 +354,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$A(-4, 3)$ ve $B(-4, 7)$ noktaları veriliyor. $AB$ doğru parçasının orta dikmesi (simetrali) olan doğrunun denklemi aşağıdakilerden hangisidir:",
-      "choices": { "A": "$y = 5$", "B": "$y = 10$", "C": "$y = -4$", "D": "$y = -4x$" },
-      "correctAnswer": "A",
-      "topic": "Аналитичка геометрија", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$y = 5$",
+        "Б": "$y = 10$",
+        "В": "$y = -4$",
+        "Г": "$y = -4x$"
+      },
+      "correctAnswer": "А",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 16,
@@ -198,11 +378,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$x$- ekseninin pozitif yönüyle $135^\\circ$ açı oluşturan doğru aşağıdakilerden hangisidir:",
-      "choices": { "A": "$x + 2y + 1 = 0$", "B": "$x - 2y - 2 = 0$", "C": "$2x + y + 1 = 0$", "D": "$x + y + 2 = 0$" },
-      "correctAnswer": "D",
-      "topic": "Права", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$x + 2y + 1 = 0$",
+        "Б": "$x - 2y - 2 = 0$",
+        "В": "$2x + y + 1 = 0$",
+        "Г": "$x + y + 2 = 0$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Права",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 17,
@@ -210,11 +402,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "Koordinat eksenlerinden $m = \\frac{3}{4}$ ve $n = -\\frac{1}{2}$ parçalar kesen doğrunun genel şekli aşağıdakilerden hangisidir:",
-      "choices": { "A": "$4x - 6y - 3 = 0$", "B": "$4x - 6y - 1 = 0$", "C": "$3x - 8y + 1 = 0$", "D": "$3x - 8y + 3 = 0$" },
-      "correctAnswer": "A",
-      "topic": "Права", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$4x - 6y - 3 = 0$",
+        "Б": "$4x - 6y - 1 = 0$",
+        "В": "$3x - 8y + 1 = 0$",
+        "Г": "$3x - 8y + 3 = 0$"
+      },
+      "correctAnswer": "А",
+      "topic": "Права",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 18,
@@ -222,11 +426,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "Bir aritmetik dizisinde ilk terim 2, onbirinci terim ise 4 olduğuna göre, $a_{2021}$ ne kadardır:",
-      "choices": { "A": "404", "B": "406", "C": "2023", "D": "4042" },
-      "correctAnswer": "B",
-      "topic": "Аритметичка прогресија", "topicArea": "analiza", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "404",
+        "Б": "406",
+        "В": "2023",
+        "Г": "4042"
+      },
+      "correctAnswer": "Б",
+      "topic": "Аритметичка прогресија",
+      "topicArea": "analiza",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 19,
@@ -234,11 +450,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "$2, -4, 8, \\dots$ dizisinin ilk yedi teriminin toplamı aşağıdakilerden hangisidir:",
-      "choices": { "A": "-254", "B": "-127", "C": "43", "D": "86" },
-      "correctAnswer": "D",
-      "topic": "Геометриска прогресија", "topicArea": "analiza", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "-254",
+        "Б": "-127",
+        "В": "43",
+        "Г": "86"
+      },
+      "correctAnswer": "Г",
+      "topic": "Геометриска прогресија",
+      "topicArea": "analiza",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 20,
@@ -246,11 +474,23 @@
       "points": 1,
       "questionType": "mc",
       "questionText": "Bir aritmetik dizisinin ilk terimi -8 ve ilk 15 teriminin toplamı -150 dir. Dizinin ortak farkı aşağıdakilerden hangisidir:",
-      "choices": { "A": "$-18\\frac{3}{4}$", "B": "$-3\\frac{1}{8}$", "C": "$-1\\frac{1}{6}$", "D": "$-\\frac{2}{7}$" },
-      "correctAnswer": "D",
-      "topic": "Аритметичка прогресија", "topicArea": "analiza", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "choices": {
+        "А": "$-18\\frac{3}{4}$",
+        "Б": "$-3\\frac{1}{8}$",
+        "В": "$-1\\frac{1}{6}$",
+        "Г": "$-\\frac{2}{7}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Аритметичка прогресија",
+      "topicArea": "analiza",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 21,
@@ -260,9 +500,16 @@
       "questionText": "$A = \\{x \\mid x \\in \\mathbb{R}, x \\le \\sqrt{3}\\}$ kümesine ait olan kaç tane asal sayı vardır?",
       "choices": null,
       "correctAnswer": "0",
-      "topic": "Множества", "topicArea": "broevi", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Множества",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 22,
@@ -272,9 +519,16 @@
       "questionText": "$x^2 - 5x + 2a = 0$ ikinci derece denkleminin kökleri $x_1$ ve $x_2$ için $2(x_1 + x_2) = x_1x_2$ bağıntısı geçerli ise, $a$ parametresinin değeri ________________ dir.",
       "choices": null,
       "correctAnswer": "5",
-      "topic": "Квадратна равенка", "topicArea": "algebra", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Квадратна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 23,
@@ -284,9 +538,16 @@
       "questionText": "$P(x) = x^3 + x + 1$ polinomu veriliyor. $P(2021) + P(-2021)$ değerini belirtiniz.",
       "choices": null,
       "correctAnswer": "2",
-      "topic": "Полиноми", "topicArea": "algebra", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Полиноми",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 24,
@@ -296,9 +557,16 @@
       "questionText": "A. $x(x-1)-(x-2)(x+2)<0$ eşitsizliğinin çözümü _____________ kümesidir.\nB. $\\begin{cases} x - y + 4 = 0 \\\\ 3y - x = 0 \\end{cases}$ sistemin çözümü (___,___) dir.",
       "choices": null,
       "correctAnswer": "A: x \\in (4, \\infty), B: (-6, -2)",
-      "topic": "Неравенки и системи", "topicArea": "algebra", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Неравенки и системи",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 25,
@@ -308,11 +576,18 @@
       "questionText": "$a \\parallel b$ ise $\\beta - \\alpha = $ ____________ $^\\circ$ dir.",
       "choices": null,
       "correctAnswer": "42",
-      "topic": "Агли", "topicArea": "geometrija", "dokLevel": 2,
+      "topic": "Агли",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
       "hasImage": true,
-      "imageUrls": ["/matura/images/2021/august/q25-fig1.png"],
+      "imageUrls": [
+        "/matura/images/2021/august/q25-fig1.png"
+      ],
       "imageDescription": "Две паралелни прави a и b пресечени со две трансверзали кои формираат триаголник. Означени се аглите \\alpha, \\beta, 44° и 130°.",
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 26,
@@ -322,9 +597,16 @@
       "questionText": "Tabanı $16\\text{ cm}$ ve yan kenarı $10\\text{ cm}$ olan bir ikizkenar üçgen verilmiştir. Bu üçgenin alanı $P = $ ____________ $\\text{cm}^2$ dir.",
       "choices": null,
       "correctAnswer": "48",
-      "topic": "Триаголник", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Триаголник",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 27,
@@ -334,9 +616,16 @@
       "questionText": "Kenarı 10 olan eşkenar dörtgenin bir köşegeni diğerinin dört katıdır.\nA. Eşkenar dörtgenin büyük köşegeninin uzunluğunu belirtiniz.\nB. Eşkenar dörtgenin alanını belirtiniz.",
       "choices": null,
       "correctAnswer": "[Одговорот недостасува во изворниот клуч]",
-      "topic": "Ромб", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Ромб",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 28,
@@ -346,9 +635,16 @@
       "questionText": "Bir düzgün dörtgen tabanlı piramidin hacmi 48, yüksekliği ise 4 tür.\nA. Piramidin yan yüzünün yüksekliği (apotemi) _______________ dir;\nB. Piramidin yanal alanı _______________ dir.",
       "choices": null,
       "correctAnswer": "A: 5, B: 60",
-      "topic": "Пирамида", "topicArea": "geometrija", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Пирамида",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 29,
@@ -358,11 +654,18 @@
       "questionText": "Yandaki şekle göre $AB$ ve $CD$ doğrularının eksen parçaları cinsinden denklemleri:\n$AB$: _______________.\n$CD$: _______________.",
       "choices": null,
       "correctAnswer": "[Одговорот зависи од цртежот — недостасува во изворниот клуч]",
-      "topic": "Права", "topicArea": "geometrija", "dokLevel": 2,
+      "topic": "Права",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
       "hasImage": true,
-      "imageUrls": ["/matura/images/2021/august/q29-fig1.png"],
+      "imageUrls": [
+        "/matura/images/2021/august/q29-fig1.png"
+      ],
       "imageDescription": "Координатен систем со две прави AB и CD кои се сечат.",
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 30,
@@ -372,9 +675,16 @@
       "questionText": "$-5, -2, 1$ sayıları bir aritmetik dizisinin ilk üç terimidir. Bu dizinin üçüncü onluktaki indisli tüm terimlerinin toplamı _______________ dir.",
       "choices": null,
       "correctAnswer": "685",
-      "topic": "Аритметичка прогресија", "topicArea": "analiza", "dokLevel": 2,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Аритметичка прогресија",
+      "topicArea": "analiza",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 31,
@@ -384,9 +694,16 @@
       "questionText": "Bir kitabın fiyatı iki defa %10 indirilmiştir. İndirimden sonar fiyatı 324 denar olmuştur.\nKitabın indirimden önceki fiyatı ne kadarmış?",
       "choices": null,
       "correctAnswer": "x = 400",
-      "topic": "Проценти", "topicArea": "broevi", "dokLevel": 3,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Проценти",
+      "topicArea": "broevi",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 32,
@@ -396,9 +713,16 @@
       "questionText": "$x$ ve $y$ sayılarının toplamı 3, onların karelerinin toplamı ise 29 dur.\nA. $xy$ belirtilsin.\nB. $(x-y)^2$ hesaplansın.",
       "choices": null,
       "correctAnswer": "A: -10, B: (x-y)^2 = 49",
-      "topic": "Системи равенки", "topicArea": "algebra", "dokLevel": 3,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Системи равенки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 33,
@@ -408,9 +732,16 @@
       "questionText": "$x^2 + kx = k^2 + 5$ ikinci derece denklemi veriliyor.\nA. $x_1$ ve $x_2$ verilen denklemin kökleri olduğuna göre, $\\frac{4}{x_1x_2} + \\frac{1}{2} = \\frac{1}{x_1} + \\frac{1}{x_2}$ eşitliğini sağlayan $k>0$ olmak üzere $k$, parametresinin değeri belirtilsin.\nB. $k>0$ için $x_1$ ve $x_2$ belirtilsin.",
       "choices": null,
       "correctAnswer": "A: k=3, B: x_{1/2} = \\frac{-3 \\pm \\sqrt{65}}{2}",
-      "topic": "Квадратна равенка", "topicArea": "algebra", "dokLevel": 3,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Квадратна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 34,
@@ -420,9 +751,16 @@
       "questionText": "$k$, parametresinin değerini o şekilde belirtiniz ki, $\\begin{cases} x + 2y - k = 0 \\\\ 3x + 4y - 11 = 0 \\end{cases}$ sistemin çözümü $(x,y)$ için $x+y=5$ koşulu geçerli olsun.",
       "choices": null,
       "correctAnswer": "k = 1",
-      "topic": "Системи линеарни равенки", "topicArea": "algebra", "dokLevel": 3,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Системи линеарни равенки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 35,
@@ -432,9 +770,16 @@
       "questionText": "Bir paralelkenarın köşegeni, $120^\\circ$ olan geniş açısını 1:3 oranında ayırmaktadır. Paralelkenarın çevresi 24 tür.\nAlanını hesaplayınız.",
       "choices": null,
       "correctAnswer": "P = 16\\sqrt{3}",
-      "topic": "Паралелограм", "topicArea": "geometrija", "dokLevel": 3,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Паралелограм",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 36,
@@ -444,9 +789,16 @@
       "questionText": "Kenarları $a=12\\text{ cm}$, $b=35\\text{ cm}$ ve $c=37\\text{ cm}$ olan bir üçgen veriliyor.\nA. Verilen üçgenin içten teğet ve çevrel çemberinin yarıçapını belirtiniz.\nB. Verilen üçgenin çevrel çemberinin çevresi, içten teğet çemberinin çevresinden ne kadar daha büyük olduğunu belirtiniz.",
       "choices": null,
       "correctAnswer": "A: R = 18.5, r = 5, B: 27\\pi",
-      "topic": "Триаголник и кружница", "topicArea": "geometrija", "dokLevel": 3,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Триаголник и кружница",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 37,
@@ -456,45 +808,73 @@
       "questionText": "Bir düzgün prizmanın tabanı, kenarı $a$ ve köşegenleri $d_1=24\\text{ cm}$ ve $d_2=18\\text{ cm}$ olan bir eşkenar dörtgendir. Bu prizmanın yan yüzünün köşegeni $D=25\\text{ cm}$ dir.\nA. Prizmayı çiziniz ve verilen elemanlarını çizimde işaretleyiniz: tabanın kenarı $a$, tabanın köşegenleri $d_1$ ve $d_2$, yan yüzün köşegeni $D$ ve prizmanın yüksekliği $H$ ile işaretledikten sonar verilen cismin alanını hesaplayınız.\nB. Tabanı verilen prizmanın tabanına ve yüksekliği prizmanın yüksekliğine eşit olan piramidin hacmi ne kadardır.",
       "choices": null,
       "correctAnswer": "A: P = 1632, B: V = 1440",
-      "topic": "Призма и пирамида", "topicArea": "geometrija", "dokLevel": 4,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "topic": "Призма и пирамида",
+      "topicArea": "geometrija",
+      "dokLevel": 4,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 38,
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "[Текстот недостасува — пресечена порака]",
+      "questionText": "$A(2, 0)$ ve $B(12, 0)$ noktaları bir $ABC$ dik üçgeninin köşeleridir. $AB$ kenarı hipotenüs ve $C$ köşesi $y=x$ doğrusu üzerindedir.\n$C$ köşesinin koordinatlarını hesaplayınız.",
       "choices": null,
-      "correctAnswer": "[Недостасува]",
-      "topic": "Непознато", "topicArea": "geometrija", "dokLevel": 3,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "correctAnswer": "C_1(3,3) ve C_2(4,4)",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 39,
       "part": 3,
       "points": 3,
       "questionType": "open",
-      "questionText": "[Текстот недостасува — пресечена порака]",
+      "questionText": "$A(5, -6)$ ve $B(-1, -4)$ noktalarından geçen doğrunun $y$- eksenini kestiği $C$ noktasını belirttikten sonar $\\overline{AC} : \\overline{BC}$ oranını da belirtiniz.",
       "choices": null,
-      "correctAnswer": "[Недостасува]",
-      "topic": "Непознато", "topicArea": "geometrija", "dokLevel": 3,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "correctAnswer": "C(0, -13/3), \\frac{AC}{BC} = 5",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     },
     {
       "questionNumber": 40,
       "part": 3,
       "points": 4,
       "questionType": "open",
-      "questionText": "[Текстот недостасува — пресечена порака]",
+      "questionText": "Artan bir geometrik dizisinde $3a_3 = 2a_1 - a_2$ ve $a_1 < 0$ geçerlidir.\nDizinin ortak çarpanını belirtiniz.",
       "choices": null,
-      "correctAnswer": "[Недостасува]",
-      "topic": "Непознато", "topicArea": "geometrija", "dokLevel": 3,
-      "hasImage": false, "imageUrls": [], "imageDescription": null,
-      "conceptIds": [], "hints": [], "aiSolution": null, "successRatePercent": null
+      "correctAnswer": "q = \\frac{2}{3}",
+      "topic": "Геометриска прогресија",
+      "topicArea": "analiza",
+      "dokLevel": 4,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
     }
   ]
 }
