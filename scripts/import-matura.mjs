@@ -17,6 +17,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { lookupConcepts } from './matura-concept-map.mjs';
 
 // ─── CLI args ─────────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
@@ -46,11 +47,15 @@ if (dryRun) {
   console.log('\n🔍 DRY-RUN MODE — nothing will be written to Firestore.\n');
   console.log(`   Exam doc:  matura_exams/${exam.id}`);
   console.log(`   Questions: ${questions.length} docs in matura_questions/`);
+  let mapped = 0;
   questions.forEach(q => {
     const docId = `${exam.id}_q${String(q.questionNumber).padStart(2, '0')}`;
-    console.log(`     matura_questions/${docId}  (Q${q.questionNumber} part=${q.part} pts=${q.points} topicArea=${q.topicArea ?? '-'})`);
+    const autoIds = (q.conceptIds?.length > 0) ? q.conceptIds : lookupConcepts(q.topic ?? q.topicArea);
+    if (autoIds.length) mapped++;
+    console.log(`     matura_questions/${docId}  (Q${q.questionNumber} part=${q.part} pts=${q.points} topicArea=${q.topicArea ?? '-'} conceptIds=[${autoIds.join(',')}])`);
   });
-  console.log(`\n✓ Dry-run complete. Run without --dry-run to import.\n`);
+  console.log(`\n✓ Auto conceptIds: ${mapped}/${questions.length} questions mapped`);
+  console.log(`✓ Dry-run complete. Run without --dry-run to import.\n`);
   process.exit(0);
 }
 
@@ -113,7 +118,8 @@ const questionDocs = questions.map(q => {
     correctAnswer: q.correctAnswer,
     topic: q.topic ?? null,
     topicArea: q.topicArea ?? null,
-    conceptIds: q.conceptIds ?? [],
+    // A3: auto-map conceptIds from topic if not already set in the JSON
+    conceptIds: (q.conceptIds?.length > 0) ? q.conceptIds : lookupConcepts(q.topic ?? q.topicArea),
     imageUrls: q.imageUrls ?? [],
     hasImage: q.hasImage ?? false,
     imageDescription: q.imageDescription ?? null,
@@ -125,6 +131,16 @@ const questionDocs = questions.map(q => {
     createdAt: new Date().toISOString(),
   };
 });
+
+// ─── Log auto-mapped conceptIds ───────────────────────────────────────────────
+const withConcepts = questionDocs.filter(d => d.conceptIds.length > 0).length;
+const withoutConcepts = questionDocs.filter(d => d.conceptIds.length === 0).length;
+console.log(`\n✓ Auto conceptIds: ${withConcepts}/${questionDocs.length} questions mapped`);
+if (withoutConcepts > 0) {
+  const unmapped = questionDocs.filter(d => d.conceptIds.length === 0).map(d => d.topic).filter(Boolean);
+  const unique = [...new Set(unmapped)];
+  if (unique.length) console.log(`  ⚠ Unmapped topics (${unique.length}): ${unique.join(', ')}`);
+}
 
 // ─── Write to Firestore ────────────────────────────────────────────────────────
 console.log(`\n▶ Importing to Firestore...`);
