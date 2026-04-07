@@ -284,8 +284,14 @@ const GenericContentRenderer: React.FC<{ content: any; type: string }> = ({ cont
                             {sourceMeta?.gradeLevel ? ` · Одделение: ${sourceMeta.gradeLevel}` : ''}
                             {sourceMeta?.topicId ? ` · Тема: ${sourceMeta.topicId}` : ''}
                         </p>
+                        {Array.isArray(sourceMeta?.sourceUrls) && sourceMeta.sourceUrls.length > 0 && (
+                            <p className="mt-1">Batch извори: {sourceMeta.sourceUrls.length}</p>
+                        )}
                         {Array.isArray(sourceMeta?.conceptIds) && sourceMeta.conceptIds.length > 0 && (
                             <p className="mt-1">Концепти: {sourceMeta.conceptIds.join(', ')}</p>
+                        )}
+                        {sourceMeta?.extractionQuality && (
+                            <p className="mt-1 font-semibold">Quality: {sourceMeta.extractionQuality.score}% ({sourceMeta.extractionQuality.label})</p>
                         )}
                     </div>
                 )}
@@ -419,6 +425,16 @@ const getExtractionBundleStats = (m: CachedMaterial): { formulas: number; theori
         formulas: Array.isArray(bundle.formulas) ? bundle.formulas.length : 0,
         theories: Array.isArray(bundle.theories) ? bundle.theories.length : 0,
         tasks: Array.isArray(bundle.tasks) ? bundle.tasks.length : 0,
+    };
+};
+
+const getExtractionQuality = (m: CachedMaterial): { score: number; label: string } | null => {
+    const c: any = m.content ?? {};
+    const quality = c?.sourceMeta?.extractionQuality;
+    if (!quality || typeof quality.score !== 'number') return null;
+    return {
+        score: quality.score,
+        label: typeof quality.label === 'string' ? quality.label : 'unknown',
     };
 };
 
@@ -1212,6 +1228,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
                         const isSelected = selectedIds.has(m.id);
                         const extractionSource = getExtractionSource(m);
                         const extractionStats = getExtractionBundleStats(m);
+                        const extractionQuality = getExtractionQuality(m);
 
                         return (
                             <div 
@@ -1283,6 +1300,11 @@ const handleUnpublish = async (m: CachedMaterial) => {
                                             {extractionStats && (
                                                 <span className="px-1.5 py-0.5 bg-slate-50 text-slate-600 font-medium rounded-full border border-slate-200">
                                                     F:{extractionStats.formulas} · T:{extractionStats.theories} · Z:{extractionStats.tasks}
+                                                </span>
+                                            )}
+                                            {extractionQuality && (
+                                                <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 font-semibold rounded-full border border-emerald-200">
+                                                    Quality: {extractionQuality.score}% ({extractionQuality.label})
                                                 </span>
                                             )}
                                             {useSemanticSearch && typeof (m as ScoredMaterial).score === 'number' && (

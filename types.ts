@@ -591,10 +591,19 @@ export interface AIGeneratedIdeas {
   sourceMeta?: {
     sourceType: 'video' | 'image' | 'web';
     sourceUrl?: string;
+    sourceUrls?: string[];
     conceptIds?: string[];
     topicId?: string;
     gradeLevel?: number;
     secondaryTrack?: string;
+    extractionQuality?: {
+      score: number;
+      label: 'poor' | 'fair' | 'good' | 'excellent';
+      formulaCoverage: number;
+      theoryCoverage: number;
+      taskCoverage: number;
+      textSignal: number;
+    };
   };
 }
 

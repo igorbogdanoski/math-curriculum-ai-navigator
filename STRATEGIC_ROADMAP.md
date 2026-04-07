@@ -398,6 +398,9 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-07 | S18-B6 | Extraction robustness — `api/webpage-extract.ts` upgraded with PDF native text extraction (`pdf-parse`) and JS-rendered reader fallback path; returns `sourceType/extractionMode` metadata | DONE |
 | 2026-04-07 | S18-B7 | Library extraction intelligence — Content Library adds source filter (video/image/web), extraction-aware search ranking, source/bundle chips, and structured preview panels for formulas/theory/tasks | DONE |
 | 2026-04-07 | S18-B8 | Curriculum linkage depth — extractor outputs now auto-map inferred conceptIds from extracted bundle text (utility + unit tests), merged with teacher-selected concepts | DONE |
+| 2026-04-07 | S18-B9 | PDF OCR fallback — `api/webpage-extract.ts` now falls back to Gemini document OCR for scanned/low-text PDFs (`pdf-ocr-fallback` mode) when native parse is weak | DONE |
+| 2026-04-07 | S18-B10 | Multi-source batch extraction — Web Extractor supports batch URL intake (up to 8), merged source context, failed URL tracking, and persisted source metadata for generator/linkage | DONE |
+| 2026-04-07 | S18-B11 | Extraction quality scoring — bundle quality metrics (`score/label/formula/theory/task/text-signal`) computed and persisted in `sourceMeta`, surfaced in Content Library chips and preview | DONE |
 
 ---
 

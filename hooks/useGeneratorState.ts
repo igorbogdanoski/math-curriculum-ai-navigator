@@ -39,7 +39,16 @@ export interface GeneratorState {
     videoTranscript: string | null;
     imageFile: { file: File, base64: string, previewUrl: string } | null;
     webpageUrl: string;
+    webpageBatchUrls: string;
     webpageText: string | null;
+    webpageExtractMeta: {
+        sourceUrls: string[];
+        sourceTypes: Array<'webpage' | 'pdf'>;
+        extractionModes: Array<'html-static' | 'html-reader-fallback' | 'pdf-native' | 'pdf-ocr-fallback'>;
+        charCount: number;
+        truncated: boolean;
+        failedUrls?: string[];
+    } | null;
     customInstruction: string;
     useMacedonianContext: boolean;
     aiTone: 'creative' | 'formal' | 'friendly' | 'expert' | 'playful';
@@ -99,7 +108,9 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         videoTranscript: null,
         imageFile: null,
         webpageUrl: '',
+        webpageBatchUrls: '',
         webpageText: null,
+        webpageExtractMeta: null,
         customInstruction: '',
         useMacedonianContext: true,
         aiTone: 'creative',

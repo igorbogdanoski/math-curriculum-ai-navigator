@@ -18,7 +18,7 @@
  *   charCount: number;
  *   truncated: boolean;
  *   sourceType: 'webpage' | 'pdf';
- *   extractionMode: 'html-static' | 'html-reader-fallback' | 'pdf-native';
+ *   extractionMode: 'html-static' | 'html-reader-fallback' | 'pdf-native' | 'pdf-ocr-fallback';
  * }
  *         | { available: false; reason: string }
  *
@@ -28,9 +28,11 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const MAX_CHARS = 12000;
 const MIN_HTML_TEXT_CHARS = 350;
+const MIN_PDF_TEXT_CHARS = 180;
 
 function getAllowedOrigins(): string[] {
   const configured = (process.env.ALLOWED_ORIGIN ?? '')
@@ -105,6 +107,16 @@ function cleanWhitespace(text: string): string {
 function extractTitle(html: string): string {
   const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   return m ? decodeEntities(stripTags(m[1])).trim().slice(0, 200) : '';
+    function getGeminiApiKeys(): string[] {
+      return [
+        process.env.GEMINI_API_KEY,
+        process.env.VITE_GEMINI_API_KEY,
+        process.env.GEMINI_API_KEY_1,
+        process.env.GEMINI_API_KEY_2,
+        process.env.GEMINI_API_KEY_3,
+        process.env.GEMINI_API_KEY_4,
+      ].filter((k): k is string => !!k && k.trim().length > 10);
+    }
 }
 
 function htmlToText(html: string): string {
@@ -145,6 +157,39 @@ async function fetchReaderFallback(url: string): Promise<string> {
   });
   if (!response.ok) return '';
   return cleanWhitespace(await response.text());
+}
+
+async function extractPdfWithGeminiOcr(arrayBuffer: ArrayBuffer): Promise<string> {
+  const apiKeys = getGeminiApiKeys();
+  if (apiKeys.length === 0) return '';
+
+  const pdfBase64 = Buffer.from(arrayBuffer).toString('base64');
+  const prompt = [
+    'Извлечи ја математичката содржина од PDF документот.',
+    'Врати чист текст со редови за формули, теорија, задачи и примери.',
+    'Задржи математичка нотација и не додавај измислена содржина.',
+  ].join('\n');
+
+  for (const key of apiKeys) {
+    try {
+      const model = new GoogleGenerativeAI(key).getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const response = await model.generateContent({
+        contents: [{
+          role: 'user',
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: 'application/pdf', data: pdfBase64 } },
+          ],
+        }],
+      });
+      const text = cleanWhitespace(response.response.text() ?? '');
+      if (text.length >= MIN_PDF_TEXT_CHARS) return text;
+    } catch {
+      // try next key
+    }
+  }
+
+  return '';
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -200,12 +245,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (isPdf) {
       const pdfBytes = await response.arrayBuffer();
       const extracted = await extractPdfText(pdfBytes);
-      if (!extracted.text) {
-        res.status(200).json({ available: false, reason: 'PDF е достапен, но не може да се извлече читлив текст.' });
+
+      let textCandidate = extracted.text;
+      let extractionMode: 'pdf-native' | 'pdf-ocr-fallback' = 'pdf-native';
+
+      if (textCandidate.length < MIN_PDF_TEXT_CHARS) {
+        const ocrText = await extractPdfWithGeminiOcr(pdfBytes);
+        if (ocrText.length > textCandidate.length) {
+          textCandidate = ocrText;
+          extractionMode = 'pdf-ocr-fallback';
+        }
+      }
+
+      if (!textCandidate) {
+        res.status(200).json({ available: false, reason: 'PDF е достапен, но не може да се извлече читлив текст (OCR fallback не успеа).' });
         return;
       }
 
-      const truncatedPdf = truncate(extracted.text);
+      const truncatedPdf = truncate(textCandidate);
       res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
       res.status(200).json({
         available: true,
@@ -215,7 +272,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         truncated: truncatedPdf.truncated,
         sourceUrl: rawUrl,
         sourceType: 'pdf',
-        extractionMode: 'pdf-native',
+        extractionMode,
       });
       return;
     }

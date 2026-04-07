@@ -5,7 +5,7 @@ import { AI_COSTS, sanitizePromptInput } from '../services/gemini/core';
 import { RateLimitError } from '../services/apiErrors';
 import { ValidationError } from '../utils/errors';
 import { useLanguage } from '../i18n/LanguageContext';
-import { buildExtractionBundle } from '../utils/extractionBundle';
+import { buildExtractionBundle, evaluateExtractionQuality } from '../utils/extractionBundle';
 import { inferConceptIdsFromExtraction } from '../utils/extractionConceptMap';
 import type {
   AIGeneratedAssessment, AIGeneratedRubric, AIGeneratedIdeas,
@@ -426,6 +426,9 @@ export function useGeneratorActions({
 
               const rawAnalysis = await geminiService.analyzeHandwriting(base64, mimeType, extractionContext);
               const extractionBundle = buildExtractionBundle(rawAnalysis);
+              const extractionQuality = evaluateExtractionQuality(extractionBundle, {
+                textLength: rawAnalysis.length,
+              });
               const mappedConceptIds = inferConceptIdsFromExtraction(
                 extractionBundle,
                 allConcepts,
@@ -455,6 +458,7 @@ export function useGeneratorActions({
                   topicId: finalContext.topic?.id,
                   gradeLevel,
                   secondaryTrack: user?.secondaryTrack,
+                  extractionQuality,
                 },
               } as unknown as GeneratedMaterial;
             }
@@ -467,6 +471,7 @@ export function useGeneratorActions({
             {
               const safeUrl     = sanitizePromptInput(state.webpageUrl, 300);
               const rawWebText  = state.webpageText;
+              const webMeta     = state.webpageExtractMeta;
               const topicTitle  = sanitizePromptInput(finalContext.topic?.title ?? 'Математика', 120);
               const gradeLevel  = finalContext.grade?.level ?? 1;
               const conceptsList = finalContext.concepts?.map(c => c.title).join(', ') || '';
@@ -478,6 +483,7 @@ export function useGeneratorActions({
               const webContext = [
                 '=== ВЕБ ИЗВОР ===',
                 `URL: ${safeUrl}`,
+                webMeta?.sourceUrls?.length ? `BATCH URLs: ${webMeta.sourceUrls.join(' | ')}` : '',
                 `Тема: ${topicTitle}`,
                 conceptsList ? `Концепти: ${conceptsList}` : '',
                 safeWebText
@@ -501,14 +507,23 @@ export function useGeneratorActions({
                   allConcepts,
                   finalContext.concepts?.map(c => c.id) ?? [],
                 );
+                const extractionQuality = evaluateExtractionQuality(extractionBundle, {
+                  textLength: safeWebText?.length ?? 0,
+                  truncated: webMeta?.truncated,
+                  extractionMode: webMeta?.extractionModes?.includes('pdf-ocr-fallback')
+                    ? 'pdf-ocr-fallback'
+                    : (webMeta?.extractionModes?.[0] as 'html-static' | 'html-reader-fallback' | 'pdf-native' | 'pdf-ocr-fallback' | undefined),
+                });
                 (result as AIGeneratedIdeas).extractionBundle = extractionBundle;
                 (result as AIGeneratedIdeas).sourceMeta = {
                   sourceType: 'web',
                   sourceUrl: safeUrl,
+                  sourceUrls: webMeta?.sourceUrls,
                   conceptIds: mappedConceptIds,
                   topicId: finalContext.topic?.id,
                   gradeLevel,
                   secondaryTrack: user?.secondaryTrack,
+                  extractionQuality,
                 };
               }
             }
@@ -554,6 +569,9 @@ export function useGeneratorActions({
                   allConcepts,
                   finalContext.concepts?.map(c => c.id) ?? [],
                 );
+                const extractionQuality = evaluateExtractionQuality(extractionBundle, {
+                  textLength: safeTranscript?.length ?? 0,
+                });
                 (result as AIGeneratedIdeas).extractionBundle = extractionBundle;
                 (result as AIGeneratedIdeas).sourceMeta = {
                   sourceType: 'video',
@@ -562,6 +580,7 @@ export function useGeneratorActions({
                   topicId: finalContext.topic?.id,
                   gradeLevel: finalContext.grade.level,
                   secondaryTrack: user?.secondaryTrack,
+                  extractionQuality,
                 };
               }
             }
