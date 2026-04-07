@@ -78,9 +78,13 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                                        a.materialType === 'QUIZ' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                        a.materialType === 'QUIZ'
+                                          ? 'bg-blue-100 text-blue-700'
+                                          : a.materialType === 'RECOVERY_WORKSHEET'
+                                            ? 'bg-rose-100 text-rose-700'
+                                            : 'bg-purple-100 text-purple-700'
                                     }`}>
-                                        {a.materialType === 'QUIZ' ? 'Квиз' : 'Тест'}
+                                        {a.materialType === 'QUIZ' ? 'Квиз' : a.materialType === 'RECOVERY_WORKSHEET' ? 'Recovery' : 'Тест'}
                                     </span>
                                     {overdue && (
                                         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 flex items-center gap-1">

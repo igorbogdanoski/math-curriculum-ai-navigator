@@ -597,6 +597,7 @@ export const MaturaAnalyticsView: React.FC = () => {
             questions: item.questions,
             topicArea: item.topicArea ?? item.concept.topicTitle ?? 'Математика',
           }))}
+          teacherUid={firebaseUser?.uid}
           onClose={() => setShowWorksheet(false)}
         />
       )}

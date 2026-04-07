@@ -77,7 +77,27 @@ export const ActivityFeed: React.FC<Props> = ({
                             : `${t('progress.assignmentDueSuffix')} ${a.dueDate}`}
                       </p>
                     </div>
-                    {!done && (
+                    {!done && a.materialType === 'RECOVERY_WORKSHEET' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (a.recoveryConceptIds?.length) {
+                            try {
+                              sessionStorage.setItem('matura_recovery_prefill', JSON.stringify({
+                                sourceConceptId: a.recoveryConceptIds[0],
+                                conceptIds: a.recoveryConceptIds,
+                                assignmentId: a.id,
+                              }));
+                            } catch { /* ignore */ }
+                          }
+                          window.location.hash = '#/matura-practice';
+                        }}
+                        className="flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+                      >
+                        Почни Recovery
+                      </button>
+                    )}
+                    {!done && a.materialType !== 'RECOVERY_WORKSHEET' && (
                       <button
                         type="button"
                         onClick={() => { window.location.hash = `/play/${a.cacheId}?assignId=${a.id}&tid=${a.teacherUid}`; }}

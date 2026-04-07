@@ -1,16 +1,18 @@
 /**
- * RecoveryWorksheetModal — M6 Phase 1
+ * RecoveryWorksheetModal — M6 Phase 1 + Phase 2
  *
- * Генерира персонализиран Recovery Worksheet за слабите концепти на ученикот.
- * Gemini го создава worksheet-от во HTML формат → се прикажува во модал → Print/PDF.
+ * Phase 1: Генерира персонализиран Recovery Worksheet (AI → HTML → Print/PDF)
+ * Phase 2: Наставникот испраќа Recovery Assignment до ученици преку Firestore
  *
  * Влезни податоци: weakConcepts од useMaturaStats (концепт, %, прашања, тема)
- * Излез: структуриран worksheet со теорија + задачи по концепт → window.print()
  */
-import React, { useState, useRef, useCallback } from 'react';
-import { X, Sparkles, Printer, Loader2, AlertTriangle, BookOpen, RefreshCcw } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { X, Sparkles, Printer, Loader2, AlertTriangle, BookOpen, RefreshCcw, Send, ChevronDown, ChevronUp, CheckSquare, Square } from 'lucide-react';
 import { callGeminiProxy } from '../../services/gemini/core';
 import { sanitizeWorksheetHtml } from '../../utils/sanitizeHtml';
+import { fetchClasses } from '../../services/firestoreService.classroom';
+import { saveAssignment } from '../../services/firestoreService.materials';
+import type { SchoolClass } from '../../services/firestoreService.types';
 
 const MODEL = 'gemini-2.5-flash';
 
@@ -29,6 +31,7 @@ interface WeakConceptItem {
 interface Props {
   weakConcepts: WeakConceptItem[];
   studentName?: string;
+  teacherUid?: string;
   onClose: () => void;
 }
 
@@ -148,12 +151,53 @@ const PRINT_STYLES = `
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentName, onClose }) => {
+export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentName, teacherUid, onClose }) => {
   const [phase, setPhase] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
   const [html, setHtml] = useState<string>('');
   const [error, setError] = useState<string>('');
   const printDivRef = useRef<HTMLDivElement>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
+
+  // ── Phase 2: Send to students ───────────────────────────────────────────────
+  const [sendOpen, setSendOpen] = useState(false);
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [dueDate, setDueDate] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 7);
+    return d.toISOString().split('T')[0];
+  });
+  const [sending, setSending] = useState(false);
+  const [sendDone, setSendDone] = useState(false);
+
+  useEffect(() => {
+    if (!teacherUid || !sendOpen || classes.length > 0) return;
+    fetchClasses(teacherUid).then(setClasses);
+  }, [teacherUid, sendOpen, classes.length]);
+
+  const selectedClass = classes.find(c => c.id === selectedClassId);
+
+  const handleSend = async () => {
+    if (!teacherUid || !selectedClass) return;
+    setSending(true);
+    try {
+      const title = `Recovery Worksheet — ${concepts.map(c => c.conceptTitle).join(', ').slice(0, 80)}`;
+      await saveAssignment({
+        title,
+        materialType: 'RECOVERY_WORKSHEET',
+        cacheId: '',
+        teacherUid,
+        classId: selectedClass.id,
+        classStudentNames: selectedClass.studentNames ?? [],
+        dueDate,
+        completedBy: [],
+        recoveryConceptIds: concepts.map(c => c.conceptId),
+      });
+      setSendDone(true);
+      setSendOpen(false);
+    } finally {
+      setSending(false);
+    }
+  };
 
   // Max 5 concepts — more would make the worksheet too long
   const concepts = weakConcepts.slice(0, 5);
@@ -328,15 +372,84 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
 
           {/* Footer — actions */}
           {phase === 'done' && (
-            <div className="px-6 py-4 border-t border-gray-100 flex items-center gap-3">
-              <button type="button" onClick={() => { setPhase('idle'); setHtml(''); }}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
-                <RefreshCcw className="w-3.5 h-3.5" /> Регенерирај
-              </button>
-              <button type="button" onClick={handlePrint}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm hover:opacity-90 transition shadow">
-                <Printer className="w-4 h-4" /> Печати / Зачувај PDF
-              </button>
+            <div className="border-t border-gray-100">
+              {/* Primary actions */}
+              <div className="px-6 py-4 flex items-center gap-3">
+                <button type="button" onClick={() => { setPhase('idle'); setHtml(''); setSendDone(false); setSendOpen(false); }}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
+                  <RefreshCcw className="w-3.5 h-3.5" /> Регенерирај
+                </button>
+                <button type="button" onClick={handlePrint}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm hover:opacity-90 transition shadow">
+                  <Printer className="w-4 h-4" /> Печати / Зачувај PDF
+                </button>
+                {teacherUid && (
+                  <button type="button"
+                    onClick={() => { setSendOpen(o => !o); setSendDone(false); }}
+                    title="Испрати на ученици"
+                    className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-semibold transition ${
+                      sendDone
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                        : sendOpen
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}>
+                    {sendDone ? <CheckSquare className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                    {sendDone ? 'Испратено!' : sendOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+              </div>
+
+              {/* Send panel (expandable) */}
+              {sendOpen && teacherUid && (
+                <div className="px-6 pb-5 space-y-3 border-t border-gray-100 pt-4">
+                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Испрати Recovery Assignment до клас</p>
+
+                  {/* Class picker */}
+                  <select
+                    title="Избери клас"
+                    value={selectedClassId}
+                    onChange={e => setSelectedClassId(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+                  >
+                    <option value="">— Избери клас —</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}{c.gradeLevel ? ` (${c.gradeLevel}. одд.)` : ''} — {c.studentNames?.length ?? 0} ученик{(c.studentNames?.length ?? 0) === 1 ? '' : 'и'}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Due date */}
+                  <div className="flex items-center gap-3">
+                    <label className="text-xs font-semibold text-gray-600 w-24 flex-shrink-0">Рок:</label>
+                    <input
+                      type="date"
+                      title="Рок за предавање"
+                      value={dueDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={e => setDueDate(e.target.value)}
+                      className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+                    />
+                  </div>
+
+                  {selectedClass && (
+                    <p className="text-xs text-gray-500">
+                      Ќе се испрати до <strong>{selectedClass.studentNames?.length ?? 0}</strong> ученик{(selectedClass.studentNames?.length ?? 0) === 1 ? '' : 'и'} од <strong>{selectedClass.name}</strong>
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={!selectedClassId || sending}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {sending ? 'Испраќање…' : 'Испрати Assignment'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -74,7 +74,8 @@ export interface ClassMembership {
 export interface Assignment {
   id: string;
   title: string;
-  materialType: 'QUIZ' | 'ASSESSMENT';
+  materialType: 'QUIZ' | 'ASSESSMENT' | 'RECOVERY_WORKSHEET';
+  /** Required for QUIZ/ASSESSMENT; empty string for RECOVERY_WORKSHEET */
   cacheId: string;
   teacherUid: string;
   classId: string;
@@ -82,6 +83,8 @@ export interface Assignment {
   dueDate: string;
   createdAt?: Timestamp;
   completedBy: string[];
+  /** Populated only for RECOVERY_WORKSHEET — concept IDs to practice */
+  recoveryConceptIds?: string[];
 }
 
 export interface StudentGamification {
