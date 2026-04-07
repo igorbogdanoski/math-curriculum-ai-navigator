@@ -11,10 +11,25 @@ class ResultErrorBoundary extends Component<{ children: ReactNode }, { error: Er
     render() {
         if (this.state.error) {
             return (
-                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                <div className="mt-6 p-5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
                     <p className="font-bold mb-1">⚠️ Грешка при прикажување на резултатот</p>
-                    <p className="text-xs text-red-500">{(this.state.error as Error).message}</p>
-                    <button type="button" onClick={() => this.setState({ error: null })} className="mt-2 text-xs underline text-red-600 hover:text-red-800">Обиди се повторно</button>
+                    <p className="text-xs text-red-500 mb-3">{(this.state.error as Error).message}</p>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => this.setState({ error: null })}
+                            className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition"
+                        >
+                            ↺ Обиди се повторно
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => window.location.reload()}
+                            className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 transition"
+                        >
+                            ⟳ Освежи страна
+                        </button>
+                    </div>
                 </div>
             );
         }

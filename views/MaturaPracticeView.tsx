@@ -583,7 +583,10 @@ function QuestionCard({
                 key={choice} type="button"
                 disabled={state.submitted}
                 onClick={() => handleMC(choice)}
-                className={`w-full flex items-start gap-3 px-4 py-2.5 rounded-xl border-2 text-left transition-all font-medium ${bg}`}
+                aria-label={`Опција ${choice}`}
+                aria-pressed={isPicked ? true : false}
+                aria-disabled={state.submitted ? true : false}
+                className={`w-full flex items-start gap-3 px-4 py-2.5 rounded-xl border-2 text-left transition-all font-medium focus:outline-2 focus:outline-brand-primary focus:outline-offset-2 ${bg}`}
               >
                 <span className="font-black shrink-0">{choice}.</span>
                 <MathRenderer text={item.choices![choice]!} />

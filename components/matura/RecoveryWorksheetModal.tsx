@@ -13,6 +13,17 @@ import { callGeminiProxy } from '../../services/gemini/core';
 
 const MODEL = 'gemini-2.5-flash';
 
+// ─── Sanitizer ────────────────────────────────────────────────────────────────
+// Strips <script>, javascript: hrefs and on* event attributes from AI-generated HTML.
+// DOMPurify-level protection is not needed here (teacher-only, Gemini-generated),
+// but we still guard against prompt-injection scenarios.
+function sanitizeWorksheetHtml(raw: string): string {
+  return raw
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/javascript\s*:/gi, 'blocked:')
+    .replace(/\bon\w+\s*=/gi, 'data-blocked=');
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface WeakConceptItem {
@@ -171,7 +182,7 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
       // Strip any accidental markdown code fences
       const cleaned = raw.replace(/^```html\n?/, '').replace(/\n?```$/, '').trim();
       if (!cleaned || !cleaned.includes('<')) throw new Error('Неочекуван формат на одговор');
-      setHtml(cleaned);
+      setHtml(sanitizeWorksheetHtml(cleaned));
       setPhase('done');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Грешка при генерирање');
@@ -182,8 +193,8 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
   const handlePrint = useCallback(() => {
     if (!printDivRef.current) return;
 
-    // Inject content into the hidden print div
-    printDivRef.current.innerHTML = html;
+    // Inject content into the hidden print div (already sanitized at generation time)
+    printDivRef.current.innerHTML = sanitizeWorksheetHtml(html);
 
     // Add print styles once
     if (!styleRef.current) {
