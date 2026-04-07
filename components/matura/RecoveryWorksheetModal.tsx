@@ -10,19 +10,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { X, Sparkles, Printer, Loader2, AlertTriangle, BookOpen, RefreshCcw } from 'lucide-react';
 import { callGeminiProxy } from '../../services/gemini/core';
+import { sanitizeWorksheetHtml } from '../../utils/sanitizeHtml';
 
 const MODEL = 'gemini-2.5-flash';
-
-// ─── Sanitizer ────────────────────────────────────────────────────────────────
-// Strips <script>, javascript: hrefs and on* event attributes from AI-generated HTML.
-// DOMPurify-level protection is not needed here (teacher-only, Gemini-generated),
-// but we still guard against prompt-injection scenarios.
-function sanitizeWorksheetHtml(raw: string): string {
-  return raw
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/javascript\s*:/gi, 'blocked:')
-    .replace(/\bon\w+\s*=/gi, 'data-blocked=');
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

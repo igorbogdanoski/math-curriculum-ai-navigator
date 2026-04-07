@@ -5,6 +5,7 @@ describe('normalizeSupportedVideoUrl', () => {
   it('normalizes a YouTube watch URL', () => {
     expect(normalizeSupportedVideoUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toEqual({
       provider: 'youtube',
+      videoId: 'dQw4w9WgXcQ',
       normalizedUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     });
@@ -13,6 +14,7 @@ describe('normalizeSupportedVideoUrl', () => {
   it('normalizes a short YouTube URL', () => {
     expect(normalizeSupportedVideoUrl('https://youtu.be/dQw4w9WgXcQ')).toEqual({
       provider: 'youtube',
+      videoId: 'dQw4w9WgXcQ',
       normalizedUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     });
@@ -53,6 +55,7 @@ describe('fetchVideoPreview', () => {
     expect(fetchMock.mock.calls[0][0]).toContain('youtube.com/oembed');
     expect(result).toEqual({
       provider: 'youtube',
+      videoId: 'dQw4w9WgXcQ',
       title: 'Demo lesson',
       authorName: 'Teacher A',
       thumbnailUrl: 'https://img.youtube.com/example.jpg',
