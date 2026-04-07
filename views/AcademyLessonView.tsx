@@ -245,7 +245,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                 </div>
                 <React.Suspense fallback={<div className="h-48 flex items-center justify-center text-slate-400">Се вчитува...</div>}>
                   {lesson.interactiveDemo === 'algebra-tiles'
-                    ? <AlgebraTilesCanvas />
+                    ? <AlgebraTilesCanvas presetExpression={lesson.algebraTilesPreset} />
                     : <Shape3DViewer compact={false} />
                   }
                 </React.Suspense>

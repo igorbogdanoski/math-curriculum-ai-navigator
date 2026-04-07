@@ -7,6 +7,7 @@ import { ValidationError } from '../utils/errors';
 import { useLanguage } from '../i18n/LanguageContext';
 import { buildExtractionBundle, evaluateExtractionQuality } from '../utils/extractionBundle';
 import { inferConceptIdsFromExtraction } from '../utils/extractionConceptMap';
+import { buildPedagogicalVideoSegments } from '../utils/videoSegmentation';
 import type {
   AIGeneratedAssessment, AIGeneratedRubric, AIGeneratedIdeas,
   Topic, Concept, Grade, NationalStandard,
@@ -537,11 +538,19 @@ export function useGeneratorActions({
               const safeVideoUrl   = sanitizePromptInput(state.videoUrl, 300);
               const preview        = state.videoPreview;
               const rawTranscript  = state.videoTranscript;
+              const rawSegments    = state.videoTranscriptSegments;
 
               // Truncate transcript to fit safely in context (~6000 chars → ~1500 tokens)
               const safeTranscript = rawTranscript
                 ? sanitizePromptInput(rawTranscript.slice(0, 6000), 6000)
                 : null;
+              const pedagogicalSegments = buildPedagogicalVideoSegments(rawSegments, 24);
+              const timelineContext = pedagogicalSegments.length > 0
+                ? pedagogicalSegments
+                    .slice(0, 12)
+                    .map((s, i) => `${i + 1}. [${s.startSec}s-${s.endSec}s] (${s.segmentType}) ${s.text}`)
+                    .join('\n')
+                : '';
 
               const videoContext = [
                 '=== ВИДЕО ИЗВОР ===',
@@ -551,6 +560,7 @@ export function useGeneratorActions({
                 safeTranscript
                   ? `\n=== ВИСТИНСКИ ТРАНСКРИПТ (извлечен од субтитли) ===\n${safeTranscript}\n=== КРАЈ НА ТРАНСКРИПТ ===\n\nИнструкција: анализирај го транскриптот погоре и извлечи ги математичките концепти, примери и чекори. Креирај детален план за час базиран на ВИСТИНСКАТА содржина на видеото.`
                   : '\nИнструкција: нема достапен транскрипт — извлечи наставни идеи врз основа на наслов и тема.',
+                timelineContext ? `\n=== TIMESTAMP SEGMENTS ===\n${timelineContext}\n=== КРАЈ НА SEGMENTS ===` : '',
               ].filter(Boolean).join('\n');
 
               const combinedInstruction = [effectiveInstruction, videoContext].filter(Boolean).join('\n\n');
@@ -576,6 +586,7 @@ export function useGeneratorActions({
                 (result as AIGeneratedIdeas).sourceMeta = {
                   sourceType: 'video',
                   sourceUrl: safeVideoUrl,
+                  videoSegments: pedagogicalSegments,
                   conceptIds: mappedConceptIds,
                   topicId: finalContext.topic?.id,
                   gradeLevel: finalContext.grade.level,

@@ -246,8 +246,10 @@ export interface PresentationSlide {
   chartConfig?: Record<string, unknown>;
   // shape-3d: interactive 3D geometry viewer in Gamma Mode
   shape3dShape?: string;
+  // algebra-tiles: interactive algebra tiles manipulative in Gamma Mode
+  algebraTilesExpression?: string;
   type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step'
-      | 'formula-centered' | 'chart-embed' | 'comparison' | 'proof' | 'shape-3d';
+      | 'formula-centered' | 'chart-embed' | 'comparison' | 'proof' | 'shape-3d' | 'algebra-tiles';
 }
 
 export interface AIGeneratedPresentation {
@@ -508,6 +510,8 @@ export interface AssessmentQuestion {
   concept_evaluated?: string;
   /** Webb's Depth of Knowledge level (1=Recall, 2=Skill/Concept, 3=Strategic Thinking, 4=Extended Thinking) */
   dokLevel?: 1 | 2 | 3 | 4;
+  /** Algebra tiles expression to render as visual aid alongside the question */
+  algebraTilesExpression?: string;
 }
 
 export interface SavedQuestion {
@@ -592,6 +596,13 @@ export interface AIGeneratedIdeas {
     sourceType: 'video' | 'image' | 'web';
     sourceUrl?: string;
     sourceUrls?: string[];
+    videoSegments?: Array<{
+      startSec: number;
+      endSec: number;
+      text: string;
+      segmentType: 'theory' | 'task' | 'example' | 'illustration' | 'mixed';
+      illustrationPrompt?: string;
+    }>;
     conceptIds?: string[];
     topicId?: string;
     gradeLevel?: number;

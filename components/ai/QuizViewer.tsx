@@ -3,6 +3,7 @@ import type { AssessmentQuestion } from '../../types';
 import { ICONS } from '../../constants';
 import { Card } from '../common/Card';
 import { MathRenderer } from '../common/MathRenderer';
+import { AlgebraTilesCanvas } from '../math/AlgebraTilesCanvas';
 
 interface QuizViewerProps {
   questions: AssessmentQuestion[];
@@ -192,6 +193,16 @@ export const QuizViewer: React.FC<QuizViewerProps> = ({ questions, onClose }) =>
         <div className="p-8 flex-1 overflow-y-auto">
           <p className="text-sm text-gray-500 mb-2">Прашање {currentIndex + 1} од {questions.length}</p>
           
+          {currentQuestion.algebraTilesExpression && (
+            <div className="mb-6">
+              <AlgebraTilesCanvas
+                presetExpression={currentQuestion.algebraTilesExpression}
+                compact={true}
+                readOnly={true}
+              />
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row gap-6 mb-8">
             <div className="text-xl font-semibold flex-1">
               <MathRenderer text={currentQuestion.question} />

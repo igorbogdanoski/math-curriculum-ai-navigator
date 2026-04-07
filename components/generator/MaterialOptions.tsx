@@ -496,6 +496,7 @@ const VideoExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'disp
                 setIsLoadingCaptions(false);
                 // Store in state so useGeneratorActions can use it
                 dispatch({ type: 'SET_FIELD', payload: { field: 'videoTranscript', value: caps.available ? caps.transcript ?? null : null } });
+                dispatch({ type: 'SET_FIELD', payload: { field: 'videoTranscriptSegments', value: caps.available ? (caps.segments ?? []) : [] } });
             }
         } catch (error) {
             dispatch({ type: 'SET_FIELD', payload: { field: 'videoPreview', value: null } });

@@ -44,6 +44,13 @@
 | P2 | 4.3 Напредна AI Персонализација — UI controls за тон/дијалект/стил | ✅ Завршено | `01e9f6c` |
 | P3 | 4.1 SystemAdminView — министерство ниво (multi-school агрегација) | ✅ Завршено | `1b38db3` |
 
+## 7. Транзиција од Strategic Roadmap — 08.04.2026
+
+- [ ] **Финален EN/AL translation sweep:** преводот е свесно изваден од Sprint S18 и ќе оди на крај, по целосен app audit. Обем: section-by-section ревизија на цел UI, не ad-hoc преведување додека продуктот уште се менува.
+- [ ] **Interactive Math hardening:** по затворањето на AlgebraTiles Phase 1, следен чекор е пост-аудит полирање: lazy loading за embed сценарија, smoke matrix за curriculum/activity/presentation/quiz/live-quiz влезни точки и acceptance checklist за teacher/student flows.
+- [ ] **Bundle strategy review:** build моментално поминува, но има големи chunk warnings. Следниот стратегиски циклус треба да внесе deliberate code-splitting за heavy interactive/AI modules.
+- [ ] **S19 formal closure criteria:** DataViz / ProbabilityLab / Monte Carlo / vocational pipeline имаат постоечки foundation, но недостига formal acceptance scope. Новиот план треба да работи со јасни DONE критериуми, не само existence на компоненти.
+
 ### P2 — Детален план: Напредна AI Персонализација
 
 Цел: наставникот да може да го прилагоди AI генераторот преку нови контроли:

@@ -11,6 +11,7 @@ export interface VideoPreviewData {
 export interface VideoCaptionsResult {
   available: boolean;
   transcript?: string;
+  segments?: Array<{ startMs: number; endMs: number; text: string }>;
   lang?: string;
   source?: 'auto' | 'manual';
   charCount?: number;

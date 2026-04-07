@@ -300,32 +300,52 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 П7. ✅ B3: Web Extractor (api/webpage-extract.ts, SSRF-safe, full pipeline)
 ```
 
-### Sprint S17 — M6 + Generator Integration
+### Sprint S17 — M6 + Generator Integration ✅ ЗАТВОРЕН
 ```
-П1. M6 Phase 1: Recovery Worksheet PDF
-П2. B5: Extraction → Generator pre-fill pipeline
-П3. G3: PPTX export од Gamma view
-П4. A3: Auto conceptIds при import
-П5. V2: Forum thread permalink
-```
-
-### Sprint S18 — Quality & Depth
-```
-П1. M6 Phase 2: Teacher assignment
-П2. G2: Gamma slide transitions
-П3. G4: Contextual slide awareness
-П4. EN/AL batch translations
-П5. D1: Algebra equation balance
+П1. ✅ M6 Phase 1: Recovery Worksheet PDF
+П2. ✅ B5: Extraction → Generator pre-fill pipeline
+П3. ✅ G3: PPTX export од Gamma view
+П4. ✅ A3: Auto conceptIds при import
+П5. ✅ V2: Forum thread permalink
 ```
 
-### S19+ — Interactive Math Platform
+### Sprint S18 — Quality & Depth ✅ ОПЕРАТИВНО ЗАТВОРЕН
 ```
-П1. Статистика интерактивни компоненти
-П2. Forum FCM push
-П3. Vocational curriculum + испити
-П4. Multiplayer canvas (WebSocket)
-П5. D2: Monte Carlo simulator
+П1. ✅ M6 Phase 2: Teacher assignment
+П2. ✅ G2: Gamma slide transitions
+П3. ✅ G4: Contextual slide awareness
+П4. ↪ EN/AL batch translations — префрлено во новиот стратегиски план (финален translation sweep по целосен app audit)
+П5. ✅ D1: Algebra equation balance + AlgebraTiles platform integration
 ```
+
+### S19+ — Interactive Math Platform 🟨 ВО ТЕК / BACKLOG
+```
+П1. 🟨 Статистика интерактивни компоненти (DataViz + ProbabilityLab постојат, треба formal close scope)
+П2. ⏳ Forum FCM push (forum-specific trigger недостасува)
+П3. 🟨 Vocational curriculum + испити (curriculum foundation постои; vocational matura exam pipeline е отворен)
+П4. ⏳ Multiplayer canvas (WebSocket)
+П5. 🟨 D2: Monte Carlo simulator (probability simulation foundation постои, нема formal milestone close)
+```
+
+### Audit Snapshot — 08.04.2026 (Professional Handoff)
+| Item | Статус | Доказ / Белешка |
+|---|---|---|
+| S17-P1 | DONE | Recovery worksheet modal + assignment flow + E2E тестови |
+| S17-P2 | DONE | `handleGenerateFromExtraction()` + extraction pre-fill панел |
+| S17-P3 | DONE | Gamma `exportGammaPPTX()` + `pptxgenjs` lazy import |
+| S17-P4 | DONE | `scripts/import-matura.mjs` + `matura-concept-map.mjs` auto-map |
+| S17-P5 | DONE | `#/forum?thread=<id>` deep-link + copy link |
+| S18-P1 | DONE | Teacher assignment за `RECOVERY_WORKSHEET` |
+| S18-P2 | DONE | Gamma transitions + reduced-motion hardening |
+| S18-P3 | DONE | slide context continuity (`concept/formulas/priorFormulas`) |
+| S18-P4 | DEFERRED | EN/AL batch translations свесно се префрлаат во новиот стратегиски план, по целосен app audit и section-by-section translation sweep |
+| S18-P5 | DONE | D1 Алгебарски плочки — balance mode + BalanceScaleSvg SVG анимација + 14 grade-organized presets (6–10. одд.) во AlgebraTilesCanvas |
+| S19-P1 | PARTIAL | DataViz/ProbabilityLab постојат; недостасува formal acceptance scope |
+| S19-P2 | OPEN | FCM постои за assignments, не за forum thread replies |
+| S19-P3 | PARTIAL | vocational curricula (`vocational3/4`) постојат; vocational matura exams не се затворени |
+| S19-P4 | OPEN | Нема WebSocket canvas module |
+| S19-P5 | PARTIAL | stochastic симулации постојат, но нема formal D2 close артефакт |
+| S19-AT | DONE | AlgebraTiles world-class upgrade — balance mode (D1), 14 grade-aware presets (6–10. одд.), compact/readOnly/onSolve props, Gamma `algebra-tiles` slide type, QuizViewer visual aid, AcademyLessonView `algebraTilesPreset` pass-through, `types.ts` schema integration |
 
 ---
 
@@ -401,6 +421,10 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-07 | S18-B9 | PDF OCR fallback — `api/webpage-extract.ts` now falls back to Gemini document OCR for scanned/low-text PDFs (`pdf-ocr-fallback` mode) when native parse is weak | DONE |
 | 2026-04-07 | S18-B10 | Multi-source batch extraction — Web Extractor supports batch URL intake (up to 8), merged source context, failed URL tracking, and persisted source metadata for generator/linkage | DONE |
 | 2026-04-07 | S18-B11 | Extraction quality scoring — bundle quality metrics (`score/label/formula/theory/task/text-signal`) computed and persisted in `sourceMeta`, surfaced in Content Library chips and preview | DONE |
+| 2026-04-08 | AUDIT | S17/S18/S19+ статус ревизија: S17 затворен; S18 делумно (отворени EN/AL batch translations, Algebra equation balance); S19+ класифициран во DONE/PARTIAL/OPEN за handoff продолжување | DONE |
+| 2026-04-08 | S18-P5 | D1 Algebra equation balance целосно затворен преку `AlgebraTilesCanvas` balance mode + grade-aware presets + cross-app integration | DONE |
+| 2026-04-08 | PLAN | EN/AL batch translations свесно извадени од активен sprint scope и префрлени во новиот strategic plan по целосен app audit | DONE |
+| 2026-04-08 | S19-AT | AlgebraTiles world-class upgrade — balance mode, 14 presets, compact/readOnly/onSolve, Gamma slide type, Quiz visual aid, Academy preset pass-through, schema integration | DONE |
 
 ---
 

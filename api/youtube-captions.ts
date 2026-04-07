@@ -11,7 +11,13 @@
  *      to title-only mode (existing MVP behaviour).
  *
  * Request:  GET /api/youtube-captions?videoId=<id>&lang=<mk|en|...>
- * Response: { available: true; transcript: string; lang: string; source: 'auto'|'manual' }
+ * Response: {
+ *   available: true;
+ *   transcript: string;
+ *   segments: Array<{ startMs: number; endMs: number; text: string }>;
+ *   lang: string;
+ *   source: 'auto'|'manual';
+ * }
  *         | { available: false; reason: string }
  *
  * Security: No auth required (public YouTube data), CORS restricted.
@@ -49,6 +55,11 @@ interface CaptionTrack {
   languageCode: string;
   kind: string; // 'asr' = auto, '' = manual
   name?: string;
+}
+
+interface TranscriptPayload {
+  transcript: string;
+  segments: Array<{ startMs: number; endMs: number; text: string }>;
 }
 
 /**
@@ -140,7 +151,7 @@ function pickTrack(tracks: CaptionTrack[], preferLang: string): CaptionTrack | n
  * Fetches and parses YouTube's timedtext XML into plain text.
  * Handles both XML caption format and JSON3 format.
  */
-async function fetchTranscriptText(track: CaptionTrack): Promise<string> {
+async function fetchTranscriptText(track: CaptionTrack): Promise<TranscriptPayload> {
   // Request JSON3 format (cleaner than XML for our use)
   const url = track.baseUrl.includes('?')
     ? `${track.baseUrl}&fmt=json3`
@@ -157,21 +168,31 @@ async function fetchTranscriptText(track: CaptionTrack): Promise<string> {
   if (contentType.includes('json') || url.includes('json3')) {
     try {
       const json = await res.json() as {
-        events?: Array<{ segs?: Array<{ utf8?: string }> }>;
+        events?: Array<{ tStartMs?: number; dDurationMs?: number; segs?: Array<{ utf8?: string }> }>;
       };
-      const lines = (json.events ?? [])
-        .flatMap(e => (e.segs ?? []).map(s => s.utf8 ?? ''))
-        .join('')
-        .replace(/\n+/g, ' ')
-        .replace(/\s{2,}/g, ' ')
-        .trim();
-      return lines;
+      const segments = (json.events ?? [])
+        .map((e) => {
+          const text = (e.segs ?? [])
+            .map((s) => s.utf8 ?? '')
+            .join('')
+            .replace(/\n+/g, ' ')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+          const startMs = Math.max(0, Number(e.tStartMs ?? 0));
+          const durationMs = Math.max(0, Number(e.dDurationMs ?? 0));
+          const endMs = durationMs > 0 ? startMs + durationMs : startMs + 2500;
+          return { startMs, endMs, text };
+        })
+        .filter((s) => s.text.length > 0);
+
+      const transcript = segments.map((s) => s.text).join(' ').replace(/\s{2,}/g, ' ').trim();
+      return { transcript, segments };
     } catch { /* fall through to XML */ }
   }
 
   // XML fallback
   const xml = await res.text();
-  const text = xml
+  const transcript = xml
     .replace(/<[^>]+>/g, ' ')        // strip XML tags
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
@@ -182,7 +203,33 @@ async function fetchTranscriptText(track: CaptionTrack): Promise<string> {
     .replace(/\s{2,}/g, ' ')
     .trim();
 
-  return text;
+  return {
+    transcript,
+    segments: [],
+  };
+}
+
+function applyTranscriptLimit(payload: TranscriptPayload, maxChars = 12000): TranscriptPayload & { truncated: boolean } {
+  if (payload.transcript.length <= maxChars) return { ...payload, truncated: false };
+
+  const segments: TranscriptPayload['segments'] = [];
+  let transcript = '';
+  for (const seg of payload.segments) {
+    const next = `${transcript} ${seg.text}`.trim();
+    if (next.length > maxChars) break;
+    transcript = next;
+    segments.push(seg);
+  }
+
+  if (!transcript) {
+    transcript = payload.transcript.slice(0, maxChars);
+  }
+
+  return {
+    transcript: `${transcript}…[truncated]`,
+    segments,
+    truncated: true,
+  };
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -220,9 +267,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const transcript = await fetchTranscriptText(track);
+    const payload = await fetchTranscriptText(track);
 
-    if (!transcript || transcript.length < 20) {
+    if (!payload.transcript || payload.transcript.length < 20) {
       return res.status(200).json({
         available: false,
         reason: 'Transcript is empty or too short',
@@ -230,21 +277,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Truncate to ~12000 chars (~3000 tokens) — enough for Gemini context
-    const truncated = transcript.length > 12000
-      ? transcript.slice(0, 12000) + '…[truncated]'
-      : transcript;
+    const limited = applyTranscriptLimit(payload, 12000);
 
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
     return res.status(200).json({
       available: true,
-      transcript: truncated,
+      transcript: limited.transcript,
+      segments: limited.segments,
       lang: track.languageCode,
       source: track.kind === 'asr' ? 'auto' : 'manual',
       videoId,
-      charCount: truncated.length,
-      truncated: transcript.length > 12000,
-      availableLangs: tracks.map(t => ({ lang: t.languageCode, kind: track.kind === 'asr' ? 'auto' : 'manual' })),
+      charCount: limited.transcript.length,
+      truncated: limited.truncated,
+      availableLangs: tracks.map(t => ({ lang: t.languageCode, kind: t.kind === 'asr' ? 'auto' : 'manual' })),
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';

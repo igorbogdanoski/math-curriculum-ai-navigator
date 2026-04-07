@@ -37,6 +37,7 @@ export interface GeneratorState {
     videoUrl: string;
     videoPreview: VideoPreviewData | null;
     videoTranscript: string | null;
+    videoTranscriptSegments: Array<{ startMs: number; endMs: number; text: string }>;
     imageFile: { file: File, base64: string, previewUrl: string } | null;
     webpageUrl: string;
     webpageBatchUrls: string;
@@ -106,6 +107,7 @@ export const getInitialState = (curriculum: any, allNationalStandards: any): Gen
         videoUrl: '',
         videoPreview: null,
         videoTranscript: null,
+        videoTranscriptSegments: [],
         imageFile: null,
         webpageUrl: '',
         webpageBatchUrls: '',

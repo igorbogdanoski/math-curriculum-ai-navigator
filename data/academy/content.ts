@@ -19,6 +19,8 @@ export interface AcademyLesson {
   generatorKey: string;
   /** Embed an interactive math tool inside this lesson */
   interactiveDemo?: 'algebra-tiles' | 'shape-3d';
+  /** Initial expression shown in the AlgebraTiles manipulative (e.g. 'x²+3x+2') */
+  algebraTilesPreset?: string;
   /** DoK classification exercise — teacher picks the DoK level for each item */
   dokClassifyItems?: DokClassifyItem[];
 }
@@ -521,6 +523,7 @@ export const ACADEMY_CONTENT: Record<string, AcademyLesson> = {
     generatorKey: "AlgebraTiles",
     title: "Алгебарски плочки — манипулативна алгебра",
     interactiveDemo: "algebra-tiles",
+    algebraTilesPreset: "x²+3x+2",
     theory: [
       "Алгебарски плочки се физички (или дигитални) правоаголни и квадратни површини кои претставуваат алгебарски изрази: x² (голем квадрат), x (правоаголник), 1 (мал квадрат). Едноставна идеја — длабоки педагошки ефекти: учениците буквално ги гледаат факторите кога плочките се сложени во правоаголник.",
       "Истражувањата на Bruner (CPA — Конкретно-Пиктуријален-Апстрактен) покажуваат дека учениците кои прво ракуваат со конкретни манипулативи развиваат 40% подобро апстрактно алгебарско разбирање. Плочките ја прекинуваат 'безначајноста на x' — ученикот разбира дека x е мерка, не само симбол.",
