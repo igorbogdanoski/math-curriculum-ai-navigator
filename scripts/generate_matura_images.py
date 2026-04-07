@@ -508,6 +508,58 @@ IMAGE_REGISTRY = [
         },
     },
 
+    # ── Јуни 2023 ──────────────────────────────────────────────────────────────
+    {
+        "id":   "q29-june-2023",
+        "exam": "Јуни 2023 Q29 — Права призма со впишан цилиндар",
+        "file": "public/matura/images/2023/june/q29-fig1.png",
+        "type": "geometry",
+        "params": {
+            # Isosceles trapezoid base: a=8, b=2, c=5. Height of trapezoid = 4.
+            # Radius of inscribed circle = 2.
+            # Prism height H=5.
+            # Drawn in oblique projection.
+            "xlim": (-1, 10),
+            "ylim": (-1, 9),
+            "axes": False,
+            "figsize": (5.0, 5.0),
+            "shapes": [
+                # Lower base (trapezoid)
+                {"type": "polygon", "pts": [[0,0],[8,0],[6,2],[2,2]], 
+                 "color": "#1e40af", "fill": "#dbeafe", "alpha": 0.3, "lw": 1.5},
+                # Lower circle (dashed)
+                {"type": "circle", "cx": 4, "cy": 1, "r": 1, 
+                 "color": "#1e40af", "lw": 1.2, "linestyle": "--"},
+                
+                # Upper base (trapezoid) - shifted by (0, 5)
+                {"type": "polygon", "pts": [[0,5],[8,5],[6,7],[2,7]], 
+                 "color": "#1e40af", "fill": "#dbeafe", "alpha": 0.3, "lw": 1.5},
+                # Upper circle
+                {"type": "circle", "cx": 4, "cy": 6, "r": 1, 
+                 "color": "#1e40af", "lw": 1.5},
+
+                # Vertical edges of prism
+                {"type": "line", "pts": [[0,0],[0,5]], "color": "#1e40af", "lw": 1.5},
+                {"type": "line", "pts": [[8,0],[8,5]], "color": "#1e40af", "lw": 1.5},
+                {"type": "line", "pts": [[6,2],[6,7]], "color": "#1e40af", "lw": 1.5, "linestyle": "--"},
+                {"type": "line", "pts": [[2,2],[2,7]], "color": "#1e40af", "lw": 1.5, "linestyle": "--"},
+
+                # Vertical edges of cylinder (tangent points)
+                {"type": "line", "pts": [[4,0],[4,5]], "color": "#1e40af", "lw": 1.0, "linestyle": "-."},
+                {"type": "line", "pts": [[4,1],[4,6]], "color": "#1e40af", "lw": 1.0, "linestyle": "-."},
+                
+                # Labels
+                {"type": "text", "x": 4, "y": -0.4, "text": "a=8cm", "fontsize": 10, "color": "#1e40af"},
+                {"type": "text", "x": 4, "y": 7.4, "text": "b=2cm", "fontsize": 10, "color": "#1e40af"},
+                {"type": "text", "x": 4.3, "y": 3.0, "text": "H", "fontsize": 11, "color": "#1e40af"},
+                
+                # Points for center
+                {"type": "point", "x": 4, "y": 1, "color": "#1e40af", "label": ""},
+                {"type": "point", "x": 4, "y": 6, "color": "#1e40af", "label": ""},
+            ],
+        },
+    },
+
     # ── Add future entries below ────────────────────────────────────────────────
     # Example geometry entry (commented out):
     # {

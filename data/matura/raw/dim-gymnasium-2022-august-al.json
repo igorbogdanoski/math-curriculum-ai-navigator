@@ -1,0 +1,795 @@
+{
+  "exam": {
+    "id": "dim-gymnasium-2022-august-al",
+    "year": 2022,
+    "session": "august",
+    "track": "gymnasium",
+    "gradeLevel": 13,
+    "language": "al",
+    "durationMinutes": 180,
+    "title": "Maturë Shtetërore — Gjimnaz — gusht 2022",
+    "hasOfficialKey": true
+  },
+  "questions": [
+    {
+      "questionNumber": 1,
+      "part": 1,
+      "points": 1,
+      "questionText": "Prerja e bashkësisë së numrave natyror dhe intervali $(1,3)$ është bashkësia:",
+      "choices": {
+        "А": "$\\{1,2\\}$",
+        "Б": "$\\{1,2,3\\}$",
+        "В": "$\\{2\\}$",
+        "Г": "$\\{1,3\\}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 2,
+      "part": 1,
+      "points": 1,
+      "questionText": "Vlera e shprehjes $\\frac{10}{16} + \\frac{3}{2} \\left( \\frac{17}{4} : 17 \\right) + 3,75 \\cdot \\frac{4}{5}$ është:",
+      "choices": {
+        "А": "$8$",
+        "Б": "$4$",
+        "В": "$\\frac{1}{4}$",
+        "Г": "$3$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Бројни изрази",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 3,
+      "part": 1,
+      "points": 1,
+      "questionText": "Vlera e shprehjes $\\frac{(-1)^5 \\cdot (-2)^{-3}}{2^{-4} \\cdot (-3)^2}$ është:",
+      "choices": {
+        "А": "$18$",
+        "Б": "$-18$",
+        "В": "$9$",
+        "Г": "$-\\frac{2}{9}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Бројни изрази",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 4,
+      "part": 1,
+      "points": 1,
+      "questionText": "Shprehja $(2x-3y)^3$ është e barabartë me:",
+      "choices": {
+        "А": "$8x^3 - 27y^3$",
+        "Б": "$8x^3 - 36x^2y + 54xy^2 - 27y^3$",
+        "В": "$8x^3 + 36x^2y + 54xy^2 + 27y^3$",
+        "Г": "$8x^3 - 24x^2y + 36xy^2 - 27y^3$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Степени и корени",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 5,
+      "part": 1,
+      "points": 1,
+      "questionText": "Barazimi $(2p-5)x+3=0$ ska zgjidhje, nëse:",
+      "choices": {
+        "А": "$p = 2,5$",
+        "Б": "$p = -2,5$",
+        "В": "$p = 0$",
+        "Г": "$p = 2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Линеарни равенки со параметар",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 6,
+      "part": 1,
+      "points": 1,
+      "questionText": "Shuma e zgjidhjeve të barazimit katror $x^2-2x-5=0$ është:",
+      "choices": {
+        "А": "$-5$",
+        "Б": "$-2$",
+        "В": "$5$",
+        "Г": "$2$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Квадратни равенки (Виетови формули)",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 7,
+      "part": 1,
+      "points": 1,
+      "questionText": "Ndryshimi i dy numrave natyror është $5$, kurse ndryshimi i katrorëve të tyre është $50$. Shuma e atyre dy numrave natyror është:",
+      "choices": {
+        "А": "$15$",
+        "Б": "$-15$",
+        "В": "$10$",
+        "Г": "$-10$"
+      },
+      "correctAnswer": "В",
+      "topic": "Систем линеарни равенки",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 8,
+      "part": 1,
+      "points": 1,
+      "questionText": "Bashkësia e definimit të funksionit $f(x) = \\frac{1}{3x-2}$ është:",
+      "choices": {
+        "А": "$\\mathbb{R}$",
+        "Б": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{3}{2}\\}$",
+        "В": "$\\{x | x \\in \\mathbb{R} \\land x \\neq 0\\}$",
+        "Г": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{2}{3}\\}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Дефинициона област",
+      "topicArea": "analiza",
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 9,
+      "part": 1,
+      "points": 1,
+      "questionText": "Këndi që është tri herë më i vogël nga këndi i tij suplementar është i barabartë me:",
+      "choices": {
+        "А": "$60^{\\circ}$",
+        "Б": "$45^{\\circ}$",
+        "В": "$40^{\\circ}$",
+        "Г": "$30^{\\circ}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Агли",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 10,
+      "part": 1,
+      "points": 1,
+      "questionText": "Nëse pika $M$ është mesi i brinjës $AD$ të paralelogramit $ABCD$, atëherë vektori $\\overrightarrow{MC}$ është i barabartë me:",
+      "choices": {
+        "А": "$\\overrightarrow{AD} - \\frac{1}{2}\\overrightarrow{AB}$",
+        "Б": "$\\overrightarrow{AB} - \\frac{1}{2}\\overrightarrow{AD}$",
+        "В": "$\\overrightarrow{AB} + \\frac{1}{2}\\overrightarrow{AD}$",
+        "Г": "$\\overrightarrow{AD} + \\frac{1}{2}\\overrightarrow{AB}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Вектори",
+      "topicArea": "matrici-vektori",
+      "conceptIds": [
+        "gym10-c5-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 11,
+      "part": 2,
+      "points": 1,
+      "questionText": "Romb me gjatësi të brinjës $12\\text{ cm}$ dhe largesë nga pikëprerje e diagonaleve deri te brinja prej $5\\text{ cm}$, ka syprinë të barabartë me:",
+      "choices": {
+        "А": "$144\\text{ cm}^2$",
+        "Б": "$140\\text{ cm}^2$",
+        "В": "$120\\text{ cm}^2$",
+        "Г": "$100\\text{ cm}^2$"
+      },
+      "correctAnswer": "В",
+      "topic": "Планиметрија - Ромб",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 12,
+      "part": 2,
+      "points": 1,
+      "questionText": "Trapez barakrahas, bazat e të cilit janë $12$ dhe $6$, kurse krahu është $5$, ka lartësi të barabartë me:",
+      "choices": {
+        "А": "$3$",
+        "Б": "$4$",
+        "В": "$5$",
+        "Г": "$2,5$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Планиметрија - Трапез",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 13,
+      "part": 2,
+      "points": 1,
+      "questionText": "Vëllimi i konit të drejtë rrethor me rreze $9\\text{ cm}$ dhe lartësi $2\\text{ cm}$ është:",
+      "choices": {
+        "А": "$54\\pi\\text{ cm}^3$",
+        "Б": "$54\\pi\\text{ cm}^2$",
+        "В": "$162\\pi\\text{ cm}^3$",
+        "Г": "$162\\pi\\text{ cm}^2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Стереометрија - Конус",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 14,
+      "part": 2,
+      "points": 1,
+      "questionText": "Cilindër i drejtë rrethor me lartësi $8$ dhe perimetër të bazës $20\\pi$ ka syprinë:",
+      "choices": {
+        "А": "$360$",
+        "Б": "$260$",
+        "В": "$360\\pi$",
+        "Г": "$260\\pi$"
+      },
+      "correctAnswer": "В",
+      "topic": "Стереометрија - Цилиндар",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 15,
+      "part": 2,
+      "points": 1,
+      "questionText": "Nëse tehu i bazës të prizmit të drejtë trebrinjësh zmadhohet $4$ herë, kurse lartësia zvoglohet $2$ herë, atëherë vëllimi i prizmit:",
+      "choices": {
+        "А": "do të zvoglohet $8$ herë",
+        "Б": "do të zmadhohet $2$ herë",
+        "В": "do të zmadhohet $4$ herë",
+        "Г": "do të zmadhohet $8$ herë"
+      },
+      "correctAnswer": "Г",
+      "topic": "Стереометрија - Призма",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 16,
+      "part": 3,
+      "points": 1,
+      "questionText": "Në cilin kuadrant shtrihet pika $A(-2,-2)$?",
+      "choices": {
+        "А": "Në kuadrantin e parë",
+        "Б": "Në kuadrantin e dytë",
+        "В": "Në kuadrantin e tretë",
+        "Г": "Në kuadrantin e katërt"
+      },
+      "correctAnswer": "В",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 17,
+      "part": 3,
+      "points": 1,
+      "questionText": "Cila nga drejtëzat e dhëna kalon nëpër pikën $A(1,4)$ dhe ka koeficient të drejtimit $k = -2$?",
+      "choices": {
+        "А": "$2x + y = 6$",
+        "Б": "$2x + y = 9$",
+        "В": "$2x - y = 7$",
+        "Г": "$2x - y = -2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Равенка на права",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 18,
+      "part": 3,
+      "points": 1,
+      "questionText": "Drejtëza $y = kx+2$ është normale me drejtëzën $3y+2x=1$, nëse:",
+      "choices": {
+        "А": "$k = -\\frac{2}{3}$",
+        "Б": "$k = -\\frac{3}{2}$",
+        "В": "$k = \\frac{1}{2}$",
+        "Г": "$k = \\frac{3}{2}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Нормалност на прави",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 19,
+      "part": 3,
+      "points": 1,
+      "questionText": "Caktoni cili nga vargjet e dhëna prej numrave real është progresion aritmetik:",
+      "choices": {
+        "А": "$\\frac{1}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{11}{2}, \\dots$",
+        "Б": "$\\frac{3}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{9}{2}, \\dots$",
+        "В": "$\\frac{2}{3}, \\frac{2}{5}, \\frac{2}{7}, \\frac{2}{9}, \\dots$",
+        "Г": "$\\frac{3}{2}, -\\frac{5}{2}, \\frac{7}{2}, -\\frac{9}{2}, \\dots$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Аритметичка прогресија",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 20,
+      "part": 3,
+      "points": 1,
+      "questionText": "Shuma e pesë antarëve të parë të progresionit gjeometrik me antarë të parë $81$ dhe herës $\\frac{2}{3}$ është:",
+      "choices": {
+        "А": "$\\frac{211}{81}$",
+        "Б": "$\\frac{275}{81}$",
+        "В": "$211$",
+        "Г": "$275$"
+      },
+      "correctAnswer": "В",
+      "topic": "Геометриска прогресија",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym12-c2-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 21,
+      "part": 4,
+      "points": 2,
+      "questionText": "Zbërtheni në faktorë të thjeshtë polinomin $8x^3y - 8x^2y^2 + 2xy^3$.",
+      "choices": {},
+      "correctAnswer": "$2xy(2x-y)^2$",
+      "topic": "Полиноми",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 22,
+      "part": 4,
+      "points": 2,
+      "questionText": "Janë dhënë funksionet $f(x) = (3m-5)x - 4 + m$ dhe $g(x) = (3-m)x + m - 1$. А. Për cilën vlerë të parametrit $m$ grafiqet e funksioneve janë drejtëza paralele? Б. Për cilën vlerë të parametrit $m$ grafiku i funksionit $f(x)$ kalon nëpër pikënisjen e koordinatave?",
+      "choices": {},
+      "correctAnswer": "А. $m=2$, Б. $m=4$",
+      "topic": "Линеарни функции со параметар",
+      "topicArea": "analiza",
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 23,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Zgjidhja e inekuacionit $\\frac{1}{3x+2} > \\frac{1}{2x-3}$ është ____________________. Б. Për cilat vlera të $x$, vlera e shprehjes $3x-8$ është ndërmjet $1$ dhe $7$?",
+      "choices": {},
+      "correctAnswer": "А. $x \\in (-\\infty, -5) \\cup (\\frac{2}{3}, \\frac{3}{2})$, Б. $x \\in (3, 5)$",
+      "topic": "Линеарни неравенки",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 24,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Mesatarja aritmetike e numrave $a$ dhe $b$ është e barabartë me __________________. Б. Mesatarja aritmetike e numrave $a$ dhe $b$ është për dy më e madhe nga prodhimi i tyre. Nëse $a=4$, atëherë $b=$ ____________________.",
+      "choices": {},
+      "correctAnswer": "А. $\\frac{a+b}{2}$, Б. $0$",
+      "topic": "Аритметичка средина",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 25,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Shumëkëndëshi i rregullt tek i cili mund të tërhiqen gjithsej $14$ diagonale ka _________ brinjë. Б. Njëri nga këndet në trekëndëshin e dhënë është për $15^{\\circ}$ më i madh nga këndi i dytë, kurse për $15^{\\circ}$ më i vogël nga këndi i tretë në trekëndësh. Këndi më i vogël në atë trekëndësh është i barabartë me _____________.",
+      "choices": {},
+      "correctAnswer": "А. $7$, Б. $45^{\\circ}$",
+      "topic": "Многуаголници и агли",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 26,
+      "part": 4,
+      "points": 2,
+      "questionText": "Brinjët e një trekëndëshi janë $8, 15$ dhe $17$. А. Syprina e trekëndëshit është _____________. Б. Gjatësia e lartësisë më të madhe të këtij trekëndëshi është __________.",
+      "choices": {},
+      "correctAnswer": "А. $60$, Б. $15$",
+      "topic": "Планиметрија - Триаголник",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 27,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Vëllimi i kubit me syprinë prej $726\\text{ cm}^2$ është ____________ $\\text{cm}^3$. Б. Syprina e prerjes diagonale të kubit është _________ $\\text{cm}^2$.",
+      "choices": {},
+      "correctAnswer": "А. $1331\\text{ cm}^3$, Б. $121\\sqrt{2}\\text{ cm}^2$",
+      "topic": "Стереометрија - Коцка",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 28,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Syprina e sferës me rreze $3\\text{ cm}$ është e barabartë me ___________ $\\text{cm}^2$. Б. Vëllimi i topit me rreze $3\\text{ cm}$ është i barabartë ___________ $\\text{cm}^3$.",
+      "choices": {},
+      "correctAnswer": "А. $36\\pi\\text{ cm}^2$, Б. $36\\pi\\text{ cm}^3$",
+      "topic": "Стереометрија - Сфера и топка",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 29,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Forma segmentare e barazimit të drejtëzës $q$, e cila i pret boshtet koordinative në pikat $A(3,0)$ dhe $B(0,-2)$, është ______________________. Б. Pikëprerja e drejtëzave $x+y-3=0$ dhe $2x+3y-8=0$ ka koordinatat ___________________________.",
+      "choices": {},
+      "correctAnswer": "А. $\\frac{x}{3} + \\frac{y}{-2} = 1$, Б. $(1, 2)$",
+      "topic": "Аналитичка геометрија - Права",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 30,
+      "part": 4,
+      "points": 2,
+      "questionText": "Janë dhënë numrat $20$, $50$ dhe $100$. А. Nëse dy numrave të parë u shtohet një numër i njëjtë, kurse i treti mbetet i njëjtë, fitohen tre anëtarë të njëpasnjëshëm të progresionit aritmetik. Numri që duhet të shtohet është ____________. Б. Nëse secilit prej tre numrave të dhënë u shtohet një numër i njëjtë, fitohen tre anëtarë të njëpasnjëshëm të progresionit gjeometrik. Numri që duhet të shtohet është ______________.",
+      "choices": {},
+      "correctAnswer": "А. $20$, Б. $25$",
+      "topic": "Аритметичка и геометриска прогресија",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 31,
+      "part": 5,
+      "points": 4,
+      "questionText": "Kryeni operacionet e shënuara dhe thjeshtoni shprehjen: $\\left( \\frac{a-1}{a+1} + \\frac{a^3+1}{a^2-2a+1} : \\frac{a^2-a+1}{1-a} \\right) \\cdot (1+a) + \\frac{3a+1}{a-1}$.",
+      "choices": {},
+      "correctAnswer": "$\\frac{a-1}{a}$",
+      "topic": "Рационални алгебарски изрази",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 32,
+      "part": 5,
+      "points": 3,
+      "questionText": "Caktoni numrin më të madh të plotë që është zgjidhje e inekuacionit $\\frac{x-2}{7} - x < 3 - \\frac{6x+7}{2}$.",
+      "choices": {},
+      "correctAnswer": "$-1$",
+      "topic": "Неравенки",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 33,
+      "part": 5,
+      "points": 4,
+      "questionText": "Raporti i një numri dyshifror dhe numrit të shënuar me shifra të njëjta, por në renditje të kundërt, është i barabartë me $3:8$. Nëse më i madhi prej këtyre numrave zvogëlohet për numrin më të vogël, fitohet $45$. Cilët janë ata numra?",
+      "choices": {},
+      "correctAnswer": "Numrat janë $27$ dhe $72$.",
+      "topic": "Проблемски задачи со системи",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-6"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 34,
+      "part": 5,
+      "points": 5,
+      "questionText": "Është dhënë barazimi $(k-2)x^2 - (k+1)x + k+1 = 0$, ku $k$ është parametër real. А. Për cilën vlerë të parametrit $k$ barazimi është linear? Б. Për cilën vlerë të parametrit $k$ barazimi katror ka zgjidhje reale? В. Për cilën vlerë të parametrit $k$ rrënjët e barazimit katror e plotësojnë kushtin $x_1 = -\\frac{1}{x_2}$?",
+      "choices": {},
+      "correctAnswer": "А. $k=2$, Б. $k \\in [-1, 3]$, В. $k=0,5$",
+      "topic": "Квадратни равенки со параметар",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym11-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 35,
+      "part": 5,
+      "points": 3,
+      "questionText": "Në rrethin me syprinë $256\\pi$, janë brendashkruar katrori dhe gjashtëkëndëshi i rregullt. Llogaritni syprinat e katrorit dhe gjashtëkëndëshit.",
+      "choices": {},
+      "correctAnswer": "Syprina e katrorit: $512$, Syprina e gjashtëkëndëshit: $384\\sqrt{3}$.",
+      "topic": "Планиметрија - Круг и многуаголници",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-6"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 36,
+      "part": 5,
+      "points": 4,
+      "questionText": "Piramida e rregullt katërbrinjëshe me tehun e bazës të barabartë me $5\\text{ dm}$ ka vëllim $50\\text{ dm}^3$. Llogaritni syprinën e piramidës.",
+      "choices": {},
+      "correctAnswer": "$P=90\\text{ dm}^2$",
+      "topic": "Стереометрија - Пирамида",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-6"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 37,
+      "part": 5,
+      "points": 4,
+      "questionText": "Brinjët e një drejtkëndëshi $ABCD$ dallojnë për $4$. Syprina e cilindrit, që fitohet me rrotullimin e drejtkëndëshit rreth brinjës më të gjatë $AB$, është e barabartë me $192\\pi$. А. Bëni skicën e cilindrit të fituar... Б. Caktoni gjatësitë e brinjëve të drejtkëndëshit... В. Llogaritni vëllimin e cilindrit të fituar.",
+      "choices": {},
+      "correctAnswer": "$V=360\\pi$",
+      "topic": "Стереометрија - Ротациони тела",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-7"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 38,
+      "part": 5,
+      "points": 3,
+      "questionText": "Largesa ndërmjet pikave $M(-2,-5)$ dhe $N$ është e barabartë me $2$. Gjeni koordinatat e pikës $N$, nëse dihet që ajo shtrihet në drejtëzën $3x-y-1=0$.",
+      "choices": {},
+      "correctAnswer": "$N_1(-2, -7)$ dhe $N_2(-\\frac{4}{5}, -\\frac{17}{5})$",
+      "topic": "Аналитичка геометрија - Растојание",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 39,
+      "part": 5,
+      "points": 4,
+      "questionText": "Kulmet e trekëndëshit $ABC$ janë pikat: $A(-1,-3)$, $B(3,3)$ dhe $C(7,5)$. Shkruani në formën e përgjithshme barazimin e vijës mesatare të tërhequr nga kulmi $A$ i këtij trekëndëshi. Caktoni koordinatat e qendrës së rëndesës $T$ të trekëndëshit të dhënë.",
+      "choices": {},
+      "correctAnswer": "Barazimi: $7x-6y-11=0$, Qendra e rëndesës: $T(3, \\frac{5}{3})$",
+      "topic": "Аналитичка геометрија - Trekëndëshi",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-6"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 40,
+      "part": 5,
+      "points": 4,
+      "questionText": "Është dhënë progresioni aritmetik me anëtarin e dytë të barabartë me $2$. Shuma nga anëtari i pestë dhe i gjashtë i progresionit është e barabartë me $25$. Caktoni shumën e njëzet anëtarëve të parë të progresionit me indeks çift.",
+      "choices": {},
+      "correctAnswer": "$S = 1180$",
+      "topic": "Аритметичка прогресија",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym12-c2-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    }
+  ]
+}

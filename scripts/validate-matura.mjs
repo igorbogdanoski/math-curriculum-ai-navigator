@@ -19,6 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const VALID_CHOICES = ['А', 'Б', 'В', 'Г'];
+const VALID_CORRECT_ANSWERS = [...VALID_CHOICES, 'X'];
 const VALID_TOPIC_AREAS = [
   'algebra', 'analiza', 'geometrija', 'statistika',
   'kombinatorika', 'trigonometrija', 'matrici-vektori', 'broevi',
@@ -108,8 +109,8 @@ if (Array.isArray(questions)) {
       }
       if (!q.correctAnswer)
         errors.push(`${loc}: missing correctAnswer`);
-      else if (!VALID_CHOICES.includes(q.correctAnswer))
-        errors.push(`${loc}: correctAnswer "${q.correctAnswer}" not in А/Б/В/Г`);
+      else if (!VALID_CORRECT_ANSWERS.includes(q.correctAnswer))
+        errors.push(`${loc}: correctAnswer "${q.correctAnswer}" not in А/Б/В/Г/X`);
     }
 
     // ── Open-specific validation ───────────────────────────────────────────────

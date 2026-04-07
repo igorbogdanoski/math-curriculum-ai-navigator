@@ -1,0 +1,724 @@
+{
+  "exam": {
+    "id": "dim-gymnasium-2023-august-al",
+    "year": 2023,
+    "session": "august",
+    "language": "al",
+    "title": "ДИМ Гимназиско — Август 2023 (АЛ)",
+    "durationMinutes": 180,
+    "track": "gymnasium",
+    "gradeLevel": 12,
+    "questionCount": 30,
+    "totalPoints": 61
+  },
+  "questions": [
+    {
+      "questionNumber": 1,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Është dhënë bashkësia $M = \\{a,b,c\\}$. I saktë është pohimi:",
+      "choices": {
+        "А": "$\\{a\\} \\in M$",
+        "Б": "$\\{c,b,a\\} \\subseteq M$",
+        "В": "$\\emptyset \\in M$",
+        "Г": "$\\{a,b,c\\} \\in M$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 2,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Sa numra natyror ka në intervalin $[-1, 5)$?",
+      "choices": {
+        "А": "4",
+        "Б": "5",
+        "В": "6",
+        "Г": "7"
+      },
+      "correctAnswer": "А",
+      "topic": "Бројни интервали",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 3,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Në qoftë se $a$ është numri më i vogël treshifror i cili gjatë pjesëtimit me $7$ ka herësin $5$. Në qoftë se $b$ është numri më i madh treshifror i cili gjatë pjesëtimit me $7$ ka herësin $5$. Sa është $a+b$?",
+      "choices": {
+        "А": "1012",
+        "Б": "1102",
+        "В": "1120",
+        "Г": "1210"
+      },
+      "correctAnswer": "Б",
+      "topic": "Деливост",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym-ea11-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 4,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Shprehja $2^8 m^3 n^6 p : (2 m n^{-2} p)$ është e barabartë me:",
+      "choices": {
+        "А": "$2^7 m^2 n^8$",
+        "Б": "$2^7 m^2 n^4$",
+        "В": "$2^7 m^2 n^3$",
+        "Г": "$2^4 m^3 n^{-3}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Степени и полиноми",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 5,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Polinomi $-x^2 + 2x - 1$ është ekuivalent me:",
+      "choices": {
+        "А": "$(-x-1)^2$",
+        "Б": "$-(x-1)^2$",
+        "В": "$-(x+1)^2$",
+        "Г": "$(-x+1)^2$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Формули за скратено множење",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 6,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Sistemi i barazimeve $\\begin{cases} 2x+5y=7 \\\\ kx+10y=14 \\end{cases}$ ka pafund shumë zgjidhje për:",
+      "choices": {
+        "А": "$k \\neq 2$",
+        "Б": "$k = 2$",
+        "В": "$k \\neq 4$",
+        "Г": "$k = 4$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Системи линеарни равенки",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 7,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Cili nga barazimet e dhënë ka një zgjidhje $x_1 = 2+i$?",
+      "choices": {
+        "А": "$x^2 - 4x + 3 = 0$",
+        "Б": "$x^2 + 4x + 3 = 0$",
+        "В": "$x^2 - 4x + 5 = 0$",
+        "Г": "$x^2 + 4x + 5 = 0$"
+      },
+      "correctAnswer": "В",
+      "topic": "Квадратни равенки",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 8,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Në qoftë se $x-y=3$ dhe $x^2+y^2=5$, atëherë $xy=$",
+      "choices": {
+        "А": "$-2$",
+        "Б": "$-5$",
+        "В": "$15$",
+        "Г": "$25$"
+      },
+      "correctAnswer": "А",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 9,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Me cilën shprehje mund të paraqitet $b$, në qoftë se $c = \\frac{a+b}{a-b}$?",
+      "choices": {
+        "А": "$b = \\frac{a(c+1)}{c-1}$",
+        "Б": "$b = \\frac{a(c-1)}{c+1}$",
+        "В": "$b = \\frac{c+1}{a(c-1)}$",
+        "Г": "$b = \\frac{c-1}{a(c+1)}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Рационални изрази",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 10,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Vëllimi i një kubi (zari) është $27\\text{ m}^3$. Sa është syprina e tij?",
+      "choices": {
+        "А": "$9\\text{ m}^3$",
+        "Б": "$18\\text{ m}^3$",
+        "В": "$27\\text{ m}^3$",
+        "Г": "$54\\text{ m}^3$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Коцка",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 11,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Në qoftë se syprina e rrethit të madh të sferës është $16\\pi$, atëherë syprina e sferës është:",
+      "choices": {
+        "А": "$P=4\\pi$",
+        "Б": "$P=64\\pi$",
+        "В": "$P=128\\pi$",
+        "Г": "$P=256\\pi$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Сфера",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 12,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Në një romb me perimetër $20\\text{ cm}$ dhe syprinë prej $20\\text{ cm}^2$ është brendashkruar një vijë rrethore. Rrezja e vijës rrethore është:",
+      "choices": {
+        "А": "$4\\text{ cm}$",
+        "Б": "$8\\text{ cm}$",
+        "В": "$20\\text{ cm}$",
+        "Г": "$40\\text{ cm}$"
+      },
+      "correctAnswer": "X",
+      "topic": "Четириаголници",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": "Kjo detyrë është anuluar/përjashtuar në çelësin zyrtar sepse përgjigja e saktë nuk është ndër opsionet e ofruara. Perimetri është $20\\text{ cm}$, kështu që brinja është $a=5\\text{ cm}$. Syprina është $P = a \\cdot h = 20$, kështu që lartësia është $h=4\\text{ cm}$. Rrezja e vijës rrethore të brendashkruar është $r = \\frac{h}{2} = 2\\text{ cm}$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 13,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Këndet e brendshëm në një trekëndësh po sillen si $2:4:3$. Sa shkallë ka këndi më i vogël në trekëndësh?",
+      "choices": {
+        "А": "$30^\\circ$",
+        "Б": "$40^\\circ$",
+        "В": "$90^\\circ$",
+        "Г": "$120^\\circ$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Триаголник",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 14,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Për sa për qind do të rritet vëllimi i cilindrit në qoftë se rrezja rritet për $20\\%$?",
+      "choices": {
+        "А": "$40\\%$",
+        "Б": "$44\\%$",
+        "В": "$50\\%$",
+        "Г": "$400\\%$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Цилиндар",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 15,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Në qoftë se $\\text{tg} 2\\alpha = \\text{ctg} 70^\\circ$, dhe $0 < \\alpha < 45^\\circ$, atëherë madhësia e këndit $\\alpha$ është:",
+      "choices": {
+        "А": "$10^\\circ$",
+        "Б": "$20^\\circ$",
+        "В": "$30^\\circ$",
+        "Г": "$40^\\circ$"
+      },
+      "correctAnswer": "А",
+      "topic": "Тригонометриски равенки",
+      "topicArea": "trigonometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c2-4"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 16,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "A. Përcakto të gjithë numrat real $a$ për të cilët vlen $|a-2| < 3$.\nB. Në qoftë se $M = \\{1,3,5,7,9\\}$ dhe $S = \\{x \\mid x \\in \\mathbb{N}, x \\le 5\\}$. Përcaktoje $(M \\cap S) \\times (S \\setminus M)$.",
+      "choices": null,
+      "correctAnswer": "A. $(-1,5)$ ose $\\{x \\mid x \\in \\mathbb{R}, -1 < x < 5\\}$, B. $\\{(1,2), (1,4), (3,2), (3,4), (5,2), (5,4)\\}$",
+      "topic": "Множества и апсолутна вредност",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2",
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 17,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "A. Fusha e definimit e thyesës algjebrike $\\frac{2x+1}{(x-1)(x+3)}$ është _________________________________.\nB. Funksioni $f(x) = (m-1)x + 3 - m$ është rritës për $m \\in$ ____________________.",
+      "choices": null,
+      "correctAnswer": "A. $\\mathbb{R} \\setminus \\{-3,1\\}$, B. $(1,\\infty)$",
+      "topic": "Функции и изрази",
+      "topicArea": "analiza",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 18,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "A. Është dhënë barazimi $5x^2+mx+n=0$. Përcakto vlerat e parametrave $m$ dhe $n$, në qoftë se dihet se $x_1+x_2=-2$ dhe $x_1-x_2=6$, gjatë së cilës $x_1$ dhe $x_2$ janë zgjidhjet e barazimit.",
+      "choices": null,
+      "correctAnswer": "$m=10$, $n=-40$",
+      "topic": "Квадратни равенки",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 19,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "Në qoftë se $ABCDEF$ është gjashtëkëndësh i rregullt dhe $S$ është prerja e diagonaleve të tij.\nA. Paraqite vektorin $\\overrightarrow{BS}$ me ndihmën e vektorëve $\\overrightarrow{AB} = \\vec{a}$ and $\\overrightarrow{BC} = \\vec{b}$.\nB. Sa është syprina e gjashtëkëndëshit të dhënë, në qoftë se brinja e tij $a=10\\text{ cm}$?",
+      "choices": null,
+      "correctAnswer": "A. $\\overrightarrow{BS} = \\vec{b} - \\vec{a}$, B. $S = 150\\sqrt{3}\\text{ cm}^2$",
+      "topic": "Вектори и многуаголници",
+      "topicArea": "matrici-vektori",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-1",
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 20,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "A. Trapezi drejtkëndor me baza $19\\text{ cm}$ dhe $11\\text{ cm}$ dhe një brinjë më të madh $17\\text{ cm}$ rrotullohet rreth brinjës më të vogël. Sa është syprina e prerjes boshtore të trupit të fituar rrotullues?\nB. Përllogarite vlerën e shprehjes $A = \\frac{\\sin\\frac{\\alpha}{2} - 3\\text{tg}(\\alpha - 15^\\circ)}{\\sin^2\\alpha}$, në qoftë se $\\alpha = 60^\\circ$.",
+      "choices": null,
+      "correctAnswer": "A. $450\\text{ cm}^2$, B. $A = -\\frac{10}{3}$",
+      "topic": "Ротациони тела и тригонометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1",
+        "gym12-c2-4"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 21,
+      "part": 3,
+      "points": 3,
+      "questionType": "open",
+      "questionText": "Janë dhënë pohimet $p: \\frac{2}{3} + 2 : \\frac{6}{5} = 2\\frac{1}{3}$ dhe $q: \\text{numri zero nuk është numër i plotë}$.\nA. Përcaktoje vlerën e vërtetësisë së pohimeve $p$ dhe $q$.\nB. Përcaktoje vlerën e vërtetësisë së formulës pohuese $F = (q \\land \\neg p) \\Leftrightarrow q$.",
+      "choices": null,
+      "correctAnswer": "A. $\\tau(p)=\\top, \\tau(q)=\\bot$, B. $\\tau(F)=\\top$",
+      "topic": "Искази",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": "A. $p: \\frac{2}{3} + 2 \\cdot \\frac{5}{6} = \\frac{2}{3} + \\frac{5}{3} = \\frac{7}{3} = 2\\frac{1}{3}$, kështu që $\\tau(p) = \\top$. $q$: zero është numër i plotë, kështu që $\\tau(q) = \\bot$. B. $F = (\\bot \\land \\bot) \\Leftrightarrow \\bot = \\bot \\Leftrightarrow \\bot = \\top$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 22,
+      "part": 3,
+      "points": 3,
+      "questionType": "open",
+      "questionText": "Në qoftë se $z_1 = 2 - i$ dhe $z_2 = 1 + i$.\nPërcaktoje modulin e numrit kompleks $\\frac{z_1 + z_2 + 1}{z_1 - z_2 + i}$.",
+      "choices": null,
+      "correctAnswer": "$2\\sqrt{2}$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": "Numëruesi: $z_1 + z_2 + 1 = 2 - i + 1 + i + 1 = 4$. Emëruesi: $z_1 - z_2 + i = 2 - i - 1 - i + i = 1 - i$. Thyesa është $\\frac{4}{1-i} = \\frac{4(1+i)}{1^2+1^2} = 2 + 2i$. Moduli është $\\sqrt{2^2 + 2^2} = \\sqrt{8} = 2\\sqrt{2}$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 23,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Thjeshtoje shprehjen $\\frac{9a}{(3-a)^2} - 1 : \\left( \\frac{a}{a-3} + \\frac{12a^2 - 9a}{27 - a^3} + \\frac{9}{a^2 + 3a + 9} \\right)$, në qoftë se $x \\neq 3$.",
+      "choices": null,
+      "correctAnswer": "-1",
+      "topic": "Рационални изрази",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": "Shprehja në kllapa: $\\frac{-a(a^2+3a+9) + 12a^2 - 9a + 9(3-a)}{(3-a)(9+3a+a^2)} = \\frac{-a^3-3a^2-9a+12a^2-9a+27-9a}{(3-a)(9+3a+a^2)} = \\frac{-a^3+9a^2-27a+27}{(3-a)(9+3a+a^2)} = \\frac{(3-a)^3}{(3-a)(9+3a+a^2)} = \\frac{(3-a)^2}{9+3a+a^2}$. Pjesëtimi zëvendësohet me shumëzim: $\\frac{9a}{(3-a)^2} - \\frac{9+3a+a^2}{(3-a)^2} = \\frac{9a - 9 - 3a - a^2}{(3-a)^2} = \\frac{-a^2+6a-9}{(3-a)^2} = \\frac{-(a-3)^2}{(a-3)^2} = -1$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 24,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Zgjidhe jobarazimin $\\frac{9x+7}{2} - \\left( x - \\frac{x-2}{7} \\right) < 3$.\nCili është numri i plotë më i madh që kënaq jobarazimin?",
+      "choices": null,
+      "correctAnswer": "$x < -1/17$, numri i plotë më i madh është -1",
+      "topic": "Линеарни неравенки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": "Shprehja në kllapa është $\\frac{7x - x + 2}{7} = \\frac{6x+2}{7}$. Jobarazimi bëhet $\\frac{9x+7}{2} - \\frac{6x+2}{7} < 3$. Shumëzojmë me 14: $7(9x+7) - 2(6x+2) < 42 \\Rightarrow 63x + 49 - 12x - 4 < 42 \\Rightarrow 51x + 45 < 42 \\Rightarrow 51x < -3 \\Rightarrow x < -\\frac{3}{51} = -\\frac{1}{17}$. Numri i plotë më i madh më i vogël se $-1/17$ është $-1$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 25,
+      "part": 3,
+      "points": 3,
+      "questionType": "open",
+      "questionText": "Një person ka investuar një shumë deri në $12000$ denarë në dy banka të ndryshme. Shkalla e kamatës vjetore në bankën e parë është $9\\%$, kurse në bankën e dytë $11\\%$. Nga sa para ka investuar personi në secilën bankë, në qoftë se për një vit ai ka fituar një kamatë prej $1180$ denarësh?",
+      "choices": null,
+      "correctAnswer": "7000 në të parën, 5000 në të dytën",
+      "topic": "Системи линеарни равенки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": "Le të jetë $x$ paratë në bankën e parë, dhe $y$ në të dytën. Sistemi është: $x+y=12000$ dhe $0.09x + 0.11y = 1180$. Shumëzojmë me 100: $9x + 11y = 118000$. Nga e para $y = 12000 - x$. Zëvendësojmë: $9x + 11(12000 - x) = 118000 \\Rightarrow 9x + 132000 - 11x = 118000 \\Rightarrow -2x = -14000 \\Rightarrow x = 7000$. Atëherë $y = 5000$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 26,
+      "part": 3,
+      "points": 5,
+      "questionType": "open",
+      "questionText": "Është dhënë funksioni linear $f(x) = (m^2 - 4)x - 3m$. Përcaktoje vlerën e parametrit $m$, ashtu që:\nA. numri një të jetë zero e funksionit.\nB. grafiku i funksionit të kalojë nëpër pikën $M(0,3)$.\nC. grafiku i funksionit të jetë paralel me grafikun e funksionit $g(x)=2$.\nÇ. skicoje grafikun e funksionit $f(x)$, për $m=-1$.",
+      "choices": null,
+      "correctAnswer": "A. $m=-1, m=4$, B. $m=-1$, C. $m=-2, m=2$, Ç. grafiku",
+      "topic": "Линеарни функции",
+      "topicArea": "analiza",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": "A. $f(1) = 0 \\Rightarrow m^2 - 4 - 3m = 0 \\Rightarrow m^2 - 3m - 4 = 0 \\Rightarrow m_1 = -1, m_2 = 4$. B. $f(0) = 3 \\Rightarrow -3m = 3 \\Rightarrow m = -1$. C. Drejtëzat paralele kanë koeficient të njëjtë drejtimi. Për $g(x)=2$, $k=0$. Pra $m^2 - 4 = 0 \\Rightarrow m = \\pm 2$. Ç. Për $m=-1$, $f(x) = (1-4)x - 3(-1) = -3x + 3$. Grafiku është drejtëz që kalon nëpër $(0,3)$ dhe $(1,0)$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 27,
+      "part": 3,
+      "points": 3,
+      "questionType": "open",
+      "questionText": "Është dhënë një kon me rreze të bazës $6\\text{ dm}$ dhe lartësi $80\\text{ cm}$.\nA. Përllogarite syprinën e konit.\nB. Përllogarite vëllimin e konit.",
+      "choices": null,
+      "correctAnswer": "$P=96\\pi\\text{ dm}^2, V=96\\pi\\text{ dm}^3$",
+      "topic": "Конус",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "voc3-10-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": "Rrezja $R = 6\\text{ dm}$, lartësia $H = 80\\text{ cm} = 8\\text{ dm}$. Përftuesja $s = \\sqrt{R^2 + H^2} = \\sqrt{36 + 64} = 10\\text{ dm}$. Syprina $P = R^2\\pi + R\\pi s = 36\\pi + 60\\pi = 96\\pi\\text{ dm}^2$. Vëllimi $V = \\frac{1}{3}R^2\\pi H = \\frac{1}{3} \\cdot 36\\pi \\cdot 8 = 96\\pi\\text{ dm}^3$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 28,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Një prerje paralele e ndan lartësinë e piramidës në raport $3:2$, llogaritur nga baza e piramidës. Syprina e prerjes paralele është për $21$ më e vogël se syprina e bazës së piramidë.\nPërllogarite syprinën e bazës së piramidës.",
+      "choices": null,
+      "correctAnswer": "$B=25$",
+      "topic": "Пирамида",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": "Le të jetë lartësia $H = 5k$. Prerja është në distancë $3k$ nga baza, kështu që lartësia e piramidës së vogël është $y = 2k$. Raporti i syprinave është $\\frac{B_1}{B} = \\left(\\frac{y}{H}\\right)^2 = \\left(\\frac{2k}{5k}\\right)^2 = \\frac{4}{25}$. Është dhënë $B_1 = B - 21$. Zëvendësojmë: $\\frac{B-21}{B} = \\frac{4}{25} \\Rightarrow 25B - 525 = 4B \\Rightarrow 21B = 525 \\Rightarrow B = 25$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 29,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Është dhënë një trekëndësh barakrahës këndi i të cilit në bazë është $45^\\circ$, kurse syprina e tij është $18\\text{ cm}^2$. Në trekëndësh është brendashkruar një katror, ashtu që një brinjë e tij qëndron në bazën e trekëndëshit.\nPërcaktoje syprinën e katrorit. Bën një skicë në të cilën do të shënosh të gjitha elementet e përdorura te përllogaritjet.",
+      "choices": null,
+      "correctAnswer": "$P_{kv}=8\\text{ cm}^2$",
+      "topic": "Триаголник и квадрат",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": "Trekëndëshi është drejtkëndor barakrahës (këndet $45^\\circ, 45^\\circ, 90^\\circ$). Syprina është $P = \\frac{b^2}{2} = 18 \\Rightarrow b^2 = 36 \\Rightarrow b = 6\\text{ cm}$. Baza është hipotenuza $a = b\\sqrt{2} = 6\\sqrt{2}\\text{ cm}$. Lartësia ndaj bazës është $h = \\frac{a}{2} = 3\\sqrt{2}\\text{ cm}$. Le të jetë brinja e katrorit $x$. Nga ngjashmëria e trekëndëshave: $\\frac{h-x}{x} = \\frac{h}{a} \\Rightarrow \\frac{3\\sqrt{2}-x}{x} = \\frac{3\\sqrt{2}}{6\\sqrt{2}} = \\frac{1}{2} \\Rightarrow 6\\sqrt{2} - 2x = x \\Rightarrow 3x = 6\\sqrt{2} \\Rightarrow x = 2\\sqrt{2}\\text{ cm}$. Syprina e katrorit është $P_{kv} = x^2 = (2\\sqrt{2})^2 = 8\\text{ cm}^2$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 30,
+      "part": 3,
+      "points": 3,
+      "questionType": "open",
+      "questionText": "Vërteto (dëshmo) identitetin: $\\sin^3\\alpha(1+\\text{ctg}\\alpha) + \\cos^3\\alpha(1+\\text{tg}\\alpha) = \\sin\\alpha + \\cos\\alpha$.",
+      "choices": null,
+      "correctAnswer": "Vërtetim",
+      "topic": "Тригонометриски идентитети",
+      "topicArea": "trigonometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c2-4"
+      ],
+      "hints": [],
+      "aiSolution": "Ana e majtë: $\\sin^3\\alpha(1 + \\frac{\\cos\\alpha}{\\sin\\alpha}) + \\cos^3\\alpha(1 + \\frac{\\sin\\alpha}{\\cos\\alpha}) = \\sin^3\\alpha \\frac{\\sin\\alpha+\\cos\\alpha}{\\sin\\alpha} + \\cos^3\\alpha \\frac{\\cos\\alpha+\\sin\\alpha}{\\cos\\alpha} = \\sin^2\\alpha(\\sin\\alpha+\\cos\\alpha) + \\cos^2\\alpha(\\sin\\alpha+\\cos\\alpha) = (\\sin\\alpha+\\cos\\alpha)(\\sin^2\\alpha+\\cos^2\\alpha) = (\\sin\\alpha+\\cos\\alpha) \\cdot 1 = \\sin\\alpha+\\cos\\alpha$.",
+      "successRatePercent": null
+    }
+  ]
+}

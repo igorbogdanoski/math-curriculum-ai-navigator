@@ -27,8 +27,8 @@
 | M6 — Remediation | ❌ | Не постои — следна голема задача |
 
 ### Испитна база (06.04.2026)
-- **10 испити**: ДИМ Гимназиско 2024 (јуни + август) × MK/AL/TR + 2025 (јуни + август) × MK/AL
-- **300 прашања** со conceptIds enrichment (100% покриеност)
+- **12 испити**: ДИМ Гимназиско 2024 (јуни + август) × MK/AL/TR + 2025 (јуни + август) × MK/AL + 2022 (август) × MK/AL
+- **380 прашања** со partial conceptIds enrichment (2022/2023 во тек)
 - **Само gymnasium track** — средно стручно следи по завршување на матура базата
 
 ---
@@ -375,6 +375,7 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-06 | S16-P5 | Gamma Branding — watermark overlay (free: ai.mismath.net, pro: schoolName/logo); schoolLogoUrl field in TeachingProfile | DONE |
 | 2026-04-06 | S16-P6 | Gamma PPTX export — lazy pptxgenjs; dark theme; all 9 slide types; speaker notes; footer watermark per slide | DONE |
 | 2026-04-06 | S16-B3 | Web Extractor — api/webpage-extract.ts (SSRF-safe, HTML→text); WEB_EXTRACTOR type; WebExtractorOptions; full generator pipeline | DONE |
+| 2026-04-06 | S16-M1 | August 2022 (MK + AL) Gymnasium enriched; June 2023 TR partial integration (1-17) | DONE |
 
 ---
 

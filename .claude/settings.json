@@ -50,7 +50,8 @@
       "Bash(wc -l views/*.tsx components/**/*.tsx)",
       "Bash(ls views/*.tsx)",
       "Bash(npx playwright:*)",
-      "Bash(grep -rn 'as any' c:/Users/pc4all/Downloads/math-curriculum-ai-navigator/src --include=*.tsx --include=*.ts -l)"
+      "Bash(grep -rn 'as any' c:/Users/pc4all/Downloads/math-curriculum-ai-navigator/src --include=*.tsx --include=*.ts -l)",
+      "Bash(grep -rn \"grades 1-9\\\\|grade 1-9\\\\|grades 1–9\\\\|grades.*1.*9\\\\|secondaryTrack\" /c/Users/pc4all/Downloads/math-curriculum-ai-navigator/services --include=*.ts -l)"
     ],
     "additionalDirectories": [
       "c:\\Users\\pc4all\\.claude\\plans",

@@ -1,0 +1,602 @@
+{
+  "exam": {
+    "id": "dim-gymnasium-2023-june-mk",
+    "year": 2023,
+    "session": "june",
+    "track": "gymnasium",
+    "gradeLevel": 12,
+    "language": "mk",
+    "durationMinutes": 180,
+    "title": "Државна матура — Гимназиско — јуни 2023",
+    "hasOfficialKey": false
+  },
+  "questions": [
+    {
+      "questionNumber": 1,
+      "part": 1,
+      "points": 1,
+      "questionText": "Кој од следниве искази е точен (вистинит)?",
+      "choices": {
+        "А": "$\\neg(p \\lor q) \\iff \\neg p \\lor \\neg q$",
+        "Б": "$\\neg(p \\lor q) \\iff \\neg p \\lor q$",
+        "В": "$\\neg(p \\lor q) \\iff \\neg p \\land \\neg q$",
+        "Г": "$\\neg(p \\lor q) \\iff \\neg p \\land q$"
+      },
+      "correctAnswer": "В",
+      "topic": "Искази",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": "Недостасуваат понудените математички искази (слика)",
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 2,
+      "part": 1,
+      "points": 1,
+      "questionText": "Кој од следниве броеви е имагинарен дел на комплексниот број $z=5i-3$?",
+      "choices": {
+        "А": "$-3$",
+        "Б": "$5$",
+        "В": "$-3i$",
+        "Г": "$5i$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 3,
+      "part": 1,
+      "points": 1,
+      "questionText": "Множеството решенија на равенката $|3x+1|=-3x-1$ е:",
+      "choices": {
+        "А": "$(-\\infty, -\\frac{1}{3}]$",
+        "Б": "$[-\\frac{1}{3}, \\infty)$",
+        "В": "$(-\\infty, -\\frac{1}{3})$",
+        "Г": "$x \\in \\mathbb{R}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Равенки со апсолутна вредност",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 4,
+      "part": 1,
+      "points": 1,
+      "questionText": "Изразот $\\frac{4^3 \\cdot 25^3}{10^6}$ е еднаков на:",
+      "choices": {
+        "А": "$\\frac{1}{10}$",
+        "Б": "$\\frac{1}{10^2}$",
+        "В": "$1$",
+        "Г": "$10$"
+      },
+      "correctAnswer": "В",
+      "topic": "Степени",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 5,
+      "part": 1,
+      "points": 1,
+      "questionText": "За која вредност на променливата $x$, изразот $\\sqrt{x+2}$ не е реален број?",
+      "choices": {
+        "А": "$x=-3$",
+        "Б": "$x=-\\frac{1}{2}$",
+        "В": "$x=\\frac{1}{2}$",
+        "Г": "$x=3$"
+      },
+      "correctAnswer": "А",
+      "topic": "Дефинициона област",
+      "topicArea": "analiza",
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": "Недостасува математичкиот израз (најверојатно корен или дропка)",
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 6,
+      "part": 1,
+      "points": 1,
+      "questionText": "Цената на еден колач е $55$ денари. Кој е најголемиот број колачи што може да се купат со $800$ денари?",
+      "choices": {
+        "А": "$13\\text{ колачи}$",
+        "Б": "$14\\text{ колачи}$",
+        "В": "$15\\text{ колачи}$",
+        "Г": "$16\\text{ колачи}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Проблемски задачи",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 7,
+      "part": 1,
+      "points": 1,
+      "questionText": "Која е вредноста на параметарот $k$, ако $(x-2)$ е еден прост множител на полиномот $p(x)=x^2-kx-2$?",
+      "choices": {
+        "А": "$-1$",
+        "Б": "$0$",
+        "В": "$1$",
+        "Г": "$2$"
+      },
+      "correctAnswer": "В",
+      "topic": "Полиноми (Безуов став)",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 8,
+      "part": 1,
+      "points": 1,
+      "questionText": "Ако $(x, y)$ е решение на системот $5x+3y=11$ и $3x+5y=13$, тогаш $x+y=$",
+      "choices": {
+        "А": "$1$",
+        "Б": "$2$",
+        "В": "$3$",
+        "Г": "$4$"
+      },
+      "correctAnswer": "В",
+      "topic": "Систем линеарни равенки",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 9,
+      "part": 1,
+      "points": 1,
+      "questionText": "Со кој од следниве изрази може да се претстави $g$, ако $\\frac{1}{f}+\\frac{1}{g}=m$?",
+      "choices": {
+        "А": "$g=\\frac{fm-1}{f}$",
+        "Б": "$g=\\frac{f}{fm+1}$",
+        "В": "$g=\\frac{f}{fm-1}$",
+        "Г": "$g=\\frac{1}{fm-f}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Трансформација на изрази",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 10,
+      "part": 1,
+      "points": 1,
+      "questionText": "Диjагоналата на еден квадрат е $10\\text{ cm}$. Колкава е плоштината на квадратот?",
+      "choices": {
+        "А": "$25\\text{ cm}^2$",
+        "Б": "$50\\text{ cm}^2$",
+        "В": "$100\\text{ cm}^2$",
+        "Г": "$200\\text{ cm}^2$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Планиметрија - Квадрат",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 11,
+      "part": 1,
+      "points": 1,
+      "questionText": "Во дадена кружница, збирот на еден централен агол $\\alpha$ и неговиот соодветен периферен агол е $150^{\\circ}$. Колкав е централниот агол?",
+      "choices": {
+        "А": "$50^{\\circ}$",
+        "Б": "$75^{\\circ}$",
+        "В": "$100^{\\circ}$",
+        "Г": "$150^{\\circ}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Агли во кружница",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 12,
+      "part": 1,
+      "points": 1,
+      "questionText": "Дадени се векторите $\\vec{a}=2\\vec{p}-3\\vec{q}$ и $\\vec{b}=\\vec{p}+2\\vec{q}$. Кој од следните вектори образува триаголник со векторите $\\vec{a}$ и $\\vec{b}$?",
+      "choices": {
+        "А": "$\\vec{c}=-3\\vec{p}+\\vec{q}$",
+        "Б": "$\\vec{c}=-3\\vec{p}-\\vec{q}$",
+        "В": "$\\vec{c}=3\\vec{p}+\\vec{q}$",
+        "Г": "$\\vec{c}=3\\vec{p}-\\vec{q}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Вектори",
+      "topicArea": "matrici-vektori",
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 13,
+      "part": 1,
+      "points": 1,
+      "questionText": "Плоштината на делтоид со дијагонали $2\\text{ dm}$ и $30\\text{ cm}$ e:",
+      "choices": {
+        "А": "$30\\text{ dm}^2$",
+        "Б": "$300\\text{ dm}^2$",
+        "В": "$300\\text{ cm}^2$",
+        "Г": "$600\\text{ cm}^2$"
+      },
+      "correctAnswer": "В",
+      "topic": "Планиметрија - Делтоид",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 14,
+      "part": 1,
+      "points": 1,
+      "questionText": "Цилиндар и конус имаат ист радиус на основата, а висините им се во однос $1:2$. Колкав е односот на волумените на цилиндарот и конусот?",
+      "choices": {
+        "А": "$1:2$",
+        "Б": "$2:1$",
+        "В": "$2:3$",
+        "Г": "$3:2$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Стереометрија - Цилиндар и конус",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 15,
+      "part": 1,
+      "points": 1,
+      "questionText": "Колку радијани има аголот од $135^{\\circ}$?",
+      "choices": {
+        "А": "$\\frac{2\\pi}{3}$",
+        "Б": "$\\frac{3\\pi}{4}$",
+        "В": "$\\frac{5\\pi}{6}$",
+        "Г": "$\\frac{3\\pi}{2}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Агли (Радијани и степени)",
+      "topicArea": "trigonometrija",
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 16,
+      "part": 2,
+      "points": 2,
+      "questionText": "А. Ако $A=\\{x \\mid x \\in \\mathbb{N} \\land x|8\\}$ и $B=\\{x \\mid x \\in \\mathbb{N} \\land 3<x\\le 8\\}$, тогаш $B \\setminus A = $ ______________.\nБ. $(-\\frac{17}{5}, \\frac{17}{5}) \\cap \\mathbb{N} = $ ______________.",
+      "choices": {},
+      "correctAnswer": "А. $\\{5, 6, 7\\}$, Б. $\\{1, 2, 3\\}$",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 17,
+      "part": 2,
+      "points": 2,
+      "questionText": "Дадени се полиномите: $P(x)=x^3-x^2$, $Q(x)=x^3(x^2-1)$ и $R(x)=x^4(x^2-2x+1)$.\nА. НЗД$(P(x), Q(x), R(x))=$ ______________.\nБ. НЗС$(P(x), Q(x), R(x))=$ ______________.",
+      "choices": {},
+      "correctAnswer": "А. $x^2(x-1)$, Б. $x^4(x-1)^2(x+1)$",
+      "topic": "НЗД и НЗС на полиноми",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 18,
+      "part": 2,
+      "points": 2,
+      "questionText": "А. За кои вредности на реалниот параметар $k$, равенката $(k^2+k)x = k^2-2k-3$ има бесконечно многу решенија?\nБ. За кои вредности на реалниот параметар $k$ равенката $x^2-2x+k-3=0$ има едно двојно решение?",
+      "choices": {},
+      "correctAnswer": "А. $k=-1$, Б. $k=4$",
+      "topic": "Линеарни и квадратни равенки со параметар",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 19,
+      "part": 2,
+      "points": 2,
+      "questionText": "А. Ако карактеристичниот триаголник е рамностран, тогаш правилниот многуаголник е ______________________.\nБ. Периметарот на еден рамностран триаголник е $6\\text{ cm}$. Неговата плоштина е еднаква на ____________ $\\text{cm}^2$.",
+      "choices": {},
+      "correctAnswer": "А. шестаголник, Б. $\\sqrt{3}$",
+      "topic": "Правилни многуаголници",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 20,
+      "part": 2,
+      "points": 2,
+      "questionText": "А. Односот меѓу плоштината на основата и плоштината на оскиниот пресек на еден прав кружен конус е еднаков на $\\pi$. Aголот што генератрисата на конусот го зафаќа со рамнината на основата е еднаков на ____________$^{\\circ}$.\nБ. Бројната вредност на изразот $\\cos^2\\frac{\\pi}{6} + \\text{ctg}\\frac{\\pi}{4}$ е еднаква на ______________.",
+      "choices": {},
+      "correctAnswer": "А. $45^{\\circ}$, Б. $\\frac{7}{4}$",
+      "topic": "Стереометрија и тригонометрија",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 21,
+      "part": 3,
+      "points": 3,
+      "questionText": "На анкетата спроведена на примерок од $400$ средношколци, $100$ се изјасниле дека пијат сок од јаболка, $150$ се изјасниле дека пијат сок од вишни, а $75$ се изјасниле дека пијат и сок од јаболка и сок од вишни. Одреди го бројот на средношколци кои не пијат ниту сок од јаболка ниту сок од вишни.",
+      "choices": {},
+      "correctAnswer": "225",
+      "topic": "Множества (Венов дијаграм)",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 22,
+      "part": 3,
+      "points": 3,
+      "questionText": "Колку изнесува $30\\%$ од вредноста на бројниот израз $\\frac{A}{B}$, ако $A = -2a - |5a+3|$ за $a=-3$, а $B = (\\frac{3}{4} + 1) + (-\\frac{9}{4})$?",
+      "choices": {},
+      "correctAnswer": "-3.6",
+      "topic": "Бројни изрази и проценти",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 23,
+      "part": 3,
+      "points": 4,
+      "questionText": "Упрости го изразот $\\left( \\frac{1-2x}{3+6x} + 2x - 1 \\right) : \\frac{1-2x}{1+2x} - \\frac{6x^2-2x}{3x}$, ако $x \\neq -\\frac{1}{2}$ и $x \\neq 0$.",
+      "choices": {},
+      "correctAnswer": "-1/3",
+      "topic": "Алгебарски дропки",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 24,
+      "part": 3,
+      "points": 3,
+      "questionText": "Реши ја неравенката: $\\frac{3x-5}{x+1} \\ge 1$, $x \\neq -1$.",
+      "choices": {},
+      "correctAnswer": "$x \\in (-\\infty, -1) \\cup [3, \\infty)$",
+      "topic": "Линеарни неравенки",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 25,
+      "part": 3,
+      "points": 3,
+      "questionText": "Одреди ја вредноста на параметарот $m$ во равенката $x^2-x+m-1=0$, ако за нејзините решенија важи $x_1^3+x_2^3=7$.",
+      "choices": {},
+      "correctAnswer": "m=-1",
+      "topic": "Квадратни равенки (Виетови формули)",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 26,
+      "part": 3,
+      "points": 5,
+      "questionText": "Дадена е функцијата $f(x)=ax^2+bx+c$. За кои вредности на коефициентите $a$, $b$ и $c$ ќе бидат исполнети следниве услови:\n- графикот на функцијата ја сече $y$–оската во точката $(0,3)$,\n- функцијата има екстремна вредност за $x=2$ и\n- $f(-1)=8$.\nСкицирај го графикот на функцијата за добиените вредности на коефициентите $a$, $b$ и $c$.",
+      "choices": {},
+      "correctAnswer": "a=5/9, b=-20/9, c=3",
+      "topic": "Квадратна функција",
+      "topicArea": "analiza",
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 27,
+      "part": 3,
+      "points": 4,
+      "questionText": "Страните на еден триаголник се: $50$, $58$ и $72$.\nА. Пресметај ја најмалата висина на триаголникот.\nБ. Пресметај го радиусот на кружницата впишана во овој триаголник.",
+      "choices": {},
+      "correctAnswer": "A. h=40, B. r=16",
+      "topic": "Планиметрија - Триаголник",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 28,
+      "part": 3,
+      "points": 4,
+      "questionText": "Работ на основата на правилна четристрана пирамида има должина $8$. Бочниот ѕид со рамнината на основата зафаќа агол од $60^{\\circ}$. Пресметај ја плоштината на пирамидата.",
+      "choices": {},
+      "correctAnswer": "P=192",
+      "topic": "Стереометрија - Пирамида",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 29,
+      "part": 3,
+      "points": 4,
+      "questionText": "Во права призма, со основа рамнокрак трапез и висина $H=5\\text{ cm}$, е впишан цилиндар. Основите на трапезот се $a=8\\text{ cm}$ и $b=2\\text{ cm}$, а неговиот крак има должина еднаква со висината на цилиндарот. Определи го односот на волуменот на призмата и волуменот на цилиндарот.",
+      "choices": {},
+      "correctAnswer": "Vp : Vc = 5 : \\pi",
+      "topic": "Стереометрија - Призма и цилиндар",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "imageUrls": [
+        "/matura/images/2023/june/q29-fig1.png"
+      ],
+      "hasImage": true,
+      "imageDescription": "Права призма со основа рамнокрак трапез, во која е впишан цилиндар.",
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 30,
+      "part": 3,
+      "points": 3,
+      "questionText": "Упрости го изразот $\\frac{\\sin^2\\alpha}{1-\\cos\\alpha} - \\frac{\\sin^2\\alpha}{1+\\cos\\alpha}$, ако $\\cos\\alpha \\neq \\pm 1$.",
+      "choices": {},
+      "correctAnswer": "$2\\cos\\alpha$",
+      "topic": "Тригонометриски изрази",
+      "topicArea": "trigonometrija",
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    }
+  ]
+}

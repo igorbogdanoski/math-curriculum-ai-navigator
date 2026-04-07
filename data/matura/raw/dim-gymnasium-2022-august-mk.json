@@ -1,0 +1,795 @@
+{
+  "exam": {
+    "id": "dim-gymnasium-2022-august-mk",
+    "year": 2022,
+    "session": "august",
+    "track": "gymnasium",
+    "gradeLevel": 13,
+    "language": "mk",
+    "durationMinutes": 180,
+    "title": "Државна матура — Гимназиско — август 2022",
+    "hasOfficialKey": true
+  },
+  "questions": [
+    {
+      "questionNumber": 1,
+      "part": 1,
+      "points": 1,
+      "questionText": "Пресекот на множеството природни броеви и интервалот $(1,3)$ е множеството:",
+      "choices": {
+        "А": "$\\{1,2\\}$",
+        "Б": "$\\{1,2,3\\}$",
+        "В": "$\\{2\\}$",
+        "Г": "$\\{1,3\\}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 2,
+      "part": 1,
+      "points": 1,
+      "questionText": "Вредноста на изразот $\\frac{10}{16} + \\frac{3}{2} \\left( \\frac{17}{4} : 17 \\right) + 3,75 \\cdot \\frac{4}{5}$ изнесува:",
+      "choices": {
+        "А": "$8$",
+        "Б": "$4$",
+        "В": "$\\frac{1}{4}$",
+        "Г": "$3$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Бројни изрази",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 3,
+      "part": 1,
+      "points": 1,
+      "questionText": "Вредноста на изразот $\\frac{(-1)^5 \\cdot (-2)^{-3}}{2^{-4} \\cdot (-3)^2}$ изнесува:",
+      "choices": {
+        "А": "$18$",
+        "Б": "$-18$",
+        "В": "$9$",
+        "Г": "$-\\frac{2}{9}$"
+      },
+      "correctAnswer": "А",
+      "topic": "Бројни изрази",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 4,
+      "part": 1,
+      "points": 1,
+      "questionText": "Изразот $(2x-3y)^3$ е еднаков на:",
+      "choices": {
+        "А": "$8x^3 - 27y^3$",
+        "Б": "$8x^3 - 36x^2y + 54xy^2 - 27y^3$",
+        "В": "$8x^3 + 36x^2y + 54xy^2 + 27y^3$",
+        "Г": "$8x^3 - 24x^2y + 36xy^2 - 27y^3$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Степени и корени",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 5,
+      "part": 1,
+      "points": 1,
+      "questionText": "Равенката $(2p-5)x+3=0$ нема решение, ако:",
+      "choices": {
+        "А": "$p = 2,5$",
+        "Б": "$p = -2,5$",
+        "В": "$p = 0$",
+        "Г": "$p = 2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Линеарни равенки со параметар",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 6,
+      "part": 1,
+      "points": 1,
+      "questionText": "Збирот на решенијата на квадратната равенка $x^2-2x-5=0$ изнесува:",
+      "choices": {
+        "А": "$-5$",
+        "Б": "$-2$",
+        "В": "$5$",
+        "Г": "$2$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Квадратни равенки (Виетови формули)",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 7,
+      "part": 1,
+      "points": 1,
+      "questionText": "Разликата на два природни броја е $5$, а разликата на нивните квадрати е $50$. Збирот на тие два природни броја изнесува:",
+      "choices": {
+        "А": "$15$",
+        "Б": "$-15$",
+        "В": "$10$",
+        "Г": "$-10$"
+      },
+      "correctAnswer": "В",
+      "topic": "Систем линеарни равенки",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 8,
+      "part": 1,
+      "points": 1,
+      "questionText": "Дефиниционото множество на функцијата $f(x) = \\frac{1}{3x-2}$ е:",
+      "choices": {
+        "А": "$\\mathbb{R}$",
+        "Б": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{3}{2}\\}$",
+        "В": "$\\{x | x \\in \\mathbb{R} \\land x \\neq 0\\}$",
+        "Г": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{2}{3}\\}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Дефинициона област",
+      "topicArea": "analiza",
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 9,
+      "part": 1,
+      "points": 1,
+      "questionText": "Аголот што е трипати помал од својот суплементен агол е еднаков на:",
+      "choices": {
+        "А": "$60^{\\circ}$",
+        "Б": "$45^{\\circ}$",
+        "В": "$40^{\\circ}$",
+        "Г": "$30^{\\circ}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Агли",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 10,
+      "part": 1,
+      "points": 1,
+      "questionText": "Ако точката $M$ е средина на страната $AD$ во паралелограмот $ABCD$, тогаш векторот $\\overrightarrow{MC}$ е еднаков на:",
+      "choices": {
+        "А": "$\\overrightarrow{AD} - \\frac{1}{2}\\overrightarrow{AB}$",
+        "Б": "$\\overrightarrow{AB} - \\frac{1}{2}\\overrightarrow{AD}$",
+        "В": "$\\overrightarrow{AB} + \\frac{1}{2}\\overrightarrow{AD}$",
+        "Г": "$\\overrightarrow{AD} + \\frac{1}{2}\\overrightarrow{AB}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Вектори",
+      "topicArea": "matrici-vektori",
+      "conceptIds": [
+        "gym10-c5-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 11,
+      "part": 2,
+      "points": 1,
+      "questionText": "Ромб со должина на страната $12\\text{ cm}$ и растојание од пресечната точка на дијагоналите до страната од $5\\text{ cm}$, има плоштина еднаква на:",
+      "choices": {
+        "А": "$144\\text{ cm}^2$",
+        "Б": "$140\\text{ cm}^2$",
+        "В": "$120\\text{ cm}^2$",
+        "Г": "$100\\text{ cm}^2$"
+      },
+      "correctAnswer": "В",
+      "topic": "Планиметрија - Ромб",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 12,
+      "part": 2,
+      "points": 1,
+      "questionText": "Рамнокрак трапез, чиишто основи се $12$ и $6$, а кракот е $5$, има висина еднаква на:",
+      "choices": {
+        "А": "$3$",
+        "Б": "$4$",
+        "В": "$5$",
+        "Г": "$2,5$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Планиметрија - Трапез",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 13,
+      "part": 2,
+      "points": 1,
+      "questionText": "Волуменот на прав кружен конус со радиус $9\\text{ cm}$ и висина $2\\text{ cm}$ изнесува:",
+      "choices": {
+        "А": "$54\\pi\\text{ cm}^3$",
+        "Б": "$54\\pi\\text{ cm}^2$",
+        "В": "$162\\pi\\text{ cm}^3$",
+        "Г": "$162\\pi\\text{ cm}^2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Стереометрија - Конус",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 14,
+      "part": 2,
+      "points": 1,
+      "questionText": "Прав кружен цилиндар со висина $8$ и периметар на основата $20\\pi$ има плоштина:",
+      "choices": {
+        "А": "$360$",
+        "Б": "$260$",
+        "В": "$360\\pi$",
+        "Г": "$260\\pi$"
+      },
+      "correctAnswer": "В",
+      "topic": "Стереометрија - Цилиндар",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 15,
+      "part": 2,
+      "points": 1,
+      "questionText": "Ако основниот раб на правилна тристрана призма се зголеми $4$ пати, а висината се намали $2$ пати, тогаш волуменот на призмата:",
+      "choices": {
+        "А": "ќе се намали $8$ пати",
+        "Б": "ќе се зголеми $2$ пати",
+        "В": "ќе се зголеми $4$ пати",
+        "Г": "ќе се зголеми $8$ пати"
+      },
+      "correctAnswer": "Г",
+      "topic": "Стереометрија - Призма",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 16,
+      "part": 3,
+      "points": 1,
+      "questionText": "Во кој квадрант лежи точката $A(-2,-2)$?",
+      "choices": {
+        "А": "Во првиот квадрант",
+        "Б": "Во вториот квадрант",
+        "В": "Во третиот квадрант",
+        "Г": "Во четвртиот квадрант"
+      },
+      "correctAnswer": "В",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 17,
+      "part": 3,
+      "points": 1,
+      "questionText": "Која од дадените прави минува низ точката $A(1,4)$ и има коефициент на правец $k = -2$?",
+      "choices": {
+        "А": "$2x + y = 6$",
+        "Б": "$2x + y = 9$",
+        "В": "$2x - y = 7$",
+        "Г": "$2x - y = -2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Равенка на права",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 18,
+      "part": 3,
+      "points": 1,
+      "questionText": "Правата $y = kx+2$ е нормална на правата $3y+2x=1$, ако:",
+      "choices": {
+        "А": "$k = -\\frac{2}{3}$",
+        "Б": "$k = -\\frac{3}{2}$",
+        "В": "$k = \\frac{1}{2}$",
+        "Г": "$k = \\frac{3}{2}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Нормалност на прави",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 19,
+      "part": 3,
+      "points": 1,
+      "questionText": "Одреди која од следните низи од реални броеви е аритметичка прогресија:",
+      "choices": {
+        "А": "$\\frac{1}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{11}{2}, \\dots$",
+        "Б": "$\\frac{3}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{9}{2}, \\dots$",
+        "В": "$\\frac{2}{3}, \\frac{2}{5}, \\frac{2}{7}, \\frac{2}{9}, \\dots$",
+        "Г": "$\\frac{3}{2}, -\\frac{5}{2}, \\frac{7}{2}, -\\frac{9}{2}, \\dots$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Аритметичка прогресија",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 20,
+      "part": 3,
+      "points": 1,
+      "questionText": "Збирот на првите пет члена на геометриската прогресија со прв член $81$ и количник $\\frac{2}{3}$ е:",
+      "choices": {
+        "А": "$\\frac{211}{81}$",
+        "Б": "$\\frac{275}{81}$",
+        "В": "$211$",
+        "Г": "$275$"
+      },
+      "correctAnswer": "В",
+      "topic": "Геометриска прогресија",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym12-c2-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 21,
+      "part": 4,
+      "points": 2,
+      "questionText": "Разложи го на прости множители полиномот $8x^3y - 8x^2y^2 + 2xy^3$.",
+      "choices": {},
+      "correctAnswer": "$2xy(2x-y)^2$",
+      "topic": "Полиноми",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 22,
+      "part": 4,
+      "points": 2,
+      "questionText": "Дадени се функциите $f(x) = (3m-5)x - 4 + m$ и $g(x) = (3-m)x + m - 1$. А. За која вредност на параметарот $m$ графиците на функциите се паралелни прави? Б. За која вредност на параметарот $m$ графикот на функцијата $f(x)$ минува низ координатниот почеток?",
+      "choices": {},
+      "correctAnswer": "А. $m=2$, Б. $m=4$",
+      "topic": "Линеарни функции со параметар",
+      "topicArea": "analiza",
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 23,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Решението на неравенката $\\frac{1}{3x+2} > \\frac{1}{2x-3}$ е ____________________. Б. За кои вредности на $x$, вредноста на изразот $3x-8$ е помеѓу $1$ и $7$?",
+      "choices": {},
+      "correctAnswer": "А. $x \\in (-\\infty, -5) \\cup (\\frac{2}{3}, \\frac{3}{2})$, Б. $x \\in (3, 5)$",
+      "topic": "Линеарни неравенки",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 24,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Аритметичката средина на броевите $a$ и $b$ е еднаква на __________________. Б. Аритметичката средина на броевите $a$ и $b$ е за два поголема од нивниот производ. Ако $a=4$, тогаш $b=$ ____________________.",
+      "choices": {},
+      "correctAnswer": "А. $\\frac{a+b}{2}$, Б. $0$",
+      "topic": "Аритметичка средина",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 25,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Правилниот многуаголник во кој може да се повлечат вкупно $14$ дијагонали има _________ страни. Б. Еден од аглите во даден триаголник е за $15^{\\circ}$ поголем од вториот агол, а за $15^{\\circ}$ помал од третиот агол во триаголникот. Најмалиот агол во тој триаголник е еднаков на _____________.",
+      "choices": {},
+      "correctAnswer": "А. $7$, Б. $45^{\\circ}$",
+      "topic": "Многуаголници и агли",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 26,
+      "part": 4,
+      "points": 2,
+      "questionText": "Бринјите на еден триаголник се $8, 15$ и $17$. А. Плоштината на триаголникот е _____________. Б. Должината на најголемата висина на овој триаголник е __________.",
+      "choices": {},
+      "correctAnswer": "А. $60$, Б. $15$",
+      "topic": "Планиметрија - Триаголник",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 27,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Волуменот на коцка со плоштина од $726\\text{ cm}^2$ изнесува ____________ $\\text{cm}^3$. Б. Плоштината на дијагоналниот пресек на коцката изнесува _________ $\\text{cm}^2$.",
+      "choices": {},
+      "correctAnswer": "А. $1331\\text{ cm}^3$, Б. $121\\sqrt{2}\\text{ cm}^2$",
+      "topic": "Стереометрија - Коцка",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 28,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Плоштината на сфера со радиус $3\\text{ cm}$ е еднаква на ___________ $\\text{cm}^2$. Б. Волуменот на топка со радиус $3\\text{ cm}$ е еднаков ___________ $\\text{cm}^3$.",
+      "choices": {},
+      "correctAnswer": "А. $36\\pi\\text{ cm}^2$, Б. $36\\pi\\text{ cm}^3$",
+      "topic": "Стереометрија - Сфера и топка",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 29,
+      "part": 4,
+      "points": 2,
+      "questionText": "А. Сегментниот облик на равенката на правата $q$, којашто ги сече координатните оски во точките $A(3,0)$ и $B(0,-2)$, e ______________________. Б. Пресечната точка на правите $x+y-3=0$ и $2x+3y-8=0$ има координати ___________________________.",
+      "choices": {},
+      "correctAnswer": "А. $\\frac{x}{3} + \\frac{y}{-2} = 1$, Б. $(1, 2)$",
+      "topic": "Аналитичка геометрија - Права",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 30,
+      "part": 4,
+      "points": 2,
+      "questionText": "Дадени се броевите $20$, $50$ и $100$. А. Ако на првите два броја се додаде еден ист број, а третиот остане ист, се добиваат три последователни членa на аритметичка прогресија. Бројот што треба да се додаде е ____________. Б. Ако на секој од дадените три броја се додаде еден ист број, се добиваат три последователни членa на геометриска прогресија. Бројот што треба да се додаде е ______________.",
+      "choices": {},
+      "correctAnswer": "А. $20$, Б. $25$",
+      "topic": "Аритметичка и геометриска прогресија",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 31,
+      "part": 5,
+      "points": 4,
+      "questionText": "Изврши ги назначените операции и упрости го изразот: $\\left( \\frac{a-1}{a+1} + \\frac{a^3+1}{a^2-2a+1} : \\frac{a^2-a+1}{1-a} \\right) \\cdot (1+a) + \\frac{3a+1}{a-1}$.",
+      "choices": {},
+      "correctAnswer": "$\\frac{a-1}{a}$",
+      "topic": "Рационални алгебарски изрази",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 32,
+      "part": 5,
+      "points": 3,
+      "questionText": "Одреди го најголемиот цел број што е решение на неравенката $\\frac{x-2}{7} - x < 3 - \\frac{6x+7}{2}$.",
+      "choices": {},
+      "correctAnswer": "$-1$",
+      "topic": "Неравенки",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 33,
+      "part": 5,
+      "points": 4,
+      "questionText": "Односот на еден двоцифрен број и бројот запишан со истите цифри, но во обратен редослед, е еднаков на $3:8$. Ако поголемиот од овие броеви се намали за помалиот број, се добива $45$. Кои се тие броеви?",
+      "choices": {},
+      "correctAnswer": "Броевите се $27$ и $72$.",
+      "topic": "Проблемски задачи со системи",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-6"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 34,
+      "part": 5,
+      "points": 5,
+      "questionText": "Дадена е равенката $(k-2)x^2 - (k+1)x + k+1 = 0$, каде што $k$ е реален параметар. А. За која вредност на параметарот $k$ равенката е линеарна? Б. За која вредност на параметарот $k$ квадратната равенка има реални решенија? В. За која вредност на параметарот $k$ корените на квадратната равенка го задоволуваат условот $x_1 = -\\frac{1}{x_2}$?",
+      "choices": {},
+      "correctAnswer": "А. $k=2$, Б. $k \\in [-1, 3]$, В. $k=0,5$",
+      "topic": "Квадратни равенки со параметар",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym11-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 35,
+      "part": 5,
+      "points": 3,
+      "questionText": "Во круг со плоштина $256\\pi$, се впишани квадрат и правилен шестаголник. Пресметај ги плоштините на квадратот и шестаголникот.",
+      "choices": {},
+      "correctAnswer": "Плоштина на квадрат: $512$, Плоштина на шестаголник: $384\\sqrt{3}$.",
+      "topic": "Планиметрија - Круг и многуаголници",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-6"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 36,
+      "part": 5,
+      "points": 4,
+      "questionText": "Правилна четиристрана пирамида со раб на основата еднаков на $5\\text{ dm}$ има волумен $50\\text{ dm}^3$. Пресметај ја плоштината на пирамидата.",
+      "choices": {},
+      "correctAnswer": "$P=90\\text{ dm}^2$",
+      "topic": "Стереометрија - Пирамида",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-6"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 37,
+      "part": 5,
+      "points": 4,
+      "questionText": "Страните на еден правоаголник $ABCD$ се разликуваат за $4$. Плоштината на цилиндарот, што се добива со ротација на правоаголникот околу подолгата страна $AB$, е еднаква на $192\\pi$. А. Направи скица на добиениот цилиндар... Б. Одреди ги должините на страните на правоаголникот... В. Пресметај го волуменот на добиениот цилиндар.",
+      "choices": {},
+      "correctAnswer": "$V=360\\pi$",
+      "topic": "Стереометрија - Ротациони тела",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym11-c4-7"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 38,
+      "part": 5,
+      "points": 3,
+      "questionText": "Растојанието меѓу точките $M(-2,-5)$ и $N$ е еднакво на $2$. Најди ги координатите на точката $N$, ако се знае дека таа лежи на правата $3x-y-1=0$.",
+      "choices": {},
+      "correctAnswer": "$N_1(-2, -7)$ и $N_2(-\\frac{4}{5}, -\\frac{17}{5})$",
+      "topic": "Аналитичка геометрија - Растојание",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 39,
+      "part": 5,
+      "points": 4,
+      "questionText": "Темињата на триаголникот $ABC$ се точките: $A(-1,-3)$, $B(3,3)$ и $C(7,5)$. Напиши ја во општ облик равенката на тежишната линија повлечена од темето $А$ на овој триаголник. Определи ги координатите на тежиштето $T$ на дадениот триаголник.",
+      "choices": {},
+      "correctAnswer": "Равенка: $7x-6y-11=0$, Тежиште: $T(3, \\frac{5}{3})$",
+      "topic": "Аналитичка геометрија - Триаголник",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c1-6"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 40,
+      "part": 5,
+      "points": 4,
+      "questionText": "Дадена е аритметичка прогресија со втор член еднаков на $2$. Збирот од петтиот и шестиот член на прогресијата е еднаков на $25$. Одреди го збирот на првите дваесет члена на прогресијата со парен индекс.",
+      "choices": {},
+      "correctAnswer": "$S = 1180$",
+      "topic": "Аритметичка прогресија",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym12-c2-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    }
+  ]
+}

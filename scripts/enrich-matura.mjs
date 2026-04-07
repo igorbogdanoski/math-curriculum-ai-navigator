@@ -99,7 +99,11 @@ async function callGemini(prompt) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 4096,
+        response_mime_type: 'application/json'
+      },
     }),
   });
   if (!res.ok) {
@@ -160,9 +164,24 @@ for (const q of toEnrich) {
     const prompt = buildPrompt(q);
     const raw = await callGemini(prompt);
 
-    // Strip markdown code fences if present
-    const cleaned = raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-    const enrichment = JSON.parse(cleaned);
+    // Robust extraction: find first '{' and last '}'
+    const firstBrace = raw.indexOf('{');
+    const lastBrace = raw.lastIndexOf('}');
+    if (firstBrace === -1 || lastBrace === -1) {
+      throw new Error('No JSON found in Gemini response');
+    }
+    const cleaned = raw.slice(firstBrace, lastBrace + 1);
+    
+    // LaTeX backslashes often break JSON.parse if not properly escaped.
+    // We try to escape them by replacing \ with \\ (but only if not already escaped)
+    let enrichment;
+    try {
+      enrichment = JSON.parse(cleaned);
+    } catch (e) {
+      // Robust fix for common LaTeX unescaped backslash issue
+      const fixed = cleaned.replace(/(?<!\\)\\(?![nr"\\])/g, '\\\\');
+      enrichment = JSON.parse(fixed);
+    }
 
     if (!Array.isArray(enrichment.hints) || enrichment.hints.length !== 3) {
       throw new Error('hints must be array of 3');
