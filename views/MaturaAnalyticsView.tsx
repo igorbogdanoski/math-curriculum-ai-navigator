@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, CalendarDays, GraduationCap, Timer, Trophy, TrendingUp, BookOpen, Network, Share2, Download, Copy, CheckCheck, Link2 } from 'lucide-react';
+import { BarChart3, CalendarDays, GraduationCap, Timer, Trophy, TrendingUp, BookOpen, Network, Share2, Download, Copy, CheckCheck, Link2, FileText } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
@@ -7,6 +7,7 @@ import { useMaturaStats } from '../hooks/useMaturaStats';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
 import { MissionPanel } from '../components/matura/MissionPanel';
 import { ForumCTA } from '../components/common/ForumCTA';
+import { RecoveryWorksheetModal } from '../components/matura/RecoveryWorksheetModal';
 import { downloadAsPdf } from '../utils/pdfDownload';
 import { shareService } from '../services/shareService';
 
@@ -71,6 +72,7 @@ export const MaturaAnalyticsView: React.FC = () => {
   const [copied, setCopied] = React.useState(false);
   const [linkCopied, setLinkCopied] = React.useState(false);
   const [isPdfLoading, setIsPdfLoading] = React.useState(false);
+  const [showWorksheet, setShowWorksheet] = React.useState(false);
   const pdfExportRef = React.useRef<HTMLDivElement>(null);
 
   const buildRecoverySharePayload = React.useCallback(() => ({
@@ -454,9 +456,21 @@ export const MaturaAnalyticsView: React.FC = () => {
         </Card>
 
         <Card className="p-5 border-rose-200 bg-rose-50/20">
-          <h2 className="text-lg font-black text-rose-900 mb-3 flex items-center gap-2">
-            <Network className="w-5 h-5" /> Weak curriculum concepts
-          </h2>
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <h2 className="text-lg font-black text-rose-900 flex items-center gap-2">
+              <Network className="w-5 h-5" /> Слаби концепти
+            </h2>
+            {stats.weakConcepts.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowWorksheet(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold hover:opacity-90 transition shadow-sm flex-shrink-0"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Recovery Worksheet
+              </button>
+            )}
+          </div>
           {stats.weakConcepts.length === 0 ? (
             <p className="text-sm text-rose-800">Супер. Нема детектирани слаби концепти од поврзаните refs во оваа сесија.</p>
           ) : (
@@ -569,6 +583,22 @@ export const MaturaAnalyticsView: React.FC = () => {
             </div>
           </div>
         </Card>
+      )}
+
+      {/* ── M6 Recovery Worksheet Modal ── */}
+      {showWorksheet && (
+        <RecoveryWorksheetModal
+          weakConcepts={stats.weakConcepts.map(item => ({
+            conceptId: item.concept.id,
+            conceptTitle: item.concept.title,
+            gradeTitle: item.concept.gradeTitle ?? `Grade ${item.concept.gradeLevel}`,
+            topicTitle: item.concept.topicTitle ?? item.concept.topicId,
+            pct: item.pct,
+            questions: item.questions,
+            topicArea: item.topicArea,
+          }))}
+          onClose={() => setShowWorksheet(false)}
+        />
       )}
     </div>
   );
