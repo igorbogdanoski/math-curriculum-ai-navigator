@@ -1,41 +1,179 @@
 <!DOCTYPE html>
-<html lang="mk">
+<html lang="mk" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ── Primary meta ──────────────────────────────────────────── -->
+    <title>MisMath | AI Математичка Платформа за Наставници | Игор Богданоски</title>
+    <meta name="description" content="MisMath е AI-подржана педагошка платформа за наставници по математика во Македонија. Генерирај тестови, квизови, рубрики и презентации со Gemini AI. Следи напредок, DoK аналитика и матура DIM испит." />
+    <meta name="keywords" content="математика, наставници, AI, педагогија, тестови, квизови, Македонија, матура, DIM, Gemini AI, DoK, образование, MisMath" />
+    <meta name="author" content="Игор Богданоски" />
+    <meta name="creator" content="Игор Богданоски" />
+    <meta name="publisher" content="MisMath" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <link rel="canonical" href="https://mismath.vercel.app/" />
+
+    <!-- ── Alternate languages ───────────────────────────────────── -->
+    <link rel="alternate" hreflang="mk" href="https://mismath.vercel.app/" />
+    <link rel="alternate" hreflang="sq" href="https://mismath.vercel.app/?lang=sq" />
+    <link rel="alternate" hreflang="tr" href="https://mismath.vercel.app/?lang=tr" />
+    <link rel="alternate" hreflang="x-default" href="https://mismath.vercel.app/" />
+
+    <!-- ── Open Graph / Facebook ─────────────────────────────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MisMath" />
+    <meta property="og:title" content="MisMath | AI Математичка Платформа за Наставници" />
+    <meta property="og:description" content="Генерирај тестови, квизови, рубрики и презентации со Gemini AI. Следи DoK аналитика, матура DIM испит и напредок на ученици — сè на македонски." />
+    <meta property="og:url" content="https://mismath.vercel.app/" />
+    <meta property="og:image" content="https://mismath.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="MisMath — AI Математичка Платформа" />
+    <meta property="og:locale" content="mk_MK" />
+    <meta property="og:locale:alternate" content="sq_AL" />
+    <meta property="og:locale:alternate" content="tr_TR" />
+    <meta property="article:author" content="Игор Богданоски" />
+
+    <!-- ── Twitter / X Cards ─────────────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MisMath | AI Математичка Платформа за Наставници" />
+    <meta name="twitter:description" content="Генерирај тестови, квизови, рубрики и презентации со Gemini AI. DoK аналитика + матура DIM испит." />
+    <meta name="twitter:image" content="https://mismath.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt" content="MisMath — AI Математичка Платформа" />
+    <meta name="twitter:creator" content="@igorbogdanoski" />
+    <meta name="twitter:site" content="@mismath_edu" />
+
+    <!-- ── PWA / App ──────────────────────────────────────────────── -->
     <meta name="theme-color" content="#0D47A1" />
-    <meta name="description" content="Педагошки AI систем за наставници по математика — следење на концепти, напредок на ученици и генерирање материјали." />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Math Navigator" />
-    <link rel="apple-touch-icon" href="/icon-512.svg">
-    <title>Math Curriculum AI Navigator</title>
-    
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="apple-mobile-web-app-title" content="MisMath" />
+    <meta name="application-name" content="MisMath" />
+    <meta name="msapplication-TileColor" content="#0D47A1" />
 
-    <!-- KaTeX for LaTeX rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+    <!-- ── Icons ─────────────────────────────────────────────────── -->
+    <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+    <link rel="apple-touch-icon" href="/icon-512.svg" />
+
+    <!-- ── JSON-LD Structured Data ───────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://mismath.vercel.app/#webapp",
+          "name": "MisMath",
+          "alternateName": "Math Curriculum AI Navigator",
+          "url": "https://mismath.vercel.app/",
+          "description": "AI-подржана педагошка платформа за наставници по математика. Генерирај тестови, квизови, рубрики и презентации со Gemini AI.",
+          "applicationCategory": "EducationApplication",
+          "operatingSystem": "Web",
+          "inLanguage": ["mk", "sq", "tr"],
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "MKD"
+          },
+          "author": {
+            "@id": "https://mismath.vercel.app/#author"
+          },
+          "creator": {
+            "@id": "https://mismath.vercel.app/#author"
+          },
+          "audience": {
+            "@type": "EducationalAudience",
+            "educationalRole": "teacher"
+          },
+          "educationalUse": ["Curriculum Planning", "Assessment", "Formative Assessment", "AI-Assisted Teaching"],
+          "keywords": "математика, AI, тестови, квизови, DoK, матура, наставници, Македонија",
+          "featureList": [
+            "AI генерирање на наставни материјали",
+            "Матура DIM испит симулатор",
+            "DoK (Webb's Depth of Knowledge) аналитика",
+            "Live квиз во реално време",
+            "Gamma презентации со PPTX export",
+            "Algebra Tiles интерактивна алатка",
+            "Форум за наставници"
+          ]
+        },
+        {
+          "@type": "Person",
+          "@id": "https://mismath.vercel.app/#author",
+          "name": "Игор Богданоски",
+          "alternateName": "Igor Bogdanoski",
+          "jobTitle": "Основач и главен разработувач",
+          "worksFor": {
+            "@type": "Organization",
+            "name": "MisMath"
+          },
+          "knowsAbout": ["Математика", "EdTech", "AI во образованието", "Педагогија"],
+          "url": "https://mismath.vercel.app/",
+          "sameAs": [
+            "https://github.com/igorbogdanoski"
+          ]
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://mismath.vercel.app/#org",
+          "name": "MisMath",
+          "url": "https://mismath.vercel.app/",
+          "logo": "https://mismath.vercel.app/icon-512.svg",
+          "founder": {
+            "@id": "https://mismath.vercel.app/#author"
+          },
+          "description": "EdTech платформа за AI-подржана математичка настава во Македонија",
+          "areaServed": ["MK", "AL", "TR"],
+          "knowsAbout": "EdTech, Mathematics Education, AI"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://mismath.vercel.app/#website",
+          "url": "https://mismath.vercel.app/",
+          "name": "MisMath",
+          "description": "AI Математичка Платформа за Наставници",
+          "publisher": {
+            "@id": "https://mismath.vercel.app/#org"
+          },
+          "inLanguage": ["mk", "sq", "tr"],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://mismath.vercel.app/?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- ── Preconnects (performance) ─────────────────────────────── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://firestore.googleapis.com" />
+    <link rel="preconnect" href="https://generativelanguage.googleapis.com" />
+
+    <!-- ── Google Fonts: Inter ───────────────────────────────────── -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- ── KaTeX for LaTeX rendering ────────────────────────────── -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous" />
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
-    
-    <!-- Vis.js for Network Graph -->
+
+    <!-- ── Vis.js for Network Graph ─────────────────────────────── -->
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    
-    <!-- Pako.js for compression -->
+
+    <!-- ── Pako.js for compression ──────────────────────────────── -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 
-    <!-- Intro.js for Guided Tours -->
-    
-    
-    
-    <!-- Chart.js for Dashboard -->
+    <!-- ── Chart.js for Dashboard ───────────────────────────────── -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-</head>
+  </head>
   <body class="bg-brand-bg">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>

@@ -284,41 +284,61 @@ export const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── COMPACT QUOTE STRIP ─────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-cyan-50 border border-cyan-100 rounded-xl">
-        <span className="text-cyan-400 text-xl font-serif leading-none flex-shrink-0">"</span>
-        <p className="text-sm text-slate-700 italic flex-1 line-clamp-1">{dailyQuote.text}</p>
-        <span className="text-xs text-slate-400 font-semibold whitespace-nowrap flex-shrink-0">— {dailyQuote.author}</span>
-        <button
-          type="button"
-          onClick={() => navigate('/academy')}
-          className="w-7 h-7 rounded-full border border-cyan-200 bg-white flex items-center justify-center text-cyan-600 hover:bg-cyan-100 transition flex-shrink-0"
-          title="Отвори Академија"
-        >
-          <ICONS.play className="w-3 h-3" />
-        </button>
-      </div>
+      {/* ── МИСЛА НА ДЕНОТ + FEATURED TOOLS ────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
-      {/* ── FEATURED TOOLS ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        {featuredTools.map((tool) => {
-          const ToolIcon = tool.icon;
-          return (
+        {/* Quote bubble — 2/5 width on lg+ */}
+        <div className="lg:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 p-5 shadow-md text-white flex flex-col justify-between min-h-[130px]">
+          {/* decorative circles */}
+          <div className="pointer-events-none absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute bottom-2 -left-6 w-20 h-20 rounded-full bg-white/5" />
+          {/* label */}
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Мисла на денот</p>
+          {/* big quote mark */}
+          <span className="absolute top-4 right-5 text-7xl font-serif text-white/10 leading-none select-none" aria-hidden="true">"</span>
+          {/* quote text */}
+          <p className="relative text-sm font-semibold leading-relaxed text-white/95 italic flex-1">
+            {dailyQuote.text}
+          </p>
+          {/* tail bubble */}
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-xs font-bold text-white/70">— {dailyQuote.author}</span>
             <button
-              key={tool.title}
               type="button"
-              onClick={tool.action}
-              className="text-left p-4 rounded-2xl bg-white border border-slate-200 hover:border-brand-primary/30 hover:shadow-md transition-all group"
+              onClick={() => navigate('/academy')}
+              className="flex items-center gap-1.5 text-[11px] font-bold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition"
             >
-              <div className={`inline-flex w-10 h-10 rounded-xl items-center justify-center border ${tool.accent}`}>
-                <ToolIcon className="w-5 h-5" />
-              </div>
-              <p className="mt-3 font-bold text-slate-800 group-hover:text-brand-primary transition-colors">{tool.title}</p>
-              <p className="mt-1 text-xs text-slate-500 leading-relaxed line-clamp-2">{tool.description}</p>
-              <p className="mt-3 text-sm font-bold text-brand-primary">{tool.cta} →</p>
+              <ICONS.play className="w-3 h-3" />
+              Академија
             </button>
-          );
-        })}
+          </div>
+          {/* speech bubble tail */}
+          <div className="absolute -bottom-2.5 left-8 w-4 h-4 bg-cyan-500 rotate-45 rounded-sm" />
+        </div>
+
+        {/* Featured tools compact list — 3/5 width on lg+ */}
+        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-100">
+          {featuredTools.map((tool) => {
+            const ToolIcon = tool.icon;
+            return (
+              <button
+                key={tool.title}
+                type="button"
+                onClick={tool.action}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors group"
+              >
+                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border ${tool.accent}`}>
+                  <ToolIcon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 group-hover:text-brand-primary transition-colors leading-tight">{tool.title}</p>
+                  <p className="text-xs text-slate-400 truncate">{tool.description}</p>
+                </div>
+                <span className="flex-shrink-0 text-xs font-bold text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <section className="space-y-3" aria-label="Today Focus">
