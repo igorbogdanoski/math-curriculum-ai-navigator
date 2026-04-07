@@ -376,6 +376,16 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-06 | S16-P6 | Gamma PPTX export — lazy pptxgenjs; dark theme; all 9 slide types; speaker notes; footer watermark per slide | DONE |
 | 2026-04-06 | S16-B3 | Web Extractor — api/webpage-extract.ts (SSRF-safe, HTML→text); WEB_EXTRACTOR type; WebExtractorOptions; full generator pipeline | DONE |
 | 2026-04-06 | S16-M1 | August 2022 (MK + AL) Gymnasium enriched; June 2023 TR partial integration (1-17) | DONE |
+| 2026-04-07 | S17-P1 | Recovery Worksheet (M6) — AI PDF со слаби концепти; Gemini HTML; window.print(); матура analytics интеграција | DONE |
+| 2026-04-07 | S17-P2 | Extraction → Generator pre-fill (B5) — cyan quick-pick панел по екстракција; handleGenerateFromExtraction(); extractedText state | DONE |
+| 2026-04-07 | S17-P3 | Gamma PPTX export (G3) — веќе завршена во S16-P6; skip | DONE |
+| 2026-04-07 | S17-P4 | Auto conceptIds при import (A3) — matura-concept-map.mjs shared module; import-matura.mjs auto-lookup; enrich script рефакториран | DONE |
+| 2026-04-07 | S17-P5a | Home redesign: quote bubble (gradient + speech tail) + compact tools list + full SEO (JSON-LD, OG, Twitter, hreflang, author: Игор Богданоски) | DONE |
+| 2026-04-07 | S17-P5 | Forum thread permalink — ?thread=<id> sharable URL; TeacherForumView deep-link; history.replaceState; Copy link button | DONE |
+| 2026-04-07 | S18-B1 | Test quality: 429/429 passing — fix stale videoPreview tests + sanitizeWorksheetHtml utility + 9 new security tests | DONE |
+| 2026-04-07 | S18-B2 | M6-P2 Teacher Recovery Assignment — send worksheet to class; saveAssignment(); Assignment type + RECOVERY_WORKSHEET; ActivityFeed deep-link | DONE |
+| 2026-04-07 | S18-PWA | PWA skipWaiting fix — skipWaiting:true + clientsClaim:true in workbox config; stale bundle issue resolved | DONE |
+| 2026-04-07 | S18-M1 | Matura pipeline: legacy 40Q validator; AL/TR Cyrillic normalization script; 2021+2022 full import (11 exams); conceptIds enrichment 410/788 | DONE |
 
 ---
 
