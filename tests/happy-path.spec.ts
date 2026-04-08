@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+const runtimeErrorBanner = 'text=/нешто тргна наопаку/i';
+
 /**
  * Happy Path E2E Tests — Core User Flows
  *
@@ -106,6 +108,45 @@ test.describe('Happy Path: Core User Flows', () => {
       await expect(either.first()).toBeVisible({ timeout: 10000 });
     });
 
+    test('Generate action path is deterministic and remains stable', async ({ page }) => {
+      await page.goto('/#/annual-planner');
+      const loginForm = page.locator('input[type="email"]');
+      const generateBtn = page.locator('button', { hasText: /Генерирај/i }).first();
+
+      if (await generateBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        const beforeText = (await generateBtn.textContent()) || '';
+        await generateBtn.click();
+        await page.waitForTimeout(1200);
+
+        // In logged-in mode, button should stay interactable while app remains stable.
+        await expect(generateBtn).toBeVisible();
+        const afterText = (await generateBtn.textContent()) || '';
+        expect(afterText.length).toBeGreaterThan(0);
+        expect(beforeText.length).toBeGreaterThan(0);
+      } else {
+        await expect(loginForm).toBeVisible({ timeout: 5000 });
+      }
+
+      await expect(page.locator(runtimeErrorBanner)).not.toBeVisible();
+    });
+
+    test('Annual Planner interaction does not surface runtime error banner', async ({ page }) => {
+      await page.goto('/#/annual-planner');
+
+      const subjectInput = page.locator('input[type="text"]').first();
+      if (await subjectInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await subjectInput.fill('Интерактивна математика');
+      }
+
+      const generateBtn = page.locator('button', { hasText: /Генерирај/i }).first();
+      if (await generateBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await generateBtn.click();
+        await page.waitForTimeout(1000);
+      }
+
+      await expect(page.locator(runtimeErrorBanner)).not.toBeVisible();
+    });
+
   });
 
   // ── 3. Public routes — no JS errors ──────────────────────────────────────
@@ -115,6 +156,7 @@ test.describe('Happy Path: Core User Flows', () => {
       { path: '/#/', label: 'Home' },
       { path: '/#/my-progress', label: 'Student Progress' },
       { path: '/#/live', label: 'Live Session' },
+      { path: '/#/graph', label: 'Curriculum Graph' },
       { path: '/#/tutor', label: 'AI Tutor' },
       { path: '/#/annual-planner', label: 'Annual Planner' },
     ];

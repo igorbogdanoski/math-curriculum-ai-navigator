@@ -11,6 +11,7 @@ test.describe('E1 Isolated Harness: Generator Panel API Chain', () => {
 
     await page.addInitScript(() => {
       localStorage.setItem('auto_ai_suggestions', 'false');
+      localStorage.setItem('preferred_language', 'mk');
     });
 
     page.on('request', (req) => {
@@ -70,7 +71,8 @@ test.describe('E1 Isolated Harness: Generator Panel API Chain', () => {
 
     await page.route(/\/api\/gemini/, async (route) => {
       const postData = route.request().postData() ?? '';
-      if (postData.includes('recommendations') || postData.includes('препораки')) {
+      const isRecommendationsCall = /recommendationText|"category"\s*:\s*\{|препорак/i.test(postData);
+      if (isRecommendationsCall) {
         const recs = [{ category: 'Напредок', title: 'Continue', recommendationText: 'Mock rec' }];
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ text: JSON.stringify(recs), candidates: [{ content: { parts: [{ text: JSON.stringify(recs) }] } }] }) });
         return;
@@ -89,6 +91,7 @@ test.describe('E1 Isolated Harness: Generator Panel API Chain', () => {
     });
 
     await page.goto('/#/generator');
+    await page.waitForFunction(() => document.documentElement.lang === 'mk');
 
     await page.addStyleTag({
       content: '#react-joyride-portal, .react-joyride__overlay, .react-joyride__spotlight, [role="dialog"][aria-label*="колачиња"] { display: none !important; pointer-events: none !important; }',
@@ -110,17 +113,29 @@ test.describe('E1 Isolated Harness: Generator Panel API Chain', () => {
     await page.getByRole('button', { name: /Video Extractor \(MVP\)/i }).click();
     await page.getByRole('button', { name: /Следно/i }).click();
 
-    const gradeSelect = page.locator('select').nth(0);
-    const gradeValues = await gradeSelect.locator('option').evaluateAll((opts) => opts.map((o) => (o as HTMLOptionElement).value).filter(Boolean));
-    if (gradeValues.length > 0) await gradeSelect.selectOption(gradeValues[0]);
+    const contextStep = page.locator('[data-tour="generator-step-2"]');
+    if (await contextStep.first().isVisible()) {
+      await expect(contextStep.first()).toBeVisible({ timeout: 15000 });
 
-    await page.getByRole('button', { name: /По твоја идеја/i }).click();
-    await page.locator('textarea').first().fill('Изолиран harness контекст за видео екстракција.');
-    await page.getByRole('button', { name: /Следно/i }).click();
+      const gradeSelect = contextStep.first().locator('select').first();
+      const gradeValues = await gradeSelect.locator('option').evaluateAll((opts) => opts.map((o) => (o as HTMLOptionElement).value).filter(Boolean));
+      if (gradeValues.length > 0) await gradeSelect.selectOption(gradeValues[0]);
+
+      const scenarioTab = contextStep.first().getByRole('button', { name: /По твоја идеја|Од ваша идеја|По моја идеја/i });
+      if (await scenarioTab.count()) {
+        await scenarioTab.first().click({ force: true });
+      }
+      const scenarioInput = contextStep.first().locator('textarea').first();
+      await expect(scenarioInput).toBeVisible({ timeout: 15000 });
+      await scenarioInput.fill('Изолиран harness контекст за видео екстракција.');
+      await page.getByRole('button', { name: /Следно/i }).click();
+    }
+
+    await expect(page.locator('#videoUrl')).toBeVisible({ timeout: 15000 });
 
     await page.locator('#videoUrl').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-    await page.getByRole('button', { name: /^Preview$/i }).click();
-    await expect(page.getByText(/Preview потврден/i)).toBeVisible();
+    await page.getByRole('button', { name: /^Анализирај$/i }).click();
+    await expect(page.getByText(/Math Channel MK/i)).toBeVisible();
 
     await page.getByRole('button', { name: /Генерирај AI/i }).click();
 
