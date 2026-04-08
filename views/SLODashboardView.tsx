@@ -316,6 +316,25 @@ export const SLODashboardView: React.FC = () => {
     ? apiData.sentry.unclassifiedRatio * 100 : null;
   const sentryStatus = rag(unclassifiedPct, { green: SLO_THRESHOLDS.unclassifiedPct.green, amber: SLO_THRESHOLDS.unclassifiedPct.amber }, true);
 
+  // Operational (server) status excludes client-session shadow metrics.
+  const operationalStatuses: RAGStatus[] = [ciStatus, sentryStatus];
+  const operationalHasRed = operationalStatuses.includes('red');
+  const operationalHasAmber = operationalStatuses.includes('amber');
+  const operationalOverall: RAGStatus = operationalHasRed ? 'red' : operationalHasAmber ? 'amber' : 'green';
+  const operationalLabel = operationalOverall === 'green'
+    ? 'Operational (server) SLO — ОК'
+    : operationalOverall === 'amber'
+      ? 'Operational (server) SLO — предупредување'
+      : 'Operational (server) SLO — критично';
+
+  const aiSessionLabel = aiPanelStatus === 'green'
+    ? 'AI session (shadow) — ОК'
+    : aiPanelStatus === 'amber'
+      ? 'AI session (shadow) — предупредување'
+      : aiPanelStatus === 'red'
+        ? 'AI session (shadow) — критично'
+        : 'AI session (shadow) — недоволно податоци';
+
   // ── Export to Markdown ───────────────────────────────────────────────────────
   const exportMarkdown = () => {
     const lines: string[] = [
@@ -383,21 +402,19 @@ export const SLODashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* Overall status bar */}
-      {(() => {
-        const allStatuses: RAGStatus[] = [aiPanelStatus, ciStatus, sentryStatus];
-        const hasRed   = allStatuses.includes('red');
-        const hasAmber = allStatuses.includes('amber');
-        const overall: RAGStatus = hasRed ? 'red' : hasAmber ? 'amber' : 'green';
-        const label = overall === 'green' ? 'Сите SLO — ОК' : overall === 'amber' ? 'Предупредување — провери amber метрики' : 'Критично — провери red метрики веднаш';
-        return (
-          <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl mb-6 border ${RAG_STYLES[overall].border} ${RAG_STYLES[overall].badge}`}>
-            <RAGIcon status={overall} />
-            <span className="text-sm font-bold">{label}</span>
-            <span className="ml-auto text-xs opacity-60">{relativeTime(refreshedAt)}</span>
-          </div>
-        );
-      })()}
+      {/* Overall status bars (server vs client session) */}
+      <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl mb-3 border ${RAG_STYLES[operationalOverall].border} ${RAG_STYLES[operationalOverall].badge}`}>
+        <RAGIcon status={operationalOverall} />
+        <span className="text-sm font-bold">{operationalLabel}</span>
+        <span className="ml-auto text-xs opacity-60">{apiData?.generatedAt ? relativeTime(apiData.generatedAt) : relativeTime(refreshedAt)}</span>
+      </div>
+
+      <div className={`flex items-center gap-2 px-4 py-2 rounded-xl mb-6 border ${RAG_STYLES[aiPanelStatus].border} ${RAG_STYLES[aiPanelStatus].badge}`}>
+        <RAGIcon status={aiPanelStatus} />
+        <span className="text-xs font-semibold">{aiSessionLabel}</span>
+        <span className="text-[11px] opacity-80">(client shadow telemetry)</span>
+        <span className="ml-auto text-[11px] opacity-60">{relativeTime(refreshedAt)}</span>
+      </div>
 
       {apiError && (
         <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

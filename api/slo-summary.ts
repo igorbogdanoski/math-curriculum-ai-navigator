@@ -149,8 +149,14 @@ async function fetchCIReliability(): Promise<CIReliabilityData> {
   const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' };
 
   try {
+    const runsUrl = new URL(`https://api.github.com/repos/${owner}/${repoName}/actions/workflows/ci-quality.yml/runs`);
+    runsUrl.searchParams.set('per_page', '100');
+    runsUrl.searchParams.set('status', 'completed');
+    runsUrl.searchParams.set('event', 'push');
+    runsUrl.searchParams.set('branch', 'main');
+
     const runsRes = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}/actions/workflows/ci-quality.yml/runs?per_page=50&status=completed`,
+      runsUrl.toString(),
       { headers }
     );
     if (!runsRes.ok) return { available: false, passRate: null, successCount: null, totalCount: null, closeTriggerReached: false, lastRunAt: null };

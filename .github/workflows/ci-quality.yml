@@ -116,13 +116,16 @@ jobs:
             const workflowId = 'ci-quality.yml';
             const currentResult = process.env.CURRENT_QUALITY_GATE_RESULT;
             const qualityGateJobName = 'Typecheck + Unit + Build';
+            const isCurrentEligible = context.eventName === 'push' && context.ref === 'refs/heads/main';
 
             const runsResp = await github.rest.actions.listWorkflowRuns({
               owner,
               repo,
               workflow_id: workflowId,
-              per_page: 50,
+              per_page: 100,
               status: 'completed',
+              event: 'push',
+              branch: 'main',
             });
 
             // IMPORTANT: Use QUALITY-GATE JOB conclusions from previous runs, not workflow conclusion.
@@ -152,7 +155,7 @@ jobs:
 
             const completed = [];
 
-            if (currentResult === 'success' || currentResult === 'failure') {
+            if (isCurrentEligible && (currentResult === 'success' || currentResult === 'failure')) {
               completed.push({ conclusion: currentResult });
             }
 
@@ -190,6 +193,7 @@ jobs:
             core.summary
               .addHeading('CI Reliability Baseline')
               .addRaw(`Basis: '${qualityGateJobName}' job conclusions (not workflow conclusion)\n\n`)
+              .addRaw(`Included runs: push events on main branch\n\n`)
               .addRaw(`Window: last ${total} completed runs\n\n`)
               .addRaw(`Success: ${success}/${total}\n\n`)
               .addRaw(`Pass rate: ${passRate.toFixed(2)}%\n\n`)
