@@ -58,6 +58,7 @@ Exit Criteria (DONE):
 | 2026-04-08 | F3 | Step 2 wave-1: on-demand export deps refactor + re-measure | PARTIAL | Build PASS; perf budget still FAIL (total 10557.74 kB > 10000 kB) |
 | 2026-04-08 | F3 | Step 2 wave-2: math evaluator optimization + re-measure | PASS | Perf budget PASS (total 9909.57 kB; third-party 6114.36 kB) |
 | 2026-04-08 | F3 | Regression validation after wave-2 | PASS | `tests/smoke.spec.ts` + `tests/auth-guard.spec.ts` => 21/21 PASS |
+| 2026-04-08 | F3 | Stretch experiment: react runtime rechunking | PARTIAL | `largest` намален (~1241 kB), но воведен circular chunk warning; change е свесно rollback-нат |
 
 ## 4) Оперативни правила
 

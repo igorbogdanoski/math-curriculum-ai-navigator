@@ -82,3 +82,10 @@ Regression safety checks:
 Current F3 status note:
 1. Perf budget gate е затворен (PASS).
 2. Stretch thresholds (`<=1300` largest / `<=1000` main chunk) остануваат open optimization target за следна итерација.
+
+## Stretch Experiment Note (08.04.2026)
+
+1. React runtime split experiment во `vite.config.ts` го симна `largest` chunk на ~1241 kB.
+2. Истовремено воведе стабилно Rollup предупредување: `Circular chunk: vendor -> vendor-react-runtime -> vendor`.
+3. Иако smoke/auth checks беа зелени, експериментот е свесно вратен за да се избегне production ризик од chunk cycle.
+4. Заклучок: за `main <= 1000 kB` е потребен app-shell/service-level refactor (не само vendor rechunking).
