@@ -961,11 +961,18 @@ IMPORTANT: You must return the updated material EXACTLY in the same generic JSON
 async analyzeHandwriting(
     base64Image: string,
     mimeType: string,
-    conceptContext?: string
+    conceptContext?: string,
+    options?: { detailMode?: 'standard' | 'detailed' }
   ): Promise<string> {
     checkDailyQuotaGuard();
     const contextLine = conceptContext
       ? `Контекст: ученикот работи на концептот „${conceptContext}".`
+      : '';
+    const detailMode = options?.detailMode ?? 'standard';
+    const detailInstruction = detailMode === 'detailed'
+      ? `
+5. **Педагошка дијагноза** — за секоја грешка наведи тип на заблуда (пр. процедурна/концептуална), зошто се јавува и како наставник да интервенира во 1-2 чекори.
+6. **Следни микро-чекори** — дај 2 кратки вежби (со насока, без целосно решение) за да се поправи истата грешка.`
       : '';
     const prompt = `${contextLine}
 Ти си искусен македонски наставник по математика. Анализирај ја оваа слика од рачно напишана математичка домашна работа или тест.
@@ -975,6 +982,7 @@ async analyzeHandwriting(
 2. **Грешки и корекции** — за секоја грешка: прикажи го точниот чекор-по-чекор пат на решавање.
 3. **Општ совет** — еден краток совет за подобрување.
 4. **Проценка** — дај процентуална оценка (пр. 75%) врз основа на точноста.
+${detailInstruction}
 
 Пишувај топло и охрабрувачки. Одговори на македонски јазик.`;
 
@@ -1752,17 +1760,63 @@ ${questionsStr}
 Врати JSON:
 { "grades": [ { "questionId": "1", "earnedPoints": X, "maxPoints": Y, "feedback": "...", "misconception": "..." } ] }`;
 
-    const result = await callGeminiProxy({
-      model: PRO_MODEL,
-      contents: [{ role: 'user', parts: [{ inlineData: { mimeType, data: imageBase64 } }, { text: prompt }] }],
-      generationConfig: { responseMimeType: 'application/json' },
-    });
+    const normalizeGradeRows = (raw: unknown): Array<{ questionId: string; earnedPoints: number; maxPoints: number; feedback: string; misconception?: string }> | null => {
+      if (!Array.isArray(raw)) return null;
+      const normalized = raw.map((row) => {
+        const item = row as Record<string, unknown>;
+        return {
+          questionId: String(item.questionId ?? ''),
+          earnedPoints: Number(item.earnedPoints),
+          maxPoints: Number(item.maxPoints),
+          feedback: String(item.feedback ?? ''),
+          misconception: item.misconception ? String(item.misconception) : undefined,
+        };
+      });
+
+      const valid = normalized.every((g) =>
+        g.questionId.length > 0
+        && Number.isFinite(g.earnedPoints)
+        && Number.isFinite(g.maxPoints)
+        && g.maxPoints >= 0
+        && g.earnedPoints >= 0
+        && g.earnedPoints <= g.maxPoints
+        && g.feedback.trim().length > 0,
+      );
+
+      if (!valid) return null;
+      return normalized;
+    };
+
+    const attempt = async (attemptPrompt: string) => {
+      const result = await callGeminiProxy({
+        model: PRO_MODEL,
+        contents: [{ role: 'user', parts: [{ inlineData: { mimeType, data: imageBase64 } }, { text: attemptPrompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      });
+
+      const parsed = JSON.parse(result.text || '{}') as { grades?: unknown };
+      const rows = normalizeGradeRows(parsed.grades);
+      if (!rows) throw new Error('Невалиден формат на оценување од AI.');
+      if (rows.length !== testQuestions.length) {
+        throw new Error(`Некомплетно оценување: добиени ${rows.length}/${testQuestions.length} прашања.`);
+      }
+      return rows;
+    };
 
     try {
-      const parsed = JSON.parse(result.text || '{}');
-      return parsed.grades ?? [];
+      return await attempt(prompt);
     } catch {
-      return [];
+      const strictPrompt = `${prompt}
+
+КРИТИЧНО:
+- Врати ИСКЛУЧИВО валиден JSON објект.
+- Не додавај markdown, не додавај објаснување надвор од JSON.
+- Полето grades мора да содржи точно ${testQuestions.length} елементи.`;
+      try {
+        return await attempt(strictPrompt);
+      } catch (retryError) {
+        throw new Error((retryError as Error).message || 'AI оценувањето не врати валиден резултат. Обидете се повторно.');
+      }
     }
   },
 };

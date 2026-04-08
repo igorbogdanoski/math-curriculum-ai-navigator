@@ -5,6 +5,8 @@ import { ICONS } from '../../constants';
 import { InfoTooltip } from '../common/InfoTooltip';
 import { educationalHints } from '../../data/educationalModelsInfo';
 import { fetchVideoPreview, fetchYouTubeCaptions, type VideoCaptionsResult } from '../../utils/videoPreview';
+import { getAuth } from 'firebase/auth';
+import { app } from '../../firebaseConfig';
 
 interface MaterialOptionsProps {
     state: GeneratorState;
@@ -655,6 +657,13 @@ const WebExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispat
         )).slice(0, 8);
     };
 
+    const buildAuthHeaders = async (): Promise<HeadersInit> => {
+        const currentUser = getAuth(app).currentUser;
+        if (!currentUser) return {};
+        const token = await currentUser.getIdToken();
+        return token ? { Authorization: `Bearer ${token}` } : {};
+    };
+
     const handleFetch = async () => {
         const url = state.webpageUrl.trim();
         if (!url) return;
@@ -664,7 +673,8 @@ const WebExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispat
         dispatch({ type: 'SET_FIELD', payload: { field: 'webpageExtractMeta', value: null } });
         try {
             const params = new URLSearchParams({ url });
-            const res = await fetch(`/api/webpage-extract?${params.toString()}`);
+            const headers = await buildAuthHeaders();
+            const res = await fetch(`/api/webpage-extract?${params.toString()}`, { headers });
             const data: WebExtractResult = await res.json();
             setResult(data);
             if (data.available && data.text) {
@@ -700,10 +710,11 @@ const WebExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispat
         dispatch({ type: 'SET_FIELD', payload: { field: 'webpageExtractMeta', value: null } });
 
         try {
+            const headers = await buildAuthHeaders();
             const batchResults = await Promise.all(urls.map(async (url) => {
                 try {
                     const params = new URLSearchParams({ url });
-                    const res = await fetch(`/api/webpage-extract?${params.toString()}`);
+                    const res = await fetch(`/api/webpage-extract?${params.toString()}`, { headers });
                     const data: WebExtractResult = await res.json();
                     return { url, data };
                 } catch {

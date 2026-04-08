@@ -3,9 +3,12 @@ import { Camera, Upload, X, CheckCircle, Loader2, RefreshCw, Sparkles, Printer, 
 import { Card } from '../components/common/Card';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
+import { persistScanArtifactWithObservability } from '../services/scanArtifactPersistence';
+import { useAuth } from '../contexts/AuthContext';
 import { AppError, ErrorCode } from '../utils/errors';
 
 export const AIVisionGraderView: React.FC = () => {
+    const { firebaseUser, user } = useAuth();
     const [imageStr, setImageStr] = useState<string | null>(null);
     const [conceptContext, setConceptContext] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -89,8 +92,37 @@ export const AIVisionGraderView: React.FC = () => {
             }
             const mimeType = match[1];
             const base64Data = match[2];
-            const text = await geminiService.analyzeHandwriting(base64Data, mimeType, conceptContext.trim() || undefined);
+            const text = await geminiService.analyzeHandwriting(
+                base64Data,
+                mimeType,
+                conceptContext.trim() || undefined,
+                { detailMode: analysisDepth },
+            );
             setResult(text);
+
+            if (firebaseUser?.uid) {
+                const outcome = await persistScanArtifactWithObservability({
+                    teacherUid: firebaseUser.uid,
+                    schoolId: user?.schoolId,
+                    mode: 'homework_feedback',
+                    sourceType: 'image',
+                    mimeType,
+                    extractedText: text,
+                    normalizedText: text.trim(),
+                    artifactQuality: {
+                        score: text.length > 250 ? 0.9 : 0.75,
+                        label: text.length > 250 ? 'good' : 'fair',
+                        truncated: false,
+                    },
+                }, {
+                    flow: 'vision_homework',
+                    stage: 'single_scan_analysis',
+                });
+
+                if (!outcome.ok) {
+                    setError('Анализата е успешна, но зачувувањето на скенираниот артефакт не успеа. Обидете се повторно.');
+                }
+            }
         } catch (err: any) {
             setError(err.message || 'Се појави грешка при анализата.');
         } finally {

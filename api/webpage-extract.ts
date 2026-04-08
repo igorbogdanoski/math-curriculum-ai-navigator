@@ -29,10 +29,94 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 const MAX_CHARS = 12000;
 const MIN_HTML_TEXT_CHARS = 350;
 const MIN_PDF_TEXT_CHARS = 180;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 20;
+const requestBuckets = new Map<string, number[]>();
+
+function isRateLimited(identifier: string): boolean {
+  const now = Date.now();
+  const bucket = (requestBuckets.get(identifier) ?? []).filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+  if (bucket.length >= MAX_REQUESTS_PER_WINDOW) {
+    requestBuckets.set(identifier, bucket);
+    return true;
+  }
+  bucket.push(now);
+  requestBuckets.set(identifier, bucket);
+  return false;
+}
+
+function resetRateLimitState(identifier?: string): void {
+  if (identifier) {
+    requestBuckets.delete(identifier);
+    return;
+  }
+  requestBuckets.clear();
+}
+
+function getFirebaseAdminAuth() {
+  if (getApps().length === 0) {
+    const sa = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
+    if (!sa) return null;
+    try {
+      const decoded = sa.trim().startsWith('{') ? sa : Buffer.from(sa, 'base64').toString('utf8');
+      initializeApp({ credential: cert(JSON.parse(decoded)) });
+    } catch {
+      return null;
+    }
+  }
+
+  return getAuth();
+}
+
+async function authorizeAnyUser(req: VercelRequest): Promise<{ ok: true; uid: string } | { ok: false; status: number; error: string }> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { ok: false, status: 401, error: 'Missing Authorization header' };
+  }
+
+  const adminAuth = getFirebaseAdminAuth();
+  if (!adminAuth) {
+    return { ok: false, status: 500, error: 'Server authentication configuration error' };
+  }
+
+  try {
+    const decoded = await adminAuth.verifyIdToken(authHeader.slice(7), false);
+    return { ok: true, uid: decoded.uid };
+  } catch {
+    return { ok: false, status: 401, error: 'Invalid authentication token' };
+  }
+}
+
+function isPrivateOrUnsafeHost(host: string): boolean {
+  const lowered = host.toLowerCase();
+  if (
+    lowered === 'localhost' ||
+    lowered === '127.0.0.1' ||
+    lowered === '::1' ||
+    lowered === '0.0.0.0' ||
+    lowered.endsWith('.internal') ||
+    lowered.endsWith('.local') ||
+    lowered === 'metadata.google.internal' ||
+    lowered === '169.254.169.254'
+  ) {
+    return true;
+  }
+
+  if (/^10\./.test(lowered) || /^192\.168\./.test(lowered) || /^169\.254\./.test(lowered)) {
+    return true;
+  }
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(lowered)) {
+    return true;
+  }
+
+  return false;
+}
 
 function getAllowedOrigins(): string[] {
   const configured = (process.env.ALLOWED_ORIGIN ?? '')
@@ -53,7 +137,7 @@ function setCors(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 // ─── HTML → text ──────────────────────────────────────────────────────────────
@@ -200,9 +284,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   if (req.method !== 'GET') { res.status(405).json({ available: false, reason: 'Method not allowed' }); return; }
 
+  const authz = await authorizeAnyUser(req);
+  if (authz.ok === false) {
+    res.status(authz.status).json({ available: false, reason: authz.error });
+    return;
+  }
+
+  if (isRateLimited(authz.uid)) {
+    res.status(429).json({ available: false, reason: 'Rate limit exceeded. Please retry in one minute.' });
+    return;
+  }
+
   const rawUrl = typeof req.query.url === 'string' ? req.query.url.trim() : '';
   if (!rawUrl) {
     res.status(400).json({ available: false, reason: 'Missing url parameter' });
+    return;
+  }
+  if (rawUrl.length > 2048) {
+    res.status(400).json({ available: false, reason: 'URL is too long' });
     return;
   }
 
@@ -218,9 +317,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(400).json({ available: false, reason: 'Only http/https URLs are supported' });
     return;
   }
+  if (parsedUrl.username || parsedUrl.password) {
+    res.status(400).json({ available: false, reason: 'URLs with embedded credentials are not allowed' });
+    return;
+  }
   // Block SSRF targets
   const host = parsedUrl.hostname.toLowerCase();
-  if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.') || host.endsWith('.internal')) {
+  if (isPrivateOrUnsafeHost(host)) {
     res.status(400).json({ available: false, reason: 'Internal URLs are not allowed' });
     return;
   }
@@ -323,3 +426,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ available: false, reason });
   }
 }
+
+export const __testables = {
+  isRateLimited,
+  isPrivateOrUnsafeHost,
+  resetRateLimitState,
+};

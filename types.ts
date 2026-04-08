@@ -618,6 +618,57 @@ export interface AIGeneratedIdeas {
   };
 }
 
+export type VisionAssessmentMode = 'homework_feedback' | 'test_grading' | 'content_extraction';
+
+export interface PedagogicalFeedbackEntry {
+  itemRef: string;
+  misconceptionType?: string;
+  feedback: string;
+  correctionSteps?: string[];
+  confidence?: number;
+}
+
+export interface ScanArtifactRecord {
+  id: string;
+  createdAt: string;
+  updatedAt?: string;
+  teacherUid: string;
+  schoolId?: string;
+  mode: VisionAssessmentMode;
+  sourceType: 'image' | 'pdf' | 'web' | 'video';
+  sourceUrl?: string;
+  sourceUrls?: string[];
+  storagePath?: string;
+  mimeType?: string;
+  gradeLevel?: number;
+  topicId?: string;
+  conceptIds?: string[];
+  extractedText?: string;
+  normalizedText?: string;
+  extractionBundle?: {
+    formulas: string[];
+    theories: string[];
+    tasks: string[];
+    rawSnippet: string;
+  };
+  pedagogicalFeedback?: PedagogicalFeedbackEntry[];
+  gradingSummary?: {
+    earnedPoints?: number;
+    maxPoints?: number;
+    percentage?: number;
+  };
+  artifactQuality?: {
+    score: number;
+    label: 'poor' | 'fair' | 'good' | 'excellent';
+    truncated?: boolean;
+  };
+  teacherOverride?: {
+    updatedBy: string;
+    updatedAt: string;
+    reason?: string;
+  };
+}
+
 export interface AIGeneratedPracticeMaterial {
     title: string;
     items: {

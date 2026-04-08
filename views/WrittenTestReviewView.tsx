@@ -5,6 +5,8 @@ import {
   Users, BarChart3, Flame, User
 } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
+import { persistScanArtifactWithObservability } from '../services/scanArtifactPersistence';
+import { useAuth } from '../contexts/AuthContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -79,6 +81,7 @@ function readFileAsDataURL(file: File): Promise<string> {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export const WrittenTestReviewView: React.FC = () => {
+  const { firebaseUser, user } = useAuth();
   const [mode, setMode] = useState<Mode>('single');
 
   // Shared state
@@ -100,6 +103,54 @@ export const WrittenTestReviewView: React.FC = () => {
 
   const singleInputRef = useRef<HTMLInputElement>(null);
   const batchInputRef = useRef<HTMLInputElement>(null);
+
+  const persistTestArtifact = useCallback(async (
+    mimeType: string,
+    results: GradeResult[],
+    meta?: { sourceUrl?: string }
+  ) => {
+    if (!firebaseUser?.uid || results.length === 0) return;
+
+    const totalEarned = results.reduce((sum, r) => sum + r.earnedPoints, 0);
+    const totalMax = results.reduce((sum, r) => sum + r.maxPoints, 0);
+    const percentage = totalMax > 0 ? Math.round((totalEarned / totalMax) * 100) : 0;
+    const feedbackText = results
+      .map((r, i) => `П${i + 1}: ${r.feedback}`)
+      .join('\n');
+
+    const outcome = await persistScanArtifactWithObservability({
+      teacherUid: firebaseUser.uid,
+      schoolId: user?.schoolId,
+      mode: 'test_grading',
+      sourceType: 'image',
+      sourceUrl: meta?.sourceUrl,
+      mimeType,
+      extractedText: feedbackText,
+      normalizedText: feedbackText.trim(),
+      pedagogicalFeedback: results.map((r, i) => ({
+        itemRef: r.questionId || `q-${i + 1}`,
+        misconceptionType: r.misconception,
+        feedback: r.feedback,
+      })),
+      gradingSummary: {
+        earnedPoints: totalEarned,
+        maxPoints: totalMax,
+        percentage,
+      },
+      artifactQuality: {
+        score: percentage >= 80 ? 0.9 : percentage >= 60 ? 0.78 : percentage >= 40 ? 0.65 : 0.5,
+        label: percentage >= 80 ? 'excellent' : percentage >= 60 ? 'good' : percentage >= 40 ? 'fair' : 'poor',
+        truncated: false,
+      },
+    }, {
+      flow: 'written_test_review',
+      stage: 'vision_grade_submission',
+    });
+
+    if (!outcome.ok) {
+      throw outcome.error ?? new Error('scan-artifact-persist-failed');
+    }
+  }, [firebaseUser?.uid, user?.schoolId]);
 
   // ── Question helpers ──
   const addQuestion = () => {
@@ -137,10 +188,20 @@ export const WrittenTestReviewView: React.FC = () => {
         base64, imageFile.type,
         validQuestions.map(q => ({ id: q.id, text: q.text, points: q.points, correctAnswer: q.correctAnswer }))
       );
+      if (!results.length) {
+        throw new Error('AI не врати валидни оценки. Обидете се повторно со појасна фотографија.');
+      }
       setSingleResults(results);
       setExpandedSetup(false);
-    } catch {
-      setError('Грешка при прегледувањето. Обидете се повторно.');
+      try {
+        await persistTestArtifact(imageFile.type, results);
+      } catch (persistErr) {
+        console.warn('Failed to persist written-test artifact:', persistErr);
+        setError('Оценувањето е успешно, но зачувувањето на артефактот не успеа. Обидете се повторно.');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Грешка при прегледувањето. Обидете се повторно.';
+      setError(message);
     } finally {
       setIsGrading(false);
     }
@@ -180,7 +241,13 @@ export const WrittenTestReviewView: React.FC = () => {
       try {
         const base64 = sub.preview.split(',')[1];
         const results = await geminiService.gradeTestWithVision(base64, sub.file.type, qList);
+        if (!results.length) throw new Error('empty-grades');
         setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'done', results } : s));
+        try {
+          await persistTestArtifact(sub.file.type, results);
+        } catch (persistErr) {
+          console.warn('Failed to persist batch written-test artifact:', persistErr);
+        }
       } catch {
         setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'error' } : s));
       }

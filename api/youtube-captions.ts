@@ -20,11 +20,71 @@
  * }
  *         | { available: false; reason: string }
  *
- * Security: No auth required (public YouTube data), CORS restricted.
+ * Security: Requires Firebase auth token, CORS restricted.
  * Rate limit: inherits Vercel function limits; YouTube timedtext is ~1 req/video.
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 20;
+const requestBuckets = new Map<string, number[]>();
+
+function isRateLimited(identifier: string): boolean {
+  const now = Date.now();
+  const bucket = (requestBuckets.get(identifier) ?? []).filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+  if (bucket.length >= MAX_REQUESTS_PER_WINDOW) {
+    requestBuckets.set(identifier, bucket);
+    return true;
+  }
+  bucket.push(now);
+  requestBuckets.set(identifier, bucket);
+  return false;
+}
+
+function resetRateLimitState(identifier?: string): void {
+  if (identifier) {
+    requestBuckets.delete(identifier);
+    return;
+  }
+  requestBuckets.clear();
+}
+
+function getFirebaseAdminAuth() {
+  if (getApps().length === 0) {
+    const sa = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
+    if (!sa) return null;
+    try {
+      const decoded = sa.trim().startsWith('{') ? sa : Buffer.from(sa, 'base64').toString('utf8');
+      initializeApp({ credential: cert(JSON.parse(decoded)) });
+    } catch {
+      return null;
+    }
+  }
+
+  return getAuth();
+}
+
+async function authorizeAnyUser(req: VercelRequest): Promise<{ ok: true; uid: string } | { ok: false; status: number; error: string }> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { ok: false, status: 401, error: 'Missing Authorization header' };
+  }
+
+  const adminAuth = getFirebaseAdminAuth();
+  if (!adminAuth) {
+    return { ok: false, status: 500, error: 'Server authentication configuration error' };
+  }
+
+  try {
+    const decoded = await adminAuth.verifyIdToken(authHeader.slice(7), false);
+    return { ok: true, uid: decoded.uid };
+  } catch {
+    return { ok: false, status: 401, error: 'Invalid authentication token' };
+  }
+}
 
 function getAllowedOrigins(): string[] {
   const configured = (process.env.ALLOWED_ORIGIN ?? '')
@@ -45,7 +105,7 @@ function setCors(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 // ─── Caption track fetcher ────────────────────────────────────────────────────
@@ -74,6 +134,7 @@ async function fetchCaptionTracks(videoId: string): Promise<CaptionTrack[]> {
       'User-Agent': 'Mozilla/5.0 (compatible; MathNavigatorBot/1.0)',
       'Accept-Language': 'en-US,en;q=0.9',
     },
+    signal: AbortSignal.timeout(9000),
   });
 
   if (!res.ok) throw new Error(`YouTube page fetch failed: ${res.status}`);
@@ -159,6 +220,7 @@ async function fetchTranscriptText(track: CaptionTrack): Promise<TranscriptPaylo
 
   const res = await fetch(url, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MathNavigatorBot/1.0)' },
+    signal: AbortSignal.timeout(9000),
   });
 
   if (!res.ok) throw new Error(`Caption fetch failed: ${res.status}`);
@@ -239,6 +301,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
+  const authz = await authorizeAnyUser(req);
+  if (authz.ok === false) {
+    return res.status(authz.status).json({ available: false, reason: authz.error });
+  }
+
+  if (isRateLimited(authz.uid)) {
+    return res.status(429).json({ available: false, reason: 'Rate limit exceeded. Please retry in one minute.' });
+  }
+
   const videoId = typeof req.query.videoId === 'string' ? req.query.videoId.trim() : '';
   const lang    = typeof req.query.lang    === 'string' ? req.query.lang.trim()    : 'mk';
 
@@ -301,3 +372,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 }
+
+export const __testables = {
+  isRateLimited,
+  resetRateLimitState,
+};

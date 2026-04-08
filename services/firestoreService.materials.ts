@@ -1,7 +1,7 @@
 import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
-import { type DifferentiationLevel, type SavedQuestion } from '../types';
+import { type DifferentiationLevel, type SavedQuestion, type ScanArtifactRecord } from '../types';
 import { type CachedMaterial, type Assignment, type AIMaterialFeedbackEvent, type AIMaterialFeedbackSummary, type AIMaterialFeedbackSummaryRow, type AIMaterialType, type AIMaterialFeedbackAction, type RecoveryWorksheetApproval } from './firestoreService.types';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import { callEmbeddingProxy } from './gemini/core';
@@ -629,6 +629,17 @@ export const saveAssignmentMaterial = async (content: any, meta: { title: string
     });
     return ref.id;
   };
+
+export const saveScanArtifactRecord = async (
+  record: Omit<ScanArtifactRecord, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<string> => {
+  const ref = await addDoc(collection(db, 'scan_artifacts'), {
+    ...record,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return ref.id;
+};
 
 export const saveRecoveryWorksheetApproval = async (approval: Omit<RecoveryWorksheetApproval, 'id' | 'createdAt'>): Promise<string> => {
     const ref = await addDoc(collection(db, 'worksheet_approvals'), {

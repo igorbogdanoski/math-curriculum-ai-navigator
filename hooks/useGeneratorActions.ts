@@ -4,6 +4,7 @@ import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiSer
 import { AI_COSTS, sanitizePromptInput } from '../services/gemini/core';
 import { RateLimitError } from '../services/apiErrors';
 import { ValidationError } from '../utils/errors';
+import { persistScanArtifactWithObservability } from '../services/scanArtifactPersistence';
 import { useLanguage } from '../i18n/LanguageContext';
 import { buildExtractionBundle, evaluateExtractionQuality } from '../utils/extractionBundle';
 import { inferConceptIdsFromExtraction } from '../utils/extractionConceptMap';
@@ -223,6 +224,43 @@ export function useGeneratorActions({
       teacherNoteInstruction,
       sanitizePromptInput(state.customInstruction),
     ].filter(Boolean).join(' ');
+  };
+
+  const persistExtractionArtifact = async (params: {
+    sourceType: 'image' | 'web' | 'video';
+    sourceUrl?: string;
+    sourceUrls?: string[];
+    extractedText: string;
+    extractionBundle: { formulas: string[]; theories: string[]; tasks: string[]; rawSnippet: string };
+    quality: { score: number; label: 'poor' | 'fair' | 'good' | 'excellent'; truncated?: boolean };
+    gradeLevel?: number;
+    topicId?: string;
+    conceptIds?: string[];
+  }) => {
+    if (!firebaseUser?.uid || !params.extractedText.trim()) return;
+
+    await persistScanArtifactWithObservability({
+      teacherUid: firebaseUser.uid,
+      schoolId: user?.schoolId,
+      mode: 'content_extraction',
+      sourceType: params.sourceType,
+      sourceUrl: params.sourceUrl,
+      sourceUrls: params.sourceUrls,
+      gradeLevel: params.gradeLevel,
+      topicId: params.topicId,
+      conceptIds: params.conceptIds,
+      extractedText: params.extractedText,
+      normalizedText: params.extractedText.trim(),
+      extractionBundle: params.extractionBundle,
+      artifactQuality: {
+        score: params.quality.score,
+        label: params.quality.label,
+        truncated: params.quality.truncated,
+      },
+    }, {
+      flow: 'generator_extraction',
+      stage: params.sourceType,
+    });
   };
 
   const handleBulkGenerate = async () => {
@@ -462,6 +500,20 @@ export function useGeneratorActions({
                   extractionQuality,
                 },
               } as unknown as GeneratedMaterial;
+
+              await persistExtractionArtifact({
+                sourceType: 'image',
+                extractedText: rawAnalysis,
+                extractionBundle,
+                quality: {
+                  score: extractionQuality.score,
+                  label: extractionQuality.label,
+                  truncated: false,
+                },
+                gradeLevel,
+                topicId: finalContext.topic?.id,
+                conceptIds: mappedConceptIds,
+              });
             }
             break;
           }
@@ -526,6 +578,22 @@ export function useGeneratorActions({
                   secondaryTrack: user?.secondaryTrack,
                   extractionQuality,
                 };
+
+                await persistExtractionArtifact({
+                  sourceType: 'web',
+                  sourceUrl: safeUrl,
+                  sourceUrls: webMeta?.sourceUrls,
+                  extractedText: safeWebText ?? '',
+                  extractionBundle,
+                  quality: {
+                    score: extractionQuality.score,
+                    label: extractionQuality.label,
+                    truncated: webMeta?.truncated,
+                  },
+                  gradeLevel,
+                  topicId: finalContext.topic?.id,
+                  conceptIds: mappedConceptIds,
+                });
               }
             }
             break;
@@ -593,6 +661,21 @@ export function useGeneratorActions({
                   secondaryTrack: user?.secondaryTrack,
                   extractionQuality,
                 };
+
+                await persistExtractionArtifact({
+                  sourceType: 'video',
+                  sourceUrl: safeVideoUrl,
+                  extractedText: safeTranscript ?? '',
+                  extractionBundle,
+                  quality: {
+                    score: extractionQuality.score,
+                    label: extractionQuality.label,
+                    truncated: false,
+                  },
+                  gradeLevel: finalContext.grade.level,
+                  topicId: finalContext.topic?.id,
+                  conceptIds: mappedConceptIds,
+                });
               }
             }
             break;

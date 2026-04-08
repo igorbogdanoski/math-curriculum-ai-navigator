@@ -1,3 +1,6 @@
+import { getAuth } from 'firebase/auth';
+import { app } from '../firebaseConfig';
+
 export interface VideoPreviewData {
   provider: 'youtube' | 'vimeo';
   title: string;
@@ -123,8 +126,13 @@ export async function fetchYouTubeCaptions(
   lang = 'mk',
 ): Promise<VideoCaptionsResult> {
   try {
+    const currentUser = getAuth(app).currentUser;
+    const token = currentUser ? await currentUser.getIdToken() : null;
     const res = await fetch(
       `/api/youtube-captions?videoId=${encodeURIComponent(videoId)}&lang=${encodeURIComponent(lang)}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      },
     );
     if (!res.ok) return { available: false, reason: `HTTP ${res.status}` };
     return (await res.json()) as VideoCaptionsResult;
