@@ -77,7 +77,7 @@ const ChartTabs: React.FC<{
     const [activeTab, setActiveTab] = useState<'activity' | 'topics'>('activity');
 
     return (
-        <Card className="h-full flex flex-col min-h-[320px]">
+        <Card className="flex h-full min-h-[360px] flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-1">
                 <div className="flex space-x-6">
                     <button
@@ -99,13 +99,13 @@ const ChartTabs: React.FC<{
                 </div>
             </div>
 
-            <div className="flex-1 relative w-full">
+            <div className="flex min-h-[280px] flex-1 w-full">
                 {isLoading ? (
-                    <div className="w-full h-full flex items-center justify-center">
+                <div className="flex h-full w-full items-center justify-center">
                         <SkeletonLoader type="paragraph" />
                     </div>
                 ) : (
-                    <div className="absolute inset-0 w-full h-full">
+                <div className="h-full w-full overflow-hidden">
                         {activeTab === 'activity' ? (
                             <MonthlyActivityChart data={monthlyActivity} />
                         ) : (
@@ -479,7 +479,7 @@ export const HomeView: React.FC = () => {
         </div>
 
         {/* CELL 4: Charts */}
-        <div className="md:col-span-2 lg:col-span-2 h-80">
+        <div className="md:col-span-2 lg:col-span-2 min-h-[360px]">
             <ChartTabs monthlyActivity={monthlyActivity} topicCoverage={topicCoverage} isLoading={isStatsLoading} />
         </div>
 

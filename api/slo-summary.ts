@@ -52,6 +52,28 @@ function getFirebaseAdmin() {
   return { auth: getAuth(), db: getFirestore() };
 }
 
+function extractRoleFromClaims(decoded: Record<string, unknown>): string | undefined {
+  if (typeof decoded.role === 'string') {
+    return decoded.role;
+  }
+  if (decoded.admin === true) {
+    return 'admin';
+  }
+  return undefined;
+}
+
+function isPermissionDeniedError(error: unknown): boolean {
+  const err = error as { code?: string | number; message?: string; details?: string };
+  const code = String(err?.code ?? '').toLowerCase();
+  const message = `${err?.message ?? ''} ${err?.details ?? ''}`.toLowerCase();
+  return code === '7'
+    || code === 'permission-denied'
+    || code === 'permission_denied'
+    || message.includes('permission_denied')
+    || message.includes('permission denied')
+    || message.includes('missing or insufficient permissions');
+}
+
 async function authorizeAdmin(req: VercelRequest): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
@@ -65,6 +87,11 @@ async function authorizeAdmin(req: VercelRequest): Promise<{ ok: true } | { ok: 
 
   try {
     const decoded = await admin.auth.verifyIdToken(authHeader.slice(7), false);
+    const claimRole = extractRoleFromClaims(decoded as unknown as Record<string, unknown>);
+
+    if (claimRole === 'admin') {
+      return { ok: true };
+    }
 
     // Primary: Firestore role check (requires datastore.user IAM on the service account).
     // Fallback: Firebase Auth custom claims (works even without Firestore IAM).
@@ -73,10 +100,8 @@ async function authorizeAdmin(req: VercelRequest): Promise<{ ok: true } | { ok: 
       const userSnap = await admin.db.collection('users').doc(decoded.uid).get();
       role = userSnap.data()?.role;
     } catch (fsErr: unknown) {
-      const fsCode = (fsErr as { code?: string })?.code ?? '';
-      if (fsCode === 'PERMISSION_DENIED' || fsCode === '7') {
-        // Firestore IAM not granted — fall back to custom claims
-        role = (decoded as unknown as { role?: string }).role;
+      if (isPermissionDeniedError(fsErr)) {
+        role = claimRole;
       } else {
         throw fsErr;
       }

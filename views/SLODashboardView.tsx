@@ -227,8 +227,8 @@ export const SLODashboardView: React.FC = () => {
         },
       });
 
-      // Retry once with a forced token refresh if the first request is unauthorized.
-      if (res.status === 401) {
+      // Retry once with a forced token refresh if the first request used a stale token.
+      if (res.status === 401 || res.status === 403) {
         token = await firebaseUser.getIdToken(true);
         res = await fetch('/api/slo-summary', {
           headers: {

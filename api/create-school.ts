@@ -78,14 +78,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── Create school + update user (atomic) ──────────────────────────────────
   const db = admin.db;
   const joinCode = generateJoinCode();
+  const normalizedSchoolName = schoolName.trim();
+  const normalizedCity = city.trim();
+  const normalizedMunicipality = municipality.trim();
+  const normalizedAddress = address.trim();
 
   try {
-    // 1. Create school document
-    const schoolRef = await db.collection('schools').add({
-      name: schoolName.trim(),
-      city: city.trim(),
-      municipality: municipality.trim(),
-      address: address.trim(),
+    const schoolRef = db.collection('schools').doc();
+    const userRef = db.collection('users').doc(uid);
+    const batch = db.batch();
+
+    batch.set(schoolRef, {
+      name: normalizedSchoolName,
+      city: normalizedCity,
+      municipality: normalizedMunicipality,
+      address: normalizedAddress,
       adminUid: uid,
       adminUids: [uid],
       teacherUids: [uid], // Director is also a teacher-member
@@ -94,22 +101,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       createdAt: FieldValue.serverTimestamp(),
     });
 
-    // 2. Update user profile: promote to school_admin + link to school
-    await db.collection('users').doc(uid).set(
-      {
-        role: 'school_admin',
-        schoolId: schoolRef.id,
-        schoolName: schoolName.trim(),
-      },
-      { merge: true }
-    );
+    batch.set(userRef, {
+      role: 'school_admin',
+      schoolId: schoolRef.id,
+      schoolName: normalizedSchoolName,
+    }, { merge: true });
 
-    console.info(`[create-school] School "${schoolName}" created. ID: ${schoolRef.id}, UID: ${uid}`);
+    await batch.commit();
+
+    console.info(`[create-school] School "${normalizedSchoolName}" created. ID: ${schoolRef.id}, UID: ${uid}`);
 
     return res.status(200).json({
       schoolId: schoolRef.id,
       joinCode,
-      schoolName: schoolName.trim(),
+      schoolName: normalizedSchoolName,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

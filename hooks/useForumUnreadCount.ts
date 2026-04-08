@@ -34,32 +34,71 @@ export function markForumVisited(): void {
 export function useForumUnreadCount(teacherUid: string | null): number {
   const [count, setCount] = useState(0);
   const unsubRef = useRef<Unsubscribe | null>(null);
+  const participantUnsubRef = useRef<Unsubscribe | null>(null);
 
   useEffect(() => {
-    if (!teacherUid) { setCount(0); return; }
+    if (!teacherUid) {
+      setCount(0);
+      return;
+    }
 
-    unsubRef.current?.();
-    const q = query(
-      collection(db, 'forum_threads'),
-      where('authorUid', '==', teacherUid),
-    );
-
-    unsubRef.current = onSnapshot(q, snap => {
+    const computeUnreadCount = (docs: Array<{ id: string; data: () => any }>): number => {
       const lastVisit = getLastVisit();
       let unread = 0;
-      for (const d of snap.docs) {
+      const seenThreadIds = new Set<string>();
+
+      for (const d of docs) {
+        if (seenThreadIds.has(d.id)) continue;
+        seenThreadIds.add(d.id);
+
         const data = d.data();
         if (!data.lastActivityAt || !data.replyCount) continue;
         const activityMs: number = data.lastActivityAt.toDate
           ? data.lastActivityAt.toDate().getTime()
           : 0;
-        // Count threads with new activity after last visit AND has at least 1 reply
         if (activityMs > lastVisit && data.replyCount > 0) unread++;
       }
-      setCount(unread);
+
+      return unread;
+    };
+
+    let ownThreadDocs: Array<{ id: string; data: () => any }> = [];
+    let participantThreadDocs: Array<{ id: string; data: () => any }> = [];
+    const recompute = () => {
+      const merged = [...ownThreadDocs, ...participantThreadDocs];
+      setCount(computeUnreadCount(merged));
+    };
+
+    unsubRef.current?.();
+    participantUnsubRef.current?.();
+
+    const ownThreadsQuery = query(
+      collection(db, 'forum_threads'),
+      where('authorUid', '==', teacherUid),
+    );
+
+    const participantThreadsQuery = query(
+      collection(db, 'forum_threads'),
+      where('participantUids', 'array-contains', teacherUid),
+    );
+
+    unsubRef.current = onSnapshot(ownThreadsQuery, snap => {
+      ownThreadDocs = snap.docs;
+      recompute();
+    }, () => {
+      ownThreadDocs = [];
+      recompute();
+    });
+
+    participantUnsubRef.current = onSnapshot(participantThreadsQuery, snap => {
+      participantThreadDocs = snap.docs;
+      recompute();
     }, () => { setCount(0); });
 
-    return () => { unsubRef.current?.(); };
+    return () => {
+      unsubRef.current?.();
+      participantUnsubRef.current?.();
+    };
   }, [teacherUid]);
 
   return count;

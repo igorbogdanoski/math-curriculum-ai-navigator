@@ -1,6 +1,5 @@
 import { useLanguage } from '../../i18n/LanguageContext';
 import React, { useEffect, useRef } from 'react';
-import { Card } from '../common/Card';
 
 declare var Chart: any;
 
@@ -68,11 +67,11 @@ export const MonthlyActivityChart: React.FC<MonthlyActivityChartProps> = ({ data
   }, [data]);
 
   return (
-    <Card className="flex flex-col h-full">
-        <h2 className="text-xl font-semibold text-brand-primary mb-4">{t('dash_monthly_activity')}</h2>
-        <div className="flex-1 relative min-h-[300px]">
-            <canvas ref={chartRef}></canvas>
-        </div>
-    </Card>
+    <div className="flex h-full min-h-0 flex-col">
+      <h2 className="mb-4 text-xl font-semibold text-brand-primary">{t('dash_monthly_activity')}</h2>
+      <div className="relative min-h-[260px] flex-1">
+        <canvas ref={chartRef} className="h-full w-full" />
+      </div>
+    </div>
   );
 };

@@ -144,6 +144,7 @@ export const createForumThread = async (data: {
     createdAt:        serverTimestamp(),
     lastActivityAt:   serverTimestamp(),
     replyCount:       0,
+    participantUids:  [data.authorUid],
     hasBestAnswer:    false,
     upvotedBy:        [],
     reactionsHelpful: [],
@@ -336,6 +337,7 @@ export const createForumReply = async (data: {
   await updateDoc(doc(db, 'forum_threads', data.threadId), {
     replyCount:     increment(1),
     lastActivityAt: serverTimestamp(),
+    participantUids: arrayUnion(data.authorUid),
   });
   return ref.id;
 };

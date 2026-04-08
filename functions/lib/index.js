@@ -179,6 +179,12 @@ exports.deductCredits = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('internal', 'Transaction failed: ' + error.message);
     }
 });
+const getUserRole = async (uid) => {
+    var _a;
+    const snap = await admin.firestore().collection('users').doc(uid).get();
+    const role = (_a = snap.data()) === null || _a === void 0 ? void 0 : _a.role;
+    return typeof role === 'string' ? role : '';
+};
 const deliverForumReplyNotification = async (input, options) => {
     var _a, _b, _c;
     const db = admin.firestore();
@@ -370,10 +376,11 @@ exports.onForumReplyCreated = functions.firestore
  * Allows production-safe dry-run (recipient/token resolution only) and live replay.
  */
 exports.replayForumReplyNotification = functions.https.onCall(async (data, context) => {
-    var _a, _b;
+    var _a, _b, _c;
     if (!((_a = context.auth) === null || _a === void 0 ? void 0 : _a.uid)) {
         throw new functions.https.HttpsError('unauthenticated', 'Authentication is required.');
     }
+    const callerUid = context.auth.uid;
     const threadId = typeof (data === null || data === void 0 ? void 0 : data.threadId) === 'string' ? data.threadId.trim() : '';
     const replyId = typeof (data === null || data === void 0 ? void 0 : data.replyId) === 'string' ? data.replyId.trim() : '';
     const dryRun = (data === null || data === void 0 ? void 0 : data.dryRun) !== false;
@@ -381,7 +388,28 @@ exports.replayForumReplyNotification = functions.https.onCall(async (data, conte
         throw new functions.https.HttpsError('invalid-argument', 'threadId is required.');
     }
     const db = admin.firestore();
-    let actorUid = context.auth.uid;
+    const callerRole = await getUserRole(callerUid);
+    const isPrivileged = callerRole === 'admin' || callerRole === 'school_admin';
+    const threadSnap = await db.collection('forum_threads').doc(threadId).get();
+    if (!threadSnap.exists) {
+        throw new functions.https.HttpsError('not-found', 'threadId not found.');
+    }
+    const thread = (_b = threadSnap.data()) !== null && _b !== void 0 ? _b : {};
+    const threadAuthorUid = typeof thread.authorUid === 'string' ? thread.authorUid : '';
+    let callerIsParticipant = false;
+    if (!isPrivileged && callerUid !== threadAuthorUid) {
+        const participantSnap = await db
+            .collection('forum_replies')
+            .where('threadId', '==', threadId)
+            .where('authorUid', '==', callerUid)
+            .limit(1)
+            .get();
+        callerIsParticipant = !participantSnap.empty;
+        if (!callerIsParticipant) {
+            throw new functions.https.HttpsError('permission-denied', 'Replay allowed only for thread participants or admins.');
+        }
+    }
+    let actorUid = callerUid;
     let actorName = 'Manual Replay';
     let effectiveReplyId = replyId || `manual-${Date.now()}`;
     if (replyId) {
@@ -389,15 +417,28 @@ exports.replayForumReplyNotification = functions.https.onCall(async (data, conte
         if (!replySnap.exists) {
             throw new functions.https.HttpsError('not-found', 'replyId not found.');
         }
-        const reply = (_b = replySnap.data()) !== null && _b !== void 0 ? _b : {};
+        const reply = (_c = replySnap.data()) !== null && _c !== void 0 ? _c : {};
         const replyThreadId = typeof reply.threadId === 'string' ? reply.threadId : '';
         if (replyThreadId !== threadId) {
             throw new functions.https.HttpsError('invalid-argument', 'replyId does not belong to provided threadId.');
         }
-        actorUid = typeof reply.authorUid === 'string' && reply.authorUid ? reply.authorUid : actorUid;
+        const replyAuthorUid = typeof reply.authorUid === 'string' ? reply.authorUid : '';
+        if (!isPrivileged && replyAuthorUid && replyAuthorUid !== callerUid) {
+            throw new functions.https.HttpsError('permission-denied', 'Replay cannot impersonate another author.');
+        }
+        actorUid = replyAuthorUid || actorUid;
         actorName = typeof reply.authorName === 'string' && reply.authorName ? reply.authorName : actorName;
         effectiveReplyId = replyId;
     }
+    console.info('[replayForumReplyNotification] authorized replay', {
+        callerUid,
+        callerRole,
+        threadId,
+        replyId: effectiveReplyId,
+        dryRun,
+        isPrivileged,
+        callerIsParticipant,
+    });
     const result = await deliverForumReplyNotification({
         threadId,
         replyId: effectiveReplyId,

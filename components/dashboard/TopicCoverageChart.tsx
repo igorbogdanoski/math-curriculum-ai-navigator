@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Card } from '../common/Card';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 declare var Chart: any;
 
@@ -16,6 +16,7 @@ interface TopicCoverageChartProps {
 }
 
 export const TopicCoverageChart: React.FC<TopicCoverageChartProps> = ({ data }) => {
+  const { t } = useLanguage();
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<any>(null);
 
@@ -56,15 +57,15 @@ export const TopicCoverageChart: React.FC<TopicCoverageChartProps> = ({ data }) 
   }, [data]);
 
   return (
-    <Card className="flex flex-col h-full">
-        <h2 className="text-xl font-semibold text-brand-primary mb-4">Покриеност на Теми</h2>
-        <div className="flex-1 relative min-h-[250px] flex items-center justify-center">
-            {data?.datasets?.[0]?.data?.length > 0 ? (
-                <canvas ref={chartRef}></canvas>
-            ) : (
-                <p className="text-center text-sm text-gray-500">Нема доволно податоци. Креирајте неколку подготовки за да се прикаже графикот.</p>
-            )}
-        </div>
-    </Card>
+    <div className="flex h-full min-h-0 flex-col">
+      <h2 className="mb-4 text-xl font-semibold text-brand-primary">{t('dash_topic_coverage')}</h2>
+      <div className="relative flex min-h-[260px] flex-1 items-center justify-center">
+        {data?.datasets?.[0]?.data?.length > 0 ? (
+          <canvas ref={chartRef} className="h-full w-full" />
+        ) : (
+          <p className="text-center text-sm text-gray-500">{t('dash_no_data_chart')}</p>
+        )}
+      </div>
+    </div>
   );
 };
