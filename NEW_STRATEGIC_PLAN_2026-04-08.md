@@ -56,6 +56,8 @@ Exit Criteria (DONE):
 | 2026-04-08 | F3 | Kickoff baseline: build + perf budget | PARTIAL | Build PASS; perf budget FAIL on total assets 10557.50 kB > 10000 kB (`outputs/f3-kickoff-2026-04-08/`) |
 | 2026-04-08 | F3 | Step 1 analysis: top bundle contributors + wave-1 shortlist | DONE | Prioritized targets documented in `F3_KICKOFF_CHECKLIST_2026-04-08.md` |
 | 2026-04-08 | F3 | Step 2 wave-1: on-demand export deps refactor + re-measure | PARTIAL | Build PASS; perf budget still FAIL (total 10557.74 kB > 10000 kB) |
+| 2026-04-08 | F3 | Step 2 wave-2: math evaluator optimization + re-measure | PASS | Perf budget PASS (total 9909.57 kB; third-party 6114.36 kB) |
+| 2026-04-08 | F3 | Regression validation after wave-2 | PASS | `tests/smoke.spec.ts` + `tests/auth-guard.spec.ts` => 21/21 PASS |
 
 ## 4) Оперативни правила
 

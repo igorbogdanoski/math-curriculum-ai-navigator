@@ -62,3 +62,23 @@ Next wave focus (Wave-2):
 1. Firestore/gemini split warning cleanup (елиминирање static+dynamic мешање за исти модули).
 2. Initial app-shell pressure reduction (поместување non-critical providers/features од старт-up path).
 3. Math stack review (`mathjs`, `mathlive`) за реално намалување на вкупни asset-и, не само прераспределба.
+
+## Step 2 Wave-2 Outcome (08.04.2026)
+
+Applied change:
+1. `utils/mathEvaluator.ts`: отстранета runtime зависност од `mathjs`; воведена lightweight numeric + `x`-sampling equivalence проверка.
+
+Measured result:
+1. Build: PASS (`outputs/f3-kickoff-2026-04-08/build-wave2.log`)
+2. Perf budget: PASS (`outputs/f3-kickoff-2026-04-08/perf-budget-wave2.log`)
+3. Total assets: 9909.57 kB (под budget 10000 kB)
+4. Third-party assets: 6114.36 kB (под budget 7000 kB)
+5. Largest JS chunk: 1437.62 kB (под 1500 kB hard budget)
+
+Regression safety checks:
+1. `tests/smoke.spec.ts` + `tests/auth-guard.spec.ts`: 21/21 PASS
+2. Evidence: `outputs/f3-kickoff-2026-04-08/e2e-regression-wave2.log`
+
+Current F3 status note:
+1. Perf budget gate е затворен (PASS).
+2. Stretch thresholds (`<=1300` largest / `<=1000` main chunk) остануваат open optimization target за следна итерација.
