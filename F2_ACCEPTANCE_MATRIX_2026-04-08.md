@@ -11,7 +11,7 @@
 | Interactive Generation | Activity flow | Teacher може да стартува генерација и да види валиден output state | `tests/happy-path.spec.ts` | Iteration 1 валидирана; следи full-gate мониторинг | Core Team | 2026-04-10 | DONE |
 | Presentation Runtime | Slide controls | Presentation controls работат без runtime regression | `tests/happy-path.spec.ts` | Iteration 1 валидирана; следи full-gate мониторинг | Core Team | 2026-04-10 | DONE |
 | Quiz Bridge | Quiz from generated content | Generated content може да се префрли во quiz path стабилно | `tests/teacher-quiz.spec.ts`, `tests/quiz-flow.spec.ts` | Iteration 2 валидирана; следи финален full-gate check | Core Team | 2026-04-10 | DONE |
-| Student Runtime | Student play onboarding | Student path е достапен и стабилен по deep-link | `tests/student-play.spec.ts` | Full-gate покажа интермитентен flaky во wizard path; потребен е follow-up утре | Core Team | 2026-04-10 | DONE_WITH_RISK |
+| Student Runtime | Student play onboarding | Student path е достапен и стабилен по deep-link | `tests/student-play.spec.ts` | Reopen verification завршен: wizard stress PASS и clean full-gate rerun | Core Team | 2026-04-10 | DONE |
 | Regression Safety | Auth and role guards | Teacher/student restricted routes се однесуваат предвидливо | `tests/auth-guard.spec.ts`, `tests/webinar-critical-flows.spec.ts` | Iteration 3 валидирана; следи финален full-gate стабилизирачки run | Core Team | 2026-04-10 | DONE |
 | Performance Safety | Build and chunk health | Build е green, runtime без blocker warning regression | `npm run build` (manual evidence) | Дефинирај threshold за chunk strategy во F3 handoff | Core Team | 2026-04-10 | BASELINE_PASS_WITH_WARNINGS |
 
@@ -69,6 +69,12 @@ Scope: Interactive Generation + Presentation Runtime
 3. Regression Safety targeted run: 21 passed (30.5s)
 4. Full gate verification: 105 passed + 1 flaky (`tests/student-play.spec.ts` wizard path)
 5. Log path: `outputs/f2-iteration3-2026-04-08/`
+
+### Reopen Verification Evidence (08.04.2026)
+
+1. Student wizard repeat run (`--repeat-each=8`, workers=1): 24 passed (1.6m)
+2. Full gate rerun: 106 passed (1.6m), без flaky
+3. Log path: `outputs/f2-reopen-2026-04-08/`
 
 ## Done Criteria за секој ред
 

@@ -50,6 +50,8 @@ Exit Criteria (DONE):
 | 2026-04-08 | F2 | Step 1 executed: Interactive Navigation stability | PASS | 5/5 + 5/5 (`tests/smoke.spec.ts` two consecutive runs) |
 | 2026-04-08 | F2 | Step 2 executed: Regression Safety stability | PASS | 21/21 (`tests/auth-guard.spec.ts` + `tests/webinar-critical-flows.spec.ts`) |
 | 2026-04-08 | F2 | Full-gate verification after steps 1+2 | FLAKY | 105 passed + 1 flaky (`tests/student-play.spec.ts` wizard path, retry PASS) |
+| 2026-04-08 | F2 | Reopen Step 1: Student wizard stress verification | PASS | 24/24 (`tests/student-play.spec.ts -g wizard --repeat-each=8 --workers=1`) |
+| 2026-04-08 | F2 | Reopen Step 2: Full-gate rerun | PASS | 106 passed (1.6m), без flaky (`outputs/f2-reopen-2026-04-08/`) |
 
 ## 4) Оперативни правила
 
