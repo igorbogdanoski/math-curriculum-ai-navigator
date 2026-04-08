@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onForumReplyCreated = exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
+exports.replayForumReplyNotification = exports.onForumReplyCreated = exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -49,15 +49,18 @@ exports.onAssignmentCreated = functions.firestore
         if (recipientUids.size === 0)
             return null;
         // 2. Fetch FCM tokens for recipients
-        const tokens = [];
-        const tokenFetches = Array.from(recipientUids).map(uid => admin.firestore().collection('user_tokens').doc(`${uid}_web`).get()
-            .then(doc => { var _a; if (doc.exists) {
-            const t = (_a = doc.data()) === null || _a === void 0 ? void 0 : _a.token;
-            if (t)
-                tokens.push(t);
-        } })
-            .catch(() => { }));
-        await Promise.all(tokenFetches);
+        const tokenSet = new Set();
+        await Promise.all(Array.from(recipientUids).map(async (uid) => {
+            var _a;
+            try {
+                const doc = await admin.firestore().collection('user_tokens').doc(`${uid}_web`).get();
+                const t = (_a = doc.data()) === null || _a === void 0 ? void 0 : _a.token;
+                if (typeof t === 'string' && t.length > 0)
+                    tokenSet.add(t);
+            }
+            catch ( /* token missing — skip */_b) { /* token missing — skip */ }
+        }));
+        const tokens = Array.from(tokenSet);
         if (tokens.length === 0)
             return null;
         // 3. Send FCM multicast
@@ -176,7 +179,159 @@ exports.deductCredits = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('internal', 'Transaction failed: ' + error.message);
     }
 });
-// ── S19-P2: Forum reply push notifications ─────────────────────────────────
+const deliverForumReplyNotification = async (input, options) => {
+    var _a, _b, _c;
+    const db = admin.firestore();
+    const threadSnap = await db.collection('forum_threads').doc(input.threadId).get();
+    if (!threadSnap.exists) {
+        throw new Error(`Thread not found: ${input.threadId}`);
+    }
+    const thread = (_a = threadSnap.data()) !== null && _a !== void 0 ? _a : {};
+    const threadAuthorUid = (_b = thread.authorUid) !== null && _b !== void 0 ? _b : '';
+    const threadTitle = (_c = thread.title) !== null && _c !== void 0 ? _c : 'Форум нишка';
+    const recipientUids = new Set();
+    if (threadAuthorUid && threadAuthorUid !== input.actorUid) {
+        recipientUids.add(threadAuthorUid);
+    }
+    const participantsSnap = await db
+        .collection('forum_replies')
+        .where('threadId', '==', input.threadId)
+        .limit(50)
+        .get();
+    participantsSnap.docs.forEach((docSnap) => {
+        var _a, _b;
+        const participantUid = ((_b = (_a = docSnap.data()) === null || _a === void 0 ? void 0 : _a.authorUid) !== null && _b !== void 0 ? _b : '');
+        if (!participantUid || participantUid === input.actorUid)
+            return;
+        recipientUids.add(participantUid);
+    });
+    if (recipientUids.size === 0) {
+        console.info('[onForumReplyCreated] no recipients', {
+            threadId: input.threadId,
+            replyId: input.replyId,
+            actorUid: input.actorUid,
+            source: options.source,
+            dryRun: Boolean(options.dryRun),
+        });
+        return {
+            threadId: input.threadId,
+            replyId: input.replyId,
+            actorUid: input.actorUid,
+            recipientCount: 0,
+            uniqueTokenCount: 0,
+            missingTokenUids: [],
+            dryRun: Boolean(options.dryRun),
+            successCount: 0,
+            failureCount: 0,
+        };
+    }
+    const tokenSet = new Set();
+    const missingTokenUids = [];
+    await Promise.all(Array.from(recipientUids).map(async (uid) => {
+        var _a;
+        try {
+            const tokenSnap = await db.collection('user_tokens').doc(`${uid}_web`).get();
+            const token = (_a = tokenSnap.data()) === null || _a === void 0 ? void 0 : _a.token;
+            if (typeof token === 'string' && token.length > 0) {
+                tokenSet.add(token);
+            }
+            else {
+                missingTokenUids.push(uid);
+            }
+        }
+        catch (_b) {
+            missingTokenUids.push(uid);
+        }
+    }));
+    const tokens = Array.from(tokenSet);
+    if (tokens.length === 0) {
+        console.info('[onForumReplyCreated] no tokens', {
+            threadId: input.threadId,
+            replyId: input.replyId,
+            actorUid: input.actorUid,
+            recipientCount: recipientUids.size,
+            missingTokenUids,
+            source: options.source,
+            dryRun: Boolean(options.dryRun),
+        });
+        return {
+            threadId: input.threadId,
+            replyId: input.replyId,
+            actorUid: input.actorUid,
+            recipientCount: recipientUids.size,
+            uniqueTokenCount: 0,
+            missingTokenUids,
+            dryRun: Boolean(options.dryRun),
+            successCount: 0,
+            failureCount: 0,
+        };
+    }
+    console.info('[onForumReplyCreated] delivery attempt', {
+        threadId: input.threadId,
+        replyId: input.replyId,
+        actorUid: input.actorUid,
+        recipientCount: recipientUids.size,
+        uniqueTokenCount: tokens.length,
+        missingTokenUids,
+        source: options.source,
+        dryRun: Boolean(options.dryRun),
+    });
+    if (options.dryRun) {
+        return {
+            threadId: input.threadId,
+            replyId: input.replyId,
+            actorUid: input.actorUid,
+            recipientCount: recipientUids.size,
+            uniqueTokenCount: tokens.length,
+            missingTokenUids,
+            dryRun: true,
+            successCount: 0,
+            failureCount: 0,
+        };
+    }
+    const result = await admin.messaging().sendEachForMulticast({
+        tokens,
+        notification: {
+            title: `💬 Нова порака — ${input.actorName}`,
+            body: `Во нишката: ${threadTitle}`,
+        },
+        webpush: {
+            notification: {
+                icon: '/icon-192.svg',
+                badge: '/icon-192.svg',
+            },
+            fcmOptions: {
+                link: `/#/forum?thread=${encodeURIComponent(input.threadId)}`,
+            },
+            headers: { TTL: '21600' },
+        },
+        data: {
+            type: 'forum_reply',
+            threadId: input.threadId,
+            replyId: input.replyId,
+            actorUid: input.actorUid,
+        },
+    });
+    console.info('[onForumReplyCreated] delivery result', {
+        threadId: input.threadId,
+        replyId: input.replyId,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        source: options.source,
+        dryRun: false,
+    });
+    return {
+        threadId: input.threadId,
+        replyId: input.replyId,
+        actorUid: input.actorUid,
+        recipientCount: recipientUids.size,
+        uniqueTokenCount: tokens.length,
+        missingTokenUids,
+        dryRun: false,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+    };
+};
 /**
  * Triggers when a new forum reply is created.
  * Sends FCM push to thread participants (thread author + recent repliers),
@@ -185,7 +340,7 @@ exports.deductCredits = functions.https.onCall(async (data, context) => {
 exports.onForumReplyCreated = functions.firestore
     .document('forum_replies/{replyId}')
     .onCreate(async (snap) => {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c;
     try {
         const reply = snap.data();
         if (!reply)
@@ -195,73 +350,13 @@ exports.onForumReplyCreated = functions.firestore
         const actorName = (_c = reply.authorName) !== null && _c !== void 0 ? _c : 'Наставник';
         if (!threadId)
             return null;
-        const db = admin.firestore();
-        // 1) Load thread details and include thread author as a recipient.
-        const threadSnap = await db.collection('forum_threads').doc(threadId).get();
-        if (!threadSnap.exists)
-            return null;
-        const thread = (_d = threadSnap.data()) !== null && _d !== void 0 ? _d : {};
-        const threadAuthorUid = (_e = thread.authorUid) !== null && _e !== void 0 ? _e : '';
-        const threadTitle = (_f = thread.title) !== null && _f !== void 0 ? _f : 'Форум нишка';
-        const recipientUids = new Set();
-        if (threadAuthorUid && threadAuthorUid !== actorUid) {
-            recipientUids.add(threadAuthorUid);
-        }
-        // 2) Include recent participants from the same thread (best-effort dedupe).
-        const participantsSnap = await db
-            .collection('forum_replies')
-            .where('threadId', '==', threadId)
-            .limit(50)
-            .get();
-        participantsSnap.docs.forEach((docSnap) => {
-            var _a, _b;
-            const participantUid = ((_b = (_a = docSnap.data()) === null || _a === void 0 ? void 0 : _a.authorUid) !== null && _b !== void 0 ? _b : '');
-            if (!participantUid || participantUid === actorUid)
-                return;
-            recipientUids.add(participantUid);
-        });
-        if (recipientUids.size === 0)
-            return null;
-        // 3) Resolve FCM tokens from user_tokens collection.
-        const tokens = [];
-        await Promise.all(Array.from(recipientUids).map(async (uid) => {
-            var _a;
-            try {
-                const tokenSnap = await db.collection('user_tokens').doc(`${uid}_web`).get();
-                const token = (_a = tokenSnap.data()) === null || _a === void 0 ? void 0 : _a.token;
-                if (typeof token === 'string' && token.length > 0) {
-                    tokens.push(token);
-                }
-            }
-            catch (_b) {
-                // Missing token doc is expected for some users.
-            }
-        }));
-        if (tokens.length === 0)
-            return null;
-        // 4) Deliver multicast notification with deep-link to thread permalink.
-        await admin.messaging().sendEachForMulticast({
-            tokens,
-            notification: {
-                title: `💬 Нова порака — ${actorName}`,
-                body: `Во нишката: ${threadTitle}`,
-            },
-            webpush: {
-                notification: {
-                    icon: '/icon-192.svg',
-                    badge: '/icon-192.svg',
-                },
-                fcmOptions: {
-                    link: `/#/forum?thread=${encodeURIComponent(threadId)}`,
-                },
-                headers: { TTL: '21600' },
-            },
-            data: {
-                type: 'forum_reply',
-                threadId,
-                replyId: snap.id,
-                actorUid,
-            },
+        await deliverForumReplyNotification({
+            threadId,
+            replyId: snap.id,
+            actorUid,
+            actorName,
+        }, {
+            source: 'trigger',
         });
         return null;
     }
@@ -269,5 +364,49 @@ exports.onForumReplyCreated = functions.firestore
         console.error('[onForumReplyCreated]', err);
         return null;
     }
+});
+/**
+ * Authenticated manual replay path for forum push notification validation.
+ * Allows production-safe dry-run (recipient/token resolution only) and live replay.
+ */
+exports.replayForumReplyNotification = functions.https.onCall(async (data, context) => {
+    var _a, _b;
+    if (!((_a = context.auth) === null || _a === void 0 ? void 0 : _a.uid)) {
+        throw new functions.https.HttpsError('unauthenticated', 'Authentication is required.');
+    }
+    const threadId = typeof (data === null || data === void 0 ? void 0 : data.threadId) === 'string' ? data.threadId.trim() : '';
+    const replyId = typeof (data === null || data === void 0 ? void 0 : data.replyId) === 'string' ? data.replyId.trim() : '';
+    const dryRun = (data === null || data === void 0 ? void 0 : data.dryRun) !== false;
+    if (!threadId) {
+        throw new functions.https.HttpsError('invalid-argument', 'threadId is required.');
+    }
+    const db = admin.firestore();
+    let actorUid = context.auth.uid;
+    let actorName = 'Manual Replay';
+    let effectiveReplyId = replyId || `manual-${Date.now()}`;
+    if (replyId) {
+        const replySnap = await db.collection('forum_replies').doc(replyId).get();
+        if (!replySnap.exists) {
+            throw new functions.https.HttpsError('not-found', 'replyId not found.');
+        }
+        const reply = (_b = replySnap.data()) !== null && _b !== void 0 ? _b : {};
+        const replyThreadId = typeof reply.threadId === 'string' ? reply.threadId : '';
+        if (replyThreadId !== threadId) {
+            throw new functions.https.HttpsError('invalid-argument', 'replyId does not belong to provided threadId.');
+        }
+        actorUid = typeof reply.authorUid === 'string' && reply.authorUid ? reply.authorUid : actorUid;
+        actorName = typeof reply.authorName === 'string' && reply.authorName ? reply.authorName : actorName;
+        effectiveReplyId = replyId;
+    }
+    const result = await deliverForumReplyNotification({
+        threadId,
+        replyId: effectiveReplyId,
+        actorUid,
+        actorName,
+    }, {
+        source: 'manual_replay',
+        dryRun,
+    });
+    return Object.assign({ ok: true }, result);
 });
 //# sourceMappingURL=index.js.map

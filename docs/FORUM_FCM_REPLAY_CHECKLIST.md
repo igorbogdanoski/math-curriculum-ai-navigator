@@ -57,8 +57,15 @@ Expected signals in returned payload:
 Collect logs for replay attempt and result:
 
 ```bash
-firebase functions:log --only replayForumReplyNotification --limit 50
-firebase functions:log --only onForumReplyCreated --limit 50
+firebase functions:log --only replayForumReplyNotification
+firebase functions:log --only onForumReplyCreated
+```
+
+Windows PowerShell quick-tail examples:
+
+```powershell
+firebase functions:log --only replayForumReplyNotification | Select-Object -Last 80
+firebase functions:log --only onForumReplyCreated | Select-Object -Last 120
 ```
 
 Look for:
@@ -77,3 +84,8 @@ Store in evidence note:
 - `recipientCount = 0`: thread has no eligible recipients (actor-only thread)
 - `uniqueTokenCount = 0`: recipients missing web FCM tokens
 - `failureCount > 0`: likely stale token(s); clean token docs and retry live replay
+
+## Current known blocker (08.04.2026)
+- Callable path is verified in production: `dryRun` returns `ok: true`, `recipientCount: 1`, `uniqueTokenCount: 1`.
+- Live replay still returns `successCount: 0`, `failureCount: 1` for synthetic thread `KC7qZl06E4s493m7XOxt`, which indicates the stored recipient token is stale even though the token doc exists.
+- Fastest remediation: sign in in a real browser session as the recipient user, grant notifications so `user_tokens/{uid}_web` is refreshed, then rerun the same callable with the same `threadId`/`replyId`.

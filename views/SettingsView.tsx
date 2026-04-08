@@ -10,6 +10,7 @@ import { ICONS } from '../constants';
 import { InstallApp } from '../components/common/InstallApp';
 import { firestoreService } from '../services/firestoreService';
 import { exportUserData, downloadUserDataAsJson } from '../services/firestoreService.gdpr';
+import { requestNotificationPermission } from '../services/pushService';
 import { isFeedbackTaxonomyRolloutEnabled, setFeedbackTaxonomyRolloutEnabled } from '../services/feedbackTaxonomyRollout';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, isIntentRouterEnabled, setIntentRouterEnabled, isVertexShadowEnabled, setVertexShadowEnabled, getShadowCompareReport, clearShadowLog } from '../services/geminiService';
@@ -310,18 +311,35 @@ export const SettingsView: React.FC = () => {
             addNotification('Вашиот пребарувач не поддржува нотификации.', 'error');
             return;
         }
-        const result = await Notification.requestPermission();
-        setNotifPermission(result);
-        if (result === 'granted') {
-            addNotification('Нотификациите се овозможени! Ќе добиете порака кога AI квотата ќе се обнови.', 'success');
-            // If quota is currently exhausted, schedule the notification now
+        if (!firebaseUser?.uid) {
+            addNotification('Најавете се за да се зачува уредот за push нотификации.', 'error');
+            return;
+        }
+
+        try {
+            const token = await requestNotificationPermission(firebaseUser.uid);
+            const permission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+            setNotifPermission(permission);
+
+            if (permission !== 'granted') {
+                addNotification('Нотификациите се одбиени. Може да ги овозможите преку поставките на пребарувачот.', 'warning');
+                return;
+            }
+
+            if (token) {
+                addNotification('Нотификациите се овозможени и уредот е регистриран за push пораки.', 'success');
+            } else {
+                addNotification('Дозволата е овозможена, но FCM токенот не е регистриран. Проверете ја Web Push конфигурацијата.', 'warning');
+            }
+
             try {
                 const stored = localStorage.getItem('ai_daily_quota_exhausted');
                 const { nextResetMs } = stored ? JSON.parse(stored) : {};
                 if (nextResetMs) scheduleQuotaNotification(nextResetMs);
             } catch { /* ignore */ }
-        } else {
-            addNotification('Нотификациите се одбиени. Може да ги овозможите преку поставките на пребарувачот.', 'warning');
+        } catch {
+            setNotifPermission(typeof Notification !== 'undefined' ? Notification.permission : 'default');
+            addNotification('Грешка при регистрација на push нотификации. Обидете се повторно.', 'error');
         }
     };
 

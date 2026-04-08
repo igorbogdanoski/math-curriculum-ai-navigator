@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { BarChart2, RefreshCw } from 'lucide-react';
 import type { TableData } from './DataTable';
 import type { ChartConfig } from './ChartPreview';
@@ -617,6 +617,7 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
   const [flash, setFlash]           = useState(false);
   const [animating, setAnimating]   = useState(false);
   const animTimerRef                = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashTimerRef               = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const theory   = theoretical(experiment, dieFaces, sectors, binN, binP);
   const outcomes = getOutcomes(experiment, dieFaces, sectors, binN);
@@ -641,7 +642,11 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
     setTotal(prev => prev + n);
     setLastResult(last);
     setFlash(true);
-    setTimeout(() => setFlash(false), 350);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => {
+      setFlash(false);
+      flashTimerRef.current = null;
+    }, 350);
   }, [counts, experiment, dieFaces, sectors, binN, binP]);
 
   // Animated single roll (×1 only)
@@ -655,6 +660,13 @@ export const ProbabilityLab: React.FC<ProbabilityLabProps> = ({ onSendToDataViz,
       runN(1);
     }, 480);
   }, [animating, runN]);
+
+  useEffect(() => {
+    return () => {
+      if (animTimerRef.current) clearTimeout(animTimerRef.current);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    };
+  }, []);
 
   const handleSend = () => {
     if (!total) return;

@@ -453,10 +453,13 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({
   const moveDrag = useCallback((clientX: number, clientY: number) => {
     if (!dragging.current || !canvasRef.current) return;
     const rect = getCanvasRect()!;
-    const cfg = TILE_CONFIG[tiles.find(t => t.id === dragging.current!.id)!.kind];
+    const dragId = dragging.current.id;
+    const draggedTile = tiles.find(t => t.id === dragId);
+    if (!draggedTile) { dragging.current = null; return; }
+    const cfg = TILE_CONFIG[draggedTile.kind];
     const newX = Math.max(0, Math.min(defaultCanvasWidth - cfg.w, clientX - rect.left - dragging.current.offX));
     const newY = Math.max(0, Math.min(defaultCanvasHeight - cfg.h, clientY - rect.top - dragging.current.offY));
-    setTiles(prev => prev.map(t => t.id === dragging.current!.id ? { ...t, x: newX, y: newY } : t));
+    setTiles(prev => prev.map(t => t.id === dragId ? { ...t, x: newX, y: newY } : t));
   }, [defaultCanvasHeight, defaultCanvasWidth, tiles]);
 
   const endDrag = useCallback(() => { dragging.current = null; }, []);
