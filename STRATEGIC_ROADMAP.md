@@ -4,6 +4,7 @@
 > Статус: АКТИВЕН — живи документ, се ажурира по секоја завршена фаза  
 > Производствен домен: https://ai.mismath.net  
 > Репо: igorbogdanoski/math-curriculum-ai-navigator
+> Фазно извршување (нов циклус): види NEW_STRATEGIC_PLAN_2026-04-08.md
 
 ---
 
@@ -24,7 +25,7 @@
 | M3 — Адаптивна практика | ✅ | По тема, DoK, јазик, AI оценување |
 | M4 — Симулација | ✅ | Целосен 3ч ДИМ испит, AI грading, кеш |
 | M5 — Аналитика | ✅ | Статс, слаби концепти, 7-Day Mission, recovery loop |
-| M6 — Remediation | ❌ | Не постои — следна голема задача |
+| M6 — Remediation | ✅ | Phase 1+2 оперативно затворени (worksheet + teacher assignment), следи scale-up |
 
 ### Испитна база (06.04.2026)
 - **12 испити**: ДИМ Гимназиско 2024 (јуни + август) × MK/AL/TR + 2025 (јуни + август) × MK/AL + 2022 (август) × MK/AL
@@ -425,6 +426,8 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-08 | S18-P5 | D1 Algebra equation balance целосно затворен преку `AlgebraTilesCanvas` balance mode + grade-aware presets + cross-app integration | DONE |
 | 2026-04-08 | PLAN | EN/AL batch translations свесно извадени од активен sprint scope и префрлени во новиот strategic plan по целосен app audit | DONE |
 | 2026-04-08 | S19-AT | AlgebraTiles world-class upgrade — balance mode, 14 presets, compact/readOnly/onSolve, Gamma slide type, Quiz visual aid, Academy preset pass-through, schema integration | DONE |
+| 2026-04-08 | F2 | Reopen verification: student wizard stress + full gate rerun | DONE | 24/24 wizard repeat и 106/106 full e2e (без flaky) |
+| 2026-04-08 | F3 | Bundle/perf hardening wave-1+wave-2 | DONE | Perf budget PASS (total 9909.57 kB; third-party 6114.36 kB), smoke+auth-guard 21/21 |
 
 ---
 
