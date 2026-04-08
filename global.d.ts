@@ -30,3 +30,16 @@ interface Window {
   /** KaTeX math typesetting library — loaded via CDN script tag */
   katex?: { renderToString(latex: string, options?: { output?: string; throwOnError?: boolean; displayMode?: boolean; strict?: boolean | string; trust?: boolean }): string };
 }
+
+declare module 'pdf-parse' {
+  interface PdfParseInfo {
+    Title?: string;
+  }
+
+  interface PdfParseResult {
+    text?: string;
+    info?: PdfParseInfo;
+  }
+
+  export default function pdfParse(buffer: Buffer): Promise<PdfParseResult>;
+}

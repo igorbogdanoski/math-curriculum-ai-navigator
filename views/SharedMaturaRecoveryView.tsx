@@ -23,7 +23,7 @@ export const SharedMaturaRecoveryView: React.FC<SharedMaturaRecoveryViewProps> =
       // New secure format: server-signed token
       if (shareService.isSignedMaturaRecoveryToken(data)) {
         try {
-          const res = await fetch(`/api/matura-share-verify?token=${encodeURIComponent(data)}`);
+          const res = await fetch(`/api/matura-share?action=verify&token=${encodeURIComponent(data)}`);
           const payload = await res.json().catch(() => null) as { payload?: SharedMaturaRecoveryData; error?: string } | null;
 
           if (cancelled) return;

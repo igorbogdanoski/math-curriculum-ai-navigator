@@ -3,6 +3,9 @@
     { "source": "/service-worker.js", "destination": "/service-worker.js" },
     { "source": "/manifest.json", "destination": "/manifest.json" },
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/api/gemini-embed", "destination": "/api/embed?responseShape=embeddings" },
+    { "source": "/api/matura-share-sign", "destination": "/api/matura-share?action=sign" },
+    { "source": "/api/matura-share-verify", "destination": "/api/matura-share?action=verify" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

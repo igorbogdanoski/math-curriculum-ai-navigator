@@ -472,7 +472,7 @@ export async function callGeminiEmbed(params: {
   return queueRequest(async () => {
     try {
       const token = await getAuthToken();
-      const response = await fetch('/api/gemini-embed', {
+      const response = await fetch('/api/embed?responseShape=embeddings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

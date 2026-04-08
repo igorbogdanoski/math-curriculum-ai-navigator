@@ -328,6 +328,37 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 П5. 🟨 D2: Monte Carlo simulator (probability simulation foundation постои, нема formal milestone close)
 ```
 
+### S19 Execution Mode — Vercel Pro ✅ АКТИВЕН (08.04.2026)
+
+Од 08.04.2026 платформата работи на **Vercel Pro** (корисничка претплата: 20/месечно), со цел да се избегне непотребно консолидирање на API endpoints и да се задржи чиста архитектура во S19.
+
+#### Budget protection mode (критично, активен од 08.04.2026)
+- Тековен циклус: 29 дена преостанати, Function Invocations: $0.60 од $20 кредит.
+- Политика: без експериментални heavy jobs во production додека не постои јасен KPI и rollback.
+- Hard cap по недела: максимум 2 нови backend endpoints и максимум 1 long-running extraction експеримент.
+- Секој batch/extraction endpoint мора да има timeout guard + rate limit + fail-fast fallback.
+- Ако projected spend надмине 70% од месечен буџет пред последните 7 дена од циклус: веднаш feature freeze за non-critical workloads.
+- Ако projected spend надмине 85%: дозволени се само bugfix/security/incident промени.
+
+#### Operational guardrails (важат и на Pro)
+1. Нов endpoint се додава само со: owner + KPI + rollback note.
+2. Максимум 2 нови endpoints неделно (освен incident/production hotfix).
+3. Секој endpoint мора да има 60-дневен review: keep, merge или deprecate.
+4. Не се укинуваат quality gates: `tsc --noEmit`, `npm run build`, релевантни тестови.
+
+#### S19 Acceptance criteria (Pro mode)
+| Item | Acceptance criteria | Validation evidence |
+|---|---|---|
+| S19-P2 Forum FCM push | Reply на thread тригерира push до учесници; dedupe за авторот; fail-safe без crash | E2E replay path + логови од notifier endpoint |
+| S19-P3 Vocational exam pipeline | Import + enrich работи за најмалку 1 vocational track; `track` филтер и групирање валидни во UI | `npm run matura:validate` + UI smoke + sample exam import evidence |
+| S19-P1 Interactive stats formal close | DataViz/ProbabilityLab имаат финален scope документ и затворен milestone | Acceptance checklist + demo recording |
+| S19-P4 Multiplayer canvas | Докажан стабилен session lifecycle (create/join/leave) и basic sync без data loss | Integration test + latency snapshot |
+
+#### Weekly review cadence
+- Понеделник: endpoint budget check (нови vs deprecate)
+- Среда: reliability check (SLO + error categories)
+- Петок: sprint evidence update во овој roadmap
+
 ### Audit Snapshot — 08.04.2026 (Professional Handoff)
 | Item | Статус | Доказ / Белешка |
 |---|---|---|
@@ -346,6 +377,7 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | S19-P3 | PARTIAL | vocational curricula (`vocational3/4`) постојат; vocational matura exams не се затворени |
 | S19-P4 | OPEN | Нема WebSocket canvas module |
 | S19-P5 | PARTIAL | stochastic симулации постојат, но нема formal D2 close артефакт |
+| S19-PRO | DONE | Vercel Pro execution mode активиран; S19 endpoint growth дозволен со guardrails и acceptance criteria |
 | S19-AT | DONE | AlgebraTiles world-class upgrade — balance mode (D1), 14 grade-aware presets (6–10. одд.), compact/readOnly/onSolve props, Gamma `algebra-tiles` slide type, QuizViewer visual aid, AcademyLessonView `algebraTilesPreset` pass-through, `types.ts` schema integration |
 
 ---
@@ -428,6 +460,8 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-08 | S19-AT | AlgebraTiles world-class upgrade — balance mode, 14 presets, compact/readOnly/onSolve, Gamma slide type, Quiz visual aid, Academy preset pass-through, schema integration | DONE |
 | 2026-04-08 | F2 | Reopen verification: student wizard stress + full gate rerun | DONE | 24/24 wizard repeat и 106/106 full e2e (без flaky) |
 | 2026-04-08 | F3 | Bundle/perf hardening wave-1+wave-2 | DONE | Perf budget PASS (total 9909.57 kB; third-party 6114.36 kB), smoke+auth-guard 21/21 |
+| 2026-04-08 | S19-PRO | Vercel Pro execution mode activated with endpoint guardrails + measurable acceptance criteria for S19 | DONE |
+| 2026-04-08 | S19-BUDGET | Budget protection mode activated (20 monthly plan): spend thresholds 70/85, weekly endpoint cap, and non-critical freeze rules | DONE |
 
 ---
 

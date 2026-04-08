@@ -2,6 +2,32 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
+type GeminiPart = { text?: string };
+type GeminiContent = { parts?: GeminiPart[] };
+
+function extractEmbeddingText(contents: unknown): string {
+  if (typeof contents === 'string') {
+    return contents;
+  }
+
+  if (Array.isArray(contents)) {
+    const firstItem = contents[0] as GeminiPart | GeminiContent | undefined;
+    if (firstItem && typeof firstItem === 'object') {
+      if ('text' in firstItem && typeof firstItem.text === 'string') {
+        return firstItem.text;
+      }
+      if ('parts' in firstItem && Array.isArray(firstItem.parts)) {
+        const firstPart = firstItem.parts[0];
+        if (firstPart && typeof firstPart.text === 'string') {
+          return firstPart.text;
+        }
+      }
+    }
+  }
+
+  return '';
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
 
@@ -21,10 +47,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server.' });
   }
 
-  const { contents } = validated;
-  const text = typeof contents === 'string'
-    ? contents
-    : (contents as Array<{ parts: Array<{ text?: string }> }>)[0]?.parts[0]?.text || '';
+  const { model, contents } = validated;
+  const text = extractEmbeddingText(contents);
+  const responseShape = req.query.responseShape === 'embeddings' ? 'embeddings' : 'embedding';
 
   if (!text) {
     return res.status(400).json({ error: 'Missing text for embedding' });
@@ -35,11 +60,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const apiKey = apiKeys[i];
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+      const modelInstance = genAI.getGenerativeModel({ model: model || "text-embedding-004" });
       
-      const result = await model.embedContent(text);
+      const result = await modelInstance.embedContent(text);
       const embedding = result.embedding;
-      
+
+      if (responseShape === 'embeddings') {
+        return res.status(200).json({ embeddings: embedding });
+      }
+
       return res.status(200).json({ embedding });
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));

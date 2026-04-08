@@ -201,7 +201,7 @@ export const MaturaAnalyticsView: React.FC = () => {
     if (firebaseUser) {
       try {
         const idToken = await firebaseUser.getIdToken();
-        const res = await fetch('/api/matura-share-sign', {
+        const res = await fetch('/api/matura-share?action=sign', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

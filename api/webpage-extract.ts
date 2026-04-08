@@ -107,16 +107,17 @@ function cleanWhitespace(text: string): string {
 function extractTitle(html: string): string {
   const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   return m ? decodeEntities(stripTags(m[1])).trim().slice(0, 200) : '';
-    function getGeminiApiKeys(): string[] {
-      return [
-        process.env.GEMINI_API_KEY,
-        process.env.VITE_GEMINI_API_KEY,
-        process.env.GEMINI_API_KEY_1,
-        process.env.GEMINI_API_KEY_2,
-        process.env.GEMINI_API_KEY_3,
-        process.env.GEMINI_API_KEY_4,
-      ].filter((k): k is string => !!k && k.trim().length > 10);
-    }
+}
+
+function getGeminiApiKeys(): string[] {
+  return [
+    process.env.GEMINI_API_KEY,
+    process.env.VITE_GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_1,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+    process.env.GEMINI_API_KEY_4,
+  ].filter((key): key is string => !!key && key.trim().length > 10);
 }
 
 function htmlToText(html: string): string {

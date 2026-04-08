@@ -64,7 +64,7 @@ function geminiDevProxy(apiKey: string): Plugin {
         }
       });
 
-      server.middlewares.use('/api/gemini-embed', async (req: any, res: any, next: any) => {
+      server.middlewares.use('/api/embed', async (req: any, res: any, next: any) => {
         if (req.method === 'OPTIONS') { res.writeHead(200); return res.end(); }
         if (req.method !== 'POST') return next();
 
@@ -78,7 +78,8 @@ function geminiDevProxy(apiKey: string): Plugin {
           const result = await modelInstance.embedContent(embedText);
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ embeddings: result.embedding }));
+          const responseShape = req.url?.includes('responseShape=embeddings') ? 'embeddings' : 'embedding';
+          res.end(JSON.stringify(responseShape === 'embeddings' ? { embeddings: result.embedding } : { embedding: result.embedding }));
         } catch (error: any) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: error.message }));
