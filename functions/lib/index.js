@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
+exports.onForumReplyCreated = exports.deductCredits = exports.aggregateStudentProgress = exports.onAssignmentCreated = void 0;
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -174,6 +174,100 @@ exports.deductCredits = functions.https.onCall(async (data, context) => {
     catch (error) {
         console.error('Error deducting credits:', error);
         throw new functions.https.HttpsError('internal', 'Transaction failed: ' + error.message);
+    }
+});
+// ── S19-P2: Forum reply push notifications ─────────────────────────────────
+/**
+ * Triggers when a new forum reply is created.
+ * Sends FCM push to thread participants (thread author + recent repliers),
+ * excluding the user who wrote the new reply.
+ */
+exports.onForumReplyCreated = functions.firestore
+    .document('forum_replies/{replyId}')
+    .onCreate(async (snap) => {
+    var _a, _b, _c, _d, _e, _f;
+    try {
+        const reply = snap.data();
+        if (!reply)
+            return null;
+        const threadId = (_a = reply.threadId) !== null && _a !== void 0 ? _a : '';
+        const actorUid = (_b = reply.authorUid) !== null && _b !== void 0 ? _b : '';
+        const actorName = (_c = reply.authorName) !== null && _c !== void 0 ? _c : 'Наставник';
+        if (!threadId)
+            return null;
+        const db = admin.firestore();
+        // 1) Load thread details and include thread author as a recipient.
+        const threadSnap = await db.collection('forum_threads').doc(threadId).get();
+        if (!threadSnap.exists)
+            return null;
+        const thread = (_d = threadSnap.data()) !== null && _d !== void 0 ? _d : {};
+        const threadAuthorUid = (_e = thread.authorUid) !== null && _e !== void 0 ? _e : '';
+        const threadTitle = (_f = thread.title) !== null && _f !== void 0 ? _f : 'Форум нишка';
+        const recipientUids = new Set();
+        if (threadAuthorUid && threadAuthorUid !== actorUid) {
+            recipientUids.add(threadAuthorUid);
+        }
+        // 2) Include recent participants from the same thread (best-effort dedupe).
+        const participantsSnap = await db
+            .collection('forum_replies')
+            .where('threadId', '==', threadId)
+            .limit(50)
+            .get();
+        participantsSnap.docs.forEach((docSnap) => {
+            var _a, _b;
+            const participantUid = ((_b = (_a = docSnap.data()) === null || _a === void 0 ? void 0 : _a.authorUid) !== null && _b !== void 0 ? _b : '');
+            if (!participantUid || participantUid === actorUid)
+                return;
+            recipientUids.add(participantUid);
+        });
+        if (recipientUids.size === 0)
+            return null;
+        // 3) Resolve FCM tokens from user_tokens collection.
+        const tokens = [];
+        await Promise.all(Array.from(recipientUids).map(async (uid) => {
+            var _a;
+            try {
+                const tokenSnap = await db.collection('user_tokens').doc(`${uid}_web`).get();
+                const token = (_a = tokenSnap.data()) === null || _a === void 0 ? void 0 : _a.token;
+                if (typeof token === 'string' && token.length > 0) {
+                    tokens.push(token);
+                }
+            }
+            catch (_b) {
+                // Missing token doc is expected for some users.
+            }
+        }));
+        if (tokens.length === 0)
+            return null;
+        // 4) Deliver multicast notification with deep-link to thread permalink.
+        await admin.messaging().sendEachForMulticast({
+            tokens,
+            notification: {
+                title: `💬 Нова порака — ${actorName}`,
+                body: `Во нишката: ${threadTitle}`,
+            },
+            webpush: {
+                notification: {
+                    icon: '/icon-192.svg',
+                    badge: '/icon-192.svg',
+                },
+                fcmOptions: {
+                    link: `/#/forum?thread=${encodeURIComponent(threadId)}`,
+                },
+                headers: { TTL: '21600' },
+            },
+            data: {
+                type: 'forum_reply',
+                threadId,
+                replyId: snap.id,
+                actorUid,
+            },
+        });
+        return null;
+    }
+    catch (err) {
+        console.error('[onForumReplyCreated]', err);
+        return null;
     }
 });
 //# sourceMappingURL=index.js.map

@@ -196,3 +196,100 @@ export const deductCredits = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('internal', 'Transaction failed: ' + error.message);
   }
 });
+
+// ── S19-P2: Forum reply push notifications ─────────────────────────────────
+/**
+ * Triggers when a new forum reply is created.
+ * Sends FCM push to thread participants (thread author + recent repliers),
+ * excluding the user who wrote the new reply.
+ */
+export const onForumReplyCreated = functions.firestore
+  .document('forum_replies/{replyId}')
+  .onCreate(async (snap) => {
+    try {
+      const reply = snap.data();
+      if (!reply) return null;
+
+      const threadId: string = reply.threadId ?? '';
+      const actorUid: string = reply.authorUid ?? '';
+      const actorName: string = reply.authorName ?? 'Наставник';
+      if (!threadId) return null;
+
+      const db = admin.firestore();
+
+      // 1) Load thread details and include thread author as a recipient.
+      const threadSnap = await db.collection('forum_threads').doc(threadId).get();
+      if (!threadSnap.exists) return null;
+      const thread = threadSnap.data() ?? {};
+      const threadAuthorUid: string = thread.authorUid ?? '';
+      const threadTitle: string = thread.title ?? 'Форум нишка';
+
+      const recipientUids = new Set<string>();
+      if (threadAuthorUid && threadAuthorUid !== actorUid) {
+        recipientUids.add(threadAuthorUid);
+      }
+
+      // 2) Include recent participants from the same thread (best-effort dedupe).
+      const participantsSnap = await db
+        .collection('forum_replies')
+        .where('threadId', '==', threadId)
+        .limit(50)
+        .get();
+
+      participantsSnap.docs.forEach((docSnap) => {
+        const participantUid = (docSnap.data()?.authorUid ?? '') as string;
+        if (!participantUid || participantUid === actorUid) return;
+        recipientUids.add(participantUid);
+      });
+
+      if (recipientUids.size === 0) return null;
+
+      // 3) Resolve FCM tokens from user_tokens collection.
+      const tokens: string[] = [];
+      await Promise.all(
+        Array.from(recipientUids).map(async (uid) => {
+          try {
+            const tokenSnap = await db.collection('user_tokens').doc(`${uid}_web`).get();
+            const token = tokenSnap.data()?.token;
+            if (typeof token === 'string' && token.length > 0) {
+              tokens.push(token);
+            }
+          } catch {
+            // Missing token doc is expected for some users.
+          }
+        }),
+      );
+
+      if (tokens.length === 0) return null;
+
+      // 4) Deliver multicast notification with deep-link to thread permalink.
+      await admin.messaging().sendEachForMulticast({
+        tokens,
+        notification: {
+          title: `💬 Нова порака — ${actorName}`,
+          body: `Во нишката: ${threadTitle}`,
+        },
+        webpush: {
+          notification: {
+            icon: '/icon-192.svg',
+            badge: '/icon-192.svg',
+          },
+          fcmOptions: {
+            link: `/#/forum?thread=${encodeURIComponent(threadId)}`,
+          },
+          headers: { TTL: '21600' },
+        },
+        data: {
+          type: 'forum_reply',
+          threadId,
+          replyId: snap.id,
+          actorUid,
+        },
+      });
+
+      return null;
+    } catch (err) {
+      console.error('[onForumReplyCreated]', err);
+      return null;
+    }
+  });
