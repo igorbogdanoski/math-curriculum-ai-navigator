@@ -8,8 +8,8 @@
 | Фаза | Име | Статус | Owner | Start | End | Evidence |
 |---|---|---|---|---|---|---|
 | F1 | Пост-аудит стабилизација на платформата | DONE | Core Team | 2026-04-08 | 2026-04-08 | F1 smoke report + 103/103 e2e |
-| F2 | Interactive Math hardening + acceptance matrix | IN_PROGRESS | Core Team | 2026-04-08 | - | Handoff from F1 completed |
-| F3 | Bundle strategy и code-splitting оптимизација | PENDING | Core Team | - | - | - |
+| F2 | Interactive Math hardening + acceptance matrix | DONE | Core Team | 2026-04-08 | 2026-04-08 | Reopen verification clean: 106/106 e2e |
+| F3 | Bundle strategy и code-splitting оптимизација | IN_PROGRESS | Core Team | 2026-04-08 | - | F3 kickoff baseline collected |
 | F4 | S19 formal closure criteria и milestone lock | PENDING | Core Team | - | - | - |
 | F5 | Финален EN/AL translation sweep (section-by-section) | PENDING | Core Team | - | - | - |
 
@@ -52,6 +52,10 @@ Exit Criteria (DONE):
 | 2026-04-08 | F2 | Full-gate verification after steps 1+2 | FLAKY | 105 passed + 1 flaky (`tests/student-play.spec.ts` wizard path, retry PASS) |
 | 2026-04-08 | F2 | Reopen Step 1: Student wizard stress verification | PASS | 24/24 (`tests/student-play.spec.ts -g wizard --repeat-each=8 --workers=1`) |
 | 2026-04-08 | F2 | Reopen Step 2: Full-gate rerun | PASS | 106 passed (1.6m), без flaky (`outputs/f2-reopen-2026-04-08/`) |
+| 2026-04-08 | F2->F3 | Formal phase transition | DONE | F2 exit criteria satisfied; F3 kickoff started |
+| 2026-04-08 | F3 | Kickoff baseline: build + perf budget | PARTIAL | Build PASS; perf budget FAIL on total assets 10557.50 kB > 10000 kB (`outputs/f3-kickoff-2026-04-08/`) |
+| 2026-04-08 | F3 | Step 1 analysis: top bundle contributors + wave-1 shortlist | DONE | Prioritized targets documented in `F3_KICKOFF_CHECKLIST_2026-04-08.md` |
+| 2026-04-08 | F3 | Step 2 wave-1: on-demand export deps refactor + re-measure | PARTIAL | Build PASS; perf budget still FAIL (total 10557.74 kB > 10000 kB) |
 
 ## 4) Оперативни правила
 

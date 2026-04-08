@@ -8,13 +8,26 @@ import { Card } from '../common/Card';
 import { MathRenderer } from '../common/MathRenderer';
 import { geminiService } from '../../services/geminiService';
 import { useNotification } from '../../contexts/NotificationContext';
-import pptxgen from 'pptxgenjs';
-import html2canvas from 'html2canvas';
 import { useAuth } from '../../contexts/AuthContext';
 import { firestoreService } from '../../services/firestoreService';
 
 // ─── Helpers for LaTeX→Image conversion ──────────────────────────────────────
 const HAS_MATH = /\$[\s\S]+?\$/;
+
+let html2canvasLoader: Promise<typeof import('html2canvas')> | null = null;
+let pptxgenLoader: Promise<typeof import('pptxgenjs')> | null = null;
+
+const getHtml2Canvas = async () => {
+  if (!html2canvasLoader) html2canvasLoader = import('html2canvas');
+  const mod = await html2canvasLoader;
+  return mod.default;
+};
+
+const getPptxgen = async () => {
+  if (!pptxgenLoader) pptxgenLoader = import('pptxgenjs');
+  const mod = await pptxgenLoader;
+  return mod.default;
+};
 
 /** Returns true if the entire string is a single $...$ or $$...$$ expression */
 const isPureMathExpr = (text: string): boolean => {
@@ -76,6 +89,7 @@ const renderBulletToImg = async (
   container.innerHTML = toHtml(text);
   document.body.appendChild(container);
   try {
+    const html2canvas = await getHtml2Canvas();
     const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', logging: false });
     return { data: canvas.toDataURL('image/png', 1.0) };
   } finally {
@@ -425,7 +439,8 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
     setPptxProgress(0);
     addNotification('Генерирам PPTX — формулите се рендерираат…', 'info');
     try {
-      const pptx = new pptxgen();
+      const PptxGen = await getPptxgen();
+      const pptx = new PptxGen();
       pptx.layout = 'LAYOUT_16x9';
       // Slide dimensions: 10 × 5.625 inches (16:9)
       const SLIDE_W = 10;
