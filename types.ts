@@ -63,15 +63,17 @@ export interface Topic {
  * Secondary education track (Н4 — Средно образование).
  * - gymnasium:   Гимназиско, grades 10–12
  * - vocational4:         Стручно 4-годишно, grades 10–12
- * - vocational3:         Стручно 3-годишно, grades 10–11
+ * - vocational3:         Стручно 3-годишно, grades 10–12
+ * - vocational2:         Стручно 2-годишно, grades 10–11
  * - gymnasium_elective:  Гимназиски изборни предмети
  */
-export type SecondaryTrack = 'gymnasium' | 'vocational4' | 'vocational3' | 'gymnasium_elective';
+export type SecondaryTrack = 'gymnasium' | 'vocational4' | 'vocational3' | 'vocational2' | 'gymnasium_elective';
 
 export const SECONDARY_TRACK_LABELS: Record<SecondaryTrack, string> = {
   gymnasium:          'Гимназиско (X–XIII)',
-  vocational4:        'Стручно 4-год (X–XII)',
-  vocational3:        'Стручно 3-год (X–XI)',
+  vocational4:        'Стручно 4-год (X–XIII)',
+  vocational3:        'Стручно 3-год (X–XII)',
+  vocational2:        'Стручно 2-год (X–XI)',
   gymnasium_elective: 'Гимназија — Изборни предмети',
 };
 

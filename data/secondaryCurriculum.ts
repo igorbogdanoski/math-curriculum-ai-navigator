@@ -5,6 +5,7 @@
  *   - gymnasium_elective  → изборни предмети по гимназија
  *   - vocational4         → grades 10–13
  *   - vocational3         → grades 10–12
+ *   - vocational2         → grades 10–11
  */
 
 import type { SecondaryCurriculumModule, SecondaryTrack } from '../types';
@@ -19,6 +20,7 @@ import {
 } from './secondary/gymnasium_electives';
 import { vocational4Grade10, vocational4Grade11, vocational4Grade12, vocational4Grade13 } from './secondary/vocational4';
 import { vocational3Grade10, vocational3Grade11, vocational3Grade12 } from './secondary/vocational3';
+import { vocational2Grade10, vocational2Grade11 } from './secondary/vocational2';
 
 export const secondaryCurricula: SecondaryCurriculumModule[] = [
   {
@@ -53,6 +55,13 @@ export const secondaryCurricula: SecondaryCurriculumModule[] = [
     label: SECONDARY_TRACK_LABELS.vocational3,
     curriculum: {
       grades: [vocational3Grade10, vocational3Grade11, vocational3Grade12],
+    },
+  },
+  {
+    track: 'vocational2',
+    label: SECONDARY_TRACK_LABELS.vocational2,
+    curriculum: {
+      grades: [vocational2Grade10, vocational2Grade11],
     },
   },
 ];

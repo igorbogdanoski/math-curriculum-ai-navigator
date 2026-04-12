@@ -148,6 +148,7 @@ export const ExploreView: React.FC = () => {
                       { id: 'gymnasium_elective' as SecondaryTrack, label: `📐 ${SECONDARY_TRACK_LABELS.gymnasium_elective}` },
                       { id: 'vocational4' as SecondaryTrack, label: `🔧 ${SECONDARY_TRACK_LABELS.vocational4}` },
                       { id: 'vocational3' as SecondaryTrack, label: `🔧 ${SECONDARY_TRACK_LABELS.vocational3}` },
+                      { id: 'vocational2' as SecondaryTrack, label: `🔧 ${SECONDARY_TRACK_LABELS.vocational2}` },
                     ] as const).map(({ id, label }) => (
                       <button
                         key={id}
