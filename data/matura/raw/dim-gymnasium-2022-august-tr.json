@@ -1,0 +1,810 @@
+{
+  "exam": {
+    "id": "dim-gymnasium-2022-august-tr",
+    "year": 2022,
+    "session": "august",
+    "track": "gymnasium",
+    "gradeLevel": 13,
+    "language": "tr",
+    "durationMinutes": 180,
+    "title": "Devlet Maturası — Lise — Ağustos 2022",
+    "hasOfficialKey": true
+  },
+  "questions": [
+    {
+      "questionNumber": 1,
+      "part": 1,
+      "points": 1,
+      "questionText": "Doğal sayılar kümesi ile $(1,3)$ aralığının kesişimi şu kümedir:",
+      "choices": {
+        "A": "$\\{1,2\\}$",
+        "B": "$\\{1,2,3\\}$",
+        "C": "$\\{2\\}$",
+        "D": "$\\{1,3\\}$"
+      },
+      "correctAnswer": "C",
+      "topic": "Kümeler",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 2,
+      "part": 1,
+      "points": 1,
+      "questionText": "$\\frac{10}{16} + \\frac{3}{2} \\left( \\frac{17}{4} : 17 \\right) + 3,75 \\cdot \\frac{4}{5}$ ifadesinin değeri şudur:",
+      "choices": {
+        "A": "$8$",
+        "B": "$4$",
+        "C": "$\\frac{1}{4}$",
+        "D": "$3$"
+      },
+      "correctAnswer": "B",
+      "topic": "Sayısal İfadeler",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 3,
+      "part": 1,
+      "points": 1,
+      "questionText": "$\\frac{(-1)^5 \\cdot (-2)^{-3}}{2^{-4} \\cdot (-3)^2}$ ifadesinin değeri şudur:",
+      "choices": {
+        "A": "$18$",
+        "B": "$-18$",
+        "C": "$9$",
+        "D": "$-\\frac{2}{9}$"
+      },
+      "correctAnswer": "A",
+      "topic": "Sayısal İfadeler",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 4,
+      "part": 1,
+      "points": 1,
+      "questionText": "$(2x-3y)^3$ ifadesi şuna eşittir:",
+      "choices": {
+        "A": "$8x^3 - 27y^3$",
+        "B": "$8x^3 - 36x^2y + 54xy^2 - 27y^3$",
+        "C": "$8x^3 + 36x^2y + 54xy^2 + 27y^3$",
+        "D": "$8x^3 - 24x^2y + 36xy^2 - 27y^3$"
+      },
+      "correctAnswer": "B",
+      "topic": "Üslü ve Köklü İfadeler",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 5,
+      "part": 1,
+      "points": 1,
+      "questionText": "$(2p-5)x+3=0$ denkleminin şu durumda çözümü yoktur:",
+      "choices": {
+        "A": "$p = 2,5$",
+        "B": "$p = -2,5$",
+        "C": "$p = 0$",
+        "D": "$p = 2$"
+      },
+      "correctAnswer": "A",
+      "topic": "Parametreli Doğrusal Denklemler",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 6,
+      "part": 1,
+      "points": 1,
+      "questionText": "$x^2-2x-5=0$ ikinci dereceden denkleminin çözümlerinin toplamı şudur:",
+      "choices": {
+        "A": "$-5$",
+        "B": "$-2$",
+        "C": "$5$",
+        "D": "$2$"
+      },
+      "correctAnswer": "D",
+      "topic": "İkinci Dereceden Denklemler (Vieta Formülleri)",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 7,
+      "part": 1,
+      "points": 1,
+      "questionText": "İki doğal sayının farkı $5$, karelerinin farkı ise $50$’dir. Bu iki doğal sayının toplamı şudur:",
+      "choices": {
+        "A": "$15$",
+        "B": "$-15$",
+        "C": "$10$",
+        "D": "$-10$"
+      },
+      "correctAnswer": "C",
+      "topic": "Doğrusal Denklem Sistemleri",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 8,
+      "part": 1,
+      "points": 1,
+      "questionText": "$f(x) = \\frac{1}{3x-2}$ fonksiyonunun tanım kümesi şudur:",
+      "choices": {
+        "A": "$\\mathbb{R}$",
+        "B": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{3}{2}\\}$",
+        "C": "$\\{x | x \\in \\mathbb{R} \\land x \\neq 0\\}$",
+        "D": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{2}{3}\\}$"
+      },
+      "correctAnswer": "D",
+      "topic": "Tanım Kümesi",
+      "topicArea": "analiza",
+      "conceptIds": [
+        "gym13-c2-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 9,
+      "part": 1,
+      "points": 1,
+      "questionText": "Bütünler açısından üç kat küçük olan açı şuna eşittir:",
+      "choices": {
+        "A": "$60^{\\circ}$",
+        "B": "$45^{\\circ}$",
+        "C": "$40^{\\circ}$",
+        "D": "$30^{\\circ}$"
+      },
+      "correctAnswer": "B",
+      "topic": "Açılar",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 10,
+      "part": 1,
+      "points": 1,
+      "questionText": "$ABCD$ paralelkenarında $M$ noktası $AD$ kenarının orta noktası ise, $\\overrightarrow{MC}$ vektörü şuna eşittir:",
+      "choices": {
+        "A": "$\\overrightarrow{AD} - \\frac{1}{2}\\overrightarrow{AB}$",
+        "B": "$\\overrightarrow{AB} - \\frac{1}{2}\\overrightarrow{AD}$",
+        "C": "$\\overrightarrow{AB} + \\frac{1}{2}\\overrightarrow{AD}$",
+        "D": "$\\overrightarrow{AD} + \\frac{1}{2}\\overrightarrow{AB}$"
+      },
+      "correctAnswer": "C",
+      "topic": "Vektörler",
+      "topicArea": "matrici-vektori",
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 11,
+      "part": 2,
+      "points": 1,
+      "questionText": "Kenar uzunluğu $12\\text{ cm}$ olan ve köşegenlerin kesişim noktasının kenara uzaklığı $5\\text{ cm}$ olan bir eşkenar dörtgenin alanı şuna eşittir:",
+      "choices": {
+        "A": "$144\\text{ cm}^2$",
+        "B": "$140\\text{ cm}^2$",
+        "C": "$120\\text{ cm}^2$",
+        "D": "$100\\text{ cm}^2$"
+      },
+      "correctAnswer": "C",
+      "topic": "Planimetri - Eşkenar Dörtgen",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 12,
+      "part": 2,
+      "points": 1,
+      "questionText": "Tabanları $12$ ve $6$, yan kenarı ise $5$ olan ikizkenar yamuğun yüksekliği şuna eşittir:",
+      "choices": {
+        "A": "$3$",
+        "B": "$4$",
+        "C": "$5$",
+        "D": "$2,5$"
+      },
+      "correctAnswer": "B",
+      "topic": "Planimetri - Yamuk",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 13,
+      "part": 2,
+      "points": 1,
+      "questionText": "Taban yarıçapı $9\\text{ cm}$ ve yüksekliği $2\\text{ cm}$ olan dik dairesel koninin hacmi şudur:",
+      "choices": {
+        "A": "$54\\pi\\text{ cm}^3$",
+        "B": "$54\\pi\\text{ cm}^2$",
+        "C": "$162\\pi\\text{ cm}^3$",
+        "D": "$162\\pi\\text{ cm}^2$"
+      },
+      "correctAnswer": "A",
+      "topic": "Stereometri - Koni",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 14,
+      "part": 2,
+      "points": 1,
+      "questionText": "Yüksekliği $8$ ve taban çevresi $20\\pi$ olan dik dairesel silindirin alanı şudur:",
+      "choices": {
+        "A": "$360$",
+        "B": "$260$",
+        "C": "$360\\pi$",
+        "D": "$260\\pi$"
+      },
+      "correctAnswer": "C",
+      "topic": "Stereometri - Silindir",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 15,
+      "part": 2,
+      "points": 1,
+      "questionText": "Düzgün üçgen prizmanın taban kenarı $4$ kat artırılır ve yüksekliği $2$ kat azaltılırsa, prizmanın hacmi:",
+      "choices": {
+        "A": "8 kat azalır",
+        "B": "2 kat artar",
+        "C": "4 kat artar",
+        "D": "8 kat artar"
+      },
+      "correctAnswer": "D",
+      "topic": "Stereometri - Prizma",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 16,
+      "part": 3,
+      "points": 1,
+      "questionText": "$A(-2,-2)$ noktası hangi bölgededir?",
+      "choices": {
+        "A": "Birinci bölgede",
+        "B": "İkinci bölgede",
+        "C": "Üçüncü bölgede",
+        "D": "Dördüncü bölgede"
+      },
+      "correctAnswer": "C",
+      "topic": "Analitik Geometri",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 17,
+      "part": 3,
+      "points": 1,
+      "questionText": "Verilen doğrulardan hangisi $A(1,4)$ noktasından geçer ve eğimi $k = -2$’dir?",
+      "choices": {
+        "A": "$2x + y = 6$",
+        "B": "$2x + y = 9$",
+        "C": "$2x - y = 7$",
+        "D": "$2x - y = -2$"
+      },
+      "correctAnswer": "A",
+      "topic": "Doğru Denklemi",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 18,
+      "part": 3,
+      "points": 1,
+      "questionText": "$y = kx+2$ doğrusunun $3y+2x=1$ doğrusuna dik olması için:",
+      "choices": {
+        "A": "$k = -\\frac{2}{3}$",
+        "B": "$k = -\\frac{3}{2}$",
+        "C": "$k = \\frac{1}{2}$",
+        "D": "$k = \\frac{3}{2}$"
+      },
+      "correctAnswer": "D",
+      "topic": "Döğruların Dikliği",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-3",
+        "gym12-c4-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 19,
+      "part": 3,
+      "points": 1,
+      "questionText": "Aşağıdaki reel sayı dizilerinden hangisinin bir aritmetik dizi olduğunu belirleyin:",
+      "choices": {
+        "A": "$\\frac{1}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{11}{2}, \\dots$",
+        "B": "$\\frac{3}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{9}{2}, \\dots$",
+        "C": "$\\frac{2}{3}, \\frac{2}{5}, \\frac{2}{7}, \\frac{2}{9}, \\dots$",
+        "D": "$\\frac{3}{2}, -\\frac{5}{2}, \\frac{7}{2}, -\\frac{9}{2}, \\dots$"
+      },
+      "correctAnswer": "B",
+      "topic": "Aritmetik Dizi",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym13-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 1
+    },
+    {
+      "questionNumber": 20,
+      "part": 3,
+      "points": 1,
+      "questionText": "İlk terimi $81$ ve ortak çarpanı $\\frac{2}{3}$ olan geometrik dizinin ilk beş teriminin toplamı şudur:",
+      "choices": {
+        "A": "$\\frac{211}{81}$",
+        "B": "$\\frac{275}{81}$",
+        "C": "$211$",
+        "D": "$275$"
+      },
+      "correctAnswer": "C",
+      "topic": "Geometrik Dizi",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym13-c1-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 21,
+      "part": 4,
+      "points": 2,
+      "questionText": "$8x^3y - 8x^2y^2 + 2xy^3$ polinomunu çarpanlarına ayırın.",
+      "choices": {},
+      "correctAnswer": "$2xy(2x-y)^2$",
+      "topic": "Polinomlar",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 22,
+      "part": 4,
+      "points": 2,
+      "questionText": "$f(x) = (3m-5)x - 4 + m$ ve $g(x) = (3-m)x + m - 1$ fonksiyonları verilmiştir. A. $m$ parametresinin hangi değeri için fonksiyonların grafikleri paralel doğrulardır? B. $m$ parametresinin hangi değeri için $f(x)$ fonksiyonunun grafiği başlangıç noktasından geçer?",
+      "choices": {},
+      "correctAnswer": "A. $m=2$, B. $m=4$",
+      "topic": "Parametreli Doğrusal Fonksiyonlar",
+      "topicArea": "analiza",
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 23,
+      "part": 4,
+      "points": 2,
+      "questionText": "A. $\\frac{1}{3x+2} > \\frac{1}{2x-3}$ eşitsizliğinin çözümü şudur: ________. B. $x$’in hangi değerleri için $3x-8$ ifadesinin değeri $1$ ile $7$ arasındadır?",
+      "choices": {},
+      "correctAnswer": "A. $x \\in (-\\infty, -5) \\cup (\\frac{2}{3}, \\frac{3}{2})$, B. $x \\in (3, 5)$",
+      "topic": "Doğrusal Eşitsizlikler",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 24,
+      "part": 4,
+      "points": 2,
+      "questionText": "A. $a$ ve $b$ sayılarının aritmetik ortalaması şuna eşittir: ________. B. $a$ ve $b$ sayılarının aritmetik ortalaması, çarpımlarından iki fazladır. $a=4$ ise, $b=$ ________.",
+      "choices": {},
+      "correctAnswer": "A. $\\frac{a+b}{2}$, B. $0$",
+      "topic": "Aritmetik Ortalama",
+      "topicArea": "broevi",
+      "conceptIds": [
+        "gym10-c6-2",
+        "gym11-c8-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 25,
+      "part": 4,
+      "points": 2,
+      "questionText": "A. Toplam $14$ köşegeni olan düzgün çokgenin ________ kenarı vardır. B. Bir üçgenin açılarından biri ikinci açıdan $15^{\\circ}$ büyük, üçüncü açıdan ise $15^{\\circ}$ küçüktür. Bu üçgenin en küçük açısı şuna eşittir: ________.",
+      "choices": {},
+      "correctAnswer": "A. $7$, B. $45^{\\circ}$",
+      "topic": "Çokgenler ve Açılar",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 26,
+      "part": 4,
+      "points": 2,
+      "questionText": "Bir üçgenin kenarları $8, 15$ ve $17$’dir. A. Üçgenin alanı şudur: ________. B. Bu üçgenin en büyük yüksekliğinin uzunluğu şudur: ________.",
+      "choices": {},
+      "correctAnswer": "A. $60$, B. $15$",
+      "topic": "Planimetri - Üçgen",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 27,
+      "part": 4,
+      "points": 2,
+      "questionText": "A. Alanı $726\\text{ cm}^2$ olan küpün hacmi ________ $\\text{cm}^3$’tür. B. Küpün diyagonal kesitinin alanı ________ $\\text{cm}^2$’dir.",
+      "choices": {},
+      "correctAnswer": "A. $1331\\text{ cm}^3$, B. $121\\sqrt{2}\\text{ cm}^2$",
+      "topic": "Stereometri - Küp",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 28,
+      "part": 4,
+      "points": 2,
+      "questionText": "A. Yarıçapı $3\\text{ cm}$ olan kürenin alanı ________ $\\text{cm}^2$’dir. B. Yarıçapı $3\\text{ cm}$ olan kürenin hacmi ________ $\\text{cm}^3$’tür.",
+      "choices": {},
+      "correctAnswer": "A. $36\\pi\\text{ cm}^2$, B. $36\\pi\\text{ cm}^3$",
+      "topic": "Stereometri - Küre",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 29,
+      "part": 4,
+      "points": 2,
+      "questionText": "A. Koordinat eksenlerini $A(3,0)$ ve $B(0,-2)$ noktalarında kesen $q$ doğrusunun parçalı (segment) denklemi şudur: ________. B. $x+y-3=0$ ve $2x+3y-8=0$ doğrularının kesişim noktasının koordinatları şudur: ________.",
+      "choices": {},
+      "correctAnswer": "A. $\\frac{x}{3} + \\frac{y}{-2} = 1$, B. $(1, 2)$",
+      "topic": "Analitik Geometri - Doğru",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 2
+    },
+    {
+      "questionNumber": 30,
+      "part": 4,
+      "points": 2,
+      "questionText": "$20$, $50$ ve $100$ sayıları verilmiştir. A. İlk iki sayıya aynı sayı eklenir ve üçüncü sayı aynı kalırsa, bir aritmetik dizinin ardışık üç terimi elde edilir. Eklenmesi gereken sayı şudur: ________. B. Verilen üç sayının her birine aynı sayı eklenirse, bir geometrik dizinin ardışık üç terimi elde edilir. Eklenmesi gereken sayı şudur: ________.",
+      "choices": {},
+      "correctAnswer": "A. $20$, B. $25$",
+      "topic": "Aritmetik ve Geometrik Dizi",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym13-c1-2",
+        "gym13-c1-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 31,
+      "part": 5,
+      "points": 4,
+      "questionText": "Belirtilen işlemleri yapın ve şu ifadeyi sadeleştirin: $\\left( \\frac{a-1}{a+1} + \\frac{a^3+1}{a^2-2a+1} : \\frac{a^2-a+1}{1-a} \\right) \\cdot (1+a) + \\frac{3a+1}{a-1}$.",
+      "choices": {},
+      "correctAnswer": "$\\frac{a-1}{a}$",
+      "topic": "Rasyonel Cebirsel İfadeler",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 32,
+      "part": 5,
+      "points": 3,
+      "questionText": "$\\frac{x-2}{7} - x < 3 - \\frac{6x+7}{2}$ eşitsizliğini sağlayan en büyük tam sayıyı belirleyin.",
+      "choices": {},
+      "correctAnswer": "$-1$",
+      "topic": "Eşitsizlikler",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 33,
+      "part": 5,
+      "points": 4,
+      "questionText": "İki basamaklı bir sayının, aynı rakamlarla ters sırada yazılan sayıya oranı $3:8$’dir. Büyük sayıdan küçük sayı çıkarıldığında $45$ elde ediliyorsa, bu sayılar hangileridir?",
+      "choices": {},
+      "correctAnswer": "Sayilar 27 ve 72'dir.",
+      "topic": "Sistemlerle Problem Çözme",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 34,
+      "part": 5,
+      "points": 5,
+      "questionText": "$(k-2)x^2 - (k+1)x + k+1 = 0$ denklemi verilmiştir ($k$ reel bir parametredir). A. $k$ parametresinin hangi değeri için denklem doğrusaldır? B. $k$ parametresinin hangi değeri için ikinci dereceden denklemin reel çözümleri vardır? C. $k$ parametresinin hangi değeri için ikinci dereceden denklemin kökleri $x_1 = -\\frac{1}{x_2}$ koşulunu sağlar?",
+      "choices": {},
+      "correctAnswer": "A. $k=2$, B. $k \\in [-1, 3]$, C. $k=0,5$",
+      "topic": "Parametreli İkinci Dereceden Denklemler",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 35,
+      "part": 5,
+      "points": 3,
+      "questionText": "Alanı $256\\pi$ olan bir dairenin içine bir kare ve bir düzgün altıgen çizilmiştir. Karenin ve altıgenin alanlarını hesaplayın.",
+      "choices": {},
+      "correctAnswer": "Karenin alani: 512, Altigenin alani: $384\\sqrt{3}$.",
+      "topic": "Planimetri - Daire ve Çokgenler",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym11-c6-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 36,
+      "part": 5,
+      "points": 4,
+      "questionText": "Taban kenarı $5\\text{ dm}$ olan düzgün kare piramidin hacmi $50\\text{ dm}^3$’tür. Piramidin alanını hesaplayın.",
+      "choices": {},
+      "correctAnswer": "$P=90\\text{ dm}^2$",
+      "topic": "Stereometri - Piramit",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 37,
+      "part": 5,
+      "points": 4,
+      "questionText": "$ABCD$ dikdörtgeninin kenarları $4$ birim fark etmektedir. Dikdörtgenin uzun kenarı $AB$ etrafında döndürülmesiyle oluşan silindirin alanı $192\\pi$’dir. A. Oluşan silindirin bir taslağını çizin... B. Dikdörtgenin kenar uzunluklarını belirleyin... C. Oluşan silindirin hacmini hesaplayın.",
+      "choices": {},
+      "correctAnswer": "$V=360\\pi$",
+      "topic": "Stereometri - Dönel Cisimler",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 38,
+      "part": 5,
+      "points": 3,
+      "questionText": "$M(-2,-5)$ ve $N$ noktaları arasındaki uzaklık $2$’dir. $N$ noktasının $3x-y-1=0$ doğrusu üzerinde olduğu biliniyorsa, $N$ noktasının koordinatlarını bulun.",
+      "choices": {},
+      "correctAnswer": "$N_1(-2, -7)$ ve $N_2(-\\frac{4}{5}, -\\frac{17}{5})$",
+      "topic": "Analitik Geometri - Uzaklık",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 39,
+      "part": 5,
+      "points": 4,
+      "questionText": "$ABC$ üçgeninin köşeleri $A(-1,-3)$, $B(3,3)$ ve $C(7,5)$ noktalarıdır. Bu üçgenin $A$ köşesinden çekilen kenarortay doğrusunun genel denklemini yazın. Verilen üçgenin $T$ ağırlık merkezinin koordinatlarını belirleyin.",
+      "choices": {},
+      "correctAnswer": "Denklem: $7x-6y-11=0$, Agirlik merkezi: $T(3, \\frac{5}{3})$",
+      "topic": "Analitik Geometri - Üçgen",
+      "topicArea": "geometrija",
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    },
+    {
+      "questionNumber": 40,
+      "part": 5,
+      "points": 4,
+      "questionText": "İkinci terimi $2$ olan bir aritmetik dizi verilmiştir. Dizinin beşinci ve altıncı terimlerinin toplamı $25$’tir. Dizinin çift indisli ilk yirmi teriminin toplamını belirleyin.",
+      "choices": {},
+      "correctAnswer": "$S = 1180$",
+      "topic": "Aritmetik Dizi",
+      "topicArea": "algebra",
+      "conceptIds": [
+        "gym13-c1-2"
+      ],
+      "imageUrls": [],
+      "hasImage": false,
+      "imageDescription": null,
+      "dokLevel": 3
+    }
+  ]
+}

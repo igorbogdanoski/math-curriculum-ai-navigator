@@ -1,15 +1,15 @@
 {
   "exam": {
-    "id": "dim-gymnasium-2021-june-al",
-    "year": 2021,
+    "id": "dim-gymnasium-2020-june-mk",
+    "year": 2020,
     "session": "june",
-    "language": "al",
-    "title": "ДИМ Гимназиско — Јуни 2021 (АЛ)",
+    "language": "mk",
+    "title": "ДИМ Гимназиско — Јуни 2020 (МК)",
     "durationMinutes": 180,
     "track": "gymnasium",
     "gradeLevel": 12,
     "questionCount": 40,
-    "totalPoints": 76
+    "totalPoints": 61
   },
   "questions": [
     {
@@ -17,14 +17,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Vlera e bashkësisë numerike $\\left[ 2^{-1} : \\left( \\frac{1}{4} \\right)^{-3} \\cdot 8 \\right]^{0,25} \\cdot \\left( \\frac{1}{16^{-3/2}} \\right)^0$ është:",
+      "questionText": "Вредноста на бројниот израз $\\left[ 2^{-1} : \\left( \\frac{1}{4} \\right)^{-3} \\cdot 8 \\right]^{0,25} \\cdot \\left( \\frac{1}{16^{-3/2}} \\right)^0$ е:",
       "choices": {
-        "A": "4",
-        "B": "$\\frac{1}{4}$",
-        "C": "2",
-        "Ç": "$\\frac{1}{2}$"
+        "А": "4",
+        "Б": "$\\frac{1}{4}$",
+        "В": "2",
+        "Г": "$\\frac{1}{2}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Бројни изрази",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -41,14 +41,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Polinomi $3x^3 - 5x^2 - 9xy + 15y$ i reduktuar në shumëzues është:",
+      "questionText": "Полиномот $3x^3 - 5x^2 - 9xy + 15y$ разложен на множители е:",
       "choices": {
-        "A": "$x(3x-5)(x+3y)$",
-        "B": "$(3x-5)(x^2-3y)$",
-        "C": "$y(9x-5x)(3x+5)$",
-        "Ç": "$(3x^3-5x^2)(-9xy+15y)$"
+        "А": "$x(3x-5)(x+3y)$",
+        "Б": "$(3x-5)(x^2-3y)$",
+        "В": "$y(9x-5x)(3x+5)$",
+        "Г": "$(3x^3-5x^2)(-9xy+15y)$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Полиноми",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -65,14 +65,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se $x_1$ dhe $x_2$ janë zgjidhje të barazimit katror $x^2 + 6x - 10 = 0$, atëherë vlera e shprehjes $\\frac{x_1 x_2}{2} - 3x_1 - 3x_2$ është:",
+      "questionText": "Ако $x_1$ и $x_2$ се решенија на квадратната равенка $x^2 + 6x - 10 = 0$, тогаш вредноста на изразот $\\frac{x_1 x_2}{2} - 3x_1 - 3x_2$ изнесува:",
       "choices": {
-        "A": "13",
-        "B": "23",
-        "C": "27",
-        "Ç": "-13"
+        "А": "13",
+        "Б": "23",
+        "В": "27",
+        "Г": "-13"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Квадратна равенка",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -89,14 +89,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se $\\frac{1}{x} + \\frac{1}{3x} \\le 1, x \\neq 0$, atëherë:",
+      "questionText": "Ако $\\frac{1}{x} + \\frac{1}{3x} \\le 1, x \\neq 0$, тогаш:",
       "choices": {
-        "A": "$x \\le \\frac{1}{4}$",
-        "B": "$x \\ge \\frac{1}{4}$",
-        "C": "$x \\le \\frac{3}{4}$",
-        "Ç": "$x \\ge \\frac{4}{3}$"
+        "А": "$x \\le \\frac{1}{4}$",
+        "Б": "$x \\ge \\frac{1}{4}$",
+        "В": "$x \\le \\frac{3}{4}$",
+        "Г": "$x \\ge \\frac{4}{3}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -113,14 +113,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Shuma e gjysmës, një të tretës dhe një të pestës së një numri është për 1 më e madhe se ai numër. Cili numër është ai?",
+      "questionText": "Збирот од половината, третината и петтината на некој број е за 1 поголем од тој број. Кој е тој број?",
       "choices": {
-        "A": "15",
-        "B": "20",
-        "C": "30",
-        "Ç": "60"
+        "А": "15",
+        "Б": "20",
+        "В": "30",
+        "Г": "60"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Линеарни равенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -137,14 +137,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Për cilën vlerë të parametrit $a$, sistemi i barazimeve $\\begin{cases} 4x - ay = 6 + a \\\\ ax - y = 2a \\end{cases}$ nuk ka zgjidhje?",
+      "questionText": "За која вредност на параметарот $a$, системот равенки $\\begin{cases} 4x - ay = 6 + a \\\\ ax - y = 2a \\end{cases}$ нема решение?",
       "choices": {
-        "A": "$a = 2$",
-        "B": "$a = -2$",
-        "C": "$a = 4$",
-        "Ç": "$a = 3$"
+        "А": "$a = 2$",
+        "Б": "$a = -2$",
+        "В": "$a = 4$",
+        "Г": "$a = 3$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Системи линеарни равенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -161,14 +161,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se diagonalet e rombit kanë gjatësitë $a$ dhe $a\\sqrt{3}$, atëherë syprina e rombit është:",
+      "questionText": "Ако дијагоналите на ромбот имаат должини $a$ и $a\\sqrt{3}$, тогаш плоштината на ромбот е:",
       "choices": {
-        "A": "$a^2$",
-        "B": "$\\frac{a^2\\sqrt{3}}{2}$",
-        "C": "$\\frac{a^2\\sqrt{3}}{3}$",
-        "Ç": "$\\frac{a^2\\sqrt{3}}{4}$"
+        "А": "$a^2$",
+        "Б": "$\\frac{a^2\\sqrt{3}}{2}$",
+        "В": "$\\frac{a^2\\sqrt{3}}{3}$",
+        "Г": "$\\frac{a^2\\sqrt{3}}{4}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Ромб",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -185,14 +185,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Numri i diagonaleve të një shumëkëndëshi, të tërhequra nga një kulm, është dy herë më i vogël nga numri i brinjëve të tij.\nSa brinjë ka shumëkëndëshi?",
+      "questionText": "Бројот на дијагоналите на еден многуаголник, повлечени од едно теме, е двапати помал од бројот на неговите страни. Колку страни има многуаголникот?",
       "choices": {
-        "A": "4",
-        "B": "5",
-        "C": "6",
-        "Ç": "7"
+        "А": "4",
+        "Б": "5",
+        "В": "6",
+        "Г": "7"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Многуаголници",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -209,14 +209,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Kubi dhe trekëndëshi barabrinjës kanë perimetra të barabartë.\nNë qoftë se syprina e trekëndëshit është $9\\sqrt{3}$, atëherë brinja e kubit është:",
+      "questionText": "Квадрат и рамностран триаголник имаат еднакви периметри. Ако плоштината на триаголникот е $9\\sqrt{3}$, тогаш страната на квадратот е:",
       "choices": {
-        "A": "8",
-        "B": "3",
-        "C": "$\\frac{5}{2}$",
-        "Ç": "$\\frac{9}{2}$"
+        "А": "8",
+        "Б": "3",
+        "В": "$\\frac{5}{2}$",
+        "Г": "$\\frac{9}{2}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Многуаголници",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -233,14 +233,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Për sa herë do të rritet vëllimi i cilindrit, në qoftë se radiusi i tij rritet për $n$-herë, ndërsa lartësia rritet për $m$-herë?",
+      "questionText": "За колку пати ќе се зголеми волуменот на цилиндар, ако неговиот радиус се зголеми $n$-пати, а висината се зголеми $m$-пати?",
       "choices": {
-        "A": "$mn$ - herë",
-        "B": "$m^2n$ - herë",
-        "C": "$n^2m$ - herë",
-        "Ç": "$m^2n^2$ - herë"
+        "А": "$mn$-пати",
+        "Б": "$m^2n$-пати",
+        "В": "$n^2m$-пати",
+        "Г": "$m^2n^2$-пати"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Цилиндар",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -257,14 +257,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Distanca nga pika $A(2,-4)$ deri te pika qendrore e segmentit $MN \\left[ M(3, -2), N(-5, 2) \\right]$ është:",
+      "questionText": "Растојанието од точката $A(2,-4)$ до средишната точка на отсечката $MN[M(3,-2), N(-5,2)]$ изнесува:",
       "choices": {
-        "A": "5",
-        "B": "$\\sqrt{8}$",
-        "C": "25",
-        "Ç": "$\\sqrt{17}$"
+        "А": "5",
+        "Б": "$\\sqrt{8}$",
+        "В": "25",
+        "Г": "$\\sqrt{17}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -281,14 +281,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Drejtëza $(a-1)x + (2a+1)y + a + 1 = 0$ është paralele me boshtin $x$-në qoftë se:",
+      "questionText": "Правата $(a-1)x + (2a+1)y + a + 1 = 0$ е паралелна со $x$-оската, ако:",
       "choices": {
-        "A": "$a = -1$",
-        "B": "$a = -\\frac{1}{2}$",
-        "C": "$a = 0$",
-        "Ç": "$a = 1$"
+        "А": "$a = -1$",
+        "Б": "$a = -\\frac{1}{2}$",
+        "В": "$a = 0$",
+        "Г": "$a = 1$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -305,14 +305,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Pika $M$ e cila shtrihet në boshtin e ordinatës është barabarësish larg nga pika $A(9,-3)$ dhe fillimi i koordinatës. Pika $M$ ka koordinatat:",
+      "questionText": "Точката $M$ која лежи на ординатната оска е еднакво оддалечена од точката $A(9,-3)$ и координатниот почеток. Точката $M$ има координати:",
       "choices": {
-        "A": "$M(-15,0)$",
-        "B": "$M(-45,0)$",
-        "C": "$M(0,-15)$",
-        "Ç": "$M(0,15)$"
+        "А": "$M(-15,0)$",
+        "Б": "$M(-45,0)$",
+        "В": "$M(0,-15)$",
+        "Г": "$M(0,15)$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -329,14 +329,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Është dhënë barazimi i drejtëzës $px + (p-2)y - 6 = 0$.\nNë qoftë se drejtëza e boshtit -$x$ pret një segment me gjatësi dyfish më të madhe nga gjatësia e segmentit të cilin e pret nga boshti -$y$ atëherë vlera e parametrit $p$ është:",
+      "questionText": "Дадена е равенката на правата $px + (p-2)y - 6 = 0$. Ако правата од $x$-оската отсекува отсечка со должина двапати поголема од должината на отсечката која ја отсекува од $y$-оската, тогаш вредноста на параметарот $p$ е:",
       "choices": {
-        "A": "2",
-        "B": "-2",
-        "C": "0",
-        "Ç": "6"
+        "А": "2",
+        "Б": "-2",
+        "В": "0",
+        "Г": "6"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 3,
@@ -353,14 +353,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në një kuti ka 9 unaza ari dhe një unazë diamanti.\nNë qoftë se rastësisht tërheqim një unazë nga kutia, sa ka të ngjarë që të tërheqim unazën e diamantit?",
+      "questionText": "Во една кутија има 9 златни прстени и еден дијамантски прстен. Ако случајно извлечеме еден прстен од кутијата, колкава е веројатноста дека ќе го извлечеме дијамантскиот прстен?",
       "choices": {
-        "A": "10%",
-        "B": "15%",
-        "C": "20%",
-        "Ç": "25%"
+        "А": "10%",
+        "Б": "15%",
+        "В": "20%",
+        "Г": "25%"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -377,14 +377,14 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se hedhim një zar 3-herë, gjasat për të fituar tri gjashta janë:",
+      "questionText": "Доколку фрлиме една коцка 3-пати, веројатноста да се добијат три шестки е:",
       "choices": {
-        "A": "$\\frac{3}{6^3}$",
-        "B": "$\\frac{1}{6^2}$",
-        "C": "$\\frac{3}{6^2}$",
-        "Ç": "$\\frac{1}{6^3}$"
+        "А": "$\\frac{3}{6^3}$",
+        "Б": "$\\frac{1}{6^2}$",
+        "В": "$\\frac{3}{6^2}$",
+        "Г": "$\\frac{1}{6^3}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,

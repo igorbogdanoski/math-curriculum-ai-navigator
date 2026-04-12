@@ -1,15 +1,15 @@
 {
   "exam": {
-    "id": "dim-gymnasium-2021-june-al",
-    "year": 2021,
+    "id": "dim-gymnasium-2020-june-al",
+    "year": 2020,
     "session": "june",
     "language": "al",
-    "title": "ДИМ Гимназиско — Јуни 2021 (АЛ)",
+    "title": "DIM Gjimnazore — Qershor 2020 (AL)",
     "durationMinutes": 180,
     "track": "gymnasium",
     "gradeLevel": 12,
     "questionCount": 40,
-    "totalPoints": 76
+    "totalPoints": 61
   },
   "questions": [
     {
@@ -17,7 +17,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Vlera e bashkësisë numerike $\\left[ 2^{-1} : \\left( \\frac{1}{4} \\right)^{-3} \\cdot 8 \\right]^{0,25} \\cdot \\left( \\frac{1}{16^{-3/2}} \\right)^0$ është:",
+      "questionText": "Vlera e shprehjes numerike $\\left[ 2^{-1} : \\left( \\frac{1}{4} \\right)^{-3} \\cdot 8 \\right]^{0,25} \\cdot \\left( \\frac{1}{16^{-3/2}} \\right)^0$ është:",
       "choices": {
         "A": "4",
         "B": "$\\frac{1}{4}$",
@@ -25,7 +25,7 @@
         "Ç": "$\\frac{1}{2}$"
       },
       "correctAnswer": "Ç",
-      "topic": "Бројни изрази",
+      "topic": "Shprehjet numerike",
       "topicArea": "broevi",
       "dokLevel": 1,
       "hasImage": false,
@@ -41,7 +41,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Polinomi $3x^3 - 5x^2 - 9xy + 15y$ i reduktuar në shumëzues është:",
+      "questionText": "Polinomi $3x^3 - 5x^2 - 9xy + 15y$ i zbërthyer në faktorë është:",
       "choices": {
         "A": "$x(3x-5)(x+3y)$",
         "B": "$(3x-5)(x^2-3y)$",
@@ -49,7 +49,7 @@
         "Ç": "$(3x^3-5x^2)(-9xy+15y)$"
       },
       "correctAnswer": "B",
-      "topic": "Полиноми",
+      "topic": "Polinomet",
       "topicArea": "algebra",
       "dokLevel": 1,
       "hasImage": false,
@@ -65,7 +65,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se $x_1$ dhe $x_2$ janë zgjidhje të barazimit katror $x^2 + 6x - 10 = 0$, atëherë vlera e shprehjes $\\frac{x_1 x_2}{2} - 3x_1 - 3x_2$ është:",
+      "questionText": "Nëse $x_1$ dhe $x_2$ janë zgjidhje të ekuacionit kuadratik $x^2 + 6x - 10 = 0$, atëherë vlera e shprehjes $\\frac{x_1 x_2}{2} - 3x_1 - 3x_2$ është:",
       "choices": {
         "A": "13",
         "B": "23",
@@ -73,7 +73,7 @@
         "Ç": "-13"
       },
       "correctAnswer": "A",
-      "topic": "Квадратна равенка",
+      "topic": "Ekuacioni kuadratik",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
@@ -89,7 +89,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se $\\frac{1}{x} + \\frac{1}{3x} \\le 1, x \\neq 0$, atëherë:",
+      "questionText": "Nëse $\\frac{1}{x} + \\frac{1}{3x} \\le 1, x \\neq 0$, atëherë:",
       "choices": {
         "A": "$x \\le \\frac{1}{4}$",
         "B": "$x \\ge \\frac{1}{4}$",
@@ -97,7 +97,7 @@
         "Ç": "$x \\ge \\frac{4}{3}$"
       },
       "correctAnswer": "Ç",
-      "topic": "Линеарни неравенки",
+      "topic": "Inekuacionet lineare",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
@@ -113,7 +113,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Shuma e gjysmës, një të tretës dhe një të pestës së një numri është për 1 më e madhe se ai numër. Cili numër është ai?",
+      "questionText": "Shuma e gjysmës, e të tretës dhe e të pestës së një numri është për 1 më e madhe se ai numër. Cili është ai numër?",
       "choices": {
         "A": "15",
         "B": "20",
@@ -121,7 +121,7 @@
         "Ç": "60"
       },
       "correctAnswer": "C",
-      "topic": "Линеарни равенки",
+      "topic": "Ekuacionet lineare",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
@@ -137,7 +137,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Për cilën vlerë të parametrit $a$, sistemi i barazimeve $\\begin{cases} 4x - ay = 6 + a \\\\ ax - y = 2a \\end{cases}$ nuk ka zgjidhje?",
+      "questionText": "Për cilën vlerë të parametrit $a$, sistemi i ekuacioneve $\\begin{cases} 4x - ay = 6 + a \\\\ ax - y = 2a \\end{cases}$ nuk ka zgjidhje?",
       "choices": {
         "A": "$a = 2$",
         "B": "$a = -2$",
@@ -145,7 +145,7 @@
         "Ç": "$a = 3$"
       },
       "correctAnswer": "B",
-      "topic": "Системи линеарни равенки",
+      "topic": "Sistemet e ekuacioneve lineare",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
@@ -161,7 +161,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se diagonalet e rombit kanë gjatësitë $a$ dhe $a\\sqrt{3}$, atëherë syprina e rombit është:",
+      "questionText": "Nëse diagonalet e rombit kanë gjatësi $a$ dhe $a\\sqrt{3}$, atëherë syprina e rombit është:",
       "choices": {
         "A": "$a^2$",
         "B": "$\\frac{a^2\\sqrt{3}}{2}$",
@@ -169,7 +169,7 @@
         "Ç": "$\\frac{a^2\\sqrt{3}}{4}$"
       },
       "correctAnswer": "B",
-      "topic": "Ромб",
+      "topic": "Rombi",
       "topicArea": "geometrija",
       "dokLevel": 1,
       "hasImage": false,
@@ -185,7 +185,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Numri i diagonaleve të një shumëkëndëshi, të tërhequra nga një kulm, është dy herë më i vogël nga numri i brinjëve të tij.\nSa brinjë ka shumëkëndëshi?",
+      "questionText": "Numri i diagonaleve të një shumëkëndëshi, të hequra nga një kulm, është dy herë më i vogël se numri i brinjëve të tij. Sa brinjë ka shumëkëndëshi?",
       "choices": {
         "A": "4",
         "B": "5",
@@ -193,7 +193,7 @@
         "Ç": "7"
       },
       "correctAnswer": "C",
-      "topic": "Многуаголници",
+      "topic": "Shumëkëndëshat",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -209,7 +209,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Kubi dhe trekëndëshi barabrinjës kanë perimetra të barabartë.\nNë qoftë se syprina e trekëndëshit është $9\\sqrt{3}$, atëherë brinja e kubit është:",
+      "questionText": "Katrori dhe trekëndëshi barabrinjës kanë perimetra të barabartë. Nëse syprina e trekëndëshit është $9\\sqrt{3}$, atëherë brinja e katrorit është:",
       "choices": {
         "A": "8",
         "B": "3",
@@ -217,7 +217,7 @@
         "Ç": "$\\frac{9}{2}$"
       },
       "correctAnswer": "Ç",
-      "topic": "Многуаголници",
+      "topic": "Shumëkëndëshat",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -233,15 +233,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Për sa herë do të rritet vëllimi i cilindrit, në qoftë se radiusi i tij rritet për $n$-herë, ndërsa lartësia rritet për $m$-herë?",
+      "questionText": "Sa herë do të rritet vëllimi i cilindrit, nëse rrezja e tij rritet $n$-herë, ndërsa lartësia rritet $m$-herë?",
       "choices": {
-        "A": "$mn$ - herë",
-        "B": "$m^2n$ - herë",
-        "C": "$n^2m$ - herë",
-        "Ç": "$m^2n^2$ - herë"
+        "A": "$mn$-herë",
+        "B": "$m^2n$-herë",
+        "C": "$n^2m$-herë",
+        "Ç": "$m^2n^2$-herë"
       },
       "correctAnswer": "C",
-      "topic": "Цилиндар",
+      "topic": "Cilindri",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -257,7 +257,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Distanca nga pika $A(2,-4)$ deri te pika qendrore e segmentit $MN \\left[ M(3, -2), N(-5, 2) \\right]$ është:",
+      "questionText": "Largësia nga pika $A(2,-4)$ deri te mespika e segmentit $MN[M(3,-2), N(-5,2)]$ është:",
       "choices": {
         "A": "5",
         "B": "$\\sqrt{8}$",
@@ -265,7 +265,7 @@
         "Ç": "$\\sqrt{17}$"
       },
       "correctAnswer": "A",
-      "topic": "Аналитичка геометрија",
+      "topic": "Gjeometria analitike",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -281,7 +281,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Drejtëza $(a-1)x + (2a+1)y + a + 1 = 0$ është paralele me boshtin $x$-në qoftë se:",
+      "questionText": "Drejtëza $(a-1)x + (2a+1)y + a + 1 = 0$ është paralele me boshtin $x$, nëse:",
       "choices": {
         "A": "$a = -1$",
         "B": "$a = -\\frac{1}{2}$",
@@ -289,7 +289,7 @@
         "Ç": "$a = 1$"
       },
       "correctAnswer": "Ç",
-      "topic": "Права",
+      "topic": "Drejtëza",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -305,7 +305,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Pika $M$ e cila shtrihet në boshtin e ordinatës është barabarësish larg nga pika $A(9,-3)$ dhe fillimi i koordinatës. Pika $M$ ka koordinatat:",
+      "questionText": "Pika $M$ e cila shtrihet në boshtin e ordinatave është njësoj e larguar nga pika $A(9,-3)$ dhe fillimi koordinativ. Pika $M$ ka koordinatat:",
       "choices": {
         "A": "$M(-15,0)$",
         "B": "$M(-45,0)$",
@@ -313,7 +313,7 @@
         "Ç": "$M(0,15)$"
       },
       "correctAnswer": "C",
-      "topic": "Аналитичка геометрија",
+      "topic": "Gjeometria analitike",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -329,7 +329,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Është dhënë barazimi i drejtëzës $px + (p-2)y - 6 = 0$.\nNë qoftë se drejtëza e boshtit -$x$ pret një segment me gjatësi dyfish më të madhe nga gjatësia e segmentit të cilin e pret nga boshti -$y$ atëherë vlera e parametrit $p$ është:",
+      "questionText": "Është dhënë ekuacioni i drejtëzës $px + (p-2)y - 6 = 0$. Nëse drejtëza nga boshti $x$ pret segment me gjatësi dy herë më të madhe se gjatësia e segmentit që pret nga boshti $y$, atëherë vlera e parametrit $p$ është:",
       "choices": {
         "A": "2",
         "B": "-2",
@@ -337,7 +337,7 @@
         "Ç": "6"
       },
       "correctAnswer": "B",
-      "topic": "Права",
+      "topic": "Drejtëza",
       "topicArea": "geometrija",
       "dokLevel": 3,
       "hasImage": false,
@@ -353,7 +353,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në një kuti ka 9 unaza ari dhe një unazë diamanti.\nNë qoftë se rastësisht tërheqim një unazë nga kutia, sa ka të ngjarë që të tërheqim unazën e diamantit?",
+      "questionText": "Në një kuti ka 9 unaza ari dhe një unazë diamanti. Nëse tërheqim rastësisht një unazë nga kutia, sa është probabiliteti që të tërheqim unazën e diamantit?",
       "choices": {
         "A": "10%",
         "B": "15%",
@@ -361,7 +361,7 @@
         "Ç": "25%"
       },
       "correctAnswer": "A",
-      "topic": "Веројатност",
+      "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 1,
       "hasImage": false,
@@ -377,7 +377,7 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se hedhim një zar 3-herë, gjasat për të fituar tri gjashta janë:",
+      "questionText": "Nëse e hedhim një zare 3 herë, probabiliteti që të fitohen tri gjashta është:",
       "choices": {
         "A": "$\\frac{3}{6^3}$",
         "B": "$\\frac{1}{6^2}$",
@@ -385,7 +385,7 @@
         "Ç": "$\\frac{1}{6^3}$"
       },
       "correctAnswer": "Ç",
-      "topic": "Веројатност",
+      "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 1,
       "hasImage": false,

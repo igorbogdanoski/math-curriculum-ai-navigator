@@ -1,0 +1,731 @@
+{
+  "exam": {
+    "id": "dim-gymnasium-2024-august-tr",
+    "year": 2024,
+    "session": "august",
+    "language": "tr",
+    "title": "DİM Lise — Ağustos 2024 (TR)",
+    "durationMinutes": 180,
+    "track": "gymnasium",
+    "gradeLevel": 12,
+    "questionCount": 30,
+    "totalPoints": 63
+  },
+  "questions": [
+    {
+      "questionNumber": 1,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "$\\tau(p \\lor \\neg q) = \\bot$ ise, aşağıdaki önerme formüllerinden hangisi yanlıştır?",
+      "choices": {
+        "A": "$p \\lor q$",
+        "B": "$\\neg p \\lor \\neg q$",
+        "C": "$p \\land q$",
+        "D": "$\\neg p \\land q$"
+      },
+      "correctAnswer": "C",
+      "topic": "Önermeler",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 2,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "$0,000001$ sayısı $0,1$ tabanında bir kuvvet olarak şöyle yazılır:",
+      "choices": {
+        "A": "$0,1^6$",
+        "B": "$0,1^5$",
+        "C": "$0,1^4$",
+        "D": "$0,1^3$"
+      },
+      "correctAnswer": "A",
+      "topic": "Üslü Sayılar",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 3,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Ölçeği $1:150\\ 000$ olan bir haritada iki yer arasındaki mesafe $6\\text{ cm}$’dir. Bu iki yer arasındaki gerçek mesafe şudur:",
+      "choices": {
+        "A": "$90\\ 000\\text{ cm}$",
+        "B": "$9\\text{ km}$",
+        "C": "$90\\text{ km}$",
+        "D": "$900\\text{ m}$"
+      },
+      "correctAnswer": "B",
+      "topic": "Oran ve Orantı",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 4,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Verilen ifadelerden hangisi bir polinomdur?",
+      "choices": {
+        "A": "$\\frac{1}{2x} + xy^2$",
+        "B": "$\\sqrt{2}xy^2 - 1$",
+        "C": "$3\\sqrt{xy} + 1$",
+        "D": "$5x^{-2}y + 1$"
+      },
+      "correctAnswer": "B",
+      "topic": "Polinomlar",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 5,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "$27^n \\cdot \\left(\\frac{1}{3}\\right)^n : 3^n$ ifadesinin üçte biri şudur:",
+      "choices": {
+        "A": "$3^{2n}$",
+        "B": "$3^n$",
+        "C": "$3^{n-1}$",
+        "D": "$3^{n-2}$"
+      },
+      "correctAnswer": "C",
+      "topic": "Üslü Sayılar",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 6,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "$\\frac{2x+3}{x^2+1}$ ifadesinin tanım kümesi şudur:",
+      "choices": {
+        "A": "$(-\\infty, -1) \\cup (1, \\infty)$",
+        "B": "$(-\\infty, \\infty) \\setminus \\{-1, 1\\}$",
+        "C": "$\\left(-\\infty, -\\frac{3}{2}\\right) \\cup \\left(-\\frac{3}{2}, \\infty\\right)$",
+        "D": "$(-\\infty, \\infty)$"
+      },
+      "correctAnswer": "D",
+      "topic": "Rasyonel İfadeler",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 7,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "$f(x) = (k+3)x + 4 - k$ fonksiyonu şu durumda azalandır:",
+      "choices": {
+        "A": "$k < -3$",
+        "B": "$k = -3$",
+        "C": "$k > -3$",
+        "D": "$k = 4$"
+      },
+      "correctAnswer": "A",
+      "topic": "Doğrusal Fonksiyonlar",
+      "topicArea": "analiza",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 8,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "$f(x) = (1-x)^2 + 3$ ikinci dereceden fonksiyonu şuna sahiptir:",
+      "choices": {
+        "A": "3'e eşit maksimum",
+        "B": "3'e eşit minimum",
+        "C": "T(-1, 3) noktasında tepe noktası",
+        "D": "T(1, -3) noktasında tepe noktası"
+      },
+      "correctAnswer": "B",
+      "topic": "İkinci Dereceden Fonksiyonlar",
+      "topicArea": "analiza",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 9,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "$\\begin{cases} x - 2 \\le 0 \\\\ 7 - 2x \\le 0 \\end{cases}$ doğrusal eşitsizlik sisteminin çözümü şudur:",
+      "choices": {
+        "A": "$\\left[2, \\frac{7}{2}\\right]$",
+        "B": "$\\left[\\frac{7}{2}, \\infty\\right)$",
+        "C": "$(-\\infty, 2]$",
+        "D": "$\\emptyset$"
+      },
+      "correctAnswer": "D",
+      "topic": "Doğrusal Eşitsizlik Sistemleri",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 10,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Bir kenarı $a$ olan eşkenar üçgenin yüksekliği şudur:",
+      "choices": {
+        "A": "$\\frac{a\\sqrt{3}}{2}$",
+        "B": "$\\frac{a\\sqrt{3}}{3}$",
+        "C": "$\\frac{a\\sqrt{3}}{4}$",
+        "D": "$\\frac{a\\sqrt{3}}{6}$"
+      },
+      "correctAnswer": "A",
+      "topic": "Üçgen",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 11,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Bir kenarı $6\\text{ cm}$ ve alanı $60\\text{ cm}^2$ olan eşkenar dörtgenin iç teğet çemberinin yarıçapı kaçtır?",
+      "choices": {
+        "A": "$20\\text{ cm}$",
+        "B": "$10\\text{ cm}$",
+        "C": "$6\\text{ cm}$",
+        "D": "$5\\text{ cm}$"
+      },
+      "correctAnswer": "D",
+      "topic": "Dörtgenler",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 12,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Tabanları aynı çokgenler olan bir prizma ve bir piramit verilmiştir. Prizmanın toplam 18 ayrıtı varsa, piramidin toplam kaç ayrıtı vardır?",
+      "choices": {
+        "A": "18",
+        "B": "12",
+        "C": "9",
+        "D": "6"
+      },
+      "correctAnswer": "B",
+      "topic": "Prizma ve Piramit",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 13,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Uzunluğu çemberin çevresinin $\\frac{1}{6}$’sı olan bir yaya karşılık gelen çevre açı kaçtır?",
+      "choices": {
+        "A": "$30^\\circ$",
+        "B": "$60^\\circ$",
+        "C": "$90^\\circ$",
+        "D": "$120^\\circ$"
+      },
+      "correctAnswer": "A",
+      "topic": "Çemberde Açılar",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 14,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Hacimleri $31\\text{ cm}^3, 15\\text{ cm}^3, 11\\text{ cm}^3$ ve $7\\text{ cm}^3$ olan dört metal küp eritilerek yeni bir küp yapılmıştır. Yeni küpün alanı kaçtır?",
+      "choices": {
+        "A": "$16\\text{ cm}^2$",
+        "B": "$64\\text{ cm}^2$",
+        "C": "$96\\text{ cm}^2$",
+        "D": "$192\\text{ cm}^2$"
+      },
+      "correctAnswer": "C",
+      "topic": "Küp",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 15,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "$\\frac{2\\text{tg}30^\\circ}{1+\\text{ctg}^2 60^\\circ}$ bölümü şuna eşittir:",
+      "choices": {
+        "A": "$\\sin 60^\\circ$",
+        "B": "$\\cos 60^\\circ$",
+        "C": "$\\text{tg} 60^\\circ$",
+        "D": "$\\sin 30^\\circ$"
+      },
+      "correctAnswer": "A",
+      "topic": "Trigonometrik İfadeler",
+      "topicArea": "trigonometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 16,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "A. $A=\\{1,4,9,16,25,36,49\\}$ ve $B=\\{x \\mid x \\in \\mathbb{N} \\land 1 < x \\le 25\\}$ kümelerinin kesişimi şudur: ____________________.\nB. İki bisikletli kapalı dairesel bir pistte birbirlerine zıt yönlerde sürmektedir. Birinci bisikletli pisti $60$ saniyede, ikincisi ise $75$ saniyede tamamlamaktadır. Bisikletlilerin birinci karşılaşmalarından ikinci karşılaşmalarına kadar kaç dakika geçer?",
+      "choices": null,
+      "correctAnswer": "A. $A \\cap B = \\{4,9,16,25\\}$, B. 5",
+      "topic": "Kümeler ve OKKE",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": "A. A ve B kümelerinin kesişimini bulmak için önce her bir kümenin elemanlarını belirlemeliyiz.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 17,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "$2x - ax = 4 - a^2$ denklemi verilmiştir.\nA. $a$ parametresinin hangi değeri için denklemin sonsuz sayıda çözümü vardır?\nB. $a = -2$ ise denklemin çözümü nedir?",
+      "choices": null,
+      "correctAnswer": "A. $a = 2$, B. $x = 0$",
+      "topic": "Doğrusal Denklemler",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": "Verilen denklem $2x - ax = 4 - a^2$. Denklemi $x(2 - a) = (2 - a)(2 + a)$ şeklinde dönüştürürüz.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 18,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "$f(x) = (k+2)x + k - 3$ fonksiyonu verilmiştir.\nA. $f(x)$ ve $g(x) = (2k-3)x + 2k - 1$ fonksiyonlarının grafikleri $k = $ ____________________ için paralel doğrulardır.\nB. $f(x)$ fonksiyonunun grafiği $k = $ ____________________ için $x$ eksenini kesmez.",
+      "choices": null,
+      "correctAnswer": "A. $k = 5$, B. $k = -2$",
+      "topic": "Doğrusal Fonksiyonlar",
+      "topicArea": "analiza",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": "A. f(x) ve g(x) grafiklerinin paralel olması için eğimlerinin eşit olması gerekir.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 19,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "Bir silindir ve bir koninin taban yarıçapları ve yükseklikleri eşittir. Silindirin hacmi $18\\pi\\text{ cm}^3$’tür.\nA. Koninin hacmi ____________________ $\\text{cm}^3$’tür.\nB. Silindirin yüksekliği $2\\text{ cm}$ ise, koninin taban alanı ____________________ $\\text{cm}^2$’dir.",
+      "choices": null,
+      "correctAnswer": "A. $6\\pi$, B. $9\\pi$",
+      "topic": "Silindir ve Koni",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": "A. Silindirin hacmi $V_c = \\pi r^2 h$, koninin ise $V_k = \\frac{1}{3}\\pi r^2 h$ olur.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 20,
+      "part": 2,
+      "points": 2,
+      "questionType": "open",
+      "questionText": "$\\alpha = 75^\\circ$ açısı verilmiştir.\nA. $\\alpha$ açısının tümler ve bütünler açılarının toplamı kaçtır?\nB. $\\alpha$ açısı kaç radyandır?",
+      "choices": null,
+      "correctAnswer": "A. $120^\\circ$, B. $\\frac{5\\pi}{12}$",
+      "topic": "Açılar",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
+      "hints": [],
+      "aiSolution": "A. Verilen açı $\\alpha = 75^circ$. Tümler açı $\\alpha_c = 90-75=15$. Bütünler açı $\\alpha_s = 180-75=105$.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 21,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Bir sınıftaki öğrencilerin devlet maturası sonuçlarının analizi, öğrencilerin ana dil, yabancı dil ve matematik derslerinden toplam 58 tane '5' (en yüksek not) aldığını göstermiştir. 35 öğrenci ana dilden, 20 öğrenci yabancı dilden ve 15 öğrenci matematikten '5' almıştır. Üç öğrenci her üç dersten de '5' almıştır. Kaç öğrenci bu üç dersten tam olarak ikisinden '5' almıştır?",
+      "choices": null,
+      "correctAnswer": "6",
+      "topic": "Kümeler",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": "A, B, C kümelerini oluşturur. |A∪B∪C| = |A|+|B|+|C|-|A∩B|-|A∩C|-|B∩C|+|A∩B∩C| formülünü kullanır. 58 = 35+20+15-(|A∩B|+|A∩C|+|B∩C|)+3 → |A∩B|+|A∩C|+|B∩C| = 15. Sadece iki dersten 5 alanların sayısı T = 15 - 3×3 = 6.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 22,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "$z_1 = 2 - i, z_2 = -2 + i$ olsun. $\\text{Im}\\left(\\frac{z_1 \\cdot z_2}{\\overline{z_2}}\\right)$ değerini belirleyin.",
+      "choices": null,
+      "correctAnswer": "$-\\frac{11}{5}$",
+      "topic": "Karmaşık Sayılar",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": "z1·z2 = (2-i)(-2+i) = -3+4i. ō(z2) = -2-i. (z1·z2)/ō(z2) = (-3+4i)/(-2-i) = (2-11i)/5. Im = -11/5.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 23,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "$A(x) = (4x^2 - 12x + 9) - 3x(2x - 3) + 4x^2 - 9$ ve $B(x) = (3x + 2)^2 - (x + 5)^2$ polinomları verilmiştir.\nA. $A(x)$ ve $B(x)$ polinomlarını çarpanlarına ayırın.\nB. Mümkünse, $\\frac{B(x)}{A(x)}$ kesrini sadeleştirin.\nC. $x = -2$ için $\\frac{A(x)}{B(x)}$ kesrinin değerini belirleyin.",
+      "choices": null,
+      "correctAnswer": "A. $A(x)=x(2x-3)$, $B(x)=(4x+7)(2x-3)$, B. $\\frac{4x+7}{x}$, C. 2",
+      "topic": "Polinomlar",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": "A. A(x) = 2x²-3x = x(2x-3). B(x) = (4x+7)(2x-3). B. B(x)/A(x) = (4x+7)/x. C. A(-2)/B(-2) = (-2)/(-1) = 2.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 24,
+      "part": 3,
+      "points": 3,
+      "questionType": "open",
+      "questionText": "Ana bir sayı tutmuştur. Sayıyı beşte biri kadar azaltmış, ardından sonucu 3 ile çarpmıştır. Elde edilen çarpımdan, tuttuğu sayının yüzde 40'ını çıkarmıştır. Elde edilen farkı $\\frac{2}{5}$'e böldüğünde 80 sonucunu bulmuştur. Ana hangi sayıyı tutmuştur?",
+      "choices": null,
+      "correctAnswer": "16",
+      "topic": "Doğrusal Denklemler",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": "[(x - x/5)·3 - 0.4x] : (2/5) = 80 denklemini kurar. (12x/5 - 2x/5) : (2/5) = 80 → 2x = 32 → x = 16.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 25,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "$ax^2 - 10x + 24 = 0$ ikinci dereceden denklemi verilmiştir. Denklemin $x_1$ ve $x_2$ kökleri için $\\frac{x_1}{x_2} = \\frac{2}{3}$ olduğu biliniyorsa, $a$ parametresinin değerini belirleyin.",
+      "choices": null,
+      "correctAnswer": "$a=1$",
+      "topic": "İkinci Dereceden Denklemler",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": "Vieta formüllerinden: x1+x2 = 10/a, x1·x2 = 24/a. x1/x2 = 2/3 olduğundan x1 = 4/a, x2 = 6/a olur. (4/a)(6/a) = 24/a → a = 1.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 26,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "$\\frac{3x - 1}{4} + \\frac{x^2 - 1}{3} \\le x$ eşitsizliğinin tüm tam sayı çözümlerini belirleyin.",
+      "choices": null,
+      "correctAnswer": "$x \\in \\{-1, 0, 1\\}$",
+      "topic": "İkinci Dereceden Eşitsizlikler",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": "12 ile çarpar: 4x²-3x-7 ≤ 0. Kökler: x₁=-1, x₂=7/4. Çözüm: x ∈ [-1, 7/4]. Tam sayılar: {-1, 0, 1}.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 27,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Bir üçgenin kenarları $2:3:4$ oranındadır ve iç teğet çemberinin yarıçapı $r = \\frac{\\sqrt{15}}{2}\\text{ cm}$'dir. Üçgenin kenarlarını hesaplayın.",
+      "choices": null,
+      "correctAnswer": "$a=6\\text{ cm}, b=9\\text{ cm}, c=12\\text{ cm}$",
+      "topic": "Üçgen",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
+      "hints": [],
+      "aiSolution": "a=2k, b=3k, c=4k. s=9k/2. Heron formülü: P = 3k²√15/4. r = P/s = k√15/6 = √15/2 → k=3. Kenarlar: a=6, b=9, c=12 cm.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 28,
+      "part": 3,
+      "points": 3,
+      "questionType": "open",
+      "questionText": "İki küre verilmiştir. Birinci kürenin hacmi $36\\pi\\text{ dm}^3$, ikinci kürenin alanı ise $400\\pi\\text{ cm}^2$’dir. Büyük kürenin yarıçapının küçük kürenin yarıçapına oranını belirleyin.",
+      "choices": null,
+      "correctAnswer": "3",
+      "topic": "Küre",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": "V1 = 4R1³π/3 = 36π → R1 = 3 dm = 30 cm. P2 = 4R2²π = 400π → R2 = 10 cm. Oran: 30/10 = 3.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 29,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Düzgün kare piramidin alanı $108\\text{ cm}^2$ ve taban düzlemi ile yan yüzey arasındaki açı $60^\\circ$’dir. Piramidin hacmini hesaplayın.",
+      "choices": null,
+      "correctAnswer": "$36\\sqrt{3}\\text{ cm}^3$",
+      "topic": "Piramit",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": true,
+      "imageUrls": [
+        "/matura/images/2024/august/q29-fig1.png"
+      ],
+      "imageDescription": "Apotemi h ve taban ile 60° açı yapan düzgün kare piramit.",
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": "cos60° = (a/2)/h → a=h. P = a²+2ah = 3a² = 108 → a=6, h=6 cm. H = √(h²-(a/2)²) = 3√3 cm. V = a²H/3 = 36√3 cm³.",
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 30,
+      "part": 3,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "$0^\\circ < \\alpha < 90^\\circ$ ve $\\alpha \\neq 45^\\circ$ ise, $\\frac{\\sin\\alpha - 2\\sin^3\\alpha}{2\\cos^3\\alpha - \\cos\\alpha} = \\text{tg}\\alpha$ olduğunu kanıtlayın.",
+      "choices": null,
+      "correctAnswer": "Kanıt",
+      "topic": "Trigonometrik Özdeşlikler",
+      "topicArea": "trigonometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
+      "hints": [],
+      "aiSolution": "Sol = sinα(1-2sin²α) / [cosα(2cos²α-1)]. 1=sin²α+cos²α ile: Sol = sinα(cos²α-sin²α) / [cosα(cos²α-sin²α)] = sinα/cosα = tgα.",
+      "successRatePercent": null
+    }
+  ]
+}

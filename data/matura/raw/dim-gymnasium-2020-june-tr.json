@@ -1,15 +1,15 @@
 {
   "exam": {
-    "id": "dim-gymnasium-2021-june-al",
-    "year": 2021,
+    "id": "dim-gymnasium-2020-june-tr",
+    "year": 2020,
     "session": "june",
-    "language": "al",
-    "title": "ДИМ Гимназиско — Јуни 2021 (АЛ)",
+    "language": "tr",
+    "title": "DİM Lise — Haziran 2020 (TR)",
     "durationMinutes": 180,
     "track": "gymnasium",
     "gradeLevel": 12,
     "questionCount": 40,
-    "totalPoints": 76
+    "totalPoints": 61
   },
   "questions": [
     {
@@ -17,15 +17,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Vlera e bashkësisë numerike $\\left[ 2^{-1} : \\left( \\frac{1}{4} \\right)^{-3} \\cdot 8 \\right]^{0,25} \\cdot \\left( \\frac{1}{16^{-3/2}} \\right)^0$ është:",
+      "questionText": "$\\left[ 2^{-1} : \\left( \\frac{1}{4} \\right)^{-3} \\cdot 8 \\right]^{0,25} \\cdot \\left( \\frac{1}{16^{-3/2}} \\right)^0$ sayısal ifadesinin değeri şudur:",
       "choices": {
         "A": "4",
         "B": "$\\frac{1}{4}$",
         "C": "2",
-        "Ç": "$\\frac{1}{2}$"
+        "D": "$\\frac{1}{2}$"
       },
-      "correctAnswer": "Ç",
-      "topic": "Бројни изрази",
+      "correctAnswer": "D",
+      "topic": "Sayısal ifadeler",
       "topicArea": "broevi",
       "dokLevel": 1,
       "hasImage": false,
@@ -41,15 +41,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Polinomi $3x^3 - 5x^2 - 9xy + 15y$ i reduktuar në shumëzues është:",
+      "questionText": "$3x^3 - 5x^2 - 9xy + 15y$ polinomunun çarpanlarına ayrılmış hali şudur:",
       "choices": {
         "A": "$x(3x-5)(x+3y)$",
         "B": "$(3x-5)(x^2-3y)$",
         "C": "$y(9x-5x)(3x+5)$",
-        "Ç": "$(3x^3-5x^2)(-9xy+15y)$"
+        "D": "$(3x^3-5x^2)(-9xy+15y)$"
       },
       "correctAnswer": "B",
-      "topic": "Полиноми",
+      "topic": "Polinomlar",
       "topicArea": "algebra",
       "dokLevel": 1,
       "hasImage": false,
@@ -65,15 +65,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se $x_1$ dhe $x_2$ janë zgjidhje të barazimit katror $x^2 + 6x - 10 = 0$, atëherë vlera e shprehjes $\\frac{x_1 x_2}{2} - 3x_1 - 3x_2$ është:",
+      "questionText": "$x_1$ ve $x_2$, $x^2 + 6x - 10 = 0$ ikinci dereceden denkleminin çözümleri ise, $\\frac{x_1 x_2}{2} - 3x_1 - 3x_2$ ifadesinin değeri şudur:",
       "choices": {
         "A": "13",
         "B": "23",
         "C": "27",
-        "Ç": "-13"
+        "D": "-13"
       },
       "correctAnswer": "A",
-      "topic": "Квадратна равенка",
+      "topic": "İkinci dereceden denklem",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
@@ -89,15 +89,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se $\\frac{1}{x} + \\frac{1}{3x} \\le 1, x \\neq 0$, atëherë:",
+      "questionText": "$\\frac{1}{x} + \\frac{1}{3x} \\le 1, x \\neq 0$ ise, o halde:",
       "choices": {
         "A": "$x \\le \\frac{1}{4}$",
         "B": "$x \\ge \\frac{1}{4}$",
         "C": "$x \\le \\frac{3}{4}$",
-        "Ç": "$x \\ge \\frac{4}{3}$"
+        "D": "$x \\ge \\frac{4}{3}$"
       },
-      "correctAnswer": "Ç",
-      "topic": "Линеарни неравенки",
+      "correctAnswer": "D",
+      "topic": "Doğrusal eşitsizlikler",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
@@ -113,15 +113,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Shuma e gjysmës, një të tretës dhe një të pestës së një numri është për 1 më e madhe se ai numër. Cili numër është ai?",
+      "questionText": "Bir sayının yarısı, üçte biri ve beşte birinin toplamı o sayıdan 1 fazladır. Bu sayı kaçtır?",
       "choices": {
         "A": "15",
         "B": "20",
         "C": "30",
-        "Ç": "60"
+        "D": "60"
       },
       "correctAnswer": "C",
-      "topic": "Линеарни равенки",
+      "topic": "Doğrusal denklemler",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
@@ -137,15 +137,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Për cilën vlerë të parametrit $a$, sistemi i barazimeve $\\begin{cases} 4x - ay = 6 + a \\\\ ax - y = 2a \\end{cases}$ nuk ka zgjidhje?",
+      "questionText": "$a$ parametresinin hangi değeri için, $\\begin{cases} 4x - ay = 6 + a \\\\ ax - y = 2a \\end{cases}$ denklem sisteminin çözümü yoktur?",
       "choices": {
         "A": "$a = 2$",
         "B": "$a = -2$",
         "C": "$a = 4$",
-        "Ç": "$a = 3$"
+        "D": "$a = 3$"
       },
       "correctAnswer": "B",
-      "topic": "Системи линеарни равенки",
+      "topic": "Doğrusal denklem sistemleri",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
@@ -161,15 +161,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se diagonalet e rombit kanë gjatësitë $a$ dhe $a\\sqrt{3}$, atëherë syprina e rombit është:",
+      "questionText": "Eşkenar dörtgenin köşegen uzunlukları $a$ ve $a\\sqrt{3}$ ise, eşkenar dörtgenin alanı şudur:",
       "choices": {
         "A": "$a^2$",
         "B": "$\\frac{a^2\\sqrt{3}}{2}$",
         "C": "$\\frac{a^2\\sqrt{3}}{3}$",
-        "Ç": "$\\frac{a^2\\sqrt{3}}{4}$"
+        "D": "$\\frac{a^2\\sqrt{3}}{4}$"
       },
       "correctAnswer": "B",
-      "topic": "Ромб",
+      "topic": "Eşkenar dörtgen",
       "topicArea": "geometrija",
       "dokLevel": 1,
       "hasImage": false,
@@ -185,15 +185,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Numri i diagonaleve të një shumëkëndëshi, të tërhequra nga një kulm, është dy herë më i vogël nga numri i brinjëve të tij.\nSa brinjë ka shumëkëndëshi?",
+      "questionText": "Bir çokgenin bir köşesinden çizilen köşegen sayısı, kenar sayısının yarısıdır. Çokgenin kaç kenarı vardır?",
       "choices": {
         "A": "4",
         "B": "5",
         "C": "6",
-        "Ç": "7"
+        "D": "7"
       },
       "correctAnswer": "C",
-      "topic": "Многуаголници",
+      "topic": "Çokgenler",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -209,15 +209,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Kubi dhe trekëndëshi barabrinjës kanë perimetra të barabartë.\nNë qoftë se syprina e trekëndëshit është $9\\sqrt{3}$, atëherë brinja e kubit është:",
+      "questionText": "Bir kare ve bir eşkenar üçgenin çevreleri eşittir. Üçgenin alanı $9\\sqrt{3}$ ise, karenin bir kenarı şudur:",
       "choices": {
         "A": "8",
         "B": "3",
         "C": "$\\frac{5}{2}$",
-        "Ç": "$\\frac{9}{2}$"
+        "D": "$\\frac{9}{2}$"
       },
-      "correctAnswer": "Ç",
-      "topic": "Многуаголници",
+      "correctAnswer": "D",
+      "topic": "Çokgenler",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -233,15 +233,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Për sa herë do të rritet vëllimi i cilindrit, në qoftë se radiusi i tij rritet për $n$-herë, ndërsa lartësia rritet për $m$-herë?",
+      "questionText": "Bir silindirin yarıçapı $n$ katına, yüksekliği de $m$ katına çıkarılırsa hacmi kaç kat artar?",
       "choices": {
-        "A": "$mn$ - herë",
-        "B": "$m^2n$ - herë",
-        "C": "$n^2m$ - herë",
-        "Ç": "$m^2n^2$ - herë"
+        "A": "$mn$ katı",
+        "B": "$m^2n$ katı",
+        "C": "$n^2m$ katı",
+        "D": "$m^2n^2$ katı"
       },
       "correctAnswer": "C",
-      "topic": "Цилиндар",
+      "topic": "Silindir",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -257,15 +257,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Distanca nga pika $A(2,-4)$ deri te pika qendrore e segmentit $MN \\left[ M(3, -2), N(-5, 2) \\right]$ është:",
+      "questionText": "$A(2,-4)$ noktasının $MN[M(3,-2), N(-5,2)]$ doğru parçasının orta noktasına olan uzaklığı şudur:",
       "choices": {
         "A": "5",
         "B": "$\\sqrt{8}$",
         "C": "25",
-        "Ç": "$\\sqrt{17}$"
+        "D": "$\\sqrt{17}$"
       },
       "correctAnswer": "A",
-      "topic": "Аналитичка геометрија",
+      "topic": "Analitik geometri",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -281,15 +281,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Drejtëza $(a-1)x + (2a+1)y + a + 1 = 0$ është paralele me boshtin $x$-në qoftë se:",
+      "questionText": "$(a-1)x + (2a+1)y + a + 1 = 0$ doğrusu şu durumda $x$ eksenine paraleldir:",
       "choices": {
         "A": "$a = -1$",
         "B": "$a = -\\frac{1}{2}$",
         "C": "$a = 0$",
-        "Ç": "$a = 1$"
+        "D": "$a = 1$"
       },
-      "correctAnswer": "Ç",
-      "topic": "Права",
+      "correctAnswer": "D",
+      "topic": "Doğru",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -305,15 +305,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Pika $M$ e cila shtrihet në boshtin e ordinatës është barabarësish larg nga pika $A(9,-3)$ dhe fillimi i koordinatës. Pika $M$ ka koordinatat:",
+      "questionText": "$y$ ekseni üzerinde bulunan $M$ noktası, $A(9,-3)$ noktasına ve başlangıç noktasına eşit uzaklıktadır. $M$ noktasının koordinatları şudur:",
       "choices": {
         "A": "$M(-15,0)$",
         "B": "$M(-45,0)$",
         "C": "$M(0,-15)$",
-        "Ç": "$M(0,15)$"
+        "D": "$M(0,15)$"
       },
       "correctAnswer": "C",
-      "topic": "Аналитичка геометрија",
+      "topic": "Analitik geometri",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
@@ -329,15 +329,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Është dhënë barazimi i drejtëzës $px + (p-2)y - 6 = 0$.\nNë qoftë se drejtëza e boshtit -$x$ pret një segment me gjatësi dyfish më të madhe nga gjatësia e segmentit të cilin e pret nga boshti -$y$ atëherë vlera e parametrit $p$ është:",
+      "questionText": "$px + (p-2)y - 6 = 0$ doğru denklemi verilmiştir. Doğrunun $x$ ekseninden kestiği parçanın uzunluğu, $y$ ekseninden kestiği parçanın uzunluğunun iki katı ise, $p$ parametresinin değeri şudur:",
       "choices": {
         "A": "2",
         "B": "-2",
         "C": "0",
-        "Ç": "6"
+        "D": "6"
       },
       "correctAnswer": "B",
-      "topic": "Права",
+      "topic": "Doğru",
       "topicArea": "geometrija",
       "dokLevel": 3,
       "hasImage": false,
@@ -353,15 +353,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në një kuti ka 9 unaza ari dhe një unazë diamanti.\nNë qoftë se rastësisht tërheqim një unazë nga kutia, sa ka të ngjarë që të tërheqim unazën e diamantit?",
+      "questionText": "Bir kutuda 9 altın yüzük ve bir elmas yüzük vardır. Kutudan rastgele bir yüzük çekersek, elmas yüzüğü çekme olasılığımız kaçtır?",
       "choices": {
         "A": "10%",
         "B": "15%",
         "C": "20%",
-        "Ç": "25%"
+        "D": "25%"
       },
       "correctAnswer": "A",
-      "topic": "Веројатност",
+      "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 1,
       "hasImage": false,
@@ -377,15 +377,15 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "Në qoftë se hedhim një zar 3-herë, gjasat për të fituar tri gjashta janë:",
+      "questionText": "Bir zar 3 kez atıldığında, üç kez altı gelme olasılığı şudur:",
       "choices": {
         "A": "$\\frac{3}{6^3}$",
         "B": "$\\frac{1}{6^2}$",
         "C": "$\\frac{3}{6^2}$",
-        "Ç": "$\\frac{1}{6^3}$"
+        "D": "$\\frac{1}{6^3}$"
       },
-      "correctAnswer": "Ç",
-      "topic": "Веројатност",
+      "correctAnswer": "D",
+      "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 1,
       "hasImage": false,
