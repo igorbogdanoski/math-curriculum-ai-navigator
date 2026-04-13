@@ -80,11 +80,48 @@ service firebase.storage {
       allow delete: if isOwner(uid);
     }
 
+    // ── Форум слики (AlgebraTiles / Shape3D export) ───────────
+    // /forum-images/{uid}/{fileName}
+    match /forum-images/{uid}/{fileName} {
+      allow read:  if isAuthenticated(); // Видливо за сите наставници во форумот
+      allow write: if isOwner(uid)
+                   && isImage()
+                   && request.resource.size <= 10 * 1024 * 1024; // Max 10MB
+      allow delete: if isOwner(uid);
+    }
+
+    // ── AI генерирани илустрации (Imagen / Gemini Vision) ─────
+    // /ai_illustrations/{fileName}
+    // Се генерираат на страна на клиентот (geminiService.real.ts)
+    // Нема uid во патеката — rate limiting е на AI proxy страна
+    match /ai_illustrations/{fileName} {
+      allow read:  if true; // Јавно — вградени во споделени материјали
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && request.resource.size <= 10 * 1024 * 1024;
+      allow delete: if isAuthenticated(); // Само автентицирани
+    }
+
+    // ── Legacy профилни слики (GDPR delete патека) ────────────
+    // /profilePictures/{uid} — стара патека, нема upload, само delete
+    match /profilePictures/{uid} {
+      allow read:  if isOwner(uid);
+      allow write: if false; // Нема нов upload на оваа патека
+      allow delete: if isOwner(uid);
+    }
+
     // ── Јавна национална библиотека — само читање ─────────────
     // /national_library/{resourceId}
     match /national_library/{resourceId} {
       allow read:  if true; // Јавно
       allow write: if false; // Само преку Cloud Functions / Admin SDK
+    }
+
+    // ── Matura слики (2025 испитни слики) ─────────────────────
+    // /matura/images/{year}/{session}/{fileName}
+    match /matura/{allSubPaths=**} {
+      allow read:  if true; // Јавно — испитни слики се дел од содржината
+      allow write: if false; // Само преку Admin SDK (import pipeline)
     }
 
     // ── Блокирај сè останато ──────────────────────────────────
