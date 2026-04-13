@@ -596,16 +596,22 @@ export const MaturaAnalyticsView: React.FC = () => {
                 <Route className="w-5 h-5" /> Препорачана патека кон матура
               </h2>
               <p className="text-sm text-violet-700 mt-0.5">
-                {readiness.hasExamDate
-                  ? `До матурата имаш уште ${readiness.daysUntilExam} ${readiness.daysUntilExam === 1 ? 'ден' : 'дена'} (${readiness.weeksUntilExam} нед.).`
-                  : `Приказ базиран на ~${readiness.daysUntilExam} дена до испит.`}
-                {readiness.steps.length > 0 && (
+                {readiness.examPassed
+                  ? 'Датумот на матурата помина.'
+                  : readiness.hasExamDate
+                    ? `До матурата имаш уште ${readiness.daysUntilExam} ${readiness.daysUntilExam === 1 ? 'ден' : 'дена'} (${readiness.weeksUntilExam} нед.).`
+                    : `Приказ базиран на ~${readiness.daysUntilExam} дена до испит.`}
+                {!readiness.examPassed && readiness.steps.length > 0 && (
                   <> &nbsp;Треба уште: <strong>{readiness.steps.length} концепти</strong>. Препорачано: <strong>{readiness.recommendedPerWeek}/нед.</strong></>
                 )}
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {readiness.onTrack ? (
+              {readiness.examPassed ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Испитот помина
+                </span>
+              ) : readiness.onTrack ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Во план
                 </span>
@@ -629,7 +635,10 @@ export const MaturaAnalyticsView: React.FC = () => {
 
           {readiness.steps.length === 0 ? (
             <p className="text-sm text-emerald-700 font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> Одличен напредок — нема концепти под прагот за успех (55%).
+              <CheckCircle2 className="w-4 h-4" />
+              {readiness.examPassed
+                ? 'Испитот веќе помина. Промени го датумот за да ги видиш препораките.'
+                : 'Одличен напредок — нема концепти под прагот за успех (55%).'}
             </p>
           ) : (
             <div className="space-y-2">

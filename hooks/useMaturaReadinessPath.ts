@@ -21,6 +21,7 @@ export interface ReadinessPath {
   weeksUntilExam: number;
   examDate: Date | null;
   hasExamDate: boolean;
+  examPassed: boolean;
   steps: PathStep[];
   onTrack: boolean;
   recommendedPerWeek: number;
@@ -31,7 +32,9 @@ export function computeReadinessPath(
   weakConcepts: UseMaturaStatsResult['weakConcepts'],
   daysUntilExam: number,
 ): Omit<ReadinessPath, 'examDate' | 'hasExamDate'> {
-  const weeksUntilExam = Math.max(1, Math.floor(daysUntilExam / 7));
+  const examPassed = daysUntilExam <= 0;
+  const effectiveDays = Math.max(1, daysUntilExam);
+  const weeksUntilExam = Math.max(1, Math.floor(effectiveDays / 7));
 
   // Uncovered (pct === 0) first, then ascending by pct
   const needWork = [...weakConcepts]
@@ -56,10 +59,11 @@ export function computeReadinessPath(
   }));
 
   return {
-    daysUntilExam,
+    daysUntilExam: effectiveDays,
     weeksUntilExam,
-    steps,
-    onTrack: needWork.length <= weeksUntilExam,
+    examPassed,
+    steps: examPassed ? [] : steps,
+    onTrack: !examPassed && needWork.length <= weeksUntilExam,
     recommendedPerWeek,
   };
 }
@@ -83,7 +87,7 @@ export function useMaturaReadinessPath(
     if (!examDateStr) return { examDate: null, daysUntilExam: DEFAULT_DAYS, hasExamDate: false };
     const d = new Date(examDateStr);
     if (isNaN(d.getTime())) return { examDate: null, daysUntilExam: DEFAULT_DAYS, hasExamDate: false };
-    const days = Math.max(1, Math.ceil((d.getTime() - Date.now()) / 86_400_000));
+    const days = Math.ceil((d.getTime() - Date.now()) / 86_400_000);
     return { examDate: d, daysUntilExam: days, hasExamDate: true };
   }, [examDateStr]);
 
@@ -92,5 +96,5 @@ export function useMaturaReadinessPath(
     [weakConcepts, daysUntilExam],
   );
 
-  return { ...path, examDate, hasExamDate, setExamDate };
+  return { ...path, examDate, hasExamDate, setExamDate, examPassed: path.examPassed };
 }
