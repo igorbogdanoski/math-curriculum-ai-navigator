@@ -533,6 +533,7 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-13 | B4-2 | aiSolution on-demand: `handleGenerateSolution` во `QuestionCard` со `callGeminiProxy({model,contents,generationConfig})`; localStorage cache (`matura_ai_sol_{examId}_{q}`); Part 2+3 show generated solution | DONE |
 | 2026-04-13 | B1-3 | Central logger `utils/logger.ts`: `info` (dev-only), `warn/error` (all envs + Sentry); замена на console.log во firestoreService.quiz, indexedDBService, pushService | DONE |
 | 2026-04-13 | B5-1 | FCM silent token refresh: `silentRefreshFCMToken(uid)` во pushService + dynamic import во App.tsx на `firebaseUser` auth event; stale token root cause: registration само при explicit Settings click | DONE |
+| 2026-04-13 | BUG-MATURA | Past-exam bug fix: `useMaturaReadinessPath` — raw negative days now reach `computeReadinessPath`; `examPassed: boolean` added to `ReadinessPath` interface; steps emptied when past; MaturaAnalyticsView shows 'Датумот на матурата помина.' + slate badge 'Испитот помина' | DONE |
 
 ---
 
