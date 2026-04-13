@@ -516,6 +516,18 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-08 | S19-P2d | Authenticated callable replay re-run completed against `KC7qZl06E4s493m7XOxt` / `K3uIvBqqqJw5gMfew3mZ`: `dryRun` returned 200 with `recipientCount:1` + `uniqueTokenCount:1`, `liveRun` returned 200 with `successCount:0`, `failureCount:1`; confirms callable/auth path is healthy and close is blocked only by stale browser token refresh on recipient side | PARTIAL |
 | 2026-04-08 | S19-P2e | Forum replay security hardening: `replayForumReplyNotification` now authorizes only admins or actual thread participants and blocks non-admin author impersonation; deployed to Firebase Functions and admin dry-run replay revalidated (`ok:true`, `recipientCount:1`, `uniqueTokenCount:1`) | DONE |
 | 2026-04-08 | S19-HARDEN-2 | Forum unread + school onboarding integrity: thread-level `participantUids` denormalization added (`createForumThread` + `createForumReply`), unread badge now counts participated threads (deduped merge), and `/api/create-school` switched to atomic Firestore batch (school + user role link in single commit); Vercel production deploy + smoke route sweep executed | DONE |
+| 2026-04-13 | SEC-DATA | Сите 5 MoN средно образование програми во дата-слој: vocational4 (X–XIII, 3ч), vocational3 (X–XII, 2ч), vocational2 (X–XI, 2ч), gymnasium (X–XIII, 4ч), gymnasium_elective (XI–XIII, 3ч) — 4 340 линии официјална MoN содржина | DONE |
+| 2026-04-13 | SEC-P1 | P1 Bug fix: `parseInt(grade.id)` → `grade.level ?? 1` во TeacherAnalyticsView:187 — gradeLevel беше NaN→1 за сите secondary quiz резултати | DONE |
+| 2026-04-13 | SEC-P2 | P2 AI secondary context: `getSecondaryTrackContext()` во `services/gemini/core.ts` — инјектирана во 5 AI entry-points (Chat, AnnualPlan, Assessment, Plans×3); секој track добива свој педагошки AI блок со ч/нед, пристап и примери | DONE |
+| 2026-04-13 | SEC-P3 | P3 Default grade fix: `getDefaultGradeId()` извезена од `useGeneratorState.ts` — secondary наставници добиваат одд. 10 наместо одд. 1 во AnnualPlanGenerator | DONE |
+| 2026-04-13 | SEC-P4 | P4 Secondary standards: `allNationalStandards` useMemo во `useCurriculum.ts` — secondary `assessmentStandards` сега видливи во StandardsTab и CoverageAnalyzer | DONE |
+| 2026-04-13 | SEC-P5 | P5 Matura mapping: `SECONDARY_TRACK_TO_MATURA_TRACKS` константа во `types.ts` + smart default exam во MaturaLibraryView (vocational4→vocational-it, gymnasium→gymnasium) | DONE |
+| 2026-04-13 | SEC-P6 | P6 weeklyHours: `Grade.weeklyHours?: 2\|3\|4` во types.ts + сетирано на сите 18 secondary Grade објекти (gymnasium:4, gymnasium_elective:3, vocational4:3, vocational3:2, vocational2:2) | DONE |
+| 2026-04-13 | MATURA-PIPE | Матура pipeline верификација: 57 raw JSON фајлови (2 004 прашања, 2016–2025, MK+AL+TR, 2020-август отсутен COVID ✓) веќе поврзани преку `import.meta.glob` во firestoreService.matura.ts — сè работи | DONE |
+| 2026-04-13 | MATURA-DEAD | `data/matura/index.ts` (570 линии мртов код — никогаш не се увезувал) — ИЗБРИШАН | DONE |
+| 2026-04-13 | GRAPH-SEC | CurriculumGraphView: бои за одд. X–XIII, getRomanGrade за 10–13, smart default selection по secondaryTrack, динамична легенда (наместо хардкодирана 6–9) | DONE |
+| 2026-04-13 | ROAD-SEC | RoadmapView: `grade.weeklyHours` за точни часови на secondary (2/3/4ч); `getDefaultGradeId` за smart default grade — стручни наставници отвораат на одд. 10 | DONE |
+| 2026-04-13 | QA | Quality gate: tsc EXIT:0 \| vitest 535/535 PASS \| npm run build ✓ (33s) \| Playwright 10/10 | DONE |
 
 ---
 
