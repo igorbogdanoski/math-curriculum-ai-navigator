@@ -295,7 +295,7 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c2-5"],
+      "conceptIds": ["voc4-10-c4-2"],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -319,7 +319,7 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-12-c4-5"],
+      "conceptIds": ["voc4-12-c5-2"],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -367,7 +367,7 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-12-c4-4"],
+      "conceptIds": ["voc4-12-c5-2"],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null

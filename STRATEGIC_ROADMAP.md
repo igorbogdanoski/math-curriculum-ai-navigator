@@ -528,6 +528,11 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-13 | GRAPH-SEC | CurriculumGraphView: бои за одд. X–XIII, getRomanGrade за 10–13, smart default selection по secondaryTrack, динамична легенда (наместо хардкодирана 6–9) | DONE |
 | 2026-04-13 | ROAD-SEC | RoadmapView: `grade.weeklyHours` за точни часови на secondary (2/3/4ч); `getDefaultGradeId` за smart default grade — стручни наставници отвораат на одд. 10 | DONE |
 | 2026-04-13 | QA | Quality gate: tsc EXIT:0 \| vitest 535/535 PASS \| npm run build ✓ (33s) \| Playwright 10/10 | DONE |
+| 2026-04-13 | B2-3 | Matura Readiness Path: `computeReadinessPath()` pure fn + `useMaturaReadinessPath` hook (localStorage exam date, SM-2 gaps); MaturaAnalyticsView патека card + date picker; `MaturaNextStepWidget` на HomeView (600ms defer, route `/matura-stats`) | DONE |
+| 2026-04-13 | B4-1 | Vocational4 Economics мatura: 6 испити (2022-2024, јуни+август, MK), 20Q×6=120 прашања, 40pts/120min. Концептни IDs верифицирани и поправени: `voc4-10-c2-5`→`voc4-10-c4-2`, `voc4-12-c4-4/5`→`voc4-12-c5-2` | DONE |
+| 2026-04-13 | B4-2 | aiSolution on-demand: `handleGenerateSolution` во `QuestionCard` со `callGeminiProxy({model,contents,generationConfig})`; localStorage cache (`matura_ai_sol_{examId}_{q}`); Part 2+3 show generated solution | DONE |
+| 2026-04-13 | B1-3 | Central logger `utils/logger.ts`: `info` (dev-only), `warn/error` (all envs + Sentry); замена на console.log во firestoreService.quiz, indexedDBService, pushService | DONE |
+| 2026-04-13 | B5-1 | FCM silent token refresh: `silentRefreshFCMToken(uid)` во pushService + dynamic import во App.tsx на `firebaseUser` auth event; stale token root cause: registration само при explicit Settings click | DONE |
 
 ---
 

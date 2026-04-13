@@ -358,11 +358,11 @@ git add data/matura/raw/ && git commit -m "content-matura-vocational-economics-2
 | 6 | B3-3: EN/AL/TR translations | UX | 1 ден | High | Medium | ⏳ |
 | 7 | B2-2: Misconception Detection | Педаг. | 1 ден | High | Low | ⏳ |
 | 8 | B3-2: Onboarding Wizard | UX | 1 ден | High | Low | ⏳ |
-| 9 | B2-3: Learning Path | Педаг. | 2 дена | High | Medium | ⏳ |
-| 10 | B4-1: Vocational Matura | Содр. | ongoing | 🔴 High | None | ⏳ |
-| 11 | B4-2: aiSolution batch | Содр. | 1 ден | High | Low | ⏳ |
-| 12 | B1-3: Central logger | Техн. | 1 ден | Medium | Low | ⏳ |
-| 13 | B5-1: FCM DONE close | Feat. | 2ч (token) | Medium | Low | ⏳ |
+| 9 | B2-3: Learning Path | Педаг. | 2 дена | High | Medium | ✅ 13.04.2026 |
+| 10 | B4-1: Vocational Matura | Содр. | ongoing | 🔴 High | None | ✅ 13.04.2026 — 6 испити (voc4-eco 2022-2024) |
+| 11 | B4-2: aiSolution on-demand | Содр. | 1 ден | High | Low | ✅ 13.04.2026 |
+| 12 | B1-3: Central logger | Техн. | 1 ден | Medium | Low | ✅ 13.04.2026 |
+| 13 | B5-1: FCM silent refresh | Feat. | 2ч (token) | Medium | Low | ✅ 13.04.2026 — силентно, browser prod val. pending |
 | 14 | B5-2: Multiplayer Canvas | Feat. | 3-4 нед | High | 🔴 High | 🔒 |
 
 ---

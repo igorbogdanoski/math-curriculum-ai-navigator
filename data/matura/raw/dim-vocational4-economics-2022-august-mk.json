@@ -462,7 +462,7 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-12-c4-5"],
+      "conceptIds": ["voc4-12-c5-2"],
       "hints": ["68-95-99.7 правило: 1σ, 2σ, 3σ", "CI = x̄ ± z·(σ/√n)"],
       "aiSolution": null,
       "successRatePercent": null
