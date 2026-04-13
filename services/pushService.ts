@@ -126,6 +126,44 @@ export async function requestNotificationPermission(uid?: string): Promise<strin
   }
 }
 
+// ── Silent token refresh (B5-1) ───────────────────────────────────────────────
+/**
+ * Silently refreshes the FCM token in Firestore if the browser already has
+ * notification permission. Does NOT re-ask for permission.
+ *
+ * Call this once after the user authenticates so stale tokens are replaced
+ * automatically without any user interaction.
+ *
+ * @param uid  Authenticated Firebase user UID
+ */
+export async function silentRefreshFCMToken(uid: string): Promise<void> {
+  if (!uid) return;
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+
+  const messaging = await getFirebaseMessaging();
+  if (!messaging || !VAPID_KEY) return;
+
+  try {
+    const swReg = await navigator.serviceWorker.getRegistration('/');
+    if (!swReg) return;
+
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: swReg,
+    });
+
+    if (token) {
+      sendConfigToSW();
+      await saveTokenToFirestore(uid, token);
+      logger.info('[Push] FCM token silently refreshed', { prefix: token.slice(0, 20) });
+    }
+  } catch (e) {
+    // Non-critical: log at info level so it doesn't cause Sentry noise
+    logger.info('[Push] Silent token refresh skipped', { reason: String(e) });
+  }
+}
+
 // ── Foreground message listener ───────────────────────────────────────────────
 /**
  * Listen for messages while the app is in the foreground.

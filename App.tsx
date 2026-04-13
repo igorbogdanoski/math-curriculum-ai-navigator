@@ -331,6 +331,15 @@ const AppContent: React.FC = () => {
 
 const AuthenticatedApp: React.FC = () => {
     const { isLoading: isCurriculumLoading, error: curriculumError } = useCurriculum();
+    const { firebaseUser } = useAuth();
+
+    // B5-1: silently refresh FCM token on every login so stale tokens are replaced
+    useEffect(() => {
+        if (!firebaseUser?.uid) return;
+        import('./services/pushService').then(({ silentRefreshFCMToken }) => {
+            void silentRefreshFCMToken(firebaseUser.uid);
+        }).catch(() => { /* non-critical */ });
+    }, [firebaseUser?.uid]);
 
     const isLoading = isCurriculumLoading;
     const error = curriculumError;
