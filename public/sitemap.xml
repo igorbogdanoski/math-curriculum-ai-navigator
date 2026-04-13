@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- ── Почетна ─────────────────────────────────────────────────────── -->
+  <url>
+    <loc>https://ai.mismath.net/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="mk" href="https://ai.mismath.net/"/>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://ai.mismath.net/?lang=sq"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://ai.mismath.net/?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ai.mismath.net/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ai.mismath.net/"/>
+  </url>
+
+  <!-- ── AI Генератор ────────────────────────────────────────────────── -->
+  <url>
+    <loc>https://ai.mismath.net/generator</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="mk" href="https://ai.mismath.net/generator"/>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://ai.mismath.net/generator?lang=sq"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://ai.mismath.net/generator?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ai.mismath.net/generator?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ai.mismath.net/generator"/>
+  </url>
+
+  <!-- ── Матура / DIM испит ──────────────────────────────────────────── -->
+  <url>
+    <loc>https://ai.mismath.net/matura-library</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+    <xhtml:link rel="alternate" hreflang="mk" href="https://ai.mismath.net/matura-library"/>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://ai.mismath.net/matura-library?lang=sq"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://ai.mismath.net/matura-library?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ai.mismath.net/matura-library?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ai.mismath.net/matura-library"/>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/matura-practice</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/matura-simulation</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/matura-stats</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- ── Наставна програма ───────────────────────────────────────────── -->
+  <url>
+    <loc>https://ai.mismath.net/explore</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="mk" href="https://ai.mismath.net/explore"/>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://ai.mismath.net/explore?lang=sq"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://ai.mismath.net/explore?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ai.mismath.net/explore?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ai.mismath.net/explore"/>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/national-library</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/curriculum-graph</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/roadmap</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- ── Аналитика и следење ─────────────────────────────────────────── -->
+  <url>
+    <loc>https://ai.mismath.net/analytics</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/coverage</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ── Едукативни алатки ───────────────────────────────────────────── -->
+  <url>
+    <loc>https://ai.mismath.net/academy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="mk" href="https://ai.mismath.net/academy"/>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://ai.mismath.net/academy?lang=sq"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://ai.mismath.net/academy?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ai.mismath.net/academy?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ai.mismath.net/academy"/>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/assistant</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/vision-assessment</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/data-viz</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ── Планирање ───────────────────────────────────────────────────── -->
+  <url>
+    <loc>https://ai.mismath.net/planner</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/annual-plan</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://ai.mismath.net/mylessons</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- ── Заедница ────────────────────────────────────────────────────── -->
+  <url>
+    <loc>https://ai.mismath.net/forum</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="mk" href="https://ai.mismath.net/forum"/>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://ai.mismath.net/forum?lang=sq"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://ai.mismath.net/forum?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ai.mismath.net/forum?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ai.mismath.net/forum"/>
+  </url>
+
+  <!-- ── Профил и поставки ───────────────────────────────────────────── -->
+  <url>
+    <loc>https://ai.mismath.net/settings</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+</urlset>

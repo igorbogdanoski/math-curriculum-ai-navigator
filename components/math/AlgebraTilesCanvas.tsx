@@ -952,6 +952,25 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({
         </div>
       )}
 
+      {/* ── Color legend ────────────────────────────────────────────────────── */}
+      {!compact && !readOnly && (
+        <div className="flex items-center gap-3 px-2 flex-wrap">
+          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Легенда:</span>
+          {([
+            { kind: 'x2' as const, label: 'x²',  pos: 'bg-blue-500',    neg: 'bg-red-400'   },
+            { kind: 'x'  as const, label: 'x',   pos: 'bg-emerald-500', neg: 'bg-pink-400'  },
+            { kind: '1'  as const, label: '1',   pos: 'bg-amber-400',   neg: 'bg-gray-400'  },
+          ]).map(({ kind, label, pos, neg }) => (
+            <span key={kind} className="flex items-center gap-1 text-[10px] text-gray-600">
+              <span className={`inline-block w-3 h-3 rounded-sm ${pos} border border-white/30`} />
+              <span className="font-mono font-bold">+{label}</span>
+              <span className={`inline-block w-3 h-3 rounded-sm ${neg} border border-white/30 ml-1`} />
+              <span className="font-mono font-bold">−{label}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* ── Guided mode banner ──────────────────────────────────────────────── */}
       {guidedMode && !compact && (
         <div className={`mx-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
