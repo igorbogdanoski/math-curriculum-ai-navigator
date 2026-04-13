@@ -246,7 +246,7 @@ const BALANCE_PRESETS: BalancePreset[] = [
 ];
 
 // ─── Expression builder ────────────────────────────────────────────────────────
-function buildExpression(tiles: Tile[]): string {
+export function buildExpression(tiles: Tile[]): string {
   const counts: Record<string, number> = { x2: 0, x: 0, '1': 0 };
   for (const t of tiles) counts[t.kind] = (counts[t.kind] ?? 0) + t.sign;
   const parts: string[] = [];
@@ -328,6 +328,8 @@ interface AlgebraTilesCanvasProps {
   readOnly?: boolean;
   /** Fires when balanced or factoring is solved (quiz integration) */
   onSolve?: () => void;
+  /** A1.9 — fires whenever the tile arrangement changes, passing the current LaTeX expression */
+  onExpressionChange?: (latex: string) => void;
 }
 
 /** Convert live Tile[] → TileSpec[] for URL encoding */
@@ -356,6 +358,7 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({
   compact = false,
   readOnly = false,
   onSolve,
+  onExpressionChange,
 }) => {
   const initTiles = useCallback((): Tile[] => {
     if (initialTileSpecs && initialTileSpecs.length > 0) {
@@ -571,6 +574,9 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({
 
   const expr = buildExpression(tiles);
   const canUndo = undoStack.current.length > 0;
+
+  // A1.9 — notify parent whenever expression changes
+  useEffect(() => { onExpressionChange?.(expr); }, [expr, onExpressionChange]);
 
   // A1.9 — copy LaTeX expression to clipboard
   const [latexCopied, setLatexCopied] = useState(false);
