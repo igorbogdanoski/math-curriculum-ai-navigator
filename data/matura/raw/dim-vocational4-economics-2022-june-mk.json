@@ -199,7 +199,7 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-13-c1-1"],
+      "conceptIds": ["voc4-13-c5-1"],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -223,7 +223,7 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-13-c3-1"],
+      "conceptIds": ["voc4-13-c4-1"],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -343,7 +343,7 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-13-c3-1"],
+      "conceptIds": ["voc4-13-c4-1"],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null

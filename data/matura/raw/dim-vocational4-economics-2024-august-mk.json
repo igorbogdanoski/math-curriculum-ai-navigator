@@ -424,7 +424,7 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-13-c1-1"],
+      "conceptIds": ["voc4-13-c5-1"],
       "hints": ["Множење матрици: редови по колони", "det(2×2) = ad − bc"],
       "aiSolution": null,
       "successRatePercent": null
