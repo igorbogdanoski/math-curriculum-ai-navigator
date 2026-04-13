@@ -32,6 +32,7 @@ import { GlobalSearchBar } from './components/common/GlobalSearchBar';
 import { Card } from './components/common/Card';
 import { OfflineBanner } from './components/common/OfflineBanner';
 import { QuotaBanner } from './components/common/QuotaBanner';
+import { BottomNavBar } from './components/common/BottomNavBar';
 import { ContextualFAB } from './components/common/ContextualFAB';
 import { UpgradeModal } from './components/common/UpgradeModal';
 import { CookieConsent } from './components/common/CookieConsent';
@@ -291,7 +292,7 @@ const AppContent: React.FC = () => {
                         <GlobalSearchBar />
                     </header>
                     <Breadcrumbs crumbs={breadcrumbs} />
-                    <div className="flex-1 overflow-y-auto pb-12">
+                    <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
                         <ErrorBoundary>
                             <Suspense fallback={<AppSkeleton />}>
                                 <div key={path} className="animate-fade-in-up origin-top">
@@ -302,6 +303,7 @@ const AppContent: React.FC = () => {
                     </div>
                     <OfflineBanner />
                     <QuotaBanner />
+                    <BottomNavBar currentPath={path} />
                 </main>
                 <SilentErrorBoundary name="ContextualFAB">
                     <ContextualFAB path={path} params={params} />
