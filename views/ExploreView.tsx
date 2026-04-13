@@ -9,7 +9,6 @@ import { useModal } from '../contexts/ModalContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { exploreTourSteps } from '../tours/tour-steps';
-import { secondaryCurriculumByTrack } from '../data/secondaryCurriculum';
 
 
 
@@ -70,19 +69,28 @@ export const ExploreView: React.FC = () => {
     const [selectedGradeId, setSelectedGradeId] = useState<string>('');
     // Track selector — '' = primary (I–IX), otherwise shows the secondary track grades
     const [selectedTrack, setSelectedTrack] = useState<SecondaryTrack | ''>('');
+    const [secondaryData, setSecondaryData] = useState<Record<string, { curriculum: { grades: Grade[] } }> | null>(null);
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedQuery(searchQuery), 200);
         return () => clearTimeout(t);
     }, [searchQuery]);
 
+    // Lazy-load secondary curriculum only when user switches to a secondary track
+    useEffect(() => {
+        if (!selectedTrack) return;
+        import('../data/secondaryCurriculum').then(({ secondaryCurriculumByTrack }) => {
+            setSecondaryData(secondaryCurriculumByTrack);
+        });
+    }, [selectedTrack]);
+
     // Grades to display — primary or secondary track
     const activeGrades: Grade[] = useMemo(() => {
         if (selectedTrack) {
-            return secondaryCurriculumByTrack[selectedTrack]?.curriculum.grades ?? [];
+            return secondaryData?.[selectedTrack]?.curriculum.grades ?? [];
         }
         return curriculum?.grades ?? [];
-    }, [curriculum, selectedTrack]);
+    }, [curriculum, selectedTrack, secondaryData]);
 
     useEffect(() => {
         if (activeGrades.length > 0) {

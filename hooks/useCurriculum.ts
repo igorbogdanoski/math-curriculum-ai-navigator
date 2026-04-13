@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
-import type { Curriculum, VerticalProgressionAnalysis, Concept, ConceptProgression, Grade, Topic, NationalStandard } from '../types';
+import type { Curriculum, VerticalProgressionAnalysis, Concept, ConceptProgression, Grade, Topic, NationalStandard, SecondaryCurriculumModule } from '../types';
 import { SECONDARY_TRACK_LABELS } from '../types';
 import type { CurriculumModule } from '../data/curriculum';
 import { firestoreService } from '../services/firestoreService';
@@ -8,7 +8,6 @@ import { useNotification } from '../contexts/NotificationContext';
 import { fetchCurriculumOverrides, type CurriculumOverridesDoc } from '../services/firestoreService.curriculumOverrides';
 import { getLocalizedTitle } from '../data/localeOverrides';
 import { useAuth } from '../contexts/AuthContext';
-import { secondaryCurriculumByTrack } from '../data/secondaryCurriculum';
 import { AppError, ErrorCode } from '../utils/errors';
 
 interface ConceptChainEntry { grade: Grade; topic: Topic; concept: Concept; }
@@ -56,6 +55,15 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const secondaryTrack = user?.secondaryTrack;
     // Admins see ALL secondary tracks regardless of their profile setting
     const isAdmin = user?.role === 'admin';
+    const [secondaryData, setSecondaryData] = useState<Record<string, SecondaryCurriculumModule> | null>(null);
+
+    // Lazy-load the secondary curriculum chunk only when the user actually needs it
+    useEffect(() => {
+        if (!secondaryTrack && !isAdmin) return;
+        import('../data/secondaryCurriculum').then(({ secondaryCurriculumByTrack }) => {
+            setSecondaryData(secondaryCurriculumByTrack);
+        });
+    }, [secondaryTrack, isAdmin]);
 
     // Keep uiLang in sync when user changes language in Settings
     useEffect(() => {
@@ -97,12 +105,14 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const needsLocale = uiLang !== 'mk';
 
         // Admin sees all secondary tracks; regular users see their own secondaryTrack
-        const secondaryModules: ReturnType<typeof Object.values<typeof secondaryCurriculumByTrack[keyof typeof secondaryCurriculumByTrack]>> =
-            isAdmin
-                ? Object.values(secondaryCurriculumByTrack)
-                : secondaryTrack
-                    ? [secondaryCurriculumByTrack[secondaryTrack]].filter(Boolean)
-                    : [];
+        const secondaryModules: SecondaryCurriculumModule[] =
+            !secondaryData
+                ? []
+                : isAdmin
+                    ? Object.values(secondaryData)
+                    : secondaryTrack
+                        ? [secondaryData[secondaryTrack]].filter((x): x is SecondaryCurriculumModule => !!x)
+                        : [];
         const hasSecondary = secondaryModules.length > 0;
 
         // Fast path: no modifications needed and no secondary curriculum
@@ -158,7 +168,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         return { grades };
-    }, [data, overrides, uiLang, secondaryTrack, isAdmin]);
+    }, [data, overrides, uiLang, secondaryTrack, isAdmin, secondaryData]);
     const verticalProgression = useMemo(() => data?.verticalProgressionData, [data]);
     const allNationalStandards = useMemo(() => {
         if (!data) return undefined;

@@ -155,7 +155,9 @@ export const RoadmapView: React.FC = () => {
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedGradeId(e.target.value)}
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-secondary focus:border-brand-secondary"
                         >
-                            {curriculum.grades.map((grade: Grade) => (
+                            {curriculum.grades
+                                .filter((grade: Grade) => !grade.secondaryTrack || !!user?.secondaryTrack)
+                                .map((grade: Grade) => (
                                 <option key={grade.id} value={grade.id}>{grade.title}</option>
                             ))}
                         </select>
@@ -173,7 +175,9 @@ export const RoadmapView: React.FC = () => {
                             // Note: We allow manual override, but usually it's fixed per grade
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                            {selectedGrade?.level === 6 ? 'Стандард: 5 часа' : 'Стандард: 4 часа'}
+                            {selectedGrade?.weeklyHours
+                                ? `Стандард: ${selectedGrade.weeklyHours} часа`
+                                : selectedGrade?.level === 6 ? 'Стандард: 5 часа' : 'Стандард: 4 часа'}
                         </p>
                     </div>
                 </div>
