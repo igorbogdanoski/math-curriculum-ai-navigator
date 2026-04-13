@@ -16,6 +16,14 @@ const ROLE_LABELS: Record<string, string> = {
   admin:       '🛡️ Систем Админ',
 };
 
+const TRACK_LABELS: Record<string, string> = {
+  vocational4: 'Стручно 4г',
+  vocational3: 'Стручно 3г',
+  vocational2: 'Стручно 2г',
+  gymnasium:   'Гимназија',
+  gymnasium_elective: 'Гимн. изб.',
+};
+
 const ROLE_COLORS: Record<string, string> = {
   teacher:      'bg-blue-50 text-blue-700 border-blue-200',
   school_admin: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -80,6 +88,11 @@ const UserAdminRow = ({ u, isMe, schools, updatingUid, handleChangeRole, handleU
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ROLE_COLORS[role] ?? ROLE_COLORS.teacher}`}>
                         {ROLE_LABELS[role] ?? role}
                     </span>
+                    {u.secondaryTrack && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200" title={`Средно: ${u.secondaryTrack}`}>
+                            🎓 {TRACK_LABELS[u.secondaryTrack] ?? u.secondaryTrack}
+                        </span>
+                    )}
                     {!isMe && (
                         <select
                             aria-label={`Улога за ${u.name ?? u.uid}`}
@@ -584,6 +597,32 @@ export const SystemAdminView: React.FC = () => {
                             </span>
                         </div>
                     )}
+
+                    {/* Secondary track breakdown */}
+                    {users.length > 0 && (() => {
+                        const primary = users.filter(u => !u.secondaryTrack).length;
+                        const secondary = users.filter(u => !!u.secondaryTrack);
+                        const trackCounts: Record<string, number> = {};
+                        secondary.forEach(u => { trackCounts[u.secondaryTrack] = (trackCounts[u.secondaryTrack] ?? 0) + 1; });
+                        return (
+                            <div className="flex flex-wrap gap-2 mb-4 text-xs border-t border-gray-100 pt-3">
+                                <span className="text-gray-400 text-[10px] uppercase tracking-wide self-center mr-1">Програма:</span>
+                                <span className="px-2.5 py-1 rounded-full font-bold bg-slate-100 text-slate-600">
+                                    📘 Основно: {primary}
+                                </span>
+                                {Object.entries(trackCounts).map(([track, count]) => (
+                                    <span key={track} className="px-2.5 py-1 rounded-full font-bold bg-teal-50 text-teal-700 border border-teal-100">
+                                        🎓 {TRACK_LABELS[track] ?? track}: {count}
+                                    </span>
+                                ))}
+                                {secondary.length > 0 && (
+                                    <span className="px-2.5 py-1 rounded-full font-bold bg-indigo-50 text-indigo-700">
+                                        Средно вкупно: {secondary.length}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     {/* Search */}
                     <input
