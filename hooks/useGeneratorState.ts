@@ -1,7 +1,8 @@
 
 import { useReducer, useEffect, useRef } from 'react';
-import { QuestionType, type MaterialType, type GenerationContextType, type StudentProfile, type DifferentiationLevel, type BloomDistribution, type DokLevel } from '../types';
+import { QuestionType, type MaterialType, type GenerationContextType, type StudentProfile, type DifferentiationLevel, type BloomDistribution, type DokLevel, type SecondaryTrack } from '../types';
 import { useCurriculum } from './useCurriculum';
+import { useAuth } from '../contexts/AuthContext';
 import type { VideoPreviewData } from '../utils/videoPreview';
 
 
@@ -71,9 +72,32 @@ export type GeneratorAction =
     | { type: 'TOGGLE_QUESTION_TYPE'; payload: QuestionType };
 
 
-export const getInitialState = (curriculum: any, allNationalStandards: any): GeneratorState => {
-    const defaultGradeId = curriculum?.grades?.[0]?.id || '';
-    const defaultTopicId = curriculum?.grades?.[0]?.topics?.[0]?.id || '';
+/**
+ * Returns the best default grade ID for the initial generator state.
+ * For secondary teachers, picks the first grade of their track (e.g. voc4-grade-10).
+ * For primary teachers, picks the first primary grade (grade-1 or equivalent).
+ * Exported so it can be unit-tested in isolation.
+ */
+export function getDefaultGradeId(
+    curriculum: any,
+    secondaryTrack: SecondaryTrack | undefined | null,
+): string {
+    if (!curriculum?.grades?.length) return '';
+    if (secondaryTrack) {
+        const firstSecondaryGrade = curriculum.grades.find(
+            (g: { secondaryTrack?: string }) => g.secondaryTrack === secondaryTrack,
+        );
+        if (firstSecondaryGrade) return firstSecondaryGrade.id;
+    }
+    // Fallback: first primary (non-secondary) grade
+    const firstPrimaryGrade = curriculum.grades.find((g: { secondaryTrack?: string }) => !g.secondaryTrack);
+    return firstPrimaryGrade?.id || curriculum.grades[0].id;
+}
+
+export const getInitialState = (curriculum: any, allNationalStandards: any, secondaryTrack?: SecondaryTrack | null): GeneratorState => {
+    const defaultGradeId = getDefaultGradeId(curriculum, secondaryTrack);
+    const defaultGrade = curriculum?.grades?.find((g: { id: string }) => g.id === defaultGradeId) ?? curriculum?.grades?.[0];
+    const defaultTopicId = defaultGrade?.topics?.[0]?.id || '';
     const defaultStandardId = allNationalStandards?.[0]?.id || '';
 
     return {
@@ -177,7 +201,8 @@ function generatorReducer(state: GeneratorState, action: GeneratorAction): Gener
 // Hook
 export function useGeneratorState(props: Partial<GeneratorState> = {}) {
     const { curriculum, allNationalStandards, isLoading } = useCurriculum();
-    const initialState = getInitialState(curriculum, allNationalStandards);
+    const { user } = useAuth();
+    const initialState = getInitialState(curriculum, allNationalStandards, user?.secondaryTrack);
 
     const [state, dispatch] = useReducer(generatorReducer, initialState);
 

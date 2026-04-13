@@ -5,7 +5,7 @@ import {
     checkDailyQuotaGuard, SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
     CACHE_COLLECTION, minifyContext, callEmbeddingProxy, sanitizePromptInput,
     streamGeminiProxyRich, type StreamChunk, type ImagenProxyResponse,
-    withLangRule, getResolvedTextSystemInstruction,
+    withLangRule, getResolvedTextSystemInstruction, getSecondaryTrackContext,
 } from './gemini/core';
 import { shouldUseLiteModel, logRouterDecision } from './gemini/intentRouter';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -16,7 +16,7 @@ import { Concept, ChatMessage, TeachingProfile, AIGeneratedIllustration, AIGener
 import { AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalAnalysisSchema, CoverageAnalysisSchema, AIRecommendationSchema, GeneratedTestSchema, DailyBriefSchema, WorkedExampleSchema, ReflectionSummarySchema } from '../utils/schemas';
 
 // Core exports
-export { scheduleQuotaNotification, isDailyQuotaKnownExhausted, clearDailyQuotaFlag, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, buildDynamicSystemInstruction } from './gemini/core';
+export { scheduleQuotaNotification, isDailyQuotaKnownExhausted, clearDailyQuotaFlag, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, buildDynamicSystemInstruction, getSecondaryTrackContext } from './gemini/core';
 export { isVertexShadowEnabled, setVertexShadowEnabled, getShadowLog, clearShadowLog, getShadowCompareReport } from './gemini/vertexShadow';
 export type { ShadowLogEntry, ShadowCompareReport } from './gemini/vertexShadow';
 
@@ -110,7 +110,7 @@ export const realGeminiService = {
   
 async *getChatResponseStream(history: ChatMessage[], profile?: TeachingProfile, attachment?: { base64: string, mimeType: string }, ragContext?: string): AsyncGenerator<string, void, unknown> {
     checkDailyQuotaGuard(); // П30: block streaming if daily quota is exhausted
-    let systemInstruction = `${getResolvedTextSystemInstruction()}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
+    let systemInstruction = `${getResolvedTextSystemInstruction()}${getSecondaryTrackContext(profile?.secondaryTrack)}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
     if (ragContext) {
         systemInstruction += `\n\n--- КОНТЕКСТ ОД БИБЛИОТЕКАТА НА НАСТАВНИКОТ ---\nСледните материјали се пронајдени како релевантни за прашањето. Користи ги при одговорот:\n\n${ragContext}\n--- КРАЈ НА БИБЛИОТЕЧЕН КОНТЕКСТ ---\n\nКога ги користиш овие материјали, споменувај ги по наслов и тип (пр. "Во вашиот зачуван квиз...").`;
     }
@@ -129,7 +129,7 @@ async *getChatResponseStream(history: ChatMessage[], profile?: TeachingProfile, 
 
 async *getChatResponseStreamWithThinking(history: ChatMessage[], profile?: TeachingProfile, attachment?: { base64: string, mimeType: string }, ragContext?: string): AsyncGenerator<StreamChunk, void, unknown> {
     checkDailyQuotaGuard();
-    let systemInstruction = `${getResolvedTextSystemInstruction()}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
+    let systemInstruction = `${getResolvedTextSystemInstruction()}${getSecondaryTrackContext(profile?.secondaryTrack)}\nПрофил на наставник: ${JSON.stringify(profile || {})}`;
     if (ragContext) {
         systemInstruction += `\n\n--- КОНТЕКСТ ОД БИБЛИОТЕКАТА НА НАСТАВНИКОТ ---\nСледните материјали се пронајдени како релевантни за прашањето. Користи ги при одговорот:\n\n${ragContext}\n--- КРАЈ НА БИБЛИОТЕЧЕН КОНТЕКСТ ---\n\nКога ги користиш овие материјали, споменувај ги по наслов и тип (пр. "Во вашиот зачуван квиз...").`;
     }
@@ -1244,9 +1244,14 @@ ${notesSample ? `Рефлексивни белешки на ученикот: ${
     customInstruction?: string
   ): Promise<AIGeneratedAnnualPlan> {
     const safeCustomInstruction = sanitizePromptInput(customInstruction, 600);
+    const weeklyHoursForTrack = profile?.secondaryTrack
+      ? ({ gymnasium: 4, gymnasium_elective: 3, vocational4: 3, vocational3: 2, vocational2: 2 } as const)[profile.secondaryTrack] ?? 4
+      : 4;
+    const secondaryContextBlock = getSecondaryTrackContext(profile?.secondaryTrack);
     const prompt = `
 Вие сте врвен експерт за планирање на наставата по ${subject} за ${grade} во македонскиот образовен систем.
 Ваша задача е да креирате детална, практична и изводлива предлог-годишна програма.
+${secondaryContextBlock}
 
 ПАРАМЕТРИ:
 - Вкупно недели на располагање: ${totalWeeks}.
@@ -1258,7 +1263,7 @@ ${curriculumContext}
 1. Строго базирајте го вашиот план на официалните теми дадени погоре.
 2. Распределете ги темите низ неделите така што сумата од сите недели да биде ТОЧНО ${totalWeeks}.
 3. Вклучи најмалку ${MIN_ANNUAL_PLAN_TOPICS} одделни теми во полето "topics" (не спојувај повеќе теми во една ставка).
-4. Конвертирајте ги "Препорачани часови" (suggested hours) во реални недели на настава (претпоставувајќи просечно 4-5 часа неделно за математика).
+4. Конвертирајте ги "Препорачани часови" (suggested hours) во реални недели на настава (претпоставувајќи точно ${weeklyHoursForTrack} часа неделно за математика за оваа програма).
 5. За секоја тема, извлечете ги примарните цели и предложете 2-3 креативни, модерни активности погодни за тоа одделение.
 6. КАЛЕНДАРСКИ ИНТЕЛИГЕНТНО ПЛАНИРАЊЕ: Земете ги предвид македонските државни празници (како 8 Септември, 11 Октомври, 23 Октомври, 8 Декември, 1 Мај, 24 Мај) и училишните зимски распусти (обично јануари). Прилагодете ја тежината или времетраењето на темите што паѓаат во овие периоди (наведете во активностите доколку некоја недела е скратена поради празник).
 ${safeCustomInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НАСТАВНИКОТ: ${safeCustomInstruction}` : ''}

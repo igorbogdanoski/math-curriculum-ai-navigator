@@ -21,6 +21,7 @@ export const gymnasiumGrade10: Grade = {
   level: 10,
   title: 'X (десетто) — Гимназиско',
   secondaryTrack: 'gymnasium',
+  weeklyHours: 4,
   levelDescription: 'Прва година гимназија — Математика (МОН, нова програма, 108 часа)',
   topics: [
 
@@ -417,6 +418,7 @@ export const gymnasiumGrade11: Grade = {
   level: 11,
   title: 'XI (единаесетто) — Гимназиско',
   secondaryTrack: 'gymnasium',
+  weeklyHours: 4,
   levelDescription: 'Втора година гимназија — Математика (МОН, официјална програма, 106 часа)',
   topics: [
 
@@ -748,6 +750,7 @@ export const gymnasiumGrade12: Grade = {
   level: 12,
   title: 'XII (дванаесетто) — Гимназиско',
   secondaryTrack: 'gymnasium',
+  weeklyHours: 4,
   levelDescription: 'Трета година гимназија — Математика (МОН, официјална програма, 108 часа)',
   topics: [
 
@@ -1041,6 +1044,7 @@ export const gymnasiumGrade13: Grade = {
   level: 13,
   title: 'IV (четврта) — Гимназиско',
   secondaryTrack: 'gymnasium',
+  weeklyHours: 4,
   levelDescription: 'Четврта година гимназија — Математика (МОН, официјална програма, 90 часа)',
   topics: [
 

@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
 import type { Curriculum, VerticalProgressionAnalysis, Concept, ConceptProgression, Grade, Topic, NationalStandard } from '../types';
+import { SECONDARY_TRACK_LABELS } from '../types';
 import type { CurriculumModule } from '../data/curriculum';
 import { firestoreService } from '../services/firestoreService';
 import { useNotification } from '../contexts/NotificationContext';
@@ -192,8 +193,38 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
              });
         }
         
+        // Dynamically extract assessmentStandards for secondary grades (P4)
+        // Each secondary concept's assessmentStandards[] becomes a NationalStandard entry,
+        // visible in StandardsTab and CoverageAnalyzerView for secondary track teachers.
+        if (curriculum?.grades) {
+            curriculum.grades
+                .filter((g: Grade) => g.secondaryTrack)
+                .forEach((grade: Grade) => {
+                    grade.topics?.forEach((topic: Topic) => {
+                        topic.concepts?.forEach((concept: Concept) => {
+                            concept.assessmentStandards?.forEach((stdText, idx) => {
+                                const id = `SEC-${grade.secondaryTrack}-${concept.id}-${idx}`;
+                                const existing = standards.find(s => s.id === id);
+                                if (!existing) {
+                                    standards.push({
+                                        id,
+                                        code: `${grade.secondaryTrack?.toUpperCase()}-${grade.level}`,
+                                        description: stdText,
+                                        gradeLevel: grade.level,
+                                        category: `Математика — ${SECONDARY_TRACK_LABELS[grade.secondaryTrack!]}`,
+                                        relatedConceptIds: [concept.id],
+                                    });
+                                } else if (existing.relatedConceptIds && !existing.relatedConceptIds.includes(concept.id)) {
+                                    existing.relatedConceptIds.push(concept.id);
+                                }
+                            });
+                        });
+                    });
+                });
+        }
+
         return standards.sort((a,b) => (a.gradeLevel || 0) - (b.gradeLevel || 0));
-    }, [data]);
+    }, [data, curriculum]);
 
     const gradeMap = useMemo(() => {
         if (!curriculum) return new Map();

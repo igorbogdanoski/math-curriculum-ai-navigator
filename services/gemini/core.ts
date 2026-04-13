@@ -3,7 +3,7 @@ import { isVertexShadowEnabled, runVertexShadow } from './vertexShadow';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import { GenerationContext } from '../../types';
+import { GenerationContext, SecondaryTrack, SECONDARY_TRACK_LABELS } from '../../types';
 import { ragService } from '../ragService';
 import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 import { PermissionError, AIServiceError, OfflineError, AppError, ErrorCode } from '../../utils/errors';
@@ -886,7 +886,72 @@ export function getResolvedTextSystemInstruction(): string {
     return TEXT_SYSTEM_INSTRUCTION.replace('{{LANGUAGE_RULE}}', getAILanguageRule());
 }
 
-export async function buildDynamicSystemInstruction(baseInstruction: string, gradeLevel?: number, conceptId?: string, topicId?: string): Promise<string> {
+/**
+ * Returns a rich pedagogical context block for secondary track teachers.
+ * Injected into AI system instructions so generation adapts to the specific
+ * educational program — applied (vocational) vs theoretical (gymnasium).
+ *
+ * Returns '' for primary school teachers (track === undefined/null).
+ * Covers all 5 SecondaryTrack values; if a new track is added without updating
+ * this map, the exhaustive unit test in secondaryTrackContext.test.ts will fail.
+ */
+export function getSecondaryTrackContext(track: SecondaryTrack | undefined | null): string {
+    if (!track) return '';
+
+    const contextMap: Record<SecondaryTrack, string> = {
+        gymnasium: [
+            `ОБРАЗОВЕН КОНТЕКСТ: ${SECONDARY_TRACK_LABELS.gymnasium} — гимназиско 4-годишно образование (X–XIII одделение).`,
+            'ПЕДАГОШКИ ПРИСТАП: Теоретски, апстрактен. Формална математичка нотација. Докажувања и дедуктивно размислување.',
+            'ТЕМПО: 4 часа неделно (~144ч/год). Акцент на математичка строгост, подготовка за државна матура и универзитет.',
+            'ПРИМЕРИ: Може да бидат апстрактни. Нагласи логичка структура и математичка прецизност.',
+        ].join('\n'),
+
+        gymnasium_elective: [
+            `ОБРАЗОВЕН КОНТЕКСТ: ${SECONDARY_TRACK_LABELS.gymnasium_elective} — напредни изборни предмети по математика (XI–XIII одд.).`,
+            'ПЕДАГОШКИ ПРИСТАП: Длабинска и проширена математика за ученици со висок интерес и способности.',
+            'ТЕМИ: Елементарна алгебра, Алгебра и аналитичка геометрија, Математичка анализа.',
+            'ТЕМПО: 3 часа неделно. Истражувачки задачи, математички докажувања, подготовка за натпревари.',
+            'ПРИМЕРИ: Комплексни и предизвикувачки. Математичките докажувања се очекувани.',
+        ].join('\n'),
+
+        vocational4: [
+            `ОБРАЗОВЕН КОНТЕКСТ: ${SECONDARY_TRACK_LABELS.vocational4} — стручно 4-годишно образование (X–XIII одделение).`,
+            'ПЕДАГОШКИ ПРИСТАП: ПРИМЕНЕТ. Математиката е инструмент за стручните предмети (техника, економија, ИТ, здравство).',
+            'ТЕМПО: 3 часа неделно (~108ч/год). Планирај реалистично — не премногу теорија.',
+            'ПРИМЕРИ: ЗАДОЛЖИТЕЛНО поврзи со стручни контексти. Реални задачи од работна средина.',
+            'ТЕЖИНА: Средна. Нагласи применливост и практичен смисол. Избегни чисто апстрактни докажувања.',
+            'АКТИВНОСТИ: Практични проекти, задачи поврзани со идната работна позиција на ученикот.',
+        ].join('\n'),
+
+        vocational3: [
+            `ОБРАЗОВЕН КОНТЕКСТ: ${SECONDARY_TRACK_LABELS.vocational3} — стручно 3-годишно образование, занаетски профили (X–XII одд.).`,
+            'ПЕДАГОШКИ ПРИСТАП: ПРАКТИЧЕН. Математиката директно служи за занаетот (мерења, пресметки, материјали).',
+            'ТЕМПО: 2 часа неделно (~72ч/год). Минимална теорија, максимална директна примена.',
+            'ПРИМЕРИ: Конкретни мерења, пресметки на материјали, практични задачи од занаетот.',
+            'ТЕЖИНА: Ниска до средна. Без формални докажувања. Само суштинските концепти.',
+            'АКТИВНОСТИ: Работни листови со реални сценарија. Кратки и директни задачи.',
+        ].join('\n'),
+
+        vocational2: [
+            `ОБРАЗОВЕН КОНТЕКСТ: ${SECONDARY_TRACK_LABELS.vocational2} — стручно 2-годишно образование (X–XI одделение).`,
+            'ПЕДАГОШКИ ПРИСТАП: ОСНОВЕН ПРАКТИЧЕН. Само есенцијалните математички концепти за работна сила.',
+            'ТЕМПО: 2 часа неделно (~72ч/год). Строго ограничен curriculum — покривај само тоа што е во програмата.',
+            'ПРИМЕРИ: Секојдневни ситуации. Максимална конкретност, без апстракција.',
+            'ТЕЖИНА: Ниска. Потребна е максимална инклузивност и достапност на содржината.',
+            'АКТИВНОСТИ: Кратки директни задачи. Никакви сложени повеќечекорни проблеми.',
+        ].join('\n'),
+    };
+
+    return `\n\n--- ПЕДАГОШКИ КОНТЕКСТ НА ОБРАЗОВНАТА ПРОГРАМА ---\n${contextMap[track]}\n--- КРАЈ НА КОНТЕКСТ ---`;
+}
+
+export async function buildDynamicSystemInstruction(
+    baseInstruction: string,
+    gradeLevel?: number,
+    conceptId?: string,
+    topicId?: string,
+    secondaryTrack?: SecondaryTrack | null,
+): Promise<string> {
     let instruction = baseInstruction;
     const langRule = getAILanguageRule();
     let lang = 'mk';
@@ -903,6 +968,11 @@ export async function buildDynamicSystemInstruction(baseInstruction: string, gra
         instruction += await ragService.getConceptContext(gradeLevel, conceptId);
     } else if (gradeLevel && topicId) {
         instruction += await ragService.getTopicContext(gradeLevel, topicId);
+    }
+
+    // Inject secondary track pedagogical context when teacher is secondary
+    if (secondaryTrack) {
+        instruction += getSecondaryTrackContext(secondaryTrack);
     }
 
     // Inject Macedonian local context when enabled (default: on)

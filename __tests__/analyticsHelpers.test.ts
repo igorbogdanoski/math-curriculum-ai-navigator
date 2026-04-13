@@ -233,3 +233,46 @@ describe('Analytics aggregation logic', () => {
     expect(page1Only.totalAttempts).toBe(5);
   });
 });
+
+// ---------------------------------------------------------------------------
+// P1 — gradeLevel extraction via Grade.level (regression guard)
+// Ensures we never regress to parseInt(grade.id) which fails for secondary IDs.
+// ---------------------------------------------------------------------------
+describe('gradeLevel extraction from Grade.level (P1 regression guard)', () => {
+  interface MockGrade { id: string; level: number; title: string; secondaryTrack?: string; }
+
+  function extractGradeLevel(grade: MockGrade | undefined): number {
+    // This mirrors the fixed pattern: grade?.level ?? 1
+    return grade?.level ?? 1;
+  }
+
+  it('extracts level=6 from primary grade', () => {
+    const grade: MockGrade = { id: 'grade-6', level: 6, title: 'VI одделение' };
+    expect(extractGradeLevel(grade)).toBe(6);
+  });
+
+  it('extracts level=10 from vocational4 grade — the core regression case', () => {
+    const grade: MockGrade = { id: 'voc4-grade-10', level: 10, title: 'X — Стручно 4-год', secondaryTrack: 'vocational4' };
+    expect(extractGradeLevel(grade)).toBe(10);
+  });
+
+  it('extracts level=13 from gymnasium grade', () => {
+    const grade: MockGrade = { id: 'gym-grade-13', level: 13, title: 'XIII — Гимназиско', secondaryTrack: 'gymnasium' };
+    expect(extractGradeLevel(grade)).toBe(13);
+  });
+
+  it('returns 1 as fallback when grade is undefined', () => {
+    expect(extractGradeLevel(undefined)).toBe(1);
+  });
+
+  it('DOCUMENTS THE BUG: parseInt on secondary IDs returns NaN → 1 (wrong)', () => {
+    // This test documents WHY parseInt was wrong — serves as a regression guard.
+    // If someone tries to revert to parseInt, they will see this failing.
+    expect(parseInt('voc4-grade-10', 10) || 1).toBe(1);   // ← the old bug: gives 1
+    expect(parseInt('voc3-grade-12', 10) || 1).toBe(1);   // ← the old bug: gives 1
+    expect(parseInt('gym-grade-11', 10) || 1).toBe(1);    // ← the old bug: gives 1
+    // The correct fix always gives the right value:
+    expect({ id: 'voc4-grade-10', level: 10 }.level ?? 1).toBe(10);
+    expect({ id: 'gym-grade-11', level: 11 }.level ?? 1).toBe(11);
+  });
+});

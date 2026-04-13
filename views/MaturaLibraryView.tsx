@@ -11,7 +11,7 @@
  *   Part 3 open → Self-assess rubric + optional AI.
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { MathRenderer }    from '../components/common/MathRenderer';
 import { DokBadge }        from '../components/common/DokBadge';
 import { callGeminiProxy } from '../services/gemini/core';
@@ -23,6 +23,8 @@ import {
 } from '../services/firestoreService.matura';
 import type { MaturaQuestion, MaturaExamMeta } from '../services/firestoreService.matura';
 import type { MaturaChoice, DokLevel } from '../types';
+import { SECONDARY_TRACK_TO_MATURA_TRACKS } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
@@ -438,9 +440,23 @@ function QuestionCard({
 export function MaturaLibraryView() {
   // ── Firestore data ──
   const { exams, loading: examsLoading, error: examsError } = useMaturaExams();
+  const { user } = useAuth();
 
-  // ── Exam selection (default to first exam once loaded) ──
+  // ── Exam selection (smart default: prefer teacher's secondary track) ──
   const [selectedExamId, setSelectedExamId] = useState<string>('');
+
+  useEffect(() => {
+    if (examsLoading || !exams.length || selectedExamId) return;
+    const relevantTracks = user?.secondaryTrack
+      ? SECONDARY_TRACK_TO_MATURA_TRACKS[user.secondaryTrack] ?? []
+      : [];
+    const smartDefault = relevantTracks.length > 0
+      ? exams.find(e => relevantTracks.includes(e.track ?? ''))
+      : undefined;
+    if (smartDefault) setSelectedExamId(smartDefault.id);
+    // No fallback needed — resolvedId handles it via exams[0]
+  }, [exams, examsLoading, user?.secondaryTrack]);
+
   const resolvedId = selectedExamId || exams[0]?.id || '';
 
   // Stable array reference for the hook

@@ -184,7 +184,7 @@ const { addNotification } = useNotification();
     setAssignRemedialState({
       conceptId, title, students, misconceptions,
       topicId: topic?.id,
-      gradeLevel: parseInt(grade?.id || '1') || 1,
+      gradeLevel: grade?.level ?? 1,
     });
   };
 

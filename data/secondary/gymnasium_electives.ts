@@ -28,6 +28,7 @@ export const elementaryAlgebraGrade11: Grade = {
   level: 11,
   title: 'XI — Елементарна алгебра (изборен)',
   secondaryTrack: 'gymnasium_elective',
+  weeklyHours: 3,
   levelDescription: 'Втора година гимназија — Елементарна алгебра (изборен предмет, 72 часа)',
   topics: [
 
@@ -281,6 +282,7 @@ export const elementaryAlgebraGeometryGrade11: Grade = {
   level: 11,
   title: 'XI — Елементарна алгебра и геометрија (изборен)',
   secondaryTrack: 'gymnasium_elective',
+  weeklyHours: 3,
   levelDescription: 'Втора година гимназија — Елементарна алгебра и геометрија (изборен предмет, 66 часа)',
   topics: [
 
@@ -425,6 +427,7 @@ export const algebraGrade12: Grade = {
   level: 12,
   title: 'XII — Алгебра (изборен)',
   secondaryTrack: 'gymnasium_elective',
+  weeklyHours: 3,
   levelDescription: 'Трета година гимназија — Алгебра (изборен предмет, 72 часа)',
   topics: [
 
@@ -626,6 +629,7 @@ export const linearAlgebraAnalyticGeometryGrade12: Grade = {
   level: 12,
   title: 'XII — Линеарна алгебра и аналитичка геометрија (изборен)',
   secondaryTrack: 'gymnasium_elective',
+  weeklyHours: 3,
   levelDescription: 'Трета година гимназија — Линеарна алгебра и аналитичка геометрија (изборен предмет, 72 часа)',
   topics: [
 
@@ -771,6 +775,7 @@ export const mathematicalAnalysisGrade13: Grade = {
   level: 13,
   title: 'IV — Математичка анализа (изборен)',
   secondaryTrack: 'gymnasium_elective',
+  weeklyHours: 3,
   levelDescription: 'Четврта година гимназија — Математичка анализа (изборен предмет, 96 часа)',
   topics: [
 

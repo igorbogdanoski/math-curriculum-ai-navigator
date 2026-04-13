@@ -77,6 +77,19 @@ export const SECONDARY_TRACK_LABELS: Record<SecondaryTrack, string> = {
   gymnasium_elective: 'Гимназија — Изборни предмети',
 };
 
+/**
+ * Maps curriculum SecondaryTrack → relevant Matura (ДИМ) exam track keys.
+ * Used to pre-filter MaturaLibraryView / MaturaSimulationView for secondary teachers.
+ * vocational2 has no Matura (2-year programs don't take the state exam).
+ */
+export const SECONDARY_TRACK_TO_MATURA_TRACKS: Partial<Record<SecondaryTrack, string[]>> = {
+  gymnasium:          ['gymnasium'],
+  gymnasium_elective: ['gymnasium'],
+  vocational4:        ['vocational-it', 'vocational-economics', 'vocational-electro', 'vocational-mechanical', 'vocational-health', 'vocational-civil'],
+  vocational3:        ['vocational-mechanical', 'vocational-civil'],
+  vocational2:        [],
+} as const;
+
 export interface Grade {
   id: string;
   level: number;
@@ -86,6 +99,8 @@ export interface Grade {
   levelDescription?: string;
   /** Set on secondary grades — identifies the track they belong to */
   secondaryTrack?: SecondaryTrack;
+  /** Math hours per week for this grade (secondary only): 2 | 3 | 4 */
+  weeklyHours?: 2 | 3 | 4;
 }
 
 export interface Curriculum {

@@ -117,12 +117,13 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
     const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
     
-    // RAG INJECTION
+    // RAG INJECTION + secondary track context
     const systemInstr = await buildDynamicSystemInstruction(
-        JSON_SYSTEM_INSTRUCTION, 
-        context.grade.level, 
-        conceptCacheId !== 'gen' ? conceptCacheId : undefined, 
-        context.topic?.id
+        JSON_SYSTEM_INSTRUCTION,
+        context.grade.level,
+        conceptCacheId !== 'gen' ? conceptCacheId : undefined,
+        context.topic?.id,
+        profile?.secondaryTrack,
     );
 
     const result = await generateAndParseJSON<AIGeneratedAssessment>(

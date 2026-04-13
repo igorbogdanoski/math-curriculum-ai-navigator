@@ -79,7 +79,7 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
         required: ["title", "openingActivity", "mainActivity", "differentiation", "assessmentIdea", "assessmentStandards", "concepts"]
     };
 
-    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id);
+    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id, profile?.secondaryTrack);
     // Use high-quality model for better pedagogical reasoning
         const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
         // Cache write must never block UI completion; generation result is already available.
@@ -185,7 +185,7 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
 
       const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
       if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
-      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, context.concepts?.[0]?.id, context.topic?.id);
+      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, context.concepts?.[0]?.id, context.topic?.id, profile?.secondaryTrack);
 
       // Use Thinking model for high-quality pedagogical planning
       return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
@@ -283,7 +283,7 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
           required: ["thematicUnit", "lessons"]
       };
 
-      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, grade.level, undefined, topic.id);
+      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, grade.level, undefined, topic.id, profile?.secondaryTrack);
       // Use Thinking model for structural curriculum mapping
       const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
       await setCached(cacheKey, result, { type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id });
@@ -325,7 +325,7 @@ ${sanitizePromptInput(customInstruction) ? `ДОПОЛНИТЕЛНО БАРАЊ�
         : { type: Type.OBJECT, properties: { text: { type: Type.STRING }, duration: { type: Type.STRING } }, required: ["text"] };
 
     const contents: Part[] = [{ text: prompt }];
-    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, currentPlan.grade);
+    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, currentPlan.grade, undefined, undefined, profile?.secondaryTrack);
     
     return generateAndParseJSON<LessonScenario['main'] | LessonScenario['introductory']>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   },
@@ -411,7 +411,7 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
       required: ["title", "topic", "gradeLevel", "slides"]
     };
 
-    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel);
+    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, undefined, undefined, profile?.secondaryTrack);
     return generateAndParseJSON<AIGeneratedPresentation>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   }
 };
