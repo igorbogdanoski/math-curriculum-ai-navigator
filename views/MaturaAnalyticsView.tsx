@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, CalendarDays, GraduationCap, Timer, Trophy, TrendingUp, BookOpen, Network, Share2, Download, Copy, CheckCheck, Link2, FileText } from 'lucide-react';
+import { BarChart3, CalendarDays, GraduationCap, Timer, Trophy, TrendingUp, BookOpen, Network, Share2, Download, Copy, CheckCheck, Link2, FileText, MapPin, AlertTriangle, CheckCircle2, Route } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
@@ -10,6 +10,7 @@ import { ForumCTA } from '../components/common/ForumCTA';
 import { RecoveryWorksheetModal } from '../components/matura/RecoveryWorksheetModal';
 import { downloadAsPdf } from '../utils/pdfDownload';
 import { shareService } from '../services/shareService';
+import { useMaturaReadinessPath } from '../hooks/useMaturaReadinessPath';
 
 function statTone(value: number, good: number, warn: number): 'green' | 'amber' | 'red' {
   if (value >= good) return 'green';
@@ -69,6 +70,7 @@ export const MaturaAnalyticsView: React.FC = () => {
   const { firebaseUser } = useAuth();
   const stats = useMaturaStats();
   const missions = useMaturaMissions();
+  const readiness = useMaturaReadinessPath(stats.weakConcepts);
   const [copied, setCopied] = React.useState(false);
   const [linkCopied, setLinkCopied] = React.useState(false);
   const [isPdfLoading, setIsPdfLoading] = React.useState(false);
@@ -582,6 +584,95 @@ export const MaturaAnalyticsView: React.FC = () => {
               </div>
             </div>
           </div>
+        </Card>
+      )}
+
+      {/* ── B2-3: Препорачана патека кон матура ── */}
+      {stats.hasAttempts && (
+        <Card className="p-5 border-violet-200 bg-violet-50/20">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 mb-4">
+            <div className="flex-1">
+              <h2 className="text-lg font-black text-violet-900 flex items-center gap-2">
+                <Route className="w-5 h-5" /> Препорачана патека кон матура
+              </h2>
+              <p className="text-sm text-violet-700 mt-0.5">
+                {readiness.hasExamDate
+                  ? `До матурата имаш уште ${readiness.daysUntilExam} ${readiness.daysUntilExam === 1 ? 'ден' : 'дена'} (${readiness.weeksUntilExam} нед.).`
+                  : `Приказ базиран на ~${readiness.daysUntilExam} дена до испит.`}
+                {readiness.steps.length > 0 && (
+                  <> &nbsp;Треба уште: <strong>{readiness.steps.length} концепти</strong>. Препорачано: <strong>{readiness.recommendedPerWeek}/нед.</strong></>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {readiness.onTrack ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Во план
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Забрзај
+                </span>
+              )}
+              <label className="flex items-center gap-1.5 text-xs text-violet-700 font-semibold">
+                <MapPin className="w-3.5 h-3.5" />
+                <input
+                  type="date"
+                  aria-label="Датум на матура"
+                  value={readiness.examDate ? readiness.examDate.toISOString().slice(0, 10) : ''}
+                  onChange={(e) => readiness.setExamDate(e.target.value)}
+                  className="border border-violet-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-violet-400"
+                />
+              </label>
+            </div>
+          </div>
+
+          {readiness.steps.length === 0 ? (
+            <p className="text-sm text-emerald-700 font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" /> Одличен напредок — нема концепти под прагот за успех (55%).
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {readiness.steps.map((step) => (
+                <div
+                  key={step.conceptId}
+                  className={`flex items-center gap-3 p-3 rounded-xl border ${
+                    step.status === 'uncovered'
+                      ? 'border-rose-200 bg-rose-50/60'
+                      : 'border-amber-200 bg-amber-50/40'
+                  }`}
+                >
+                  <span className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${
+                    step.status === 'uncovered' ? 'bg-rose-500 text-white' : 'bg-amber-400 text-white'
+                  }`}>
+                    {step.rank}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 truncate">{step.conceptTitle}</p>
+                    <p className="text-[11px] text-gray-500">
+                      {step.status === 'uncovered' ? 'Непокриен' : `${step.pct.toFixed(0)}% — слаб`}
+                      {step.topicArea && <> · {step.topicArea}</>}
+                    </p>
+                  </div>
+                  <span className="flex-shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
+                    Нед. {step.weekNumber}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => startRecoverySession({
+                      topicArea: step.topicArea,
+                      conceptId: step.conceptId,
+                      conceptTitle: step.conceptTitle,
+                      pctBefore: step.pct,
+                    })}
+                    className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-violet-600 text-white hover:bg-violet-700 transition"
+                  >
+                    Вежбај
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       )}
 

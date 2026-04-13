@@ -32,6 +32,7 @@ import { useDailyBrief } from '../hooks/useDailyBrief';
 import { DailyBriefCard } from '../components/dashboard/DailyBriefCard';
 import { FormativeNextStepCard } from '../components/dashboard/FormativeNextStepCard';
 import { SpacedRepDueCard } from '../components/dashboard/SpacedRepDueCard';
+import { MaturaNextStepWidget } from '../components/dashboard/MaturaNextStepWidget';
 
 // ── Quick Actions strip — 5 most-used teacher actions ────────────────────────
 const getQuickActions = (t: any) => [
@@ -369,6 +370,9 @@ export const HomeView: React.FC = () => {
 
         {/* ── П-Д: SPACED REP DUE ──────────────────────────────────────── */}
         <SpacedRepDueCard due={spacedRepDue} />
+
+        {/* ── B2-3: MATURA NEXT STEP ───────────────────────────────────── */}
+        <MaturaNextStepWidget />
       </section>
 
       <section className="space-y-3" aria-label="Priority Actions">
