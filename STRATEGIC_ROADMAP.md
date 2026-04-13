@@ -534,6 +534,8 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-13 | B1-3 | Central logger `utils/logger.ts`: `info` (dev-only), `warn/error` (all envs + Sentry); замена на console.log во firestoreService.quiz, indexedDBService, pushService | DONE |
 | 2026-04-13 | B5-1 | FCM silent token refresh: `silentRefreshFCMToken(uid)` во pushService + dynamic import во App.tsx на `firebaseUser` auth event; stale token root cause: registration само при explicit Settings click | DONE |
 | 2026-04-13 | BUG-MATURA | Past-exam bug fix: `useMaturaReadinessPath` — raw negative days now reach `computeReadinessPath`; `examPassed: boolean` added to `ReadinessPath` interface; steps emptied when past; MaturaAnalyticsView shows 'Датумот на матурата помина.' + slate badge 'Испитот помина' | DONE |
+| 2026-04-13 | A1.9 | Tiles→LaTeX: `buildExpression` exported as named pure fn; `onExpressionChange?(latex)` prop fires on every tile change via useEffect; 18 new unit tests (edge cases: zero-pairs, negative coefficients, diff-of-squares, all-cancel, callback mount/add); 21/21 pass | DONE |
+| 2026-04-13 | B3-3 | i18n sprint deferred to S22+; detailed plan saved in `docs/B3-3_I18N_SPRINT_PLAN.md` (51 uninstrumented views, Tier 1/2/3 priority, Gemini batch approach, 5-day estimate) | DEFERRED |
 
 ---
 
