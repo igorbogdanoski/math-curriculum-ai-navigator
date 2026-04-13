@@ -17,6 +17,7 @@
 import { getToken, onMessage } from 'firebase/messaging';
 import { doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { getFirebaseMessaging, db } from '../firebaseConfig';
+import { logger } from '../utils/logger';
 
 const VAPID_KEY = import.meta.env.VITE_FCM_VAPID_KEY as string | undefined;
 
@@ -72,25 +73,25 @@ export async function removeTokenFromFirestore(uid: string): Promise<void> {
 export async function requestNotificationPermission(uid?: string): Promise<string | null> {
   // Check browser support
   if (!('Notification' in window)) {
-    console.log('[Push] Notifications not supported');
+    logger.info('[Push] Notifications not supported');
     return null;
   }
 
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') {
-    console.log('[Push] Permission denied');
+    logger.info('[Push] Permission denied');
     return null;
   }
 
   const messaging = await getFirebaseMessaging();
   if (!messaging) {
-    console.log('[Push] Firebase Messaging not supported on this browser');
+    logger.info('[Push] Firebase Messaging not supported on this browser');
     // Fallback: local notifications only
     return null;
   }
 
   if (!VAPID_KEY) {
-    console.warn(
+    logger.warn(
       '[Push] VITE_FCM_VAPID_KEY not set — FCM token skipped. ' +
       'Add your Web Push certificate key from Firebase Console → Cloud Messaging.'
     );
@@ -109,7 +110,7 @@ export async function requestNotificationPermission(uid?: string): Promise<strin
     });
 
     if (token) {
-      console.log('[Push] FCM Token registered:', token.slice(0, 20) + '...');
+      logger.info('[Push] FCM Token registered', { prefix: token.slice(0, 20) });
       // Forward Firebase config to SW so background messages work
       sendConfigToSW();
       // Persist to Firestore if user is logged in
@@ -120,7 +121,7 @@ export async function requestNotificationPermission(uid?: string): Promise<strin
     }
     return null;
   } catch (error) {
-    console.error('[Push] Error getting FCM token:', error);
+    logger.error('[Push] Error getting FCM token', error instanceof Error ? error : new Error(String(error)));
     return null;
   }
 }

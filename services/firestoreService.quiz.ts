@@ -1,5 +1,6 @@
 import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, serverTimestamp, startAfter, documentId, type QueryConstraint, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { logger } from '../utils/logger';
 import { type CurriculumModule } from '../data/curriculum';
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import type { ConceptMastery, QuizResult, StudentGamification } from './firestoreService.types';
@@ -179,11 +180,11 @@ export const quizService = {
     startAfterDoc?: DocumentSnapshot
   ): Promise<{ results: QuizResult[]; lastDoc: DocumentSnapshot | null }> => {
     // E2E Mocking
-    console.log('E2E CHECK: window.__E2E_TEACHER_MODE__ =', window.__E2E_TEACHER_MODE__);
+    logger.info('E2E CHECK: window.__E2E_TEACHER_MODE__ =', { value: String(window.__E2E_TEACHER_MODE__) });
     if (typeof window !== 'undefined' && window.__E2E_TEACHER_MODE__) {
-      console.log('E2E: fetchQuizResultsPage mocking activated');
+      logger.info('E2E: fetchQuizResultsPage mocking activated');
       const mockResults = window.__E2E_MOCK_QUIZ_RESULTS__ || [];
-      console.log('E2E: mockResults count =', mockResults.length);
+      logger.info('E2E: mockResults count', { count: mockResults.length });
       const startIdx = startAfterDoc ? 10 : 0; 
       const batch = mockResults.slice(startIdx, startIdx + pageSize);
       return {

@@ -1,5 +1,6 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { QuizResult } from './firestoreService';
+import { logger } from '../utils/logger';
 
 interface MathNavDB extends DBSchema {
   pending_quizzes: {
@@ -119,7 +120,7 @@ export const saveQuizOffline = async (quizResult: QuizResult): Promise<string> =
     timestamp: Date.now(),
   });
   
-  console.log(`[Offline Sync] Quiz saved locally with id: ${id}`);
+  logger.info('[Offline Sync] Quiz saved locally', { id });
   return id;
 };
 
