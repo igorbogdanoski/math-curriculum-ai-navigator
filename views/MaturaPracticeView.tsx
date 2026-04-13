@@ -505,6 +505,50 @@ function QuestionCard({
 
   const topicColor = TOPIC_COLORS[item.topicArea ?? ''] ?? 'bg-gray-100 text-gray-700 border-gray-200';
 
+  // ── On-demand aiSolution generation (B4-2) ───────────────────────────────
+  const solCacheKey = `matura_ai_sol_${item.examId ?? 'local'}_${item.questionNumber}`;
+  const [genSolution, setGenSolution] = useState<string | null>(() => {
+    try { return localStorage.getItem(solCacheKey); } catch { return null; }
+  });
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerateSolution = useCallback(async () => {
+    if (generating || genSolution) return;
+    setGenerating(true);
+    try {
+      const prompt = `Си математички тутор кој пишува чекор-по-чекор решенија за македонски државен испит (ДИМ). Пишувај на македонски јазик.
+
+Прашање ${item.questionNumber} (Дел ${item.part ?? ''}, ${item.points ?? ''} поени):
+${item.questionText}
+
+Точен одговор/модел: ${item.correctAnswer}
+
+Напиши КОНЦИЗНО чекор-по-чекор решение. Барања:
+- Користи LaTeX нотација ($x^2$, $\\frac{a}{b}$)
+- Максимум 200 збора
+- Не го повторувај прашањето
+- Почни директно со решението
+- Нагласи го крајниот одговор
+
+Врати САМО текст на решението, без JSON, без хедери.`;
+
+      const result = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
+      });
+      const text = result.text ?? '';
+      if (text) {
+        setGenSolution(text);
+        try { localStorage.setItem(solCacheKey, text); } catch { /* ignore */ }
+      }
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setGenerating(false);
+    }
+  }, [generating, genSolution, item, solCacheKey]);
+
   // MC submit on click
   const handleMC = useCallback((choice: string) => {
     if (state.submitted) return;
@@ -661,11 +705,11 @@ function QuestionCard({
                 <p className="text-xs text-gray-500 font-medium">Точен одговор:</p>
                 <div className="text-xs text-gray-700"><MathRenderer text={item.correctAnswer} /></div>
               </div>
-              {item.aiSolution && (
+              {(item.aiSolution || genSolution) ? (
                 <div className="pt-2 border-t border-blue-100 space-y-1">
                   <p className="text-xs font-black text-blue-700">Решение:</p>
                   <div className="text-xs text-blue-800 leading-relaxed">
-                    <MathRenderer text={item.aiSolution} />
+                    <MathRenderer text={item.aiSolution ?? genSolution ?? ''} />
                   </div>
                   {item.solutionImageUrl && (
                     <img
@@ -675,6 +719,15 @@ function QuestionCard({
                     />
                   )}
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void handleGenerateSolution()}
+                  disabled={generating}
+                  className="mt-1 px-3 py-1 rounded-lg text-[11px] font-bold bg-violet-100 text-violet-700 hover:bg-violet-200 transition disabled:opacity-50"
+                >
+                  {generating ? 'Генерирање решение…' : 'Генерирај решение'}
+                </button>
               )}
             </div>
           ) : (
@@ -735,11 +788,11 @@ function QuestionCard({
                   <p className="text-xs text-gray-500 font-semibold mb-1">Точен одговор / модел:</p>
                   <div className="text-xs text-gray-700"><MathRenderer text={item.correctAnswer} /></div>
                 </div>
-                {item.aiSolution && (
+                {(item.aiSolution || genSolution) ? (
                   <div className="pt-2 border-t border-gray-200 space-y-1">
                     <p className="text-xs font-black text-blue-700">Решение:</p>
                     <div className="text-xs text-gray-700 leading-relaxed">
-                      <MathRenderer text={item.aiSolution} />
+                      <MathRenderer text={item.aiSolution ?? genSolution ?? ''} />
                     </div>
                     {item.solutionImageUrl && (
                       <img
@@ -749,6 +802,15 @@ function QuestionCard({
                       />
                     )}
                   </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void handleGenerateSolution()}
+                    disabled={generating}
+                    className="mt-1 px-3 py-1 rounded-lg text-[11px] font-bold bg-violet-100 text-violet-700 hover:bg-violet-200 transition disabled:opacity-50"
+                  >
+                    {generating ? 'Генерирање решение…' : 'Генерирај решение'}
+                  </button>
                 )}
               </div>
               {/* Opt-in AI */}
