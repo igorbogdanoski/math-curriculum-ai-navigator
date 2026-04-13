@@ -93,6 +93,10 @@ const getRomanGrade = (level: number) => {
         case 7: return 'VII';
         case 8: return 'VIII';
         case 9: return 'IX';
+        case 10: return 'X';
+        case 11: return 'XI';
+        case 12: return 'XII';
+        case 13: return 'XIII';
         default: return level;
     }
 };
@@ -132,7 +136,7 @@ export const CurriculumGraphView: React.FC = () => {
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
   const { allConcepts, isLoading, curriculum } = useCurriculum();
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, user } = useAuth();
   const networkRef = useRef<any>(null);
 
   // Mastery Overlay state
@@ -143,8 +147,21 @@ export const CurriculumGraphView: React.FC = () => {
   // Keep track of nodes in a ref to access latest state inside event listeners
   const nodesRef = useRef<any[]>([]);
 
-  // Default to Grade 6 initially
+  // Smart default: secondary teachers start on their track grades, primary on grade 6
+  const defaultGrades = useMemo(() => {
+    if (!user?.secondaryTrack || !curriculum) return [6];
+    const trackGrades = curriculum.grades
+      .filter((g: Grade) => g.secondaryTrack === user.secondaryTrack)
+      .map((g: Grade) => g.level);
+    return trackGrades.length > 0 ? [trackGrades[0]] : [6];
+  }, [user?.secondaryTrack, curriculum]);
+
   const [selectedGrades, setSelectedGrades] = useState<number[]>([6]);
+
+  // Apply smart default once curriculum loads
+  useEffect(() => {
+    if (defaultGrades.length > 0) setSelectedGrades(defaultGrades);
+  }, [defaultGrades]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   
   // Clustering State
@@ -192,6 +209,11 @@ export const CurriculumGraphView: React.FC = () => {
     7: '#4CAF50', // Green
     8: '#2196F3', // Blue
     9: '#009688', // Teal
+    // Secondary grades (X–XIII) — distinct palette
+    10: '#FF6F00', // Deep Amber
+    11: '#5D4037', // Brown
+    12: '#00695C', // Dark Teal
+    13: '#1A237E', // Deep Navy
   }), []);
 
   // Colors for Focus Mode
@@ -1003,11 +1025,13 @@ export const CurriculumGraphView: React.FC = () => {
                      </div>
                  ) : !focusNodeId ? (
                      <div className="grid grid-cols-2 gap-y-2 gap-x-4 animate-fade-in">
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm shadow-sm border border-gray-300" style={{backgroundColor: gradeColors[6]}}></div> 6. Одд. (VI)</div>
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm shadow-sm border border-gray-300" style={{backgroundColor: gradeColors[7]}}></div> 7. Одд. (VII)</div>
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm shadow-sm border border-gray-300" style={{backgroundColor: gradeColors[8]}}></div> 8. Одд. (VIII)</div>
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm shadow-sm border border-gray-300" style={{backgroundColor: gradeColors[9]}}></div> 9. Одд. (IX)</div>
-                        {isClustered && <div className="col-span-2 flex items-start gap-2 mt-2 border-t pt-2 text-gray-600"><div className="mt-0.5" style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '10px solid gray' }}></div> <span>Тематски кластер (содржи ознака за одделение [VI-IX])</span></div>}
+                        {(curriculum?.grades ?? []).map((g: Grade) => (
+                          <div key={g.level} className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-sm shadow-sm border border-gray-300" style={{backgroundColor: gradeColors[g.level] ?? '#9E9E9E'}}></div>
+                            <span>{g.level}. Одд. ({getRomanGrade(g.level)}){g.secondaryTrack ? ' ★' : ''}</span>
+                          </div>
+                        ))}
+                        {isClustered && <div className="col-span-2 flex items-start gap-2 mt-2 border-t pt-2 text-gray-600"><div className="mt-0.5" style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderBottom: '10px solid gray' }}></div> <span>Тематски кластер</span></div>}
                      </div>
                  ) : (
                      <div className="space-y-2 animate-fade-in">

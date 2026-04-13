@@ -1,6 +1,8 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { useAuth } from '../contexts/AuthContext';
+import { getDefaultGradeId } from '../hooks/useGeneratorState';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -26,6 +28,7 @@ const months = ['Сеп', 'Окт', 'Ное', 'Дек', 'Јан', 'Фев', 'М�
 export const RoadmapView: React.FC = () => {
     const { navigate } = useNavigation();
     const { curriculum, isLoading } = useCurriculum();
+    const { user } = useAuth();
     const [selectedGradeId, setSelectedGradeId] = useState<string>('');
     const [hoursPerWeek, setHoursPerWeek] = useState(4);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -36,17 +39,20 @@ export const RoadmapView: React.FC = () => {
 
     useEffect(() => {
         if (curriculum && !selectedGradeId) {
-            setSelectedGradeId(curriculum.grades[0].id);
+            setSelectedGradeId(getDefaultGradeId(curriculum, user?.secondaryTrack));
         }
-    }, [curriculum, selectedGradeId]);
+    }, [curriculum, selectedGradeId, user?.secondaryTrack]);
 
     // Automatic Hours Logic based on Macedonian Education System
     useEffect(() => {
         if (curriculum && selectedGradeId) {
             const grade = curriculum.grades.find((g: Grade) => g.id === selectedGradeId);
             if (grade) {
-                // 6th Grade has 5 hours, others (7, 8, 9) have 4 hours
-                if (grade.level === 6) {
+                // Use weeklyHours from data (secondary tracks: 2, 3, or 4h)
+                // Primary fallback: grade 6 = 5h, others = 4h
+                if (grade.weeklyHours) {
+                    setHoursPerWeek(grade.weeklyHours);
+                } else if (grade.level === 6) {
                     setHoursPerWeek(5);
                 } else {
                     setHoursPerWeek(4);
