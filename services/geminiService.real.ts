@@ -397,22 +397,33 @@ async solveSpecificProblemStepByStep(problemText: string): Promise<{ problem: st
     return result;
   },
 
-async diagnoseMisconception(question: string, correctAnswer: string, studentAnswer: string): Promise<string> {
+async diagnoseMisconception(question: string, correctAnswer: string, studentAnswer: string, topicTitle?: string): Promise<string> {
     const safeQuestion = sanitizePromptInput(question, 500);
     const safeCorrectAnswer = sanitizePromptInput(correctAnswer, 250);
     const safeStudentAnswer = sanitizePromptInput(studentAnswer, 250);
+
+    // Inject known misconceptions for this topic as context hints
+    let misconceptionContext = '';
+    if (topicTitle) {
+      const { getMisconceptionsForTopic } = await import('../data/misconceptions');
+      const known = getMisconceptionsForTopic(topicTitle);
+      if (known.length > 0) {
+        misconceptionContext = `\n\nПознати мисконцепции за темата „${topicTitle}":\n${known.slice(0, 4).map((m, i) => `${i + 1}. ${m}`).join('\n')}\nАко ученикот направил некоја од горните грешки, именувај ја директно.`;
+      }
+    }
+
     const prompt = `
       Ти си искусен наставник по математика кој се обидува да ја разбере логиката зад грешката на ученикот.
-      
+
       Прашање: "${safeQuestion}"
       Точен одговор: "${safeCorrectAnswer}"
-      Одговор на ученикот: "${safeStudentAnswer}"
+      Одговор на ученикот: "${safeStudentAnswer}"${misconceptionContext}
 
       Твоја задача:
-      Дијагностицирај каква концептуална или пресметковна грешка направил ученикот. 
+      Дијагностицирај каква концептуална или пресметковна грешка направил ученикот.
       Ако е очигледна концептуална грешка (пр. ги собира именителите кај дропки, не ги разбира негативните броеви, ги меша периметар и плоштина), опиши ја кратко.
       Ако изгледа како обична пресметковна или случајна грешка, кажи "Пресметковна грешка или случајно погодување".
-      
+
       Врати САМО една кратка реченица на македонски јазик која ја опишува грешката (без објаснувања и совети).
       Пример: "Ученикот ги собира именителите наместо да бара НЗС."
     `;

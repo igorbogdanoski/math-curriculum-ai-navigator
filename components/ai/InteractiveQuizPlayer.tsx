@@ -190,7 +190,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       
       // Diagnose misconception asynchronously
       if (option !== 'TIME_UP') {
-        geminiService.diagnoseMisconception(currentQ.question, currentQ.answer ?? '', option)
+        geminiService.diagnoseMisconception(currentQ.question, currentQ.answer ?? '', option, title)
           .then(misconception => {
             if (!isMounted.current) return;
             setMisconceptions(prev => [...prev, {
