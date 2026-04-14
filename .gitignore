@@ -39,6 +39,44 @@ temp.tsx
 
 # Python scripts (data processing tools)
 check_*.py
+debug_replace.py
+
+# One-off development/patch scripts (root-level tooling, not part of app)
+patch_*.cjs
+fix.cjs
+fix_plan.cjs
+fixAcademyView.cjs
+add_plan.cjs
+applyAcademy.cjs
+applyPriors.cjs
+applyPriors2.cjs
+generateAcademyDB.cjs
+generateDB.js
+generateESM.mts
+link.cjs
+ext.cjs
+listGeminiModels.cjs
+listGeminiModels.js
+check_models.cjs
+test_ai.cjs
+aiAnalyzerUI.cjs
+setupDBGen.cjs
+updateUI.cjs
+verify.cjs
+verify2.cjs
+verify_new.cjs
+writeAcademy.cjs
+write_gallery.cjs
+
+# Temporary data/output artifacts (root-level, generated during dev)
+/grade*_activities.json
+/6to.json
+/7mo.json
+/8mo.json
+/9to.json
+/metadata.json
+/status.md
+/outputs/
 
 # TypeScript build info
 tsconfig.tsbuildinfo
