@@ -1,9 +1,9 @@
 # Национална Стратегија — Math Curriculum AI Navigator
-## Математика | Основно образование 1–9 одделение
+## Математика | Основно + Средно образование 1–13 одделение
 
 > Создадено: 15 Март 2026
-> Последно ажурирање: 16 Март 2026 (Сесија 7)
-> Статус: 🟢 Фаза С ✅ + Фаза И ✅ + Фаза П ✅ + Фаза О ✅ + Фаза Р ✅ | Следна: Фаза Н
+> Последно ажурирање: 14 Април 2026 (S21 — Secondary Integration + Matura Feature Layer)
+> Статус: 🟢 Фази С+И+П+О+Р+Н ✅ | S11–S21 ✅ | Тековна: S22
 > Визија: Најдобра дигитална педагошка платформа за македонскиот образовен систем
 
 ---
@@ -11,10 +11,50 @@
 ## ВРЕМЕНСКА ЛИНИЈА
 
 ```
-ФАЗА С ✅   ФАЗА И ✅   ФАЗА П ✅   ФАЗА О ✅   ФАЗА Р ✅   ФАЗА Н ⬜
+ФАЗА С ✅   ФАЗА И ✅   ФАЗА П ✅   ФАЗА О ✅   ФАЗА Р ✅   ФАЗА Н ✅
 Темели   →  Институц. → Педагог.  → Офлајн   → Refactor → Национал.
-ЗАВРШЕНА    ЗАВРШЕНА    ЗАВРШЕНА    ЗАВРШЕНА    ЗАВРШЕНА   Следна (Мес. 5+)
+ЗАВРШЕНА    ЗАВРШЕНА    ЗАВРШЕНА    ЗАВРШЕНА    ЗАВРШЕНА   ЗАВРШЕНА
+
+S11 ✅      S12 ✅      S13 ✅      S14 ✅      S15 ✅      S16–S21 ✅
+Audit       Grounding   DoK         AlgTiles    A1.9+       SecInteg+Matura
 ```
+
+---
+
+## СЕСИИ — ДЕТАЛЕН СТАТУС
+
+### S11–S14 (Март 2026) ✅
+
+- S11: Security audit, Sentry, PWA hardening
+- S12: Gemini Grounding (Google Search), AIStatsAssistant
+- S13: DoK (Depth of Knowledge) — глобална видливост во 8+ views
+- S14: AlgebraTiles (A1), Shape3DViewer (A2), Academy DoK+Visual модули, Forum C1-C3
+
+### S15 (Март 2026) ✅
+
+- A1.8: AlgebraTiles zero-pair — **ОДЛОЖЕНО → S22/D2**
+- A1.9: Tiles→LaTeX expression callback ✅
+- B3.3: Shareable URL — **ОДЛОЖЕНО → S22/D3**
+- SEO: Sitemap, hreflang, AlgebraTiles color legend
+
+### S19–S20 (13 Април 2026) ✅
+
+- Secondary curriculum data layer: сите 5 tracks (gymnasium, voc4, voc3, voc2, gymnasium_elective)
+- 219 прашања — Интерна матура гимназиско (internal-matura-bank-gymnasium-mk.json)
+- DIM стручна матура: IT + Economics 2022–2024 (6 испити во JSON)
+- Secondary integration architecture: P1–P6 (Grade.weeklyHours, getSecondaryTrackContext, getDefaultGradeId, assessmentStandards, MATURA_TRACKS mapping)
+- Matura регулатива 2025: session/track labels (ucilisna, zavrshen, bank)
+
+### S21 (14 Април 2026) ✅ — commit `48e208d`
+
+- **B1/N2:** ConceptDetailView — "Матурски прашања" collapsed блок (lazy-load по conceptId)
+- **B2/N1:** MaturaLibraryView — "Училишна матура" таб (InternalMaturaTab, 219q, filter, pagination)
+- **B3/N3 student:** Inline practice mode (15 MC + 4 open, auto-grade, self-assess, quiz_results save)
+- **Metrics:** tsc=0 · 574/574 tests · build PASS · as any=2(легитимни) · @ts-ignore=0
+
+### S22 (14 Април 2026) — АКТИВНА — `ACTION_PLAN_S22_2026-04-14.md`
+
+Тековни задачи: concept_mastery по internal practice (C1) · Teacher B3 PDF+assign (C2) · Recovery Worksheets (C3) · console→logger (D1) · zero-pair анимација (D2) · Shareable URLs (D3) · Adaptive DoK (D4) · English i18n (E1)
 
 ---
 
@@ -336,7 +376,7 @@
 - [x] SettingsView — dropdown за избор на тип (Основно I–IX / Гимназиско / Стручно 4-год / Стручно 3-год)
 - [ ] **Чека:** Официјални наставни програми од МОН → JSON шаблон: `docs/CURRICULUM_DATA_TEMPLATE.json`
 - [ ] **Чека:** Мaturski тестови (ДИМ) → водич: `docs/MATURA_PDF_GUIDE.md`
-- [ ] **Следно по добивање податоци:** PopulateConceptsForSecondaryCurriculum + AI контекст за secondary
+- [x] **Secondary Integration завршена (S19–S21):** сите 5 tracks · weeklyHours · getSecondaryTrackContext · getDefaultGradeId · assessmentStandards · MATURA_TRACKS · Училишна матура таб · ConceptDetail мatura блок
 
 ---
 
@@ -434,5 +474,5 @@ IndexedDB (sync)
 ---
 
 *Создадено: 15 Март 2026*
-*Последно ажурирање: 16 Март 2026 (Сесија 8 — Фаза Н ✅ Н1–Н4 инфраструктура завршена)*
-*Следно ревидирање: По добивање на МОН програми и ДИМ тестови*
+*Последно ажурирање: 14 Април 2026 (S21 — Secondary Integration + Matura Feature Layer завршена)*
+*Следно ревидирање: По S22 (concept_mastery · Recovery Worksheets · Teacher B3 · English i18n)*
