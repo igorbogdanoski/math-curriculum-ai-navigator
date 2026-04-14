@@ -4,10 +4,10 @@
  * adaptive homework, gamification, save progress modal.
  * Extracted from StudentPlayView for single-responsibility.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Star, RefreshCw, BookOpen, BarChart2, Sparkles, ExternalLink,
-  Trophy, Loader2, MessageSquare, Send, Users,
+  Trophy, Loader2, MessageSquare, Send, Users, FileText,
 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { ACHIEVEMENTS } from '../../services/firestoreService';
@@ -16,6 +16,7 @@ import { firestoreService } from '../../services/firestoreService';
 import { calcFibonacciLevel, getAvatar } from '../../utils/gamification';
 import { PrintableHomework } from '../materials/PrintableHomework';
 import { SaveProgressModal } from './SaveProgressModal';
+import { RecoveryWorksheetView } from '../../views/RecoveryWorksheetView';
 import type { Concept, Grade, Topic } from '../../types';
 import type { QuizSessionState, QuizSessionAction, QuizPlayData } from './quizSessionReducer';
 
@@ -49,6 +50,8 @@ export const QuizResultPanel: React.FC<QuizResultPanelProps> = ({
     metacognitivePrompt, metacognitiveNote, metacognitiveSaved,
     peerSuggestions, homework, isHomeworkLoading, homeworkError,
   } = session;
+
+  const [showRecovery, setShowRecovery] = useState(false);
 
   if (!quizResult) return null;
 
@@ -158,10 +161,35 @@ export const QuizResultPanel: React.FC<QuizResultPanelProps> = ({
                 <RefreshCw className="w-3.5 h-3.5" />
                 Обиди се повторно
               </button>
+              {quizData?._meta.conceptId && !showRecovery && (
+                <button
+                  type="button"
+                  onClick={() => setShowRecovery(true)}
+                  className="mt-2 flex items-center gap-2 text-xs font-bold bg-rose-100 text-rose-800 px-4 py-2 rounded-xl hover:bg-rose-200 transition"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  📄 Генерирај работен лист
+                </button>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* C3: Recovery Worksheet — shown when score < 70% and user requests it */}
+      {showRecovery && quizData?._meta.conceptId && (
+        <RecoveryWorksheetView
+          studentName={studentName || 'Ученик'}
+          deviceId={deviceId || undefined}
+          conceptId={quizData._meta.conceptId}
+          conceptTitle={
+            quizData._meta.conceptId
+              ? (getConceptDetails(quizData._meta.conceptId).concept?.title ?? quizData.title ?? quizData._meta.conceptId)
+              : (quizData.title ?? 'концептот')
+          }
+          onClose={() => setShowRecovery(false)}
+        />
+      )}
 
       {/* P1: AI personalised feedback */}
       {(isFeedbackLoading || aiFeedback) && (
