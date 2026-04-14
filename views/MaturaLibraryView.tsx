@@ -82,8 +82,8 @@ interface AIGrade {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function isOpen(q: MaturaQuestion): boolean {
-  if (q.questionType === 'open') return true;
-  if (q.questionType === 'mc')   return false;
+  if (q.questionType === 'open' || q.questionType === 'short') return true;
+  if (q.questionType === 'mc') return false;
   return !q.choices || Object.keys(q.choices).length === 0;
 }
 function parseSubParts(answer: string): { A?: string; B?: string } {

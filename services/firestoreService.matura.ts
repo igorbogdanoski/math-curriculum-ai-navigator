@@ -32,7 +32,7 @@ interface LocalMaturaRawQuestion {
   questionNumber: number;
   part: 1 | 2 | 3;
   points: number;
-  questionType?: 'mc' | 'open';
+  questionType?: 'mc' | 'short' | 'open';
   questionText: string;
   choices?: Record<string, string> | null;
   correctAnswer: string;
@@ -88,7 +88,12 @@ export interface MaturaQuestion {
   questionNumber: number;
   part: 1 | 2 | 3;
   points: number;
-  questionType?: 'mc' | 'open';
+  /**
+   * mc    — избор на еден точен одговор (1 бод)
+   * short — краток одговор (1–2 бода) — Концепција ДИЦ 2025, Државна стручна матура
+   * open  — цела постапка / проширен одговор (2–4+ бода)
+   */
+  questionType?: 'mc' | 'short' | 'open';
   questionText: string;
   choices?: Record<string, string> | null;
   correctAnswer: string;
@@ -120,7 +125,7 @@ export interface MaturaQueryFilters {
   topicAreas?: string[];
   parts?: number[];
   dokLevels?: number[];
-  questionType?: 'mc' | 'open';
+  questionType?: 'mc' | 'short' | 'open';
 }
 
 export interface MaturaStoredGrade {
@@ -163,8 +168,10 @@ function applyFilters(qs: MaturaQuestion[], f: MaturaQueryFilters): MaturaQuesti
     if (f.topicAreas?.length && !f.topicAreas.includes(q.topicArea ?? '')) return false;
     if (f.parts?.length     && !f.parts.includes(q.part))                  return false;
     if (f.dokLevels?.length && !f.dokLevels.includes(q.dokLevel ?? 1))     return false;
-    if (f.questionType === 'mc'   &&  (q.questionType === 'open' || (!q.choices || !Object.keys(q.choices).length))) return false;
-    if (f.questionType === 'open' && !(q.questionType === 'open' || (!q.choices || !Object.keys(q.choices).length))) return false;
+    // 'short' (краток одговор) and 'open' (цела постапка) are both non-MC
+    const isNonMc = q.questionType === 'open' || q.questionType === 'short' || (!q.choices || !Object.keys(q.choices).length);
+    if (f.questionType === 'mc'   &&  isNonMc)  return false;
+    if (f.questionType === 'open' && !isNonMc)  return false;
     return true;
   });
 }
