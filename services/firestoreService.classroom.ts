@@ -209,3 +209,28 @@ export const fetchStudentIdentityByDevice = async (deviceId: string): Promise<{ 
     return { name: data.name, anonymousUid: data.anonymousUid };
   };
 
+export interface MaturaAssignment {
+  id?: string;
+  teacherUid: string;
+  classId: string;
+  title: string;
+  questionIds: string[];
+  createdAt?: unknown;
+}
+
+export const createAssignment = async (
+  teacherUid: string,
+  classId: string,
+  title: string,
+  questionIds: string[],
+): Promise<string> => {
+  const ref = await addDoc(collection(db, 'matura_assignments'), {
+    teacherUid,
+    classId,
+    title,
+    questionIds,
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
