@@ -1,12 +1,12 @@
 {
   "exam": {
-    "id": "internal-matura-bank-vocational4-mk",
+    "id": "internal-matura-bank-gymnasium-mk",
     "year": 2026,
     "session": "bank",
     "language": "mk",
-    "title": "Базен прашања — Интерна матура по математика (Стручно 4-год)",
+    "title": "Базен прашања — Интерна матура по математика (Гимназиско)",
     "durationMinutes": 0,
-    "track": "vocational4",
+    "track": "gymnasium",
     "gradeLevel": 13,
     "questionCount": 120,
     "totalPoints": 0
@@ -31,7 +31,7 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c3-1"],
+      "conceptIds": ["gym11-c3-1"],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
