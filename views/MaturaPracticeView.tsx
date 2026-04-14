@@ -39,15 +39,12 @@ interface AIGrade {
   score: number;
   maxScore: number;
   feedback: string;
-  partA?: boolean;
-  partB?: boolean;
-  commentA?: string;
-  commentB?: string;
+  correct?: boolean;
+  comment?: string;
 }
 interface QuestionState {
   mcPick?: string;
-  answerA?: string;
-  answerB?: string;
+  answer?: string;
   aiGrade?: AIGrade;
   grading?: boolean;
   selfChecks?: boolean[];
@@ -90,11 +87,6 @@ function isOpen(q: MaturaQuestion): boolean {
   if (q.questionType === 'mc')   return false;
   return !q.choices || Object.keys(q.choices).length === 0;
 }
-function parseSubParts(answer: string): { A?: string; B?: string } {
-  const aMatch = answer.match(/[АA]\.\s*([\s\S]+?)(?=\s*,?\s*[БB]\.|$)/);
-  const bMatch = answer.match(/[БB]\.\s*([\s\S]+)/);
-  return { A: aMatch?.[1]?.trim(), B: bMatch?.[1]?.trim() };
-}
 function safeParseJSON(text: string): any {
   try { const m = text.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null; }
   catch { return null; }
@@ -109,30 +101,29 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 // ─── AI grading ──────────────────────────────────────────────────────────────
-async function gradePart2(q: MaturaQuestion, answerA: string, answerB: string): Promise<AIGrade> {
-  const cacheInput = `${answerA}|||${answerB}`;
-  const cacheKey   = buildGradeCacheKey(q.examId, q.questionNumber, cacheInput);
+async function gradePart2(q: MaturaQuestion, answer: string): Promise<AIGrade> {
+  const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, answer);
+  const maxScore = q.points ?? 4;
 
   const cached = await getCachedAIGrade(cacheKey);
   if (cached) {
-    return {
-      score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback,
-      partA: undefined, partB: undefined, commentA: undefined, commentB: undefined,
-    };
+    return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
   }
 
   const prompt = `Ти си асистент за оценување матура на македонски јазик.
 
-Задача Q${q.questionNumber}: ${q.questionText}
+Задача Q${q.questionNumber} (${maxScore} поени): ${q.questionText}
 Точен одговор: ${q.correctAnswer}
-Одговор на ученикот: А. ${answerA || '(нема)'} | Б. ${answerB || '(нема)'}
+Одговор на ученикот: ${answer || '(нема одговор)'}
 
-Оцени ги двата дела (А и Б). Секој дел вреди 1 поен.
+Оцени го одговорот. Споредувај математичко значење, не буквален текст.
 Врати САМО валиден JSON:
-{"score":0,"partA":false,"partB":false,"commentA":"...","commentB":"...","feedback":"..."}
+{"score":0,"correct":false,"comment":"...","feedback":"..."}
 
-- Споредувај математичко значење, не буквален текст.
-- score = 0, 1 или 2 (вкупно точни делови).`;
+- score = цел број од 0 до ${maxScore}.
+- correct = true ако одговорот суштински совпаѓа со точниот.
+- comment = кратка реченица за одговорот (на македонски).
+- feedback = детална повратна информација (на македонски).`;
 
   const resp = await callGeminiProxy({
     model: DEFAULT_MODEL,
@@ -142,14 +133,16 @@ async function gradePart2(q: MaturaQuestion, answerA: string, answerB: string): 
   const p = safeParseJSON(resp.text);
   if (!p) throw new Error('Parse error');
   const grade: AIGrade = {
-    score: Number(p.score ?? 0), maxScore: 2, feedback: p.feedback ?? '',
-    partA: Boolean(p.partA), partB: Boolean(p.partB),
-    commentA: p.commentA, commentB: p.commentB,
+    score: Math.min(Number(p.score ?? 0), maxScore),
+    maxScore,
+    feedback: p.feedback ?? '',
+    correct: Boolean(p.correct),
+    comment: p.comment,
   };
 
   saveAIGrade(cacheKey, {
     examId: q.examId, questionNumber: q.questionNumber,
-    inputHash: cacheKey, score: grade.score, maxPoints: 2, feedback: grade.feedback,
+    inputHash: cacheKey, score: grade.score, maxPoints: maxScore, feedback: grade.feedback,
   });
   return grade;
 }
@@ -501,7 +494,6 @@ function QuestionCard({
   const open = isOpen(item);
   const part2 = item.part === 2 && open;
   const part3 = item.part === 3 && open;
-  const sub   = part2 ? parseSubParts(item.correctAnswer) : {};
 
   const topicColor = TOPIC_COLORS[item.topicArea ?? ''] ?? 'bg-gray-100 text-gray-700 border-gray-200';
 
@@ -552,20 +544,19 @@ ${item.questionText}
   // MC submit on click
   const handleMC = useCallback((choice: string) => {
     if (state.submitted) return;
-    const correct = item.correctAnswer.trim();
     onUpdate({ mcPick: choice, submitted: true });
-  }, [state.submitted, item.correctAnswer, onUpdate]);
+  }, [state.submitted, onUpdate]);
 
   // Part 2 AI grade
   const handleGradeP2 = useCallback(async () => {
     onUpdate({ grading: true, aiError: undefined });
     try {
-      const grade = await gradePart2(item, state.answerA ?? '', state.answerB ?? '');
+      const grade = await gradePart2(item, state.answer ?? '');
       onUpdate({ grading: false, aiGrade: grade, submitted: true });
     } catch {
       onUpdate({ grading: false, aiError: 'Грешка при оценување. Обидете се повторно.', submitted: false });
     }
-  }, [item, state.answerA, state.answerB, onUpdate]);
+  }, [item, state.answer, onUpdate]);
 
   // Part 3 AI grade
   const handleGradeP3 = useCallback(async () => {
@@ -672,29 +663,22 @@ ${item.questionText}
       {/* ── Part 2 open (AI grade) ── */}
       {part2 && (
         <div className="px-5 pb-4 space-y-3 mt-2">
-          <p className="text-xs text-gray-500 font-medium">Внеси го твојот одговор (А и Б):</p>
-          {['А', 'Б'].map((ltr, i) => {
-            const val = i === 0 ? state.answerA : state.answerB;
-            const setVal = (v: string) => onUpdate(i === 0 ? { answerA: v } : { answerB: v });
-            const aiOk  = state.aiGrade ? (i === 0 ? state.aiGrade.partA : state.aiGrade.partB) : null;
-            const comment = state.aiGrade ? (i === 0 ? state.aiGrade.commentA : state.aiGrade.commentB) : null;
-            return (
-              <div key={ltr}>
-                <label className="text-xs font-bold text-gray-600 block mb-1">{ltr}.</label>
-                <input
-                  type="text" value={val ?? ''} disabled={!!state.aiGrade}
-                  onChange={e => setVal(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-brand-primary focus:border-brand-primary disabled:bg-gray-50"
-                  placeholder={`Одговор ${ltr}…`}
-                />
-                {state.aiGrade && (
-                  <p className={`text-xs mt-1 font-medium ${aiOk ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {aiOk ? '✓' : '✗'} {comment}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+          <p className="text-xs text-gray-500 font-medium">Внеси го твојот одговор:</p>
+          <div>
+            <input
+              type="text"
+              value={state.answer ?? ''}
+              disabled={!!state.aiGrade}
+              onChange={e => onUpdate({ answer: e.target.value })}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-brand-primary focus:border-brand-primary disabled:bg-gray-50"
+              placeholder="Одговор…"
+            />
+            {state.aiGrade && (
+              <p className={`text-xs mt-1 font-medium ${state.aiGrade.correct ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {state.aiGrade.correct ? '✓' : '✗'} {state.aiGrade.comment}
+              </p>
+            )}
+          </div>
           {state.aiGrade ? (
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
               <p className="text-xs font-bold text-blue-700">
@@ -732,7 +716,7 @@ ${item.questionText}
             </div>
           ) : (
             <button
-              type="button" disabled={!!state.grading || (!state.answerA && !state.answerB)}
+              type="button" disabled={!!state.grading || !state.answer}
               onClick={handleGradeP2}
               className="px-4 py-2 bg-brand-primary text-white text-sm font-bold rounded-lg hover:bg-brand-secondary disabled:opacity-50 transition-colors"
             >

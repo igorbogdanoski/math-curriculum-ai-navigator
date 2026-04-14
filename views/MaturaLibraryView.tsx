@@ -80,7 +80,7 @@ const TRACK_LABELS: Record<string, string> = {
 // ─── AI grade type ───────────────────────────────────────────────────────────
 interface AIGrade {
   score: number; maxScore: number; feedback: string;
-  partA?: boolean; partB?: boolean; commentA?: string; commentB?: string;
+  correct?: boolean; comment?: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -88,11 +88,6 @@ function isOpen(q: MaturaQuestion): boolean {
   if (q.questionType === 'open' || q.questionType === 'short') return true;
   if (q.questionType === 'mc') return false;
   return !q.choices || Object.keys(q.choices).length === 0;
-}
-function parseSubParts(answer: string): { A?: string; B?: string } {
-  const aMatch = answer.match(/[АA]\.\s*([\s\S]+?)(?=\s*,?\s*[БB]\.|$)/);
-  const bMatch = answer.match(/[БB]\.\s*([\s\S]+)/);
-  return { A: aMatch?.[1]?.trim(), B: bMatch?.[1]?.trim() };
 }
 function safeParseJSON(text: string): any {
   try { const m = text.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null; }
@@ -105,30 +100,27 @@ function examLabel(e: MaturaExamMeta): string {
 }
 
 // ─── AI grading ──────────────────────────────────────────────────────────────
-async function gradePart2(q: MaturaQuestion, answerA: string, answerB: string): Promise<AIGrade> {
-  const cacheInput = `${answerA}|||${answerB}`;
-  const cacheKey   = buildGradeCacheKey(q.examId, q.questionNumber, cacheInput);
+async function gradePart2(q: MaturaQuestion, answer: string): Promise<AIGrade> {
+  const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, answer);
+  const maxScore = q.points ?? 4;
 
   // Cache hit — skip Gemini call entirely
   const cached = await getCachedAIGrade(cacheKey);
   if (cached) {
-    return {
-      score: cached.score, maxScore: cached.maxPoints,
-      feedback: cached.feedback,
-      partA: undefined, partB: undefined,
-      commentA: undefined, commentB: undefined,
-    };
+    return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
   }
 
   const prompt = `Ти си асистент за оценување матура на македонски јазик.
-Задача Q${q.questionNumber}: ${q.questionText}
+Задача Q${q.questionNumber} (${maxScore} поени): ${q.questionText}
 Точен одговор: ${q.correctAnswer}
-Одговор на ученикот: А. ${answerA||'(нема)'} | Б. ${answerB||'(нема)'}
-Оцени ги двата дела (А и Б). Секој дел вреди 1 поен.
+Одговор на ученикот: ${answer || '(нема одговор)'}
+Оцени го одговорот. Споредувај математичко значење, не буквален текст.
 Врати САМО валиден JSON:
-{"score":0,"partA":false,"partB":false,"commentA":"...","commentB":"...","feedback":"..."}
-- Споредувај математичко значење, не буквален текст.
-- score = 0, 1 или 2.`;
+{"score":0,"correct":false,"comment":"...","feedback":"..."}
+- score = цел број од 0 до ${maxScore}.
+- correct = true ако одговорот суштински совпаѓа со точниот.
+- comment = кратка реченица за одговорот (на македонски).
+- feedback = детална повратна информација (на македонски).`;
 
   const resp = await callGeminiProxy({
     model: DEFAULT_MODEL,
@@ -138,14 +130,16 @@ async function gradePart2(q: MaturaQuestion, answerA: string, answerB: string): 
   const p = safeParseJSON(resp.text);
   if (!p) throw new Error('Parse error');
   const grade: AIGrade = {
-    score: Number(p.score ?? 0), maxScore: 2, feedback: p.feedback ?? '',
-    partA: Boolean(p.partA), partB: Boolean(p.partB),
-    commentA: p.commentA, commentB: p.commentB,
+    score: Math.min(Number(p.score ?? 0), maxScore),
+    maxScore,
+    feedback: p.feedback ?? '',
+    correct: Boolean(p.correct),
+    comment: p.comment,
   };
 
   saveAIGrade(cacheKey, {
     examId: q.examId, questionNumber: q.questionNumber,
-    inputHash: cacheKey, score: grade.score, maxPoints: 2, feedback: grade.feedback,
+    inputHash: cacheKey, score: grade.score, maxPoints: maxScore, feedback: grade.feedback,
   });
   return grade;
 }
@@ -248,8 +242,7 @@ interface CardProps {
   practiceMode: boolean;
   mcPick?: string;
   onMcPick?: (ch: string) => void;
-  answerA: string; setAnswerA: (v: string) => void;
-  answerB: string; setAnswerB: (v: string) => void;
+  answer: string; setAnswer: (v: string) => void;
   onGradeP2: () => void;
   gradingP2: boolean;
   aiGrade?: AIGrade;
@@ -265,13 +258,11 @@ interface CardProps {
 function QuestionCard({
   q, revealed, onReveal, onHide, practiceMode,
   mcPick, onMcPick,
-  answerA, setAnswerA, answerB, setAnswerB, onGradeP2, gradingP2, aiGrade,
+  answer, setAnswer, onGradeP2, gradingP2, aiGrade,
   selfChecks, onSelfCheck,
   aiDesc, setAiDesc, onGradeP3, gradingP3, aiGradeP3, aiError,
 }: CardProps) {
   const open         = isOpen(q);
-  const hasSubParts  = open && q.part === 2 && /[АA]\./.test(q.correctAnswer);
-  const sub          = hasSubParts ? parseSubParts(q.correctAnswer) : null;
   const ta           = q.topicArea ?? '';
   const selfScore    = selfChecks.filter(Boolean).length;
 
@@ -343,27 +334,19 @@ function QuestionCard({
       {open && q.part === 2 && practiceMode && !revealed && (
         <div className="px-4 pb-3 space-y-2">
           <p className="text-xs text-gray-500 font-medium">Внеси го твојот одговор:</p>
-          {(['А','Б'] as const).map((ltr, i) => {
-            const val    = i === 0 ? answerA : answerB;
-            const setVal = i === 0 ? setAnswerA : setAnswerB;
-            return (
-              <div key={ltr}>
-                <label htmlFor={`p2-${q.questionNumber}-${ltr}`} className="text-xs font-bold text-gray-600">{ltr}.</label>
-                <input
-                  id={`p2-${q.questionNumber}-${ltr}`}
-                  type="text" value={val} onChange={e => setVal(e.target.value)}
-                  disabled={!!aiGrade}
-                  placeholder={`Одговор ${ltr}…`}
-                  className="mt-0.5 w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-indigo-300 focus:border-indigo-400 disabled:bg-gray-50" />
-                {aiGrade && (
-                  <p className={`text-xs mt-0.5 font-medium ${(i===0?aiGrade.partA:aiGrade.partB)?'text-emerald-600':'text-red-600'}`}>
-                    {(i===0?aiGrade.partA:aiGrade.partB)?'✓ ':'✗ '}
-                    {i===0?aiGrade.commentA:aiGrade.commentB}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+          <div>
+            <input
+              id={`p2-${q.questionNumber}`}
+              type="text" value={answer} onChange={e => setAnswer(e.target.value)}
+              disabled={!!aiGrade}
+              placeholder="Одговор…"
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-indigo-300 focus:border-indigo-400 disabled:bg-gray-50" />
+            {aiGrade && (
+              <p className={`text-xs mt-0.5 font-medium ${aiGrade.correct ? 'text-emerald-600' : 'text-red-600'}`}>
+                {aiGrade.correct ? '✓ ' : '✗ '}{aiGrade.comment}
+              </p>
+            )}
+          </div>
           {aiGrade ? (
             <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
@@ -373,7 +356,7 @@ function QuestionCard({
               <p className="text-xs text-indigo-700">{aiGrade.feedback}</p>
             </div>
           ) : (
-            <button type="button" disabled={gradingP2 || (!answerA && !answerB)} onClick={onGradeP2}
+            <button type="button" disabled={gradingP2 || !answer} onClick={onGradeP2}
               className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 transition-colors">
               {gradingP2 ? 'Оценување…' : 'Провери со AI'}
             </button>
@@ -1179,8 +1162,7 @@ export function MaturaLibraryView() {
 
   // ── Per-question state ──
   const [mcPicks,    setMcPicks]    = useState<Record<number,string>>({});
-  const [p2AnswersA, setP2AnswersA] = useState<Record<number,string>>({});
-  const [p2AnswersB, setP2AnswersB] = useState<Record<number,string>>({});
+  const [p2Answers,  setP2Answers]  = useState<Record<number,string>>({});
   const [aiGrades,   setAiGrades]   = useState<Record<number,AIGrade>>({});
   const [gradingP2,  setGradingP2]  = useState<Set<number>>(new Set());
   const [selfChecks, setSelfChecks] = useState<Record<number,boolean[]>>({});
@@ -1221,7 +1203,7 @@ export function MaturaLibraryView() {
   const switchExam = useCallback((id: string) => {
     setSelectedExamId(id);
     setRevealedIds(new Set()); setRevealAll(false);
-    setMcPicks({}); setP2AnswersA({}); setP2AnswersB({});
+    setMcPicks({}); setP2Answers({});
     setAiGrades({}); setAiGradesP3({}); setSelfChecks({});
     setAiDescs({}); setAiErrors({});
     setFilterPart(0); setFilterDok(0); setFilterTopic('');
@@ -1245,7 +1227,7 @@ export function MaturaLibraryView() {
     setGradingP2(prev => { const s = new Set(prev); s.add(n); return s; });
     setAiErrors(prev => ({ ...prev, [n]: '' }));
     try {
-      const grade = await gradePart2(q, p2AnswersA[n] ?? '', p2AnswersB[n] ?? '');
+      const grade = await gradePart2(q, p2Answers[n] ?? '');
       setAiGrades(prev => ({ ...prev, [n]: grade }));
       setRevealedIds(prev => { const s = new Set(prev); s.add(n); return s; });
     } catch {
@@ -1253,7 +1235,7 @@ export function MaturaLibraryView() {
     } finally {
       setGradingP2(prev => { const s = new Set(prev); s.delete(n); return s; });
     }
-  }, [p2AnswersA, p2AnswersB]);
+  }, [p2Answers]);
 
   const handleGradeP3 = useCallback(async (q: MaturaQuestion) => {
     const n   = q.questionNumber;
@@ -1493,8 +1475,7 @@ export function MaturaLibraryView() {
                   practiceMode={practiceMode}
                   mcPick={mcPicks[n]}
                   onMcPick={ch => setMcPicks(p => ({ ...p, [n]: ch }))}
-                  answerA={p2AnswersA[n] ?? ''}   setAnswerA={v => setP2AnswersA(p => ({ ...p, [n]: v }))}
-                  answerB={p2AnswersB[n] ?? ''}   setAnswerB={v => setP2AnswersB(p => ({ ...p, [n]: v }))}
+                  answer={p2Answers[n] ?? ''}   setAnswer={v => setP2Answers(p => ({ ...p, [n]: v }))}
                   onGradeP2={() => handleGradeP2(q)}
                   gradingP2={gradingP2.has(n)}
                   aiGrade={aiGrades[n]}
