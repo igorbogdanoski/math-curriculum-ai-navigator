@@ -8,8 +8,8 @@
     "durationMinutes": 0,
     "track": "gymnasium",
     "gradeLevel": 13,
-    "questionCount": 120,
-    "totalPoints": 0
+    "questionCount": 219,
+    "totalPoints": 702
   },
   "questions": [
     {
@@ -17,21 +17,4887 @@
       "part": 1,
       "points": 1,
       "questionType": "mc",
-      "questionText": "ПРАШАЊЕ 1 — замени го овој текст",
+      "questionText": "Вредноста на изразот $2 \\cdot (-2)^2 + 3 \\cdot (-1)^3$ е :",
       "choices": {
-        "А": "одговор А",
-        "Б": "одговор Б",
-        "В": "одговор В",
-        "Г": "одговор Г"
+        "А": "$11$",
+        "Б": "$5$",
+        "В": "$8$",
+        "Г": "$7$"
       },
-      "correctAnswer": "А",
-      "topic": "Тема",
+      "correctAnswer": "Б",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 2,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Колку е $\\frac{2}{3}$ од $18$ :",
+      "choices": {
+        "А": "$\\frac{16}{3}$",
+        "Б": "$3$",
+        "В": "$12$",
+        "Г": "$27$"
+      },
+      "correctAnswer": "В",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 3,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Множеството $A = \\{x \\mid x \\in \\mathbb{R},\\; 1 \\le x < 2\\}$ е точно претставено во :",
+      "choices": {
+        "А": "$(1,\\, 2)$",
+        "Б": "$[1,\\, 2]$",
+        "В": "$(1,\\, 2]$",
+        "Г": "$[1,\\, 2)$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 4,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Квадратот на биномот $2a - 1$ е еднаков на :",
+      "choices": {
+        "А": "$4a^2 - 1$",
+        "Б": "$2a^2 - a + 1$",
+        "В": "$4a^2 - 4a + 1$",
+        "Г": "$4a - 1$"
+      },
+      "correctAnswer": "В",
+      "topic": "Алгебра",
       "topicArea": "algebra",
       "dokLevel": 1,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym11-c3-1"],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 5,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "По кратењето на дропката $\\dfrac{a^2 - a}{1 - a}$ се добива :",
+      "choices": {
+        "А": "$a - 1$",
+        "Б": "$a^2$",
+        "В": "$-a$",
+        "Г": "$a + 1$"
+      },
+      "correctAnswer": "В",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 6,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Линеарната функција $y = x + 4$ ја сече $y$-оската во точката :",
+      "choices": {
+        "А": "$M(0,\\, 4)$",
+        "Б": "$M(4,\\, 0)$",
+        "В": "$M(2,\\, 4)$",
+        "Г": "$M(1,\\, 4)$"
+      },
+      "correctAnswer": "А",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 7,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Нула на линеарната функција $y = 2x - 10$ е:",
+      "choices": {
+        "А": "$5$",
+        "Б": "$0$",
+        "В": "$-2$",
+        "Г": "$1$"
+      },
+      "correctAnswer": "А",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 8,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Решението на системот равенки $\\begin{cases} x + y = 3 \\\\ x - y = 1 \\end{cases}$ е :",
+      "choices": {
+        "А": "$(3,\\, 1)$",
+        "Б": "$(1,\\, 2)$",
+        "В": "$(2,\\, 1)$",
+        "Г": "$(1,\\, -1)$"
+      },
+      "correctAnswer": "В",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 9,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Решението на системот неравенки $\\begin{cases} x \\le 3 \\\\ x < 2 \\end{cases}$ е :",
+      "choices": {
+        "А": "$(2,\\, 3]$",
+        "Б": "$(-\\infty,\\, 3)$",
+        "В": "$(-\\infty,\\, 2)$",
+        "Г": "$(-\\infty,\\, 3]$"
+      },
+      "correctAnswer": "В",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 10,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Бројната вредност на изразот $\\left(\\dfrac{1}{2}\\right)^{-2} - \\left(\\dfrac{1}{3}\\right)^{-2}$ е:",
+      "choices": {
+        "А": "$5$",
+        "Б": "$-5$",
+        "В": "$1$",
+        "Г": "$6$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 11,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "$\\sqrt[3]{\\sqrt{2}} =$",
+      "choices": {
+        "А": "$\\sqrt[5]{2}$",
+        "Б": "$\\sqrt[6]{2}$",
+        "В": "$\\sqrt[4]{2}$",
+        "Г": "$\\sqrt[3]{2}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 12,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Колку е $i^{24}$",
+      "choices": {
+        "А": "$24$",
+        "Б": "$-1$",
+        "В": "$0$",
+        "Г": "$1$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 13,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Количникот $\\dfrac{2}{1+i}$ е:",
+      "choices": {
+        "А": "$2$",
+        "Б": "$1 - i$",
+        "В": "$1 + i$",
+        "Г": "$1$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 14,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Корени на квадратната равенка $x^2 = 5x + 6$ се:",
+      "choices": {
+        "А": "$5$ и $6$",
+        "Б": "$1$ и $-6$",
+        "В": "$-1$ и $6$",
+        "Г": "$0$ и $-\\dfrac{6}{5}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 15,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Решенија на равенката $(x + 3) \\cdot (2x - 1) = 0$ се:",
+      "choices": {
+        "А": "$3$ и $-1$",
+        "Б": "$3$ и $-\\dfrac{1}{2}$",
+        "В": "$-3$ и $\\dfrac{1}{2}$",
+        "Г": "$-3$ и $1$"
+      },
+      "correctAnswer": "В",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 16,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Ако $f(x) = x^2 - 6x + 3$, тогаш $f(-2)$ е:",
+      "choices": {
+        "А": "$19$",
+        "Б": "$-1$",
+        "В": "$\\dfrac{1}{3}$",
+        "Г": "$2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 17,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "За која вредност на $k$ графикот на функцијата $y = x^2 - 3kx + 1$ минува низ точката $M(2,\\, -1)$ :",
+      "choices": {
+        "А": "$1$",
+        "Б": "$-1$",
+        "В": "$\\dfrac{1}{3}$",
+        "Г": "$2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 18,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Плоштината на круг со радиус $2\\text{ cm}$ е:",
+      "choices": {
+        "А": "$4\\text{ cm}^2$",
+        "Б": "$4\\pi\\text{ dm}^2$",
+        "В": "$4\\pi\\text{ cm}^2$",
+        "Г": "$4\\pi\\text{ cm}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 19,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Ако збирот на должините на страните на квадрат е $12\\text{ cm}$, тогаш плоштината е:",
+      "choices": {
+        "А": "$9\\text{ cm}$",
+        "Б": "$9\\text{ cm}^2$",
+        "В": "$3\\text{ cm}^2$",
+        "Г": "$12\\text{ cm}^2$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 20,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Суплементен агол на аголот од $70^\\circ$ има :",
+      "choices": {
+        "А": "$20^\\circ$",
+        "Б": "$30^\\circ$",
+        "В": "$110^\\circ$",
+        "Г": "$130^\\circ$"
+      },
+      "correctAnswer": "В",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 21,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Радиусот на впишаната кружница во рамностран триаголник се наоѓа со формулите :",
+      "choices": {
+        "А": "$r = \\dfrac{a\\sqrt{3}}{2}$",
+        "Б": "$r = \\dfrac{a\\sqrt{3}}{3}$",
+        "В": "$r = \\dfrac{a}{2}$",
+        "Г": "$r = \\dfrac{a\\sqrt{3}}{6}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Геометрија — Триаголник",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 22,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Плоштината на правилен шестоаголник со страна $a$ е:",
+      "choices": {
+        "А": "$P = 6\\,\\dfrac{a^2\\sqrt{3}}{3}$",
+        "Б": "$P = 3\\,\\dfrac{a^2\\sqrt{3}}{2}$",
+        "В": "$P = 6\\,\\dfrac{a\\sqrt{3}}{4}$",
+        "Г": "$P = 6\\,\\dfrac{a^2\\sqrt{3}}{2}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Геометрија — Правилни многуаголници",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 23,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Дијагоналата на квадар со димензии $9\\text{ cm},\\; 12\\text{ cm},\\; 20\\text{ cm}$ изнесува :",
+      "choices": {
+        "А": "$41\\text{ cm}$",
+        "Б": "$21\\text{ cm}$",
+        "В": "$32\\text{ cm}$",
+        "Г": "$25\\text{ cm}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Геометрија — 3Д форми",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 24,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Страната на една коцка е $8\\text{ cm}$. Квадар со страни $2\\text{ cm},\\; 4\\text{ cm},\\; x\\text{ cm}$ има ист волумен со коцката. Да се определи третата страна $x$ на квадарот.",
+      "choices": {
+        "А": "$16\\text{ cm}$",
+        "Б": "$8\\text{ cm}$",
+        "В": "$32\\text{ cm}$",
+        "Г": "$64\\text{ cm}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Геометрија — Волумен",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 25,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Точката $A(-2,\\; 3)$ се наоѓа во :",
+      "choices": {
+        "А": "$I$-квадрант",
+        "Б": "$II$-квадрант",
+        "В": "$III$-квадрант",
+        "Г": "$IV$-квадрант"
+      },
+      "correctAnswer": "Б",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 26,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Кои се координатите на векторот $\\vec{a} = \\vec{i} - \\vec{j}$ ?",
+      "choices": {
+        "А": "$(0,\\; -1)$",
+        "Б": "$(1,\\; 1)$",
+        "В": "$(1,\\; 0)$",
+        "Г": "$(1,\\; -1)$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Вектори",
+      "topicArea": "matrici-vektori",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 27,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Кој од следниве искази е вистинит :",
+      "choices": {
+        "А": "$\\sqrt{0{,}4} = 0{,}2$",
+        "Б": "$|-3| < |3|$",
+        "В": "бројот $1$ е прост број",
+        "Г": "$\\dfrac{2}{3}$ од $\\dfrac{3}{7}$ е $\\dfrac{2}{7}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 28,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Аголот што правата $y = \\sqrt{3} \\cdot x - 1$ го гради со $x$-оската е :",
+      "choices": {
+        "А": "$45^\\circ$",
+        "Б": "$60^\\circ$",
+        "В": "$120^\\circ$",
+        "Г": "$30^\\circ$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 29,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Неточно е:",
+      "choices": {
+        "А": "$T \\land (T \\lor T)$",
+        "Б": "$(T \\lor \\bot) \\land (T \\land T)$",
+        "В": "$\\neg(T \\lor \\bot) \\lor (\\bot \\land T)$",
+        "Г": "$(T \\lor \\neg\\bot) \\land \\neg(\\bot \\land T)$"
+      },
+      "correctAnswer": "В",
+      "topic": "Математичка логика",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 30,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Да се заокружи точката низ која минува правата $3x - 5y + 5 = 0$",
+      "choices": {
+        "А": "$(2,\\; -1)$",
+        "Б": "$(-1,\\; 1)$",
+        "В": "$(5,\\; 4)$",
+        "Г": "$(-3,\\; -2)$"
+      },
+      "correctAnswer": "В",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 31,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Дадени се множествата $A=\\{a, b, c, d\\}$ и $B=\\{a, c, e\\}$. Множеството $A \\setminus B$ е:",
+      "choices": {
+        "А": "$\\{a, b, c, d\\}$",
+        "Б": "$\\{a, c, e\\}$",
+        "В": "$\\{b, d\\}$",
+        "Г": "$\\{e\\}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 32,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Дадени се множествата $A=\\{m, n, p, q\\}$, $B=\\{m, n, r\\}$ и $C=\\{m, p, q\\}$. Множеството $(A \\cup B) \\cap C$ е:",
+      "choices": {
+        "А": "$\\{m, n\\}$",
+        "Б": "$\\{m, p, q\\}$",
+        "В": "$\\{r\\}$",
+        "Г": "$\\{p, q\\}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 33,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Множеството $A \\cup (A \\cap B)$ е еднакво на:",
+      "choices": {
+        "А": "$A \\cap B$",
+        "Б": "$A$",
+        "В": "$B$",
+        "Г": "$A \\cup B$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 34,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Дадени се множествата $A=\\{x \\mid x \\in \\mathbb{Z},\\; -4 < x \\le 5\\}$ и $B=\\{x \\mid x \\in \\mathbb{N},\\; 2 < x \\le 7\\}$. Колку елементи има множеството $A \\cap B$",
+      "choices": {
+        "А": "$1$",
+        "Б": "$2$",
+        "В": "$3$",
+        "Г": "повеќе од $3$"
+      },
+      "correctAnswer": "В",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 35,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Одреди го вистинитиот исказ:",
+      "choices": {
+        "А": "$7 \\mid 27$",
+        "Б": "$4 \\mid 2$",
+        "В": "$8 \\mid 58$",
+        "Г": "$17 \\mid 51$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Делливост",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 36,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Најмал заеднички содржател на броевите $20$, $28$ и $35$ е:",
+      "choices": {
+        "А": "$35$",
+        "Б": "$20$",
+        "В": "$140$",
+        "Г": "друг одговор"
+      },
+      "correctAnswer": "В",
+      "topic": "НЗС",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 37,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Најголем заеднички делител на броевите $2$, $6$, $9$ и $18$ е :",
+      "choices": {
+        "А": "$3$",
+        "Б": "$2$",
+        "В": "$1$",
+        "Г": "$18$"
+      },
+      "correctAnswer": "В",
+      "topic": "НЗД",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 38,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Колку е $5\\%$ од $30$ :",
+      "choices": {
+        "А": "$5$",
+        "Б": "$\\dfrac{3}{5}$",
+        "В": "$\\dfrac{3}{2}$",
+        "Г": "$\\dfrac{5}{3}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Проценти",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 39,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Колку е $\\dfrac{3}{2} : \\dfrac{2}{3}$ :",
+      "choices": {
+        "А": "$1$",
+        "Б": "$\\dfrac{4}{9}$",
+        "В": "$\\dfrac{9}{4}$",
+        "Г": "нема смисла"
+      },
+      "correctAnswer": "В",
+      "topic": "Рационални броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 40,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Дефинициона област на функцијата $f(x) = \\dfrac{5x}{x^2 - 4}$ е:",
+      "choices": {
+        "А": "$\\mathbb{R} \\setminus \\{0\\}$",
+        "Б": "$\\mathbb{R} \\setminus \\{-2\\}$",
+        "В": "$\\mathbb{R} \\setminus \\{2\\}$",
+        "Г": "$\\mathbb{R} \\setminus \\{-2,\\; 2\\}$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Функции",
+      "topicArea": "analiza",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym13-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 41,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "За која вредност на $x$ нема смисла изразот $\\dfrac{4}{x^2 - 4}$",
+      "choices": {
+        "А": "$4$ или $-4$",
+        "Б": "$2$ и $-2$",
+        "В": "$2$ и $4$",
+        "Г": "$0$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 42,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "НЗД $[a^3 + 8,\\; a^2 - 4,\\; a^2 + 2a]$ е :",
+      "choices": {
+        "А": "$a - 2$",
+        "Б": "$a + 2$",
+        "В": "$a^2 - 4$",
+        "Г": "$a^3 + 8$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 43,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "По кратењето на дропката $\\dfrac{a^2 - 9}{a + 3}$ се добива:",
+      "choices": {
+        "А": "$a + 3$",
+        "Б": "$a^3 - 27$",
+        "В": "$a - 9$",
+        "Г": "$a - 3$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 44,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "НЗС $[a^3 + 1,\\; a^2 - 1,\\; a^2 + a]$ е :",
+      "choices": {
+        "А": "$a^2 - a + 1$",
+        "Б": "$a^2 - 1$",
+        "В": "$a^3 + 1$",
+        "Г": "$a(a^2 - 1)(a^2 - a + 1)$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 45,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Пресметај ја вредноста на изразот $\\dfrac{(7{,}3 - 2{,}9) \\cdot 0{,}5}{2{,}2}$",
+      "choices": null,
+      "correctAnswer": "$1$",
+      "topic": "Пресметување со реални броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 46,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Кој израз е претставен со $(a + 2) \\cdot (a^2 - 2a + 4)$",
+      "choices": null,
+      "correctAnswer": "$a^3 + 8$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 47,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Разложи го полиномот на прости множители $a^2 - (b - c)^2$",
+      "choices": null,
+      "correctAnswer": "$(a + b - c)(a - b + c)$",
+      "topic": "Факторизација",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 48,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Одреди ја вредноста на коефициентот $k$, така што графикот на функцијата $f(x) = kx + 3$ да минува низ точката $M(4,\\; 5)$",
+      "choices": null,
+      "correctAnswer": "$k = \\dfrac{1}{2}$",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 49,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Одреди ги координатите на пресечните точки на правата $3x + 4y = 12$ со координатните оски",
+      "choices": null,
+      "correctAnswer": "$A(4,\\; 0)$ и $B(0,\\; 3)$",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 50,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Упрости $\\sqrt{xy^3\\sqrt{x^2y}}$",
+      "choices": null,
+      "correctAnswer": "$x\\sqrt[4]{y^7}$",
+      "topic": "Корени и потенции",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 51,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Упрости $4 \\cdot \\sqrt[8]{x^4} - \\sqrt[20]{x^5} + \\sqrt[10]{x^5} - 2 \\cdot \\sqrt[12]{x^3}$",
+      "choices": null,
+      "correctAnswer": "$5\\sqrt{x} - 3\\sqrt[4]{x}$",
+      "topic": "Корени и потенции",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 52,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Степенувај го комплексниот број $(1 + i)^{10}$",
+      "choices": null,
+      "correctAnswer": "$32i$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 53,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дискриминанта на квадратната равенка $ax^2 + bx + c = 0$ е изразот",
+      "choices": null,
+      "correctAnswer": "$D = b^2 - 4ac$",
+      "topic": "Квадратна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 54,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Параболата $f(x) = 2x^2 - x - 3$ ја сече $y$-оската во точката",
+      "choices": null,
+      "correctAnswer": "$(0,\\; -3)$",
+      "topic": "Квадратна функција",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 55,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Разложи го на прости множители $14ax - 21bx + 28cx$",
+      "choices": null,
+      "correctAnswer": "$7x(2a - 3b + 4c)$",
+      "topic": "Факторизација",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 56,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Ако бројот на дијагоналите на еден многуаголник е двапати поголем од бројот на страните, тогаш тој многуаголник е",
+      "choices": null,
+      "correctAnswer": "Седумаголник ($n = 7$). Постапка: $\\frac{n(n-3)}{2} = 2n \\Rightarrow n-3 = 4 \\Rightarrow n = 7$",
+      "topic": "Геометрија — Многуаголници",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 57,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Радиусот на опишана кружница на правоаголен триаголник со хипотенуза $10\\text{ cm}$ е",
+      "choices": null,
+      "correctAnswer": "$R = 5\\text{ cm}$",
+      "topic": "Геометрија — Триаголник",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 58,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Пресек на топка со рамнина е",
+      "choices": null,
+      "correctAnswer": "Кружница (или точка, ако рамнината е тангента)",
+      "topic": "Геометрија — 3Д форми",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 59,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Подреди ги по големина броевите $\\cos 10^\\circ,\\; \\cos 90^\\circ,\\; \\cos 15^\\circ,\\; \\cos 30^\\circ$",
+      "choices": null,
+      "correctAnswer": "$\\cos 90^\\circ < \\cos 30^\\circ < \\cos 15^\\circ < \\cos 10^\\circ$",
+      "topic": "Тригонометрија",
+      "topicArea": "trigonometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 60,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Кој вектор се нарекува радиус-вектор?",
+      "choices": null,
+      "correctAnswer": "Векторот од координатното потекло $O(0, 0)$ до дадената точка $A(x, y)$, т.е. $\\vec{OA}$",
+      "topic": "Вектори",
+      "topicArea": "matrici-vektori",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 61,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дали расте или опаѓа функцијата $f(x) = 3x + 2$ ?",
+      "choices": null,
+      "correctAnswer": "Функцијата расте бидејќи $k = 3 > 0$",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 62,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "За која вредност на коефициентот $n$, графикот на функцијата $f(x) = 2x + n$ ја сече $y$-оската на нејзиниот позитивен дел.",
+      "choices": null,
+      "correctAnswer": "$n > 0$",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 63,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "За функцијата $f(x) = -x + n$ најди ја вредноста на слободниот член $n$ така што нејзиниот график да ја сече $y$-оската во иста точка во која ја сече графикот на функцијата $f(x) = 7x + 3$",
+      "choices": null,
+      "correctAnswer": "$n = 3$",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 64,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Нула на линеарната функција $y = -4x + 8$ е:",
+      "choices": null,
+      "correctAnswer": "$x = 2$",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 65,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Пресметај $3: \\left(-\\dfrac{3}{5}\\right) - \\left(-\\dfrac{4}{5}: 2\\right) + 5 \\cdot \\left(0{,}4 - \\dfrac{2}{5}: (-2)\\right) + (-2): (-1)$",
+      "choices": null,
+      "correctAnswer": "$\\dfrac{2}{5}$",
+      "topic": "Пресметување со реални броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 66,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Пресметај $\\dfrac{x^3 - y^3}{2x^2 + 2y^2} : \\dfrac{x^2 + xy + y^2}{x^3y + xy^3} : \\dfrac{x - y}{4xy}$",
+      "choices": null,
+      "correctAnswer": "$2x^2y^2$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 67,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја равенката $\\dfrac{x^2 + 4}{x^2 + 2x} - \\dfrac{1 + 4x}{4x + 8} = \\dfrac{1}{2x}$",
+      "choices": null,
+      "correctAnswer": "$x = 4$",
+      "topic": "Рационална равенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 68,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја неравенката $\\dfrac{5x + 1}{3} - \\dfrac{8x + 1}{4} < \\dfrac{10x + 1}{12}$",
+      "choices": null,
+      "correctAnswer": "$x > 0$, т.е. $x \\in (0,\\; +\\infty)$",
+      "topic": "Линеарна неравенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 69,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши го системот равенки $\\begin{cases} (3x + 5) : (2y + 4) = 5 : 2 \\\\ (6x - 5) : (7y + 1) = 5 : 3 \\end{cases}$",
+      "choices": null,
+      "correctAnswer": "$x = 5,\\; y = 2$",
+      "topic": "Систем линеарни равенки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 70,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја неравенката $(x + 1)(x - 5) < 0$",
+      "choices": null,
+      "correctAnswer": "$x \\in (-1,\\; 5)$",
+      "topic": "Квадратна неравенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 71,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Упрости го изразот $\\dfrac{\\sqrt{a}}{\\sqrt{a} - \\sqrt{b}} - \\dfrac{\\sqrt{b}}{\\sqrt{a} + \\sqrt{b}}$",
+      "choices": null,
+      "correctAnswer": "$\\dfrac{a + b}{a - b}$",
+      "topic": "Изрази со корени",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 72,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Одреди го модулот на комплексниот број $(1 + i)^6 + 6$",
+      "choices": null,
+      "correctAnswer": "$|z| = 10$. Постапка: $(1+i)^2=2i$, $(1+i)^6=-8i$, $z=-8i+6=6-8i$, $|z|=\\sqrt{36+64}=10$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 73,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Скрати ја дропката $\\dfrac{2x^3 - 7x^2 + 3x}{3 - 5x - 2x^2}$",
+      "choices": null,
+      "correctAnswer": "$\\dfrac{x(3 - x) \\cdot \\text{(се поедноставува)}}{x+3}$ — крајна форма: $\\dfrac{x(3-x)}{x+3}$",
+      "topic": "Алгебарски дропки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 74,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Најди ги целобројните решенија на неравенката $2 - x - x^2 \\ge 0$",
+      "choices": null,
+      "correctAnswer": "$x \\in \\{-2,\\; -1,\\; 0,\\; 1\\}$. Постапка: $x^2+x-2\\le0$, $(x+2)(x-1)\\le0$, $-2\\le x\\le1$",
+      "topic": "Квадратна неравенка",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 75,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја неравенката $x - (2 - x) < 3x + 7$",
+      "choices": null,
+      "correctAnswer": "$x > -9$, т.е. $x \\in (-9,\\; +\\infty)$",
+      "topic": "Линеарна неравенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 76,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Нека $M$ и $N$ се средини на краците на трапезот $ABCD$. Докажи дека важи равенството $\\vec{MN} = \\dfrac{1}{2} \\cdot (\\vec{AB} + \\vec{DC})$",
+      "choices": null,
+      "correctAnswer": "Средната линија на трапезот е паралелна со основите и еднаква на $\\frac{1}{2}(AB+DC)$ — докаж со векторски збир $\\vec{MN}=\\vec{MA}+\\vec{AB}+\\vec{BN}$ и замена на средините.",
+      "topic": "Вектори",
+      "topicArea": "matrici-vektori",
+      "dokLevel": 4,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 77,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Најди ги страните на триаголникот ако тие се однесуваат како $9 : 10 : 17$, а неговата плоштина е $144\\text{ cm}^2$.",
+      "choices": null,
+      "correctAnswer": "$a = 18\\text{ cm},\\; b = 20\\text{ cm},\\; c = 34\\text{ cm}$. Постапка: $a=9k,b=10k,c=17k$; Херон: $s=18k$, $P=36k^2=144 \\Rightarrow k=2$",
+      "topic": "Геометрија — Триаголник",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 78,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја равенката $\\dfrac{2}{x + 3} - \\dfrac{3}{x - 2} = 0$",
+      "choices": null,
+      "correctAnswer": "$x = -13$",
+      "topic": "Рационална равенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 79,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Докажи го идентитетот $\\dfrac{\\sin^3 x - \\cos^3 x}{(\\sin x - \\cos x)\\sin^2 x} - \\dfrac{1}{\\sin^2 x} = \\operatorname{ctg} x$",
+      "choices": null,
+      "correctAnswer": "Разложи со куб на разлика: $\\frac{(\\sin x-\\cos x)(\\sin^2x+\\sin x\\cos x+\\cos^2x)}{(\\sin x-\\cos x)\\sin^2x} - \\frac{1}{\\sin^2x} = \\frac{1+\\sin x\\cos x}{\\sin^2x} - \\frac{1}{\\sin^2x} = \\frac{\\cos x}{\\sin x} = \\operatorname{ctg}x$",
+      "topic": "Тригонометриски идентитети",
+      "topicArea": "trigonometrija",
+      "dokLevel": 4,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 80,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Докажи го идентитетот $\\operatorname{tg}^2 x \\cos^2 x + \\operatorname{ctg}^2 x \\sin^2 x = 1$",
+      "choices": null,
+      "correctAnswer": "Замени $\\tan^2x=\\frac{\\sin^2x}{\\cos^2x}$ и $\\cot^2x=\\frac{\\cos^2x}{\\sin^2x}$: $\\frac{\\sin^2x}{\\cos^2x}\\cdot\\cos^2x + \\frac{\\cos^2x}{\\sin^2x}\\cdot\\sin^2x = \\sin^2x + \\cos^2x = 1$",
+      "topic": "Тригонометриски идентитети",
+      "topicArea": "trigonometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 81,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Докажи го идентитетот $\\sin^6 x + \\cos^6 x = 1 - 3\\cos^2 x \\sin^2 x$",
+      "choices": null,
+      "correctAnswer": "Примени збир на кубови со $a=\\sin^2x$, $b=\\cos^2x$: $(\\sin^2x+\\cos^2x)(\\sin^4x-\\sin^2x\\cos^2x+\\cos^4x)=1\\cdot[(\\sin^2x+\\cos^2x)^2-3\\sin^2x\\cos^2x]=1-3\\sin^2x\\cos^2x$",
+      "topic": "Тригонометриски идентитети",
+      "topicArea": "trigonometrija",
+      "dokLevel": 4,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 82,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Да се пресмета плоштината на прав кружен цилиндар со волумен $112\\pi\\text{ cm}^3$ и висина $7\\text{ cm}$.",
+      "choices": null,
+      "correctAnswer": "$S = 88\\pi\\text{ cm}^2$. Постапка: $r^2 = V/(\\pi h) = 16$, $r=4\\text{ cm}$; $S = 2\\pi r^2 + 2\\pi rh = 32\\pi + 56\\pi$",
+      "topic": "Геометрија — Цилиндар",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 83,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Да се пресмета волуменот на прав кружен цилиндар со плоштина $324\\pi\\text{ cm}^2$ ако висината и радиусот се однесуваат како $7 : 2$.",
+      "choices": null,
+      "correctAnswer": "$V = 756\\pi\\text{ cm}^3$. Постапка: $h=7k$, $r=2k$; $S=36\\pi k^2=324\\pi \\Rightarrow k=3$; $r=6$, $h=21$; $V=\\pi\\cdot36\\cdot21$",
+      "topic": "Геометрија — Цилиндар",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 84,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Квадар со димензии $12\\text{ cm}$, $2\\text{ cm}$, $9\\text{ cm}$ и коцка имаат еднакви волумени. Пресметај го работ на коцката.",
+      "choices": null,
+      "correctAnswer": "$a = 6\\text{ cm}$. Постапка: $V = 12\\cdot2\\cdot9 = 216 = a^3 \\Rightarrow a = \\sqrt[3]{216}$",
+      "topic": "Геометрија — Волумен",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 85,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Квадар со страни $2\\text{ cm}$, $4\\text{ cm}$, $c\\text{ cm}$ има ист волумен со коцка чија страна е $8\\text{ cm}$. Најди ја третата страна $c$ на квадарот.",
+      "choices": null,
+      "correctAnswer": "$c = 64\\text{ cm}$. Постапка: $8^3 = 512$; $2\\cdot4\\cdot c = 512 \\Rightarrow 8c = 512$",
+      "topic": "Геометрија — Волумен",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 86,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на бочната површина на правилна шестоаголна призма е $576\\text{ cm}^2$, а висината е $12\\text{ cm}$. Да се пресмета плоштината на дијагоналниот пресек.",
+      "choices": null,
+      "correctAnswer": "$P_{diag} = 192\\text{ cm}^2$. Постапка: $6a\\cdot12=576 \\Rightarrow a=8\\text{ cm}$; дијаг. пресек = правоаголник $2a\\times h = 16\\times12$",
+      "topic": "Геометрија — Призма",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 87,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на бочната површина на правилна шестоаголна призма е $576\\text{ cm}^2$, а висината е $12\\text{ cm}$. Да се пресмета волуменот на призмата.",
+      "choices": null,
+      "correctAnswer": "$V = 1152\\sqrt{3}\\text{ cm}^3$. Постапка: $a=8$; $B=\\frac{3\\sqrt{3}}{2}a^2=96\\sqrt{3}$; $V=B\\cdot h=96\\sqrt{3}\\cdot12$",
+      "topic": "Геометрија — Призма",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 88,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Да се пресмета радиусот на впишаната кружница на триаголник со страни $12\\text{ cm}$, $35\\text{ cm}$, $37\\text{ cm}$.",
+      "choices": null,
+      "correctAnswer": "$r = 5\\text{ cm}$. Постапка: правоаголен триаголник ($12^2+35^2=37^2$); $A=210$, $s=42$; $r=A/s$",
+      "topic": "Геометрија — Триаголник",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 89,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Да се пресмета радиусот на опишаната кружница на триаголник со страни $12\\text{ cm}$, $35\\text{ cm}$, $37\\text{ cm}$.",
+      "choices": null,
+      "correctAnswer": "$R = 18{,}5\\text{ cm}$. Постапка: правоаголен триаголник — $R = c/2 = 37/2$",
+      "topic": "Геометрија — Триаголник",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 90,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Страните на триаголникот се однесуваат како $2:3:4$, а радиусот на впишаната кружница е $r = \\dfrac{\\sqrt{15}}{2}\\text{ cm}$. Да се пресметаат страните на триаголникот.",
+      "choices": null,
+      "correctAnswer": "$a=6\\text{ cm},\\; b=9\\text{ cm},\\; c=12\\text{ cm}$. Постапка: $a=2k$, $r=\\frac{k\\sqrt{15}}{6}=\\frac{\\sqrt{15}}{2} \\Rightarrow k=3$",
+      "topic": "Геометрија — Триаголник",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 91,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Во рамнокрак трапез кракот е еднаков на средната линија, периметарот е $L = 36\\text{ cm}$. Да се најде кракот.",
+      "choices": null,
+      "correctAnswer": "$c = 9\\text{ cm}$. Постапка: $m=(a+b)/2=c$; $P=a+b+2c=2c+2c=4c=36 \\Rightarrow c=9$",
+      "topic": "Геометрија — Трапез",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 92,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Да се пресмета плоштината на правоаголен трапез со краци $12\\text{ cm}$ и $13\\text{ cm}$, ако периметарот е $46\\text{ cm}$.",
+      "choices": null,
+      "correctAnswer": "$A = 126\\text{ cm}^2$. Постапка: $h=12$ (правоаголен крак); $d=\\sqrt{13^2-12^2}=5$; $a+b=21$; $A=\\frac{21}{2}\\cdot12$",
+      "topic": "Геометрија — Трапез",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 93,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Да се пресмета плоштината на ромбот, ако неговата страна е $10\\text{ cm}$, а едната дијагонала е $12\\text{ cm}$.",
+      "choices": null,
+      "correctAnswer": "$A = 96\\text{ cm}^2$. Постапка: $d_2/2=\\sqrt{10^2-6^2}=8$, $d_2=16$; $A=d_1\\cdot d_2/2=12\\cdot16/2$",
+      "topic": "Геометрија — Ромб",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 94,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Висината на ромбот е $48\\text{ cm}$, а поголемата дијагонала е $80\\text{ cm}$. Да се пресмета страната на ромбот.",
+      "choices": null,
+      "correctAnswer": "$a = 50\\text{ cm}$. Постапка: $A=a\\cdot h=48a$; $A=40d_2$; $e_2=3a/5$; $a^2=40^2+(3a/5)^2 \\Rightarrow 16a^2=40000$",
+      "topic": "Геометрија — Ромб",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 95,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на ромбот е $384\\text{ cm}^2$, а едната дијагонала е $32\\text{ cm}$. Да се пресмета страната на ромбот.",
+      "choices": null,
+      "correctAnswer": "$a = 20\\text{ cm}$. Постапка: $d_2=2\\cdot384/32=24$; $a=\\sqrt{16^2+12^2}=\\sqrt{400}$",
+      "topic": "Геометрија — Ромб",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 96,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на ромбот е $384\\text{ cm}^2$, а едната дијагонала е $32\\text{ cm}$. Да се пресмета периметарот на ромбот.",
+      "choices": null,
+      "correctAnswer": "$P = 80\\text{ cm}$. Постапка: $a=20\\text{ cm}$ (од пр. 95); $P=4a=4\\cdot20$",
+      "topic": "Геометрија — Ромб",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 97,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на ромбот е $384\\text{ cm}^2$, а едната дијагонала е $32\\text{ cm}$. Да се пресмета радиусот на впишаната кружница на ромбот.",
+      "choices": null,
+      "correctAnswer": "$r = 9{,}6\\text{ cm}$. Постапка: $P=80$ (од пр. 96); $r = \\frac{2A}{P} = \\frac{768}{80}$",
+      "topic": "Геометрија — Ромб",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 98,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја неравенката $-2x^2 + x + 3 < 0$",
+      "choices": null,
+      "correctAnswer": "$x \\in (-\\infty,\\; -1) \\cup \\left(\\dfrac{3}{2},\\; +\\infty\\right)$. Постапка: множи со $-1$: $2x^2-x-3>0$; корени $x=-1$, $x=3/2$; парабола нагоре",
+      "topic": "Квадратна неравенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 99,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја неравенката $x^2 - 7x + 12 \\le 0$",
+      "choices": null,
+      "correctAnswer": "$x \\in [3,\\; 4]$. Постапка: $(x-3)(x-4)\\le0$; парабола нагоре, негативна меѓу корените",
+      "topic": "Квадратна неравенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 100,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја неравенката $\\dfrac{2x+1}{x-5} \\le 0$",
+      "choices": null,
+      "correctAnswer": "$x \\in \\left[-\\dfrac{1}{2},\\; 5\\right)$. Постапка: нула на бројник $x=-1/2$; недозволена вредност $x=5$; знак на дропката",
+      "topic": "Рационална неравенка",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 101,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја равенката $x^2 - 4x + 3 = 0$",
+      "choices": null,
+      "correctAnswer": "$x_1 = 1,\\; x_2 = 3$",
+      "topic": "Квадратна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 102,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Разложи го на множители триномот $x^2 - 4x + 3$",
+      "choices": null,
+      "correctAnswer": "$(x - 1)(x - 3)$",
+      "topic": "Факторизација",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 103,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја равенката $x^3 + 6x^2 - 7x = 0$",
+      "choices": null,
+      "correctAnswer": "$x_1 = 0,\\; x_2 = -7,\\; x_3 = 1$. Постапка: $x(x^2+6x-7)=0$; $x(x+7)(x-1)=0$",
+      "topic": "Равенки од повисок степен",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 104,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Разложи го на множители полиномот $x^3 + 6x^2 - 7x$",
+      "choices": null,
+      "correctAnswer": "$x(x + 7)(x - 1)$",
+      "topic": "Факторизација",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 105,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја равенката $9x^4 - 13x^2 + 4 = 0$",
+      "choices": null,
+      "correctAnswer": "$x \\in \\left\\{-1,\\; -\\dfrac{2}{3},\\; \\dfrac{2}{3},\\; 1\\right\\}$. Постапка: $t=x^2$; $9t^2-13t+4=0$; $t_1=1$, $t_2=4/9$",
+      "topic": "Биквадратна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 106,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја равенката $x^4 - 4x^2 = 0$",
+      "choices": null,
+      "correctAnswer": "$x \\in \\{-2,\\; 0,\\; 2\\}$. Постапка: $x^2(x^2-4)=0$; $x^2(x-2)(x+2)=0$",
+      "topic": "Равенки од повисок степен",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 107,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја равенката $x^4 - 81 = 0$",
+      "choices": null,
+      "correctAnswer": "$x \\in \\{-3,\\; 3\\}$. Постапка: $(x^2-9)(x^2+9)=0$; $x^2+9>0$ нема реални решенија; $x^2=9$",
+      "topic": "Равенки од повисок степен",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 108,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Разложи го на множители триномот $x^4 - 5x^2 + 4$",
+      "choices": null,
+      "correctAnswer": "$(x-1)(x+1)(x-2)(x+2)$. Постапка: $t=x^2$; $(t-1)(t-4)=(x^2-1)(x^2-4)$",
+      "topic": "Факторизација",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 109,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја равенката $x^4 - 5x^2 + 4 = 0$",
+      "choices": null,
+      "correctAnswer": "$x \\in \\{-2,\\; -1,\\; 1,\\; 2\\}$",
+      "topic": "Биквадратна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 110,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши го системот равенки $\\begin{cases} x - y = 2 \\\\ x^2 - 2y^2 + 3x = 10 \\end{cases}$",
+      "choices": null,
+      "correctAnswer": "$(x_1, y_1) = (2,\\; 0)$ и $(x_2, y_2) = (9,\\; 7)$. Постапка: $x=y+2$ во II; $-y^2+7y=0$; $y=0$ или $y=7$",
+      "topic": "Систем мешани равенки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 111,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши го системот равенки $\\begin{cases} x - y = 8 \\\\ xy = 33 \\end{cases}$",
+      "choices": null,
+      "correctAnswer": "$(x_1, y_1) = (11,\\; 3)$ и $(x_2, y_2) = (-3,\\; -11)$. Постапка: $x=y+8$; $y^2+8y-33=0$; $y=3$ или $y=-11$",
+      "topic": "Систем мешани равенки",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 112,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши го системот равенки $\\begin{cases} x - y = 1 \\\\ x^2 + y^2 = 25 \\end{cases}$",
+      "choices": null,
+      "correctAnswer": "$(x_1, y_1) = (-3,\\; -4)$ и $(x_2, y_2) = (4,\\; 3)$. Постапка: $x=y+1$; $2y^2+2y-24=0$; $y=-4$ или $y=3$",
+      "topic": "Систем мешани равенки",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 113,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Пресметај $(1 + i)^{10}$",
+      "choices": null,
+      "correctAnswer": "$32i$. Постапка: $(1+i)^2=2i$; $(2i)^5=32i^5=32i$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 114,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Одреди го модулот на комплексниот број $\\dfrac{7-i}{-3+4i}$",
+      "choices": null,
+      "correctAnswer": "$|z| = \\sqrt{2}$. Постапка: $|z| = \\frac{|7-i|}{|-3+4i|} = \\frac{\\sqrt{50}}{\\sqrt{25}} = \\frac{5\\sqrt{2}}{5}$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 115,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Пресметај $(3 + 4i)(1 - 6i)$",
+      "choices": null,
+      "correctAnswer": "$27 - 14i$. Постапка: $3-18i+4i-24i^2 = 3-14i+24$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 116,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Пресметај $\\dfrac{8+i}{2-i}$",
+      "choices": null,
+      "correctAnswer": "$3 + 2i$. Постапка: $\\frac{(8+i)(2+i)}{5} = \\frac{15+10i}{5}$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 117,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Рационализирај $\\dfrac{1-a}{1+\\sqrt{a}}$",
+      "choices": null,
+      "correctAnswer": "$1 - \\sqrt{a}$. Постапка: $\\frac{(1-\\sqrt{a})(1+\\sqrt{a})}{1+\\sqrt{a}} = 1-\\sqrt{a}$, бидејќи $1-a=(1-\\sqrt{a})(1+\\sqrt{a})$",
+      "topic": "Изрази со корени",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 118,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши го системот равенки $\\begin{cases} x - y = -3 \\\\ 4x + y = 8 \\end{cases}$",
+      "choices": null,
+      "correctAnswer": "$x = 1,\\; y = 4$. Постапка: собери ги двете равенки: $5x=5$",
+      "topic": "Систем линеарни равенки",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 119,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши го системот равенки $\\begin{cases} 5x - 3y = 9 \\\\ 2x + 4y = 14 \\end{cases}$",
+      "choices": null,
+      "correctAnswer": "$x = 3,\\; y = 2$. Постапка: $x=7-2y$ од II; замени во I: $-13y=-26$",
+      "topic": "Систем линеарни равенки",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 120,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја равенката $\\dfrac{2+x}{3} = 2 - \\dfrac{x-4}{5}$",
+      "choices": null,
+      "correctAnswer": "$x = 4$. Постапка: множи со 15: $5(2+x)=30-3(x-4)$; $5x+3x=42-10$; $8x=32$",
+      "topic": "Линеарна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 121,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Производот $(a - b)(b + a)$ е еднаков на:",
+      "choices": {
+        "А": "$a^2 + b^2$",
+        "Б": "$a^2 - 2ab + b^2$",
+        "В": "$a^2 + 2ab + b^2$",
+        "Г": "$a^2 - b^2$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 122,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Коефициентите на полиномот $7x^3 - 3x^2 + 5$ се:",
+      "choices": {
+        "А": "$7,\\; 3,\\; 5$",
+        "Б": "$7,\\; -3,\\; 5$",
+        "В": "$7,\\; -3,\\; 0,\\; 5$",
+        "Г": "друг одговор"
+      },
+      "correctAnswer": "В",
+      "topic": "Полиноми",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 123,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Решение на равенката $2(x - 1) - 1 = x$ е :",
+      "choices": {
+        "А": "$4$",
+        "Б": "$2$",
+        "В": "$3$",
+        "Г": "нема решение"
+      },
+      "correctAnswer": "В",
+      "topic": "Линеарна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 124,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Линеарната функција $y = -2x + 4$ ја сече $y$-оската во точката:",
+      "choices": {
+        "А": "$A(0,\\; 4)$",
+        "Б": "$A(0,\\; 2)$",
+        "В": "$A(2,\\; 0)$",
+        "Г": "$A(4,\\; 0)$"
+      },
+      "correctAnswer": "А",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 125,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Плоштина на круг со радиус $2\\text{ dm}$ е :",
+      "choices": {
+        "А": "$4\\text{ dm}^2$",
+        "Б": "$4\\pi\\text{ cm}^2$",
+        "В": "$4\\pi\\text{ dm}$",
+        "Г": "$4\\pi\\text{ dm}^2$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Геометрија — Круг",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 126,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Плоштина на коцка со раб $5\\text{ cm}$ е :",
+      "choices": {
+        "А": "$150\\text{ cm}^2$",
+        "Б": "$25\\text{ cm}^2$",
+        "В": "$625\\text{ cm}^2$",
+        "Г": "$125\\text{ cm}^2$"
+      },
+      "correctAnswer": "А",
+      "topic": "Геометрија — 3Д форми",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 127,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Бочната површина на конус е :",
+      "choices": {
+        "А": "кружен исечок",
+        "Б": "кружен отсечок",
+        "В": "кружен прстен",
+        "Г": "друг одговор"
+      },
+      "correctAnswer": "А",
+      "topic": "Геометрија — Конус",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 128,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Коефициентот на правецот на правата $2x + 3y - 6 = 0$ е :",
+      "choices": {
+        "А": "$k = 2$",
+        "Б": "$k = -\\dfrac{2}{3}$",
+        "В": "$k = -2$",
+        "Г": "$k = \\dfrac{2}{3}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 129,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Пресекот на правите $x - y + 4 = 0$ и $4x - 2y - 20 = 0$ е точката:",
+      "choices": {
+        "А": "$A(4,\\; 0)$",
+        "Б": "$A(6,\\; 2)$",
+        "В": "$A(18,\\; 14)$",
+        "Г": "$A(14,\\; 18)$"
+      },
+      "correctAnswer": "Г",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 130,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Збирот на комплексните броеви $2 - 5i$ и $-2 + i$ е:",
+      "choices": {
+        "А": "$0$",
+        "Б": "$-4i$",
+        "В": "$4 - 6i$",
+        "Г": "$-6i$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 131,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Синусот на остриот агол $\\alpha$ во еден правоаголен триаголник е $\\dfrac{5}{6}$, а хипотенузата е $12\\text{ cm}$. Должината на спротивната катета е:",
+      "choices": {
+        "А": "$5\\text{ cm}$",
+        "Б": "$10\\text{ cm}$",
+        "В": "$32\\text{ cm}$",
+        "Г": "$12\\text{ cm}$"
+      },
+      "correctAnswer": "Б",
+      "topic": "Тригонометрија",
+      "topicArea": "trigonometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 132,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Одреди кои од следниве реченици се искази:",
+      "choices": {
+        "А": "$3$ е прост број.",
+        "Б": "Таблата е зелена.",
+        "В": "Сакам да паѓа снег.",
+        "Г": "$5 + 2 = 6$"
+      },
+      "correctAnswer": "А",
+      "topic": "Математичка логика",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 133,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Одреди ја вистинитосната вредност на следниве искази:\nа) $\\tau(5 - 4 = 1 \\land -4 < -1) =$\nб) $\\tau(1 \\text{ е прост број } \\lor 1 \\text{ е непарен број}) =$\nв) $\\tau(3 \\le 5 \\Rightarrow 4 \\mid 7) =$\nг) $\\tau(4 \\text{ е прост број } \\Leftrightarrow 4 \\mid 12) =$",
+      "choices": null,
+      "correctAnswer": "а) $\\top$ (T∧T=T); б) $\\top$ (F∨T=T); в) $\\bot$ (T⇒F=F); г) $\\bot$ (F↔T=F)",
+      "topic": "Логика",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 134,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Изврши негација на следниве искази, користејќи логички закони:\nа) $\\neg(2 \\text{ не е најмал природен број})$\nб) $\\neg(2+2 \\neq 4 \\text{ или } 3 \\ge 4) =$",
+      "choices": null,
+      "correctAnswer": "а) 2 е најмал природен број; б) $(2+2=4) \\land (3<4)$, вредност: $\\top$",
+      "topic": "Логика",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 135,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Одреди ја вистинитосната вредност на исказите со запишување на $\\top$ или $\\bot$:\nа) $\\mathbb{N} \\subseteq \\mathbb{Z}$\nб) $A \\setminus \\emptyset = A$\nв) $A \\subseteq B \\Rightarrow A \\cap B = B$",
+      "choices": null,
+      "correctAnswer": "а) $\\top$; б) $\\top$; в) $\\bot$ (важи $A\\cap B=A$, не $B$)",
+      "topic": "Логика и множества",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 136,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "На што е еднаков изразот $(8a^2b - 12ac) : 4a$",
+      "choices": null,
+      "correctAnswer": "$2ab - 3c$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 137,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Кој бином дигнат на квадрат е еднаков на триномот $9x^2 - 12xy + 4y^2$",
+      "choices": null,
+      "correctAnswer": "$(3x - 2y)^2$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 138,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Разложи го полиномот $2ab - 4ac + 8ad$ на прости множители",
+      "choices": null,
+      "correctAnswer": "$2a(b - 2c + 4d)$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 139,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Ако аглите $\\alpha$ и $\\beta$ се со заемно паралелни краци и $\\alpha = 60^\\circ$ тогаш $\\beta =$",
+      "choices": null,
+      "correctAnswer": "$\\beta = 60^\\circ$ или $\\beta = 120^\\circ$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 140,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Ако $z = 3i - 8$ тогаш $\\bar{z} =$ и $|z| =$",
+      "choices": null,
+      "correctAnswer": "$\\bar{z} = -8 - 3i$; $|z| = \\sqrt{64+9} = \\sqrt{73}$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 141,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на квадрат со страна $a$ е еднаква на",
+      "choices": null,
+      "correctAnswer": "$a^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 142,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Ако $\\sin \\alpha = \\dfrac{7}{25}$ тогаш $\\cos \\alpha =$, $\\operatorname{tg} \\alpha =$ и $\\operatorname{ctg} \\alpha =$",
+      "choices": null,
+      "correctAnswer": "$\\cos\\alpha = \\dfrac{24}{25}$; $\\operatorname{tg}\\alpha = \\dfrac{7}{24}$; $\\operatorname{ctg}\\alpha = \\dfrac{24}{7}$",
+      "topic": "Тригонометрија",
+      "topicArea": "trigonometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 143,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Одреди го аголот $\\alpha$, ако $\\sin(\\alpha - 45^\\circ) = \\cos 25^\\circ$. $\\alpha =$",
+      "choices": null,
+      "correctAnswer": "$\\cos 25^\\circ = \\sin 65^\\circ \\Rightarrow \\alpha-45^\\circ = 65^\\circ$ или $115^\\circ \\Rightarrow \\alpha = 110^\\circ$ или $\\alpha = 160^\\circ$",
+      "topic": "Тригонометрија",
+      "topicArea": "trigonometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 144,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Ако $\\cos \\alpha = \\dfrac{\\sqrt{2}}{2}$ тогаш $\\sin \\alpha =$, $\\operatorname{tg} \\alpha =$ и $\\operatorname{ctg} \\alpha =$",
+      "choices": null,
+      "correctAnswer": "$\\sin\\alpha = \\dfrac{\\sqrt{2}}{2}$; $\\operatorname{tg}\\alpha = 1$; $\\operatorname{ctg}\\alpha = 1$",
+      "topic": "Тригонометрија",
+      "topicArea": "trigonometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 145,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Разликата на комплексните броеви $2 + i$ и $4 + 3i$ е:",
+      "choices": {
+        "А": "$6 + 4i$",
+        "Б": "$2 + 2i$",
+        "В": "$-2 - 2i$",
+        "Г": "$2 - 2i$"
+      },
+      "correctAnswer": "В",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 146,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "Тангенс на остриот агол $\\alpha$ во еден правоаголен триаголник е $\\dfrac{2}{5}$, а налегнатата катета на триаголникот е $15\\text{ cm}$. Должината на спротивната катета на аголот $\\alpha$ е:",
+      "choices": {
+        "А": "$5\\text{ cm}$",
+        "Б": "$10\\text{ cm}$",
+        "В": "$6\\text{ cm}$",
+        "Г": "$12\\text{ cm}$"
+      },
+      "correctAnswer": "В",
+      "topic": "Тригонометрија",
+      "topicArea": "trigonometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 147,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Правите што немаат заеднички точки и лежат во иста рамнина се нарекуваат",
+      "choices": null,
+      "correctAnswer": "паралелни прави",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 148,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Бочните ѕидови на права призма се",
+      "choices": null,
+      "correctAnswer": "правоаголници",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 149,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Како се нарекува $x$-оската а како $y$-оската",
+      "choices": null,
+      "correctAnswer": "$x$-оска = апсцисна оска; $y$-оска = ординатна оска",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 150,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Запиши ја равенката на симетралата на вториот и четвртиот квадрант",
+      "choices": null,
+      "correctAnswer": "$y = -x$",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 151,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Одреди го најмалиот заеднички содржател на броевите: $24$, $15$ и $30$.",
+      "choices": null,
+      "correctAnswer": "$\\text{НЗС}(24, 15, 30) = 2^3 \\cdot 3 \\cdot 5 = 120$",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 152,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Колку е $\\dfrac{1}{5} + \\dfrac{3}{15}$",
+      "choices": null,
+      "correctAnswer": "$\\dfrac{1}{5} + \\dfrac{1}{5} = \\dfrac{2}{5}$",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 153,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Изразот $(-a)^2(-a^4)(-a)^3$ е:",
+      "choices": null,
+      "correctAnswer": "$a^2 \\cdot (-a^4) \\cdot (-a^3) = a^2 \\cdot a^4 \\cdot a^3 = a^9$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 154,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Квадрат на биномот $(1 - 3x)$ е еднаков на:",
+      "choices": null,
+      "correctAnswer": "$1 - 6x + 9x^2$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 155,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Изразот $\\left[ (x+y)^3 \\right]^4$ е:",
+      "choices": null,
+      "correctAnswer": "$(x+y)^{12}$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 156,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Решение на равенката $0 \\cdot x = 3$ е:",
+      "choices": null,
+      "correctAnswer": "Нема решение (противречна равенка, $\\emptyset$)",
+      "topic": "Алгебра",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 157,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Линеарната функција $y = x - 2$ ја сече $y$-оската во точката:",
+      "choices": null,
+      "correctAnswer": "$(0,\\; -2)$",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 158,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Решение на системот равенки $\\begin{cases} x - y = 3 \\\\ 2x + 3y = 11 \\end{cases}$",
+      "choices": null,
+      "correctAnswer": "$x = 4,\\; y = 1$",
+      "topic": "Системи равенки",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 159,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Решение на неравенката $1 - x \\ge -5$ е",
+      "choices": null,
+      "correctAnswer": "$x \\le 6$",
+      "topic": "Неравенки",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 160,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Суплементен агол на аголот од $30^\\circ$ има:",
+      "choices": null,
+      "correctAnswer": "$180^\\circ - 30^\\circ = 150^\\circ$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 161,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштина на круг со радиус $5\\text{ cm}$ е:",
+      "choices": null,
+      "correctAnswer": "$P = \\pi r^2 = 25\\pi\\text{ cm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 162,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Периметарот на кружница впишана во квадрат со плоштина $36\\text{ cm}^2$ е:",
+      "choices": null,
+      "correctAnswer": "$a^2=36 \\Rightarrow a=6\\text{ cm},\\; r=3\\text{ cm},\\; P=2\\pi r=6\\pi\\text{ cm}$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 163,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Волумен на коцка со страна $3\\text{ cm}$ е:",
+      "choices": null,
+      "correctAnswer": "$V = 3^3 = 27\\text{ cm}^3$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 164,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дијагоналата на квадар со страни $1\\text{ cm}$, $2\\text{ cm}$ и $4\\text{ cm}$ е:",
+      "choices": null,
+      "correctAnswer": "$d = \\sqrt{1^2+2^2+4^2} = \\sqrt{21}\\text{ cm}$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 165,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на делтоид со дијагонали $20\\text{ dm}$ и $30\\text{ dm}$ е:",
+      "choices": null,
+      "correctAnswer": "$P = \\dfrac{d_1 \\cdot d_2}{2} = \\dfrac{20 \\cdot 30}{2} = 300\\text{ dm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 166,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "На што е еднаков изразот $(4ab^2 - 6a^2c) : 2a$",
+      "choices": null,
+      "correctAnswer": "$2b^2 - 3ac$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 167,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Кој израз е претставен со $(a^4 + b^4)(a^4 - b^4)$",
+      "choices": null,
+      "correctAnswer": "$a^8 - b^8$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 168,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Кој бином дигнат на квадрат е еднаков на триномот $x^2 - 6xy + 9y^2$",
+      "choices": null,
+      "correctAnswer": "$(x - 3y)^2$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 169,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Ако аглите $\\alpha$ и $\\beta$ се со заемно нормални краци и $\\alpha = 160^\\circ$ тогаш $\\beta =$",
+      "choices": null,
+      "correctAnswer": "$\\beta = 160^\\circ$ или $\\beta = 20^\\circ$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 170,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дијагоналите на ромбот се сечат под _________________________ агол.",
+      "choices": null,
+      "correctAnswer": "прав агол ($90^\\circ$)",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 171,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на рамностран триаголник со страна $a$ е:",
+      "choices": null,
+      "correctAnswer": "$P = \\dfrac{a^2\\sqrt{3}}{4}$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 172,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Изразот $(1-a)(1+a)-a^2$ е:",
+      "choices": null,
+      "correctAnswer": "$(1-a^2)-a^2 = 1 - 2a^2$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 173,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Изразот $\\left[ (x-y)^2 \\right]^4$ е:",
+      "choices": null,
+      "correctAnswer": "$(x-y)^8$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 174,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Нула на линеарната функција $y = 2x - 2$ е:",
+      "choices": null,
+      "correctAnswer": "$2x-2=0 \\Rightarrow x=1$",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 175,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Решение на системот равенки $\\begin{cases} 3x + 2y = -4 \\\\ 6x - y = 2 \\end{cases}$",
+      "choices": null,
+      "correctAnswer": "$x = 0,\\; y = -2$",
+      "topic": "Системи равенки",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 176,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Решение на неравенката $x - 1 \\le 1$ е:",
+      "choices": null,
+      "correctAnswer": "$x \\le 2$",
+      "topic": "Неравенки",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 177,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Колкав агол образуваат стрелките на часовникот на полноќ:",
+      "choices": null,
+      "correctAnswer": "$0^\\circ$ (или $360^\\circ$)",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 178,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштина на квадрат впишан во кружница со радиус $5\\text{ cm}$ е:",
+      "choices": null,
+      "correctAnswer": "Страна = $r\\sqrt{2}$, $P = (r\\sqrt{2})^2 = 2r^2 = 50\\text{ cm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 179,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Периметарот на кружница со радиус $3\\text{ cm}$ е:",
+      "choices": null,
+      "correctAnswer": "$P = 2\\pi r = 6\\pi\\text{ cm}$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 180,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Страната на една коцка е $2\\text{ cm}$. Ако квадар со страни $2\\text{ cm}$, $4\\text{ cm}$, $x\\text{ cm}$, има ист волумен со коцката, одреди $x$.",
+      "choices": null,
+      "correctAnswer": "$V_{\\text{коцка}} = 2^3 = 8\\text{ cm}^3$; $2 \\cdot 4 \\cdot x = 8 \\Rightarrow x = 1\\text{ cm}$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 181,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Просторната дијагонала на коцка со страна $3\\text{ cm}$ е:",
+      "choices": null,
+      "correctAnswer": "$d = a\\sqrt{3} = 3\\sqrt{3}\\text{ cm}$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c5-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 182,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на четириаголник со дијагонали $20\\text{ dm}$ и $30\\text{ dm}$ и агол меѓу нив $30^\\circ$ е:",
+      "choices": null,
+      "correctAnswer": "$P = \\dfrac{d_1 \\cdot d_2 \\cdot \\sin 30^\\circ}{2} = \\dfrac{20 \\cdot 30 \\cdot 0{,}5}{2} = 150\\text{ dm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c6-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 183,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Тежиштето $T$ на триаголникот $ABC$ [$A(2,4)$, $B(3,-1)$, $C(4,3)$] има координати:",
+      "choices": null,
+      "correctAnswer": "$T\\!\\left(\\dfrac{2+3+4}{3},\\; \\dfrac{4-1+3}{3}\\right) = T(3,\\; 2)$",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 184,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дали расте или опаѓа функцијата $f(x) = 3 - 2x$? Функцијата $f(x)$ _________",
+      "choices": null,
+      "correctAnswer": "опаѓа (коефициентот на $x$ е $-2 < 0$)",
+      "topic": "Линеарна функција",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 185,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Кој израз е претставен со $(a-1)(a^2+a+1)$",
+      "choices": null,
+      "correctAnswer": "$a^3 - 1$ (формула за разлика на кубови)",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 186,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Вкупниот број на дијагонали што можат да се повлечат во $8$-аголник е",
+      "choices": null,
+      "correctAnswer": "$d = \\dfrac{n(n-3)}{2} = \\dfrac{8 \\cdot 5}{2} = 20$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 187,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на квадрат со страна $a = 5\\text{ cm}$ е",
+      "choices": null,
+      "correctAnswer": "$P = 5^2 = 25\\text{ cm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 188,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дадени се исказите: $p\\colon 2 < 6$, $q\\colon 2 \\mid 8$ и $r\\colon 5$ парен број. Одреди ја вистинитосната вредност на исказот: $(\\neg p \\Leftrightarrow \\neg q) \\Leftrightarrow \\neg r$",
+      "choices": null,
+      "correctAnswer": "$p=\\top,\\; q=\\top,\\; r=\\bot$. $\\neg p=\\bot,\\; \\neg q=\\bot,\\; \\neg r=\\top$. $(\\bot\\Leftrightarrow\\bot)\\Leftrightarrow\\top = \\top\\Leftrightarrow\\top = \\top$",
+      "topic": "Логика",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 189,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Запиши го множеството $A$ со набројување на неговите елементи:\nа) $A = \\{ x \\mid x \\in \\mathbb{N},\\; 5 \\le x < 9 \\}$\nб) $B = \\{ x \\mid x \\in \\mathbb{N},\\; x \\text{ е делител на } 40 \\}$",
+      "choices": null,
+      "correctAnswer": "а) $A = \\{5, 6, 7, 8\\}$;  б) $B = \\{1, 2, 4, 5, 8, 10, 20, 40\\}$",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 190,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дадени се множествата $A = \\{ 1, 3, 5 \\}$ и $B = \\{ a, c \\}$.\nа) Определи го декартовиот производ $A \\times B$\nб) Определи го $\\overline{A}$ во однос на $U = \\{1, 2, 3, 4, 5, 6, 7, 8, 9, 10\\}$",
+      "choices": null,
+      "correctAnswer": "а) $A \\times B = \\{(1,a),(1,c),(3,a),(3,c),(5,a),(5,c)\\}$;  б) $\\overline{A} = \\{2,4,6,7,8,9,10\\}$",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 191,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Во еден клас $15$ ученици зборуваат странски јазици, меѓу нив $8$ што зборуваат француски јазик, а $5$ ученици што зборуваат француски и англиски. Колку ученици зборуваат англиски јазик?",
+      "choices": null,
+      "correctAnswer": "$|F \\cup A|=15,\\; |F|=8,\\; |F\\cap A|=5$. $|A|=15-8+5=12$ ученици",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 192,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Состави вистинитосна таблица за следнава исказна формула:\n$$(p \\land \\neg q) \\Leftrightarrow (p \\Rightarrow \\neg q)$$",
+      "choices": null,
+      "correctAnswer": "$(T,T)\\!:\\,F\\Leftrightarrow F=T$; $(T,F)\\!:\\,T\\Leftrightarrow T=T$; $(F,T)\\!:\\,F\\Leftrightarrow T=F$; $(F,F)\\!:\\,F\\Leftrightarrow T=F$. Не е тавтологија.",
+      "topic": "Логика",
+      "topicArea": "algebra",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 193,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дадени се множествата $A = \\{ x \\mid x \\in \\mathbb{N},\\; 1 < x \\le 7 \\}$, $B = \\{ x \\mid x \\in \\mathbb{N},\\; x \\mid 12 \\}$ и $C = \\{ x \\mid x \\in \\mathbb{Z},\\; -2 \\le x \\le 4 \\}$. Определи ги множествата:\nа) $A \\cap B =$\nб) $B \\cup C =$\nв) $A \\setminus C =$\nг) $(A \\cap B) \\setminus C =$",
+      "choices": null,
+      "correctAnswer": "а) $\\{2,3,4,6\\}$;  б) $\\{-2,-1,0,1,2,3,4,6,12\\}$;  в) $\\{5,6,7\\}$;  г) $\\{6\\}$",
+      "topic": "Множества",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 194,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши го правоаголниот триаголник со зададени катети $a=15$, $b=17$.",
+      "choices": null,
+      "correctAnswer": "$c = \\sqrt{225+289} = \\sqrt{514} \\approx 22{,}67$;  $\\tan\\alpha = \\frac{15}{17}$, $\\alpha \\approx 41^\\circ 25'$;  $\\beta \\approx 48^\\circ 35'$",
+      "topic": "Тригонометрија",
+      "topicArea": "trigonometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 195,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Пресметај\n$$\\left( \\frac{4+3i}{1+3i} + \\frac{3-4i}{3-i} \\right) \\cdot (3+4i)$$",
+      "choices": null,
+      "correctAnswer": "$\\frac{4+3i}{1+3i} = \\frac{(4+3i)(1-3i)}{10} = \\frac{13-9i}{10}$;  $\\frac{3-4i}{3-i} = \\frac{13-9i}{10}$;  Збир $= \\frac{13-9i}{5}$;  $\\cdot(3+4i) = \\frac{75+25i}{5} = 15+5i$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 196,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Пресметај\n$$\\frac{(1+i)^2}{(2-2i)^2} \\cdot \\left( \\frac{3-i}{2+i} - \\frac{2-i}{3+i} \\right)$$",
+      "choices": null,
+      "correctAnswer": "$(1+i)^2=2i$; $(2-2i)^2=-8i$; количник $=-\\frac{1}{4}$. $\\frac{3-i}{2+i}=1-i$; $\\frac{2-i}{3+i}=\\frac{1-i}{2}$; разлика $=\\frac{1-i}{2}$. Резултат: $-\\frac{1}{4}\\cdot\\frac{1-i}{2}=\\frac{-1+i}{8}$",
+      "topic": "Комплексни броеви",
+      "topicArea": "broevi",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 197,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Упрости го изразот\n$$\\frac{1}{a^2+ab} + \\frac{2b}{a^3-ab^2} - \\frac{a+b}{a^2b-ab^2}$$",
+      "choices": null,
+      "correctAnswer": "НЗС $= ab(a+b)(a-b)$. По средување: $\\dfrac{-a(a+b)}{ab(a+b)(a-b)} = \\dfrac{-1}{b(a-b)}$",
+      "topic": "Алгебарски изрази",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 198,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Одреди ги целобројните решенија на системот неравенки\n$$\\begin{cases} 2x-1 > 3(1-x) \\\\ 5x-3(2-x) < 17 \\end{cases}$$",
+      "choices": null,
+      "correctAnswer": "1-ва: $5x>4 \\Rightarrow x>\\frac{4}{5}$;  2-ра: $8x<23 \\Rightarrow x<\\frac{23}{8}=2{,}875$. Цели: $x \\in \\{1,\\; 2\\}$",
+      "topic": "Неравенки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 199,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Околу правоаголникот $ABCD$ со страна $\\overline{AB}=16\\text{ cm}$ е опишана кружница со радиус $r=10\\text{ cm}$. Пресметај го периметарот и плоштината на правоаголникот.",
+      "choices": null,
+      "correctAnswer": "$d=2r=20\\text{ cm}$; $BC=\\sqrt{400-256}=12\\text{ cm}$; $P=2(16+12)=56\\text{ cm}$; $S=16\\cdot12=192\\text{ cm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 200,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Даден е правоаголен трапез со основи $9\\text{ cm}$ и $5\\text{ cm}$ и агол меѓу кракот и поголемата основа $45^\\circ$. Направи скица и пресметај ја плоштината на трапезот.",
+      "choices": null,
+      "correctAnswer": "$h = (9-5)\\cdot\\tan 45^\\circ / 1 = 4\\text{ cm}$; $S=\\frac{(9+5)\\cdot4}{2}=28\\text{ cm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 201,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Даден е прав кружен конус чија висина е $12\\text{ cm}$, а волуменот на конусот е $324\\pi\\text{ cm}^3$. Направи скица и пресметај ја плоштината на конусот.",
+      "choices": null,
+      "correctAnswer": "$V=\\frac{\\pi r^2 h}{3}=324\\pi \\Rightarrow r^2=81 \\Rightarrow r=9\\text{ cm}$; $l=\\sqrt{81+144}=15\\text{ cm}$; $S=\\pi r(r+l)=\\pi\\cdot9\\cdot24=216\\pi\\text{ cm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 202,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Збирот на годините на мајката и ќерката е $46$. По $10$ години мајката ќе биде два пати постара од ќерката. По колку години тие имаат сега?",
+      "choices": null,
+      "correctAnswer": "Нека ќерката е $x$, мајката $46-x$. $46-x+10=2(x+10) \\Rightarrow 3x=36 \\Rightarrow x=12$. Ќерка: $12$ год., мајка: $34$ год.",
+      "topic": "Текстуални задачи",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 203,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Периметарот на рамнокрак триаголник е $36\\text{ cm}$, а разликата на кракот и основата е $8\\text{ cm}$. Пресметај ја плоштината на триаголникот.",
+      "choices": null,
+      "correctAnswer": "$2c+a=36$, $c-a=8 \\Rightarrow c=11\\text{ cm}$, $a=14\\text{ cm}$; $h=\\sqrt{11^2-7^2}=\\sqrt{72}=6\\sqrt{2}\\text{ cm}$; $S=\\frac{14\\cdot6\\sqrt{2}}{2}=42\\sqrt{2}\\text{ cm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 204,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Да се пресмета радиус на опишана и впишана кружница на триаголник со страни $39\\text{ cm}$, $42\\text{ cm}$, $45\\text{ cm}$.",
+      "choices": null,
+      "correctAnswer": "$s=63$; $S=\\sqrt{63\\cdot24\\cdot21\\cdot18}=756\\text{ cm}^2$; $r=\\frac{S}{s}=12\\text{ cm}$; $R=\\frac{abc}{4S}=\\frac{39\\cdot42\\cdot45}{3024}=\\frac{195}{8}\\text{ cm}$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c4-2"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 205,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Да се пресмета волуменот и бочната плоштина на прав кружен цилиндар со радиус $12\\text{ cm}$ и полна плоштина $912\\pi\\text{ cm}^2$.",
+      "choices": null,
+      "correctAnswer": "$2\\pi r(r+h)=912\\pi \\Rightarrow 24(12+h)=912 \\Rightarrow h=26\\text{ cm}$; $V=\\pi\\cdot144\\cdot26=3744\\pi\\text{ cm}^3$; $S_{\\text{бочна}}=2\\pi\\cdot12\\cdot26=624\\pi\\text{ cm}^2$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 206,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "За која вредност на параметарот $k$ равенката $(k + 1)x^2 - (k - 1)x + k + 1 = 0$ ќе има еднакви корени?",
+      "choices": null,
+      "correctAnswer": "$D=0$: $(k-1)^2-4(k+1)^2=0 \\Rightarrow k-1=\\pm2(k+1)$. Решенија: $k=-3$ или $k=-\\frac{1}{3}$",
+      "topic": "Квадратна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 207,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Нека $x_1$ и $x_2$ се корени на равенката $4x^2 - 3x - 6 = 0$. Со помош на Виетовите формули (без да ги наоѓаш корените) пресметај ја вредноста на изразот\n$$\\frac{x_1}{x_2-1} + \\frac{x_2}{x_1-1}$$",
+      "choices": null,
+      "correctAnswer": "$x_1+x_2=\\frac{3}{4}$, $x_1 x_2=-\\frac{3}{2}$. Бројник: $x_1^2+x_2^2-(x_1+x_2)=\\frac{57}{16}-\\frac{3}{4}=\\frac{45}{16}$. Именител: $x_1 x_2-(x_1+x_2)+1=-\\frac{5}{4}$. Резултат: $\\frac{45/16}{-5/4}=-\\frac{9}{4}$",
+      "topic": "Квадратна равенка",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 208,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Нека е зададен триаголникот $ABC$ [$A(4,3)$, $B(0,1)$, $C(1,9)$].\n- Најди го мерниот број на тежишната линија $t_c$ повлечена од темето $C$.\n- Состави равенка на тежишната линија $t_c$.",
+      "choices": null,
+      "correctAnswer": "Среди. на $AB$: $M(2,2)$. $t_c=|CM|=\\sqrt{(1-2)^2+(9-2)^2}=\\sqrt{50}=5\\sqrt{2}$. Наклон $=-7$. Равенка: $y=-7x+16$",
+      "topic": "Аналитичка геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym12-c4-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 209,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дадена е равенката\n$$\\frac{x+1}{x-2} - \\frac{x+1}{x-1} - \\frac{x-1}{2-x} = \\frac{4}{x^2-3x+2}$$\n- Најди НЗС од именителите.\n- Најди ја дефиниционата област.\n- Реши ја равенката.",
+      "choices": null,
+      "correctAnswer": "НЗС $=(x-1)(x-2)$; ДО: $x\\neq1, x\\neq2$. По множење: $x^2-x-2=0 \\Rightarrow x=-1$ (x=2 исклучен). Решение: $x=-1$",
+      "topic": "Рационални равенки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c2-2",
+        "gym10-c3-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 210,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши го системот неравенки:\n$$\\begin{cases} \\dfrac{3x-1}{2} \\le 1 - x \\\\ x < 2x - \\dfrac{1}{3} \\end{cases}$$",
+      "choices": null,
+      "correctAnswer": "1-ва: $3x-1 \\le 2-2x \\Rightarrow x \\le \\frac{3}{5}$;  2-ра: $x > \\frac{1}{3}$. Решение: $\\frac{1}{3} < x \\le \\frac{3}{5}$",
+      "topic": "Неравенки",
+      "topicArea": "algebra",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 211,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Плоштината на цилиндар е $80\\pi\\text{ cm}^2$, а разликата меѓу висината и радиусот на цилиндарот е $2\\text{ cm}$. Пресметај го волуменот на цилиндарот.",
+      "choices": null,
+      "correctAnswer": "$h=r+2$; $2\\pi r(r+h)=4\\pi r(r+1)=80\\pi \\Rightarrow r^2+r-20=0 \\Rightarrow r=4\\text{ cm}$, $h=6\\text{ cm}$; $V=\\pi\\cdot16\\cdot6=96\\pi\\text{ cm}^3$",
+      "topic": "Геометрија",
+      "topicArea": "geometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c7-1"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 212,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Реши ја пропорцијата\n$$\\frac{1}{8} : x = \\frac{3}{2} : \\frac{4}{3}$$",
+      "choices": null,
+      "correctAnswer": "$\\frac{1}{8} \\cdot \\frac{4}{3} = x \\cdot \\frac{3}{2} \\Rightarrow \\frac{1}{6} = \\frac{3x}{2} \\Rightarrow x = \\frac{1}{9}$",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 213,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Односот на бројот на момчиња и девојчиња во еден клас е $5 : 7$. Колкав е бројот на девојчиња, ако во класот има $15$ момчиња?",
+      "choices": null,
+      "correctAnswer": "$\\frac{15}{5} = 3$; девојчиња $= 7 \\cdot 3 = 21$",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 214,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Доколку вложите $40\\,000\\text{ ден.}$ за време од $8$ месеци, а притоа каматната стапка е $6\\%$, тогаш колкава камата ќе добиете?",
+      "choices": null,
+      "correctAnswer": "$I = P \\cdot r \\cdot t = 40\\,000 \\cdot 0{,}06 \\cdot \\frac{8}{12} = 1\\,600\\text{ ден.}$",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 215,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Во главната туристичка сезона, туристичката агенција ги зголемила цените за $25\\%$. Ако еден аранжман имал цена од $800\\text{ евра}$ пред сезоната, колку ќе изнесува новата цена?",
+      "choices": null,
+      "correctAnswer": "$800 \\cdot 1{,}25 = 1\\,000\\text{ евра}$",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 216,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Во едно училиште имало $600$ ученици, распоредени во $15$ паралелки со еднаков број на ученици. Колку ученици има во $8$ паралелки?",
+      "choices": null,
+      "correctAnswer": "$\\frac{600}{15} = 40$ ученици по паралелка; $8 \\cdot 40 = 320$ ученици",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 217,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Една работа можат да ја завршат $30$ работници за $60$ дена. Работата ја почнале $20$ работници, а по $12$ дена се приклучиле уште $4$ работници. За колку дена од почнувањето ќе биде завршена работата?",
+      "choices": null,
+      "correctAnswer": "Вкупно: $30\\cdot60=1800$ ед. Во $12$ дена: $20\\cdot12=240$ ед. Останува: $1560$ ед. Со $24$ работници: $\\frac{1560}{24}=65$ дена. Вкупно: $12+65=77$ дена",
+      "topic": "Текстуални задачи",
+      "topicArea": "broevi",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 218,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Три лица со старост од $20$, $30$ и $50$ години треба да поделат $3\\,100\\text{ денари}$. По колку ќе добие секое лице ако поделбата се врши сразмерно на годините на старост?",
+      "choices": null,
+      "correctAnswer": "$\\frac{3100}{20+30+50}=31\\text{ ден/год}$; лице 1: $620\\text{ ден.}$, лице 2: $930\\text{ ден.}$, лице 3: $1\\,550\\text{ ден.}$",
+      "topic": "Броеви",
+      "topicArea": "broevi",
+      "dokLevel": 2,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    },
+    {
+      "questionNumber": 219,
+      "part": 2,
+      "points": 4,
+      "questionType": "open",
+      "questionText": "Дијагоналите во правоаголник се со должина $16\\text{ cm}$, а остриот агол помеѓу страната $b$ и дијагоналата е $34^\\circ 50'$. Пресметај ги страните на правоаголникот.",
+      "choices": null,
+      "correctAnswer": "$a = 16\\sin(34^\\circ 50') \\approx 16 \\cdot 0{,}5707 \\approx 9{,}13\\text{ cm}$;  $b = 16\\cos(34^\\circ 50') \\approx 16 \\cdot 0{,}8211 \\approx 13{,}14\\text{ cm}$",
+      "topic": "Тригонометрија",
+      "topicArea": "trigonometrija",
+      "dokLevel": 3,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
