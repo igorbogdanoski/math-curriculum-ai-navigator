@@ -1,0 +1,40 @@
+{
+  "exam": {
+    "id": "internal-matura-bank-vocational4-mk",
+    "year": 2026,
+    "session": "bank",
+    "language": "mk",
+    "title": "Базен прашања — Интерна матура по математика (Стручно 4-год)",
+    "durationMinutes": 0,
+    "track": "vocational4",
+    "gradeLevel": 13,
+    "questionCount": 120,
+    "totalPoints": 0
+  },
+  "questions": [
+    {
+      "questionNumber": 1,
+      "part": 1,
+      "points": 1,
+      "questionType": "mc",
+      "questionText": "ПРАШАЊЕ 1 — замени го овој текст",
+      "choices": {
+        "А": "одговор А",
+        "Б": "одговор Б",
+        "В": "одговор В",
+        "Г": "одговор Г"
+      },
+      "correctAnswer": "А",
+      "topic": "Тема",
+      "topicArea": "algebra",
+      "dokLevel": 1,
+      "hasImage": false,
+      "imageUrls": [],
+      "imageDescription": null,
+      "conceptIds": ["voc4-10-c3-1"],
+      "hints": [],
+      "aiSolution": null,
+      "successRatePercent": null
+    }
+  ]
+}
