@@ -78,16 +78,19 @@ export const SECONDARY_TRACK_LABELS: Record<SecondaryTrack, string> = {
 };
 
 /**
- * Maps curriculum SecondaryTrack → relevant Matura (ДИМ) exam track keys.
- * Used to pre-filter MaturaLibraryView / MaturaSimulationView for secondary teachers.
- * vocational2 has no Matura (2-year programs don't take the state exam).
+ * Maps curriculum SecondaryTrack → relevant exam track keys shown in MaturaLibraryView.
+ * Per Концепција 2025 (ДИЦ, Решение 13-12804/3 од 10.10.2025):
+ *   - gymnasium:   Државна гимназиска матура + Училишна гимназиска матура
+ *   - vocational4: Државна стручна матура (по профил) + Училишна стручна матура
+ *   - vocational3: Завршен испит (нема државна матура)
+ *   - vocational2: Завршен испит (нема државна матура)
  */
 export const SECONDARY_TRACK_TO_MATURA_TRACKS: Partial<Record<SecondaryTrack, string[]>> = {
   gymnasium:          ['gymnasium'],
   gymnasium_elective: ['gymnasium'],
-  vocational4:        ['vocational-it', 'vocational-economics', 'vocational-electro', 'vocational-mechanical', 'vocational-health', 'vocational-civil'],
-  vocational3:        ['vocational-mechanical', 'vocational-civil'],
-  vocational2:        [],
+  vocational4:        ['vocational-it', 'vocational-economics', 'vocational-electro', 'vocational-mechanical', 'vocational-health', 'vocational-civil', 'vocational-art'],
+  vocational3:        ['vocational3-zavrshen', 'vocational-mechanical', 'vocational-civil'],
+  vocational2:        ['vocational2-zavrshen'],
 } as const;
 
 export interface Grade {

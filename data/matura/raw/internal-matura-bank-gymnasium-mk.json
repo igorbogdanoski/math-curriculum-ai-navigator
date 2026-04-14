@@ -2,9 +2,9 @@
   "exam": {
     "id": "internal-matura-bank-gymnasium-mk",
     "year": 2026,
-    "session": "bank",
+    "session": "ucilisna",
     "language": "mk",
-    "title": "Базен прашања — Интерна матура по математика (Гимназиско)",
+    "title": "Базен прашања — Училишна гимназиска матура (МК)",
     "durationMinutes": 0,
     "track": "gymnasium",
     "gradeLevel": 13,

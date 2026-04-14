@@ -47,15 +47,31 @@ const PART_COLORS: Record<number, string> = {
   1: 'bg-sky-100 text-sky-700', 2: 'bg-amber-100 text-amber-700', 3: 'bg-rose-100 text-rose-700',
 };
 const LANG_FLAGS: Record<string, string> = { mk: '🇲🇰 МК', al: '🇦🇱 АЛ', tr: '🇹🇷 ТР' };
-const SESSION_LABELS: Record<string, string> = { june: 'Јуни', august: 'Август', march: 'Март' };
+const SESSION_LABELS: Record<string, string> = {
+  june:       'Јуни',
+  august:     'Август',
+  march:      'Март',
+  // Концепција 2025 — Државен испитен центар
+  ucilisna:   'Училишна матура',
+  bank:       'Базен прашања',
+  zavrshen:   'Завршен испит',
+};
 const TRACK_LABELS: Record<string, string> = {
-  'gymnasium':            'Гимназиско',
-  'vocational-it':        'Стручно — ИТ',
-  'vocational-economics': 'Стручно — Економија',
-  'vocational-electro':   'Стручно — Електро',
-  'vocational-mechanical':'Стручно — Машинство',
-  'vocational-health':    'Стручно — Здравство',
-  'vocational-civil':     'Стручно — Градежништво',
+  // Државна матура (ДИЦ)
+  'gymnasium':            'Државна гимназиска матура',
+  // Стручна матура — по профил
+  'vocational-it':        'Стручна матура — ИТ',
+  'vocational-economics': 'Стручна матура — Економија',
+  'vocational-electro':   'Стручна матура — Електро',
+  'vocational-mechanical':'Стручна матура — Машинство',
+  'vocational-health':    'Стручна матура — Здравство',
+  'vocational-civil':     'Стручна матура — Градежништво',
+  'vocational-art':       'Уметничка матура',
+  // Завршен испит (2–3 год. стручно)
+  'vocational3-zavrshen': 'Завршен испит — Стручно 3-год',
+  'vocational2-zavrshen': 'Завршен испит — Стручно 2-год',
+  // Generic fallback
+  'vocational4':          'Стручна матура (4-год)',
 };
 
 // ─── AI grade type ───────────────────────────────────────────────────────────
@@ -590,8 +606,8 @@ export function MaturaLibraryView() {
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex flex-wrap items-center gap-3">
             <div>
-              <h1 className="text-lg font-bold text-gray-900">📚 Библиотека — Државна Матура</h1>
-              <p className="text-xs text-gray-500">Матура база (сите насоки) · {exams.length > 0 ? `${exams.length} испити во базата` : 'Се вчитува…'}</p>
+              <h1 className="text-lg font-bold text-gray-900">📚 Библиотека — Матура и Испити</h1>
+              <p className="text-xs text-gray-500">Државна · Училишна · Завршен испит · {exams.length > 0 ? `${exams.length} испити во базата` : 'Се вчитува…'}</p>
             </div>
 
             {/* Practice toggle */}
