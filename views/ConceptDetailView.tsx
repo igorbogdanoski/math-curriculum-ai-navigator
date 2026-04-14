@@ -26,6 +26,7 @@ import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
 import { DokBadge, DokDistributionBar } from '../components/common/DokBadge';
 import { firestoreService } from '../services/firestoreService';
 import type { SavedQuestion, DokLevel } from '../types';
+import type { ConceptMastery } from '../services/firestoreService';
 
 const DOK_LEVELS: DokLevel[] = [1, 2, 3, 4];
 
@@ -183,6 +184,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     ideas: false, analogy: false, quiz: false, solver: false, gamma: false
   });
   const [dokQuestions, setDokQuestions] = useState<SavedQuestion[]>([]);
+  const [conceptMastery, setConceptMastery] = useState<ConceptMastery | null>(null);
   const [gammaPresentation, setGammaPresentation] = useState<AIGeneratedPresentation | null>(null);
   const [gammaOpen, setGammaOpen] = useState(false);
 
@@ -330,6 +332,19 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
     firestoreService.fetchSavedQuestions(firebaseUser.uid).then(qs => {
       setDokQuestions(qs.filter(q => q.conceptId === concept.id && q.dokLevel));
     }).catch(() => {/* non-fatal */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser?.uid, concept?.id]);
+
+  // D4: Fetch student concept_mastery for adaptive DoK scaffolding
+  useEffect(() => {
+    if (!firebaseUser || !concept) return;
+    const studentName = firebaseUser.displayName || firebaseUser.email || firebaseUser.uid;
+    firestoreService.fetchMasteryByStudent(studentName)
+      .then(records => {
+        const rec = records.find(r => r.conceptId === concept.id) ?? null;
+        setConceptMastery(rec);
+      })
+      .catch(() => {/* non-fatal */});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firebaseUser?.uid, concept?.id]);
 
@@ -557,7 +572,20 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
 
             {/* ДЕСНА КОЛОНА */}
             <aside className="space-y-8">
-                {/* DoK Coverage Ring */}
+                {/* D4: Adaptive DoK Scaffolding suggestion */}
+                {conceptMastery && (conceptMastery.lastScore ?? 100) < 60 && dokQuestions.some(q => (q.dokLevel as number) >= 3) && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 animate-fade-in">
+                    <span className="text-2xl flex-shrink-0">💡</span>
+                    <div>
+                      <p className="text-sm font-bold text-amber-900">Препорачуваме DoK 1–2 прашања</p>
+                      <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                        Твојот последен резултат за овој концепт е {conceptMastery.lastScore ?? 0}%. Започни со DoK 1–2 прашања за да ги зацврстиш основите пред да продолжиш со потешки задачи.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+            {/* DoK Coverage Ring */}
                 <Card className="border-indigo-100 bg-gradient-to-br from-indigo-50/60 to-violet-50/40">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-lg font-black text-indigo-700">DoK Покриеност</span>
