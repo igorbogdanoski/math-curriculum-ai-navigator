@@ -482,6 +482,12 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
+export function collectPracticeConceptIds(
+  practiceQs: ReadonlyArray<Pick<InternalQuestion, 'conceptIds'>>,
+): string[] {
+  return [...new Set(practiceQs.flatMap(q => q.conceptIds))];
+}
+
 function InternalMaturaTab() {
   const { firebaseUser } = useAuth();
   const [allQuestions, setAllQuestions] = useState<InternalQuestion[]>([]);
@@ -578,6 +584,7 @@ function InternalMaturaTab() {
       const scored  = correctMC + openPts;
       const pct = maxPts > 0 ? Math.round(scored / maxPts * 100) : 0;
       setSaving(true);
+      const studentName = firebaseUser.displayName || firebaseUser.email || firebaseUser.uid;
       firestoreService.saveQuizResult({
         quizId:         'internal-matura-gymnasium',
         quizTitle:      'Вежба — Училишна матура (Гимназиско)',
@@ -588,6 +595,15 @@ function InternalMaturaTab() {
         gradeLevel:     13,
         conceptId:      undefined,
       }).catch(() => {/* fire-and-forget */}).finally(() => setSaving(false));
+
+      collectPracticeConceptIds(practiceQs).forEach(cid => {
+        firestoreService.updateConceptMastery(
+          studentName,
+          cid,
+          pct,
+          { gradeLevel: 13 },
+        ).catch(() => {/* fire-and-forget */});
+      });
     }
   }
 
