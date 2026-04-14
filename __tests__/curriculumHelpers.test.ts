@@ -8,7 +8,8 @@
 import { describe, it, expect } from 'vitest';
 import { SECONDARY_TRACK_TO_MATURA_TRACKS } from '../types';
 
-// These are the known valid matura track keys in the app
+// These are the known valid matura/exam track keys in the app
+// Includes both state matura tracks and завршен испит tracks (vocational2/3)
 const KNOWN_MATURA_TRACKS = [
     'gymnasium',
     'vocational-it',
@@ -17,6 +18,10 @@ const KNOWN_MATURA_TRACKS = [
     'vocational-mechanical',
     'vocational-health',
     'vocational-civil',
+    'vocational-art',          // уметничка матура
+    'vocational3-zavrshen',    // завршен испит 3-год стручно
+    'vocational2-zavrshen',    // завршен испит 2-год стручно
+    'vocational4',             // generic 4-год fallback
 ];
 
 describe('SECONDARY_TRACK_TO_MATURA_TRACKS (P5)', () => {
@@ -43,8 +48,10 @@ describe('SECONDARY_TRACK_TO_MATURA_TRACKS (P5)', () => {
         expect(tracks).toContain('vocational-civil');
     });
 
-    it('vocational2 maps to empty array (no matura)', () => {
-        expect(SECONDARY_TRACK_TO_MATURA_TRACKS.vocational2).toEqual([]);
+    it('vocational2 maps to vocational2-zavrshen (no state matura, but завршен испит applies)', () => {
+        // vocational2 has no state мatura; however the "завршен испит" track is relevant
+        // for the MaturaLibraryView smart-default so teachers see the correct exam data.
+        expect(SECONDARY_TRACK_TO_MATURA_TRACKS.vocational2).toEqual(['vocational2-zavrshen']);
     });
 
     it('all mapped track keys are valid known matura tracks', () => {
