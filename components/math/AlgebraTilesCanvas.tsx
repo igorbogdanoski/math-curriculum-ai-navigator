@@ -575,6 +575,13 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({
   const expr = buildExpression(tiles);
   const canUndo = undoStack.current.length > 0;
 
+  // A1.8 — auto-cancel zero pairs after 600ms ping animation
+  useEffect(() => {
+    if (zeroPairTileIds.size === 0) return;
+    const timer = setTimeout(() => { simplify(); }, 600);
+    return () => clearTimeout(timer);
+  }, [zeroPairTileIds.size, simplify]);
+
   // A1.9 — notify parent whenever expression changes
   useEffect(() => { onExpressionChange?.(expr); }, [expr, onExpressionChange]);
 
@@ -1071,7 +1078,7 @@ export const AlgebraTilesCanvas: React.FC<AlgebraTilesCanvasProps> = ({
                 onTouchEnd={onTouchEnd}
                 onTouchCancel={onTouchEnd}
                 title={readOnly ? cfg.label : 'Влечи · двоен клик за бришење'}
-                className={`absolute flex items-center justify-center rounded border-2 font-black text-[10px] transition-shadow touch-none ${readOnly ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} ${colors} ${isDragged ? 'shadow-2xl ring-2 ring-white/70 z-10 scale-105' : 'shadow-sm hover:shadow-md hover:scale-105'} ${zeroPairTileIds.has(tile.id) ? 'ring-2 ring-amber-400 ring-offset-1 animate-pulse' : ''}`}
+                className={`absolute flex items-center justify-center rounded border-2 font-black text-[10px] transition-shadow touch-none ${readOnly ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} ${colors} ${isDragged ? 'shadow-2xl ring-2 ring-white/70 z-10 scale-105' : 'shadow-sm hover:shadow-md hover:scale-105'} ${zeroPairTileIds.has(tile.id) ? 'ring-2 ring-amber-400 ring-offset-1 animate-ping' : ''}`}
                 style={{ left: tile.x, top: tile.y, width: cfg.w, height: cfg.h, transition: isDragged ? 'none' : 'box-shadow 0.15s, transform 0.1s' }}
               >
                 {cfg.label}
