@@ -30,6 +30,121 @@ const DOK_LEVELS: DokLevel[] = [1, 2, 3, 4];
 
 const InteractiveQuizPlayer = React.lazy(() => import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 
+// ─── MaturaQuestionsBlock (B1/N2) ─────────────────────────────────────────────
+
+interface MatBankQuestion {
+  questionNumber: number;
+  part: 1 | 2;
+  questionType: 'mc' | 'open';
+  questionText: string;
+  choices?: Record<string, string> | null;
+  correctAnswer: string;
+  topicArea: string;
+  dokLevel: DokLevel;
+  conceptIds: string[];
+}
+
+function MaturaQuestionsBlock({ conceptId }: { conceptId: string }) {
+  const [open,     setOpen]     = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [matches,  setMatches]  = useState<MatBankQuestion[]>([]);
+  const [revealed, setRevealed] = useState<Set<number>>(new Set());
+  const loaded = useRef(false);
+
+  function toggle() {
+    if (!open && !loaded.current) {
+      loaded.current = true;
+      setLoading(true);
+      import('../data/matura/raw/internal-matura-bank-gymnasium-mk.json')
+        .then((mod) => {
+          const bank = mod.default as unknown as { questions: MatBankQuestion[] };
+          setMatches(bank.questions.filter(q => q.conceptIds.includes(conceptId)));
+        })
+        .catch(() => {/* non-fatal */})
+        .finally(() => setLoading(false));
+    }
+    setOpen(o => !o);
+  }
+
+  function toggleReveal(n: number) {
+    setRevealed(prev => { const s = new Set(prev); s.has(n) ? s.delete(n) : s.add(n); return s; });
+  }
+
+  const count = matches.length;
+
+  return (
+    <div className="mt-6 border border-rose-100 rounded-2xl overflow-hidden bg-white">
+      {/* Header toggle */}
+      <button type="button" onClick={toggle}
+        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-rose-50 transition-colors">
+        <div className="flex items-center gap-2.5">
+          <span className="text-base">📝</span>
+          <span className="font-bold text-sm text-gray-800">Матурски прашања</span>
+          {!loading && loaded.current && (
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${count > 0 ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-500'}`}>
+              {count}
+            </span>
+          )}
+          {loading && <span className="text-xs text-gray-400 animate-pulse">се вчитува…</span>}
+        </div>
+        <span className="text-gray-400 text-sm font-bold">{open ? '▲' : '▼'}</span>
+      </button>
+
+      {/* Body */}
+      {open && (
+        <div className="border-t border-rose-100 px-4 pb-4 pt-3 space-y-3">
+          {loading ? (
+            <div className="text-xs text-gray-400 py-2 text-center animate-pulse">Се вчитуваат прашањата…</div>
+          ) : count === 0 ? (
+            <div className="text-xs text-gray-400 py-3 text-center">
+              Нема матурски прашања поврзани со овој концепт.
+            </div>
+          ) : (
+            matches.map(q => {
+              const isRev = revealed.has(q.questionNumber);
+              const isMC  = q.questionType === 'mc';
+              return (
+                <div key={q.questionNumber}
+                  className="border border-gray-100 rounded-xl p-3.5 space-y-2 hover:border-rose-200 transition-colors">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${isMC ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {isMC ? 'MC' : 'Отворено'}
+                    </span>
+                    <DokBadge level={q.dokLevel} size="compact" />
+                    <span className="text-[11px] text-gray-400 ml-auto">Училишна матура</span>
+                  </div>
+                  <div className="text-sm text-gray-800 leading-relaxed">
+                    <MathRenderer text={q.questionText} />
+                  </div>
+                  {isMC && q.choices && !isRev && (
+                    <div className="grid grid-cols-2 gap-1">
+                      {(['А','Б','В','Г'] as const).map(ch => q.choices![ch] ? (
+                        <div key={ch} className="text-[11px] px-2 py-1 bg-gray-50 rounded-lg text-gray-600">
+                          <span className="font-semibold">{ch}. </span><MathRenderer text={q.choices![ch]!} />
+                        </div>
+                      ) : null)}
+                    </div>
+                  )}
+                  {isRev && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                      <p className="text-[11px] font-semibold text-emerald-700 mb-0.5">Точен одговор:</p>
+                      <div className="text-xs text-gray-800"><MathRenderer text={q.correctAnswer} /></div>
+                    </div>
+                  )}
+                  <button type="button" onClick={() => toggleReveal(q.questionNumber)}
+                    className="text-[11px] text-rose-600 hover:underline">
+                    {isRev ? '🙈 Скриј одговор' : '👁 Прикажи одговор'}
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Помошни функции ---
 const formatIdeasToText = (ideas: AIGeneratedIdeas) => {
     const mainActivities = Array.isArray(ideas.mainActivity)
@@ -492,6 +607,11 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
             </aside>
         </div>
         
+        {/* Матурски прашања (B1/N2) */}
+        <div className="max-w-4xl mx-auto px-4">
+          <MaturaQuestionsBlock conceptId={concept.id} />
+        </div>
+
         {/* СКРИЕН ДЕЛ ЗА PDF ЕКСПОРТ (Оптимизиран) */}
         <div style={{ display: 'none' }}>
             <div ref={printComponentRef} className="p-16 text-black bg-white">
