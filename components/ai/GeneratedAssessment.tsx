@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
 import { Bookmark, Image as ImageIcon, Loader2, X, RefreshCw, BarChart2, Upload } from 'lucide-react';
 import { ChartPreview, DEFAULT_CONFIG } from '../dataviz/ChartPreview';
@@ -441,7 +442,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
 
             addNotification('Илустрацијата е успешно генерирана!', 'success');
         } catch (error) {
-            console.error('Visualization error:', error);
+            logger.error('Visualization error:', error);
             addNotification('Грешка при генерирање на илустрацијата.', 'error');
         } finally {
             setVisualizingIdx(null);

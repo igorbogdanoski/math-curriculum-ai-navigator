@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { doc, getDoc, collection, getDocs, query, where, orderBy, updateDoc, addDoc, getCountFromServer, getAggregateFromServer, average, limit, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import type { School } from '../types';
@@ -42,7 +43,7 @@ export const schoolService = {
       });
       return { id: docRef.id, name, city, municipality: opts?.municipality, adminUid, adminUids: adminUid ? [adminUid] : [], teacherUids: [], joinCode };
     } catch (error) {
-      console.error('Error creating school:', error);
+      logger.error('Error creating school:', error);
       throw error;
     }
   },
@@ -90,7 +91,7 @@ export const schoolService = {
       ]);
       return school;
     } catch (error) {
-      console.error('Error joining school:', error);
+      logger.error('Error joining school:', error);
       throw error;
     }
   },
@@ -108,7 +109,7 @@ export const schoolService = {
         }),
       ]);
     } catch (error) {
-      console.error('Error leaving school:', error);
+      logger.error('Error leaving school:', error);
       throw error;
     }
   },
@@ -126,7 +127,7 @@ export const schoolService = {
         }),
       ]);
     } catch (error) {
-      console.error('Error removing teacher:', error);
+      logger.error('Error removing teacher:', error);
       throw error;
     }
   },
@@ -151,7 +152,7 @@ export const schoolService = {
     } catch (error: any) {
       // permission-denied is expected when called from the login screen before auth resolves
       if (error?.code !== 'permission-denied') {
-        console.error('Error fetching schools:', error);
+        logger.error('Error fetching schools:', error);
       }
       return [];
     }
@@ -162,7 +163,7 @@ export const schoolService = {
       const snap = await getDocs(collection(db, 'users'));
       return snap.docs.map(d => ({ uid: d.id, ...d.data() as Record<string, unknown> })) as { uid: string; name: string; email?: string; role?: string; schoolId?: string }[];
     } catch (error) {
-      console.error('Error fetching all users:', error);
+      logger.error('Error fetching all users:', error);
       return [];
     }
   },
@@ -173,7 +174,7 @@ export const schoolService = {
       if (schoolId !== undefined) patch.schoolId = schoolId;
       await updateDoc(doc(db, 'users', uid), patch);
     } catch (error) {
-      console.error('Error updating user role:', error);
+      logger.error('Error updating user role:', error);
       throw error;
     }
   },
@@ -187,7 +188,7 @@ export const schoolService = {
     try {
       await updateDoc(doc(db, 'users', uid), updateData);
     } catch (error) {
-      console.error('Error updating user subscription:', error);
+      logger.error('Error updating user subscription:', error);
       throw error;
     }
   },
@@ -254,7 +255,7 @@ export const schoolService = {
         weakConcepts,
       };
     } catch (error) {
-      console.error('Error fetching national stats:', error);
+      logger.error('Error fetching national stats:', error);
       return { totalSchools: 0, totalTeachers: 0, totalQuizzes: 0, nationalAvg: 0, gradeStats: [], weakConcepts: [] };
     }
   },
@@ -367,7 +368,7 @@ export const schoolService = {
         weeklyTrend,
       };
     } catch (error) {
-      console.error('Error fetching school stats:', error);
+      logger.error('Error fetching school stats:', error);
       return null;
     }
   },

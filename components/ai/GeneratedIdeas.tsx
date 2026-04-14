@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../common/Card';
 import { downloadAsPdf } from '../../utils/pdfDownload';
@@ -151,7 +152,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
             }));
             addNotification('Илустрацијата е успешно генерирана!', 'success');
         } catch (error) {
-            console.error('Visualization error:', error);
+            logger.error('Visualization error:', error);
             setVisualizations(prev => ({ ...prev, [section]: { loading: false } }));
             addNotification('Грешка при генерирање на илустрацијата.', 'error');
         }
@@ -171,7 +172,7 @@ export const GeneratedIdeas: React.FC<GeneratedIdeasProps> = ({ material, onSave
             addNotification('Илустрацијата е успешно регенерирана!', 'success');
             trackFeedback('edit_regenerated', `section:${section}`);
         } catch (error) {
-            console.error('Regenerate visualization error:', error);
+            logger.error('Regenerate visualization error:', error);
             setVisualizations(prev => ({ ...prev, [section]: { loading: false } }));
             addNotification('Грешка при регенерирање на илустрацијата.', 'error');
         }

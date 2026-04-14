@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState } from 'react';
 import {
   Document,
@@ -615,7 +616,7 @@ export const LessonPlanPDFButton: React.FC<LessonPlanPDFButtonProps> = ({ plan }
       setTimeout(() => URL.revokeObjectURL(url), 1500);
       setStatus('idle');
     } catch (err) {
-      console.error('PDF generation failed:', err);
+      logger.error('PDF generation failed:', err);
       setStatus('error');
       setTimeout(() => setStatus('idle'), 3000);
     }

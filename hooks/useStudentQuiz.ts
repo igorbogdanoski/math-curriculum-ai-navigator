@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 /**
  * useStudentQuiz — loads quiz content from Firestore / IndexedDB / E2E mock.
  * Extracted from StudentPlayView for single-responsibility.
@@ -83,7 +84,7 @@ export function useStudentQuiz(id: string | undefined, tid?: string) {
             });
             usedCache = true;
           } else if (!cancelled) {
-            console.error('Грешка при вчитување на квизот:', err);
+            logger.error('Грешка при вчитување на квизот:', err);
             setError(t('play.error.connect'));
           }
         }

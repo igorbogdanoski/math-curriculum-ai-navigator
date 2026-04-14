@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
@@ -20,7 +21,7 @@ export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
         // Се враќаат сите податоци мапирани по објект CurriculumModule.
         return docSnap.data() as CurriculumModule;
       } else {
-        console.error("...Firestore fetch failed: Document 'v1' does not exist in 'curriculum' collection.");
+        logger.error("...Firestore fetch failed: Document 'v1' does not exist in 'curriculum' collection.");
         throw new NotFoundError('curriculum/v1');
       }
     } catch (error: any) {
@@ -28,10 +29,10 @@ export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
       if (error?.code && error?.userMessage) throw error;
       // Gracefully handle offline errors — the app has a local data fallback.
       if (error.code === 'unavailable' || (error.message && error.message.includes('offline'))) {
-          console.info("...Could not fetch from Firestore: client is offline and data is not cached. Using local data.");
+          logger.info("...Could not fetch from Firestore: client is offline and data is not cached. Using local data.");
           throw new OfflineError('Клиентот е офлајн — Firestore не е достапен.');
       }
-      console.error("...Error fetching document from Firestore:", error);
+      logger.error("...Error fetching document from Firestore:", error);
       throw new FirestoreError('read', error.message);
     }
   };
@@ -41,7 +42,7 @@ export const saveFullCurriculum = async (data: CurriculumModule): Promise<void> 
     try {
       await setDoc(docRef, data);
     } catch (error) {
-      console.error("Error saving curriculum data to Firestore:", error);
+      logger.error("Error saving curriculum data to Firestore:", error);
       throw error;
     }
   };
@@ -59,7 +60,7 @@ export const fetchCachedMaterials = async (maxCount: number = 50): Promise<Cache
         ...doc.data()
       })) as CachedMaterial[];
     } catch (error) {
-      console.error("Error fetching cached materials:", error);
+      logger.error("Error fetching cached materials:", error);
       return [];
     }
   };
@@ -83,7 +84,7 @@ export const fetchLatestQuizByConcept = async (conceptId: string): Promise<Cache
       }
       return null;
     } catch (error) {
-      console.error("Error fetching latest quiz:", error);
+      logger.error("Error fetching latest quiz:", error);
       return null;
     }
   };
@@ -108,12 +109,12 @@ export const syncOfflineQuizzes = async (): Promise<number> => {
            await clearPendingQuiz(item.id);
            synced++;
          } catch (err) {
-           console.error('Failed to sync offline quiz:', err);
+           logger.error('Failed to sync offline quiz:', err);
          }
        }
        return synced;
     } catch (err) {
-       console.error('Sync error', err);
+       logger.error('Sync error', err);
        return 0;
     }
   };
@@ -166,10 +167,10 @@ export const saveRemediaQuiz = async (content: any, meta: {
         ...(teacherUid ? { teacherUid } : {}),
         ...(embedding ? { embedding } : {}),
         createdAt: serverTimestamp(),
-      }).catch(err => console.warn('Offline deferred', err));
+      }).catch(err => logger.warn('Offline deferred', err));
       return docRef.id;
     } catch (error) {
-      console.error('Error saving remedial quiz:', error);
+      logger.error('Error saving remedial quiz:', error);
       return null;
     }
   };
@@ -202,7 +203,7 @@ export const saveExitTicketQuiz = async (content: any, meta: {
       });
       return docRef.id;
     } catch (error) {
-      console.error('Error saving exit ticket quiz:', error);
+      logger.error('Error saving exit ticket quiz:', error);
       return null;
     }
   };
@@ -215,7 +216,7 @@ export const rateCachedMaterial = async (materialId: string, isHelpful: boolean)
       });
       return true;
     } catch (error) {
-      console.error("Error rating material:", error);
+      logger.error("Error rating material:", error);
       return false;
     }
   };
@@ -243,7 +244,7 @@ export const fetchUnapprovedQuestions = async (): Promise<SavedQuestion[]> => {
         .map(d => ({ id: d.id, ...d.data() } as SavedQuestion))
         .filter(q => !q.reviewStatus || q.reviewStatus === 'pending');
     } catch (error) {
-      console.error('Error fetching unapproved questions:', error);
+      logger.error('Error fetching unapproved questions:', error);
       return [];
     }
   };
@@ -252,7 +253,7 @@ export const updateSavedQuestion = async (questionId: string, updates: Partial<S
     try {
       await updateDoc(doc(db, 'saved_questions', questionId), updates);
     } catch (error) {
-      console.error('Error updating saved question:', error);
+      logger.error('Error updating saved question:', error);
       throw error;
     }
   };
@@ -268,7 +269,7 @@ export const fetchSavedQuestions = async (teacherUid: string): Promise<SavedQues
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedQuestion));
     } catch (error) {
-      console.error('Error fetching saved questions:', error);
+      logger.error('Error fetching saved questions:', error);
       return [];
     }
   };
@@ -296,7 +297,7 @@ export const fetchVerifiedQuestions = async (teacherUid: string, conceptId?: str
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedQuestion));
       return conceptId ? all.filter(q => q.conceptId === conceptId) : all;
     } catch (error) {
-      console.error('Error fetching verified questions:', error);
+      logger.error('Error fetching verified questions:', error);
       return [];
     }
   };
@@ -394,7 +395,7 @@ export const fetchAIMaterialFeedbackSummary = async (
     const events = snap.docs.map((d) => ({ id: d.id, ...d.data() } as AIMaterialFeedbackEvent));
     return buildAIMaterialFeedbackSummaryFromEvents(events, windowDays);
   } catch (error) {
-    console.error('Error fetching AI material feedback summary:', error);
+    logger.error('Error fetching AI material feedback summary:', error);
     return fallback;
   }
 };
@@ -418,7 +419,7 @@ export const saveToLibrary = async (content: any, meta: {
         const textToEmbed = `${meta.title}\n${contentSnippet}`;
         embedding = await callEmbeddingProxy(textToEmbed);
     } catch (err) {
-        console.warn('Failed to generate embedding for library item:', err);
+        logger.warn('Failed to generate embedding for library item:', err);
     }
 
     const ref = await addDoc(collection(db, 'cached_ai_materials'), {
@@ -443,7 +444,7 @@ export const fetchLibraryMaterials = async (teacherUid: string): Promise<CachedM
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as CachedMaterial));
     } catch (error) {
-      console.error('Error fetching library materials:', error);
+      logger.error('Error fetching library materials:', error);
       return [];
     }
   };
@@ -461,7 +462,7 @@ export const fetchGlobalLibraryMaterials = async (): Promise<CachedMaterial[]> =
         .map(d => ({ id: d.id, ...d.data() } as CachedMaterial))
         .filter(m => m.isPublic !== false);
     } catch (error) {
-      console.error('Error fetching global library materials:', error);
+      logger.error('Error fetching global library materials:', error);
       return [];
     }
   };
@@ -505,7 +506,7 @@ export const fetchArchivedMaterials = async (teacherUid: string): Promise<import
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as import('./firestoreService.types').CachedMaterial));
   } catch (error) {
-    console.error('fetchArchivedMaterials error:', error);
+    logger.error('fetchArchivedMaterials error:', error);
     return [];
   }
 };
@@ -582,7 +583,7 @@ export const fetchAssignmentsByTeacher = async (teacherUid: string): Promise<Ass
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Assignment));
     } catch (error) {
-      console.error('Error fetching assignments by teacher:', error);
+      logger.error('Error fetching assignments by teacher:', error);
       return [];
     }
   };
@@ -593,7 +594,7 @@ export const fetchAssignmentsByStudent = async (studentName: string): Promise<As
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Assignment));
     } catch (error) {
-      console.error('Error fetching assignments by student:', error);
+      logger.error('Error fetching assignments by student:', error);
       return [];
     }
   };
@@ -602,7 +603,7 @@ export const markAssignmentCompleted = async (assignmentId: string, studentName:
     try {
       await updateDoc(doc(db, 'assignments', assignmentId), { completedBy: arrayUnion(studentName) });
     } catch (error) {
-      console.error('Error marking assignment completed:', error);
+      logger.error('Error marking assignment completed:', error);
     }
   };
 
@@ -760,7 +761,7 @@ export const fetchNationalLibrary = async (filters?: {
       const lastDoc = snap.docs.length === PAGE_SIZE_NATIONAL_LIBRARY ? snap.docs[snap.docs.length - 1] : null;
       return { entries, lastDoc };
     } catch (error) {
-      console.error('Error fetching national library:', error);
+      logger.error('Error fetching national library:', error);
       return { entries: [], lastDoc: null };
     }
   };

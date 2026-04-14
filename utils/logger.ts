@@ -30,8 +30,16 @@ function captureSentry(level: 'warning' | 'error', msg: string, err?: Error, ctx
 }
 
 export const logger = {
+  /** Dev-only debug log — silent in production */
+  debug(msg: string, ctx?: unknown): void {
+    if (isDev) {
+      // eslint-disable-next-line no-console
+      console.debug(`[DEBUG] ${msg}`, ctx ?? '');
+    }
+  },
+
   /** Dev-only info log — silent in production */
-  info(msg: string, ctx?: object): void {
+  info(msg: string, ctx?: unknown): void {
     if (isDev) {
       // eslint-disable-next-line no-console
       console.info(`[INFO] ${msg}`, ctx ?? '');
@@ -39,17 +47,17 @@ export const logger = {
   },
 
   /** Logged in all envs; Sentry warning in production */
-  warn(msg: string, ctx?: object): void {
+  warn(msg: string, ctx?: unknown): void {
     // eslint-disable-next-line no-console
     console.warn(`[WARN] ${msg}`, ctx ?? '');
-    if (!isDev) captureSentry('warning', msg, undefined, ctx);
+    if (!isDev) captureSentry('warning', msg, undefined, ctx instanceof Object ? ctx as object : undefined);
   },
 
   /** Logged in all envs; Sentry exception in production */
-  error(msg: string, err?: Error | unknown, ctx?: object): void {
+  error(msg: string, err?: unknown, ctx?: unknown): void {
     const e = err instanceof Error ? err : err !== undefined ? new Error(String(err)) : undefined;
     // eslint-disable-next-line no-console
     console.error(`[ERROR] ${msg}`, e ?? '', ctx ?? '');
-    if (!isDev) captureSentry('error', msg, e, ctx);
+    if (!isDev) captureSentry('error', msg, e, ctx instanceof Object ? ctx as object : undefined);
   },
 };

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import { Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
 import { Concept, Topic, Grade, TeachingProfile, LessonPlan, LessonScenario, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, AIGeneratedPresentation, GenerationContext } from '../../types';
 import { AIGeneratedIdeasSchema, AnnualPlanSchema, AIGeneratedThematicPlanSchema } from '../../utils/schemas';
@@ -15,7 +16,7 @@ async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: num
       try {
           const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
           if (cachedDoc.exists()) return cachedDoc.data().content as AIGeneratedIdeas;
-      } catch (e) { console.warn("Cache read error:", e); }
+      } catch (e) { logger.warn("Cache read error:", e); }
     }
 
     const conceptList = concepts.map(c => c.title).join(', ');
@@ -289,7 +290,7 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
       await setCached(cacheKey, result, { type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id });
       return result;
     } catch (error) {
-      console.error('Error generating thematic plan:', error);
+      logger.error('Error generating thematic plan:', error);
       throw error;
     }
   },

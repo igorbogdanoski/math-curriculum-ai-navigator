@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 /**
  * Firestore service for SM-2 Spaced Repetition data.
  *
@@ -64,7 +65,7 @@ export async function updateSpacedRepRecord(
 
   // Fire-and-forget (same pattern as gamification saves in firestoreService.quiz.ts)
   setDoc(ref, updated, { merge: true }).catch((e) =>
-    console.warn('[spacedRep] Failed to save record:', e),
+    logger.warn('[spacedRep] Failed to save record:', e),
   );
 }
 
@@ -89,7 +90,7 @@ export async function fetchSpacedRepRecords(
     const snap = await getDocs(q);
     return snap.docs.map((d) => d.data() as SpacedRepRecord);
   } catch (e) {
-    console.warn('[spacedRep] Failed to fetch records:', e);
+    logger.warn('[spacedRep] Failed to fetch records:', e);
     return [];
   }
 }

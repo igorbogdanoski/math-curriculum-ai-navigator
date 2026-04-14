@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect } from 'react';
 import { firestoreService, type QuizResult, type Announcement } from '../services/firestoreService';
 import type { DocumentSnapshot } from 'firebase/firestore';
@@ -139,7 +140,7 @@ const { addNotification } = useNotification();
       setAnnouncements(updated);
       addNotification('Огласот е објавен! 📢', 'success');
     } catch (err) {
-      console.error('Error posting announcement:', err);
+      logger.error('Error posting announcement:', err);
       addNotification('Грешка при објавување на огласот.', 'error');
     } finally {
       setIsPostingAnnouncement(false);
@@ -151,7 +152,7 @@ const { addNotification } = useNotification();
       await firestoreService.deleteAnnouncement(id);
       setAnnouncements(prev => prev.filter(a => a.id !== id));
     } catch (err) {
-      console.error('Error deleting announcement:', err);
+      logger.error('Error deleting announcement:', err);
       addNotification('Грешка при бришење на огласот.', 'error');
     }
   };
@@ -170,7 +171,7 @@ const { addNotification } = useNotification();
   useEffect(() => {
     if (!firebaseUser?.uid) return;
     firestoreService.fetchClasses(firebaseUser.uid).then(setClasses).catch(err => {
-      console.error('Failed to fetch classes:', err);
+      logger.error('Failed to fetch classes:', err);
     });
   }, [firebaseUser?.uid]);
 
@@ -221,7 +222,7 @@ const { addNotification } = useNotification();
       });
       setAiRecs(recs);
     } catch (err) {
-      console.error('Error generating class recommendations:', err);
+      logger.error('Error generating class recommendations:', err);
       addNotification('Грешка при генерирање препораки. Проверете ја AI квотата.', 'error');
     } finally {
       setIsLoadingRecs(false);
@@ -289,7 +290,7 @@ const { addNotification } = useNotification();
       setLastDoc(page.lastDoc);
       setHasMore(page.lastDoc !== null);
     } catch (err) {
-      console.error('Error loading more results:', err);
+      logger.error('Error loading more results:', err);
     } finally {
       setIsLoadingMore(false);
     }

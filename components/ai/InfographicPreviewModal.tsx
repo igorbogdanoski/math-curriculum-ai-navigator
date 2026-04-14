@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { X, Download, Loader2 } from 'lucide-react';
@@ -149,7 +150,7 @@ export const InfographicPreviewModal: React.FC<Props> = ({ layout, onClose }) =>
       canvas.width = 0;
       canvas.height = 0;
     } catch (err) {
-      console.error('Infographic export failed:', err);
+      logger.error('Infographic export failed:', err);
       addNotification('Грешка при извоз. Обидете се повторно.', 'error');
     } finally {
       setIsExporting(false);

@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 /**
  * Adaptive Difficulty Service — Ж1.2
  *
@@ -113,7 +114,7 @@ export const adaptiveDifficultyService = {
       );
     } catch (err) {
       // Non-critical — fail silently, core quiz save is already done
-      console.error('[AdaptiveDifficulty] updateAfterQuiz failed:', err);
+      logger.error('[AdaptiveDifficulty] updateAfterQuiz failed:', err);
     }
   },
 

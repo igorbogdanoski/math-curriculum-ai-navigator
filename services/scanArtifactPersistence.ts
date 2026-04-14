@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import type { ScanArtifactRecord } from '../types';
 import { firestoreService } from './firestoreService';
 import { captureException } from './sentryService';
@@ -27,7 +28,7 @@ export const persistScanArtifactWithObservability = async (
   try {
     const artifactId = await firestoreService.saveScanArtifactRecord(record);
     const durationMs = Date.now() - startedAt;
-    console.info('[scan-archive] persisted', {
+    logger.info('[scan-archive] persisted', {
       flow: meta.flow,
       stage: meta.stage,
       mode: record.mode,
@@ -50,7 +51,7 @@ export const persistScanArtifactWithObservability = async (
       conceptCount: record.conceptIds?.length ?? 0,
       durationMs,
     });
-    console.warn('[scan-archive] persistence failed', {
+    logger.warn('[scan-archive] persistence failed', {
       flow: meta.flow,
       stage: meta.stage,
       mode: record.mode,

@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 /**
  * firestoreService.matura.ts
  * ─────────────────────────────────────────────────────────────────────────────
@@ -469,7 +470,7 @@ export async function saveUserMaturaResult(
     }, { merge: true });
   } catch (e) {
     // Non-critical: local result remains source-of-truth fallback for immediate UX.
-    console.warn('saveUserMaturaResult failed', e);
+    logger.warn('saveUserMaturaResult failed', e);
   }
 }
 
@@ -485,7 +486,7 @@ export async function getUserMaturaResults(uid: string): Promise<MaturaStoredRes
       return { ...data, source: 'firestore' as const };
     });
   } catch (e) {
-    console.warn('getUserMaturaResults failed', e);
+    logger.warn('getUserMaturaResults failed', e);
     return [];
   }
 }
@@ -532,7 +533,7 @@ export async function saveMaturaMissionPlan(uid: string, plan: MaturaMissionPlan
       { merge: true },
     );
   } catch (e) {
-    console.warn('saveMaturaMissionPlan failed', e);
+    logger.warn('saveMaturaMissionPlan failed', e);
   }
 }
 
@@ -551,7 +552,7 @@ export async function getActiveMaturaMission(uid: string): Promise<MaturaMission
     const active = all.find((p) => new Date(p.endsAt).getTime() > now);
     return active ?? all[0]; // fall back to newest if all expired
   } catch (e) {
-    console.warn('getActiveMaturaMission failed', e);
+    logger.warn('getActiveMaturaMission failed', e);
     return null;
   }
 }

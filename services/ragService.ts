@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { Topic, Concept } from '../types';
 import { callGeminiEmbed } from './gemini/core';
 
@@ -59,7 +60,7 @@ class RagService {
         .slice(0, 3);
 
     } catch (error) {
-      console.error("RAG Embedding Error:", error);
+      logger.error("RAG Embedding Error:", error);
       return [];
     }
   }

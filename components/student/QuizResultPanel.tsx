@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 /**
  * QuizResultPanel — all post-quiz UI panels:
  * result card, AI feedback, peer learning, confidence, metacognitive,
@@ -313,7 +314,7 @@ export const QuizResultPanel: React.FC<QuizResultPanelProps> = ({
                 );
                 if (isMountedRef.current) dispatch({ type: 'HOMEWORK_SUCCESS', homework: result });
               } catch (err) {
-                console.warn('[Homework] generateAdaptiveHomework failed:', err);
+                logger.warn('[Homework] generateAdaptiveHomework failed:', err);
                 if (isMountedRef.current) dispatch({ type: 'HOMEWORK_ERROR' });
               }
             }}

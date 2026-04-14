@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect } from 'react';
 import { useModal } from '../../contexts/ModalContext';
 import { useCurriculum } from '../../hooks/useCurriculum';
@@ -62,7 +63,7 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
                         addNotification('Годишниот план е успешно додаден во планерот!', 'success');
                     } catch (addError) {
                         addNotification('Грешка при додавање на планот во планерот.', 'error');
-                        console.error("Failed to add annual plan items:", addError);
+                        logger.error("Failed to add annual plan items:", addError);
                     }
                 },
                 onCancel: hideModal,

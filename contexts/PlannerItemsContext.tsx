@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebaseConfig';
@@ -62,7 +63,7 @@ export const PlannerItemsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setIsLoading(false);
       }, 
       (err) => {
-        console.error("Error fetching planner items:", err);
+        logger.error("Error fetching planner items:", err);
         setError("Не може да се вчитаат податоците од планерот.");
         setIsLoading(false);
       }

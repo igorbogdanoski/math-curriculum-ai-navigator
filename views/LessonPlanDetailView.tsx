@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { usePlanner } from '../contexts/PlannerContext';
 import { ICONS } from '../constants';
@@ -128,7 +129,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
         navigate(`/planner/lesson/${newPlanId}`); // Go directly to editor
       } catch (error) {
         addNotification('Грешка при креирање на копија.', 'error');
-        console.error("Import failed:", error);
+        logger.error("Import failed:", error);
       }
     }
   };
@@ -224,7 +225,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
             addNotification('PDF фајлот е успешно генериран.', 'success');
 
         } catch (error) {
-            console.error("PDF Generation Error:", error);
+            logger.error("PDF Generation Error:", error);
             addNotification('Грешка при генерирање на PDF. Пробајте со "Печати" опцијата ако ова не успее.', 'error');
         } finally {
             setIsGeneratingPDF(false);
@@ -273,7 +274,7 @@ export const LessonPlanDetailView: React.FC<LessonPlanDetailViewProps> = ({ id }
                 await exportLessonPlanToWord(plan as LessonPlan, user);
                 addNotification('Документот е успешно зачуван како Word (.docx).', 'success');
             } catch (error) {
-                console.error('Word export failed:', error);
+                logger.error('Word export failed:', error);
                 addNotification('Грешка при експортирање во Word.', 'error');
             } finally {
                 setIsGeneratingWord(false);

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, X, Bot, Loader2, Sparkles } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
@@ -77,7 +78,7 @@ export const AcademyMentor: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) =
         }
       }
     } catch (error) {
-      console.error('Mentor Error:', error);
+      logger.error('Mentor Error:', error);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Извинете, настана грешка. Ве молам обидете се повторно.' }]);
     } finally {
       setIsLoading(false);

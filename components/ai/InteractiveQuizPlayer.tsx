@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import './InteractiveQuizPlayer.css';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
@@ -199,7 +200,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
               misconception
             }]);
           })
-          .catch(err => console.error("Error diagnosing misconception", err));
+          .catch(err => logger.error("Error diagnosing misconception", err));
       }
     }
   };
@@ -275,7 +276,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
         resetQuiz();
       }
     } catch (err) {
-      console.error("Грешка при генерирање паралелни прашања:", err);
+      logger.error("Грешка при генерирање паралелни прашања:", err);
     } finally {
       setIsGeneratingParallel(false);
     }
@@ -288,7 +289,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       const data = await geminiService.solveSpecificProblemStepByStep(currentQ.question);
       setScaffoldData(data);
     } catch (err) {
-      console.error("Грешка при генерирање хинт:", err);
+      logger.error("Грешка при генерирање хинт:", err);
     } finally {
       setIsGeneratingScaffold(false);
     }

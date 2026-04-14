@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useRef, useEffect } from 'react';
 import { ICONS } from '../../constants';
 import { geminiService } from '../../services/geminiService';
@@ -36,7 +37,7 @@ export function RefineGenerationChat({ material, onUpdateMaterial, materialType 
                 setError('Неуспешно фино подесување. Обидете се повторно.');
             }
         } catch (err: any) {
-            console.error("Error refining material:", err);
+            logger.error("Error refining material:", err);
             setError(err.message || 'Настана грешка при комуникацијата со AI.');
         } finally {
             setIsRefining(false);

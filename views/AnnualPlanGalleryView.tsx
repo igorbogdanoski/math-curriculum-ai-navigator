@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy, updateDoc, doc, increment } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -50,7 +51,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
             } as SavedPlan));
             setPlans(loadedPlans);
         } catch (error) {
-            console.error("Грешка при вчитување планови:", error);
+            logger.error("Грешка при вчитување планови:", error);
         } finally {
             setIsLoading(false);
         }
@@ -97,7 +98,7 @@ export const AnnualPlanGalleryView: React.FC = () => {
                     navigate(`/annual-planner/${newId}`);
 
                 } catch (error) {
-                    console.error("Failed to fork:", error);
+                    logger.error("Failed to fork:", error);
                     addNotification("Настана грешка при клонирањето.", 'error');
                 } finally {
                     setIsForking(false);

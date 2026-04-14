@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown } from 'lucide-react';
 import { Shape3DViewer, Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
@@ -218,7 +219,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       await pptx.writeFile({ fileName: `${safeTitle}_gamma.pptx` });
       addNotification('PPTX успешно зачуван! ✅', 'success');
     } catch (err) {
-      console.error('[Gamma PPTX]', err);
+      logger.error('[Gamma PPTX]', err);
       addNotification('Грешка при генерирање на PPTX.', 'error');
     } finally {
       setIsExportingPptx(false);

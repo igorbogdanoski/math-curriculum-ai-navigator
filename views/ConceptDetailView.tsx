@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
@@ -252,7 +253,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
       const ideas = await geminiService.generateLessonPlanIdeas([concept], topic, grade.level, user ?? undefined, undefined, conceptCustomInstruction || undefined);
       setAiSuggestions(ideas);
     } catch(e) {
-      console.error("[AI Ideas]", e);
+      logger.error("[AI Ideas]", e);
       addNotification(aiErrMsg(e, "Грешка при генерирање идеи."), 'error');
     }
     finally { setLoadingState(p => ({ ...p, ideas: false })); }
@@ -265,7 +266,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
       const res = await geminiService.generateAnalogy(concept, grade.level);
       setAnalogy(res);
     } catch(e) {
-      console.error("[AI Analogy]", e);
+      logger.error("[AI Analogy]", e);
       addNotification(aiErrMsg(e, "Грешка при генерирање аналогија."), 'error');
     }
     finally { setLoadingState(p => ({ ...p, analogy: false })); }
@@ -278,7 +279,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
       const res = await geminiService.generatePracticeMaterials(concept, grade.level, 'problems');
       setPracticeMaterial(res);
     } catch(e) {
-      console.error("[AI Quiz]", e);
+      logger.error("[AI Quiz]", e);
       addNotification(aiErrMsg(e, "Грешка при креирање квиз."), 'error');
     }
     finally { setLoadingState(p => ({ ...p, quiz: false })); }
@@ -298,7 +299,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
       setGammaPresentation(presentation);
       setGammaOpen(true);
     } catch (e) {
-      console.error('[AI Gamma]', e);
+      logger.error('[AI Gamma]', e);
       addNotification(aiErrMsg(e, 'Грешка при генерирање презентација.'), 'error');
     } finally {
       setLoadingState(p => ({ ...p, gamma: false }));
@@ -313,7 +314,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
       const res = await geminiService.generateStepByStepSolution(concept.title, grade.level, conceptCustomInstruction || undefined);
       setSolverData(res);
     } catch(e) {
-      console.error("[AI Solver]", e);
+      logger.error("[AI Solver]", e);
       addNotification(aiErrMsg(e, "Грешка во AI Туторот."), "error");
     }
     finally { setLoadingState(p => ({ ...p, solver: false })); }

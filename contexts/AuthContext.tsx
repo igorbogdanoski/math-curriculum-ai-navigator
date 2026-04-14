@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react';
 import type { TeachingProfile } from '../types';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile as firebaseUpdateProfile, type User, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, deleteUser } from "firebase/auth";
@@ -57,15 +58,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (docSnap.exists()) {
             return parseFirestoreDoc(TeachingProfileSchema, docSnap.data(), `users/${uid}`) as TeachingProfile;
         } else {
-            console.warn(`User profile document not found for UID: ${uid}. Using fallback defaults.`);
+            logger.warn(`User profile document not found for UID: ${uid}. Using fallback defaults.`);
         }
     } catch (e: any) {
         // Handle offline case gracefully. It's not a critical error if persistence is enabled.
         if (e.code === 'unavailable' || (e.message && e.message.includes('offline'))) {
-            console.info("Could not fetch user profile: client is offline. App will use cached data if available or fallback defaults.");
+            logger.info("Could not fetch user profile: client is offline. App will use cached data if available or fallback defaults.");
         } else {
             // Log other potential errors as critical.
-            console.error("Error fetching user profile:", e);
+            logger.error("Error fetching user profile:", e);
         }
     }
     return null;
@@ -74,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // E2E Mock: If teacher mode is requested, bypass real auth
     if (typeof window !== 'undefined' && window.__E2E_TEACHER_MODE__) {
-        console.info("E2E: Teacher mode detected. Mocking authenticated state.");
+        logger.info("E2E: Teacher mode detected. Mocking authenticated state.");
         setAuthState({
             firebaseUser: { uid: 'test-teacher-uid', email: 'teacher@test.mk', emailVerified: true } as unknown as User,
             profile: {
@@ -104,12 +105,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Reload user state to get the latest emailVerified status
                 await user.reload();
             } catch (error) {
-                console.warn("Failed to reload user state, possibly due to network issues. Proceeding with cached state.", error);
+                logger.warn("Failed to reload user state, possibly due to network issues. Proceeding with cached state.", error);
                 // Don't crash the app; proceed with the potentially stale user object.
             }
             
             if (!user.emailVerified) {
-                console.info("User logged in but email not verified. UID:", user.uid);
+                logger.info("User logged in but email not verified. UID:", user.uid);
                 setAuthState({
                     firebaseUser: user,
                     profile: null,
@@ -134,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Stop polling after 10 minutes to avoid indefinite background work
                 setTimeout(() => clearInterval(verifyPoll), 10 * 60_000);
             } else {
-                console.info("Fetching profile for verified user. UID:", user.uid);
+                logger.info("Fetching profile for verified user. UID:", user.uid);
                 const profile = await fetchUserProfile(user.uid);
 
                 let finalProfile: TeachingProfile;
@@ -143,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 } else {
                     // Profile missing — create it now with 50 starter credits.
                     // This handles: setDoc failure during registration, or Google sign-in first login.
-                    console.warn("No profile found for verified user. Creating default profile with 50 credits. UID:", user.uid);
+                    logger.warn("No profile found for verified user. Creating default profile with 50 credits. UID:", user.uid);
                     finalProfile = {
                         name: user.displayName || 'Корисник',
                         photoURL: user.photoURL || undefined,
@@ -164,12 +165,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     try {
                         await setDoc(doc(db, 'users', user.uid), finalProfile);
                     } catch (e) {
-                        console.error("Failed to create fallback profile in Firestore:", e);
+                        logger.error("Failed to create fallback profile in Firestore:", e);
                         // Still use the in-memory profile so the user can access the app.
                     }
                 }
 
-                console.info("Auth state resolved. IsAuthenticated: true");
+                logger.info("Auth state resolved. IsAuthenticated: true");
                 setSentryUser(user.uid, user.email ?? undefined);
                 setAuthState({
                     firebaseUser: user,
@@ -179,7 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 });
             }
         } else {
-            console.info("No user detected (logged out).");
+            logger.info("No user detected (logged out).");
             clearSentryUser();
             setAuthState({ firebaseUser: null, profile: null, isAuthenticated: false, isLoading: false });
         }
@@ -193,7 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await signInWithEmailAndPassword(auth, email, password);
         // The onAuthStateChanged listener will handle the logic for verified/unverified users.
     } catch (error: any) {
-        console.error("Firebase login error:", error.code);
+        logger.error("Firebase login error:", error.code);
         if (error.code === 'auth/invalid-credential') {
             throw new Error('Погрешна е-пошта или лозинка.');
         }
@@ -207,7 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await signInWithPopup(auth, googleProvider);
         // onAuthStateChanged handles profile creation (with 50 credits if new user)
     } catch (error: any) {
-        console.error("Google sign-in error:", error.code);
+        logger.error("Google sign-in error:", error.code);
         if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
             return; // User cancelled — no error shown
         }
@@ -260,11 +261,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (profileError) {
             // Auth account was created successfully. Profile write failed (e.g. network issue).
             // The onAuthStateChanged handler will create it on next login.
-            console.error("Failed to write initial profile to Firestore:", profileError);
+            logger.error("Failed to write initial profile to Firestore:", profileError);
         }
 
     } catch (error: any) {
-        console.error("Firebase registration error:", error.code, error.message);
+        logger.error("Firebase registration error:", error.code, error.message);
         if (error.code === 'auth/email-already-in-use') {
             throw new Error("Оваа е-пошта е веќе регистрирана. Обидете се да се најавите или ресетирајте ја лозинката.");
         }
@@ -313,7 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
         await sendPasswordResetEmail(auth, email);
     } catch (error: any) {
-        console.error("Firebase password reset error:", error.code);
+        logger.error("Firebase password reset error:", error.code);
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
             throw new Error('Не е пронајдена сметка со оваа е-пошта.');
         }
@@ -334,7 +335,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Update local state immediately for better UX
         setAuthState((prev: typeof authState) => ({ ...prev, profile: profileData }));
     } catch (error) {
-        console.error("Error updating user profile in Firestore:", error);
+        logger.error("Error updating user profile in Firestore:", error);
         // Re-throw a user-friendly error to be caught by the UI component
         throw new Error("Неуспешно ажурирање на профилот во базата на податоци.");
     }

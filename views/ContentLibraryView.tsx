@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore, Star, Loader2, Eye, Send } from 'lucide-react';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
@@ -114,7 +115,7 @@ Keep responses concise (2-3 sentences max), practical, and focused on teacher ne
         timestamp: Date.now(),
       }]);
     } catch (error) {
-      console.error('Error calling Gemini API:', error);
+      logger.error('Error calling Gemini API:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: 'Error connecting to AI. Please check your API key and try again.',
@@ -575,7 +576,7 @@ export const ContentLibraryView: React.FC = () => {
                 embeddingCacheRef.current.set(searchQuery, emb);
                 setQueryEmbedding(emb);
             } catch (err) {
-                console.error('Semantic search error:', err);
+                logger.error('Semantic search error:', err);
                 addNotification('Проблем со семантичкото пребарување.', 'warning');
             } finally {
                 setIsEmbedding(false);

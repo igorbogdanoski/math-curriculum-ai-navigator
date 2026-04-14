@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 /**
  * С1 — SaveProgressModal
  *
@@ -86,7 +87,7 @@ export const SaveProgressModal: React.FC<SaveProgressModalProps> = ({
       setState('saved');
       onSaved?.(uid);
     } catch (err: any) {
-      console.error('SaveProgress error:', err);
+      logger.error('SaveProgress error:', err);
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         // Корисникот го затворил popup — врати се на idle без грешка
         setState('idle');

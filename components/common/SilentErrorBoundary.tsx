@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface SilentErrorBoundaryProps {
@@ -24,7 +25,7 @@ export class SilentErrorBoundary extends Component<SilentErrorBoundaryProps, Sil
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error(`[SilentErrorBoundary${this.props.name ? `: ${this.props.name}` : ''}]`, error, errorInfo);
+    logger.error(`[SilentErrorBoundary${this.props.name ? `: ${this.props.name}` : ''}]`, error, errorInfo);
   }
 
   render() {

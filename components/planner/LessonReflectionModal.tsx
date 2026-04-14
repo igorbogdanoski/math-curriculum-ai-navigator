@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect } from 'react';
 import type { PlannerItem, LessonReflection } from '../../types';
 import { ICONS } from '../../constants';
@@ -123,7 +124,7 @@ export const LessonReflectionModal: React.FC<LessonReflectionModalProps> = ({ it
         hideModal();
     } catch (error) {
         addNotification('Грешка при зачувување на рефлексијата.', 'error');
-        console.error("Failed to save reflection:", error);
+        logger.error("Failed to save reflection:", error);
     }
   };
 

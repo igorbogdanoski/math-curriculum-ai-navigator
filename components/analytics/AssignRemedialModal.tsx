@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useMemo } from 'react';
 import { X, Users, AlertTriangle, ClipboardList, Loader2, CheckSquare, Square } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
@@ -97,7 +98,7 @@ export const AssignRemedialModal: React.FC<Props> = ({
 
             onSuccess(studentList.length);
         } catch (err) {
-            console.error('Assign remedial error:', err);
+            logger.error('Assign remedial error:', err);
         } finally {
             setLoading(false);
             setStep('idle');

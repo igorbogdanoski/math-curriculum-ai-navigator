@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebaseConfig';
@@ -57,7 +58,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
       }
       setIsPreferencesLoaded(true);
     }, (error) => {
-        console.error("Error listening to user preferences:", error);
+        logger.error("Error listening to user preferences:", error);
     });
 
     return () => unsubscribe();
@@ -69,7 +70,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     const isFav = favoriteConceptIds.includes(conceptId);
     updateDoc(userDocRef, {
         favoriteConceptIds: isFav ? arrayRemove(conceptId) : arrayUnion(conceptId)
-    }).catch(err => console.error("Failed to toggle concept favorite:", err));
+    }).catch(err => logger.error("Failed to toggle concept favorite:", err));
   }, [firebaseUser, favoriteConceptIds]);
 
   const isFavoriteConcept = useCallback((conceptId: string) => {
@@ -82,7 +83,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     const isFav = favoriteLessonPlanIds.includes(planId);
     updateDoc(userDocRef, {
         favoriteLessonPlanIds: isFav ? arrayRemove(planId) : arrayUnion(planId)
-    }).catch(err => console.error("Failed to toggle lesson plan favorite:", err));
+    }).catch(err => logger.error("Failed to toggle lesson plan favorite:", err));
   }, [firebaseUser, favoriteLessonPlanIds]);
 
   const isFavoriteLessonPlan = useCallback((planId: string) => {
@@ -94,7 +95,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     if (!firebaseUser) return;
     const userDocRef = doc(db, "users", firebaseUser.uid);
     updateDoc(userDocRef, { toursSeen: {} }).catch(err => {
-      console.error("Failed to reset tours:", err);
+      logger.error("Failed to reset tours:", err);
     });
   }, [firebaseUser]);
 
@@ -111,7 +112,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
         [tour]: true
       }
     }, { merge: true }).catch(err => {
-        console.error("Failed to mark tour as seen, reverting optimistic update:", err);
+        logger.error("Failed to mark tour as seen, reverting optimistic update:", err);
         setToursSeen((prev: Record<string, boolean>) => {
             const revertedState = { ...prev };
             delete revertedState[tour];

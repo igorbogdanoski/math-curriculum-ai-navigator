@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 
 import React, { useState, useEffect } from 'react';
 
@@ -351,7 +352,7 @@ export const SettingsView: React.FC = () => {
             addNotification('Профилот е успешно зачуван!', 'success');
         } catch (error) {
             addNotification('Грешка при зачувување на профилот.', 'error');
-            console.error("Failed to save profile:", error);
+            logger.error("Failed to save profile:", error);
         } finally {
             setIsSaving(false);
         }
@@ -404,7 +405,7 @@ export const SettingsView: React.FC = () => {
             } else {
                 addNotification('Грешка при извоз на податоците. Обидете се повторно.', 'error');
             }
-            console.error('GDPR export failed:', err);
+            logger.error('GDPR export failed:', err);
         } finally {
             setIsExporting(false);
         }
@@ -441,7 +442,7 @@ export const SettingsView: React.FC = () => {
                     addNotification('Наставната програма е успешно префрлена во Firestore!', 'success');
                 } catch (error) {
                     addNotification('Грешка при миграција на податоците.', 'error');
-                    console.error("Migration failed:", error);
+                    logger.error("Migration failed:", error);
                 } finally {
                     setIsMigrating(false);
                 }

@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
@@ -105,7 +106,7 @@ export const StudentTutorView: React.FC = () => {
       const response = await geminiService.askTutor(userMessage, newMessages);
       setMessages([...newMessages, { id: Date.now().toString(), role: 'assistant', content: response }]);
     } catch (error) {
-      console.error('Failed to get tutor response:', error);
+      logger.error('Failed to get tutor response:', error);
       setMessages([...newMessages, { 
         id: Date.now().toString(), 
         role: 'assistant', 

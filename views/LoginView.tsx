@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { APP_NAME, ICONS } from '../constants';
@@ -298,7 +299,7 @@ export const LoginView: React.FC = () => {
                 const fetchedSchools = await firestoreService.fetchSchools();
                 setSchools(fetchedSchools);
             } catch (err) {
-                console.error("Failed to load schools:", err);
+                logger.error("Failed to load schools:", err);
             } finally {
                 setSchoolsLoading(false);
             }

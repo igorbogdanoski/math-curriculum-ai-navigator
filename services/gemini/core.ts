@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import { getAuth } from 'firebase/auth';
 import { isVertexShadowEnabled, runVertexShadow } from './vertexShadow';
 import { db } from '../../firebaseConfig';
@@ -371,7 +372,7 @@ export async function callGeminiProxy(params: {
     } catch (err: any) {
       if (err.name === 'AbortError') throw err;
       if (err instanceof ApiError) throw err; // Already typed — propagate as-is
-      console.error("Gemini Proxy Error:", err.message || err);
+      logger.error("Gemini Proxy Error:", err.message || err);
       throw err;
     } finally {
       clearTimeout(timeoutId);
@@ -422,7 +423,7 @@ export async function callImagenProxy(params: {
       return await response.json();
     } catch (err: any) {
       if (err.name === 'AbortError') throw err;
-      console.error("Imagen Proxy Error:", err.message || err);
+      logger.error("Imagen Proxy Error:", err.message || err);
       throw err;
     }
   });
@@ -459,7 +460,7 @@ export async function callEmbeddingProxy(text: string, signal?: AbortSignal): Pr
       return data.embedding.values;
     } catch (err: any) {
       if (err.name === 'AbortError') throw err;
-      console.error("Embedding Proxy Error:", err.message || err);
+      logger.error("Embedding Proxy Error:", err.message || err);
       throw err;
     }
   });
@@ -496,7 +497,7 @@ export async function callGeminiEmbed(params: {
 
       return await response.json();
     } catch (err: any) {
-      console.error("Gemini Embedding Error:", err.message || err);
+      logger.error("Gemini Embedding Error:", err.message || err);
       throw err;
     }
   });
@@ -582,7 +583,7 @@ export async function* streamGeminiProxy(params: {
           if (data.text) yield data.text;
           if (data.error) throw new AIServiceError(data.error);
         } catch (e) {
-          console.error("Error parsing stream chunk:", e);
+          logger.error("Error parsing stream chunk:", e);
         }
       }
     }
@@ -675,7 +676,7 @@ export async function* streamGeminiProxyRich(params: {
           else if (data.text) yield { kind: 'text', text: data.text };
           if (data.error) throw new AIServiceError(data.error);
         } catch (e) {
-          console.error("Error parsing rich stream chunk:", e);
+          logger.error("Error parsing rich stream chunk:", e);
         }
       }
     }
@@ -733,7 +734,7 @@ export function sanitizePromptInput(text: string | undefined | null, maxLength =
 
 // --- UTILS ---
 export function handleGeminiError(error: unknown, customMessage?: string): never {
-    console.error("Gemini Service Error:", error);
+    logger.error("Gemini Service Error:", error);
     const errorMessage = error instanceof Error ? error.message.toLowerCase() : "";
 
     if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
@@ -1092,7 +1093,7 @@ export async function generateAndParseJSON<T>(
       // Truncated response (token limit hit) — attempt structural recovery
       const recovered = recoverTruncatedJson(jsonString);
       if (recovered !== null) {
-        console.warn('[AI] JSON truncated — recovered partial response');
+        logger.warn('[AI] JSON truncated — recovered partial response');
         parsedJson = recovered;
         isPartialResponse = true;
       } else {
@@ -1144,7 +1145,7 @@ export async function generateAndParseJSON<T>(
         if (!(error instanceof RateLimitError)) markDailyQuotaExhausted(); // Fallback: mark if not already marked
         throw new RateLimitError("Дневната AI квота е исцрпена. Обидете се повторно утре или контактирајте го администраторот за надградба на планот.");
       }
-      console.error("Non-retryable AI error:", error);
+      logger.error("Non-retryable AI error:", error);
       throw error;
     }
 
@@ -1153,7 +1154,7 @@ export async function generateAndParseJSON<T>(
       const delay = match
         ? (parseFloat(match[1]) + 1) * 1000
         : 2000 * Math.pow(2, MAX_RETRIES - retries);
-      console.warn(`[AI] Retry in ${delay}ms, ${retries} attempt(s) left.`);
+      logger.warn(`[AI] Retry in ${delay}ms, ${retries} attempt(s) left.`);
       await new Promise(r => setTimeout(r, delay));
       return generateAndParseJSON<T>(contents, schema, model, zodSchema, retries - 1, useThinking);
     }
@@ -1192,7 +1193,7 @@ export async function setCached(key: string, content: any, metadata: any = {}) {
             createdAt: serverTimestamp()
         });
     } catch (e) {
-        console.error('Cache write error (Firestore):', e);
+        logger.error('Cache write error (Firestore):', e);
     }
     try {
         await saveAICache(key, content);

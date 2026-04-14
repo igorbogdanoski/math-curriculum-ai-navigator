@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
@@ -15,7 +16,7 @@ export const fetchStudentGroups = async (teacherUid?: string): Promise<StudentGr
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as StudentGroup));
     } catch (error) {
-      console.error('Error fetching student groups:', error);
+      logger.error('Error fetching student groups:', error);
       return [];
     }
   };
@@ -48,7 +49,7 @@ export const fetchClasses = async (teacherUid: string): Promise<SchoolClass[]> =
       const snap = await getDocs(q);
       return snap.docs.map(d => parseFirestoreDoc(SchoolClassSchema, { id: d.id, ...d.data() }, `classes/${d.id}`) as SchoolClass);
     } catch (error) {
-      console.error('Error fetching classes:', error);
+      logger.error('Error fetching classes:', error);
       return [];
     }
   };
@@ -95,7 +96,7 @@ export const generateClassJoinCode = async (classId: string): Promise<string | n
     await updateDoc(doc(db, 'classes', classId), { joinCode: code, joinCodeGeneratedAt: serverTimestamp() });
     return code;
   } catch (error) {
-    console.error('Failed to generate class join code:', error);
+    logger.error('Failed to generate class join code:', error);
     return null;
   }
 };

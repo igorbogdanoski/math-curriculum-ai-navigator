@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 
 import { useState, useEffect, useCallback } from 'react';
 
@@ -17,7 +18,7 @@ export function usePersistentState<T,>(key: string, initialState: T): [T, (value
       }
       return initialState;
     } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
+      logger.error(`Error reading localStorage key "${key}":`, error);
       return initialState;
     }
   });
@@ -28,7 +29,7 @@ export function usePersistentState<T,>(key: string, initialState: T): [T, (value
       window.localStorage.setItem(key, JSON.stringify({ data: state, timestamp: now }));
       setLastSaved(now);
     } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
+      logger.error(`Error setting localStorage key "${key}":`, error);
     }
   }, [key, state]);
 

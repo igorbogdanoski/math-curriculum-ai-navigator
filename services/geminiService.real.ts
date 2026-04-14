@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { assessmentAPI } from './gemini/assessment';
 import { plansAPI } from './gemini/plans';
 import {
@@ -271,7 +272,7 @@ async generateAnalogy(concept: Concept, gradeLevel: number, profile?: TeachingPr
     try {
         const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
         if (cachedDoc.exists()) return cachedDoc.data().content;
-    } catch (e) { console.warn(e); }
+    } catch (e) { logger.warn('Cache read error', e); }
 
     const prompt = `Објасни го поимот "${concept.title}" за ${gradeLevel} одделение преку аналогија.`;
     // E3 Intent Router
@@ -300,7 +301,7 @@ async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, custo
       try {
           const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
           if (cachedDoc.exists()) return cachedDoc.data().content;
-      } catch (e) { console.warn("Cache error:", e); }
+      } catch (e) { logger.warn("Cache error:", e); }
     }
 
     const prompt = `
@@ -444,7 +445,7 @@ async diagnoseMisconception(question: string, correctAnswer: string, studentAnsw
 
         return response.text ? response.text.trim().replace(/^"|"$/g, '') : "Непозната грешка";
     } catch (e) {
-        console.error("Грешка при дијагностицирање:", e);
+        logger.error("Грешка при дијагностицирање:", e);
         return "Непозната грешка";
     }
   },
@@ -934,7 +935,7 @@ async askTutor(message: string, history: Array<{role: string, content: string}>)
       });
       return response.text || "Извини, се појави проблем при генерирањето на одговорот.";
     } catch (e) {
-      console.error("Tutor API error:", e);
+      logger.error("Tutor API error:", e);
       return "Настана грешка при комуникацијата со туторот. Обиди се повторно.";
     }
   },
@@ -964,7 +965,7 @@ IMPORTANT: You must return the updated material EXACTLY in the same generic JSON
       });
       return JSON.parse(response.text.replace(/```json/g, '').replace(/```/g, '').trim());
     } catch (e) {
-      console.error('Refine material error:', e);
+      logger.error('Refine material error:', e);
       throw e;
     }
   },

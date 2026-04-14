@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Card } from './Card';
 import { AlertTriangle } from 'lucide-react';
@@ -29,7 +30,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
     // getDerivedStateFromError already set hasError+error; here we add errorInfo for the stack trace UI.
     this.setState({ errorInfo });
-    console.error("Uncaught error in ErrorBoundary:", error, errorInfo);
+    logger.error("Uncaught error in ErrorBoundary:", error, errorInfo);
     // Wrap plain render errors so they get app_error_code=RENDER_ERROR in Sentry (not UNCLASSIFIED)
     const reportError = error instanceof AppError
       ? error
@@ -60,7 +61,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       navigator.clipboard.writeText(errorDetails).then(() => {
         alert('Деталите за грешката се копирани.');
       }).catch(err => {
-        console.error("Failed to copy error details:", err);
+        logger.error("Failed to copy error details:", err);
         alert('Неуспешно копирање.');
       });
     }

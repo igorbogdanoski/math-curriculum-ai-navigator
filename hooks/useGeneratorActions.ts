@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { useState, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
@@ -330,14 +331,14 @@ export function useGeneratorActions({
         setBulkResults({ ...acc });
       } catch (error) {
         if (error instanceof RateLimitError) { setQuotaBannerFromStorage(); break; }
-        console.error(`[Bulk] ${step.key} failed:`, error);
+        logger.error(`[Bulk] ${step.key} failed:`, error);
       }
     }
     setBulkStep(null);
     setIsGeneratingBulk(false);
 
     if (typeof deductCredits === 'function' && Object.keys(acc).length > 0) {
-      try { await deductCredits(cost); } catch (e) { console.error('[Bulk] deductCredits failed:', e); }
+      try { await deductCredits(cost); } catch (e) { logger.error('[Bulk] deductCredits failed:', e); }
     }
   };
 
@@ -697,14 +698,14 @@ export function useGeneratorActions({
           const illRes = await geminiService.generateIllustration(illustrationPrompt, undefined, user ?? undefined);
           if (illRes?.imageUrl) (result as { illustrationUrl?: string }).illustrationUrl = illRes.imageUrl;
         } catch (illErr) {
-          console.warn('Failed to generate contextual illustration:', illErr);
+          logger.warn('Failed to generate contextual illustration:', illErr);
         }
       }
 
       setGeneratedMaterial(result);
     } catch (error) {
       if (cancelRef.current) { cancelRef.current = false; return; }
-      console.error('[AI Generator]', error);
+      logger.error('[AI Generator]', error);
       if (error instanceof RateLimitError) {
         setQuotaBannerFromStorage();
       } else {

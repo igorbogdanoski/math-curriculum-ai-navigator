@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import type { LessonPlan, SharedAnnualPlan } from '../types';
 import { z } from 'zod';
 import { AppError, ErrorCode } from '../utils/errors';
@@ -110,7 +111,7 @@ export const shareService = {
       const jsonString = JSON.stringify(lessonPlan);
       return btoa(encodeURIComponent(jsonString));
     } catch (error) {
-      console.error("Error generating share data:", error);
+      logger.error("Error generating share data:", error);
       return '';
     }
   },
@@ -121,7 +122,7 @@ export const shareService = {
       const parsed = SharedLessonPlanSchema.safeParse(JSON.parse(jsonString));
       
       if (!parsed.success) {
-        console.error("Invalid share data schema:", parsed.error.issues);
+        logger.error("Invalid share data schema:", parsed.error.issues);
         return null;
       }
       
@@ -129,7 +130,7 @@ export const shareService = {
       const { id, ...planWithoutId } = plan;
       return planWithoutId;
     } catch (error) {
-      console.error("Error decoding share data:", error);
+      logger.error("Error decoding share data:", error);
       return null;
     }
   },
@@ -148,7 +149,7 @@ export const shareService = {
       const compressed = pako.deflate(jsonString, { to: 'string' });
       return btoa(compressed);
     } catch (error) {
-      console.error("Error generating annual share data:", error);
+      logger.error("Error generating annual share data:", error);
       return '';
     }
   },
@@ -168,13 +169,13 @@ export const shareService = {
       const parsed = SharedAnnualPlanSchema.safeParse(JSON.parse(jsonString));
 
       if (!parsed.success) {
-        console.error("Invalid annual share data schema:", parsed.error.issues);
+        logger.error("Invalid annual share data schema:", parsed.error.issues);
         return null;
       }
       
       return parsed.data as SharedAnnualPlan;
     } catch (error) {
-      console.error("Error decoding annual share data:", error);
+      logger.error("Error decoding annual share data:", error);
       return null;
     }
   },
@@ -188,7 +189,7 @@ export const shareService = {
       }
       return btoa(encodeURIComponent(jsonString));
     } catch (error) {
-      console.error("Error generating quiz share data:", error);
+      logger.error("Error generating quiz share data:", error);
       return '';
     }
   },
@@ -209,12 +210,12 @@ export const shareService = {
       
       const parsed = SharedQuizSchema.safeParse(JSON.parse(jsonString));
       if (!parsed.success) {
-        console.error("Invalid quiz share data schema:", parsed.error.issues);
+        logger.error("Invalid quiz share data schema:", parsed.error.issues);
         return null;
       }
       return parsed.data;
     } catch (error) {
-      console.error("Error decoding quiz share data:", error);
+      logger.error("Error decoding quiz share data:", error);
       return null;
     }
   },
@@ -238,7 +239,7 @@ export const shareService = {
 
       return `u:${btoa(encodeURIComponent(jsonString))}`;
     } catch (error) {
-      console.error('Error generating matura recovery share data:', error);
+      logger.error('Error generating matura recovery share data:', error);
       return '';
     }
   },
@@ -272,7 +273,7 @@ export const shareService = {
 
       const parsed = SharedMaturaRecoverySchema.safeParse(JSON.parse(jsonString));
       if (!parsed.success) {
-        console.error('Invalid matura recovery share data schema:', parsed.error.issues);
+        logger.error('Invalid matura recovery share data schema:', parsed.error.issues);
         return { data: null, error: 'invalid' };
       }
 
@@ -283,7 +284,7 @@ export const shareService = {
 
       return { data: payload };
     } catch (error) {
-      console.error('Error decoding matura recovery share data:', error);
+      logger.error('Error decoding matura recovery share data:', error);
       return { data: null, error: 'invalid' };
     }
   },

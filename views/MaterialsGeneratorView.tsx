@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { useTour } from '../hooks/useTour';
 import { useGeneratorActions } from '../hooks/useGeneratorActions';
 
@@ -7,7 +8,7 @@ import React, { useState, useMemo, Component, type ReactNode, type ErrorInfo } f
 class ResultErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
     state = { error: null };
     static getDerivedStateFromError(error: Error) { return { error }; }
-    componentDidCatch(error: Error, info: ErrorInfo) { console.error('[ResultErrorBoundary]', error, info); }
+    componentDidCatch(error: Error, info: ErrorInfo) { logger.error('[ResultErrorBoundary]', error, info); }
     render() {
         if (this.state.error) {
             return (
@@ -179,7 +180,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
             const deductFn = httpsCallable(functions, 'deductCredits');
             await deductFn({ amount });
         } catch (err) {
-            console.error("Failed to deduct credits remotely", err);
+            logger.error("Failed to deduct credits remotely", err);
             updateLocalProfile({ aiCreditsBalance: originalBalance });
         }
     };

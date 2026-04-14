@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlanner } from '../contexts/PlannerContext';
@@ -60,7 +61,7 @@ export function usePersonalizedRecommendations(enabled = true) {
                     timestamp: Date.now()
                 }));
             } catch (err) {
-                console.error("Failed to fetch personalized recommendations:", err);
+                logger.error("Failed to fetch personalized recommendations:", err);
                 setError((err as Error).message);
                 // FIX: If quota is exhausted, cache failure for a full 12h (same as success)
                 // so we don't probe the API every hour. Previously it was only 1h,

@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
@@ -223,7 +224,7 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
             if (safeId.startsWith('g')) {
                 navigate(`/concept/${encodeURIComponent(safeId)}`);
             } else {
-                console.warn(`[MindMap] Ignored navigation to non-concept node: ${safeId}`);
+                logger.warn(`[MindMap] Ignored navigation to non-concept node: ${safeId}`);
             }
         }
       });

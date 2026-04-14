@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import {
   collection,
   addDoc,
@@ -109,7 +110,7 @@ export const recordMaterialFeedback = async (
     const docRef = await addDoc(feedbackRef, feedbackDoc);
     return docRef.id;
   } catch (error) {
-    console.error('Error recording material feedback:', error);
+    logger.error('Error recording material feedback:', error);
     throw error;
   }
 };
@@ -139,7 +140,7 @@ export const fetchMaterialFeedback = async (
       reviewedAt: toReviewDate(doc.data().reviewedAt),
     })) as MaterialFeedback[];
   } catch (error) {
-    console.error('Error fetching material feedback:', error);
+    logger.error('Error fetching material feedback:', error);
     return [];
   }
 };
@@ -174,7 +175,7 @@ export const computeFeedbackBreakdown = async (
 
     return buildFeedbackReasonBreakdown(allFeedback, periodDays);
   } catch (error) {
-    console.error('Error computing feedback breakdown:', error);
+    logger.error('Error computing feedback breakdown:', error);
     return buildFeedbackReasonBreakdown([], periodDays);
   }
 };
@@ -210,7 +211,7 @@ export const fetchReviewerFeedbackHistory = async (
       reviewedAt: toReviewDate(doc.data().reviewedAt),
     })) as MaterialFeedback[];
   } catch (error) {
-    console.error('Error fetching reviewer feedback history:', error);
+    logger.error('Error fetching reviewer feedback history:', error);
     return [];
   }
 };

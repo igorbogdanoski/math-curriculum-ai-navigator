@@ -1,4 +1,4 @@
-import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, serverTimestamp, startAfter, documentId, type QueryConstraint, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
+﻿import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, updateDoc, setDoc, serverTimestamp, startAfter, documentId, type QueryConstraint, type DocumentSnapshot, type Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { logger } from '../utils/logger';
 import { type CurriculumModule } from '../data/curriculum';
@@ -30,16 +30,16 @@ export const quizService = {
       if (docSnap.exists()) {
         return docSnap.data() as CurriculumModule;
       } else {
-        console.error("...Firestore fetch failed: Document 'v1' does not exist in 'curriculum' collection.");
+        logger.error("...Firestore fetch failed: Document 'v1' does not exist in 'curriculum' collection.");
         throw new NotFoundError('curriculum/v1');
       }
     } catch (error: any) {
       if (error?.code && error?.userMessage) throw error;
       if (error.code === 'unavailable' || (error.message && error.message.includes('offline'))) {
-        console.info('...Could not fetch from Firestore: client is offline and data is not cached. Using local data.');
+        logger.info('...Could not fetch from Firestore: client is offline and data is not cached. Using local data.');
         throw new OfflineError('Офлајн — не може да се вчита курикулумот.');
       }
-      console.error('...Error fetching document from Firestore:', error);
+      logger.error('...Error fetching document from Firestore:', error);
       throw new FirestoreError('read', error.message);
     }
   },
@@ -49,7 +49,7 @@ export const quizService = {
     try {
       await setDoc(docRef, data);
     } catch (error) {
-      console.error('Error saving curriculum data to Firestore:', error);
+      logger.error('Error saving curriculum data to Firestore:', error);
       throw error;
     }
   },
@@ -83,7 +83,7 @@ export const quizService = {
         const { saveQuizOffline } = await import('./indexedDBService');
         return await saveQuizOffline(result);
       } catch (err) {
-        console.error('Error saving quiz result offline:', err);
+        logger.error('Error saving quiz result offline:', err);
         return '';
       }
     }
@@ -102,17 +102,17 @@ export const quizService = {
             );
           })
           .catch((err) => {
-            console.warn('[AdaptiveDifficulty] fire-and-forget update failed:', err);
+            logger.warn('[AdaptiveDifficulty] fire-and-forget update failed:', err);
           });
       }
       return docRef.id;
     } catch (error) {
-      console.warn('Firestore write failed, falling back to offline queue:', error);
+      logger.warn('Firestore write failed, falling back to offline queue:', error);
       try {
         const { saveQuizOffline } = await import('./indexedDBService');
         return await saveQuizOffline(result);
       } catch (offlineErr) {
-        console.error('Both Firestore and offline save failed:', offlineErr);
+        logger.error('Both Firestore and offline save failed:', offlineErr);
         return '';
       }
     }
@@ -133,12 +133,12 @@ export const quizService = {
           await clearPendingQuiz(item.id);
           synced++;
         } catch (err) {
-          console.error('Failed to sync offline quiz:', err);
+          logger.error('Failed to sync offline quiz:', err);
         }
       }
       return synced;
     } catch (err) {
-      console.error('Sync error', err);
+      logger.error('Sync error', err);
       return 0;
     }
   },
@@ -148,7 +148,7 @@ export const quizService = {
     try {
       await updateDoc(doc(db, 'quiz_results', docId), { confidence });
     } catch (error) {
-      console.error('Error updating quiz confidence:', error);
+      logger.error('Error updating quiz confidence:', error);
     }
   },
 
@@ -157,7 +157,7 @@ export const quizService = {
     try {
       await updateDoc(doc(db, 'quiz_results', docId), { metacognitiveNote: note.trim() });
     } catch (error) {
-      console.error('Error updating metacognitive note:', error);
+      logger.error('Error updating metacognitive note:', error);
     }
   },
 
@@ -169,7 +169,7 @@ export const quizService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data()).filter(isValidQuizResult);
     } catch (error) {
-      console.error('Error fetching quiz results:', error);
+      logger.error('Error fetching quiz results:', error);
       return [];
     }
   },
@@ -205,7 +205,7 @@ export const quizService = {
       const lastDoc = snap.docs.length === pageSize ? snap.docs[snap.docs.length - 1] : null;
       return { results, lastDoc };
     } catch (error) {
-      console.error('Error fetching quiz results page:', error);
+      logger.error('Error fetching quiz results page:', error);
       return { results: [], lastDoc: null };
     }
   },
@@ -218,7 +218,7 @@ export const quizService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data()).filter(isValidQuizResult);
     } catch (error) {
-      console.error('Error fetching quiz results by student name:', error);
+      logger.error('Error fetching quiz results by student name:', error);
       return [];
     }
   },
@@ -229,7 +229,7 @@ export const quizService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data()).filter(isValidQuizResult);
     } catch (error) {
-      console.error('Error fetching quiz results by quiz ID:', error);
+      logger.error('Error fetching quiz results by quiz ID:', error);
       return [];
     }
   },
@@ -249,7 +249,7 @@ export const quizService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => parseFirestoreDoc(QuizResultSchema, d.data(), `quiz_results/${d.id}`) as QuizResult);
     } catch (error) {
-      console.warn('fetchQuizResultsByConcept failed (non-critical):', error);
+      logger.warn('fetchQuizResultsByConcept failed (non-critical):', error);
       return [];
     }
   },
@@ -291,10 +291,10 @@ export const quizService = {
         updatedAt: serverTimestamp() as unknown as Timestamp,
         ...(mastered && !wasAlreadyMastered ? { masteredAt: serverTimestamp() as unknown as Timestamp } : {}),
       };
-      setDoc(ref, updated, { merge: true }).catch(err => console.warn('Offline deferred', err));
+      setDoc(ref, updated, { merge: true }).catch(err => logger.warn('Offline deferred', err));
       return { ...updated, attempts: updated.attempts! } as ConceptMastery;
     } catch (error) {
-      console.error('Error updating concept mastery:', error);
+      logger.error('Error updating concept mastery:', error);
       return {
         studentName, conceptId, attempts: 1,
         consecutiveHighScores: score >= 85 ? 1 : 0,
@@ -311,7 +311,7 @@ export const quizService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
     } catch (error) {
-      console.error('Error fetching mastery by student:', error);
+      logger.error('Error fetching mastery by student:', error);
       return [];
     }
   },
@@ -324,7 +324,7 @@ export const quizService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
     } catch (error) {
-      console.error('Error fetching mastery by concept:', error);
+      logger.error('Error fetching mastery by concept:', error);
       return [];
     }
   },
@@ -338,7 +338,7 @@ export const quizService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => d.data()).filter(isValidConceptMastery);
     } catch (error) {
-      console.error('Error fetching mastery by concept bulk:', error);
+      logger.error('Error fetching mastery by concept bulk:', error);
       return [];
     }
   },
@@ -370,7 +370,7 @@ export const quizService = {
       }
       return allResults;
     } catch (error) {
-      console.error('Error fetching all mastery:', error);
+      logger.error('Error fetching all mastery:', error);
       return allResults; // return whatever we managed to fetch
     }
   },
@@ -394,7 +394,7 @@ export const quizService = {
       const s = await getDoc(doc(db, 'student_gamification', studentName));
       return s.exists() ? parseFirestoreDoc(StudentGamificationSchema, s.data(), `student_gamification/${studentName}`) as StudentGamification : null;
     } catch (error) {
-      console.error('Error fetching gamification:', error);
+      logger.error('Error fetching gamification:', error);
       return null;
     }
   },
@@ -411,7 +411,7 @@ export const quizService = {
         .filter(d => typeof d?.studentName === 'string' && typeof d?.totalXP === 'number')
         .sort((a, b) => b.totalXP - a.totalXP);
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      logger.error('Error fetching leaderboard:', error);
       return [];
     }
   },
@@ -450,7 +450,7 @@ export const quizService = {
     };
     const newAchievements = computeNewAchievements(updated.totalQuizzes, updated.longestStreak, percentage, totalMastered, updated.achievements);
     updated.achievements = [...updated.achievements, ...newAchievements];
-    setDoc(ref, updated, { merge: false }).catch(err => console.warn('Offline deferred', err));
+    setDoc(ref, updated, { merge: false }).catch(err => logger.warn('Offline deferred', err));
     return { xpGained, newAchievements, gamification: updated };
   },
 };

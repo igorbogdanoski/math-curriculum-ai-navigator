@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -162,7 +163,7 @@ export const CoverageAnalyzerView: React.FC = () => {
             }
             setReport(analysisResult);
         } catch (error) {
-            console.error("Failed to get coverage analysis:", error);
+            logger.error("Failed to get coverage analysis:", error);
             setReport({ analysis: [], error: (error as Error).message });
         } finally {
             setIsLoading(false);

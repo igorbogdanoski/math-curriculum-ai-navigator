@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Flame, Zap, Brain, ArrowRight, Loader2, Sparkles, Trophy, Target, RefreshCw } from 'lucide-react';
 import { callGeminiProxy, sanitizePromptInput } from '../../services/gemini/core';
@@ -265,7 +266,7 @@ export const AcademyDailyHub: React.FC<Props> = ({ modules, readLessons, applied
         setChallenge(response.text);
       }
     } catch (e) {
-      console.error('Daily challenge error:', e);
+      logger.error('Daily challenge error:', e);
     } finally {
       setIsChallengeLoading(false);
     }

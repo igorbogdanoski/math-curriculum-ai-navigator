@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { useState } from 'react';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
 import { AI_COSTS } from '../services/gemini/core';
@@ -79,7 +80,7 @@ export function useVariantGenerate({
           setQuotaBannerFromStorage();
           quotaHit = true;
         } else {
-          console.warn(`Failed to generate ${level} variant:`, error);
+          logger.warn(`Failed to generate ${level} variant:`, error);
         }
       }
     }

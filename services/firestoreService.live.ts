@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
@@ -19,7 +20,7 @@ export const fetchCachedQuizList = async (): Promise<{ id: string; title: string
         .filter(q => q.type === 'quiz' || q.type === 'assessment')
         .slice(0, 20);
     } catch (error) {
-      console.error('Error fetching cached quiz list:', error);
+      logger.error('Error fetching cached quiz list:', error);
       return [];
     }
   };
@@ -43,7 +44,7 @@ export const getLiveSessionByCode = async (joinCode: string): Promise<LiveSessio
       const d = snap.docs[0];
       return { id: d.id, ...d.data() } as LiveSession;
     } catch (error) {
-      console.error('Error fetching live session by code:', error);
+      logger.error('Error fetching live session by code:', error);
       return null;
     }
   };
@@ -61,7 +62,7 @@ export const joinLiveSession = async (sessionId: string, studentName: string): P
 export const submitLiveResponse = async (sessionId: string, studentName: string, percentage: number): Promise<void> => {
     await updateDoc(doc(db, 'live_sessions', sessionId), {
       [`studentResponses.${studentName}`]: { status: 'completed', percentage, completedAt: serverTimestamp() },
-    }).catch(err => console.warn('[Live] submitLiveResponse failed:', err));
+    }).catch(err => logger.warn('[Live] submitLiveResponse failed:', err));
   };
 
 export const markLiveInProgress = async (sessionId: string, studentName: string): Promise<void> => {

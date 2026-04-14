@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useEffect, useState, useMemo } from 'react';
 import { ICONS } from '../constants';
 import {
@@ -86,7 +87,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
             .slice(0, 3) as string[];
           if (helpers.length > 0) results[m.conceptId] = helpers;
         }
-      } catch (err) { console.warn('[PeerLearning] fetchMasteryByConceptBulk failed:', err); }
+      } catch (err) { logger.warn('[PeerLearning] fetchMasteryByConceptBulk failed:', err); }
       if (!cancelled) setPeerHelpers(results);
     })();
     return () => { cancelled = true; };

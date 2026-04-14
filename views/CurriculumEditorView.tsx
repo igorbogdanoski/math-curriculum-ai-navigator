@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -56,7 +57,7 @@ export const CurriculumEditorView: React.FC = () => {
                 // For now, using 'school_overrides' as well-known key as per hook
                 await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
             } catch (error) {
-                console.error('Error loading overrides:', error);
+                logger.error('Error loading overrides:', error);
                 addNotification('Грешка при вчитување на промените.', 'error');
             } finally {
                 setIsLoading(false);

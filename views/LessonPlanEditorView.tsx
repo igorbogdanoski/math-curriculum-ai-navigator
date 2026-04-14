@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -400,7 +401,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             }
         }
     } catch (error) {
-        console.error("Failed to save lesson plan:", error);
+        logger.error("Failed to save lesson plan:", error);
         if (isMounted.current) {
             addNotification('Грешка при зачувување на подготовката.', 'error');
         }
@@ -468,7 +469,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               await exportLessonPlanToWord(plan as LessonPlan, user || undefined);
               addNotification('Word документот е успешно преземен', 'success');
           } catch (error) {
-              console.error('Export to Word failed:', error);
+              logger.error('Export to Word failed:', error);
               addNotification('Грешка при генерирање на Word документ.', 'error');
           } finally {
               setIsGeneratingWord(false);
@@ -482,7 +483,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             downloadICS(ics, `${filename}.ics`);
             addNotification('Календарскиот настан е успешно преземен', 'success');
         } catch (error) {
-            console.error('Export to ICS failed:', error);
+            logger.error('Export to ICS failed:', error);
             addNotification('Грешка при генерирање на ICS.', 'error');
         }
         return;
@@ -494,7 +495,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             window.open(url, '_blank');
             addNotification('Се отвора Google Calendar...', 'success');
         } catch (error) {
-            console.error('Google Calendar link failed:', error);
+            logger.error('Google Calendar link failed:', error);
             addNotification('Грешка при креирање на Google Calendar линк.', 'error');
         }
         return;
@@ -528,7 +529,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         URL.revokeObjectURL(url);
         addNotification('Документот е преземен.', 'success');
     } catch (error) {
-        console.error('Export failed:', error);
+        logger.error('Export failed:', error);
         addNotification('Грешка при преземање на документот.', 'error');
     }
   };

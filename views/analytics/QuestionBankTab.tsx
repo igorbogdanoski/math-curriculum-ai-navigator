@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Trash2, Search, BookOpen, CheckSquare, Square, PlusSquare, ShieldCheck, Shield, Globe } from 'lucide-react';
 import { firestoreService } from '../../services/firestoreService';
@@ -188,7 +189,7 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
       addNotification(`Квизот е создаден! Линк: ${quizUrl}`, 'success');
       setSelected(new Set());
     } catch (err) {
-      console.error('Error creating quiz from bank:', err);
+      logger.error('Error creating quiz from bank:', err);
       addNotification(t('analytics.qbank.errCreateQuiz'), 'error');
     } finally {
       setCreatingQuiz(false);

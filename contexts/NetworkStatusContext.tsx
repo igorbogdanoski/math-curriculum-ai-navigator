@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { firestoreService } from '../services/firestoreService';
@@ -19,13 +20,13 @@ async function syncWithRetry(maxAttempts = 6): Promise<void> {
     try {
       const synced = await firestoreService.syncOfflineQuizzes();
       if (synced > 0) {
-        console.log(`[Offline Sync] Synced ${synced} pending quiz(es) on attempt ${attempt}.`);
+        logger.info(`[Offline Sync] Synced ${synced} pending quiz(es) on attempt ${attempt}.`);
       }
       return; // success
     } catch (err) {
-      console.warn(`[Offline Sync] Attempt ${attempt}/${maxAttempts} failed:`, err);
+      logger.warn(`[Offline Sync] Attempt ${attempt}/${maxAttempts} failed:`, err);
       if (attempt === maxAttempts) {
-        console.error('[Offline Sync] All retry attempts exhausted. Data remains in IndexedDB.');
+        logger.error('[Offline Sync] All retry attempts exhausted. Data remains in IndexedDB.');
         return;
       }
       // Wait before next attempt; abort early if we went offline again

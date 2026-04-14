@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebaseConfig';
@@ -99,7 +100,7 @@ export const AcademyProgressProvider: React.FC<{ children: React.ReactNode }> = 
         setProgress({ ...defaultProgress, ...parsed });
       }
     } catch (e) {
-      console.error('Failed to load academy progress', e);
+      logger.error('Failed to load academy progress', e);
     }
     setIsLoaded(true);
   }, []);

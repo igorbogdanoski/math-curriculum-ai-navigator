@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { useState, useEffect } from 'react';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -109,7 +110,7 @@ export function useProactiveSuggestions() {
                 timestamp: Date.now()
             }));
           } catch (error) {
-            console.error("Failed to generate proactive suggestion:", error);
+            logger.error("Failed to generate proactive suggestion:", error);
             setSuggestion(null);
           }
         } else {

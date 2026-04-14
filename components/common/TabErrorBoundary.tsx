@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 /**
  * Compact, inline ErrorBoundary designed for tab-level isolation.
  *
@@ -34,7 +35,7 @@ export class TabErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
-    console.error(`[TabErrorBoundary:${this.props.tabName ?? 'unknown'}]`, error, info);
+    logger.error(`[TabErrorBoundary:${this.props.tabName ?? 'unknown'}]`, error, info);
     // Wrap as RENDER_ERROR so Sentry tags it with app_error_code (not UNCLASSIFIED)
     const reportError = error instanceof AppError
       ? error

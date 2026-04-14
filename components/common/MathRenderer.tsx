@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect } from 'react';
 
 interface MathRendererProps {
@@ -159,7 +160,7 @@ const InlineMathRenderer: React.FC<{ text: string }> = React.memo(({ text }) => 
                             return <code key={index} className="font-mono text-sm bg-gray-100 text-gray-800 rounded px-1 border border-gray-200" title="Unrendered math">{math}</code>;
                         }
                     } catch (e: any) {
-                        console.warn("KaTeX inline rendering error:", e.message, "for content:", math);
+                        logger.warn("KaTeX inline rendering error", { message: e.message, math });
                         html = `<span class="text-red-600 font-mono bg-red-100 p-1 rounded" title="${escapeHtml(e.message)}">${escapeHtml(math)}</span>`;
                     }
                     return <span key={index} role="math" aria-label={math} dangerouslySetInnerHTML={{ __html: html }} />;
@@ -271,7 +272,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
                         try {
                             html = window.katex!.renderToString(math, { ...katexOptions, displayMode: true });
                         } catch (e: any) {
-                            console.warn("KaTeX block rendering error:", e.message, "for content:", math);
+                            logger.warn("KaTeX block rendering error", { message: e.message, math });
                             html = `<div class="text-red-600 font-mono bg-red-100 p-2 rounded" title="${escapeHtml(e.message)}">${escapeHtml(math)}</div>`;
                         }
                         return <div key={index} role="math" aria-label={math} dangerouslySetInnerHTML={{ __html: html }} />;
@@ -304,7 +305,7 @@ export const MathRenderer: React.FC<MathRendererProps> = ({ text }) => {
                     });
                     
                 } catch (error) {
-                    console.error("Markdown rendering error:", error, "for block:", block);
+                    logger.error("Markdown rendering error", error, { block });
                     return <p key={index}>{block}</p>;
                 }
             })}

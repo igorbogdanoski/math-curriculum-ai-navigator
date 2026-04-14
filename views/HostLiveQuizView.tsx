@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy } from 'lucide-react';
 import QRCode from 'react-qr-code';
@@ -44,7 +45,7 @@ export const HostLiveQuizView: React.FC = () => {
             const id = await firestoreService.createLiveSession(firebaseUser.uid, quiz.id, quiz.title, quiz.conceptId);
             setSessionId(id);
         } catch (error) {
-            console.error('Error creating live session:', error);
+            logger.error('Error creating live session:', error);
         } finally {
             setCreating(false);
         }

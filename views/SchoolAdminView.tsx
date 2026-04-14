@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
@@ -57,7 +58,7 @@ export const SchoolAdminView: React.FC = () => {
       setStats(data);
       setSchool(schoolData);
     } catch (error) {
-      console.error('Error fetching school stats:', error);
+      logger.error('Error fetching school stats:', error);
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 /**
  * С1 — RestoreProgressModal
  *
@@ -55,7 +56,7 @@ export const RestoreProgressModal: React.FC<RestoreProgressModalProps> = ({
         setLoading(false);
         return;
       }
-      console.error('RestoreProgress error:', err);
+      logger.error('RestoreProgress error:', err);
       setError('Грешка при поврзување. Обиди се повторно.');
       setLoading(false);
     }

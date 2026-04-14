@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState } from 'react';
 import { CheckCircle2, XCircle, Brain, HelpCircle, ArrowRight, Loader2, Award } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
@@ -54,7 +55,7 @@ export const AcademyQuiz: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => 
         setQuestions(parsed);
       }
     } catch (error) {
-      console.error('Quiz generation failed:', error);
+      logger.error('Quiz generation failed:', error);
     } finally {
       setIsGenerating(false);
     }

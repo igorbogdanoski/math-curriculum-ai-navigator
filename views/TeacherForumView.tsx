@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 /**
  * TeacherForumView — Ж7.2 (upgraded Сесија 10)
  *
@@ -967,7 +968,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
       await pinThread(threadId, true);
       addNotification('DoK Предизвик создаден и прикачен!', 'success');
     } catch (err) {
-      console.error('[DoK Challenge]', err);
+      logger.error('[DoK Challenge]', err);
       const msg = err instanceof Error ? err.message : '';
       addNotification(
         msg.includes('permission') || msg.includes('PERMISSION')

@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import { useTour } from '../hooks/useTour';
 import React, { memo, useMemo, useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
@@ -159,7 +160,7 @@ const handlePublish = (plan: LessonPlan) => {
             addNotification(message, 'success');
         } catch (error) {
             addNotification('Грешка при објавување на подготовката.', 'error');
-            console.error("Publishing failed:", error);
+            logger.error("Publishing failed:", error);
         }
     };
 

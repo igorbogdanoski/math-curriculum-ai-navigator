@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 /**
  * useGeneratorSave — library/save operations for generated materials.
  * Handles: savedToLibrary, assignTarget, handleSaveToLibrary, handleSaveQuestion,
@@ -105,7 +106,7 @@ export function useGeneratorSave({
       const achievementMsg = newAchievements.length ? ` Ново достигнување: ${newAchievements.join(', ')}` : '';
       addNotification(`Зачувано во библиотека! Прегледај и публикувај во „Библиотека". 📚${achievementMsg}`, 'success');
     } catch (err) {
-      console.error('[Save to library]', err);
+      logger.error('[Save to library]', err);
       const msg = err instanceof Error ? err.message : '';
       addNotification(
         msg.includes('permission') || msg.includes('PERMISSION')
@@ -139,7 +140,7 @@ export function useGeneratorSave({
       });
       addNotification('Прашањето е зачувано во банката! 📌', 'success');
     } catch (err) {
-      console.error('Error saving question:', err);
+      logger.error('Error saving question:', err);
       addNotification('Грешка при зачувување на прашањето.', 'error');
     }
   };
@@ -172,7 +173,7 @@ export function useGeneratorSave({
       rating, title, type, firebaseUser.uid, reportText,
       state.selectedConcepts[0] ?? undefined,
       state.selectedGrade ? Number(state.selectedGrade) || undefined : undefined,
-    ).catch(err => console.warn('[Feedback] save failed:', err));
+    ).catch(err => logger.warn('[Feedback] save failed:', err));
   };
 
   const handleSavePackage = async () => {

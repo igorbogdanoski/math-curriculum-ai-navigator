@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
 import { Presentation, Image as ImageIcon, ChevronLeft, ChevronRight, FileDown, Sparkles, Loader2, BookOpen, Cpu, MousePointer2, Radio, Zap, X, Users, ExternalLink, Maximize2, Minimize2, PenLine, Plus, Trash2, Save, Check, Play, ArrowUp, ArrowDown, FileText } from 'lucide-react';
 import QRCode from 'react-qr-code';
@@ -332,7 +333,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
       setIsSaved(true);
       trackFeedback('accept_saved', 'target:saved_presentation');
     } catch (err) {
-      console.error('[save-presentation]', err);
+      logger.error('[save-presentation]', err);
     } finally {
       setIsSaving(false);
     }
@@ -425,7 +426,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
       trackFeedback('edit_regenerated', `slide_index:${idx}`);
       addNotification('Сликата за слајдот е генерирана!', 'success');
     } catch (error) {
-      console.error('Slide visual error:', error);
+      logger.error('Slide visual error:', error);
       setVisuals(prev => ({ ...prev, [idx]: { loading: false } }));
       addNotification('Грешка при генерирање на сликата.', 'error');
     }
@@ -688,7 +689,7 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
       await pptx.writeFile({ fileName: `${safeTitle}.pptx` });
       addNotification('PPTX успешно генериран! ✅', 'success');
     } catch (err) {
-      console.error('PPTX export error:', err);
+      logger.error('PPTX export error:', err);
       addNotification('Грешка при генерирање на PPTX.', 'error');
     } finally {
       setIsExportingPptx(false);

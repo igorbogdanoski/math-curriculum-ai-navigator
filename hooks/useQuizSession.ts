@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 /**
  * useQuizSession — quiz session state + business logic.
  * Manages: reducer, handleQuizComplete, generateRemediaQuiz.
@@ -91,7 +92,7 @@ export function useQuizSession({
       }, meta.teacherUid);
       if (newId) dispatch({ type: 'SET_REMEDIA_QUIZ', quizId: newId });
     } catch (err) {
-      console.error('Грешка при генерирање следен квиз:', err);
+      logger.error('Грешка при генерирање следен квиз:', err);
     } finally {
       dispatch({ type: 'SET_GENERATING_REMEDIA', loading: false });
     }
@@ -131,7 +132,7 @@ export function useQuizSession({
           classId: classId || undefined,
         });
       } catch (err) {
-        console.error('[Quiz] saveQuizResult failed:', err);
+        logger.error('[Quiz] saveQuizResult failed:', err);
       }
     }
 
@@ -153,7 +154,7 @@ export function useQuizSession({
           deviceId,
         );
       } catch (err) {
-        console.error('[Quiz] updateConceptMastery failed:', err);
+        logger.error('[Quiz] updateConceptMastery failed:', err);
       }
     }
 
@@ -239,19 +240,19 @@ export function useQuizSession({
         .then(({ xpGained, newAchievements, gamification }) => {
           if (isMountedRef.current) dispatch({ type: 'SET_GAMIFICATION', update: { xpGained, newAchievements, gamification } });
         })
-        .catch(err => console.warn('[Gamification] update failed:', err));
+        .catch(err => logger.warn('[Gamification] update failed:', err));
     }
 
     // 3b. Spaced Repetition
     if (!isE2E && meta.conceptId && deviceId) {
       firestoreService.updateSpacedRepRecord(deviceId, meta.conceptId, percentage)
-        .catch(err => console.warn('[SM-2] updateSpacedRepRecord failed:', err));
+        .catch(err => logger.warn('[SM-2] updateSpacedRepRecord failed:', err));
     }
 
     // 4. Live session response
     if (!isE2E && sessionId && studentName) {
       firestoreService.submitLiveResponse(sessionId, studentName, percentage)
-        .catch(err => console.warn('[Live] submitLiveResponse failed:', err));
+        .catch(err => logger.warn('[Live] submitLiveResponse failed:', err));
     }
 
     // P5 — Peer learning suggestions
@@ -267,7 +268,7 @@ export function useQuizSession({
             dispatch({ type: 'SET_PEER_SUGGESTIONS', peers: selected });
           }
         })
-        .catch(err => console.warn('[Peer Learning] failed:', err));
+        .catch(err => logger.warn('[Peer Learning] failed:', err));
     }
 
     // 5. Adaptive next quiz

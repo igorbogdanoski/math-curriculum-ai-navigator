@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -633,7 +634,7 @@ export const CurriculumGraphView: React.FC = () => {
       try {
         network = new window.vis.Network(graphRef.current, data, options);
       } catch (err) {
-        console.error('[CurriculumGraph] vis.js Network init failed:', err);
+        logger.error('[CurriculumGraph] vis.js Network init failed:', err);
         return;
       }
       networkRef.current = network;

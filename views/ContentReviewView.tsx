@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Loader2, CheckCircle, XCircle, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -61,7 +62,7 @@ export const ContentReviewView: React.FC = () => {
                 const allQs = await firestoreService.fetchUnapprovedQuestions();
                 setQuestions(allQs);
             } catch (error) {
-                console.error("Error fetching content for review", error);
+                logger.error("Error fetching content for review", error);
             } finally {
                 setIsLoading(false);
             }
@@ -96,7 +97,7 @@ export const ContentReviewView: React.FC = () => {
             setQuestions(prev => prev.filter(q => q.id !== qId));
             setBanner({ type: 'success', message: 'Материјалот е одобрен и евидентиран во feedback analytics.' });
         } catch (e) {
-            console.error('Error approving', e);
+            logger.error('Error approving', e);
             setBanner({ type: 'error', message: 'Не успеа одобрувањето на материјалот.' });
         }
     };
@@ -141,7 +142,7 @@ export const ContentReviewView: React.FC = () => {
             setBanner({ type: 'success', message: 'Прашањето е отфрлено преку legacy path. Вклучи rollout за structured analytics.' });
             logFeedbackTaxonomyRolloutEvent('legacy_reject_fallback');
         } catch (error) {
-            console.error('Error rejecting question', error);
+            logger.error('Error rejecting question', error);
             setBanner({ type: 'error', message: 'Не успеа отфрлањето на прашањето.' });
         }
     };

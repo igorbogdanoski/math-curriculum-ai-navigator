@@ -1,3 +1,4 @@
+﻿import { logger } from '../../utils/logger';
 
 import React, { useState, useEffect } from 'react';
 import type { PlannerItem, LessonPlan } from '../../types';
@@ -115,7 +116,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
     };
 
     recognition.onerror = (event: any) => {
-        console.error(event.error);
+        logger.error(event.error);
         setIsListening(false);
         setIsProcessingVoice(false);
         addNotification('Грешка при слушање.', 'error');
@@ -170,7 +171,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
       }
     } catch (err) {
       addNotification('Грешка при генерирање на exit ticket.', 'error');
-      console.error(err);
+      logger.error('Exit ticket generation error', err);
     } finally {
       setIsGeneratingTicket(false);
     }
@@ -209,7 +210,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
         hideModal();
     } catch (error) {
         addNotification('Грешка при зачувување на настанот.', 'error');
-        console.error(error);
+        logger.error('Save planner item error', error);
     } finally {
         setIsSaving(false);
     }
@@ -223,7 +224,7 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
             hideModal();
         } catch (error) {
             addNotification('Грешка при бришење на настанот.', 'error');
-            console.error(error);
+            logger.error('Delete planner item error', error);
         }
     } else {
         hideModal();

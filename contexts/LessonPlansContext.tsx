@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebaseConfig';
@@ -70,7 +71,7 @@ export const LessonPlansProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setIsCommunityLoading(false);
       },
       (err) => {
-        console.error("Error fetching community plans:", err);
+        logger.error("Error fetching community plans:", err);
         setError("Не може да се вчитаат подготовките од заедницата.");
         setCommunityLessonPlans(exampleLessonPlans);
         setIsCommunityLoading(false);
@@ -97,7 +98,7 @@ export const LessonPlansProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setIsUserLoading(false);
       }, 
       (err) => {
-        console.error("Error fetching lesson plans:", err);
+        logger.error("Error fetching lesson plans:", err);
         setError("Не може да се вчитаат подготовките за час.");
         setIsUserLoading(false);
       }

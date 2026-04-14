@@ -1,4 +1,5 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+﻿import { logger } from '../utils/logger';
+import React, { useState, useRef, useEffect } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -194,7 +195,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                 addNotification("Програмата е успешно зачувана во облак!", 'success');
             }
         } catch (error) {
-            console.error("Грешка при зачувување:", error);
+            logger.error("Грешка при зачувување:", error);
             addNotification("Грешка при зачувување на програмата.", 'error');
         } finally {
             setIsSaving(false);
@@ -263,11 +264,11 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                         // Update local state
                         updateLocalProfile({ aiCreditsBalance: (user.aiCreditsBalance || 0) - cost });
                     } catch (err) {
-                        console.error("Error deducting credits:", err);
+                        logger.error("Error deducting credits:", err);
                     }
                 }
             } else {
-                console.warn("geminiService.generateAnnualPlan is not implemented yet!");
+                logger.warn("geminiService.generateAnnualPlan is not implemented yet!");
                 // Mock for now so UI works
                 setPlan({
                     grade: selectedGradeId,
@@ -290,7 +291,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                 });
             }
         } catch (error) {
-            console.error('Failed to generate plan:', error);
+            logger.error('Failed to generate plan:', error);
         } finally {
             setIsGenerating(false);
         }

@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 import React, { useState } from 'react';
 import { 
   ArrowDown, 
@@ -51,7 +52,7 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
       );
       setDeepExplanations(prev => ({ ...prev, [index]: why }));
     } catch (error) {
-      console.error("Грешка при преземање на објаснување:", error);
+      logger.error("Грешка при преземање на објаснување:", error);
     } finally {
       setLoadingStep(null);
     }

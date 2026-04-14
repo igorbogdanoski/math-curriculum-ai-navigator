@@ -1,3 +1,4 @@
+﻿import { logger } from '../utils/logger';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card } from '../components/common/Card';
@@ -187,7 +188,7 @@ export const AssistantView: React.FC = () => {
                 // Refresh sidebar session list
                 loadSessions();
             } catch (err) {
-                console.warn('Autosave failed:', err);
+                logger.warn('Autosave failed:', err);
             }
         }, AUTOSAVE_DELAY_MS);
     }, [firebaseUser?.uid, currentSessionId, libraryMode, loadSessions]);
@@ -278,7 +279,7 @@ export const AssistantView: React.FC = () => {
             }).join('\n\n---\n\n');
             return { sources, ragContext };
         } catch (err) {
-            console.warn('RAG embedding failed:', err);
+            logger.warn('RAG embedding failed:', err);
             return { sources: [], ragContext: '' };
         }
     }, [libraryMode, libraryMaterials]);
@@ -305,7 +306,7 @@ export const AssistantView: React.FC = () => {
                 if (attachment?.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
                 const base64 = await fileToBase64(file);
                 setAttachment({ file, previewUrl: URL.createObjectURL(file), base64, mimeType: file.type });
-            } catch (err) { console.error('File processing error:', err); }
+            } catch (err) { logger.error('File processing error:', err); }
         }
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
