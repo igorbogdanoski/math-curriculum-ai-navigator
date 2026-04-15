@@ -2,6 +2,15 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig, type Tool } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
 
+// Increase body size limit to 10 MB to support PDF inline data uploads
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
 

@@ -1013,6 +1013,46 @@ ${detailInstruction}
     return response.text.trim();
   },
 
+  async analyzeDocumentText(
+    documentText: string,
+    conceptContext?: string,
+    options?: { detailMode?: 'standard' | 'detailed' }
+  ): Promise<string> {
+    checkDailyQuotaGuard();
+    const contextLine = conceptContext
+      ? `Контекст: ученикот работи на концептот „${conceptContext}".`
+      : '';
+    const detailMode = options?.detailMode ?? 'standard';
+    const detailInstruction = detailMode === 'detailed'
+      ? `
+5. **Педагошка дијагноза** — за секоја грешка наведи тип на заблуда (процедурна/концептуална), зошто се јавува и предлог за интервенција.
+6. **Следни микро-чекори** — дај 2 кратки вежби (со насока, без целосно решение) за поправка на грешката.`
+      : '';
+    const prompt = `${contextLine}
+Ти си искусен македонски наставник по математика. Анализирај го следниот текст од математичка домашна работа или тест (извлечен од документ):
+
+---
+${documentText.slice(0, 8000)}
+---
+
+Твојата анализа треба да содржи:
+1. **Точни делови** — наведи ги сите точно решени задачи (пофали ученикот конкретно).
+2. **Грешки и корекции** — за секоја грешка: прикажи го точниот чекор-по-чекор пат на решавање.
+3. **Општ совет** — еден краток совет за подобрување.
+4. **Проценка** — дај процентуална оценка (пр. 75%) врз основа на точноста.
+${detailInstruction}
+
+Пишувај топло и охрабрувачки. Одговори на македонски јазик.`;
+
+    const response = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: getResolvedTextSystemInstruction(),
+      safetySettings: SAFETY_SETTINGS,
+    });
+    return response.text.trim();
+  },
+
 async generateParentReport(
     studentName: string,
     results: Array<{ quizTitle: string; percentage: number; conceptId?: string }>,
