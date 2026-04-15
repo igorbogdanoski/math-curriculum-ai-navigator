@@ -27,6 +27,9 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { callGeminiProxy } from '../services/gemini/core';
+
+// Gemini 3 Flash Preview: thinking → подобра персонализирана анализа по симулација
+const ANALYSIS_MODEL = 'gemini-3-flash-preview';
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
 import {
   buildGradeCacheKey,
@@ -491,7 +494,8 @@ export const MaturaSimulationView: React.FC = () => {
 Слаби теми: ${weakTopics || 'нема забележани'}.
 Дај кратка, охрабрувачка анализа (3–4 реченици на македонски) со конкретни совети.`;
       const resp = await callGeminiProxy({
-        model: DEFAULT_MODEL,
+        model: ANALYSIS_MODEL,
+        skipTierOverride: true,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
       });

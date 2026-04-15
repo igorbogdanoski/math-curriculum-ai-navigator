@@ -1856,7 +1856,8 @@ ${levelDesc}
   async extractTestQuestions(
     input: { kind: 'image' | 'pdf'; base64: string; mimeType: string } | { kind: 'text'; text: string },
   ): Promise<Array<{ text: string; correctAnswer: string; points: number }>> {
-    const { PRO_MODEL } = await import('./gemini/core');
+    // gemini-3.1-pro-preview: thinking + vision → точно разбира структура на тест документ
+    const { ULTIMATE_MODEL } = await import('./gemini/core');
 
     const prompt = `Анализирај го овој тест документ и извлечи ги сите прашања со нивните точни одговори.
 
@@ -1874,14 +1875,14 @@ ${levelDesc}
       let result;
       if (input.kind === 'text') {
         result = await callGeminiProxy({
-          model: PRO_MODEL,
+          model: ULTIMATE_MODEL,
           skipTierOverride: true,
           contents: [{ role: 'user', parts: [{ text: `${prompt}\n\n---\n${input.text.slice(0, 8000)}\n---` }] }],
           generationConfig: { responseMimeType: 'application/json' },
         });
       } else {
         result = await callGeminiProxy({
-          model: PRO_MODEL,
+          model: ULTIMATE_MODEL,
           skipTierOverride: true,
           contents: [{ role: 'user', parts: [{ inlineData: { mimeType: input.mimeType, data: input.base64 } }, { text: prompt }] }],
           generationConfig: { responseMimeType: 'application/json' },

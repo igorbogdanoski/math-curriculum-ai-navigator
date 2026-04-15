@@ -58,8 +58,9 @@ if (!GEMINI_API_KEY) {
 }
 
 // ─── Gemini helper ────────────────────────────────────────────────────────────
-// gemini-2.5-flash-lite: ист 1M context + thinking, пониска цена/RPM → повеќе прашања пред квота
-const MODEL = 'gemini-2.5-flash-lite';
+// gemini-3-flash-preview: thinking enabled → поточни математички деривации за мatura решенија
+// Fallback: gemini-2.5-flash-lite ако 3-flash не е достапен
+const MODEL = 'gemini-3-flash-preview';
 
 async function callGemini(prompt, retries = 4) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
