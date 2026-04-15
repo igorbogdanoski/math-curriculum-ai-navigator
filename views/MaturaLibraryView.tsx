@@ -1293,6 +1293,13 @@ export function MaturaLibraryView() {
                   🏫 Составувач
                 </button>
               )}
+              {(user?.role === 'admin' || user?.role === 'school_admin') && (
+                <button type="button"
+                  onClick={() => { window.location.href = '/matura-import'; }}
+                  className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all text-gray-500 hover:text-violet-700 hover:bg-violet-50">
+                  ☁ Увози PDF
+                </button>
+              )}
             </div>
 
             {/* DIM-only controls */}

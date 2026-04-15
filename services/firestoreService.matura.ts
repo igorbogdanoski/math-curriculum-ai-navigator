@@ -599,3 +599,86 @@ export function buildMissionPlan(
 
   return { id, uid, sourceConceptId, sourceConceptTitle, createdAt, endsAt, days, streakCount: 0, badgeEarned: false };
 }
+
+// ─── PDF Import helpers ───────────────────────────────────────────────────────
+
+export interface MaturaImportQuestion {
+  questionNumber: number;
+  part: 1 | 2 | 3;
+  points: number;
+  questionType: 'mc' | 'open';
+  questionText: string;
+  choices?: Record<string, string> | null;
+  correctAnswer?: string;
+  topic?: string;
+  topicArea?: string;
+  dokLevel?: number;
+}
+
+export interface MaturaImportDraft {
+  examId: string;
+  title: string;
+  year: number;
+  session: string;
+  language: string;
+  track: string;
+  gradeLevel: number;
+  durationMinutes: number;
+  questions: MaturaImportQuestion[];
+}
+
+/**
+ * Persists an AI-extracted matura draft to Firestore.
+ * Writes matura_exams/{examId} + matura_questions/{examId}_qNN docs.
+ * Invalidates the in-memory exam cache so the library reflects the new exam.
+ */
+export async function importMaturaFromDraft(draft: MaturaImportDraft): Promise<void> {
+  const now = new Date().toISOString();
+  const totalPoints = draft.questions.reduce((s, q) => s + (q.points || 0), 0);
+
+  // Exam metadata
+  await setDoc(doc(db, 'matura_exams', draft.examId), {
+    id: draft.examId,
+    year: draft.year,
+    session: draft.session,
+    language: draft.language,
+    title: draft.title,
+    track: draft.track,
+    gradeLevel: draft.gradeLevel,
+    durationMinutes: draft.durationMinutes,
+    questionCount: draft.questions.length,
+    totalPoints,
+    importedAt: now,
+    importedVia: 'pdf_ocr',
+  }, { merge: true });
+
+  // Questions
+  for (const q of draft.questions) {
+    const docId = `${draft.examId}_q${String(q.questionNumber).padStart(2, '0')}`;
+    await setDoc(doc(db, 'matura_questions', docId), {
+      examId: draft.examId,
+      year: draft.year,
+      session: draft.session,
+      language: draft.language,
+      track: draft.track,
+      gradeLevel: draft.gradeLevel,
+      questionNumber: q.questionNumber,
+      part: q.part,
+      points: q.points,
+      questionType: q.questionType,
+      questionText: q.questionText,
+      choices: q.choices ?? null,
+      correctAnswer: q.correctAnswer ?? null,
+      topic: q.topic ?? null,
+      topicArea: q.topicArea ?? null,
+      dokLevel: q.dokLevel ?? null,
+      imageUrls: [],
+      hasImage: false,
+      importedVia: 'pdf_ocr',
+      createdAt: now,
+    }, { merge: true });
+  }
+
+  // Invalidate cache so MaturaLibraryView re-fetches
+  _examCache = null;
+}
