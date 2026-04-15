@@ -9,7 +9,7 @@
     "track": "gymnasium",
     "gradeLevel": 12,
     "questionCount": 40,
-    "totalPoints": 61
+    "totalPoints": 75
   },
   "questions": [
     {
@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Shprehja $\\left( 2a^{\\frac{1}{2}} + a^{\\frac{1}{2}} \\right)^2$ është e barabartë me:",
       "choices": {
-        "A": "$3a$",
-        "B": "$3a^2$",
-        "C": "$9a$",
-        "Ç": "$9a^2$"
+        "А": "$3a$",
+        "Б": "$3a^2$",
+        "В": "$9a$",
+        "Г": "$9a^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Степени",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Funksioni linear $f(x) = ax + b$, për të cilën vlen $f(2) = 1$ dhe $f(-1) = -5$ është e barabartë me:",
       "choices": {
-        "A": "$f(x) = -2x + 5$",
-        "B": "$f(x) = 3x - 2$",
-        "C": "$f(x) = 2x + 3$",
-        "Ç": "$f(x) = 2x - 3$"
+        "А": "$f(x) = -2x + 5$",
+        "Б": "$f(x) = 3x - 2$",
+        "В": "$f(x) = 2x + 3$",
+        "Г": "$f(x) = 2x - 3$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Линеарна функција",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Barazimi $3 - x = 5x + a$ ka zgjidhje negative nëse për parametrin $a$ vlen:",
       "choices": {
-        "A": "$a > 3$",
-        "B": "$a = 3$",
-        "C": "$a < 3$",
-        "Ç": "$a < -3$"
+        "А": "$a > 3$",
+        "Б": "$a = 3$",
+        "В": "$a < 3$",
+        "Г": "$a < -3$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Линеарни равенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "Cili nga pohimet e mëposhtme është i vërtetë?",
       "choices": {
-        "A": "$\\mathbb{R} \\subset \\mathbb{N}$",
-        "B": "$\\mathbb{Q} \\subset \\mathbb{N}$",
-        "C": "$\\mathbb{Z} \\subset \\mathbb{Q}$",
-        "Ç": "$\\mathbb{R} \\subset \\mathbb{Z}$"
+        "А": "$\\mathbb{R} \\subset \\mathbb{N}$",
+        "Б": "$\\mathbb{Q} \\subset \\mathbb{N}$",
+        "В": "$\\mathbb{Z} \\subset \\mathbb{Q}$",
+        "Г": "$\\mathbb{R} \\subset \\mathbb{Z}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Множества",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Cili nga pohimet e mëposhtme është i vërtetë?",
       "choices": {
-        "A": "$a^3 b^8 > 0$ për $a < 0, b < 0$",
-        "B": "$a^3 b^8 > 0$ për $a < 0, b > 0$",
-        "C": "$a^8 b^3 < 0$ për $a > 0, b < 0$",
-        "Ç": "$a^8 b^3 < 0$ për $a > 0, b > 0$"
+        "А": "$a^3 b^8 > 0$ për $a < 0, b < 0$",
+        "Б": "$a^3 b^8 > 0$ për $a < 0, b > 0$",
+        "В": "$a^8 b^3 < 0$ për $a > 0, b < 0$",
+        "Г": "$a^8 b^3 < 0$ për $a > 0, b > 0$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Степени",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Për cilat vlera të parametrit real $a$ barazimi $x^2 - 5ax + 6a^2 = 0$ nuk ka zgjidhje reale?",
       "choices": {
-        "A": "$a \\in (0, \\infty)$",
-        "B": "$a \\in (-\\infty, 0)$",
-        "C": "$a = 0$",
-        "Ç": "nuk egziston numër real i tillë"
+        "А": "$a \\in (0, \\infty)$",
+        "Б": "$a \\in (-\\infty, 0)$",
+        "В": "$a = 0$",
+        "Г": "nuk egziston numër real i tillë"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Квадратна равенка",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Zerot e funksionit $f(x) = \\frac{2x^2 - x - 1}{2x^2 + 3x - 2}$ janë:",
       "choices": {
-        "A": "$\\frac{1}{2}, -2$",
-        "B": "$-\\frac{1}{2}, 1$",
-        "C": "$\\frac{1}{2}, -1$",
-        "Ç": "$-\\frac{1}{2}, 2$"
+        "А": "$\\frac{1}{2}, -2$",
+        "Б": "$-\\frac{1}{2}, 1$",
+        "В": "$\\frac{1}{2}, -1$",
+        "Г": "$-\\frac{1}{2}, 2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Рационални функции",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Këndi $\\beta$ i dhënë në vizatim është:",
       "choices": {
-        "A": "$54^\\circ$",
-        "B": "$63^\\circ$",
-        "C": "$75^\\circ$",
-        "Ç": "$81^\\circ$"
+        "А": "$54^\\circ$",
+        "Б": "$63^\\circ$",
+        "В": "$75^\\circ$",
+        "Г": "$81^\\circ$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -213,12 +213,12 @@
       "questionType": "mc",
       "questionText": "Raporti ndërmjet syprinës së bazës dhe prerjes boshtore të konit rrethor barabrinjës është:",
       "choices": {
-        "A": "$\\frac{\\sqrt{3}\\pi}{2}$",
-        "B": "$\\frac{\\sqrt{3}}{3}\\pi$",
-        "C": "$\\frac{2\\pi}{\\sqrt{3}}$",
-        "Ç": "$\\pi\\sqrt{3}$"
+        "А": "$\\frac{\\sqrt{3}\\pi}{2}$",
+        "Б": "$\\frac{\\sqrt{3}}{3}\\pi$",
+        "В": "$\\frac{2\\pi}{\\sqrt{3}}$",
+        "Г": "$\\pi\\sqrt{3}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Конус",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -237,12 +237,12 @@
       "questionType": "mc",
       "questionText": "Në trekëndëshin $\\Delta ABC$ me brinjë $a, b$ dhe $c$, ku $a=15$ dhe $b=8$ për brinjën $c$ vlen:",
       "choices": {
-        "A": "$c \\ge 23$",
-        "B": "$c \\le 7$",
-        "C": "$7 < c < 23$",
-        "Ç": "$7 \\le c \\le 23$"
+        "А": "$c \\ge 23$",
+        "Б": "$c \\le 7$",
+        "В": "$7 < c < 23$",
+        "Г": "$7 \\le c \\le 23$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Триаголник",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -261,12 +261,12 @@
       "questionType": "mc",
       "questionText": "Nëse një e teta e një rrethi ka syprinë $8\\pi \\text{ cm}^2$, atëherë perimetri i rrethit është i barabartë me:",
       "choices": {
-        "A": "$\\pi \\text{ cm}$",
-        "B": "$2\\pi \\text{ cm}$",
-        "C": "$8\\pi \\text{ cm}$",
-        "Ç": "$16\\pi \\text{ cm}$"
+        "А": "$\\pi \\text{ cm}$",
+        "Б": "$2\\pi \\text{ cm}$",
+        "В": "$8\\pi \\text{ cm}$",
+        "Г": "$16\\pi \\text{ cm}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Кружница",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -285,12 +285,12 @@
       "questionType": "mc",
       "questionText": "Nëse drejtëza $(m + 5) x + (2m - 3) y + 3m - 5 = 0$ është paralele me boshtin e $x$ - it, atëherë:",
       "choices": {
-        "A": "$m = -5$",
-        "B": "$m = \\frac{3}{2}$",
-        "C": "$m = \\frac{5}{3}$",
-        "Ç": "përgjigje tjetër"
+        "А": "$m = -5$",
+        "Б": "$m = \\frac{3}{2}$",
+        "В": "$m = \\frac{5}{3}$",
+        "Г": "përgjigje tjetër"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -309,12 +309,12 @@
       "questionType": "mc",
       "questionText": "Nëse drejtëza që kalon nëpër pikat $M(2, -1)$ dhe $N(-2, a)$ është normale me drejtëzën $y = \\frac{4}{3}x$ atëherë ordinata $a$ e pikës $N$ është e barabartë me:",
       "choices": {
-        "A": "0",
-        "B": "2",
-        "C": "3",
-        "Ç": "4"
+        "А": "0",
+        "Б": "2",
+        "В": "3",
+        "Г": "4"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -333,12 +333,12 @@
       "questionType": "mc",
       "questionText": "Janë dhënë pikat $A(3, -1)$ dhe $B(2, 1)$. Kordinatat e pikës $M$, e cila është simetrike me pikën $A$ në raport me pikën $B$ si qendër e simetrisë, janë:",
       "choices": {
-        "A": "$(2, -1)$",
-        "B": "$(1, 3)$",
-        "C": "$(\\frac{5}{2}, 0)$",
-        "Ç": "$(0, -3)$"
+        "А": "$(2, -1)$",
+        "Б": "$(1, 3)$",
+        "В": "$(\\frac{5}{2}, 0)$",
+        "Г": "$(0, -3)$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -357,12 +357,12 @@
       "questionType": "mc",
       "questionText": "Lea e paramendon një numër dyshifror. Cila është gjasa që me herën e parë do ta qëllojmë numrin e paramenduar?",
       "choices": {
-        "A": "$\\frac{1}{99}$",
-        "B": "$\\frac{2}{99}$",
-        "C": "$\\frac{1}{90}$",
-        "Ç": "$\\frac{2}{90}$"
+        "А": "$\\frac{1}{99}$",
+        "Б": "$\\frac{2}{99}$",
+        "В": "$\\frac{1}{90}$",
+        "Г": "$\\frac{2}{90}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -381,12 +381,12 @@
       "questionType": "mc",
       "questionText": "Njëkohësisht hidhen dy kube (zare) për lojë. Sa ngjarje elementare përmban ngjarja $A$: në pjesën e sipërme të kubeve (zareve) të paktën njëherë është paraqitur numri 1?",
       "choices": {
-        "A": "5",
-        "B": "6",
-        "C": "11",
-        "Ç": "12"
+        "А": "5",
+        "Б": "6",
+        "В": "11",
+        "Г": "12"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -405,12 +405,12 @@
       "questionType": "mc",
       "questionText": "Shënojmë një numër dyshifror. Gjasa që të jetë shënuar numri 99 është:",
       "choices": {
-        "A": "$\\frac{1}{99}$",
-        "B": "$\\frac{2}{99}$",
-        "C": "$\\frac{1}{90}$",
-        "Ç": "$\\frac{1}{45}$"
+        "А": "$\\frac{1}{99}$",
+        "Б": "$\\frac{2}{99}$",
+        "В": "$\\frac{1}{90}$",
+        "Г": "$\\frac{1}{45}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -429,12 +429,12 @@
       "questionType": "mc",
       "questionText": "Cili nga vargjet e dhëna është progresion aritmetik monoton zbritës?",
       "choices": {
-        "A": "$1, \\frac{3}{2}, 2, \\frac{5}{2}, \\dots$",
-        "B": "$\\frac{7}{3}, \\frac{4}{3}, \\frac{1}{3}, -\\frac{2}{3}, \\dots$",
-        "C": "$\\frac{10}{6}, -\\frac{3}{2}, \\frac{7}{6}, -1, \\dots$",
-        "Ç": "$\\frac{1}{2}, \\frac{1}{4}, \\frac{1}{8}, \\frac{1}{16}, \\dots$"
+        "А": "$1, \\frac{3}{2}, 2, \\frac{5}{2}, \\dots$",
+        "Б": "$\\frac{7}{3}, \\frac{4}{3}, \\frac{1}{3}, -\\frac{2}{3}, \\dots$",
+        "В": "$\\frac{10}{6}, -\\frac{3}{2}, \\frac{7}{6}, -1, \\dots$",
+        "Г": "$\\frac{1}{2}, \\frac{1}{4}, \\frac{1}{8}, \\frac{1}{16}, \\dots$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Аритметичка прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -453,12 +453,12 @@
       "questionType": "mc",
       "questionText": "Tre anëtarët e parë të një progresioni gjeometrik janë $3, 6, 12$. Anëtari i trembëdhjet i këtij progresioni është:",
       "choices": {
-        "A": "$3 \\cdot 2^{12}$",
-        "B": "$3 \\cdot 2^{13}$",
-        "C": "$3 + 3^{12}$",
-        "Ç": "$3 \\cdot 3^{12}$"
+        "А": "$3 \\cdot 2^{12}$",
+        "Б": "$3 \\cdot 2^{13}$",
+        "В": "$3 + 3^{12}$",
+        "Г": "$3 \\cdot 3^{12}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Геометриска прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -477,12 +477,12 @@
       "questionType": "mc",
       "questionText": "Për sa kohë biçikletisti do të kalon $54 \\text{ km}$ nëse në orën e parë ka kaluar $15 \\text{ km}$, kurse çdo orë të ardhshme kalon nga $1 \\text{ km}$ më pak nga ora paraprake?",
       "choices": {
-        "A": "2 orë",
-        "B": "4 orë",
-        "C": "6 orë",
-        "Ç": "8 orë"
+        "А": "2 orë",
+        "Б": "4 orë",
+        "В": "6 orë",
+        "Г": "8 orë"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Аритметичка прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,

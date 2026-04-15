@@ -8,8 +8,8 @@
     "durationMinutes": 180,
     "track": "gymnasium",
     "gradeLevel": 12,
-    "questionCount": 40,
-    "totalPoints": 61
+    "questionCount": 16,
+    "totalPoints": 16
   },
   "questions": [
     {
@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Vlera e shprehjes numerike $\\left[ 2^{-1} : \\left( \\frac{1}{4} \\right)^{-3} \\cdot 8 \\right]^{0,25} \\cdot \\left( \\frac{1}{16^{-3/2}} \\right)^0$ është:",
       "choices": {
-        "A": "4",
-        "B": "$\\frac{1}{4}$",
-        "C": "2",
-        "Ç": "$\\frac{1}{2}$"
+        "А": "4",
+        "Б": "$\\frac{1}{4}$",
+        "В": "2",
+        "Г": "$\\frac{1}{2}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Shprehjet numerike",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Polinomi $3x^3 - 5x^2 - 9xy + 15y$ i zbërthyer në faktorë është:",
       "choices": {
-        "A": "$x(3x-5)(x+3y)$",
-        "B": "$(3x-5)(x^2-3y)$",
-        "C": "$y(9x-5x)(3x+5)$",
-        "Ç": "$(3x^3-5x^2)(-9xy+15y)$"
+        "А": "$x(3x-5)(x+3y)$",
+        "Б": "$(3x-5)(x^2-3y)$",
+        "В": "$y(9x-5x)(3x+5)$",
+        "Г": "$(3x^3-5x^2)(-9xy+15y)$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Polinomet",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Nëse $x_1$ dhe $x_2$ janë zgjidhje të ekuacionit kuadratik $x^2 + 6x - 10 = 0$, atëherë vlera e shprehjes $\\frac{x_1 x_2}{2} - 3x_1 - 3x_2$ është:",
       "choices": {
-        "A": "13",
-        "B": "23",
-        "C": "27",
-        "Ç": "-13"
+        "А": "13",
+        "Б": "23",
+        "В": "27",
+        "Г": "-13"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Ekuacioni kuadratik",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "Nëse $\\frac{1}{x} + \\frac{1}{3x} \\le 1, x \\neq 0$, atëherë:",
       "choices": {
-        "A": "$x \\le \\frac{1}{4}$",
-        "B": "$x \\ge \\frac{1}{4}$",
-        "C": "$x \\le \\frac{3}{4}$",
-        "Ç": "$x \\ge \\frac{4}{3}$"
+        "А": "$x \\le \\frac{1}{4}$",
+        "Б": "$x \\ge \\frac{1}{4}$",
+        "В": "$x \\le \\frac{3}{4}$",
+        "Г": "$x \\ge \\frac{4}{3}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Inekuacionet lineare",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Shuma e gjysmës, e të tretës dhe e të pestës së një numri është për 1 më e madhe se ai numër. Cili është ai numër?",
       "choices": {
-        "A": "15",
-        "B": "20",
-        "C": "30",
-        "Ç": "60"
+        "А": "15",
+        "Б": "20",
+        "В": "30",
+        "Г": "60"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Ekuacionet lineare",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Për cilën vlerë të parametrit $a$, sistemi i ekuacioneve $\\begin{cases} 4x - ay = 6 + a \\\\ ax - y = 2a \\end{cases}$ nuk ka zgjidhje?",
       "choices": {
-        "A": "$a = 2$",
-        "B": "$a = -2$",
-        "C": "$a = 4$",
-        "Ç": "$a = 3$"
+        "А": "$a = 2$",
+        "Б": "$a = -2$",
+        "В": "$a = 4$",
+        "Г": "$a = 3$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Sistemet e ekuacioneve lineare",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Nëse diagonalet e rombit kanë gjatësi $a$ dhe $a\\sqrt{3}$, atëherë syprina e rombit është:",
       "choices": {
-        "A": "$a^2$",
-        "B": "$\\frac{a^2\\sqrt{3}}{2}$",
-        "C": "$\\frac{a^2\\sqrt{3}}{3}$",
-        "Ç": "$\\frac{a^2\\sqrt{3}}{4}$"
+        "А": "$a^2$",
+        "Б": "$\\frac{a^2\\sqrt{3}}{2}$",
+        "В": "$\\frac{a^2\\sqrt{3}}{3}$",
+        "Г": "$\\frac{a^2\\sqrt{3}}{4}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Rombi",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Numri i diagonaleve të një shumëkëndëshi, të hequra nga një kulm, është dy herë më i vogël se numri i brinjëve të tij. Sa brinjë ka shumëkëndëshi?",
       "choices": {
-        "A": "4",
-        "B": "5",
-        "C": "6",
-        "Ç": "7"
+        "А": "4",
+        "Б": "5",
+        "В": "6",
+        "Г": "7"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Shumëkëndëshat",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Katrori dhe trekëndëshi barabrinjës kanë perimetra të barabartë. Nëse syprina e trekëndëshit është $9\\sqrt{3}$, atëherë brinja e katrorit është:",
       "choices": {
-        "A": "8",
-        "B": "3",
-        "C": "$\\frac{5}{2}$",
-        "Ç": "$\\frac{9}{2}$"
+        "А": "8",
+        "Б": "3",
+        "В": "$\\frac{5}{2}$",
+        "Г": "$\\frac{9}{2}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Shumëkëndëshat",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Sa herë do të rritet vëllimi i cilindrit, nëse rrezja e tij rritet $n$-herë, ndërsa lartësia rritet $m$-herë?",
       "choices": {
-        "A": "$mn$-herë",
-        "B": "$m^2n$-herë",
-        "C": "$n^2m$-herë",
-        "Ç": "$m^2n^2$-herë"
+        "А": "$mn$-herë",
+        "Б": "$m^2n$-herë",
+        "В": "$n^2m$-herë",
+        "Г": "$m^2n^2$-herë"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Cilindri",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Largësia nga pika $A(2,-4)$ deri te mespika e segmentit $MN[M(3,-2), N(-5,2)]$ është:",
       "choices": {
-        "A": "5",
-        "B": "$\\sqrt{8}$",
-        "C": "25",
-        "Ç": "$\\sqrt{17}$"
+        "А": "5",
+        "Б": "$\\sqrt{8}$",
+        "В": "25",
+        "Г": "$\\sqrt{17}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Gjeometria analitike",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "Drejtëza $(a-1)x + (2a+1)y + a + 1 = 0$ është paralele me boshtin $x$, nëse:",
       "choices": {
-        "A": "$a = -1$",
-        "B": "$a = -\\frac{1}{2}$",
-        "C": "$a = 0$",
-        "Ç": "$a = 1$"
+        "А": "$a = -1$",
+        "Б": "$a = -\\frac{1}{2}$",
+        "В": "$a = 0$",
+        "Г": "$a = 1$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Drejtëza",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "Pika $M$ e cila shtrihet në boshtin e ordinatave është njësoj e larguar nga pika $A(9,-3)$ dhe fillimi koordinativ. Pika $M$ ka koordinatat:",
       "choices": {
-        "A": "$M(-15,0)$",
-        "B": "$M(-45,0)$",
-        "C": "$M(0,-15)$",
-        "Ç": "$M(0,15)$"
+        "А": "$M(-15,0)$",
+        "Б": "$M(-45,0)$",
+        "В": "$M(0,-15)$",
+        "Г": "$M(0,15)$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Gjeometria analitike",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "Është dhënë ekuacioni i drejtëzës $px + (p-2)y - 6 = 0$. Nëse drejtëza nga boshti $x$ pret segment me gjatësi dy herë më të madhe se gjatësia e segmentit që pret nga boshti $y$, atëherë vlera e parametrit $p$ është:",
       "choices": {
-        "A": "2",
-        "B": "-2",
-        "C": "0",
-        "Ç": "6"
+        "А": "2",
+        "Б": "-2",
+        "В": "0",
+        "Г": "6"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Drejtëza",
       "topicArea": "geometrija",
       "dokLevel": 3,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Në një kuti ka 9 unaza ari dhe një unazë diamanti. Nëse tërheqim rastësisht një unazë nga kutia, sa është probabiliteti që të tërheqim unazën e diamantit?",
       "choices": {
-        "A": "10%",
-        "B": "15%",
-        "C": "20%",
-        "Ç": "25%"
+        "А": "10%",
+        "Б": "15%",
+        "В": "20%",
+        "Г": "25%"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Nëse e hedhim një zare 3 herë, probabiliteti që të fitohen tri gjashta është:",
       "choices": {
-        "A": "$\\frac{3}{6^3}$",
-        "B": "$\\frac{1}{6^2}$",
-        "C": "$\\frac{3}{6^2}$",
-        "Ç": "$\\frac{1}{6^3}$"
+        "А": "$\\frac{3}{6^3}$",
+        "Б": "$\\frac{1}{6^2}$",
+        "В": "$\\frac{3}{6^2}$",
+        "Г": "$\\frac{1}{6^3}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 1,

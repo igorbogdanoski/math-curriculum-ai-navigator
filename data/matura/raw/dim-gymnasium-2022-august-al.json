@@ -8,7 +8,9 @@
     "language": "al",
     "durationMinutes": 180,
     "title": "Maturë Shtetërore — Gjimnaz — gusht 2022",
-    "hasOfficialKey": true
+    "hasOfficialKey": true,
+    "questionCount": 40,
+    "totalPoints": 78
   },
   "questions": [
     {

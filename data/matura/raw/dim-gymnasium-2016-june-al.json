@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Cili nga numrat e dhënë është më i madhi?",
       "choices": {
-        "A": "$\\left(\\frac{1}{2}\\right)^2$",
-        "B": "$\\sqrt{2}$",
-        "C": "$\\sqrt{\\frac{1}{2}}$",
-        "Ç": "$0,2$"
+        "А": "$\\left(\\frac{1}{2}\\right)^2$",
+        "Б": "$\\sqrt{2}$",
+        "В": "$\\sqrt{\\frac{1}{2}}$",
+        "Г": "$0,2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Numrat realë",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Bashkësia e definicionit e funksionit $f(x) = \\sqrt{3x - x^2}$ është:",
       "choices": {
-        "A": "$(0, 3)$",
-        "B": "$(-\\infty, 0]$",
-        "C": "$[3, +\\infty)$",
-        "Ç": "$[0, 3]$"
+        "А": "$(0, 3)$",
+        "Б": "$(-\\infty, 0]$",
+        "В": "$[3, +\\infty)$",
+        "Г": "$[0, 3]$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Funksionet",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Numri më i madh i plotë që është zgjidhje e jobarazisë $3(x - 1) - (x - 2) > 4x - 6$ është:",
       "choices": {
-        "A": "2",
-        "B": "3",
-        "C": "4",
-        "Ç": "5"
+        "А": "2",
+        "Б": "3",
+        "В": "4",
+        "Г": "5"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Jobarazimet lineare",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "Sa është shuma e zgjidhjeve të barazimit $x^2 - 3|x| - 4 = 0$?",
       "choices": {
-        "A": "$-3$",
-        "B": "$0$",
-        "C": "$3$",
-        "Ç": "$4$"
+        "А": "$-3$",
+        "Б": "$0$",
+        "В": "$3$",
+        "Г": "$4$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Barazimet kuadratike",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Syprina e një trekëndëshi barabrinjës është $9\\sqrt{3} \\text{ cm}^2$. Perimetri i tij është:",
       "choices": {
-        "A": "$6 \\text{ cm}$",
-        "B": "$12 \\text{ cm}$",
-        "C": "$18 \\text{ cm}$",
-        "Ç": "$36 \\text{ cm}$"
+        "А": "$6 \\text{ cm}$",
+        "Б": "$12 \\text{ cm}$",
+        "В": "$18 \\text{ cm}$",
+        "Г": "$36 \\text{ cm}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Figurat plane - Trekëndëshi",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Nëse shuma e këndeve te baza më e vogël e një trapezi është $250^\\circ$, atëherë shuma e këndeve te baza më e madhe është:",
       "choices": {
-        "A": "$70^\\circ$",
-        "B": "$90^\\circ$",
-        "C": "$110^\\circ$",
-        "Ç": "$150^\\circ$"
+        "А": "$70^\\circ$",
+        "Б": "$90^\\circ$",
+        "В": "$110^\\circ$",
+        "Г": "$150^\\circ$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Figurat plane - Katërkëndëshi",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Gjatësitë e tri teheve të një kllapi që takohen në një kulm janë $3 \\text{ cm}$, $4 \\text{ cm}$ dhe $12 \\text{ cm}$. Sa është gjatësia e dijagonales së tij hapësinore?",
       "choices": {
-        "A": "$5 \\text{ cm}$",
-        "B": "$12 \\text{ cm}$",
-        "C": "$13 \\text{ cm}$",
-        "Ç": "$15 \\text{ cm}$"
+        "А": "$5 \\text{ cm}$",
+        "Б": "$12 \\text{ cm}$",
+        "В": "$13 \\text{ cm}$",
+        "Г": "$15 \\text{ cm}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Stereometria - Kllapi",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Rrezja e bazës së një koni të drejtë rrethor është $5 \\text{ cm}$, kurse lartësia e tij është $12 \\text{ cm}$. Syprina e prerjes aksiale të tij është:",
       "choices": {
-        "A": "$30 \\text{ cm}^2$",
-        "B": "$60 \\text{ cm}^2$",
-        "C": "$65 \\text{ cm}^2$",
-        "Ç": "$120 \\text{ cm}^2$"
+        "А": "$30 \\text{ cm}^2$",
+        "Б": "$60 \\text{ cm}^2$",
+        "В": "$65 \\text{ cm}^2$",
+        "Г": "$120 \\text{ cm}^2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Stereometria - Koni",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Sa është largësia midis pikave $A(2, 3)$ dhe $B(-1, -1)$?",
       "choices": {
-        "A": "$3$",
-        "B": "$4$",
-        "C": "$5$",
-        "Ç": "$25$"
+        "А": "$3$",
+        "Б": "$4$",
+        "В": "$5$",
+        "Г": "$25$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Gjeometria analitike - Pika",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Parametri $n$ në barazimin e drejtëzës $y = kx + n$ që kalon nëpër pikën $M(2, 3)$ dhe është paralele me drejtëzën $y = -2x + 5$ është:",
       "choices": {
-        "A": "$-7$",
-        "B": "$1$",
-        "C": "$5$",
-        "Ç": "$7$"
+        "А": "$-7$",
+        "Б": "$1$",
+        "В": "$5$",
+        "Г": "$7$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Gjeometria analitike - Drejtëza",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Për cilën vlerë të parametrit $m$, drejtëza $(m + 2)x + (2m - 1)y - 5 = 0$ është paralele me boshtin $y$?",
       "choices": {
-        "A": "$-2$",
-        "B": "$-1$",
-        "C": "$\\frac{1}{2}$",
-        "Ç": "$2$"
+        "А": "$-2$",
+        "Б": "$-1$",
+        "В": "$\\frac{1}{2}$",
+        "Г": "$2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Gjeometria analitike - Drejtëza",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "Koeficienti i drejtimit të drejtëzës që kalon nëpër pikat $A(-1, 2)$ dhe $B(2, 8)$ është:",
       "choices": {
-        "A": "$-2$",
-        "B": "$-1$",
-        "C": "$1$",
-        "Ç": "$2$"
+        "А": "$-2$",
+        "Б": "$-1$",
+        "В": "$1$",
+        "Г": "$2$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Gjeometria analitike - Drejtëza",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "Drejtëza $3x + 4y - 12 = 0$ me boshtet koordinative formon një trekëndësh numri matës i syprinës të cilit është:",
       "choices": {
-        "A": "$3$",
-        "B": "$4$",
-        "C": "$6$",
-        "Ç": "$12$"
+        "А": "$3$",
+        "Б": "$4$",
+        "В": "$6$",
+        "Г": "$12$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Gjeometria analitike - Drejtëza",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "Për cilën vlerë të $m$, në barazimin e drejtëzës $mx + (m - 2)y - 6 = 0$, gjatësia e segmentit në boshtin $x$ është dy herë më e madhe se gjatësia e segmentit në boshtin $y$?",
       "choices": {
-        "A": "$m = -4$",
-        "B": "$m = -2$",
-        "C": "$m = -\\frac{1}{2}$",
-        "Ç": "$m = 4$"
+        "А": "$m = -4$",
+        "Б": "$m = -2$",
+        "В": "$m = -\\frac{1}{2}$",
+        "Г": "$m = 4$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Gjeometria analitike - Drejtëza",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Në një test matematike janë dhënë 20 detyra të numeruara me numrat nga 1 deri në 20. Sa është probabiliteti që numri rendor i një detyre të zgjedhur rastësisht të jetë 10?",
       "choices": {
-        "A": "$\\frac{10}{20}$",
-        "B": "$\\frac{1}{10}$",
-        "C": "$\\frac{1}{5}$",
-        "Ç": "$\\frac{1}{20}$"
+        "А": "$\\frac{10}{20}$",
+        "Б": "$\\frac{1}{10}$",
+        "В": "$\\frac{1}{5}$",
+        "Г": "$\\frac{1}{20}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Në një kuti ka tri topa të bardhë, tetë të zinj dhe shtatë të kuq. Sa është probabiliteti që topi i tërhequr të mos jetë i kuq?",
       "choices": {
-        "A": "$\\frac{4}{9}$",
-        "B": "$\\frac{5}{9}$",
-        "C": "$\\frac{11}{18}$",
-        "Ç": "$\\frac{7}{18}$"
+        "А": "$\\frac{4}{9}$",
+        "Б": "$\\frac{5}{9}$",
+        "В": "$\\frac{11}{18}$",
+        "Г": "$\\frac{7}{18}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -403,12 +403,12 @@
       "questionType": "mc",
       "questionText": "Nëse probabiliteti që një ngjarje të ndodhë është $0,4$, atëherë probabiliteti që ajo ngjarje të mos ndodhë është:",
       "choices": {
-        "A": "$-0,4$",
-        "B": "$0,2$",
-        "C": "$0,4$",
-        "Ç": "$0,6$"
+        "А": "$-0,4$",
+        "Б": "$0,2$",
+        "В": "$0,4$",
+        "Г": "$0,6$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -427,12 +427,12 @@
       "questionType": "mc",
       "questionText": "Anëtari i dhjetë i një progresioni aritmetik $2, 5, 8, \\dots$ është:",
       "choices": {
-        "A": "27",
-        "B": "29",
-        "C": "30",
-        "Ç": "32"
+        "А": "27",
+        "Б": "29",
+        "В": "30",
+        "Г": "32"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Progresioni aritmetik",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -451,12 +451,12 @@
       "questionType": "mc",
       "questionText": "Shuma e anëtarëve të një progresioni gjeometrik pafundësisht zbritës $1, \\frac{1}{2}, \\frac{1}{4}, \\dots$ është:",
       "choices": {
-        "A": "1",
-        "B": "2",
-        "C": "3",
-        "Ç": "4"
+        "А": "1",
+        "Б": "2",
+        "В": "3",
+        "Г": "4"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Progresioni gjeometrik",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -475,12 +475,12 @@
       "questionType": "mc",
       "questionText": "Derivati i funksionit $f(x) = x^3 - 3x^2 + 5$ është:",
       "choices": {
-        "A": "$3x^2 - 6x + 5$",
-        "B": "$3x^2 - 6x$",
-        "C": "$x^2 - 3x$",
-        "Ç": "$x^2 - 3x + 5$"
+        "А": "$3x^2 - 6x + 5$",
+        "Б": "$3x^2 - 6x$",
+        "В": "$x^2 - 3x$",
+        "Г": "$x^2 - 3x + 5$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Derivatet",
       "topicArea": "analiza",
       "dokLevel": 1,

@@ -20,15 +20,17 @@
       "questionType": "mc",
       "questionText": "$4>3$ veya $2+3=5$ önermesinin olumsuzu şudur:",
       "choices": {
-        "A": "$4 < 3$ ve $2+3 \\ne 5$",
-        "B": "$4 \\le 3$ ve $2+3 \\ne 5$",
-        "C": "$4 \\le 3$ veya $2+3 \\ne 5$",
-        "D": "$4 < 3$ veya $2+3 \\ne 5$"
+        "А": "$4 < 3$ ve $2+3 \\ne 5$",
+        "Б": "$4 \\le 3$ ve $2+3 \\ne 5$",
+        "В": "$4 \\le 3$ veya $2+3 \\ne 5$",
+        "Г": "$4 < 3$ veya $2+3 \\ne 5$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Önermeler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-3"],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -41,15 +43,17 @@
       "questionType": "mc",
       "questionText": "$3-|-3|+36:2\\cdot 2$ sayısal ifadesinin değeri şudur:",
       "choices": {
-        "A": "$9$",
-        "B": "$15$",
-        "C": "$36$",
-        "D": "$42$"
+        "А": "$9$",
+        "Б": "$15$",
+        "В": "$36$",
+        "Г": "$42$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Sayısal İfadeler",
       "topicArea": "broevi",
-      "conceptIds": ["gym10-c1-2"],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -62,15 +66,17 @@
       "questionType": "mc",
       "questionText": "Üç iş insanı 20700 euro değerinde hisse senedi satın almıştır. Birincisi toplam değerin $\\frac{1}{6}$'sını, diğer ikisi ise kalanı $7:8$ oranında ödemiştir. En çok para yatıran iş insanı kaç euro ödemiştir?",
       "choices": {
-        "A": "$3450$",
-        "B": "$8050$",
-        "C": "$9200$",
-        "D": "$17250$"
+        "А": "$3450$",
+        "Б": "$8050$",
+        "В": "$9200$",
+        "Г": "$17250$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Oran ve Orantı",
       "topicArea": "broevi",
-      "conceptIds": ["gym10-c1-3"],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -83,15 +89,17 @@
       "questionType": "mc",
       "questionText": "$2x-4x^3\\cdot 5x^2-3x^4$ polinomunun derecesi kaçtır?",
       "choices": {
-        "A": "$2$",
-        "B": "$3$",
-        "C": "$4$",
-        "D": "$5$"
+        "А": "$2$",
+        "Б": "$3$",
+        "В": "$4$",
+        "Г": "$5$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Polinomlar",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c2-2"],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -104,15 +112,17 @@
       "questionType": "mc",
       "questionText": "Şekilde hangi fonksiyonun grafiği gösterilmiştir?",
       "choices": {
-        "A": "$f(x) = (x+2)^2+1$",
-        "B": "$f(x) = (x-2)^2+1$",
-        "C": "$f(x) = (x+1)^2+2$",
-        "D": "$f(x) = (x+1)^2-2$"
+        "А": "$f(x) = (x+2)^2+1$",
+        "Б": "$f(x) = (x-2)^2+1$",
+        "В": "$f(x) = (x+1)^2+2$",
+        "Г": "$f(x) = (x+1)^2-2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "İkinci Dereceden Fonksiyon",
       "topicArea": "analiza",
-      "conceptIds": ["gym11-c4-1"],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "imageUrls": [
         "/matura/images/2025/june/q05-fig1.png"
       ],
@@ -127,15 +137,17 @@
       "questionType": "mc",
       "questionText": "$x(x+2)$, $x^2-4$ ve $x^2+2x$ polinomlarının en büyük ortak böleni şudur:",
       "choices": {
-        "A": "$x-2$",
-        "B": "$x$",
-        "C": "$x+2$",
-        "D": "$x^2-4$"
+        "А": "$x-2$",
+        "Б": "$x$",
+        "В": "$x+2$",
+        "Г": "$x^2-4$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Polinomların EBOB'u",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c2-3"],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -148,15 +160,17 @@
       "questionType": "mc",
       "questionText": "$ax+3y=2$ ve $x+y=5$ denklem sisteminin şu durumda çözümü yoktur:",
       "choices": {
-        "A": "$a=3$",
-        "B": "$a=0$",
-        "C": "$a=-2$",
-        "D": "$a=-3$"
+        "А": "$a=3$",
+        "Б": "$a=0$",
+        "В": "$a=-2$",
+        "Г": "$a=-3$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Doğrusal Denklem Sistemleri",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-4"],
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -169,15 +183,17 @@
       "questionType": "mc",
       "questionText": "$m$ parametresinin hangi değeri için $x^2-8x+m=0$ denkleminin bir çözümü diğerinden üç kat büyüktür?",
       "choices": {
-        "A": "$m=3$",
-        "B": "$m=6$",
-        "C": "$m=8$",
-        "D": "$m=12$"
+        "А": "$m=3$",
+        "Б": "$m=6$",
+        "В": "$m=8$",
+        "Г": "$m=12$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "İkinci Dereceden Denklemler (Vieta Formülleri)",
       "topicArea": "algebra",
-      "conceptIds": ["gym11-c3-1"],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -190,15 +206,17 @@
       "questionType": "mc",
       "questionText": "$x$’in hangi değerleri için $f(x)=1-x^2$ fonksiyonu pozitiftir?",
       "choices": {
-        "A": "$(-\\infty, -1) \\cup (1, \\infty)$",
-        "B": "$(-1, 1)$",
-        "C": "$(-\\infty, -1)$",
-        "D": "$(1, \\infty)$"
+        "А": "$(-\\infty, -1) \\cup (1, \\infty)$",
+        "Б": "$(-1, 1)$",
+        "В": "$(-\\infty, -1)$",
+        "Г": "$(1, \\infty)$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "İkinci Dereceden Eşitsizlikler",
       "topicArea": "algebra",
-      "conceptIds": ["gym11-c4-1"],
+      "conceptIds": [
+        "gym11-c4-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -211,15 +229,17 @@
       "questionType": "mc",
       "questionText": "$A, B, C$ ve $D$ noktaları bu sırayla bir doğru üzerinde yer almaktadır. $\\overline{AB} = 3\\text{ cm}, \\overline{AC} = 4\\text{ cm}$ ve $\\overline{BD} = 6\\text{ cm}$ olduğuna göre, $\\overline{CD}$ parçasının uzunluğu kaçtır?",
       "choices": {
-        "A": "$5\\text{ cm}$",
-        "B": "$7\\text{ cm}$",
-        "C": "$10\\text{ cm}$",
-        "D": "$13\\text{ cm}$"
+        "А": "$5\\text{ cm}$",
+        "Б": "$7\\text{ cm}$",
+        "В": "$10\\text{ cm}$",
+        "Г": "$13\\text{ cm}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Doğru Parçaları",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -232,15 +252,18 @@
       "questionType": "mc",
       "questionText": "Bir kenarı $8$ olan eşkenar üçgenin yüksekliği kaçtır?",
       "choices": {
-        "A": "$4$",
-        "B": "$4\\sqrt{2}$",
-        "C": "$4\\sqrt{3}$",
-        "D": "$16\\sqrt{3}$"
+        "А": "$4$",
+        "Б": "$4\\sqrt{2}$",
+        "В": "$4\\sqrt{3}$",
+        "Г": "$16\\sqrt{3}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Planimetri - Eşkenar Üçgen",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-1", "gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -253,15 +276,17 @@
       "questionType": "mc",
       "questionText": "Aynı yay üzerindeki çevre açısı ile merkez açısının toplamı $120^{\\circ}$’dir. Merkez açısı kaçtır?",
       "choices": {
-        "A": "$40^{\\circ}$",
-        "B": "$50^{\\circ}$",
-        "C": "$70^{\\circ}$",
-        "D": "$80^{\\circ}$"
+        "А": "$40^{\\circ}$",
+        "Б": "$50^{\\circ}$",
+        "В": "$70^{\\circ}$",
+        "Г": "$80^{\\circ}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Çemberde Açılar",
       "topicArea": "geometrija",
-      "conceptIds": ["gym12-c2-1"],
+      "conceptIds": [
+        "gym12-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -274,15 +299,18 @@
       "questionType": "mc",
       "questionText": "Yüksekliği $4$ olan bir dik eşkenar silindirin eksenel kesitinin alanı kaçtır?",
       "choices": {
-        "A": "$18$",
-        "B": "$16$",
-        "C": "$8\\pi$",
-        "D": "$16\\pi$"
+        "А": "$18$",
+        "Б": "$16$",
+        "В": "$8\\pi$",
+        "Г": "$16\\pi$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Stereometri - Silindir",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -295,15 +323,18 @@
       "questionType": "mc",
       "questionText": "Dik bir dörtgen prizmanın hacmi $240\\text{ m}^3$’tür. Prizmanın tabanı, köşegenleri $6\\text{ m}$ ve $8\\text{ m}$ olan bir eşkenar dörtgendir. Prizmanın yüksekliği kaçtır?",
       "choices": {
-        "A": "$5\\text{ m}$",
-        "B": "$10\\text{ m}$",
-        "C": "$20\\text{ m}$",
-        "D": "$30\\text{ m}$"
+        "А": "$5\\text{ m}$",
+        "Б": "$10\\text{ m}$",
+        "В": "$20\\text{ m}$",
+        "Г": "$30\\text{ m}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Stereometri - Prizma",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -316,15 +347,17 @@
       "questionType": "mc",
       "questionText": "$26\\sqrt{6} \\cdot \\text{tg}\\frac{\\pi}{6} \\cdot \\sin\\frac{\\pi}{4}$ ifadesinin sayısal değeri şuna eşittir:",
       "choices": {
-        "A": "$26$",
-        "B": "$39$",
-        "C": "$78$",
-        "D": "$156$"
+        "А": "$26$",
+        "Б": "$39$",
+        "В": "$78$",
+        "Г": "$156$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Trigonometrik İfadeler",
       "topicArea": "trigonometrija",
-      "conceptIds": ["gym12-c2-3"],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -340,7 +373,9 @@
       "correctAnswer": "A. $M=\\{3,5,7,9\\}$, B. $B=\\{3,5,6,8\\}$",
       "topic": "Kümeler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c1-1"],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -357,7 +392,9 @@
       "correctAnswer": "A. $z=-3-2i$, B. $11+2\\sqrt{2}-i$",
       "topic": "Karmaşık Sayılar",
       "topicArea": "broevi",
-      "conceptIds": ["gym11-c2-1"],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -374,7 +411,9 @@
       "correctAnswer": "A. $64$, B. $-\\frac{27}{20}$",
       "topic": "Üslü Sayılar ve Fonksiyonlar",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c2-1"],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -391,7 +430,9 @@
       "correctAnswer": "A. $200$, B. $16$",
       "topic": "Planimetri - Dörtgenler",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -408,7 +449,9 @@
       "correctAnswer": "A. $\\alpha = 62^{\\circ}$, B. $\\text{ctg}\\,\\alpha = \\frac{8}{15}$",
       "topic": "Dik Üçgende Trigonometri",
       "topicArea": "trigonometrija",
-      "conceptIds": ["gym11-c1-1"],
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -425,7 +468,9 @@
       "correctAnswer": "Totoloji. (Doğruluk tablosunun son sütunu $\\top,\\top,\\top,\\top$ şeklindedir.)",
       "topic": "Önerme Mantığı",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-3"],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -442,7 +487,9 @@
       "correctAnswer": "$M=2000$",
       "topic": "Sayısal İfadeler ve Yüzdeler",
       "topicArea": "broevi",
-      "conceptIds": ["gym10-c1-2"],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -459,7 +506,9 @@
       "correctAnswer": "$x \\in (-\\infty, 1) \\cup \\left[\\frac{4}{3}, +\\infty\\right)$",
       "topic": "Rasyonel Eşitsizlikler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-5"],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -476,7 +525,9 @@
       "correctAnswer": "$\\dfrac{a-x}{8x^2}$",
       "topic": "Rasyonel İfadeler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c2-3"],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -493,7 +544,9 @@
       "correctAnswer": "$864$",
       "topic": "Basamak Kavramı ve Denklemler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-3"],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -510,7 +563,9 @@
       "correctAnswer": "$k_1=3,\\quad k_2=\\dfrac{1}{2}$",
       "topic": "İkinci Dereceden Denklemler ve Diskriminant",
       "topicArea": "algebra",
-      "conceptIds": ["gym11-c3-1"],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -527,7 +582,10 @@
       "correctAnswer": "$160\\text{ cm}^2$",
       "topic": "Planimetri - Dikdörtgen",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-1", "gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -544,7 +602,10 @@
       "correctAnswer": "$800\\text{ cm}^2$",
       "topic": "Stereometri - Piramit",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -561,7 +622,10 @@
       "correctAnswer": "$72\\text{ cm}$",
       "topic": "Stereometri - Silindir ve Koni",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -578,7 +642,9 @@
       "correctAnswer": "Kanıtlandı: pay = $2(1-\\sin\\alpha)$, payda = $-2\\sin\\alpha(1-\\sin\\alpha)$, sonuç = $-\\frac{1}{\\sin\\alpha}$.",
       "topic": "Trigonometrik Özdeşlikler",
       "topicArea": "trigonometrija",
-      "conceptIds": ["gym12-c2-3"],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,

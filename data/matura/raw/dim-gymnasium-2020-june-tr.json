@@ -8,8 +8,8 @@
     "durationMinutes": 180,
     "track": "gymnasium",
     "gradeLevel": 12,
-    "questionCount": 40,
-    "totalPoints": 61
+    "questionCount": 16,
+    "totalPoints": 16
   },
   "questions": [
     {
@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "$\\left[ 2^{-1} : \\left( \\frac{1}{4} \\right)^{-3} \\cdot 8 \\right]^{0,25} \\cdot \\left( \\frac{1}{16^{-3/2}} \\right)^0$ sayısal ifadesinin değeri şudur:",
       "choices": {
-        "A": "4",
-        "B": "$\\frac{1}{4}$",
-        "C": "2",
-        "D": "$\\frac{1}{2}$"
+        "А": "4",
+        "Б": "$\\frac{1}{4}$",
+        "В": "2",
+        "Г": "$\\frac{1}{2}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Sayısal ifadeler",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "$3x^3 - 5x^2 - 9xy + 15y$ polinomunun çarpanlarına ayrılmış hali şudur:",
       "choices": {
-        "A": "$x(3x-5)(x+3y)$",
-        "B": "$(3x-5)(x^2-3y)$",
-        "C": "$y(9x-5x)(3x+5)$",
-        "D": "$(3x^3-5x^2)(-9xy+15y)$"
+        "А": "$x(3x-5)(x+3y)$",
+        "Б": "$(3x-5)(x^2-3y)$",
+        "В": "$y(9x-5x)(3x+5)$",
+        "Г": "$(3x^3-5x^2)(-9xy+15y)$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Polinomlar",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "$x_1$ ve $x_2$, $x^2 + 6x - 10 = 0$ ikinci dereceden denkleminin çözümleri ise, $\\frac{x_1 x_2}{2} - 3x_1 - 3x_2$ ifadesinin değeri şudur:",
       "choices": {
-        "A": "13",
-        "B": "23",
-        "C": "27",
-        "D": "-13"
+        "А": "13",
+        "Б": "23",
+        "В": "27",
+        "Г": "-13"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "İkinci dereceden denklem",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "$\\frac{1}{x} + \\frac{1}{3x} \\le 1, x \\neq 0$ ise, o halde:",
       "choices": {
-        "A": "$x \\le \\frac{1}{4}$",
-        "B": "$x \\ge \\frac{1}{4}$",
-        "C": "$x \\le \\frac{3}{4}$",
-        "D": "$x \\ge \\frac{4}{3}$"
+        "А": "$x \\le \\frac{1}{4}$",
+        "Б": "$x \\ge \\frac{1}{4}$",
+        "В": "$x \\le \\frac{3}{4}$",
+        "Г": "$x \\ge \\frac{4}{3}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Doğrusal eşitsizlikler",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Bir sayının yarısı, üçte biri ve beşte birinin toplamı o sayıdan 1 fazladır. Bu sayı kaçtır?",
       "choices": {
-        "A": "15",
-        "B": "20",
-        "C": "30",
-        "D": "60"
+        "А": "15",
+        "Б": "20",
+        "В": "30",
+        "Г": "60"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Doğrusal denklemler",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "$a$ parametresinin hangi değeri için, $\\begin{cases} 4x - ay = 6 + a \\\\ ax - y = 2a \\end{cases}$ denklem sisteminin çözümü yoktur?",
       "choices": {
-        "A": "$a = 2$",
-        "B": "$a = -2$",
-        "C": "$a = 4$",
-        "D": "$a = 3$"
+        "А": "$a = 2$",
+        "Б": "$a = -2$",
+        "В": "$a = 4$",
+        "Г": "$a = 3$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Doğrusal denklem sistemleri",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Eşkenar dörtgenin köşegen uzunlukları $a$ ve $a\\sqrt{3}$ ise, eşkenar dörtgenin alanı şudur:",
       "choices": {
-        "A": "$a^2$",
-        "B": "$\\frac{a^2\\sqrt{3}}{2}$",
-        "C": "$\\frac{a^2\\sqrt{3}}{3}$",
-        "D": "$\\frac{a^2\\sqrt{3}}{4}$"
+        "А": "$a^2$",
+        "Б": "$\\frac{a^2\\sqrt{3}}{2}$",
+        "В": "$\\frac{a^2\\sqrt{3}}{3}$",
+        "Г": "$\\frac{a^2\\sqrt{3}}{4}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Eşkenar dörtgen",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Bir çokgenin bir köşesinden çizilen köşegen sayısı, kenar sayısının yarısıdır. Çokgenin kaç kenarı vardır?",
       "choices": {
-        "A": "4",
-        "B": "5",
-        "C": "6",
-        "D": "7"
+        "А": "4",
+        "Б": "5",
+        "В": "6",
+        "Г": "7"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Çokgenler",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Bir kare ve bir eşkenar üçgenin çevreleri eşittir. Üçgenin alanı $9\\sqrt{3}$ ise, karenin bir kenarı şudur:",
       "choices": {
-        "A": "8",
-        "B": "3",
-        "C": "$\\frac{5}{2}$",
-        "D": "$\\frac{9}{2}$"
+        "А": "8",
+        "Б": "3",
+        "В": "$\\frac{5}{2}$",
+        "Г": "$\\frac{9}{2}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Çokgenler",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Bir silindirin yarıçapı $n$ katına, yüksekliği de $m$ katına çıkarılırsa hacmi kaç kat artar?",
       "choices": {
-        "A": "$mn$ katı",
-        "B": "$m^2n$ katı",
-        "C": "$n^2m$ katı",
-        "D": "$m^2n^2$ katı"
+        "А": "$mn$ katı",
+        "Б": "$m^2n$ katı",
+        "В": "$n^2m$ katı",
+        "Г": "$m^2n^2$ katı"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Silindir",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "$A(2,-4)$ noktasının $MN[M(3,-2), N(-5,2)]$ doğru parçasının orta noktasına olan uzaklığı şudur:",
       "choices": {
-        "A": "5",
-        "B": "$\\sqrt{8}$",
-        "C": "25",
-        "D": "$\\sqrt{17}$"
+        "А": "5",
+        "Б": "$\\sqrt{8}$",
+        "В": "25",
+        "Г": "$\\sqrt{17}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Analitik geometri",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "$(a-1)x + (2a+1)y + a + 1 = 0$ doğrusu şu durumda $x$ eksenine paraleldir:",
       "choices": {
-        "A": "$a = -1$",
-        "B": "$a = -\\frac{1}{2}$",
-        "C": "$a = 0$",
-        "D": "$a = 1$"
+        "А": "$a = -1$",
+        "Б": "$a = -\\frac{1}{2}$",
+        "В": "$a = 0$",
+        "Г": "$a = 1$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Doğru",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "$y$ ekseni üzerinde bulunan $M$ noktası, $A(9,-3)$ noktasına ve başlangıç noktasına eşit uzaklıktadır. $M$ noktasının koordinatları şudur:",
       "choices": {
-        "A": "$M(-15,0)$",
-        "B": "$M(-45,0)$",
-        "C": "$M(0,-15)$",
-        "D": "$M(0,15)$"
+        "А": "$M(-15,0)$",
+        "Б": "$M(-45,0)$",
+        "В": "$M(0,-15)$",
+        "Г": "$M(0,15)$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Analitik geometri",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "$px + (p-2)y - 6 = 0$ doğru denklemi verilmiştir. Doğrunun $x$ ekseninden kestiği parçanın uzunluğu, $y$ ekseninden kestiği parçanın uzunluğunun iki katı ise, $p$ parametresinin değeri şudur:",
       "choices": {
-        "A": "2",
-        "B": "-2",
-        "C": "0",
-        "D": "6"
+        "А": "2",
+        "Б": "-2",
+        "В": "0",
+        "Г": "6"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Doğru",
       "topicArea": "geometrija",
       "dokLevel": 3,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Bir kutuda 9 altın yüzük ve bir elmas yüzük vardır. Kutudan rastgele bir yüzük çekersek, elmas yüzüğü çekme olasılığımız kaçtır?",
       "choices": {
-        "A": "10%",
-        "B": "15%",
-        "C": "20%",
-        "D": "25%"
+        "А": "10%",
+        "Б": "15%",
+        "В": "20%",
+        "Г": "25%"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Bir zar 3 kez atıldığında, üç kez altı gelme olasılığı şudur:",
       "choices": {
-        "A": "$\\frac{3}{6^3}$",
-        "B": "$\\frac{1}{6^2}$",
-        "C": "$\\frac{3}{6^2}$",
-        "D": "$\\frac{1}{6^3}$"
+        "А": "$\\frac{3}{6^3}$",
+        "Б": "$\\frac{1}{6^2}$",
+        "В": "$\\frac{3}{6^2}$",
+        "Г": "$\\frac{1}{6^3}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 1,

@@ -5,7 +5,7 @@
     "session": "ucilisna",
     "language": "mk",
     "title": "Базен прашања — Училишна гимназиска матура (МК)",
-    "durationMinutes": 0,
+    "durationMinutes": 180,
     "track": "gymnasium",
     "gradeLevel": 13,
     "questionCount": 378,
@@ -5464,7 +5464,7 @@
         "В": "6",
         "Г": "48"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Геометрија",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -5919,7 +5919,7 @@
         "В": "$300^\\circ$",
         "Г": "$450^\\circ$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Тригонометрија",
       "topicArea": "trigonometrija",
       "dokLevel": 1,

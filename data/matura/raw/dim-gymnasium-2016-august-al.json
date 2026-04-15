@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Vlera e shprehjes $\\frac{1}{2} + \\left[ \\frac{3}{4} : \\left( -\\frac{5}{12} \\right) \\right] - \\frac{4}{8}$ është:",
       "choices": {
-        "A": "0",
-        "B": "$\\frac{1}{4}$",
-        "C": "$\\frac{3}{8}$",
-        "Ç": "$\\frac{1}{2}$"
+        "А": "0",
+        "Б": "$\\frac{1}{4}$",
+        "В": "$\\frac{3}{8}$",
+        "Г": "$\\frac{1}{2}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Бројни изрази",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Cila nga jobarazimet e mëposhtme nuk ka zgjidhje?",
       "choices": {
-        "A": "$2(x+2) \\le 2x+4$",
-        "B": "$2(x+2) < 2x+4$",
-        "C": "$2(x+2) < x+2$",
-        "Ç": "$2(x+2) \\le x+2$"
+        "А": "$2(x+2) \\le 2x+4$",
+        "Б": "$2(x+2) < 2x+4$",
+        "В": "$2(x+2) < x+2$",
+        "Г": "$2(x+2) \\le x+2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Nëse numri $\\overline{213234x}$ plotëpjestohet me 6 atëherë:",
       "choices": {
-        "A": "$x \\in \\{6\\}$",
-        "B": "$x \\in \\{0, 6\\}$",
-        "C": "$x \\in \\{3, 9\\}$",
-        "Ç": "$x \\in \\{0, 3, 6, 9\\}$"
+        "А": "$x \\in \\{6\\}$",
+        "Б": "$x \\in \\{0, 6\\}$",
+        "В": "$x \\in \\{3, 9\\}$",
+        "Г": "$x \\in \\{0, 3, 6, 9\\}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Деливост",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "Nëse $A = (-1, 1)$ dhe $B = (-2, 1]$, atëherë:",
       "choices": {
-        "A": "$1 \\in A \\cap B$",
-        "B": "$1 \\in A$",
-        "C": "$1 \\notin B$",
-        "Ç": "$1 \\in A \\cup B$"
+        "А": "$1 \\in A \\cap B$",
+        "Б": "$1 \\in A$",
+        "В": "$1 \\notin B$",
+        "Г": "$1 \\in A \\cup B$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Множества и интервали",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Barazimi linear $a^2(x-1) = b^2x - ab$ ka pakufi shumë zgjidhje nëse për parametrat $a$ dhe $b$ vlen:",
       "choices": {
-        "A": "$a < b$",
-        "B": "$a > b$",
-        "C": "$a = b$",
-        "Ç": "$a = -b$"
+        "А": "$a < b$",
+        "Б": "$a > b$",
+        "В": "$a = b$",
+        "Г": "$a = -b$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Линеарни равенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Për cilat vlera të parametrit $k$ barazimi $2x^2 - 8x + k + 6 = 0$ ka zgjidhje reale dhe të ndryshme?",
       "choices": {
-        "A": "$k \\in (-\\infty, 2)$",
-        "B": "$k \\in (2, \\infty)$",
-        "C": "$k \\in (-\\infty, 2]$",
-        "Ç": "$k \\in [2, \\infty)$"
+        "А": "$k \\in (-\\infty, 2)$",
+        "Б": "$k \\in (2, \\infty)$",
+        "В": "$k \\in (-\\infty, 2]$",
+        "Г": "$k \\in [2, \\infty)$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Квадратна равенка",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Lartësia e trekëndëshit barabrinjës me syprinë $S = 9\\sqrt{3} \\text{ cm}^2$ është:",
       "choices": {
-        "A": "$6\\sqrt{3} \\text{ cm}$",
-        "B": "$3\\sqrt{3} \\text{ cm}$",
-        "C": "$6\\sqrt{6} \\text{ cm}$",
-        "Ç": "$3\\sqrt{6} \\text{ cm}$"
+        "А": "$6\\sqrt{3} \\text{ cm}$",
+        "Б": "$3\\sqrt{3} \\text{ cm}$",
+        "В": "$6\\sqrt{6} \\text{ cm}$",
+        "Г": "$3\\sqrt{6} \\text{ cm}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Триаголник",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Vëllimi i piramidës së rregullt katërkëndore me teh të bazës $a = 6 \\text{ cm}$ dhe apotemë $h = 5 \\text{ cm}$ është:",
       "choices": {
-        "A": "$144 \\text{ cm}^3$",
-        "B": "$48 \\text{ cm}^3$",
-        "C": "$180 \\text{ cm}^3$",
-        "Ç": "$60 \\text{ cm}^3$"
+        "А": "$144 \\text{ cm}^3$",
+        "Б": "$48 \\text{ cm}^3$",
+        "В": "$180 \\text{ cm}^3$",
+        "Г": "$60 \\text{ cm}^3$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Пирамида",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Nëse syprina e sektorit rrethor të cilit i përgjigjet këndi qendror prej $30^\\circ$ është $12\\pi \\text{ cm}^2$, atëherë syprina e segmentit rrethor përkatës është",
       "choices": {
-        "A": "$12\\pi \\text{ cm}^2$",
-        "B": "$36\\sqrt{3} \\text{ cm}^2$",
-        "C": "$12(\\pi - 3\\sqrt{3}) \\text{ cm}^2$",
-        "Ç": "$(36\\sqrt{3} - 12\\pi) \\text{ cm}^2$"
+        "А": "$12\\pi \\text{ cm}^2$",
+        "Б": "$36\\sqrt{3} \\text{ cm}^2$",
+        "В": "$12(\\pi - 3\\sqrt{3}) \\text{ cm}^2$",
+        "Г": "$(36\\sqrt{3} - 12\\pi) \\text{ cm}^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Кружница",
       "topicArea": "geometrija",
       "dokLevel": 3,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Drejtkëndëshi me brinjë $6 \\text{ cm}$ dhe dijagonale $10 \\text{ cm}$ ka syprinë:",
       "choices": {
-        "A": "$28 \\text{ cm}^2$",
-        "B": "$48 \\text{ cm}^2$",
-        "C": "$60 \\text{ cm}^2$",
-        "Ç": "$80 \\text{ cm}^2$"
+        "А": "$28 \\text{ cm}^2$",
+        "Б": "$48 \\text{ cm}^2$",
+        "В": "$60 \\text{ cm}^2$",
+        "Г": "$80 \\text{ cm}^2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Правоаголник",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Nëse këndi $\\alpha$ është $\\frac{3}{7}$ e këndit të tij suplementar, atëherë:",
       "choices": {
-        "A": "$\\alpha = 54^\\circ$",
-        "B": "$\\alpha = 98^\\circ$",
-        "C": "$\\alpha = 126^\\circ$",
-        "Ç": "$\\alpha = 252^\\circ$"
+        "А": "$\\alpha = 54^\\circ$",
+        "Б": "$\\alpha = 98^\\circ$",
+        "В": "$\\alpha = 126^\\circ$",
+        "Г": "$\\alpha = 252^\\circ$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "Cila prej drejtëzave të dhëna është paralele me drejtëzën $3x - 2y - \\frac{1}{4} = 0$?",
       "choices": {
-        "A": "$y = \\frac{3}{2}x + 1$",
-        "B": "$y = 3x - \\frac{1}{4}$",
-        "C": "$2x - 3y + 5 = 0$",
-        "Ç": "$2x + 3y - 5 = 0$"
+        "А": "$y = \\frac{3}{2}x + 1$",
+        "Б": "$y = 3x - \\frac{1}{4}$",
+        "В": "$2x - 3y + 5 = 0$",
+        "Г": "$2x + 3y - 5 = 0$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "Segmenti $n$ i cili drejtëza $AB$ e pret në boshtin e $x$ – it sipas të dhënave në vizatim është:",
       "choices": {
-        "A": "$\\frac{3}{5}$",
-        "B": "$\\frac{5}{2}$",
-        "C": "$\\frac{2}{5}$",
-        "Ç": "$\\frac{5}{3}$"
+        "А": "$\\frac{3}{5}$",
+        "Б": "$\\frac{5}{2}$",
+        "В": "$\\frac{2}{5}$",
+        "Г": "$\\frac{5}{3}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -333,12 +333,12 @@
       "questionType": "mc",
       "questionText": "Nëse drejtëza $m^2x + 2y + m - 1 = 0$ kalon nëpër fillimin e kordinatave, atëherë drejtëza e cila është normale me këtë drejtëz ka koeficient të drejtimit të barabart me:",
       "choices": {
-        "A": "-2",
-        "B": "$-\\frac{1}{2}$",
-        "C": "1",
-        "Ç": "2"
+        "А": "-2",
+        "Б": "$-\\frac{1}{2}$",
+        "В": "1",
+        "Г": "2"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -357,12 +357,12 @@
       "questionType": "mc",
       "questionText": "Njëkohësisht hidhen tri kube (zare) me ngjyra të ndryshme për lojë.\nNumri i ngjarjeve elementare të cilët e përbëjnë ngjarjen: „Shuma e numrit të pikëve të paraqitura në pjesët e sipërme prej të gjitha tre kubeve është 6“ është:",
       "choices": {
-        "A": "6",
-        "B": "8",
-        "C": "10",
-        "Ç": "12"
+        "А": "6",
+        "Б": "8",
+        "В": "10",
+        "Г": "12"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -381,12 +381,12 @@
       "questionType": "mc",
       "questionText": "Nëse $P(A) = \\frac{2}{5}, P(B) = \\frac{1}{3}$ dhe $P(A \\cup B) = \\frac{1}{2}$, atëherë $P(A \\cap B)$ është:",
       "choices": {
-        "A": "$\\frac{7}{10}$",
-        "B": "$\\frac{7}{30}$",
-        "C": "$\\frac{7}{12}$",
-        "Ç": "$\\frac{7}{15}$"
+        "А": "$\\frac{7}{10}$",
+        "Б": "$\\frac{7}{30}$",
+        "В": "$\\frac{7}{12}$",
+        "Г": "$\\frac{7}{15}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -405,12 +405,12 @@
       "questionType": "mc",
       "questionText": "Në një firmë me 20 të punësuar, 14 flasin gjuhën angleze, 5 flasin frengjisht, kurse 3 i flasin të dy gjuhët.\nSa është gjasa që i punësuari rastësisht i zgjedhur të mos ta flet asnjërën nga të dy gjuhët e larpërmendura",
       "choices": {
-        "A": "0,2",
-        "B": "0,4",
-        "C": "0,6",
-        "Ç": "0,8"
+        "А": "0,2",
+        "Б": "0,4",
+        "В": "0,6",
+        "Г": "0,8"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -429,12 +429,12 @@
       "questionType": "mc",
       "questionText": "Nëse në një progresion gjeometrik $a_4 = 48$ dhe $a_7 = 384$, atëherë:",
       "choices": {
-        "A": "$a_1 = 6$ dhe $q = 2$",
-        "B": "$a_1 = 3$ dhe $q = 2$",
-        "C": "$a_1 = 12$ dhe $q = \\frac{1}{2}$",
-        "Ç": "$a_1 = 6$ dhe $q = \\frac{1}{2}$"
+        "А": "$a_1 = 6$ dhe $q = 2$",
+        "Б": "$a_1 = 3$ dhe $q = 2$",
+        "В": "$a_1 = 12$ dhe $q = \\frac{1}{2}$",
+        "Г": "$a_1 = 6$ dhe $q = \\frac{1}{2}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Геометриска прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -453,12 +453,12 @@
       "questionType": "mc",
       "questionText": "Cila nga vargjet e dhëna është progresion aritmetik?",
       "choices": {
-        "A": "$-7, -3, 0, 3, 7, \\dots$",
-        "B": "$\\frac{11}{6}, \\frac{3}{2}, 0, \\frac{3}{2}, \\frac{11}{6}, \\dots$",
-        "C": "$-5, -3, -1, 1, 3, 5, \\dots$",
-        "Ç": "$\\frac{7}{3}, \\frac{4}{3}, \\frac{1}{3}, \\frac{1}{3}, \\frac{4}{3}, \\frac{7}{3}, \\dots$"
+        "А": "$-7, -3, 0, 3, 7, \\dots$",
+        "Б": "$\\frac{11}{6}, \\frac{3}{2}, 0, \\frac{3}{2}, \\frac{11}{6}, \\dots$",
+        "В": "$-5, -3, -1, 1, 3, 5, \\dots$",
+        "Г": "$\\frac{7}{3}, \\frac{4}{3}, \\frac{1}{3}, \\frac{1}{3}, \\frac{4}{3}, \\frac{7}{3}, \\dots$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Аритметичка прогресија",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -477,12 +477,12 @@
       "questionType": "mc",
       "questionText": "Nëse dihet që herësi i një progresioni gjeometrik është $-3$ dhe shuma e gjashtë anëtarëve të parë është 728, atëherë anëtari i parë i atij progresioni gjeometrik është:",
       "choices": {
-        "A": "$a_1 = 4$",
-        "B": "$a_1 = 1$",
-        "C": "$a_1 = -1$",
-        "Ç": "$a_1 = -4$"
+        "А": "$a_1 = 4$",
+        "Б": "$a_1 = 1$",
+        "В": "$a_1 = -1$",
+        "Г": "$a_1 = -4$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Геометриска прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,

@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Cili nga numrat e dhënë është numër iracional",
       "choices": {
-        "A": "$-\\sqrt{1}$",
-        "B": "$0,323223222...$",
-        "C": "$-0,3(2)$",
-        "Ç": "$\\frac{2}{5}$"
+        "А": "$-\\sqrt{1}$",
+        "Б": "$0,323223222...$",
+        "В": "$-0,3(2)$",
+        "Г": "$\\frac{2}{5}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Броеви",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Nëse $A = -\\frac{3}{5} + \\frac{3}{5} : \\frac{2}{5}$, atëherë $(0,1 + A)^3$ do të jetë e barabartë me:",
       "choices": {
-        "A": "-8",
-        "B": "0",
-        "C": "1",
-        "Ç": "3"
+        "А": "-8",
+        "Б": "0",
+        "В": "1",
+        "Г": "3"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Бројни изрази",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Shprehja $2^{20} \\cdot 5^{21}$ është e barabartë me:",
       "choices": {
-        "A": "$10^{41}$",
-        "B": "$5 \\cdot 10^{20}$",
-        "C": "$10^{420}$",
-        "Ç": "$5 + 10^{20}$"
+        "А": "$10^{41}$",
+        "Б": "$5 \\cdot 10^{20}$",
+        "В": "$10^{420}$",
+        "Г": "$5 + 10^{20}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Степени",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "Është dhënë bashkësia $M = \\{x \\mid x \\in \\mathbb{Z}, -3 \\le x < 4\\}$, E saktë është:",
       "choices": {
-        "A": "$-3 \\notin M$",
-        "B": "$0 \\notin M$",
-        "C": "$4 \\notin M$",
-        "Ç": "$4 \\in M$"
+        "А": "$-3 \\notin M$",
+        "Б": "$0 \\notin M$",
+        "В": "$4 \\notin M$",
+        "Г": "$4 \\in M$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Множества",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Funksioni linear $f(x) = 3x - ax + 1$ është monoton rritës. Atëherë për $a$ vlen:",
       "choices": {
-        "A": "$a < 3$",
-        "B": "$a > 3$",
-        "C": "$a = 3,1$",
-        "Ç": "$a \\le 3,1$"
+        "А": "$a < 3$",
+        "Б": "$a > 3$",
+        "В": "$a = 3,1$",
+        "Г": "$a \\le 3,1$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Линеарна функција",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Secila bazë dhe lartësi e një trapezi janë zvogëluar për $50\\%$. Syprina e atij trapezi do të jetë zvogëluar për:",
       "choices": {
-        "A": "$50\\%$",
-        "B": "$25\\%$",
-        "C": "$75\\%$",
-        "Ç": "$90\\%$"
+        "А": "$50\\%$",
+        "Б": "$25\\%$",
+        "В": "$75\\%$",
+        "Г": "$90\\%$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Трапез",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Për cilat vlera të parametrit $a$ barazimi katror $ax^2 + (2a-3)x + a - 1 = 0$ nuk do të ketë rrënjë reale?",
       "choices": {
-        "A": "$(-\\infty, -1)$",
-        "B": "$(1, \\infty)$",
-        "C": "$(-\\infty, \\frac{9}{8})$",
-        "Ç": "$(\\frac{9}{8}, \\infty)$"
+        "А": "$(-\\infty, -1)$",
+        "Б": "$(1, \\infty)$",
+        "В": "$(-\\infty, \\frac{9}{8})$",
+        "Г": "$(\\frac{9}{8}, \\infty)$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Квадратна равенка",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Zgjidhje e jobarazimit $12 - 0,2x > 10$ është intervali:",
       "choices": {
-        "A": "$(2, \\infty)$",
-        "B": "$(10, \\infty)$",
-        "C": "$(-\\infty, 2)$",
-        "Ç": "$(-\\infty, 10)$"
+        "А": "$(2, \\infty)$",
+        "Б": "$(10, \\infty)$",
+        "В": "$(-\\infty, 2)$",
+        "Г": "$(-\\infty, 10)$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Është dhënë vija rrethore me qendër në pikën $O$. Nëse $\\alpha = 15^\\circ$, atëherë",
       "choices": {
-        "A": "$\\beta = 7,5^\\circ$",
-        "B": "$\\beta = 15^\\circ$",
-        "C": "$\\beta = 30^\\circ$",
-        "Ç": "$\\beta = 45^\\circ$"
+        "А": "$\\beta = 7,5^\\circ$",
+        "Б": "$\\beta = 15^\\circ$",
+        "В": "$\\beta = 30^\\circ$",
+        "Г": "$\\beta = 45^\\circ$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Агли во кружница",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -237,12 +237,12 @@
       "questionType": "mc",
       "questionText": "Gjatësitë e brinjëve të një trekëndëshi janë $4\\text{ cm}, 6\\text{ cm}$ dhe $9\\text{ cm}$. Nëse trekëndëshi i ngjajshëm me trekëndëshin e dhënë e ka brinjën më të vogël të barabartë me $2\\text{ cm}$, atëherë brinja më e madhe do të jetë:",
       "choices": {
-        "A": "$4\\text{ cm}$",
-        "B": "$4,5\\text{ cm}$",
-        "C": "$6\\text{ cm}$",
-        "Ç": "$6,5\\text{ cm}$"
+        "А": "$4\\text{ cm}$",
+        "Б": "$4,5\\text{ cm}$",
+        "В": "$6\\text{ cm}$",
+        "Г": "$6,5\\text{ cm}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Сличност на триаголници",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -261,12 +261,12 @@
       "questionType": "mc",
       "questionText": "Goma e biçikletës e ka perimetrin $\\frac{\\pi}{2}\\text{ m}$. Rrezja e gomës është:",
       "choices": {
-        "A": "$25\\text{ m}$",
-        "B": "$0,25\\text{ dm}$",
-        "C": "$25\\text{ cm}$",
-        "Ç": "$\\pi\\text{ m}$"
+        "А": "$25\\text{ m}$",
+        "Б": "$0,25\\text{ dm}$",
+        "В": "$25\\text{ cm}$",
+        "Г": "$\\pi\\text{ m}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Кружница",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -285,12 +285,12 @@
       "questionType": "mc",
       "questionText": "Trekëndëshi këndrejt i ka katetet 5 dhe 12. Largesa prej kulmit të këndit të drejtë deri te mesi i hipotenuzës është:",
       "choices": {
-        "A": "5",
-        "B": "6,5",
-        "C": "8,5",
-        "Ç": "$2\\sqrt{15}$"
+        "А": "5",
+        "Б": "6,5",
+        "В": "8,5",
+        "Г": "$2\\sqrt{15}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Правоаголен триаголник",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -309,12 +309,12 @@
       "questionType": "mc",
       "questionText": "Prerja boshtore e cilindrit është katror me syprinë 12. Vëllimi i cilindrit është:",
       "choices": {
-        "A": "$6\\sqrt{3}\\pi$",
-        "B": "$24\\pi$",
-        "C": "$24\\sqrt{3}\\pi$",
-        "Ç": "$54\\pi$"
+        "А": "$6\\sqrt{3}\\pi$",
+        "Б": "$24\\pi$",
+        "В": "$24\\sqrt{3}\\pi$",
+        "Г": "$54\\pi$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Цилиндар",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -333,12 +333,12 @@
       "questionType": "mc",
       "questionText": "Drejtëza që kalon nëpër qendrën e kordinatave dhe nëpër pikën $A(6, a-2)$ ashtuqë $a \\in \\mathbb{N}, a < 2$, e ka koeficientin e drejtimit të barabartë me:",
       "choices": {
-        "A": "-6",
-        "B": "$-\\frac{1}{6}$",
-        "C": "$\\frac{1}{6}$",
-        "Ç": "6"
+        "А": "-6",
+        "Б": "$-\\frac{1}{6}$",
+        "В": "$\\frac{1}{6}$",
+        "Г": "6"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -357,12 +357,12 @@
       "questionType": "mc",
       "questionText": "Pika $M(-2, 5)$ gjatë simetrisë qendrore me qendër në pikën $S$ pasqyrohet në pikën $M'(2, -7)$. Atëherë vlen:",
       "choices": {
-        "A": "$S(0, 1)$",
-        "B": "$S(-2, -1)$",
-        "C": "$S(0, -1)$",
-        "Ç": "$S(0, -\\frac{1}{2})$"
+        "А": "$S(0, 1)$",
+        "Б": "$S(-2, -1)$",
+        "В": "$S(0, -1)$",
+        "Г": "$S(0, -\\frac{1}{2})$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -381,12 +381,12 @@
       "questionType": "mc",
       "questionText": "Nëse drejtëza $4\\lambda x + 3y - 36 = 0$ në boshtin e $x$-it pret segment me gjatësi 2 atëherë vlera e parametrit $\\lambda$ është e barabartë me:",
       "choices": {
-        "A": "9",
-        "B": "2",
-        "C": "$\\frac{9}{2}$",
-        "Ç": "$\\frac{2}{9}$"
+        "А": "9",
+        "Б": "2",
+        "В": "$\\frac{9}{2}$",
+        "Г": "$\\frac{2}{9}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -405,12 +405,12 @@
       "questionType": "mc",
       "questionText": "Drejtëza me barazimin $y = -4x + 2m - 7$ kalon nëpër pikën $(2, -1)$ nëse:",
       "choices": {
-        "A": "$m = 7$",
-        "B": "$m = 2\\frac{1}{2}$",
-        "C": "$m = -\\frac{1}{2}$",
-        "Ç": "$m = -17$"
+        "А": "$m = 7$",
+        "Б": "$m = 2\\frac{1}{2}$",
+        "В": "$m = -\\frac{1}{2}$",
+        "Г": "$m = -17$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -429,12 +429,12 @@
       "questionType": "mc",
       "questionText": "Ndryshimi i mesit aritmetik dhe gjeometrik të numrave 1 dhe 25 është e barabartë me:",
       "choices": {
-        "A": "13",
-        "B": "12",
-        "C": "8",
-        "Ç": "1"
+        "А": "13",
+        "Б": "12",
+        "В": "8",
+        "Г": "1"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Низи и средини",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -453,12 +453,12 @@
       "questionType": "mc",
       "questionText": "Numrat $\\frac{5}{6}, x - 1, \\frac{6}{5}$ janë tre anëtar të njëpasnjëshëm të progresionit gjeometrik rritës. Vlera e $x$ është:",
       "choices": {
-        "A": "$\\frac{11}{5}$",
-        "B": "$\\frac{61}{60}$",
-        "C": "0",
-        "Ç": "2"
+        "А": "$\\frac{11}{5}$",
+        "Б": "$\\frac{61}{60}$",
+        "В": "0",
+        "Г": "2"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Геометриска прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -477,12 +477,12 @@
       "questionType": "mc",
       "questionText": "Nëse është dhënë progresioni aritmetik ku anëtari i dytë $a_2 = 3$ dhe ndryshimi $d = 5$ atëherë $(a_1 + a_2)^2$ është e barabartë me:",
       "choices": {
-        "A": "1",
-        "B": "9",
-        "C": "25",
-        "Ç": "64"
+        "А": "1",
+        "Б": "9",
+        "В": "25",
+        "Г": "64"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Аритметичка прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,

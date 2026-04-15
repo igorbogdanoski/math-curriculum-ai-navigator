@@ -121,10 +121,10 @@ export interface SecondaryCurriculumModule {
 
 export type MaturaChoice = 'А' | 'Б' | 'В' | 'Г';
 export type MaturaLanguage = 'mk' | 'al' | 'tr';
-export type MaturaSession = 'june' | 'august' | 'demo';
+export type MaturaSession = 'june' | 'august' | 'demo' | 'ucilisna';
 export type MaturaTopicArea =
   | 'algebra' | 'analiza' | 'geometrija' | 'statistika'
-  | 'kombinatorika' | 'trigonometrija' | 'matrici-vektori' | 'broevi';
+  | 'kombinatorika' | 'trigonometrija' | 'matrici-vektori' | 'broevi' | 'logika';
 
 /**
  * questionType:

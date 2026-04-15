@@ -20,15 +20,17 @@
       "questionType": "mc",
       "questionText": "Aşağıdakilerden hangisi '$3<2$ veya $3$ asal sayıdır' önermesinin olumsuzdur?",
       "choices": {
-        "A": "$3 \\ge 2$ veya $3$ asal sayıdır",
-        "B": "$3 \\ge 2$ veya $3$ asal sayı değildir",
-        "C": "$3 \\ge 2$ ve $3$ asal sayı değildir",
-        "D": "$3 \\ge 2$ ve $3$ asal sayıdır"
+        "А": "$3 \\ge 2$ veya $3$ asal sayıdır",
+        "Б": "$3 \\ge 2$ veya $3$ asal sayı değildir",
+        "В": "$3 \\ge 2$ ve $3$ asal sayı değildir",
+        "Г": "$3 \\ge 2$ ve $3$ asal sayıdır"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Önermeler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-3"],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -41,15 +43,17 @@
       "questionType": "mc",
       "questionText": "Aşağıdakilerden hangisi $z = -3 + 5i$ karmaşık sayısının sanal (imajiner) kısmıdır?",
       "choices": {
-        "A": "$-3i$",
-        "B": "$-3$",
-        "C": "$5i$",
-        "D": "$5$"
+        "А": "$-3i$",
+        "Б": "$-3$",
+        "В": "$5i$",
+        "Г": "$5$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Karmaşık Sayılar",
       "topicArea": "broevi",
-      "conceptIds": ["gym11-c2-1"],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -62,15 +66,17 @@
       "questionType": "mc",
       "questionText": "$64$ sayısı $2, 4$ ve $6$ ile orantılı üç parçaya bölünürse, en küçük parça şudur:",
       "choices": {
-        "A": "$5$",
-        "B": "$5 \\frac{1}{3}$",
-        "C": "$10 \\frac{2}{3}$",
-        "D": "$11$"
+        "А": "$5$",
+        "Б": "$5 \\frac{1}{3}$",
+        "В": "$10 \\frac{2}{3}$",
+        "Г": "$11$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Oran ve Orantı",
       "topicArea": "broevi",
-      "conceptIds": ["gym10-c1-3"],
+      "conceptIds": [
+        "gym10-c1-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -83,15 +89,17 @@
       "questionType": "mc",
       "questionText": "$\\frac{4 \\cdot 6^n}{2^n}$ ifadesi şuna eşittir:",
       "choices": {
-        "A": "$12n$",
-        "B": "$4 \\cdot 3^n$",
-        "C": "$2 \\cdot 3^n$",
-        "D": "$12$"
+        "А": "$12n$",
+        "Б": "$4 \\cdot 3^n$",
+        "В": "$2 \\cdot 3^n$",
+        "Г": "$12$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Üslü Sayılar",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c2-1"],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -104,15 +112,17 @@
       "questionType": "mc",
       "questionText": "$x^2 - x - 6 = 0$ ikinci dereceden denkleminin bir çözümü $3$ ise, diğer çözümü şudur:",
       "choices": {
-        "A": "$-1$",
-        "B": "$-2$",
-        "C": "$1$",
-        "D": "$2$"
+        "А": "$-1$",
+        "Б": "$-2$",
+        "В": "$1$",
+        "Г": "$2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "İkinci Dereceden Denklemler",
       "topicArea": "algebra",
-      "conceptIds": ["gym11-c3-1"],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -125,15 +135,17 @@
       "questionType": "mc",
       "questionText": "$\\frac{3x+4}{4x^2-25}$ rasyonel cebirsel ifadesinin tanım kümesi şudur:",
       "choices": {
-        "A": "$\\mathbb{R} \\setminus \\{-\\frac{4}{3}\\}$",
-        "B": "$\\mathbb{R} \\setminus \\{-\\frac{2}{5}, \\frac{2}{5}\\}$",
-        "C": "$\\mathbb{R} \\setminus \\{-\\frac{5}{2}, \\frac{5}{2}\\}$",
-        "D": "$\\mathbb{R}$"
+        "А": "$\\mathbb{R} \\setminus \\{-\\frac{4}{3}\\}$",
+        "Б": "$\\mathbb{R} \\setminus \\{-\\frac{2}{5}, \\frac{2}{5}\\}$",
+        "В": "$\\mathbb{R} \\setminus \\{-\\frac{5}{2}, \\frac{5}{2}\\}$",
+        "Г": "$\\mathbb{R}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Rasyonel İfadeler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c2-3"],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -146,15 +158,17 @@
       "questionType": "mc",
       "questionText": "Şekilde hangi doğrusal fonksiyonun grafiği gösterilmiştir?",
       "choices": {
-        "A": "$y = -3x + 3$",
-        "B": "$y = 3x + 3$",
-        "C": "$y = -3x - 3$",
-        "D": "$y = 3x - 3$"
+        "А": "$y = -3x + 3$",
+        "Б": "$y = 3x + 3$",
+        "В": "$y = -3x - 3$",
+        "Г": "$y = 3x - 3$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Doğrusal Fonksiyon",
       "topicArea": "analiza",
-      "conceptIds": ["gym10-c3-2"],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "imageUrls": [
         "data/matura/images/2025/august/q07-fig1.png"
       ],
@@ -169,15 +183,17 @@
       "questionType": "mc",
       "questionText": "Bir yarışmanın organizatörleri ödül alan her bir kişiye 1000 denar, diğer katılımcılara ise 250 denar ödemeye karar vermiştir. Yarışmaya 63 kişi katılmış ve toplam 30000 denar ödenmiştir. Kaç kişi ödül almıştır?",
       "choices": {
-        "A": "$15$",
-        "B": "$18$",
-        "C": "$19$",
-        "D": "$20$"
+        "А": "$15$",
+        "Б": "$18$",
+        "В": "$19$",
+        "Г": "$20$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Doğrusal Denklem Sistemleri",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-4"],
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -190,15 +206,17 @@
       "questionType": "mc",
       "questionText": "$a$ reel parametresinin hangi değeri için $a(x-3)+3<x$ eşitsizliğinin reel çözümü yoktur?",
       "choices": {
-        "A": "$a = -2$",
-        "B": "$a = -1$",
-        "C": "$a = 0$",
-        "D": "$a = 1$"
+        "А": "$a = -2$",
+        "Б": "$a = -1$",
+        "В": "$a = 0$",
+        "Г": "$a = 1$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Doğrusal Eşitsizlikler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-5"],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -211,15 +229,17 @@
       "questionType": "mc",
       "questionText": "$M, N$ ve $P$ (bu sırayla) doğrusal noktalar ve $\\overrightarrow{NP} = \\frac{1}{4}\\overrightarrow{MN}$ ise, $\\overrightarrow{PN}$ vektörü şuna eşittir:",
       "choices": {
-        "A": "$\\frac{1}{4}\\overrightarrow{MN}$",
-        "B": "$\\frac{1}{3}\\overrightarrow{MN}$",
-        "C": "$-\\frac{1}{4}\\overrightarrow{MN}$",
-        "D": "$-\\frac{1}{3}\\overrightarrow{MN}$"
+        "А": "$\\frac{1}{4}\\overrightarrow{MN}$",
+        "Б": "$\\frac{1}{3}\\overrightarrow{MN}$",
+        "В": "$-\\frac{1}{4}\\overrightarrow{MN}$",
+        "Г": "$-\\frac{1}{3}\\overrightarrow{MN}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Vektörler",
       "topicArea": "matrici-vektori",
-      "conceptIds": ["gym10-c4-1"],
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -232,15 +252,18 @@
       "questionType": "mc",
       "questionText": "Yarıçapı $3\\text{ cm}$ olan bir kürenin hacmi şuna eşittir:",
       "choices": {
-        "A": "$27\\pi\\text{ cm}^2$",
-        "B": "$27\\pi\\text{ cm}^3$",
-        "C": "$36\\pi\\text{ cm}^2$",
-        "D": "$36\\pi\\text{ cm}^3$"
+        "А": "$27\\pi\\text{ cm}^2$",
+        "Б": "$27\\pi\\text{ cm}^3$",
+        "В": "$36\\pi\\text{ cm}^2$",
+        "Г": "$36\\pi\\text{ cm}^3$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Stereometri - Küre",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -253,15 +276,18 @@
       "questionType": "mc",
       "questionText": "Bir eşkenar dörtgenin kenar uzunluğu $15$ ve iç açılarından biri $120^{\\circ}$’dir. Bu eşkenar dörtgenin kısa köşegeninin uzunluğu kaçtır?",
       "choices": {
-        "A": "$15$",
-        "B": "$14$",
-        "C": "$13$",
-        "D": "$10$"
+        "А": "$15$",
+        "Б": "$14$",
+        "В": "$13$",
+        "Г": "$10$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Planimetri - Eşkenar Dörtgen",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-1", "gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -274,15 +300,18 @@
       "questionType": "mc",
       "questionText": "Ayrıtları $2\\text{ cm}, 4\\text{ cm}$ ve $8\\text{ cm}$ olan dikdörtgenler prizmasının hacmi bir küpün hacmine eşittir. Küpün bir kenarı kaçtır?",
       "choices": {
-        "A": "$2\\text{ cm}$",
-        "B": "$4\\text{ cm}$",
-        "C": "$8\\text{ cm}$",
-        "D": "$16\\text{ cm}$"
+        "А": "$2\\text{ cm}$",
+        "Б": "$4\\text{ cm}$",
+        "В": "$8\\text{ cm}$",
+        "Г": "$16\\text{ cm}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Stereometri - Dikdörtgenler Prizması ve Küp",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -295,15 +324,18 @@
       "questionType": "mc",
       "questionText": "Kenarları $AC = 12\\text{ cm}$ ve $AB = 20\\text{ cm}$ olan $ABC$ üçgeni, çapı $AB$ olan bir çemberin içine çizilmiştir. $BC$ kenarının uzunluğu kaçtır?",
       "choices": {
-        "A": "$8\\text{ cm}$",
-        "B": "$12\\text{ cm}$",
-        "C": "$16\\text{ cm}$",
-        "D": "$32\\text{ cm}$"
+        "А": "$8\\text{ cm}$",
+        "Б": "$12\\text{ cm}$",
+        "В": "$16\\text{ cm}$",
+        "Г": "$32\\text{ cm}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Planimetri - Üçgen ve Çember",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-1", "gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -316,15 +348,17 @@
       "questionType": "mc",
       "questionText": "$\\text{tg}^2 45^{\\circ} - 4\\sin^2 30^{\\circ} + 8\\cos^2 60^{\\circ}$ ifadesinin değeri şuna eşittir:",
       "choices": {
-        "A": "$1$",
-        "B": "$2$",
-        "C": "$3$",
-        "D": "$4$"
+        "А": "$1$",
+        "Б": "$2$",
+        "В": "$3$",
+        "Г": "$4$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Trigonometrik İfadeler",
       "topicArea": "trigonometrija",
-      "conceptIds": ["gym12-c2-3"],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -340,7 +374,9 @@
       "correctAnswer": "A. $C=\\{(2,4), (2,6), (2,8), (3,6), (3,9), (4,8)\\}$, B. $20$",
       "topic": "Kümeler ve Yüzdeler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c1-1"],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -357,7 +393,9 @@
       "correctAnswer": "A. $k=1$, B. $k \\neq 2$",
       "topic": "Doğrusal Denklemler ve Sistemler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-3"],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -374,7 +412,9 @@
       "correctAnswer": "A. $(2x+y)(x+y-1)$, B. $(x-2)^2$",
       "topic": "Polinomlar",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c2-2"],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -391,7 +431,10 @@
       "correctAnswer": "A. $M=160\\text{ cm}^2$, B. $H=\\sqrt{84}\\text{ cm}$ veya $H=2\\sqrt{21}\\text{ cm}$",
       "topic": "Stereometri - Piramit",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -408,7 +451,10 @@
       "correctAnswer": "A. $90^{\\circ}$, B. $\\frac{8}{17}$",
       "topic": "Planimetri ve Dik Üçgende Trigonometri",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c4-2", "gym10-c5-1"],
+      "conceptIds": [
+        "gym10-c4-2",
+        "gym10-c5-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -425,7 +471,9 @@
       "correctAnswer": "$\\top$ (Doğru)",
       "topic": "Önerme Mantığı",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-3"],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -442,7 +490,9 @@
       "correctAnswer": "$\\text{Re}(w) = \\frac{1}{10}$",
       "topic": "Karmaşık Sayılar",
       "topicArea": "broevi",
-      "conceptIds": ["gym11-c2-1"],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -459,7 +509,9 @@
       "correctAnswer": "$x \\in [\\frac{5}{2}, \\frac{15}{4})$",
       "topic": "Doğrusal Eşitsizlik Sistemi",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-5"],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -476,7 +528,9 @@
       "correctAnswer": "A. $x \\in \\mathbb{R} \\setminus \\{-1, 0, 4\\}$, B. $x = -\\frac{5}{2}$",
       "topic": "Rasyonel İfadeler",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c2-3"],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -493,7 +547,9 @@
       "correctAnswer": "$51$",
       "topic": "Denklemler (Problem Çözme)",
       "topicArea": "algebra",
-      "conceptIds": ["gym10-c3-3"],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -510,7 +566,9 @@
       "correctAnswer": "$p=0$",
       "topic": "İkinci Dereceden Denklemler (Vieta Formülleri)",
       "topicArea": "algebra",
-      "conceptIds": ["gym11-c3-1"],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -527,7 +585,10 @@
       "correctAnswer": "$c=17\\text{ cm}$",
       "topic": "Planimetri - Dik Üçgen",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-1", "gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -544,7 +605,10 @@
       "correctAnswer": "$V=48\\pi\\text{ cm}^3$",
       "topic": "Stereometri - Silindir",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -561,7 +625,10 @@
       "correctAnswer": "$P=124\\text{ cm}^2$",
       "topic": "Planimetri - Yamuk",
       "topicArea": "geometrija",
-      "conceptIds": ["gym10-c5-1", "gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,
@@ -578,7 +645,9 @@
       "correctAnswer": "$A = \\frac{7}{65}$",
       "topic": "Trigonometrik Değerler",
       "topicArea": "trigonometrija",
-      "conceptIds": ["gym11-c1-1"],
+      "conceptIds": [
+        "gym11-c1-1"
+      ],
       "imageUrls": [],
       "hasImage": false,
       "imageDescription": null,

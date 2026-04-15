@@ -9,7 +9,7 @@
     "track": "gymnasium",
     "gradeLevel": 12,
     "questionCount": 40,
-    "totalPoints": 70
+    "totalPoints": 71
   },
   "questions": [
     {
@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "$\\frac{1}{2} + \\left[ \\frac{3}{4} : \\left( -\\frac{5}{12} \\right) \\right] - \\frac{4}{8}$ ifadesinin değeri aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$\\frac{9}{5}$",
-        "B": "$-\\frac{9}{20}$",
-        "C": "$-\\frac{9}{5}$",
-        "D": "$-\\frac{36}{5}$"
+        "А": "$\\frac{9}{5}$",
+        "Б": "$-\\frac{9}{20}$",
+        "В": "$-\\frac{9}{5}$",
+        "Г": "$-\\frac{36}{5}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Rasyonel sayılarla işlemler",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki ifadelerden hangisi doğrudur?",
       "choices": {
-        "A": "$3-5 \\in \\mathbb{N}$",
-        "B": "$-\\sqrt{3} \\in \\mathbb{I}$",
-        "C": "$\\frac{1}{2} \\in \\mathbb{Q}^-$",
-        "D": "$\\sqrt{2} \\in \\mathbb{Q}$"
+        "А": "$3-5 \\in \\mathbb{N}$",
+        "Б": "$-\\sqrt{3} \\in \\mathbb{I}$",
+        "В": "$\\frac{1}{2} \\in \\mathbb{Q}^-$",
+        "Г": "$\\sqrt{2} \\in \\mathbb{Q}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Sayı kümeleri",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "$x - (2-x) \\ge 3x - 7$ eşitsizliğinin çözümü olan en büyük doğal sayı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "1",
-        "B": "6",
-        "C": "5",
-        "D": "Böyle bir doğal sayı yoktur"
+        "А": "1",
+        "Б": "6",
+        "В": "5",
+        "Г": "Böyle bir doğal sayı yoktur"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Lineer eşitsizlikler",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "$n$ bir tek sayı ise, aşağıdaki sayılardan hangisi bir çift sayıdır?",
       "choices": {
-        "A": "$n^2$",
-        "B": "$7n$",
-        "C": "$3n - 1$",
-        "D": "$4n + 1$"
+        "А": "$n^2$",
+        "Б": "$7n$",
+        "В": "$3n - 1$",
+        "Г": "$4n + 1$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Bölünebilme",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki denklemlerden hangisinin iki eşlenik karmaşık çözümü vardır?",
       "choices": {
-        "A": "$x^2 + 2x + 2 = 0$",
-        "B": "$x^2 - 7x + 4 = 0$",
-        "C": "$x^2 - 6x + 9 = 0$",
-        "D": "$x^2 - 4 = 0$"
+        "А": "$x^2 + 2x + 2 = 0$",
+        "Б": "$x^2 - 7x + 4 = 0$",
+        "В": "$x^2 - 6x + 9 = 0$",
+        "Г": "$x^2 - 4 = 0$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "İkinci derece denklemler",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "$x^2 - 4$ ve $x^2 - 4x + 4$ polinomlarının en küçük ortak katı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$(x-2)^2(x+2)$",
-        "B": "$(x^2-4)(x^2-4x+4)$",
-        "C": "$x^2 - 4x + 4$",
-        "D": "$x^2 - 4x - 4$"
+        "А": "$(x-2)^2(x+2)$",
+        "Б": "$(x^2-4)(x^2-4x+4)$",
+        "В": "$x^2 - 4x + 4$",
+        "Г": "$x^2 - 4x - 4$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Polinomlar",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Bir koninin hacmi $60\\pi\\text{ cm}^3$ ise, bu koniyle aynı yarıçap ve yüksekliğe sahip silindirin hacmi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$120\\pi\\text{ cm}^3$",
-        "B": "$180\\pi\\text{ cm}^3$",
-        "C": "$20\\pi\\text{ cm}^3$",
-        "D": "Seçeneklerin hiçbirinde doğru cevap yoktur."
+        "А": "$120\\pi\\text{ cm}^3$",
+        "Б": "$180\\pi\\text{ cm}^3$",
+        "В": "$20\\pi\\text{ cm}^3$",
+        "Г": "Seçeneklerin hiçbirinde doğru cevap yoktur."
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Dönel cisimler",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Bir kenarı $a$ olan bir karenin içine bir daire çizilmiştir. Karenin alanının dairenin alanına oranı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$a$",
-        "B": "$\\pi$",
-        "C": "$\\frac{4}{\\pi}$",
-        "D": "$\\frac{a}{2}$"
+        "А": "$a$",
+        "Б": "$\\pi$",
+        "В": "$\\frac{4}{\\pi}$",
+        "Г": "$\\frac{a}{2}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Düzlem şekillerin alanı",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Bir $\\alpha$ açısı ve onun bütünleyeninden iki defa daha büyük olan açının toplamı $245^\\circ$ ise,",
       "choices": {
-        "A": "$\\alpha = 65^\\circ$ dir.",
-        "B": "$\\alpha = 115^\\circ$ dir.",
-        "C": "$\\alpha = 130^\\circ$ dir.",
-        "D": "$\\alpha = 155^\\circ$ dir."
+        "А": "$\\alpha = 65^\\circ$ dir.",
+        "Б": "$\\alpha = 115^\\circ$ dir.",
+        "В": "$\\alpha = 130^\\circ$ dir.",
+        "Г": "$\\alpha = 155^\\circ$ dir."
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Açılar",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Yarıçapı $25\\text{ cm}$ olan bir çemberde, merkezinden $15\\text{ cm}$ uzaklıkta bir kiriş çizilmiştir. Kirişin uzunluğu ne kadardır?",
       "choices": {
-        "A": "$40\\text{ cm}$",
-        "B": "$30\\text{ cm}$",
-        "C": "$20\\text{ cm}$",
-        "D": "$10\\text{ cm}$"
+        "А": "$40\\text{ cm}$",
+        "Б": "$30\\text{ cm}$",
+        "В": "$20\\text{ cm}$",
+        "Г": "$10\\text{ cm}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Çember ve daire",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "$y = 3 - ax$ fonksiyonunun grafiği, $y = 2x + 1$ fonksiyonunun grafiğiyle paralel olduğuna göre, aşağıdakilerden hangisi doğrudur:",
       "choices": {
-        "A": "$a = -2$",
-        "B": "$a = -1$",
-        "C": "$a = 1$",
-        "D": "$a = 2$"
+        "А": "$a = -2$",
+        "Б": "$a = -1$",
+        "В": "$a = 1$",
+        "Г": "$a = 2$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Analitik geometri - Doğru",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "$m$ parametresinin hangi değeri için $y = 2x - m^2 - 1$ doğrusu $4mx - y + 1 = 0$ doğrusuyla diktir:",
       "choices": {
-        "A": "$\\frac{1}{8}$",
-        "B": "$-\\frac{1}{8}$",
-        "C": "2",
-        "D": "-2"
+        "А": "$\\frac{1}{8}$",
+        "Б": "$-\\frac{1}{8}$",
+        "В": "2",
+        "Г": "-2"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Analitik geometri - Doğru",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "$(2m-1)x + (m-3)y + m - 2 = 0$ doğrusunun denkleminde $m$ parametresini o şekilde belirtiniz ki, doğru $M(1, -1)$ noktasından geçsin.",
       "choices": {
-        "A": "$m = 1$",
-        "B": "$m = 2$",
-        "C": "$m = 0$",
-        "D": "$m = 3$"
+        "А": "$m = 1$",
+        "Б": "$m = 2$",
+        "В": "$m = 0$",
+        "Г": "$m = 3$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Analitik geometri - Doğru",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "$S(-2, -1)$ noktası $AB$ doğru parçasının orta noktası ve $A(-2, 5)$ ise, $B$ noktasının koordinatları aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$B(-2, -7)$",
-        "B": "$B(-2, 7)$",
-        "C": "$B(2, -7)$",
-        "D": "$B(2, 7)$"
+        "А": "$B(-2, -7)$",
+        "Б": "$B(-2, 7)$",
+        "В": "$B(2, -7)$",
+        "Г": "$B(2, 7)$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Analitik geometri - Nokta",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Bir kutuda 3 beyaz, sekiz siyah ve yedi kırmızı top vardır. Kutudan bir top çekiliyor. Çekilen topun siyah olmama olasılığı ne kadardır?",
       "choices": {
-        "A": "$\\frac{4}{9}$",
-        "B": "$\\frac{5}{9}$",
-        "C": "$\\frac{1}{6}$",
-        "D": "$\\frac{7}{18}$"
+        "А": "$\\frac{4}{9}$",
+        "Б": "$\\frac{5}{9}$",
+        "В": "$\\frac{1}{6}$",
+        "Г": "$\\frac{7}{18}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Bir oyun zarının havaya atılmasıyla, 5'ten küçük sayı düşme olasılığı ne kadardır?",
       "choices": {
-        "A": "$\\frac{1}{6}$",
-        "B": "$\\frac{1}{3}$",
-        "C": "$\\frac{2}{3}$",
-        "D": "$\\frac{5}{6}$"
+        "А": "$\\frac{1}{6}$",
+        "Б": "$\\frac{1}{3}$",
+        "В": "$\\frac{2}{3}$",
+        "Г": "$\\frac{5}{6}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -403,12 +403,12 @@
       "questionType": "mc",
       "questionText": "\"KOKA KOLA\" kelimelerindeki sekiz harf, her biri ayrı ayrı özdeş kağıtlara yazılıp şeffaf olmayan bir kutuya konuluyor. Kutudan bir kağıt çekiliyor. Çekilen kağıtta \"KAKAO\" kelimesindeki harflerden birinin yazılı olma olasılığı nedir?",
       "choices": {
-        "A": "$\\frac{3}{8}$",
-        "B": "$\\frac{5}{8}$",
-        "C": "1",
-        "D": "$\\frac{7}{8}$"
+        "А": "$\\frac{3}{8}$",
+        "Б": "$\\frac{5}{8}$",
+        "В": "1",
+        "Г": "$\\frac{7}{8}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -427,12 +427,12 @@
       "questionType": "mc",
       "questionText": "$5-\\sqrt{5}, x, 5+\\sqrt{5}$ sayıları monoton bir geometrik dizi meydana getirdiklerine göre, $x$ in değeri aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$2\\sqrt{5}$",
-        "B": "5",
-        "C": "$\\sqrt{5}$",
-        "D": "7"
+        "А": "$2\\sqrt{5}$",
+        "Б": "5",
+        "В": "$\\sqrt{5}$",
+        "Г": "7"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Geometrik dizi",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -451,12 +451,12 @@
       "questionType": "mc",
       "questionText": "Bir aritmetik dizide $a_1 = 4$, $d = 2$ ve $a_n = 200$ ise, $n$ aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "78",
-        "B": "64",
-        "C": "100",
-        "D": "99"
+        "А": "78",
+        "Б": "64",
+        "В": "100",
+        "Г": "99"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Aritmetik dizi",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -475,12 +475,12 @@
       "questionType": "mc",
       "questionText": "Beşinci, altıncı ve yedinci teriminin toplamı 87 olan aritmetik dizisinin altıncı terimi ne kadardır:",
       "choices": {
-        "A": "24",
-        "B": "29",
-        "C": "30",
-        "D": "33"
+        "А": "24",
+        "Б": "29",
+        "В": "30",
+        "Г": "33"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Aritmetik dizi",
       "topicArea": "algebra",
       "dokLevel": 2,

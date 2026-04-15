@@ -22,11 +22,12 @@ const VALID_CHOICES = ['А', 'Б', 'В', 'Г'];
 const VALID_CORRECT_ANSWERS = [...VALID_CHOICES, 'X'];
 const VALID_TOPIC_AREAS = [
   'algebra', 'analiza', 'geometrija', 'statistika',
-  'kombinatorika', 'trigonometrija', 'matrici-vektori', 'broevi',
+  'kombinatorika', 'trigonometrija', 'matrici-vektori', 'broevi', 'logika',
 ];
 const VALID_LANGUAGES = ['mk', 'al', 'tr'];
-const VALID_SESSIONS = ['june', 'august', 'demo'];
-const VALID_TRACKS = ['gymnasium', 'vocational4', 'vocational3', 'gymnasium_elective'];
+const VALID_SESSIONS = ['june', 'august', 'demo', 'ucilisna'];
+// Note: 'ucilisna' = school/internal matura (not a DIM state exam session)
+const VALID_TRACKS = ['gymnasium', 'vocational4', 'vocational3', 'vocational2', 'gymnasium_elective'];
 const VALID_QUESTION_TYPES = ['mc', 'open'];
 
 // ─── CLI args ─────────────────────────────────────────────────────────────────
@@ -140,7 +141,7 @@ if (Array.isArray(questions)) {
     // ── Open-specific validation ───────────────────────────────────────────────
     if (isOpen) {
       if (!q.correctAnswer || String(q.correctAnswer).trim() === '')
-        errors.push(`${loc}: open question must have correctAnswer (model answer)`);
+        warnings.push(`${loc}: open question missing correctAnswer (model answer) — AI grading will use question text only`);
     }
 
     // ── Common ────────────────────────────────────────────────────────────────

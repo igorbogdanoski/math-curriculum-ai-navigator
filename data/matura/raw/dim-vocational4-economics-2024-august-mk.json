@@ -6,7 +6,7 @@
     "language": "mk",
     "title": "ДИМ Стручно 4-год (Економија) — Август 2024 (МК)",
     "durationMinutes": 180,
-    "track": "vocational-economics",
+    "track": "vocational4",
     "gradeLevel": 13,
     "questionCount": 20,
     "totalPoints": 40
@@ -31,7 +31,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c1-1"],
+      "conceptIds": [
+        "voc4-10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -55,7 +57,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c1-2"],
+      "conceptIds": [
+        "voc4-10-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -79,7 +83,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c2-1"],
+      "conceptIds": [
+        "voc4-10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -103,7 +109,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c2-3"],
+      "conceptIds": [
+        "voc4-10-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -127,7 +135,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c5-1"],
+      "conceptIds": [
+        "voc4-10-c5-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -151,7 +161,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-11-c1-1"],
+      "conceptIds": [
+        "voc4-11-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -175,7 +187,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-11-c3-1"],
+      "conceptIds": [
+        "voc4-11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -199,7 +213,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c6-4"],
+      "conceptIds": [
+        "voc4-10-c6-4"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -223,7 +239,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c6-5"],
+      "conceptIds": [
+        "voc4-10-c6-5"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -247,7 +265,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-12-c4-1"],
+      "conceptIds": [
+        "voc4-12-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -271,7 +291,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-12-c4-2"],
+      "conceptIds": [
+        "voc4-12-c4-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -295,7 +317,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c4-2"],
+      "conceptIds": [
+        "voc4-10-c4-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -319,7 +343,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-12-c3-1"],
+      "conceptIds": [
+        "voc4-12-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -343,7 +369,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-11-c4-1"],
+      "conceptIds": [
+        "voc4-11-c4-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -367,7 +395,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-11-c2-2"],
+      "conceptIds": [
+        "voc4-11-c2-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -386,8 +416,13 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c4-2"],
-      "hints": ["Маржа = (продажна − набавна) / набавна × 100", "Попуст = 10% од продажна цена"],
+      "conceptIds": [
+        "voc4-10-c4-2"
+      ],
+      "hints": [
+        "Маржа = (продажна − набавна) / набавна × 100",
+        "Попуст = 10% од продажна цена"
+      ],
       "aiSolution": null,
       "successRatePercent": null
     },
@@ -405,8 +440,13 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-11-c1-1"],
-      "hints": ["d = (a_n − a_1) / (n − 1)", "S_n = n·(a_1 + a_n) / 2"],
+      "conceptIds": [
+        "voc4-11-c1-1"
+      ],
+      "hints": [
+        "d = (a_n − a_1) / (n − 1)",
+        "S_n = n·(a_1 + a_n) / 2"
+      ],
       "aiSolution": null,
       "successRatePercent": null
     },
@@ -424,8 +464,13 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-13-c5-1"],
-      "hints": ["Множење матрици: редови по колони", "det(2×2) = ad − bc"],
+      "conceptIds": [
+        "voc4-13-c5-1"
+      ],
+      "hints": [
+        "Множење матрици: редови по колони",
+        "det(2×2) = ad − bc"
+      ],
       "aiSolution": null,
       "successRatePercent": null
     },
@@ -443,8 +488,13 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-10-c3-3"],
-      "hints": ["Брзина на работа = 1/t", "Заедно: сумирај ги брзините"],
+      "conceptIds": [
+        "voc4-10-c3-3"
+      ],
+      "hints": [
+        "Брзина на работа = 1/t",
+        "Заедно: сумирај ги брзините"
+      ],
       "aiSolution": null,
       "successRatePercent": null
     },
@@ -462,8 +512,13 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["voc4-13-c2-1"],
-      "hints": ["PV = FV / (1+r)^n", "NPV > 0 → исплатливо"],
+      "conceptIds": [
+        "voc4-13-c2-1"
+      ],
+      "hints": [
+        "PV = FV / (1+r)^n",
+        "NPV > 0 → исплатливо"
+      ],
       "aiSolution": null,
       "successRatePercent": null
     }

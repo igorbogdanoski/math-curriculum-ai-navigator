@@ -8,7 +8,9 @@
     "language": "tr",
     "durationMinutes": 180,
     "title": "Devlet Maturası — Lise — Ağustos 2022",
-    "hasOfficialKey": true
+    "hasOfficialKey": true,
+    "questionCount": 40,
+    "totalPoints": 78
   },
   "questions": [
     {
@@ -17,12 +19,12 @@
       "points": 1,
       "questionText": "Doğal sayılar kümesi ile $(1,3)$ aralığının kesişimi şu kümedir:",
       "choices": {
-        "A": "$\\{1,2\\}$",
-        "B": "$\\{1,2,3\\}$",
-        "C": "$\\{2\\}$",
-        "D": "$\\{1,3\\}$"
+        "А": "$\\{1,2\\}$",
+        "Б": "$\\{1,2,3\\}$",
+        "В": "$\\{2\\}$",
+        "Г": "$\\{1,3\\}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Kümeler",
       "topicArea": "algebra",
       "conceptIds": [
@@ -39,12 +41,12 @@
       "points": 1,
       "questionText": "$\\frac{10}{16} + \\frac{3}{2} \\left( \\frac{17}{4} : 17 \\right) + 3,75 \\cdot \\frac{4}{5}$ ifadesinin değeri şudur:",
       "choices": {
-        "A": "$8$",
-        "B": "$4$",
-        "C": "$\\frac{1}{4}$",
-        "D": "$3$"
+        "А": "$8$",
+        "Б": "$4$",
+        "В": "$\\frac{1}{4}$",
+        "Г": "$3$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Sayısal İfadeler",
       "topicArea": "broevi",
       "conceptIds": [
@@ -61,12 +63,12 @@
       "points": 1,
       "questionText": "$\\frac{(-1)^5 \\cdot (-2)^{-3}}{2^{-4} \\cdot (-3)^2}$ ifadesinin değeri şudur:",
       "choices": {
-        "A": "$18$",
-        "B": "$-18$",
-        "C": "$9$",
-        "D": "$-\\frac{2}{9}$"
+        "А": "$18$",
+        "Б": "$-18$",
+        "В": "$9$",
+        "Г": "$-\\frac{2}{9}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Sayısal İfadeler",
       "topicArea": "broevi",
       "conceptIds": [
@@ -83,12 +85,12 @@
       "points": 1,
       "questionText": "$(2x-3y)^3$ ifadesi şuna eşittir:",
       "choices": {
-        "A": "$8x^3 - 27y^3$",
-        "B": "$8x^3 - 36x^2y + 54xy^2 - 27y^3$",
-        "C": "$8x^3 + 36x^2y + 54xy^2 + 27y^3$",
-        "D": "$8x^3 - 24x^2y + 36xy^2 - 27y^3$"
+        "А": "$8x^3 - 27y^3$",
+        "Б": "$8x^3 - 36x^2y + 54xy^2 - 27y^3$",
+        "В": "$8x^3 + 36x^2y + 54xy^2 + 27y^3$",
+        "Г": "$8x^3 - 24x^2y + 36xy^2 - 27y^3$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Üslü ve Köklü İfadeler",
       "topicArea": "algebra",
       "conceptIds": [
@@ -105,12 +107,12 @@
       "points": 1,
       "questionText": "$(2p-5)x+3=0$ denkleminin şu durumda çözümü yoktur:",
       "choices": {
-        "A": "$p = 2,5$",
-        "B": "$p = -2,5$",
-        "C": "$p = 0$",
-        "D": "$p = 2$"
+        "А": "$p = 2,5$",
+        "Б": "$p = -2,5$",
+        "В": "$p = 0$",
+        "Г": "$p = 2$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Parametreli Doğrusal Denklemler",
       "topicArea": "algebra",
       "conceptIds": [
@@ -127,12 +129,12 @@
       "points": 1,
       "questionText": "$x^2-2x-5=0$ ikinci dereceden denkleminin çözümlerinin toplamı şudur:",
       "choices": {
-        "A": "$-5$",
-        "B": "$-2$",
-        "C": "$5$",
-        "D": "$2$"
+        "А": "$-5$",
+        "Б": "$-2$",
+        "В": "$5$",
+        "Г": "$2$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "İkinci Dereceden Denklemler (Vieta Formülleri)",
       "topicArea": "algebra",
       "conceptIds": [
@@ -149,12 +151,12 @@
       "points": 1,
       "questionText": "İki doğal sayının farkı $5$, karelerinin farkı ise $50$’dir. Bu iki doğal sayının toplamı şudur:",
       "choices": {
-        "A": "$15$",
-        "B": "$-15$",
-        "C": "$10$",
-        "D": "$-10$"
+        "А": "$15$",
+        "Б": "$-15$",
+        "В": "$10$",
+        "Г": "$-10$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Doğrusal Denklem Sistemleri",
       "topicArea": "algebra",
       "conceptIds": [
@@ -171,12 +173,12 @@
       "points": 1,
       "questionText": "$f(x) = \\frac{1}{3x-2}$ fonksiyonunun tanım kümesi şudur:",
       "choices": {
-        "A": "$\\mathbb{R}$",
-        "B": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{3}{2}\\}$",
-        "C": "$\\{x | x \\in \\mathbb{R} \\land x \\neq 0\\}$",
-        "D": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{2}{3}\\}$"
+        "А": "$\\mathbb{R}$",
+        "Б": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{3}{2}\\}$",
+        "В": "$\\{x | x \\in \\mathbb{R} \\land x \\neq 0\\}$",
+        "Г": "$\\{x | x \\in \\mathbb{R} \\land x \\neq \\frac{2}{3}\\}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Tanım Kümesi",
       "topicArea": "analiza",
       "conceptIds": [
@@ -193,12 +195,12 @@
       "points": 1,
       "questionText": "Bütünler açısından üç kat küçük olan açı şuna eşittir:",
       "choices": {
-        "A": "$60^{\\circ}$",
-        "B": "$45^{\\circ}$",
-        "C": "$40^{\\circ}$",
-        "D": "$30^{\\circ}$"
+        "А": "$60^{\\circ}$",
+        "Б": "$45^{\\circ}$",
+        "В": "$40^{\\circ}$",
+        "Г": "$30^{\\circ}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Açılar",
       "topicArea": "geometrija",
       "conceptIds": [
@@ -215,12 +217,12 @@
       "points": 1,
       "questionText": "$ABCD$ paralelkenarında $M$ noktası $AD$ kenarının orta noktası ise, $\\overrightarrow{MC}$ vektörü şuna eşittir:",
       "choices": {
-        "A": "$\\overrightarrow{AD} - \\frac{1}{2}\\overrightarrow{AB}$",
-        "B": "$\\overrightarrow{AB} - \\frac{1}{2}\\overrightarrow{AD}$",
-        "C": "$\\overrightarrow{AB} + \\frac{1}{2}\\overrightarrow{AD}$",
-        "D": "$\\overrightarrow{AD} + \\frac{1}{2}\\overrightarrow{AB}$"
+        "А": "$\\overrightarrow{AD} - \\frac{1}{2}\\overrightarrow{AB}$",
+        "Б": "$\\overrightarrow{AB} - \\frac{1}{2}\\overrightarrow{AD}$",
+        "В": "$\\overrightarrow{AB} + \\frac{1}{2}\\overrightarrow{AD}$",
+        "Г": "$\\overrightarrow{AD} + \\frac{1}{2}\\overrightarrow{AB}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Vektörler",
       "topicArea": "matrici-vektori",
       "conceptIds": [
@@ -237,12 +239,12 @@
       "points": 1,
       "questionText": "Kenar uzunluğu $12\\text{ cm}$ olan ve köşegenlerin kesişim noktasının kenara uzaklığı $5\\text{ cm}$ olan bir eşkenar dörtgenin alanı şuna eşittir:",
       "choices": {
-        "A": "$144\\text{ cm}^2$",
-        "B": "$140\\text{ cm}^2$",
-        "C": "$120\\text{ cm}^2$",
-        "D": "$100\\text{ cm}^2$"
+        "А": "$144\\text{ cm}^2$",
+        "Б": "$140\\text{ cm}^2$",
+        "В": "$120\\text{ cm}^2$",
+        "Г": "$100\\text{ cm}^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Planimetri - Eşkenar Dörtgen",
       "topicArea": "geometrija",
       "conceptIds": [
@@ -260,12 +262,12 @@
       "points": 1,
       "questionText": "Tabanları $12$ ve $6$, yan kenarı ise $5$ olan ikizkenar yamuğun yüksekliği şuna eşittir:",
       "choices": {
-        "A": "$3$",
-        "B": "$4$",
-        "C": "$5$",
-        "D": "$2,5$"
+        "А": "$3$",
+        "Б": "$4$",
+        "В": "$5$",
+        "Г": "$2,5$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Planimetri - Yamuk",
       "topicArea": "geometrija",
       "conceptIds": [
@@ -283,12 +285,12 @@
       "points": 1,
       "questionText": "Taban yarıçapı $9\\text{ cm}$ ve yüksekliği $2\\text{ cm}$ olan dik dairesel koninin hacmi şudur:",
       "choices": {
-        "A": "$54\\pi\\text{ cm}^3$",
-        "B": "$54\\pi\\text{ cm}^2$",
-        "C": "$162\\pi\\text{ cm}^3$",
-        "D": "$162\\pi\\text{ cm}^2$"
+        "А": "$54\\pi\\text{ cm}^3$",
+        "Б": "$54\\pi\\text{ cm}^2$",
+        "В": "$162\\pi\\text{ cm}^3$",
+        "Г": "$162\\pi\\text{ cm}^2$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Stereometri - Koni",
       "topicArea": "geometrija",
       "conceptIds": [
@@ -306,12 +308,12 @@
       "points": 1,
       "questionText": "Yüksekliği $8$ ve taban çevresi $20\\pi$ olan dik dairesel silindirin alanı şudur:",
       "choices": {
-        "A": "$360$",
-        "B": "$260$",
-        "C": "$360\\pi$",
-        "D": "$260\\pi$"
+        "А": "$360$",
+        "Б": "$260$",
+        "В": "$360\\pi$",
+        "Г": "$260\\pi$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Stereometri - Silindir",
       "topicArea": "geometrija",
       "conceptIds": [
@@ -329,12 +331,12 @@
       "points": 1,
       "questionText": "Düzgün üçgen prizmanın taban kenarı $4$ kat artırılır ve yüksekliği $2$ kat azaltılırsa, prizmanın hacmi:",
       "choices": {
-        "A": "8 kat azalır",
-        "B": "2 kat artar",
-        "C": "4 kat artar",
-        "D": "8 kat artar"
+        "А": "8 kat azalır",
+        "Б": "2 kat artar",
+        "В": "4 kat artar",
+        "Г": "8 kat artar"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Stereometri - Prizma",
       "topicArea": "geometrija",
       "conceptIds": [
@@ -352,12 +354,12 @@
       "points": 1,
       "questionText": "$A(-2,-2)$ noktası hangi bölgededir?",
       "choices": {
-        "A": "Birinci bölgede",
-        "B": "İkinci bölgede",
-        "C": "Üçüncü bölgede",
-        "D": "Dördüncü bölgede"
+        "А": "Birinci bölgede",
+        "Б": "İkinci bölgede",
+        "В": "Üçüncü bölgede",
+        "Г": "Dördüncü bölgede"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Analitik Geometri",
       "topicArea": "geometrija",
       "conceptIds": [
@@ -374,12 +376,12 @@
       "points": 1,
       "questionText": "Verilen doğrulardan hangisi $A(1,4)$ noktasından geçer ve eğimi $k = -2$’dir?",
       "choices": {
-        "A": "$2x + y = 6$",
-        "B": "$2x + y = 9$",
-        "C": "$2x - y = 7$",
-        "D": "$2x - y = -2$"
+        "А": "$2x + y = 6$",
+        "Б": "$2x + y = 9$",
+        "В": "$2x - y = 7$",
+        "Г": "$2x - y = -2$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Doğru Denklemi",
       "topicArea": "geometrija",
       "conceptIds": [
@@ -396,12 +398,12 @@
       "points": 1,
       "questionText": "$y = kx+2$ doğrusunun $3y+2x=1$ doğrusuna dik olması için:",
       "choices": {
-        "A": "$k = -\\frac{2}{3}$",
-        "B": "$k = -\\frac{3}{2}$",
-        "C": "$k = \\frac{1}{2}$",
-        "D": "$k = \\frac{3}{2}$"
+        "А": "$k = -\\frac{2}{3}$",
+        "Б": "$k = -\\frac{3}{2}$",
+        "В": "$k = \\frac{1}{2}$",
+        "Г": "$k = \\frac{3}{2}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Döğruların Dikliği",
       "topicArea": "geometrija",
       "conceptIds": [
@@ -419,12 +421,12 @@
       "points": 1,
       "questionText": "Aşağıdaki reel sayı dizilerinden hangisinin bir aritmetik dizi olduğunu belirleyin:",
       "choices": {
-        "A": "$\\frac{1}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{11}{2}, \\dots$",
-        "B": "$\\frac{3}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{9}{2}, \\dots$",
-        "C": "$\\frac{2}{3}, \\frac{2}{5}, \\frac{2}{7}, \\frac{2}{9}, \\dots$",
-        "D": "$\\frac{3}{2}, -\\frac{5}{2}, \\frac{7}{2}, -\\frac{9}{2}, \\dots$"
+        "А": "$\\frac{1}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{11}{2}, \\dots$",
+        "Б": "$\\frac{3}{2}, \\frac{5}{2}, \\frac{7}{2}, \\frac{9}{2}, \\dots$",
+        "В": "$\\frac{2}{3}, \\frac{2}{5}, \\frac{2}{7}, \\frac{2}{9}, \\dots$",
+        "Г": "$\\frac{3}{2}, -\\frac{5}{2}, \\frac{7}{2}, -\\frac{9}{2}, \\dots$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Aritmetik Dizi",
       "topicArea": "algebra",
       "conceptIds": [
@@ -441,12 +443,12 @@
       "points": 1,
       "questionText": "İlk terimi $81$ ve ortak çarpanı $\\frac{2}{3}$ olan geometrik dizinin ilk beş teriminin toplamı şudur:",
       "choices": {
-        "A": "$\\frac{211}{81}$",
-        "B": "$\\frac{275}{81}$",
-        "C": "$211$",
-        "D": "$275$"
+        "А": "$\\frac{211}{81}$",
+        "Б": "$\\frac{275}{81}$",
+        "В": "$211$",
+        "Г": "$275$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Geometrik Dizi",
       "topicArea": "algebra",
       "conceptIds": [

@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Me cilin nga shënimet e mëposhtme është paraqitur bashkësia e të gjithë numrave natyrorë më të vegjël se 9?",
       "choices": {
-        "A": "$(1,9]$",
-        "B": "$\\{x | x \\in \\mathbb{N}, x < 9\\}$",
-        "C": "$(1,9)$",
-        "D": "$\\{n | n \\in \\mathbb{R}, n < 9\\}$"
+        "А": "$(1,9]$",
+        "Б": "$\\{x | x \\in \\mathbb{N}, x < 9\\}$",
+        "В": "$(1,9)$",
+        "Г": "$\\{n | n \\in \\mathbb{R}, n < 9\\}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Bashkësitë e numrave",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Për cilën vlerë të shifrës $x$ numri $\\overline{65321x}$ është i pjesëtueshëm me 6?",
       "choices": {
-        "A": "6",
-        "B": "2",
-        "C": "4",
-        "D": "3"
+        "А": "6",
+        "Б": "2",
+        "В": "4",
+        "Г": "3"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Pjesëtueshmëria",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Një shumë e caktuar parash është ndarë mes tre personave, ashtu që personi i parë ka marrë $\\frac{1}{4}$ e shumës totale, i dyti ka marrë $\\frac{1}{6}$ e shumës së mbetur, kurse i treti 120 denarë. Shuma totale e parave ishte:",
       "choices": {
-        "A": "216 denarë",
-        "B": "208 denarë",
-        "C": "200 denarë",
-        "D": "192 denarë"
+        "А": "216 denarë",
+        "Б": "208 denarë",
+        "В": "200 denarë",
+        "Г": "192 denarë"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Detyra tekstuale",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "Për cilën vlerë të parametrit $k$ ekuacioni $x^2 - 6x - k + 1 = 0$ ka rrënjë të dyfishtë?",
       "choices": {
-        "A": "$k=1$",
-        "B": "$k=-1$",
-        "C": "$k=8$",
-        "D": "$k=-8$"
+        "А": "$k=1$",
+        "Б": "$k=-1$",
+        "В": "$k=8$",
+        "Г": "$k=-8$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Ekuacionet kuadratike",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Nëse $\\sqrt{a} = 4$, atëherë vlera e shprehjes $\\frac{(2-\\sqrt{a})^2}{a}$ është e barabartë me:",
       "choices": {
-        "A": "$-2$",
-        "B": "$0$",
-        "C": "$\\frac{1}{4}$",
-        "D": "$4$"
+        "А": "$-2$",
+        "Б": "$0$",
+        "В": "$\\frac{1}{4}$",
+        "Г": "$4$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Rrënjët",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Bashkësia e zgjidhjeve të sistemit të inekuacioneve $\\begin{cases} -2x \\ge 0 \\\\ 3 - x > 0 \\end{cases}$ është:",
       "choices": {
-        "A": "$[2,3)$",
-        "B": "$(-\\infty, 2]$",
-        "C": "$(-\\infty, 0]$",
-        "D": "$[0,3)$"
+        "А": "$[2,3)$",
+        "Б": "$(-\\infty, 2]$",
+        "В": "$(-\\infty, 0]$",
+        "Г": "$[0,3)$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Inekuacionet linjare",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Cili nga inekuacionet e dhëna është i saktë?",
       "choices": {
-        "A": "$(-2)^3 > (-2)^4$",
-        "B": "$\\left(-\\frac{1}{2}\\right)^3 > (-2)^{-2}$",
-        "C": "$\\left(\\frac{1}{2}\\right)^2 < \\left(\\frac{1}{2}\\right)^3$",
-        "D": "$\\left(\\frac{1}{2}\\right)^2 < \\left(\\frac{1}{2}\\right)^{-2}$"
+        "А": "$(-2)^3 > (-2)^4$",
+        "Б": "$\\left(-\\frac{1}{2}\\right)^3 > (-2)^{-2}$",
+        "В": "$\\left(\\frac{1}{2}\\right)^2 < \\left(\\frac{1}{2}\\right)^3$",
+        "Г": "$\\left(\\frac{1}{2}\\right)^2 < \\left(\\frac{1}{2}\\right)^{-2}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Fuqitë",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Këndi që do të përshkruajë akrepi i madh i orës për 5 minuta është:",
       "choices": {
-        "A": "$5^\\circ$",
-        "B": "$10^\\circ$",
-        "C": "$30^\\circ$",
-        "D": "$36^\\circ$"
+        "А": "$5^\\circ$",
+        "Б": "$10^\\circ$",
+        "В": "$30^\\circ$",
+        "Г": "$36^\\circ$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Këndet",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Nëse në një kuboid syprinat e tri faqeve me kulm të përbashkët janë $8\\text{ cm}^2, 14\\text{ cm}^2$ dhe $28\\text{ cm}^2$, atëherë vëllimi i tij është:",
       "choices": {
-        "A": "$14\\text{ cm}^3$",
-        "B": "$28\\text{ cm}^3$",
-        "C": "$56\\text{ cm}^3$",
-        "D": "$112\\text{ cm}^3$"
+        "А": "$14\\text{ cm}^3$",
+        "Б": "$28\\text{ cm}^3$",
+        "В": "$56\\text{ cm}^3$",
+        "Г": "$112\\text{ cm}^3$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Kubi dhe kuboidi",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Cila nga figurat gjeometrike të përmendura është mbështjellësi i konit?",
       "choices": {
-        "A": "Gjysmërethi",
-        "B": "Sektori qarkor",
-        "C": "Segmenti qarkor",
-        "D": "Unaza qarkore"
+        "А": "Gjysmërethi",
+        "Б": "Sektori qarkor",
+        "В": "Segmenti qarkor",
+        "Г": "Unaza qarkore"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Konusi",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Perimetri i një trekëndëshi është $132\\text{ cm}$, kurse rrezja e rrethit të brendashkruar është $2\\text{ cm}$. Sa është syprina e trekëndëshit të dhënë?",
       "choices": {
-        "A": "$33\\text{ cm}^2$",
-        "B": "$66\\text{ cm}^2$",
-        "C": "$132\\text{ cm}^2$",
-        "D": "$264\\text{ cm}^2$"
+        "А": "$33\\text{ cm}^2$",
+        "Б": "$66\\text{ cm}^2$",
+        "В": "$132\\text{ cm}^2$",
+        "Г": "$264\\text{ cm}^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Syprina e figurave plane",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "Ekuacioni i drejtëzës $y = -\\frac{1}{2}x + \\frac{3}{2}$ është i shkruar në:",
       "choices": {
-        "A": "formë të përgjithshme.",
-        "B": "formë segmentare.",
-        "C": "formë eksplicite.",
-        "D": "formë parametrike."
+        "А": "formë të përgjithshme.",
+        "Б": "formë segmentare.",
+        "В": "formë eksplicite.",
+        "Г": "formë parametrike."
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Gjeometria analitike - Drejtëza",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "Këndi që formon drejtëza $y - \\sqrt{3} = 2 - x$ me pjesën pozitive të boshtit $Ox$ është:",
       "choices": {
-        "A": "$30^\\circ$",
-        "B": "$60^\\circ$",
-        "C": "$90^\\circ$",
-        "D": "$135^\\circ$"
+        "А": "$30^\\circ$",
+        "Б": "$60^\\circ$",
+        "В": "$90^\\circ$",
+        "Г": "$135^\\circ$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Gjeometria analitike - Drejtëza",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "Nëse $B$ është pikë simetrike me pikën $A(4, -1)$ në lidhje me boshtin $y$, atëherë distanca mes pikave $A$ dhe $B$ është e barabartë me:",
       "choices": {
-        "A": "$\\sqrt{8}$",
-        "B": "$\\sqrt{20}$",
-        "C": "4",
-        "D": "8"
+        "А": "$\\sqrt{8}$",
+        "Б": "$\\sqrt{20}$",
+        "В": "4",
+        "Г": "8"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Gjeometria analitike - Pika",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Dy zare loje hidhen njëkohësisht. Nëse ngjarja $A$ është „ka rënë numër i njëjtë në të dy zaret, shuma totale e të cilëve është më e vogël se 6”, atëherë numri i elementeve të bashkësisë $A$ është:",
       "choices": {
-        "A": "2",
-        "B": "3",
-        "C": "6",
-        "D": "36"
+        "А": "2",
+        "Б": "3",
+        "В": "6",
+        "Г": "36"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Probabiliteti për rënien e një numri më të vogël se 5 në faqen e sipërme të zarit të lojës është:",
       "choices": {
-        "A": "$\\frac{2}{3}$",
-        "B": "$\\frac{5}{6}$",
-        "C": "$\\frac{1}{2}$",
-        "D": "$\\frac{1}{3}$"
+        "А": "$\\frac{2}{3}$",
+        "Б": "$\\frac{5}{6}$",
+        "В": "$\\frac{1}{2}$",
+        "Г": "$\\frac{1}{3}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -403,12 +403,12 @@
       "questionType": "mc",
       "questionText": "Shënojmë një numër dyshifror. Probabiliteti që të jetë shënuar numri 99 është:",
       "choices": {
-        "A": "$\\frac{1}{99}$",
-        "B": "$\\frac{2}{99}$",
-        "C": "$\\frac{1}{90}$",
-        "D": "$\\frac{1}{45}$"
+        "А": "$\\frac{1}{99}$",
+        "Б": "$\\frac{2}{99}$",
+        "В": "$\\frac{1}{90}$",
+        "Г": "$\\frac{1}{45}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Probabiliteti",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -427,12 +427,12 @@
       "questionType": "mc",
       "questionText": "Cila nga vargjet e mëposhtme është progresion aritmetik që zvogëlohet në mënyrë monotone?",
       "choices": {
-        "A": "$1, \\frac{3}{2}, 2, \\frac{5}{2}, \\dots$",
-        "B": "$\\frac{7}{3}, \\frac{4}{3}, \\frac{1}{3}, -\\frac{2}{3}, \\dots$",
-        "C": "$\\frac{10}{6}, -\\frac{3}{2}, \\frac{7}{6}, -1, \\dots$",
-        "D": "$\\frac{1}{2}, \\frac{1}{4}, \\frac{1}{8}, \\frac{1}{16}, \\dots$"
+        "А": "$1, \\frac{3}{2}, 2, \\frac{5}{2}, \\dots$",
+        "Б": "$\\frac{7}{3}, \\frac{4}{3}, \\frac{1}{3}, -\\frac{2}{3}, \\dots$",
+        "В": "$\\frac{10}{6}, -\\frac{3}{2}, \\frac{7}{6}, -1, \\dots$",
+        "Г": "$\\frac{1}{2}, \\frac{1}{4}, \\frac{1}{8}, \\frac{1}{16}, \\dots$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Progresioni aritmetik",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -451,12 +451,12 @@
       "questionType": "mc",
       "questionText": "Tri anëtarët e parë të progresionit gjeometrik janë $3, 6, 12$. Anëtari i trembëdhjetë i këtij progresioni është:",
       "choices": {
-        "A": "$3 \\cdot 2^{12}$",
-        "B": "$3 \\cdot 2^{13}$",
-        "C": "$3 + 3^{12}$",
-        "D": "$3 \\cdot 3^{12}$"
+        "А": "$3 \\cdot 2^{12}$",
+        "Б": "$3 \\cdot 2^{13}$",
+        "В": "$3 + 3^{12}$",
+        "Г": "$3 \\cdot 3^{12}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Progresioni gjeometrik",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -475,12 +475,12 @@
       "questionType": "mc",
       "questionText": "Për sa kohë një çiklist do të kalojë $54\\text{ km}$ nëse për orën e parë ka kaluar $15\\text{ km}$, kurse çdo orë vijuese kalon $1\\text{ km}$ më pak se orën paraprake?",
       "choices": {
-        "A": "2 orë",
-        "B": "4 orë",
-        "C": "6 orë",
-        "D": "8 orë"
+        "А": "2 orë",
+        "Б": "4 orë",
+        "В": "6 orë",
+        "Г": "8 orë"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Progresioni aritmetik",
       "topicArea": "algebra",
       "dokLevel": 3,

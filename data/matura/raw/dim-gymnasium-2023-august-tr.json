@@ -19,19 +19,21 @@
       "questionType": "mc",
       "questionText": "$M = \\{a,b,c\\}$ kümesi verilmiştir. Aşağıdaki ifade doğrudur:",
       "choices": {
-        "A": "$\\{a\\} \\in M$",
-        "B": "$\\{c,b,a\\} \\subseteq M$",
-        "C": "$\\emptyset \\in M$",
-        "D": "$\\{a,b,c\\} \\in M$"
+        "А": "$\\{a\\} \\in M$",
+        "Б": "$\\{c,b,a\\} \\subseteq M$",
+        "В": "$\\emptyset \\in M$",
+        "Г": "$\\{a,b,c\\} \\in M$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Kümeler",
       "topicArea": "algebra",
       "dokLevel": 1,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c1-1"],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -43,19 +45,21 @@
       "questionType": "mc",
       "questionText": "$[-1, 5)$ aralığında kaç tane doğal sayı vardır?",
       "choices": {
-        "A": "4",
-        "B": "5",
-        "C": "6",
-        "D": "7"
+        "А": "4",
+        "Б": "5",
+        "В": "6",
+        "Г": "7"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Sayı Aralıkları",
       "topicArea": "broevi",
       "dokLevel": 1,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c1-2"],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -67,19 +71,21 @@
       "questionType": "mc",
       "questionText": "$a$, $7$ ile bölündüğünde $5$ kalanını veren en küçük üç basamaklı sayı olsun. $b$, $7$ ile bölündüğünde $5$ kalanını veren en büyük üç basamaklı sayı olsun. $a+b$ kaçtır?",
       "choices": {
-        "A": "1012",
-        "B": "1102",
-        "C": "1120",
-        "D": "1210"
+        "А": "1012",
+        "Б": "1102",
+        "В": "1120",
+        "Г": "1210"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Bölünebilme",
       "topicArea": "broevi",
       "dokLevel": 2,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c1-2"],
+      "conceptIds": [
+        "gym10-c1-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -91,19 +97,21 @@
       "questionType": "mc",
       "questionText": "$2^8 m^3 n^6 p : (2 m n^{-2} p)$ ifadesi şuna eşittir:",
       "choices": {
-        "A": "$2^7 m^2 n^8$",
-        "B": "$2^7 m^2 n^4$",
-        "C": "$2^7 m^2 n^3$",
-        "D": "$2^4 m^3 n^{-3}$"
+        "А": "$2^7 m^2 n^8$",
+        "Б": "$2^7 m^2 n^4$",
+        "В": "$2^7 m^2 n^3$",
+        "Г": "$2^4 m^3 n^{-3}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Üslü İfadeler ve Polinomlar",
       "topicArea": "algebra",
       "dokLevel": 1,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c2-1"],
+      "conceptIds": [
+        "gym10-c2-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -115,19 +123,21 @@
       "questionType": "mc",
       "questionText": "$-x^2 + 2x - 1$ polinomu şuna denktir:",
       "choices": {
-        "A": "$(-x-1)^2$",
-        "B": "$-(x-1)^2$",
-        "C": "$-(x+1)^2$",
-        "D": "$(-x+1)^2$"
+        "А": "$(-x-1)^2$",
+        "Б": "$-(x-1)^2$",
+        "В": "$-(x+1)^2$",
+        "Г": "$(-x+1)^2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Özdeşlikler",
       "topicArea": "algebra",
       "dokLevel": 1,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c2-2"],
+      "conceptIds": [
+        "gym10-c2-2"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -139,19 +149,21 @@
       "questionType": "mc",
       "questionText": "$\\begin{cases} 2x+5y=7 \\\\ kx+10y=14 \\end{cases}$ denklem sisteminin sonsuz sayıda çözümü olması için:",
       "choices": {
-        "A": "$k \\neq 2$",
-        "B": "$k = 2$",
-        "C": "$k \\neq 4$",
-        "D": "$k = 4$"
+        "А": "$k \\neq 2$",
+        "Б": "$k = 2$",
+        "В": "$k \\neq 4$",
+        "Г": "$k = 4$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Doğrusal Denklem Sistemleri",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c3-4"],
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -163,19 +175,21 @@
       "questionType": "mc",
       "questionText": "Verilen denklemlerden hangisinin bir çözümü $x_1 = 2+i$’dir?",
       "choices": {
-        "A": "$x^2 - 4x + 3 = 0$",
-        "B": "$x^2 + 4x + 3 = 0$",
-        "C": "$x^2 - 4x + 5 = 0$",
-        "D": "$x^2 + 4x + 5 = 0$"
+        "А": "$x^2 - 4x + 3 = 0$",
+        "Б": "$x^2 + 4x + 3 = 0$",
+        "В": "$x^2 - 4x + 5 = 0$",
+        "Г": "$x^2 + 4x + 5 = 0$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "İkinci Dereceden Denklemler",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym11-c3-1"],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -187,19 +201,22 @@
       "questionType": "mc",
       "questionText": "$x-y=3$ ve $x^2+y^2=5$ ise, $xy=$",
       "choices": {
-        "A": "$-2$",
-        "B": "$-5$",
-        "C": "$15$",
-        "D": "$25$"
+        "А": "$-2$",
+        "Б": "$-5$",
+        "В": "$15$",
+        "Г": "$25$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Cebirsel İfadeler",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c2-2", "gym10-c2-3"],
+      "conceptIds": [
+        "gym10-c2-2",
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -211,19 +228,21 @@
       "questionType": "mc",
       "questionText": "$c = \\frac{a+b}{a-b}$ ise, $b$ aşağıdaki ifadelerden hangisiyle temsil edilebilir?",
       "choices": {
-        "A": "$b = \\frac{a(c+1)}{c-1}$",
-        "B": "$b = \\frac{a(c-1)}{c+1}$",
-        "C": "$b = \\frac{c+1}{a(c-1)}$",
-        "D": "$b = \\frac{c-1}{a(c+1)}$"
+        "А": "$b = \\frac{a(c+1)}{c-1}$",
+        "Б": "$b = \\frac{a(c-1)}{c+1}$",
+        "В": "$b = \\frac{c+1}{a(c-1)}$",
+        "Г": "$b = \\frac{c-1}{a(c+1)}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Rasyonel İfadeler",
       "topicArea": "algebra",
       "dokLevel": 2,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c2-3"],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -235,19 +254,22 @@
       "questionType": "mc",
       "questionText": "Bir küpün hacmi $27\\text{ m}^3$’tür. Alanı kaçtır?",
       "choices": {
-        "A": "$9\\text{ m}^3$",
-        "B": "$18\\text{ m}^3$",
-        "C": "$27\\text{ m}^3$",
-        "D": "$54\\text{ m}^3$"
+        "А": "$9\\text{ m}^3$",
+        "Б": "$18\\text{ m}^3$",
+        "В": "$27\\text{ m}^3$",
+        "Г": "$54\\text{ m}^3$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Küp",
       "topicArea": "geometrija",
       "dokLevel": 1,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -259,19 +281,22 @@
       "questionType": "mc",
       "questionText": "Kürenin büyük çemberinin alanı $16\\pi$ ise, kürenin alanı şudur:",
       "choices": {
-        "A": "$P=4\\pi$",
-        "B": "$P=64\\pi$",
-        "C": "$P=128\\pi$",
-        "D": "$P=256\\pi$"
+        "А": "$P=4\\pi$",
+        "Б": "$P=64\\pi$",
+        "В": "$P=128\\pi$",
+        "Г": "$P=256\\pi$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Küre",
       "topicArea": "geometrija",
       "dokLevel": 1,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -283,10 +308,10 @@
       "questionType": "mc",
       "questionText": "Çevresi $20\\text{ cm}$ ve alanı $20\\text{ cm}^2$ olan bir eşkenar dörtgenin içine bir çember çizilmiştir. Çemberin yarıçapı şudur:",
       "choices": {
-        "A": "$4\\text{ cm}$",
-        "B": "$8\\text{ cm}$",
-        "C": "$20\\text{ cm}$",
-        "D": "$40\\text{ cm}$"
+        "А": "$4\\text{ cm}$",
+        "Б": "$8\\text{ cm}$",
+        "В": "$20\\text{ cm}$",
+        "Г": "$40\\text{ cm}$"
       },
       "correctAnswer": "X",
       "topic": "Dörtgenler",
@@ -295,7 +320,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c5-1", "gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": "Bu soru, resmi anahtarda iptal edilmiştir çünkü doğru cevap seçenekler arasında yoktur. Çevre $20\\text{ cm}$ ise kenar $a=5\\text{ cm}$'dir. Alan $P = a \\cdot h = 20$ ise yükseklik $h=4\\text{ cm}$'dir. İç teğet çemberin yarıçapı $r = \\frac{h}{2} = 2\\text{ cm}$'dir.",
       "successRatePercent": null
@@ -307,19 +335,22 @@
       "questionType": "mc",
       "questionText": "Bir üçgenin iç açıları $2:4:3$ oranındadır. Üçgenin en küçük açısı kaç derecedir?",
       "choices": {
-        "A": "$30^\\circ$",
-        "B": "$40^\\circ$",
-        "C": "$90^\\circ$",
-        "D": "$120^\\circ$"
+        "А": "$30^\\circ$",
+        "Б": "$40^\\circ$",
+        "В": "$90^\\circ$",
+        "Г": "$120^\\circ$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Üçgen",
       "topicArea": "geometrija",
       "dokLevel": 1,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c5-1", "gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -331,19 +362,22 @@
       "questionType": "mc",
       "questionText": "Yarıçap $\\%20$ artırılırsa bir silindirin hacmi yüzde kaç artar?",
       "choices": {
-        "A": "$40\\%$",
-        "B": "$44\\%$",
-        "C": "$50\\%$",
-        "D": "$400\\%$"
+        "А": "$40\\%$",
+        "Б": "$44\\%$",
+        "В": "$50\\%$",
+        "Г": "$400\\%$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Silindir",
       "topicArea": "geometrija",
       "dokLevel": 2,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -355,19 +389,21 @@
       "questionType": "mc",
       "questionText": "$\\text{tg} 2\\alpha = \\text{ctg} 70^\\circ$ ve $0 < \\alpha < 45^\\circ$ ise, $\\alpha$ açısının büyüklüğü şudur:",
       "choices": {
-        "A": "$10^\\circ$",
-        "B": "$20^\\circ$",
-        "C": "$30^\\circ$",
-        "D": "$40^\\circ$"
+        "А": "$10^\\circ$",
+        "Б": "$20^\\circ$",
+        "В": "$30^\\circ$",
+        "Г": "$40^\\circ$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Trigonometrik Denklemler",
       "topicArea": "trigonometrija",
       "dokLevel": 2,
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym12-c2-4"],
+      "conceptIds": [
+        "gym12-c2-4"
+      ],
       "hints": [],
       "aiSolution": null,
       "successRatePercent": null
@@ -386,7 +422,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c1-1"],
+      "conceptIds": [
+        "gym10-c1-1"
+      ],
       "hints": [],
       "aiSolution": "A. $|a-2| < 3$ eşitsizliği şu ikili eşitsizliğe denktir:\n$-3 < a-2 < 3$.",
       "successRatePercent": null
@@ -405,7 +443,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym13-c2-1"],
+      "conceptIds": [
+        "gym13-c2-1"
+      ],
       "hints": [],
       "aiSolution": "A. Rasyonel cebirsel ifadenin tanımlı olması için paydası sıfır olmamalıdır.",
       "successRatePercent": null
@@ -424,7 +464,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym11-c3-1"],
+      "conceptIds": [
+        "gym11-c3-1"
+      ],
       "hints": [],
       "aiSolution": "A. $x_1+x_2=-2$ ve $x_1-x_2=6$ denklemlerinden sistemi oluştururuz.",
       "successRatePercent": null
@@ -443,7 +485,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c4-1"],
+      "conceptIds": [
+        "gym10-c4-1"
+      ],
       "hints": [],
       "aiSolution": "A. S, düzgün altıgenin merkezi olsun. Düzgün altıgende bir köşeden merkeze giden vektör şuna eşittir...",
       "successRatePercent": null
@@ -462,7 +506,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "A. Yamuğun tabanları $a=19\\text{ cm}$ ve $b=11\\text{ cm}$, büyük yan kenarı ise...",
       "successRatePercent": null
@@ -481,7 +528,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c3-3"],
+      "conceptIds": [
+        "gym10-c3-3"
+      ],
       "hints": [],
       "aiSolution": "A. $p: \\frac{2}{3} + 2 \\cdot \\frac{5}{6} = \\frac{2}{3} + \\frac{5}{3} = \\frac{7}{3} = 2\\frac{1}{3}$, yani $\\tau(p) = \\top$. $q$: sıfır bir tam sayıdır, yani $\\tau(q) = \\bot$. B. $F = (\\bot \\land \\bot) \\Leftrightarrow \\bot = \\bot \\Leftrightarrow \\bot = \\top$.",
       "successRatePercent": null
@@ -500,7 +549,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym11-c2-1"],
+      "conceptIds": [
+        "gym11-c2-1"
+      ],
       "hints": [],
       "aiSolution": "Pay: $z_1 + z_2 + 1 = 2 - i + 1 + i + 1 = 4$. Payda: $z_1 - z_2 + i = 2 - i - 1 - i + i = 1 - i$. Kesir $\\frac{4}{1-i} = \\frac{4(1+i)}{1^2+1^2} = 2 + 2i$. Modül $\\sqrt{2^2 + 2^2} = \\sqrt{8} = 2\\sqrt{2}$.",
       "successRatePercent": null
@@ -519,7 +570,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c2-3"],
+      "conceptIds": [
+        "gym10-c2-3"
+      ],
       "hints": [],
       "aiSolution": "Parantez içindeki ifade: $\\frac{-a(a^2+3a+9) + 12a^2 - 9a + 9(3-a)}{(3-a)(9+3a+a^2)} = \\dots = \\frac{(3-a)^2}{9+3a+a^2}$. Bölme işlemi çarpmaya dönüştürülür: $\\frac{9a}{(3-a)^2} - \\frac{9+3a+a^2}{(3-a)^2} = \\dots = -1$.",
       "successRatePercent": null
@@ -538,7 +591,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c3-5"],
+      "conceptIds": [
+        "gym10-c3-5"
+      ],
       "hints": [],
       "aiSolution": "Parantez içindeki ifade $\\frac{7x - x + 2}{7} = \\frac{6x+2}{7}$ olur. Eşitsizlik $\\frac{9x+7}{2} - \\frac{6x+2}{7} < 3$ şekline gelir. 14 ile çarparız: $7(9x+7) - 2(6x+2) < 42 \\Rightarrow \\dots \\Rightarrow x < -\\frac{1}{17}$. $-1/17$’den küçük en büyük tam sayı $-1$’dir.",
       "successRatePercent": null
@@ -557,7 +612,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c3-4"],
+      "conceptIds": [
+        "gym10-c3-4"
+      ],
       "hints": [],
       "aiSolution": "İlk bankaya yatırılan para $x$, ikinciye $y$ olsun. Sistem: $x+y=12000$ ve $0.09x + 0.11y = 1180$. Buradan $x = 7000$ ve $y = 5000$ bulunur.",
       "successRatePercent": null
@@ -576,7 +633,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c3-2"],
+      "conceptIds": [
+        "gym10-c3-2"
+      ],
       "hints": [],
       "aiSolution": "A. $f(1) = 0 \\Rightarrow m^2 - 3m - 4 = 0 \\Rightarrow m_1 = -1, m_2 = 4$. B. $f(0) = 3 \\Rightarrow -3m = 3 \\Rightarrow m = -1$. C. Paralel doğruların eğimleri aynıdır. $g(x)=2$ için $k=0$, yani $m^2 - 4 = 0 \\Rightarrow m = \\pm 2$. D. $m=-1$ için $f(x) = -3x + 3$.",
       "successRatePercent": null
@@ -595,7 +654,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Yarıçap $R = 6\\text{ dm}$, yükseklik $H = 80\\text{ cm} = 8\\text{ dm}$. Yan yüz yüksekliği $s = \\sqrt{R^2 + H^2} = 10\\text{ dm}$. Alan $P = R^2\\pi + R\\pi s = 96\\pi\\text{ dm}^2$. Hacim $V = \\frac{1}{3}R^2\\pi H = 96\\pi\\text{ dm}^3$.",
       "successRatePercent": null
@@ -614,7 +676,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c5-2", "gym11-c7-1"],
+      "conceptIds": [
+        "gym10-c5-2",
+        "gym11-c7-1"
+      ],
       "hints": [],
       "aiSolution": "Yükseklik $H = 5k$ olsun. Kesit tabandan $3k$ uzaklıkta, yani tepe noktasından $2k$ uzaklıktadır. Alanlar oranı $\\frac{B_1}{B} = (2/5)^2 = 4/25$. $B_1 = B - 21$ olduğundan, $\\frac{B-21}{B} = \\frac{4}{25} \\Rightarrow B = 25$.",
       "successRatePercent": null
@@ -633,7 +698,10 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym10-c5-1", "gym10-c4-3"],
+      "conceptIds": [
+        "gym10-c5-1",
+        "gym10-c4-3"
+      ],
       "hints": [],
       "aiSolution": "Üçgen, dik ikizkenar üçgendir (açılar $45^\\circ, 45^\\circ, 90^\\circ$). Alan $P = \\frac{b^2}{2} = 18 \\Rightarrow b = 6\\text{ cm}$. Taban $a = 6\\sqrt{2}\\text{ cm}$, tabana ait yükseklik $h = 3\\sqrt{2}\\text{ cm}$ olur. Kare kenarı $x$ ise, üçgenlerin benzerliğinden $x = 2\\sqrt{2}\\text{ cm}$ ve karenin alanı $8\\text{ cm}^2$ bulunur.",
       "successRatePercent": null
@@ -652,7 +720,9 @@
       "hasImage": false,
       "imageUrls": [],
       "imageDescription": null,
-      "conceptIds": ["gym12-c2-3"],
+      "conceptIds": [
+        "gym12-c2-3"
+      ],
       "hints": [],
       "aiSolution": "Sol taraf: $\\sin^3\\alpha(1 + \\frac{\\cos\\alpha}{\\sin\\alpha}) + \\cos^3\\alpha(1 + \\frac{\\sin\\alpha}{\\cos\\alpha}) = \\dots = (\\sin\\alpha+\\cos\\alpha)(\\sin^2\\alpha+\\cos^2\\alpha) = \\sin\\alpha+\\cos\\alpha$.",
       "successRatePercent": null

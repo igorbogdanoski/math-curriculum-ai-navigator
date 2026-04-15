@@ -9,7 +9,7 @@
     "track": "gymnasium",
     "gradeLevel": 12,
     "questionCount": 40,
-    "totalPoints": 77
+    "totalPoints": 76
   },
   "questions": [
     {
@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Me cilin nga shënimet e mëposhtme është paraqitur bashkësia e të gjitha numrave natyror më të vogla se 9?",
       "choices": {
-        "A": "$(1,9]$",
-        "B": "$\\{x \\mid x \\in \\mathbb{N}, x < 9\\}$",
-        "C": "$(1,9)$",
-        "Ç": "$\\{n \\mid n \\in \\mathbb{R}, n < 9\\}$"
+        "А": "$(1,9]$",
+        "Б": "$\\{x \\mid x \\in \\mathbb{N}, x < 9\\}$",
+        "В": "$(1,9)$",
+        "Г": "$\\{n \\mid n \\in \\mathbb{R}, n < 9\\}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Множества",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Për cilën vlerë të shifrës $x$ numri $\\overline{65321x}$ është i plotpjestueshëm me 6?",
       "choices": {
-        "A": "6",
-        "B": "2",
-        "C": "4",
-        "Ç": "3"
+        "А": "6",
+        "Б": "2",
+        "В": "4",
+        "Г": "3"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Деливост",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Shuma e caktuar e të hollave është ndarë ndërmjet tre personave, ashtuqë personi i parë ka fituar $\\frac{1}{4}$ e shumës së përgjithshme, i dyti ka fituar $\\frac{1}{6}$ nga shuma e mbetur e të hollave, kurse i treti 120 denarë. Shuma e përgjithshme e të hollave ka qenë:",
       "choices": {
-        "A": "216 denarë",
-        "B": "208 denarë",
-        "C": "200 denarë",
-        "Ç": "192 denarë"
+        "А": "216 denarë",
+        "Б": "208 denarë",
+        "В": "200 denarë",
+        "Г": "192 denarë"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Текстуални задачи",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "Për cilën vlerë të parametrit $k$ barazimi $x^2 - 6x - k + 1 = 0$ ka rrënjë të dyfisht?",
       "choices": {
-        "A": "$k=1$",
-        "B": "$k=-1$",
-        "C": "$k=8$",
-        "Ç": "$k=-8$"
+        "А": "$k=1$",
+        "Б": "$k=-1$",
+        "В": "$k=8$",
+        "Г": "$k=-8$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Квадратна равенка",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Nëse $\\sqrt{a} = 4$, atëherë vlera e shprehjes $\\frac{(2-\\sqrt{a})^2}{a}$ është e barabartë me:",
       "choices": {
-        "A": "-2",
-        "B": "0",
-        "C": "$\\frac{1}{4}$",
-        "Ç": "4"
+        "А": "-2",
+        "Б": "0",
+        "В": "$\\frac{1}{4}$",
+        "Г": "4"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Корени",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "Bashkësia e zgjidhjeve e sistemit të jobarazimeve $\\begin{cases} -2x \\ge 0 \\\\ 3 - x > 0 \\end{cases}$ është:",
       "choices": {
-        "A": "$[2,3)$",
-        "B": "$(-\\infty, 2]$",
-        "C": "$(-\\infty, 0]$",
-        "Ç": "$[0,3)$"
+        "А": "$[2,3)$",
+        "Б": "$(-\\infty, 2]$",
+        "В": "$(-\\infty, 0]$",
+        "Г": "$[0,3)$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Систем линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Cili nga jobarazimet e dhëna është i vërtetë?",
       "choices": {
-        "A": "$(-2)^3 > (-2)^4$",
-        "B": "$(-\\frac{1}{2})^3 > (-2)^{-2}$",
-        "C": "$(\\frac{1}{2})^2 < (\\frac{1}{2})^3$",
-        "Ç": "$(\\frac{1}{2})^2 < (\\frac{1}{2})^{-2}$"
+        "А": "$(-2)^3 > (-2)^4$",
+        "Б": "$(-\\frac{1}{2})^3 > (-2)^{-2}$",
+        "В": "$(\\frac{1}{2})^2 < (\\frac{1}{2})^3$",
+        "Г": "$(\\frac{1}{2})^2 < (\\frac{1}{2})^{-2}$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Степени",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Këndi të cilin do ta përshkron shigjeta e madhe e orës për 5 minuta është:",
       "choices": {
-        "A": "$5^\\circ$",
-        "B": "$10^\\circ$",
-        "C": "$30^\\circ$",
-        "Ç": "$36^\\circ$"
+        "А": "$5^\\circ$",
+        "Б": "$10^\\circ$",
+        "В": "$30^\\circ$",
+        "Г": "$36^\\circ$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Nëse te kuadri syprinat e tre faqeve me kulm të përbashkët janë $8 \\text{ cm}^2$, $14 \\text{ cm}^2$ dhe $28 \\text{ cm}^2$, atëherë vëllimi i tij është:",
       "choices": {
-        "A": "$14 \\text{ cm}^3$",
-        "B": "$28 \\text{ cm}^3$",
-        "C": "$56 \\text{ cm}^3$",
-        "Ç": "$112 \\text{ cm}^3$"
+        "А": "$14 \\text{ cm}^3$",
+        "Б": "$28 \\text{ cm}^3$",
+        "В": "$56 \\text{ cm}^3$",
+        "Г": "$112 \\text{ cm}^3$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Квадар",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Cila nga figurat gjeometrike të mëposhtme është mbështjellësi i konit?",
       "choices": {
-        "A": "Gjysmërrethi",
-        "B": "Sektori rrethor",
-        "C": "Segmenti rrethor",
-        "Ç": "Unaza rrethore"
+        "А": "Gjysmërrethi",
+        "Б": "Sektori rrethor",
+        "В": "Segmenti rrethor",
+        "Г": "Unaza rrethore"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Конус",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Perimetri i një trekëndëshi është $132 \\text{ cm}$, kurse rrezja e vijës rrethore të mbrendashkruar është $2 \\text{ cm}$. Sa është syprina e trekëndëshit të dhënë?",
       "choices": {
-        "A": "$33 \\text{ cm}^2$",
-        "B": "$66 \\text{ cm}^2$",
-        "C": "$132 \\text{ cm}^2$",
-        "Ç": "$264 \\text{ cm}^2$"
+        "А": "$33 \\text{ cm}^2$",
+        "Б": "$66 \\text{ cm}^2$",
+        "В": "$132 \\text{ cm}^2$",
+        "Г": "$264 \\text{ cm}^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Триаголник и кружница",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "Barazimi i drejtëzës $y = -\\frac{1}{2}x + \\frac{3}{2}$ është e shënuar në:",
       "choices": {
-        "A": "formën e përgjithshme.",
-        "B": "formën segmentale.",
-        "C": "formën eksplicite.",
-        "Ç": "formën parametrike."
+        "А": "formën e përgjithshme.",
+        "Б": "formën segmentale.",
+        "В": "formën eksplicite.",
+        "Г": "formën parametrike."
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "Këndi që e formon drejtëza $y - \\sqrt{3} = 2 - x$ me pjesën pozitive të boshtit $Ox$ është:",
       "choices": {
-        "A": "$30^\\circ$",
-        "B": "$60^\\circ$",
-        "C": "$90^\\circ$",
-        "Ç": "$135^\\circ$"
+        "А": "$30^\\circ$",
+        "Б": "$60^\\circ$",
+        "В": "$90^\\circ$",
+        "Г": "$135^\\circ$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Права",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "Nëse $B$ është pikë simetrike me pikën $A(4, -1)$ në lidhje me boshtin e $y$-it, atëherë largesa midis pikave $A$ dhe $B$ është e barabartë me:",
       "choices": {
-        "A": "$\\sqrt{8}$",
-        "B": "$\\sqrt{20}$",
-        "C": "4",
-        "Ç": "8"
+        "А": "$\\sqrt{8}$",
+        "Б": "$\\sqrt{20}$",
+        "В": "4",
+        "Г": "8"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Dy kube (zare) për lojë hidhen njëkohësisht. Nëse ngjarja $A$ është \"në të dy kubet është paraqitur numri i njejtë shuma e të cilëve është më e vogël se 6\", atëherë numri i elementeve të bashkësisë $A$ është:",
       "choices": {
-        "A": "2",
-        "B": "3",
-        "C": "6",
-        "Ç": "36"
+        "А": "2",
+        "Б": "3",
+        "В": "6",
+        "Г": "36"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Gjasa që të paraqitet numër më i vogël se 5 në pjesën e sipërme të kubit (zarit) për lojë është:",
       "choices": {
-        "A": "$\\frac{2}{3}$",
-        "B": "$\\frac{5}{6}$",
-        "C": "$\\frac{1}{2}$",
-        "Ç": "$\\frac{1}{3}$"
+        "А": "$\\frac{2}{3}$",
+        "Б": "$\\frac{5}{6}$",
+        "В": "$\\frac{1}{2}$",
+        "Г": "$\\frac{1}{3}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -403,12 +403,12 @@
       "questionType": "mc",
       "questionText": "Në qoftë se shënojmë 10 karta me numrat të cilët janë elemente të bashkësisë $M = \\{x \\mid x \\in \\mathbb{N}, 0 < x \\le 10\\}$, atëherë gjasa të tërhiqet një kartë e cila do jetë e shënuar me zgjidhjen numerike të barazimit $(x-1)(x+2)(x-3) = 0$ është:",
       "choices": {
-        "A": "0,1",
-        "B": "0,2",
-        "C": "0,3",
-        "Ç": "1"
+        "А": "0,1",
+        "Б": "0,2",
+        "В": "0,3",
+        "Г": "1"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -427,12 +427,12 @@
       "questionType": "mc",
       "questionText": "Anëtari i pestë i progresionit gjeometrik me $a_2 = 2$ dhe $q = \\frac{1}{3}$ është:",
       "choices": {
-        "A": "$\\frac{2}{27}$",
-        "B": "$\\frac{8}{27}$",
-        "C": "$\\frac{7}{81}$",
-        "Ç": "$\\frac{1}{9}$"
+        "А": "$\\frac{2}{27}$",
+        "Б": "$\\frac{8}{27}$",
+        "В": "$\\frac{7}{81}$",
+        "Г": "$\\frac{1}{9}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Геометриска прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -451,12 +451,12 @@
       "questionType": "mc",
       "questionText": "Cakto vlerën e $k$, ashtu që $k+2, 4k-6, 3k-2$ janë tre anëtarët vijues të progresionit aritmetik.",
       "choices": {
-        "A": "$k=5$",
-        "B": "$k=7$",
-        "C": "$k=9$",
-        "Ç": "$k=3$"
+        "А": "$k=5$",
+        "Б": "$k=7$",
+        "В": "$k=9$",
+        "Г": "$k=3$"
       },
-      "correctAnswer": "Ç",
+      "correctAnswer": "Г",
       "topic": "Аритметичка прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -475,12 +475,12 @@
       "questionType": "mc",
       "questionText": "Cakto anëtarin e parë të progresionit aritmetik, në qoftë se $a_3 = -1$ dhe $a_7 = -13$.",
       "choices": {
-        "A": "1",
-        "B": "3",
-        "C": "5",
-        "Ç": "7"
+        "А": "1",
+        "Б": "3",
+        "В": "5",
+        "Г": "7"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Аритметичка прогресија",
       "topicArea": "analiza",
       "dokLevel": 2,

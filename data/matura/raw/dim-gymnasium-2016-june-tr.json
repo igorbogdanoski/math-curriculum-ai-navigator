@@ -9,7 +9,7 @@
     "track": "gymnasium",
     "gradeLevel": 12,
     "questionCount": 40,
-    "totalPoints": 70
+    "totalPoints": 69
   },
   "questions": [
     {
@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "$\\frac{1}{2} - \\frac{1}{2}\\left(\\frac{1}{2} - \\frac{1}{2}\\left(\\frac{1}{2} - \\frac{1}{2}\\right)\\right)$ ifadesinin değeri aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "0",
-        "B": "$\\frac{1}{4}$",
-        "C": "$\\frac{3}{8}$",
-        "D": "$\\frac{1}{2}$"
+        "А": "0",
+        "Б": "$\\frac{1}{4}$",
+        "В": "$\\frac{3}{8}$",
+        "Г": "$\\frac{1}{2}$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Бројни изрази",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "Verilen ifadelerden hangisinin çözümü yoktur?",
       "choices": {
-        "A": "$2(x+2) \\le 2x+4$",
-        "B": "$2(x+2) < 2x+4$",
-        "C": "$2(x+2) < x+2$",
-        "D": "$2(x+2) \\le x+2$"
+        "А": "$2(x+2) \\le 2x+4$",
+        "Б": "$2(x+2) < 2x+4$",
+        "В": "$2(x+2) < x+2$",
+        "Г": "$2(x+2) \\le x+2$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "$\\overline{213234x}$ sayısı $6$ ile bölünüyorsa aşağıdakilerden hangisi doğrudur:",
       "choices": {
-        "A": "$x \\in \\{6\\}$",
-        "B": "$x \\in \\{0,6\\}$",
-        "C": "$x \\in \\{3,9\\}$",
-        "D": "$x \\in \\{0,3,6,9\\}$"
+        "А": "$x \\in \\{6\\}$",
+        "Б": "$x \\in \\{0,6\\}$",
+        "В": "$x \\in \\{3,9\\}$",
+        "Г": "$x \\in \\{0,3,6,9\\}$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Деливост",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "$A=(-1,1)$ ve $B=(-2,1]$ ise, aşağıdakilerden hangisi doğrudur:",
       "choices": {
-        "A": "$1 \\in A \\cap B$",
-        "B": "$1 \\in A$",
-        "C": "$1 \\notin B$",
-        "D": "$1 \\in A \\cup B$"
+        "А": "$1 \\in A \\cap B$",
+        "Б": "$1 \\in A$",
+        "В": "$1 \\notin B$",
+        "Г": "$1 \\in A \\cup B$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Интервали",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "$a^2(x-1) = b^2x - ab$ lineer denkleminin sonsuz çok çözümü olması için, $a$ ve $b$ parametreleri hangi koşulu sağlamalıdır:",
       "choices": {
-        "A": "$a < b$",
-        "B": "$a > b$",
-        "C": "$a = b$",
-        "D": "$a = -b$"
+        "А": "$a < b$",
+        "Б": "$a > b$",
+        "В": "$a = b$",
+        "Г": "$a = -b$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Линеарни равенки со параметар",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "$k$ parametresinin hangi değeri için $2x^2 - 8x + k + 6 = 0$ denkleminin farklı reel kökleri vardır?",
       "choices": {
-        "A": "$k \\in (-\\infty, 2)$",
-        "B": "$k \\in (2, \\infty)$",
-        "C": "$k \\in (-\\infty, 2]$",
-        "D": "$k \\in [2, \\infty)$"
+        "А": "$k \\in (-\\infty, 2)$",
+        "Б": "$k \\in (2, \\infty)$",
+        "В": "$k \\in (-\\infty, 2]$",
+        "Г": "$k \\in [2, \\infty)$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Квадратни равенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Alanı $P = 9\\sqrt{3}\\text{ cm}^2$ olan eşkenar üçgenin yüksekliği aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$6\\sqrt{3}\\text{ cm}$",
-        "B": "$3\\sqrt{3}\\text{ cm}$",
-        "C": "$6\\sqrt{6}\\text{ cm}$",
-        "D": "$3\\sqrt{6}\\text{ cm}$"
+        "А": "$6\\sqrt{3}\\text{ cm}$",
+        "Б": "$3\\sqrt{3}\\text{ cm}$",
+        "В": "$6\\sqrt{6}\\text{ cm}$",
+        "Г": "$3\\sqrt{6}\\text{ cm}$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Триаголник",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Tabanı $a = 6\\text{ cm}$ ve yan yüzünün yüksekliği (apotemi) $h = 5\\text{ cm}$ olan bir düzgün dörtgen piramitin hacmi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$144\\text{ cm}^3$",
-        "B": "$48\\text{ cm}^3$",
-        "C": "$180\\text{ cm}^3$",
-        "D": "$60\\text{ cm}^3$"
+        "А": "$144\\text{ cm}^3$",
+        "Б": "$48\\text{ cm}^3$",
+        "В": "$180\\text{ cm}^3$",
+        "Г": "$60\\text{ cm}^3$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Пирамида",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Merkez açısı $30^\\circ$ olan bir daire diliminin alanı $12\\pi\\text{ cm}^2$ olduğuna göre, ona karşılık gelen daire kesmesinin alanı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$12\\pi\\text{ cm}^2$",
-        "B": "$36\\sqrt{3}\\text{ cm}^2$",
-        "C": "$12(\\pi - 3\\sqrt{3})\\text{ cm}^2$",
-        "D": "$(36\\sqrt{3} - 12\\pi)\\text{ cm}^2$"
+        "А": "$12\\pi\\text{ cm}^2$",
+        "Б": "$36\\sqrt{3}\\text{ cm}^2$",
+        "В": "$12(\\pi - 3\\sqrt{3})\\text{ cm}^2$",
+        "Г": "$(36\\sqrt{3} - 12\\pi)\\text{ cm}^2$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Кружница и круг",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Kenarı $6\\text{ cm}$ ve köşegeni $10\\text{ cm}$ olan bir dikdörtgenin alanı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$28\\text{ cm}^2$",
-        "B": "$48\\text{ cm}^2$",
-        "C": "$60\\text{ cm}^2$",
-        "D": "$80\\text{ cm}^2$"
+        "А": "$28\\text{ cm}^2$",
+        "Б": "$48\\text{ cm}^2$",
+        "В": "$60\\text{ cm}^2$",
+        "Г": "$80\\text{ cm}^2$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Четириаголници",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "$\\alpha$ açısı bütünleyeninin $\\frac{3}{7}$ sine eşit ise, o halde:",
       "choices": {
-        "A": "$\\alpha = 54^\\circ$ dir.",
-        "B": "$\\alpha = 98^\\circ$ dir.",
-        "C": "$\\alpha = 126^\\circ$ dir.",
-        "D": "$\\alpha = 252^\\circ$ dir."
+        "А": "$\\alpha = 54^\\circ$ dir.",
+        "Б": "$\\alpha = 98^\\circ$ dir.",
+        "В": "$\\alpha = 126^\\circ$ dir.",
+        "Г": "$\\alpha = 252^\\circ$ dir."
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki doğrulardan hangisi $3x - 2y - \\frac{1}{4} = 0$ doğrusuna paraleldir?",
       "choices": {
-        "A": "$y = \\frac{3}{2}x + 1$",
-        "B": "$y = 3x - \\frac{1}{4}$",
-        "C": "$2x - 3y + 5 = 0$",
-        "D": "$2x + 3y - 5 = 0$"
+        "А": "$y = \\frac{3}{2}x + 1$",
+        "Б": "$y = 3x - \\frac{1}{4}$",
+        "В": "$2x - 3y + 5 = 0$",
+        "Г": "$2x + 3y - 5 = 0$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "$S$ noktası $AB$ doğru parçasının orta noktasıdır. $S(-2,3)$ ve $B(3,-1)$ ise, $A$ noktasının koordinatları aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$A(-7,7)$",
-        "B": "$A(-5,4)$",
-        "C": "$A(-1,5)$",
-        "D": "$A(\\frac{1}{2},1)$"
+        "А": "$A(-7,7)$",
+        "Б": "$A(-5,4)$",
+        "В": "$A(-1,5)$",
+        "Г": "$A(\\frac{1}{2},1)$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "Verilen noktalardan hangisi $2x - y + 3 = 0$ doğrusu üzerindedir:",
       "choices": {
-        "A": "$A(-2,3)$",
-        "B": "$B(0,3)$",
-        "C": "$C(1,-5)$",
-        "D": "$D(3,2)$"
+        "А": "$A(-2,3)$",
+        "Б": "$B(0,3)$",
+        "В": "$C(1,-5)$",
+        "Г": "$D(3,2)$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Farklı renkte olan iki oyun zarı havaya atılıyor ve elde edİlen sayıların toplamı yazılıyor. Elde edilen toplamın asal sayı olma ihtimali kaçtır?",
       "choices": {
-        "A": "1",
-        "B": "5",
-        "C": "15",
-        "D": "36"
+        "А": "1",
+        "Б": "5",
+        "В": "15",
+        "Г": "36"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "$p(A)=0,4$; $p(B)=0,6$ ; $p(A \\cup B)=0,8$ olasılıkları bilindiğine göre, $A \\cap B$ olayının olma olasılığı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "0,2",
-        "B": "0,7",
-        "C": "0,5",
-        "D": "0,8"
+        "А": "0,2",
+        "Б": "0,7",
+        "В": "0,5",
+        "Г": "0,8"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -403,12 +403,12 @@
       "questionType": "mc",
       "questionText": "Bir deneyde, bir oyun zarı ve bir madeni para kullanılıyor. Bu deneyde örnek uzayın (elemanter olayların) kaç elemanı vardır?",
       "choices": {
-        "A": "2",
-        "B": "6",
-        "C": "12",
-        "D": "36"
+        "А": "2",
+        "Б": "6",
+        "В": "12",
+        "Г": "36"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -427,12 +427,12 @@
       "questionType": "mc",
       "questionText": "Bir aritmetik dizisinin ilk terimi $5$ ve ortak farkı $-3$ ise, dizinin on birinci terimi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$-25$",
-        "B": "$-28$",
-        "C": "$28$",
-        "D": "$25$"
+        "А": "$-25$",
+        "Б": "$-28$",
+        "В": "$28$",
+        "Г": "$25$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Низи и прогресии",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -451,12 +451,12 @@
       "questionType": "mc",
       "questionText": "Bir geometrik dizide $a_5 = 48$, $a_8 = 384$ olduğuna göre, aşağıdakilerden hangisi doğrudur:",
       "choices": {
-        "A": "$a_1 = 6$ ve $q = 2$",
-        "B": "$a_1 = 3$ ve $q = 2$",
-        "C": "$a_1 = 12$ ve $q = \\frac{1}{2}$",
-        "D": "$a_1 = 6$ ve $q = \\frac{1}{2}$"
+        "А": "$a_1 = 6$ ve $q = 2$",
+        "Б": "$a_1 = 3$ ve $q = 2$",
+        "В": "$a_1 = 12$ ve $q = \\frac{1}{2}$",
+        "Г": "$a_1 = 6$ ve $q = \\frac{1}{2}$"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Низи и прогресии",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -475,12 +475,12 @@
       "questionType": "mc",
       "questionText": "Bir geometrik dizisinin ilk ve ikinci terimi sırasıyla $2$ ve $10$ ise, dizinin beşinci terimi ne kadardır:",
       "choices": {
-        "A": "50",
-        "B": "150",
-        "C": "625",
-        "D": "1250"
+        "А": "50",
+        "Б": "150",
+        "В": "625",
+        "Г": "1250"
       },
-      "correctAnswer": null,
+      "correctAnswer": "X",
       "topic": "Низи и прогресии",
       "topicArea": "analiza",
       "dokLevel": 1,

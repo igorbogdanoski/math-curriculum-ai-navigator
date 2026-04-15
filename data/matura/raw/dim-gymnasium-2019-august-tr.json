@@ -9,7 +9,7 @@
     "track": "gymnasium",
     "gradeLevel": 12,
     "questionCount": 40,
-    "totalPoints": 77
+    "totalPoints": 76
   },
   "questions": [
     {
@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki gösterimlerden hangisi 9'dan küçük tüm doğal sayıların kümesini temsil eder?",
       "choices": {
-        "A": "$(1,9]$",
-        "B": "$\\{x \\mid x \\in \\mathbb{N}, x < 9\\}$",
-        "C": "$(1,9)$",
-        "D": "$\\{n \\mid n \\in \\mathbb{R}, n < 9\\}$"
+        "А": "$(1,9]$",
+        "Б": "$\\{x \\mid x \\in \\mathbb{N}, x < 9\\}$",
+        "В": "$(1,9)$",
+        "Г": "$\\{n \\mid n \\in \\mathbb{R}, n < 9\\}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Kümeler",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "$x$ rakamının hangi değeri için $\\overline{65321x}$ sayısı 6 ile tam bölünebilir?",
       "choices": {
-        "A": "6",
-        "B": "2",
-        "C": "4",
-        "D": "3"
+        "А": "6",
+        "Б": "2",
+        "В": "4",
+        "Г": "3"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Bölünebilirlik",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Belirli bir miktar para üç kişi arasında paylaşılmıştır: birinci kişi toplam miktarın $\\frac{1}{4}$'ini, ikincisi kalan paranın $\\frac{1}{6}$'ini ve üçüncüsü ise 120 denar almıştır. Toplam para miktarı ne kadardı?",
       "choices": {
-        "A": "216 denar",
-        "B": "208 denar",
-        "C": "200 denar",
-        "D": "192 denar"
+        "А": "216 denar",
+        "Б": "208 denar",
+        "В": "200 denar",
+        "Г": "192 denar"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Metin Problemleri",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "$k$ parametresinin hangi değeri için $x^2 - 6x - k + 1 = 0$ denkleminin çakışık (çift) kökü vardır?",
       "choices": {
-        "A": "$k=1$",
-        "B": "$k=-1$",
-        "C": "$k=8$",
-        "D": "$k=-8$"
+        "А": "$k=1$",
+        "Б": "$k=-1$",
+        "В": "$k=8$",
+        "Г": "$k=-8$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "İkinci Dereceden Denklem",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Eğer $\\sqrt{a} = 4$ ise, $\\frac{(2-\\sqrt{a})^2}{a}$ ifadesinin değeri kaçtır?",
       "choices": {
-        "A": "-2",
-        "B": "0",
-        "C": "$\\frac{1}{4}$",
-        "D": "4"
+        "А": "-2",
+        "Б": "0",
+        "В": "$\\frac{1}{4}$",
+        "Г": "4"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Köklü Sayılar",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "$\\begin{cases} -2x \\ge 0 \\\\ 3 - x > 0 \\end{cases}$ eşitsizlik sisteminin çözüm kümesi nedir?",
       "choices": {
-        "A": "$[2,3)$",
-        "B": "$(-\\infty, 2]$",
-        "C": "$(-\\infty, 0]$",
-        "D": "$[0,3)$"
+        "А": "$[2,3)$",
+        "Б": "$(-\\infty, 2]$",
+        "В": "$(-\\infty, 0]$",
+        "Г": "$[0,3)$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Doğrusal Eşitsizlik Sistemleri",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Verilen eşitsizliklerden hangisi doğrudur?",
       "choices": {
-        "A": "$(-2)^3 > (-2)^4$",
-        "B": "$(-\\frac{1}{2})^3 > (-2)^{-2}$",
-        "C": "$(\\frac{1}{2})^2 < (\\frac{1}{2})^3$",
-        "D": "$(\\frac{1}{2})^2 < (\\frac{1}{2})^{-2}$"
+        "А": "$(-2)^3 > (-2)^4$",
+        "Б": "$(-\\frac{1}{2})^3 > (-2)^{-2}$",
+        "В": "$(\\frac{1}{2})^2 < (\\frac{1}{2})^3$",
+        "Г": "$(\\frac{1}{2})^2 < (\\frac{1}{2})^{-2}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Üslü Sayılar",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Yelkovanın 5 dakikada taradığı açı kaçtır?",
       "choices": {
-        "A": "$5^\\circ$",
-        "B": "$10^\\circ$",
-        "C": "$30^\\circ$",
-        "D": "$36^\\circ$"
+        "А": "$5^\\circ$",
+        "Б": "$10^\\circ$",
+        "В": "$30^\\circ$",
+        "Г": "$36^\\circ$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Açılar",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Bir dikdörtgenler prizmasının ortak köşeye sahip üç yüzünün alanları $8 \\text{ cm}^2$, $14 \\text{ cm}^2$ ve $28 \\text{ cm}^2$ ise, hacmi kaçtır?",
       "choices": {
-        "A": "$14 \\text{ cm}^3$",
-        "B": "$28 \\text{ cm}^3$",
-        "C": "$56 \\text{ cm}^3$",
-        "D": "$112 \\text{ cm}^3$"
+        "А": "$14 \\text{ cm}^3$",
+        "Б": "$28 \\text{ cm}^3$",
+        "В": "$56 \\text{ cm}^3$",
+        "Г": "$112 \\text{ cm}^3$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Dikdörtgenler Prizması",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki geometrik şekillerden hangisi koninin yan yüzeyidir?",
       "choices": {
-        "A": "Yarım daire",
-        "B": "Daire dilimi",
-        "C": "Daire kesmesi",
-        "D": "Halka"
+        "А": "Yarım daire",
+        "Б": "Daire dilimi",
+        "В": "Daire kesmesi",
+        "Г": "Halka"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Koni",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Bir üçgenin çevresi $132 \\text{ cm}$ ve iç teğet çemberinin yarıçapı $2 \\text{ cm}$'dir. Bu üçgenin alanı kaçtır?",
       "choices": {
-        "A": "$33 \\text{ cm}^2$",
-        "B": "$66 \\text{ cm}^2$",
-        "C": "$132 \\text{ cm}^2$",
-        "D": "$264 \\text{ cm}^2$"
+        "А": "$33 \\text{ cm}^2$",
+        "Б": "$66 \\text{ cm}^2$",
+        "В": "$132 \\text{ cm}^2$",
+        "Г": "$264 \\text{ cm}^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Üçgen ve Çember",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "$y = -\\frac{1}{2}x + \\frac{3}{2}$ doğrusunun denklemi hangi formda yazılmıştır?",
       "choices": {
-        "A": "genel form.",
-        "B": "parçalı (segmental) form.",
-        "C": "açık (eksplicit) form.",
-        "D": "parametrik form."
+        "А": "genel form.",
+        "Б": "parçalı (segmental) form.",
+        "В": "açık (eksplicit) form.",
+        "Г": "parametrik form."
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Doğru",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "$y - \\sqrt{3} = 2 - x$ doğrusunun $Ox$ ekseninin pozitif yönüyle yaptığı açı kaçtır?",
       "choices": {
-        "A": "$30^\\circ$",
-        "B": "$60^\\circ$",
-        "C": "$90^\\circ$",
-        "D": "$135^\\circ$"
+        "А": "$30^\\circ$",
+        "Б": "$60^\\circ$",
+        "В": "$90^\\circ$",
+        "Г": "$135^\\circ$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Doğru",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "$B$ noktası, $A(4, -1)$ noktasının $y$ eksenine göre simetriği ise, $A$ ve $B$ noktaları arasındaki uzaklık kaçtır?",
       "choices": {
-        "A": "$\\sqrt{8}$",
-        "B": "$\\sqrt{20}$",
-        "C": "4",
-        "D": "8"
+        "А": "$\\sqrt{8}$",
+        "Б": "$\\sqrt{20}$",
+        "В": "4",
+        "Г": "8"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Analitik Geometri",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "İki oyun zarı aynı anda atılıyor. $A$ olayı, \"her iki zarda da toplamları 6'dan küçük olan aynı sayının gelmesi\" ise, $A$ kümesinin eleman sayısı kaçtır?",
       "choices": {
-        "A": "2",
-        "B": "3",
-        "C": "6",
-        "D": "36"
+        "А": "2",
+        "Б": "3",
+        "В": "6",
+        "Г": "36"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Bir oyun zarının üst yüzüne 5'ten küçük bir sayı gelme olasılığı kaçtır?",
       "choices": {
-        "A": "$\\frac{2}{3}$",
-        "B": "$\\frac{5}{6}$",
-        "C": "$\\frac{1}{2}$",
-        "D": "$\\frac{1}{3}$"
+        "А": "$\\frac{2}{3}$",
+        "Б": "$\\frac{5}{6}$",
+        "В": "$\\frac{1}{2}$",
+        "Г": "$\\frac{1}{3}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -403,12 +403,12 @@
       "questionType": "mc",
       "questionText": "$M = \\{x \\mid x \\in \\mathbb{N}, 0 < x \\le 10\\}$ kümesinin elemanları olan sayılarla 10 kart işaretlenirse, çekilen bir kartın $(x-1)(x+2)(x-3) = 0$ denkleminin sayısal çözümü ile işaretlenmiş olma olasılığı kaçtır?",
       "choices": {
-        "A": "0,1",
-        "B": "0,2",
-        "C": "0,3",
-        "D": "1"
+        "А": "0,1",
+        "Б": "0,2",
+        "В": "0,3",
+        "Г": "1"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Olasılık",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -427,12 +427,12 @@
       "questionType": "mc",
       "questionText": "$a_2 = 2$ ve $q = \\frac{1}{3}$ olan geometrik dizinin beşinci terimi kaçtır?",
       "choices": {
-        "A": "$\\frac{2}{27}$",
-        "B": "$\\frac{8}{27}$",
-        "C": "$\\frac{7}{81}$",
-        "D": "$\\frac{1}{9}$"
+        "А": "$\\frac{2}{27}$",
+        "Б": "$\\frac{8}{27}$",
+        "В": "$\\frac{7}{81}$",
+        "Г": "$\\frac{1}{9}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Geometrik Dizi",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -451,12 +451,12 @@
       "questionType": "mc",
       "questionText": "$k+2, 4k-6, 3k-2$ ifadelerinin bir aritmetik dizinin ardışık üç terimi olması için $k$ değerini belirleyin.",
       "choices": {
-        "A": "$k=5$",
-        "B": "$k=7$",
-        "C": "$k=9$",
-        "D": "$k=3$"
+        "А": "$k=5$",
+        "Б": "$k=7$",
+        "В": "$k=9$",
+        "Г": "$k=3$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Aritmetik Dizi",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -475,12 +475,12 @@
       "questionType": "mc",
       "questionText": "$a_3 = -1$ ve $a_7 = -13$ olan bir aritmetik dizinin ilk terimini belirleyin.",
       "choices": {
-        "A": "1",
-        "B": "3",
-        "C": "5",
-        "D": "7"
+        "А": "1",
+        "Б": "3",
+        "В": "5",
+        "Г": "7"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Aritmetik Dizi",
       "topicArea": "analiza",
       "dokLevel": 2,

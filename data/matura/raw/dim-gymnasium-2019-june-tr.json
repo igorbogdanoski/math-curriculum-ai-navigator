@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki ifadelerden hangisi ile $9$ sayısından küçük olan tüm doğal sayılar gösterilmiştir?",
       "choices": {
-        "A": "$(1,9]$",
-        "B": "$\\{x \\mid x \\in \\mathbb{N}, x < 9\\}$",
-        "C": "$(1,9)$",
-        "D": "$\\{n \\mid n \\in \\mathbb{R}, n < 9\\}$"
+        "А": "$(1,9]$",
+        "Б": "$\\{x \\mid x \\in \\mathbb{N}, x < 9\\}$",
+        "В": "$(1,9)$",
+        "Г": "$\\{n \\mid n \\in \\mathbb{R}, n < 9\\}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Множества",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "$x$ rakamının hangi değeri için, $\\overline{65321x}$ sayısı $6$ ile bölünür?",
       "choices": {
-        "A": "6",
-        "B": "2",
-        "C": "4",
-        "D": "3"
+        "А": "6",
+        "Б": "2",
+        "В": "4",
+        "Г": "3"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Деливост",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "Belli bir miktar parayı üç kişi şu şekilde paylaşıyor: Birinci kişi paranın $\\frac{1}{4}$ ini, ikincisi kalan paranın $\\frac{1}{6}$ ini, üçüncüsü ise $120$ denar almıştır. Paylaşılan para miktarı aşağıdakilerden hangisi olabilir:",
       "choices": {
-        "A": "216 denar",
-        "B": "208 denar",
-        "C": "200 denar",
-        "D": "192 denar"
+        "А": "216 denar",
+        "Б": "208 denar",
+        "В": "200 denar",
+        "Г": "192 denar"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Текстуални задачи",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "$k$ parametresinin hangi değeri için, $x^2 - 6x - k + 1 = 0$ denkleminin iki kat kökü vardır?",
       "choices": {
-        "A": "$k=1$",
-        "B": "$k=-1$",
-        "C": "$k=8$",
-        "D": "$k=-8$"
+        "А": "$k=1$",
+        "Б": "$k=-1$",
+        "В": "$k=8$",
+        "Г": "$k=-8$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Квадратни равенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "$\\sqrt{a} = 4$ ise, $\\frac{(2-\\sqrt{a})^2}{a}$ ifadesinin değeri aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "-2",
-        "B": "0",
-        "C": "$\\frac{1}{4}$",
-        "D": "4"
+        "А": "-2",
+        "Б": "0",
+        "В": "$\\frac{1}{4}$",
+        "Г": "4"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Корени",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "$\\begin{cases} -2x \\ge 0 \\\\ 3-x > 0 \\end{cases}$ denklem sisteminin çözümler kümesi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$[2,3)$",
-        "B": "$(-\\infty, 2]$",
-        "C": "$(-\\infty, 0]$",
-        "D": "$[0,3)$"
+        "А": "$[2,3)$",
+        "Б": "$(-\\infty, 2]$",
+        "В": "$(-\\infty, 0]$",
+        "Г": "$[0,3)$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Системи линеарни неравенки",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "Verilen eşitsizliklerden hangisi doğrudur?",
       "choices": {
-        "A": "$(-2)^3 > (-2)^4$",
-        "B": "$\\left(-\\frac{1}{2}\\right)^3 > (-2)^{-2}$",
-        "C": "$\\left(\\frac{1}{2}\\right)^2 < \\left(\\frac{1}{2}\\right)^3$",
-        "D": "$\\left(\\frac{1}{2}\\right)^2 < \\left(\\frac{1}{2}\\right)^{-2}$"
+        "А": "$(-2)^3 > (-2)^4$",
+        "Б": "$\\left(-\\frac{1}{2}\\right)^3 > (-2)^{-2}$",
+        "В": "$\\left(\\frac{1}{2}\\right)^2 < \\left(\\frac{1}{2}\\right)^3$",
+        "Г": "$\\left(\\frac{1}{2}\\right)^2 < \\left(\\frac{1}{2}\\right)^{-2}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Степени",
       "topicArea": "broevi",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Saatin büyük ibresinin $5$ dakikada oluşturduğu açı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$5^\\circ$",
-        "B": "$10^\\circ$",
-        "C": "$30^\\circ$",
-        "D": "$36^\\circ$"
+        "А": "$5^\\circ$",
+        "Б": "$10^\\circ$",
+        "В": "$30^\\circ$",
+        "Г": "$36^\\circ$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Bir dikdörtgenler prizmasının ortak köşeye ait üç yüzünün alanı $8\\text{ cm}^2$, $14\\text{ cm}^2$ ve $28\\text{ cm}^2$ ise, onun hacmi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$14\\text{ cm}^3$",
-        "B": "$28\\text{ cm}^3$",
-        "C": "$56\\text{ cm}^3$",
-        "D": "$112\\text{ cm}^3$"
+        "А": "$14\\text{ cm}^3$",
+        "Б": "$28\\text{ cm}^3$",
+        "В": "$56\\text{ cm}^3$",
+        "Г": "$112\\text{ cm}^3$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Призма",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki geometrik şekillerden hangisi koninin yanal alanıdır?",
       "choices": {
-        "A": "Yarımdaire",
-        "B": "Daire dilimi",
-        "C": "Daire kesmesi",
-        "D": "Daire yüzüğü"
+        "А": "Yarımdaire",
+        "Б": "Daire dilimi",
+        "В": "Daire kesmesi",
+        "Г": "Daire yüzüğü"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Конус",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "Bir üçgenin çevresi $132\\text{ cm}$, içten teğet çemberinin yarıçapı ise $2\\text{ cm}$ dir. Verilen üçgenin alanı ne kadardır?",
       "choices": {
-        "A": "$33\\text{ cm}^2$",
-        "B": "$66\\text{ cm}^2$",
-        "C": "$132\\text{ cm}^2$",
-        "D": "$264\\text{ cm}^2$"
+        "А": "$33\\text{ cm}^2$",
+        "Б": "$66\\text{ cm}^2$",
+        "В": "$132\\text{ cm}^2$",
+        "Г": "$264\\text{ cm}^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Триаголник",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "$y = -\\frac{1}{2}x + \\frac{3}{2}$ biçiminde verilmiş olan doğrusunun denklemi aşağıdakilerden hangi şekildedir:",
       "choices": {
-        "A": "Genel şekilde.",
-        "B": "Eksen parçaları şeklinde.",
-        "C": "Açık şekilde.",
-        "D": "Parametre şeklinde."
+        "А": "Genel şekilde.",
+        "Б": "Eksen parçaları şeklinde.",
+        "В": "Açık şekilde.",
+        "Г": "Parametre şeklinde."
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "$y - \\sqrt{3} = 2 - x$ doğrusunun Ox - ekseninin pozitif yönüyle oluşturduğu açı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$30^\\circ$",
-        "B": "$60^\\circ$",
-        "C": "$90^\\circ$",
-        "D": "$135^\\circ$"
+        "А": "$30^\\circ$",
+        "Б": "$60^\\circ$",
+        "В": "$90^\\circ$",
+        "Г": "$135^\\circ$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "$B$ noktası y - eksenine göre $A(4,-1)$ noktasıyla simetrik olduğuna göre, $A$ ve $B$ noktaları arasındaki uzaklık aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$\\sqrt{8}$",
-        "B": "$\\sqrt{20}$",
-        "C": "4",
-        "D": "8"
+        "А": "$\\sqrt{8}$",
+        "Б": "$\\sqrt{20}$",
+        "В": "4",
+        "Г": "8"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "İki oyun zarı aynı anda havaya fırlatılıyor. A olayı: “her iki zar toplamı 6`dan küçük olan iki eşit sayı gösteriyor” ise, A kümesinin eleman sayısı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "2",
-        "B": "3",
-        "C": "6",
-        "D": "36"
+        "А": "2",
+        "Б": "3",
+        "В": "6",
+        "Г": "36"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Bir oyun zarının havaya atıldığında $5$ ten küçük sayının düşme olasılığı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$\\frac{2}{3}$",
-        "B": "$\\frac{5}{6}$",
-        "C": "$\\frac{1}{2}$",
-        "D": "$\\frac{1}{3}$"
+        "А": "$\\frac{2}{3}$",
+        "Б": "$\\frac{5}{6}$",
+        "В": "$\\frac{1}{2}$",
+        "Г": "$\\frac{1}{3}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -403,12 +403,12 @@
       "questionType": "mc",
       "questionText": "Bir iki basamaklı sayı yazıyoruz. $99$ sayısının yazılmış olma olasılığı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$\\frac{1}{99}$",
-        "B": "$\\frac{2}{99}$",
-        "C": "$\\frac{1}{90}$",
-        "D": "$\\frac{1}{45}$"
+        "А": "$\\frac{1}{99}$",
+        "Б": "$\\frac{2}{99}$",
+        "В": "$\\frac{1}{90}$",
+        "Г": "$\\frac{1}{45}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -427,12 +427,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki dizilerden hangisi monoton eksilen aritmetik dizidir?",
       "choices": {
-        "A": "$1, \\frac{3}{2}, 2, \\frac{5}{2}, \\dots$",
-        "B": "$\\frac{7}{3}, \\frac{4}{3}, \\frac{1}{3}, -\\frac{2}{3}, \\dots$",
-        "C": "$\\frac{10}{6}, \\frac{3}{2}, \\frac{7}{6}, -1, \\dots$",
-        "D": "$\\frac{1}{2}, \\frac{1}{4}, \\frac{1}{8}, \\frac{1}{16}, \\dots$"
+        "А": "$1, \\frac{3}{2}, 2, \\frac{5}{2}, \\dots$",
+        "Б": "$\\frac{7}{3}, \\frac{4}{3}, \\frac{1}{3}, -\\frac{2}{3}, \\dots$",
+        "В": "$\\frac{10}{6}, \\frac{3}{2}, \\frac{7}{6}, -1, \\dots$",
+        "Г": "$\\frac{1}{2}, \\frac{1}{4}, \\frac{1}{8}, \\frac{1}{16}, \\dots$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Низи и прогресии",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -451,12 +451,12 @@
       "questionType": "mc",
       "questionText": "Bir geometrik dizisinin ilk üç terimi $3, 6, 12$ dir. Bu dizinin on üçüncü terimi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$3 \\cdot 2^{12}$",
-        "B": "$3 \\cdot 2^{13}$",
-        "C": "$3 + 3^{12}$",
-        "D": "$3 \\cdot 3^{12}$"
+        "А": "$3 \\cdot 2^{12}$",
+        "Б": "$3 \\cdot 2^{13}$",
+        "В": "$3 + 3^{12}$",
+        "Г": "$3 \\cdot 3^{12}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Низи и прогресии",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -475,12 +475,12 @@
       "questionType": "mc",
       "questionText": "Bir bisikletli ilk saatte $15\\text{ km}$ ve ilerdeki her saatte birer km daha az yol katetmiştir. Bisikletli ne kadar zamanda $54\\text{ km}$ yol katetmiştir:",
       "choices": {
-        "A": "2 saatte",
-        "B": "4 saatte",
-        "C": "6 saatte",
-        "D": "8 saatte"
+        "А": "2 saatte",
+        "Б": "4 saatte",
+        "В": "6 saatte",
+        "Г": "8 saatte"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Низи и прогресии",
       "topicArea": "analiza",
       "dokLevel": 2,

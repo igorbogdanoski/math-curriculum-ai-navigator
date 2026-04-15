@@ -19,12 +19,12 @@
       "questionType": "mc",
       "questionText": "$\\left(2a^{\\frac{1}{2}} + a^{\\frac{1}{2}}\\right)^2$ ifadesi aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$3a$",
-        "B": "$3a^2$",
-        "C": "$9a$",
-        "D": "$9a^2$"
+        "А": "$3a$",
+        "Б": "$3a^2$",
+        "В": "$9a$",
+        "Г": "$9a^2$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Степени и корени",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -43,12 +43,12 @@
       "questionType": "mc",
       "questionText": "$f(2)=1$ ve $f(-1)=-5$ olmak üzere $f(x)=ax+b$ lineer fonksiyonu aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$f(x)=-2x+5$",
-        "B": "$f(x)=3x-2$",
-        "C": "$f(x)=2x+3$",
-        "D": "$f(x)=2x-3$"
+        "А": "$f(x)=-2x+5$",
+        "Б": "$f(x)=3x-2$",
+        "В": "$f(x)=2x+3$",
+        "Г": "$f(x)=2x-3$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Линеарни функции",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -67,12 +67,12 @@
       "questionType": "mc",
       "questionText": "$3-x=5x+a$ denkleminde $a$ parametresinin hangi değerleri için, denklemin negatif çözümleri vardır:",
       "choices": {
-        "A": "$a > 3$",
-        "B": "$a = 3$",
-        "C": "$a < 3$",
-        "D": "$a < -3$"
+        "А": "$a > 3$",
+        "Б": "$a = 3$",
+        "В": "$a < 3$",
+        "Г": "$a < -3$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Линеарни равенки со параметар",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -91,12 +91,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki ifadelerden hangisi doğrudur?",
       "choices": {
-        "A": "$\\mathbb{R} \\subset \\mathbb{N}$",
-        "B": "$\\mathbb{Q} \\subset \\mathbb{N}$",
-        "C": "$\\mathbb{Z} \\subset \\mathbb{Q}$",
-        "D": "$\\mathbb{R} \\subset \\mathbb{Z}$"
+        "А": "$\\mathbb{R} \\subset \\mathbb{N}$",
+        "Б": "$\\mathbb{Q} \\subset \\mathbb{N}$",
+        "В": "$\\mathbb{Z} \\subset \\mathbb{Q}$",
+        "Г": "$\\mathbb{R} \\subset \\mathbb{Z}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Множества броеви",
       "topicArea": "broevi",
       "dokLevel": 1,
@@ -115,12 +115,12 @@
       "questionType": "mc",
       "questionText": "Aşağıdaki sayılardan hangisi $(x-5)(x+2)<0, x \\in \\mathbb{R}$ eşitsizliğinin çözüm kümesine aittir.",
       "choices": {
-        "A": "$-5$",
-        "B": "$-2$",
-        "C": "$1$",
-        "D": "$5$"
+        "А": "$-5$",
+        "Б": "$-2$",
+        "В": "$1$",
+        "Г": "$5$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Квадратни неравенки",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -139,12 +139,12 @@
       "questionType": "mc",
       "questionText": "$a$ değişkeninin hangi değeri için $15:(a+13)=5:4$ sayı eşitliği doğrudur?",
       "choices": {
-        "A": "$-9$",
-        "B": "$-1$",
-        "C": "$1$",
-        "D": "$7$"
+        "А": "$-9$",
+        "Б": "$-1$",
+        "В": "$1$",
+        "Г": "$7$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Пропорции",
       "topicArea": "algebra",
       "dokLevel": 1,
@@ -163,12 +163,12 @@
       "questionType": "mc",
       "questionText": "$x_1$ ve $x_2$ sayıları $x^2-2x-4=0$ denkleminin reel çözümleri ise, $\\frac{1}{x_1^2} + \\frac{1}{x_2^2}$ ifadesinin değeri aşağıdakilerden hangisine eşittir:",
       "choices": {
-        "A": "$-\\frac{3}{4}$",
-        "B": "$\\frac{1}{4}$",
-        "C": "$-\\frac{1}{4}$",
-        "D": "$\\frac{3}{4}$"
+        "А": "$-\\frac{3}{4}$",
+        "Б": "$\\frac{1}{4}$",
+        "В": "$-\\frac{1}{4}$",
+        "Г": "$\\frac{3}{4}$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Виетови формули",
       "topicArea": "algebra",
       "dokLevel": 2,
@@ -187,12 +187,12 @@
       "questionType": "mc",
       "questionText": "Alanı $P = 144\\text{ cm}^2$ olan dikdörtgenin kenarları $4:9$ oranında ise, dikdörtgenin büyük kenarı aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$8\\text{ cm}$",
-        "B": "$16\\text{ cm}$",
-        "C": "$18\\text{ cm}$",
-        "D": "$36\\text{ cm}$"
+        "А": "$8\\text{ cm}$",
+        "Б": "$16\\text{ cm}$",
+        "В": "$18\\text{ cm}$",
+        "Г": "$36\\text{ cm}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Четириаголници",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -211,12 +211,12 @@
       "questionType": "mc",
       "questionText": "Bir $\\alpha$ açısı ve onun bütünleyeninden iki defa daha büyük olan açının toplamı $245^\\circ$ ise,",
       "choices": {
-        "A": "$\\alpha = 65^\\circ$ dir.",
-        "B": "$\\alpha = 115^\\circ$ dir.",
-        "C": "$\\alpha = 130^\\circ$ dir.",
-        "D": "$\\alpha = 155^\\circ$ dir."
+        "А": "$\\alpha = 65^\\circ$ dir.",
+        "Б": "$\\alpha = 115^\\circ$ dir.",
+        "В": "$\\alpha = 130^\\circ$ dir.",
+        "Г": "$\\alpha = 155^\\circ$ dir."
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Агли",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -235,12 +235,12 @@
       "questionType": "mc",
       "questionText": "Yarıçapı $25\\text{ cm}$ olan bir çemberde, merkezinden $15\\text{ cm}$ uzaklıkta bir kiriş çizilmiştir. Kirişin uzunluğu ne kadardır?",
       "choices": {
-        "A": "$40\\text{ cm}$",
-        "B": "$30\\text{ cm}$",
-        "C": "$20\\text{ cm}$",
-        "D": "$10\\text{ cm}$"
+        "А": "$40\\text{ cm}$",
+        "Б": "$30\\text{ cm}$",
+        "В": "$20\\text{ cm}$",
+        "Г": "$10\\text{ cm}$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Кружница",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -259,12 +259,12 @@
       "questionType": "mc",
       "questionText": "$y = 3 - ax$ fonksiyonunun grafiği, $y = 2x + 1$ fonksiyonunun grafiğiyle paralel olduğuna göre, aşağıdakilerden hangisi doğrudur:",
       "choices": {
-        "A": "$a = -2$",
-        "B": "$a = -1$",
-        "C": "$a = 1$",
-        "D": "$a = 2$"
+        "А": "$a = -2$",
+        "Б": "$a = -1$",
+        "В": "$a = 1$",
+        "Г": "$a = 2$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -283,12 +283,12 @@
       "questionType": "mc",
       "questionText": "$m$ prametresinin hangi değeri için $y = 2x - m^2 - 1$ doğrusu $4mx - y + 1 = 0$ doğrusuyla diktir:",
       "choices": {
-        "A": "$\\frac{1}{8}$",
-        "B": "$-\\frac{1}{8}$",
-        "C": "$2$",
-        "D": "$-2$"
+        "А": "$\\frac{1}{8}$",
+        "Б": "$-\\frac{1}{8}$",
+        "В": "$2$",
+        "Г": "$-2$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -307,12 +307,12 @@
       "questionType": "mc",
       "questionText": "$(2m-1)x + (m-3)y + m - 2 = 0$ doğrusunun denkleminde $m$ parametresini o şekilde belirtiniz ki, doğru $M(1, -1)$ noktasından geçsin.",
       "choices": {
-        "A": "$m = 1$",
-        "B": "$m = 2$",
-        "C": "$m = 0$",
-        "D": "$m = 3$"
+        "А": "$m = 1$",
+        "Б": "$m = 2$",
+        "В": "$m = 0$",
+        "Г": "$m = 3$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 2,
@@ -331,12 +331,12 @@
       "questionType": "mc",
       "questionText": "$S(-2, -1)$ noktası $AB$ doğru parçasının orta noktası ve $A(-2, 5)$ ise, $B$ noktasının koordinatları aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$B(-2, -7)$",
-        "B": "$B(-2, 7)$",
-        "C": "$B(2, -7)$",
-        "D": "$B(2, 7)$"
+        "А": "$B(-2, -7)$",
+        "Б": "$B(-2, 7)$",
+        "В": "$B(2, -7)$",
+        "Г": "$B(2, 7)$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Аналитичка геометрија",
       "topicArea": "geometrija",
       "dokLevel": 1,
@@ -355,12 +355,12 @@
       "questionType": "mc",
       "questionText": "Bir kutuda $3$ beyaz, sekiz siyah ve yedi kırmızı top vardır. Kutudan bir top çekiliyor. Çekilen topun siyah olmama olasılığı ne kadardır?",
       "choices": {
-        "A": "$\\frac{4}{9}$",
-        "B": "$\\frac{5}{9}$",
-        "C": "$\\frac{1}{6}$",
-        "D": "$\\frac{7}{18}$"
+        "А": "$\\frac{4}{9}$",
+        "Б": "$\\frac{5}{9}$",
+        "В": "$\\frac{1}{6}$",
+        "Г": "$\\frac{7}{18}$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -379,12 +379,12 @@
       "questionType": "mc",
       "questionText": "Bir oyun zarının havaya atılmasıyla, $5$ ten küçük sayı düşme olasılığı ne kadardır?",
       "choices": {
-        "A": "$\\frac{1}{6}$",
-        "B": "$\\frac{1}{3}$",
-        "C": "$\\frac{2}{3}$",
-        "D": "$\\frac{5}{6}$"
+        "А": "$\\frac{1}{6}$",
+        "Б": "$\\frac{1}{3}$",
+        "В": "$\\frac{2}{3}$",
+        "Г": "$\\frac{5}{6}$"
       },
-      "correctAnswer": "C",
+      "correctAnswer": "В",
       "topic": "Веројатност",
       "topicArea": "statistika",
       "dokLevel": 1,
@@ -403,12 +403,12 @@
       "questionType": "mc",
       "questionText": "Üç kart $p(x) = x^3 + 1$ polinomunun sıfırlarıyla işaret edilmiştir. Bir çekilişte REEL SAYI OLMAYAN sayı ile işaretlenmiş olan kartın çekilme olasılığı ne kadardır:",
       "choices": {
-        "A": "$1$",
-        "B": "$\\frac{2}{3}$",
-        "C": "$\\frac{1}{3}$",
-        "D": "$0$"
+        "А": "$1$",
+        "Б": "$\\frac{2}{3}$",
+        "В": "$\\frac{1}{3}$",
+        "Г": "$0$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Веројатност и полиноми",
       "topicArea": "statistika",
       "dokLevel": 2,
@@ -427,12 +427,12 @@
       "questionType": "mc",
       "questionText": "$5-\\sqrt{5}, x, 5+\\sqrt{5}$ sayıları monoton bir geometrik dizisi meydana getirdiklerine göre, $x$ in değeri aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$2\\sqrt{5}$",
-        "B": "$5$",
-        "C": "$\\sqrt{5}$",
-        "D": "$7$"
+        "А": "$2\\sqrt{5}$",
+        "Б": "$5$",
+        "В": "$\\sqrt{5}$",
+        "Г": "$7$"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "А",
       "topic": "Низи и прогресии",
       "topicArea": "analiza",
       "dokLevel": 2,
@@ -451,12 +451,12 @@
       "questionType": "mc",
       "questionText": "Bir aritmetik dizisinde $a_1 = 4$, $d = 2$ ve $a_n = 200$ ise, $n$ aşağıdakilerden hangisidir:",
       "choices": {
-        "A": "$78$",
-        "B": "$64$",
-        "C": "$100$",
-        "D": "$99$"
+        "А": "$78$",
+        "Б": "$64$",
+        "В": "$100$",
+        "Г": "$99$"
       },
-      "correctAnswer": "D",
+      "correctAnswer": "Г",
       "topic": "Низи и прогресии",
       "topicArea": "analiza",
       "dokLevel": 1,
@@ -475,12 +475,12 @@
       "questionType": "mc",
       "questionText": "Beşinci, altıncı ve yedinci teriminin toplamı $87$ olan aritmetik dizisinin altıncı terimi ne kadardır:",
       "choices": {
-        "A": "$24$",
-        "B": "$29$",
-        "C": "$30$",
-        "D": "$33$"
+        "А": "$24$",
+        "Б": "$29$",
+        "В": "$30$",
+        "Г": "$33$"
       },
-      "correctAnswer": "B",
+      "correctAnswer": "Б",
       "topic": "Низи и прогресии",
       "topicArea": "analiza",
       "dokLevel": 2,

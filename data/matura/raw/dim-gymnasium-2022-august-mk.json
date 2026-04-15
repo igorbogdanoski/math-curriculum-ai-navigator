@@ -8,7 +8,9 @@
     "language": "mk",
     "durationMinutes": 180,
     "title": "Државна матура — Гимназиско — август 2022",
-    "hasOfficialKey": true
+    "hasOfficialKey": true,
+    "questionCount": 40,
+    "totalPoints": 78
   },
   "questions": [
     {

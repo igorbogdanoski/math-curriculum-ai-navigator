@@ -8,7 +8,9 @@
     "language": "al",
     "durationMinutes": 180,
     "title": "Државна матура — Гимназиско — јуни 2023",
-    "hasOfficialKey": false
+    "hasOfficialKey": false,
+    "questionCount": 30,
+    "totalPoints": 61
   },
   "questions": [
     {
