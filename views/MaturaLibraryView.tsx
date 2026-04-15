@@ -688,9 +688,19 @@ function InternalMaturaTab() {
                 );
               })}
               {picked && (
-                <p className={`text-xs font-semibold mt-1 ${picked === q.correctAnswer ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {picked === q.correctAnswer ? '✓ Точно!' : `✗ Точен: ${q.correctAnswer}`}
-                </p>
+                <>
+                  <p className={`text-xs font-semibold mt-1 ${picked === q.correctAnswer ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {picked === q.correctAnswer ? '✓ Точно!' : `✗ Точен: ${q.correctAnswer}`}
+                  </p>
+                  {q.aiSolution && (
+                    <div className="mt-2 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
+                      <p className="text-xs font-semibold text-indigo-700 mb-1">✨ Детално решение:</p>
+                      <div className="text-xs text-gray-800 leading-relaxed">
+                        <MathRenderer text={q.aiSolution} />
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -705,10 +715,20 @@ function InternalMaturaTab() {
                   👁 Прикажи точен одговор
                 </button>
               ) : (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                  <p className="text-xs font-semibold text-emerald-700 mb-1">Точен одговор:</p>
-                  <div className="text-sm text-gray-800"><MathRenderer text={q.correctAnswer} /></div>
-                </div>
+                <>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                    <p className="text-xs font-semibold text-emerald-700 mb-1">Точен одговор:</p>
+                    <div className="text-sm text-gray-800"><MathRenderer text={q.correctAnswer} /></div>
+                  </div>
+                  {q.aiSolution && (
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
+                      <p className="text-xs font-semibold text-indigo-700 mb-1">✨ Детално решение:</p>
+                      <div className="text-sm text-gray-800 leading-relaxed">
+                        <MathRenderer text={q.aiSolution} />
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
               {revealed && (
                 <div>
@@ -850,17 +870,29 @@ function InternalMaturaTab() {
                     </div>
                   )}
                   {isRev && (
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-                      <p className="text-xs font-semibold text-emerald-700 mb-0.5">Точен одговор:</p>
-                      <div className="text-xs text-gray-800"><MathRenderer text={q.correctAnswer} /></div>
-                    </div>
+                    <>
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                        <p className="text-xs font-semibold text-emerald-700 mb-0.5">Точен одговор:</p>
+                        <div className="text-xs text-gray-800"><MathRenderer text={q.correctAnswer} /></div>
+                      </div>
+                      {q.aiSolution && (
+                        <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
+                          <p className="text-xs font-semibold text-indigo-700 mb-1 flex items-center gap-1">
+                            ✨ Детално решение:
+                          </p>
+                          <div className="text-xs text-gray-800 leading-relaxed">
+                            <MathRenderer text={q.aiSolution} />
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                   <button type="button"
                     onClick={() => setRevealedIds(prev => {
                       const s = new Set(prev); s.has(n) ? s.delete(n) : s.add(n); return s;
                     })}
                     className="text-xs text-violet-600 hover:underline self-start mt-auto">
-                    {isRev ? '🙈 Скриј' : '👁 Прикажи одговор'}
+                    {isRev ? '🙈 Скриј' : `👁 Прикажи${q.aiSolution ? ' решение' : ' одговор'}`}
                   </button>
                 </div>
               );

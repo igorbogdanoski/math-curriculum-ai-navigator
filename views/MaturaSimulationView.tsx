@@ -18,6 +18,7 @@ import {
   GraduationCap, Clock, ChevronLeft, ChevronRight, CheckCircle2,
   XCircle, BarChart2, BookOpen, Sparkles, AlertTriangle, Trophy,
   RotateCcw, Loader2, Play, List, Grid3x3, PenLine, FileText,
+  Target, CalendarDays,
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { MathRenderer } from '../components/common/MathRenderer';
@@ -32,6 +33,8 @@ import {
   getCachedAIGrade,
   saveUserMaturaResult,
   saveAIGrade,
+  buildMissionPlan,
+  saveMaturaMissionPlan,
 } from '../services/firestoreService.matura';
 import type { MaturaQuestion, MaturaExamMeta } from '../services/firestoreService.matura';
 
@@ -280,6 +283,7 @@ export const MaturaSimulationView: React.FC = () => {
   // ── Phase & exam selection ────────────────────────────────────────────────
   const [phase,        setPhase]        = useState<Phase>('select');
   const [selectedExam, setSelectedExam] = useState<MaturaExamMeta | null>(null);
+  const [expandedSolutions, setExpandedSolutions] = useState<Set<number>>(new Set());
   const { exams, loading: examsLoading } = useMaturaExams();
   const { questions, loading: qLoading  } = useMaturaQuestions(
     selectedExam ? [selectedExam.id] : [],
@@ -301,6 +305,10 @@ export const MaturaSimulationView: React.FC = () => {
   const [result,       setResult]      = useState<SimResult | null>(null);
   const [aiAnalysis,   setAiAnalysis]  = useState('');
   const [aiLoading,    setAiLoading]   = useState(false);
+
+  // ── B5: Mission plan state ────────────────────────────────────────────────
+  const [planSaving,   setPlanSaving]  = useState(false);
+  const [planCreated,  setPlanCreated] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -507,6 +515,32 @@ export const MaturaSimulationView: React.FC = () => {
       return acc;
     }, {} as Record<string, { score: number; max: number }>);
   }, [result, questions]);
+
+  // ── B5: Generate 7-day mission plan from weak topics ─────────────────────
+  const handleGeneratePlan = useCallback(async () => {
+    if (!firebaseUser?.uid || planSaving || planCreated) return;
+    setPlanSaving(true);
+    try {
+      const weakest = Object.entries(topicBreakdown)
+        .filter(([, v]) => v.max > 0)
+        .sort(([, a], [, b]) => (a.score / a.max) - (b.score / b.max))[0];
+
+      const primaryTopic = weakest?.[0] ?? 'algebra';
+      const plan = buildMissionPlan(
+        firebaseUser.uid,
+        `simulation-${result?.examTitle ?? 'matura'}`,
+        result?.examTitle ?? 'Симулација',
+        primaryTopic,
+      );
+      await saveMaturaMissionPlan(firebaseUser.uid, plan);
+      setPlanCreated(true);
+    } catch {
+      addNotification('Планот не можеше да се зачува. Обиди се повторно.', 'error');
+    } finally {
+      setPlanSaving(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser?.uid, planSaving, planCreated, topicBreakdown, result]);
 
   // ── Part breakdown ────────────────────────────────────────────────────────
   const partBreakdown = useMemo(() => {
@@ -1023,6 +1057,81 @@ export const MaturaSimulationView: React.FC = () => {
             : <p className="mt-2 text-sm text-indigo-500 italic">Притисни „Анализирај" за персонализиран AI коментар.</p>}
         </Card>
 
+        {/* B5: 7-day mission plan */}
+        {(() => {
+          const weakTopics = Object.entries(topicBreakdown)
+            .filter(([, v]) => v.max > 0 && v.score / v.max < 0.6)
+            .sort(([, a], [, b]) => (a.score / a.max) - (b.score / b.max))
+            .slice(0, 3);
+
+          return (
+            <Card className={planCreated ? 'bg-emerald-50 border-emerald-200' : 'bg-violet-50 border-violet-100'}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className={`w-5 h-5 ${planCreated ? 'text-emerald-600' : 'text-violet-600'}`} />
+                  <h2 className={`font-black ${planCreated ? 'text-emerald-800' : 'text-violet-800'}`}>
+                    {planCreated ? '7-дневен план создаден!' : 'Персонализиран 7-дневен план'}
+                  </h2>
+                </div>
+                {!planCreated && firebaseUser && (
+                  <button
+                    type="button"
+                    onClick={handleGeneratePlan}
+                    disabled={planSaving}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white text-xs font-bold rounded-lg hover:bg-violet-700 transition disabled:opacity-60 shrink-0"
+                  >
+                    {planSaving
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <Target className="w-3.5 h-3.5" />}
+                    {planSaving ? 'Создава…' : 'Генерирај'}
+                  </button>
+                )}
+              </div>
+
+              {planCreated ? (
+                <div className="mt-3 space-y-2">
+                  <p className="text-sm text-emerald-700">
+                    Планот е зачуван и ќе те чека во <strong>Матурскиот портал</strong>. Секој ден ќе имаш конкретна задача со зголемување на тежина (DoK 1 → 3).
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/matura-portal')}
+                    className="mt-1 flex items-center gap-1.5 text-xs font-bold text-emerald-700 border border-emerald-300 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition"
+                  >
+                    <CalendarDays className="w-3.5 h-3.5" /> Отвори го планот
+                  </button>
+                </div>
+              ) : weakTopics.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  <p className="text-sm text-violet-700">
+                    Врз основа на резултатите, планот ќе фокусира на:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {weakTopics.map(([topic, { score, max }]) => {
+                      const tPct = Math.round((score / max) * 100);
+                      return (
+                        <span key={topic} className="inline-flex items-center gap-1 bg-white border border-violet-200 text-violet-800 text-xs font-semibold px-2.5 py-1 rounded-full">
+                          {topic}
+                          <span className="text-rose-500 font-black">{tPct}%</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  {!firebaseUser && (
+                    <p className="text-xs text-violet-500 italic mt-1">
+                      Влези со Google за да го зачуваш планот.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-violet-600 italic">
+                  Одличен резултат! Планот ќе те одржи во форма пред испитот.
+                </p>
+              )}
+            </Card>
+          );
+        })()}
+
         {/* Per-question review */}
         <Card>
           <div className="flex items-center gap-2 mb-4">
@@ -1060,6 +1169,26 @@ export const MaturaSimulationView: React.FC = () => {
                     {/* Part 2/3 feedback */}
                     {(q.part === 2 || q.part === 3) && g?.feedback && (
                       <p className="text-xs mt-0.5 text-gray-600 italic line-clamp-2">{g.feedback}</p>
+                    )}
+                    {/* Expandable AI solution */}
+                    {q.aiSolution && (
+                      <button type="button"
+                        onClick={() => setExpandedSolutions(prev => {
+                          const s = new Set(prev);
+                          s.has(q.questionNumber) ? s.delete(q.questionNumber) : s.add(q.questionNumber);
+                          return s;
+                        })}
+                        className="text-xs text-indigo-600 hover:underline mt-1 font-semibold"
+                      >
+                        {expandedSolutions.has(q.questionNumber) ? '▲ Скриј решение' : '▼ Детално решение'}
+                      </button>
+                    )}
+                    {q.aiSolution && expandedSolutions.has(q.questionNumber) && (
+                      <div className="mt-2 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
+                        <div className="text-xs text-gray-800 leading-relaxed">
+                          <MathRenderer text={q.aiSolution} />
+                        </div>
+                      </div>
                     )}
                   </div>
                   <span className="text-xs font-black text-gray-500 flex-shrink-0">

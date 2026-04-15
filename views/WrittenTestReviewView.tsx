@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import {
   Upload, Camera, FileText, Loader2, CheckCircle2, XCircle, AlertTriangle,
   Brain, Sparkles, ChevronDown, ChevronUp, Trash2, Plus, Eye,
-  Users, BarChart3, Flame, User
+  Users, BarChart3, Flame, User, Wand2,
 } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
 import { persistScanArtifactWithObservability } from '../services/scanArtifactPersistence';
@@ -103,6 +103,11 @@ export const WrittenTestReviewView: React.FC = () => {
 
   const singleInputRef = useRef<HTMLInputElement>(null);
   const batchInputRef = useRef<HTMLInputElement>(null);
+  const extractInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Auto-extract state ──
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
 
   const persistTestArtifact = useCallback(async (
     mimeType: string,
@@ -166,9 +171,45 @@ export const WrittenTestReviewView: React.FC = () => {
   };
   const validQuestions = questions.filter(q => q.text.trim() && q.correctAnswer.trim());
 
+  // ── Auto-extract questions from test document ──
+  const handleExtractQuestions = useCallback(async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) { setExtractError('Максимум 10MB.'); return; }
+    setIsExtracting(true);
+    setExtractError(null);
+    try {
+      const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+      const isDocx = file.name.endsWith('.docx') ||
+        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+      let extracted: Array<{ text: string; correctAnswer: string; points: number }>;
+
+      if (isDocx) {
+        const mammoth = await import('mammoth');
+        const arrayBuffer = await file.arrayBuffer();
+        const { value: text } = await mammoth.extractRawText({ arrayBuffer });
+        if (!text.trim()) { setExtractError('Документот е празен.'); return; }
+        extracted = await geminiService.extractTestQuestions({ kind: 'text', text });
+      } else {
+        // image or PDF — both via Gemini inline data
+        const dataUrl = await readFileAsDataURL(file);
+        const base64 = dataUrl.split(',')[1];
+        const mimeType = isPdf ? 'application/pdf' : file.type;
+        extracted = await geminiService.extractTestQuestions({ kind: isPdf ? 'pdf' : 'image', base64, mimeType });
+      }
+
+      if (!extracted.length) { setExtractError('AI не најде прашања во документот. Провери дали документот е тест.'); return; }
+      setQuestions(extracted.map((q, i) => ({ id: String(i + 1), ...q })));
+    } catch (err) {
+      setExtractError(err instanceof Error ? err.message : 'Грешка при извлекување. Обиди се повторно.');
+    } finally {
+      setIsExtracting(false);
+    }
+  }, []);
+
   // ── Single mode ──
   const handleSingleFile = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/')) { setError('Само слики (JPG, PNG, WebP).'); return; }
+    const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+    if (!file.type.startsWith('image/') && !isPdf) { setError('Поддржани: слики (JPG, PNG, WebP) и PDF.'); return; }
     if (file.size > 10 * 1024 * 1024) { setError('Максимум 10MB.'); return; }
     setImageFile(file);
     setError(null);
@@ -184,8 +225,11 @@ export const WrittenTestReviewView: React.FC = () => {
     setError(null);
     try {
       const base64 = imagePreview.split(',')[1];
+      const mimeType = imageFile.type === 'application/pdf' || imageFile.name.endsWith('.pdf')
+        ? 'application/pdf'
+        : imageFile.type;
       const results = await geminiService.gradeTestWithVision(
-        base64, imageFile.type,
+        base64, mimeType,
         validQuestions.map(q => ({ id: q.id, text: q.text, points: q.points, correctAnswer: q.correctAnswer }))
       );
       if (!results.length) {
@@ -367,12 +411,18 @@ export const WrittenTestReviewView: React.FC = () => {
                     imagePreview ? 'border-violet-300 bg-violet-50/30' : 'border-gray-200 bg-gray-50 hover:border-violet-300 hover:bg-violet-50/20'
                   }`}
                 >
-                  <input ref={singleInputRef} type="file" accept="image/*" className="hidden"
-                    aria-label="Прикачи слика од тест"
+                  <input ref={singleInputRef} type="file" accept="image/*,application/pdf" className="hidden"
+                    aria-label="Прикачи слика или PDF од тест"
                     onChange={e => e.target.files?.[0] && handleSingleFile(e.target.files[0])} />
                   {imagePreview ? (
                     <div className="space-y-3">
-                      <img src={imagePreview} alt="Тест" className="max-h-48 mx-auto rounded-xl shadow-md object-contain" />
+                      {imageFile?.type.startsWith('image/') ? (
+                        <img src={imagePreview} alt="Тест" className="max-h-48 mx-auto rounded-xl shadow-md object-contain" />
+                      ) : (
+                        <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto">
+                          <FileText className="w-8 h-8 text-red-500" />
+                        </div>
+                      )}
                       <p className="text-sm text-violet-700 font-medium">{imageFile?.name}</p>
                       <p className="text-xs text-gray-400">Кликни за промена</p>
                     </div>
@@ -382,7 +432,7 @@ export const WrittenTestReviewView: React.FC = () => {
                         <Camera className="w-8 h-8 text-violet-500" />
                       </div>
                       <p className="font-bold text-gray-700">Повлечи или кликни за прикачување</p>
-                      <p className="text-sm text-gray-400">JPG, PNG, WebP · Максимум 10MB</p>
+                      <p className="text-sm text-gray-400">JPG, PNG, WebP, PDF · Максимум 10MB</p>
                     </div>
                   )}
                 </div>
@@ -476,13 +526,45 @@ export const WrittenTestReviewView: React.FC = () => {
 
             {/* ── Questions ── */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-bold text-gray-700">Прашања и точни одговори</label>
                 <button type="button" onClick={addQuestion}
                   className="flex items-center gap-1.5 text-sm text-violet-600 font-bold hover:text-violet-700">
                   <Plus className="w-4 h-4" /> Додај
                 </button>
               </div>
+
+              {/* Auto-extract banner */}
+              <div className="mb-3 flex items-center gap-3 bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5">
+                <Wand2 className="w-4 h-4 text-violet-500 shrink-0" />
+                <p className="text-xs text-violet-700 flex-1">
+                  <span className="font-bold">Увези автоматски</span> — прикачи слика, PDF или Word од тестот и AI ги пополнува прашањата
+                </p>
+                <input
+                  ref={extractInputRef}
+                  type="file"
+                  accept="image/*,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  aria-label="Увези прашања од документ"
+                  onChange={e => e.target.files?.[0] && handleExtractQuestions(e.target.files[0])}
+                />
+                <button
+                  type="button"
+                  onClick={() => extractInputRef.current?.click()}
+                  disabled={isExtracting}
+                  className="flex items-center gap-1.5 text-xs font-bold bg-violet-600 text-white px-3 py-1.5 rounded-lg hover:bg-violet-700 transition disabled:opacity-60 shrink-0"
+                >
+                  {isExtracting
+                    ? <><Loader2 className="w-3 h-3 animate-spin" /> Извлекува…</>
+                    : <><Wand2 className="w-3 h-3" /> Увези</>}
+                </button>
+              </div>
+              {extractError && (
+                <div className="mb-2 flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {extractError}
+                </div>
+              )}
+
               <div className="space-y-2">
                 {questions.map((q, i) => (
                   <div key={q.id} className="grid grid-cols-12 gap-2 items-center bg-gray-50 rounded-xl px-3 py-2">

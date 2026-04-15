@@ -27,7 +27,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { OfflineError, FirestoreError } from '../utils/errors';
-import type { MaturaCurriculumRefs } from '../types';
+import type { MaturaCurriculumRefs, StudentMaturaProfile, MaturaTrack } from '../types';
 
 interface LocalMaturaRawQuestion {
   questionNumber: number;
@@ -681,4 +681,52 @@ export async function importMaturaFromDraft(draft: MaturaImportDraft): Promise<v
 
   // Invalidate cache so MaturaLibraryView re-fetches
   _examCache = null;
+}
+
+// ─── Student Matura Profile ────────────────────────────────────────────────────
+
+const STUDENT_PROFILES_COL = 'student_matura_profiles';
+
+const DEFAULT_PROFILE = (uid: string, name: string, email: string | undefined, photoURL: string | undefined, track: MaturaTrack): StudentMaturaProfile => ({
+  uid,
+  name,
+  email,
+  photoURL,
+  track,
+  examDate: '2026-06-06',
+  createdAt: new Date().toISOString(),
+  weakTopics: [],
+  practiceStats: { correct: 0, total: 0, byTopic: {} },
+  simulationCount: 0,
+  bestSimulationScore: 0,
+  streak: { count: 0, lastDate: '' },
+  isPremium: false,
+});
+
+export async function getStudentMaturaProfile(uid: string): Promise<StudentMaturaProfile | null> {
+  try {
+    const snap = await getDoc(doc(db, STUDENT_PROFILES_COL, uid));
+    return snap.exists() ? (snap.data() as StudentMaturaProfile) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function createStudentMaturaProfile(
+  uid: string,
+  name: string,
+  email: string | undefined,
+  photoURL: string | undefined,
+  track: MaturaTrack,
+): Promise<StudentMaturaProfile> {
+  const profile = DEFAULT_PROFILE(uid, name, email, photoURL, track);
+  await setDoc(doc(db, STUDENT_PROFILES_COL, uid), profile, { merge: true });
+  return profile;
+}
+
+export async function updateStudentMaturaProfile(
+  uid: string,
+  updates: Partial<StudentMaturaProfile>,
+): Promise<void> {
+  await setDoc(doc(db, STUDENT_PROFILES_COL, uid), updates, { merge: true });
 }

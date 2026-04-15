@@ -1850,6 +1850,62 @@ ${levelDesc}
   },
 
   /**
+   * Extracts test questions and correct answers from a document (image, PDF, or text).
+   * Used to auto-populate the WrittenTestReviewView question list.
+   */
+  async extractTestQuestions(
+    input: { kind: 'image' | 'pdf'; base64: string; mimeType: string } | { kind: 'text'; text: string },
+  ): Promise<Array<{ text: string; correctAnswer: string; points: number }>> {
+    const { PRO_MODEL } = await import('./gemini/core');
+
+    const prompt = `Анализирај го овој тест документ и извлечи ги сите прашања со нивните точни одговори.
+
+Врати JSON во форматот:
+{ "questions": [ { "text": "Текст на прашањето", "correctAnswer": "Точниот одговор", "points": 10 } ] }
+
+Правила:
+- "text": целиот текст на прашањето (без бројот/редниот број)
+- "correctAnswer": точниот одговор, решението или клучниот чекор
+- "points": поени ако се видливи во документот, инаку 10
+- Ако документот е тест без точни одговори, ставај "correctAnswer": "" (наставникот ќе го дополни)
+- Не додавај ништо надвор од JSON`;
+
+    const attempt = async () => {
+      let result;
+      if (input.kind === 'text') {
+        result = await callGeminiProxy({
+          model: PRO_MODEL,
+          skipTierOverride: true,
+          contents: [{ role: 'user', parts: [{ text: `${prompt}\n\n---\n${input.text.slice(0, 8000)}\n---` }] }],
+          generationConfig: { responseMimeType: 'application/json' },
+        });
+      } else {
+        result = await callGeminiProxy({
+          model: PRO_MODEL,
+          skipTierOverride: true,
+          contents: [{ role: 'user', parts: [{ inlineData: { mimeType: input.mimeType, data: input.base64 } }, { text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' },
+        });
+      }
+
+      const parsed = JSON.parse(result.text || '{}') as { questions?: unknown };
+      if (!Array.isArray(parsed.questions)) throw new Error('Невалиден формат');
+
+      return (parsed.questions as Array<Record<string, unknown>>).map((q, i) => ({
+        text: String(q.text ?? `Прашање ${i + 1}`).trim(),
+        correctAnswer: String(q.correctAnswer ?? '').trim(),
+        points: Number.isFinite(Number(q.points)) && Number(q.points) > 0 ? Number(q.points) : 10,
+      })).filter(q => q.text.length > 0);
+    };
+
+    try {
+      return await attempt();
+    } catch {
+      return await attempt(); // one retry
+    }
+  },
+
+  /**
    * Grades a student's handwritten test from a photo using Gemini Vision.
    * Returns per-question score suggestions + misconceptions.
    */
@@ -1908,6 +1964,7 @@ ${questionsStr}
     const attempt = async (attemptPrompt: string) => {
       const result = await callGeminiProxy({
         model: PRO_MODEL,
+        skipTierOverride: true,
         contents: [{ role: 'user', parts: [{ inlineData: { mimeType, data: imageBase64 } }, { text: attemptPrompt }] }],
         generationConfig: { responseMimeType: 'application/json' },
       });

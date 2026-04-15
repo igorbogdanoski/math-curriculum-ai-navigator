@@ -158,6 +158,7 @@ const MaturaLibraryView    = safeLazy(() => import('./views/MaturaLibraryView').
 const MaturaPracticeView   = safeLazy(() => import('./views/MaturaPracticeView').then(module => ({ default: module.MaturaPracticeView })));
 const MaturaAnalyticsView  = safeLazy(() => import('./views/MaturaAnalyticsView').then(module => ({ default: module.MaturaAnalyticsView })));
 const MaturaImportView     = safeLazy(() => import('./views/MaturaImportView').then(module => ({ default: module.MaturaImportView })));
+const MaturaPortalView     = safeLazy(() => import('./views/MaturaPortalView').then(module => ({ default: module.MaturaPortalView })));
 const AIGeneratorPanel = safeLazy(() => import('./components/ai/AIGeneratorPanel').then(module => ({ default: module.AIGeneratorPanel })));
 const AIChatPanel = safeLazy(() => import('./components/ai/AIChatPanel').then(module => ({ default: module.AIChatPanel })));
 const CommandPalette = safeLazy(() => import('./components/common/CommandPalette').then(module => ({ default: module.CommandPalette })));
@@ -241,6 +242,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/matura-practice', component: MaturaPracticeView },
     { path: '/matura-stats', component: MaturaAnalyticsView },
     { path: '/matura-import', component: MaturaImportView },
+    { path: '/matura-portal', component: MaturaPortalView },
     { path: '/slo', component: SLODashboardView }, // L1 — admin-only SLO dashboard
     { path: '/share/:data', component: SharedPlanView },
     { path: '/share/annual/:data', component: SharedAnnualPlanView },

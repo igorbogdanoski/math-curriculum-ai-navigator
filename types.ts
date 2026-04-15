@@ -1100,3 +1100,27 @@ export interface FeedbackReasonBreakdown {
   periodDays: number;
   generatedAt: any;
 }
+
+// ─── Matura Student Profile ────────────────────────────────────────────────────
+
+export type MaturaTrack = 'gymnasium' | 'vocational4';
+
+export interface StudentMaturaProfile {
+  uid: string;
+  name: string;
+  email?: string;
+  photoURL?: string;
+  track: MaturaTrack;
+  examDate: string;
+  createdAt: string;
+  weakTopics: string[];
+  practiceStats: {
+    correct: number;
+    total: number;
+    byTopic: Record<string, { correct: number; total: number }>;
+  };
+  simulationCount: number;
+  bestSimulationScore: number;
+  streak: { count: number; lastDate: string };
+  isPremium?: boolean;
+}
