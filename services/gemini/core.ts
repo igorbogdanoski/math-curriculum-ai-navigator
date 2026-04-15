@@ -12,7 +12,7 @@ import { getAICache, saveAICache } from '../indexedDBService';
 
 // --- CONSTANTS ---
 export const CACHE_COLLECTION = 'cached_ai_materials';
-export const LITE_MODEL = 'gemini-2.0-flash-lite';   // E3 — Intent Router: ultra-fast for trivial tasks
+export const LITE_MODEL = 'gemini-2.5-flash-lite';   // E3 — Intent Router: ultra-fast for trivial tasks (upgraded Jul 2025, supports thinking)
 export const DEFAULT_MODEL = 'gemini-2.5-flash';
 export const PRO_MODEL = 'gemini-2.5-pro';
 export const ULTIMATE_MODEL = 'gemini-3.1-pro-preview';

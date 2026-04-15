@@ -58,7 +58,8 @@ if (!GEMINI_API_KEY) {
 }
 
 // ─── Gemini helper ────────────────────────────────────────────────────────────
-const MODEL = 'gemini-2.5-flash';
+// gemini-2.5-flash-lite: ист 1M context + thinking, пониска цена/RPM → повеќе прашања пред квота
+const MODEL = 'gemini-2.5-flash-lite';
 
 async function callGemini(prompt, retries = 4) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
