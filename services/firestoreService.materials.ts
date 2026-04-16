@@ -287,15 +287,15 @@ export const verifyQuestion = async (questionId: string, verified: boolean): Pro
 
 export const fetchVerifiedQuestions = async (teacherUid: string, conceptId?: string): Promise<SavedQuestion[]> => {
     try {
-      const q = query(
-        collection(db, 'saved_questions'),
+      const constraints = [
         where('teacherUid', '==', teacherUid),
         where('isVerified', '==', true),
-        limit(100)
-      );
+        ...(conceptId ? [where('conceptId', '==', conceptId)] : []),
+        limit(100),
+      ];
+      const q = query(collection(db, 'saved_questions'), ...constraints);
       const snap = await getDocs(q);
-      const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedQuestion));
-      return conceptId ? all.filter(q => q.conceptId === conceptId) : all;
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedQuestion));
     } catch (error) {
       logger.error('Error fetching verified questions:', error);
       return [];

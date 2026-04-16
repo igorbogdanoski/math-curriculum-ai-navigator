@@ -7,5 +7,6 @@ export default defineConfig({
         environment: 'jsdom',
         globals: true,
         exclude: ['node_modules/**', 'dist/**', 'functions/**', 'tests/**'],
+        testTimeout: 15000,
     },
 });

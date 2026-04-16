@@ -120,6 +120,8 @@ const PlannerView = safeLazy(() => import('./views/PlannerView').then(module => 
 const AssistantView = safeLazy(() => import('./views/AssistantView').then(module => ({ default: module.AssistantView })));
 const SettingsView = safeLazy(() => import('./views/SettingsView').then(module => ({ default: module.SettingsView })));
 const AIVisionGraderView = safeLazy(() => import('./views/AIVisionGraderView').then(module => ({ default: module.AIVisionGraderView })));
+const SmartOCRView = safeLazy(() => import('./views/SmartOCRView').then(module => ({ default: module.SmartOCRView })));
+const ExtractionHubView = safeLazy(() => import('./views/ExtractionHubView').then(module => ({ default: module.ExtractionHubView })));
 const ContentReviewView = safeLazy(() => import('./views/ContentReviewView').then(module => ({ default: module.ContentReviewView })));
 const NotFoundView = safeLazy(() => import('./views/NotFoundView').then(module => ({ default: module.NotFoundView })));
 const ProgressionView = safeLazy(() => import('./views/ProgressionView').then(module => ({ default: module.ProgressionView })));
@@ -219,6 +221,8 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/planner/lesson/new', component: LessonPlanEditorView },
     { path: '/assistant', component: AssistantView },
     { path: '/vision-assessment', component: AIVisionGraderView },
+    { path: '/smart-ocr', component: SmartOCRView },
+    { path: '/extraction', component: ExtractionHubView },
     { path: '/generator', component: GeneratorRouteHandler },
     { path: '/my-lessons', component: LessonPlanLibraryView },
     { path: '/library', component: ContentLibraryView },

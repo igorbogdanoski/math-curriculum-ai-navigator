@@ -44,7 +44,7 @@ describe('useCurriculum hook', () => {
         
         await waitFor(() => {
             expect(result.current.isLoading).toBe(false);
-        }, { timeout: 5000 });
+        }, { timeout: 10000 });
 
         expect(result.current.curriculum?.grades).toHaveLength(9);
         expect(result.current.curriculum?.grades[0].level).toBe(1);

@@ -1,13 +1,14 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore, Star, Loader2, Eye, Send } from 'lucide-react';
+import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore, Star, Loader2, Eye, Send, Zap } from 'lucide-react';
 import { firestoreService, type CachedMaterial } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import { callEmbeddingProxy } from '../services/gemini/core';
+import { callEmbeddingProxy, callGeminiProxy, DEFAULT_MODEL, SAFETY_SETTINGS } from '../services/gemini/core';
 import { bm25Score, cosineSimilarity, hybridScore } from '../utils/search';
 import type { AIGeneratedAssessment } from '../types';
+import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 
 // Wave C1 — AI Tutor chat interface
 interface TutorMessage {
@@ -82,31 +83,21 @@ Your role is to:
 
 Keep responses concise (2-3 sentences max), practical, and focused on teacher needs.`;
 
-      // Call Gemini API for chat
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + import.meta.env.VITE_GEMINI_PUBLIC_KEY, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [
-            ...messages.map(m => ({
-              role: m.role === 'user' ? 'user' : 'model',
-              parts: [{ text: m.content }],
-            })),
-            {
-              role: 'user',
-              parts: [{ text: userMessage.content }],
-            },
-          ],
-          generation_config: {
-            temperature: 0.7,
-            max_output_tokens: 500,
-          },
-        }),
+      const proxyResponse = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        systemInstruction: systemPrompt,
+        contents: [
+          ...messages.map(m => ({
+            role: (m.role === 'user' ? 'user' : 'model') as 'user' | 'model',
+            parts: [{ text: m.content }],
+          })),
+          { role: 'user' as const, parts: [{ text: userMessage.content }] },
+        ],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
+        safetySettings: SAFETY_SETTINGS,
       });
 
-      const data = await response.json();
-      const assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      const assistantMessage = proxyResponse.text ||
         'Sorry, I could not generate a response. Please try again.';
 
       setMessages(prev => [...prev, {
@@ -118,7 +109,7 @@ Keep responses concise (2-3 sentences max), practical, and focused on teacher ne
       logger.error('Error calling Gemini API:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Error connecting to AI. Please check your API key and try again.',
+        content: 'Грешка при поврзување со AI. Обидете се повторно.',
         timestamp: Date.now(),
       }]);
     } finally {
@@ -485,6 +476,7 @@ const typeColor: Record<string, string> = {
 export const ContentLibraryView: React.FC = () => {
     const { firebaseUser } = useAuth();
     const { addNotification } = useNotification();
+    const { openGeneratorPanel } = useGeneratorPanel();
     const [materials, setMaterials] = useState<CachedMaterial[]>([]);
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
@@ -813,6 +805,25 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 <Sparkles className="w-3.5 h-3.5" />
                 Tutor
             </button>
+            {/* Generate with AI — opens generator panel pre-filled with material context */}
+            {viewMode === 'my' && (
+                <button
+                    type="button"
+                    title="Генерирај квиз, тест или флешкартички од овој материјал"
+                    onClick={() => openGeneratorPanel({
+                        selectedGrade: m.gradeLevel ? `grade-${m.gradeLevel}` : '',
+                        selectedTopic: m.topicId ?? '',
+                        selectedConcepts: m.conceptId ? [m.conceptId] : [],
+                        extractedText: typeof m.content === 'string'
+                            ? m.content.slice(0, 4000)
+                            : JSON.stringify(m.content).slice(0, 4000),
+                    })}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition"
+                >
+                    <Zap className="w-3.5 h-3.5" />
+                    Генерирај
+                </button>
+            )}
 
             {viewMode === 'national' ? (
                 <>

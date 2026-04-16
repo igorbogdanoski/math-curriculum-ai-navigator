@@ -6,9 +6,10 @@
  *   1. homeworkFeedback  — pedagogical analysis of a student homework scan
  *   2. testGrading       — per-question grading for a handwritten test
  *   3. contentExtraction — extract formulas/theories/tasks from scanned material
+ *   4. smartOCR          — world-class LaTeX digitization of math images/handwriting
  */
 
-import { callGeminiProxy, DEFAULT_MODEL, SAFETY_SETTINGS } from './core';
+import { callGeminiProxy, DEFAULT_MODEL, ULTIMATE_MODEL, SAFETY_SETTINGS } from './core';
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -406,4 +407,209 @@ Rules:
 
   if (result) return { output: result.data, retried: result.retried, fallback: false };
   return { output: CONTENT_EXTRACTION_FALLBACK, retried: true, fallback: true };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTRACT 4 — smart_ocr
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface SmartOCRInput {
+  imageBase64: string;
+  mimeType: string;
+  mode: 'image' | 'handwriting';
+}
+
+export interface SmartOCROutput {
+  latexCode: string;
+  normalizedText: string;
+  formulas: string[];
+  quality: {
+    score: number;
+    label: 'poor' | 'fair' | 'good' | 'excellent';
+  };
+  curriculumHints: {
+    suggestedGrade?: number;
+    suggestedTopicMk?: string;
+    suggestedConceptsMk?: string[];
+    dokLevel?: 1 | 2 | 3 | 4;
+  };
+}
+
+function isSmartOCROutput(o: unknown): o is SmartOCROutput {
+  if (!o || typeof o !== 'object') return false;
+  const obj = o as Record<string, unknown>;
+  const q = obj.quality as Record<string, unknown> | undefined;
+  return (
+    typeof obj.latexCode === 'string' &&
+    typeof obj.normalizedText === 'string' &&
+    Array.isArray(obj.formulas) &&
+    q !== undefined && typeof q.score === 'number' &&
+    ['poor', 'fair', 'good', 'excellent'].includes(q.label as string) &&
+    typeof obj.curriculumHints === 'object' && obj.curriculumHints !== null
+  );
+}
+
+const SMART_OCR_FALLBACK: SmartOCROutput = {
+  latexCode: '',
+  normalizedText: '',
+  formulas: [],
+  quality: { score: 0, label: 'poor' },
+  curriculumHints: {},
+};
+
+export async function smartOCRContract(
+  input: SmartOCRInput,
+): Promise<{ output: SmartOCROutput; retried: boolean; fallback: boolean }> {
+  const modeHint = input.mode === 'handwriting'
+    ? 'The image contains HANDWRITTEN math — prioritize accurate recognition of handwriting.'
+    : 'The image is a printed/digital math document — extract all formulas and text precisely.';
+
+  const prompt = `You are a world-class math OCR engine with expert LaTeX knowledge.
+${modeHint}
+
+Digitize ALL mathematical content from this image into LaTeX. Return ONLY a JSON object:
+{
+  "latexCode": "Full LaTeX representation of all math content. Use $...$ for inline math, $$...$$ for display math. Preserve original structure.",
+  "normalizedText": "Plain-text version of the content (no LaTeX), readable for screen readers.",
+  "formulas": ["each individual formula extracted, as LaTeX string"],
+  "quality": {
+    "score": 90,
+    "label": "excellent"
+  },
+  "curriculumHints": {
+    "suggestedGrade": 8,
+    "suggestedTopicMk": "Алгебра",
+    "suggestedConceptsMk": ["Линеарни равенки", "Системи на равенки"],
+    "dokLevel": 2
+  }
+}
+
+Rules:
+- quality.label: poor(<40), fair(40-69), good(70-89), excellent(≥90)
+- suggestedGrade: integer 1-12 (Macedonian curriculum: 1-9 primary, 10-12 secondary)
+- suggestedTopicMk and suggestedConceptsMk: in Macedonian, match MK math curriculum
+- dokLevel: Webb's Depth of Knowledge — 1=Recall/facts, 2=Skills/concepts, 3=Strategic thinking, 4=Extended thinking
+- If the image is blank or unreadable, set latexCode="" and quality.score≤10
+- Never omit the curriculumHints object (use {} if unsure)`;
+
+  const mediaPart = buildInlinePart(input.imageBase64, input.mimeType);
+  const result = await callWithRetry<SmartOCROutput>(prompt, isSmartOCROutput, [mediaPart]);
+
+  if (result) return { output: result.data, retried: result.retried, fallback: false };
+  return { output: SMART_OCR_FALLBACK, retried: true, fallback: true };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTRACT 5 — web_task_extraction
+// Extracts structured math tasks from plain text (YouTube transcript / webpage)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface ExtractedWebTask {
+  title: string;
+  statement: string;
+  latexStatement: string;
+  difficulty: 'basic' | 'intermediate' | 'advanced';
+  topicMk: string;
+  imagenPrompt: string;
+  dokLevel?: 1 | 2 | 3 | 4;
+}
+
+export interface WebTaskExtractionOutput {
+  tasks: ExtractedWebTask[];
+  topicsSummary: string;
+  quality: {
+    score: number;
+    label: 'poor' | 'fair' | 'good' | 'excellent';
+  };
+}
+
+function isWebTaskExtractionOutput(o: unknown): o is WebTaskExtractionOutput {
+  if (!o || typeof o !== 'object') return false;
+  const obj = o as Record<string, unknown>;
+  const q = obj.quality as Record<string, unknown> | undefined;
+  return (
+    Array.isArray(obj.tasks) &&
+    typeof obj.topicsSummary === 'string' &&
+    q !== undefined && typeof q.score === 'number' &&
+    ['poor', 'fair', 'good', 'excellent'].includes(q.label as string)
+  );
+}
+
+const WEB_TASK_FALLBACK: WebTaskExtractionOutput = {
+  tasks: [],
+  topicsSummary: '',
+  quality: { score: 0, label: 'poor' },
+};
+
+export async function webTaskExtractionContract(input: {
+  text: string;
+  sourceType: 'youtube' | 'webpage';
+  sourceRef?: string;
+  specificInstructions?: string;
+  model?: string;
+}): Promise<{ output: WebTaskExtractionOutput; fallback: boolean }> {
+  const instructionExtra = input.specificInstructions
+    ? `\nSpecific instructions from the teacher: ${input.specificInstructions}`
+    : '';
+
+  const prompt = `You are a world-class Macedonian math teacher extracting educational math tasks from ${
+    input.sourceType === 'youtube' ? 'a YouTube video transcript' : 'a web page'
+  }.${instructionExtra}
+
+Source reference: ${input.sourceRef ?? 'unknown'}
+
+Extract ALL distinct math tasks, problems, examples and exercises from this content.
+Return ONLY a JSON object:
+{
+  "tasks": [
+    {
+      "title": "Short task title in Macedonian (max 8 words)",
+      "statement": "Full task statement in Macedonian, clear and self-contained",
+      "latexStatement": "Same statement but with proper LaTeX math: $...$ inline, $$...$$ display",
+      "difficulty": "basic | intermediate | advanced",
+      "topicMk": "Math topic in Macedonian (e.g. Алгебра, Геометрија, Тригонометрија...)",
+      "imagenPrompt": "English prompt for an educational illustration of this math concept (max 30 words, no text/equations in the image)",
+      "dokLevel": 2
+    }
+  ],
+  "topicsSummary": "Brief summary in Macedonian of the mathematical topics covered",
+  "quality": {
+    "score": 85,
+    "label": "good"
+  }
+}
+
+Rules:
+- Extract ALL tasks, not just some. Min 1 task if any math exists.
+- difficulty: basic = grades 1-6, intermediate = grades 7-9, advanced = grades 10-12
+- dokLevel: Webb's Depth of Knowledge — 1=Recall/facts/procedures, 2=Skills/concepts/interpretation, 3=Strategic thinking/multi-step/proof, 4=Extended thinking/research/interdisciplinary
+- quality.score: 0-100; poor(<40), fair(40-69), good(70-89), excellent(≥90)
+- If no math tasks are found, return tasks:[] and quality.score≤20
+- Write all Macedonian text in Macedonian Cyrillic script
+- imagenPrompt: English only, no formulas, describe a VISUAL concept illustration
+
+TEXT TO ANALYZE (first 12000 chars):
+${input.text.slice(0, 12000)}`;
+
+  const modelToUse = input.model ?? ULTIMATE_MODEL;
+
+  try {
+    const response = await callGeminiProxy({
+      model: modelToUse,
+      contents: [{ role: 'user' as const, parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' },
+      safetySettings: SAFETY_SETTINGS,
+      skipTierOverride: true,
+    });
+
+    const stripped = response.text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    const parsed = JSON.parse(stripped) as unknown;
+    if (isWebTaskExtractionOutput(parsed)) {
+      return { output: parsed, fallback: false };
+    }
+  } catch {
+    // fall through
+  }
+
+  return { output: WEB_TASK_FALLBACK, fallback: true };
 }
