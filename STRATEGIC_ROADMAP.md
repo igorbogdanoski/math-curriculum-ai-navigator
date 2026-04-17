@@ -540,3 +540,56 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 ---
 
 *Овој документ е единствениот извор на вистина за развојната патека. Секоја завршена задача добива ред во Evidence log. Секој нов приоритет се вметнува во соодветниот Sprint блок.*
+
+---
+
+## Sprint S25 — World-Class Audit Remediation (17 Apr 2026)
+
+> Baseline: TSC 0 errors, 614/614 tests passing, commit `d82a6e1` live. Audit наоди изведени од full app review.
+
+### Фаза 1 — Performance emergency (BLOCKER за светско ниво)
+```
+П1. ⏳ Bundle visualizer анализа (vite-bundle-visualizer) — идентификувај што е во index-sKmcH-u6.js (2.93 MB)
+П2. ⏳ Lazy-import на data/curriculum.ts (304 kB) и data/secondaryCurriculum.ts (345 kB)
+П3. ⏳ Експлицитни manualChunks правила за vendor-DHSI2 (1.85 MB) → split по lib
+П4. ⏳ Split MaterialsGeneratorView (255 kB) и TeacherAnalyticsView (232 kB) по tabs
+П5. ⏳ Target: root chunk < 250 kB gzip (моментално 552 kB)
+П6. ⏳ Додај `perf:budget` CI gate за root chunk ≤ 250 kB
+```
+
+### Фаза 2 — Stability hardening
+```
+П7. ⏳ Поправи `as any` во views/FlashcardPlayerView.tsx:29 (Zod schema за CachedMaterial.content)
+П8. ⏳ Замени console.* со logger во: FlashcardPlayerView, SettingsView, TestGeneratorView, WrittenTestReviewView
+П9. ⏳ Parse fix за x-forwarded-for во api/_lib/sharedUtils.ts:227 (.split(',')[0].trim())
+П10. ⏳ Валидирај Vercel env ALLOWED_ORIGIN = https://ai.mismath.net
+```
+
+### Фаза 3 — A11y polish
+```
+П11. ⏳ aria-label на 60+ symbol toolbar копчиња во SmartOCRView
+П12. ⏳ aria-live="polite" на ExtractionHub STAGES progress
+П13. ⏳ role="region" + focus trap во FlashcardPlayerView
+```
+
+### Фаза 4 — Test coverage expansion
+```
+П14. ⏳ Playwright E2E: Smart OCR upload → LaTeX → save
+П15. ⏳ Playwright E2E: ExtractionHub URL → tasks → illustrate
+П16. ⏳ Playwright E2E: Flashcard session (flip, rate, complete)
+П17. ⏳ Unit тест за fetchLibraryPage cursor pagination
+П18. ⏳ Unit тест за CORS origin enforcement
+```
+
+### Фаза 5 — Strategic enhancements
+```
+П19. ⏳ Content moderation layer пред saveToLibrary (AI illustrations safety check)
+П20. ⏳ Firestore composite indexes audit за fetchLibraryPage
+П21. ⏳ SLO alert thresholds (p95 API latency)
+П22. ⏳ Offline-first Matura practice (622 прашања во IndexedDB)
+```
+
+### Evidence log
+```
+| 2026-04-17 | AUDIT | Full app audit completed: baseline TSC 0 / 614 tests; 🔴 bundle bomb (index.js 2.93MB/552KB gzip, vendor 1.85MB/624KB gzip); security posture solid (proxied AI, RBAC rules, rate-limit 20/min); data integrity good (SHA-256 dedup, pagination, proxy-only AITutor); A11y gaps in SmartOCR toolbar + ExtractionHub progress | DONE |
+```

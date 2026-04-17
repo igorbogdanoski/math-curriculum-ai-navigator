@@ -223,8 +223,15 @@ export async function authenticateAndValidate(
     return null;
   }
 
-  // Rate limit identifier (either Firebase UID or IP Address)
-  let rlIdentifier = req.headers['x-forwarded-for'] as string || 'anonymous';
+  // Rate limit identifier (either Firebase UID or IP Address).
+  // x-forwarded-for on Vercel may contain a comma-separated proxy chain
+  // (client, proxy1, proxy2). Take the first (originating client) IP and
+  // fall back to the direct socket address to prevent trivial spoofing.
+  const xff = req.headers['x-forwarded-for'];
+  const xffStr = Array.isArray(xff) ? xff[0] : xff;
+  const firstIp = typeof xffStr === 'string' ? xffStr.split(',')[0]?.trim() : undefined;
+  const socketIp = req.socket?.remoteAddress;
+  let rlIdentifier = firstIp || socketIp || 'anonymous';
 
   // 2. Verify Firebase ID token
   const auth = getFirebaseAdmin();

@@ -25,18 +25,26 @@ interface SessionStats {
     total: number;
 }
 
+type UnknownRecord = Record<string, unknown>;
+type RawTerm = { term?: string; word?: string; front?: string; definition?: string; meaning?: string; back?: string };
+type RawCard = { front?: string; question?: string; term?: string; back?: string; answer?: string; definition?: string; dokLevel?: 1 | 2 | 3 | 4 };
+
+function isRecord(v: unknown): v is UnknownRecord {
+    return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
 function extractFlashcards(material: CachedMaterial): Flashcard[] {
-    const content = material.content as any;
+    const content = material.content;
     if (!content) return [];
 
     const questions: AssessmentQuestion[] = [];
 
-    if (Array.isArray(content.questions)) {
-        questions.push(...content.questions);
+    if (isRecord(content) && Array.isArray(content.questions)) {
+        questions.push(...(content.questions as AssessmentQuestion[]));
     } else if (Array.isArray(content)) {
-        questions.push(...content);
-    } else if (content.content && Array.isArray(content.content.questions)) {
-        questions.push(...content.content.questions);
+        questions.push(...(content as AssessmentQuestion[]));
+    } else if (isRecord(content) && isRecord(content.content) && Array.isArray((content.content as UnknownRecord).questions)) {
+        questions.push(...((content.content as UnknownRecord).questions as AssessmentQuestion[]));
     }
 
     if (questions.length > 0) {
@@ -50,16 +58,16 @@ function extractFlashcards(material: CachedMaterial): Flashcard[] {
         })).filter(c => c.front && c.back);
     }
 
-    if (Array.isArray(content.terms)) {
-        return content.terms.map((t: any, i: number) => ({
+    if (isRecord(content) && Array.isArray(content.terms)) {
+        return (content.terms as RawTerm[]).map((t, i) => ({
             id: `t-${i}`,
             front: t.term ?? t.word ?? t.front ?? '',
             back: t.definition ?? t.meaning ?? t.back ?? '',
         })).filter((c: Flashcard) => c.front && c.back);
     }
 
-    if (Array.isArray(content.cards)) {
-        return content.cards.map((c: any, i: number) => ({
+    if (isRecord(content) && Array.isArray(content.cards)) {
+        return (content.cards as RawCard[]).map((c, i) => ({
             id: `c-${i}`,
             front: c.front ?? c.question ?? c.term ?? '',
             back: c.back ?? c.answer ?? c.definition ?? '',

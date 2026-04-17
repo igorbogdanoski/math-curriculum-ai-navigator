@@ -7,6 +7,7 @@ import {
 import { geminiService } from '../services/geminiService';
 import { persistScanArtifactWithObservability } from '../services/scanArtifactPersistence';
 import { useAuth } from '../contexts/AuthContext';
+import { logger } from '../utils/logger';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -240,7 +241,7 @@ export const WrittenTestReviewView: React.FC = () => {
       try {
         await persistTestArtifact(imageFile.type, results);
       } catch (persistErr) {
-        console.warn('Failed to persist written-test artifact:', persistErr);
+        logger.warn('Failed to persist written-test artifact', persistErr);
         setError('Оценувањето е успешно, но зачувувањето на артефактот не успеа. Обидете се повторно.');
       }
     } catch (err) {
@@ -290,7 +291,7 @@ export const WrittenTestReviewView: React.FC = () => {
         try {
           await persistTestArtifact(sub.file.type, results);
         } catch (persistErr) {
-          console.warn('Failed to persist batch written-test artifact:', persistErr);
+          logger.warn('Failed to persist batch written-test artifact', persistErr);
         }
       } catch {
         setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, status: 'error' } : s));

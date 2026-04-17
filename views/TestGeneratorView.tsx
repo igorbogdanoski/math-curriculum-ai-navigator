@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
+import { logger } from '../utils/logger';
 
 // ── Assessment model metadata ──────────────────────────────────────────────
 
@@ -134,7 +135,7 @@ export const TestGeneratorView: React.FC = () => {
       }
       setGeneratedTest(result);
     } catch (e) {
-      console.error(e);
+      logger.error('TestGeneratorView: generation failed', e);
       addNotification('Настана грешка при генерирањето.', 'error');
     } finally {
       setIsGenerating(false);

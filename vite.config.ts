@@ -323,6 +323,13 @@ export default defineConfig(({ mode }) => {
             // 2) Split known heavy libraries into dedicated chunks.
             // 3) Leave small/medium deps in a generic vendor fallback chunk.
             manualChunks: (id) => {
+              // Split large curriculum data into their own chunks so the
+              // root entry doesn't eagerly parse 600+ kB of JSON-like data
+              // when many services statically import them.
+              const normalized = id.replace(/\\/g, '/');
+              if (normalized.includes('/data/secondaryCurriculum')) return 'data-secondary-curriculum';
+              if (normalized.includes('/data/curriculum')) return 'data-curriculum';
+              if (normalized.includes('/data/matura/')) return 'data-matura';
               if (!id.includes('node_modules')) return undefined;
               // Keep React core in generic vendor chunk to avoid vendor <-> react-core
               // circular runtime references (TDZ in production).
@@ -351,6 +358,11 @@ export default defineConfig(({ mode }) => {
               if (id.includes('file-saver')) return 'vendor-files';
               if (id.includes('@google/generative-ai')) return 'vendor-gemini-client';
               if (id.includes('satori') || id.includes('@resvg')) return 'vendor-svg';
+              if (id.includes('katex')) return 'vendor-katex';
+              if (id.includes('marked') || id.includes('remark') || id.includes('rehype') || id.includes('unified') || id.includes('mdast') || id.includes('micromark')) return 'vendor-markdown';
+              if (id.includes('date-fns') || id.includes('dayjs')) return 'vendor-dates';
+              if (id.includes('framer-motion') || id.includes('motion-dom') || id.includes('motion-utils')) return 'vendor-motion';
+              // NOTE: do not split React core / react-dom — proven TDZ runtime errors with cyclic vendor imports.
               return 'vendor';
             }
           }
