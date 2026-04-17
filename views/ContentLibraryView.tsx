@@ -1,8 +1,10 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore, Star, Loader2, Eye, Send, Zap } from 'lucide-react';
-import { firestoreService, type CachedMaterial } from '../services/firestoreService';
+import { firestoreService, type CachedMaterial, fetchLibraryPage } from '../services/firestoreService';
+import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
 import { callEmbeddingProxy, callGeminiProxy, DEFAULT_MODEL, SAFETY_SETTINGS } from '../services/gemini/core';
@@ -476,6 +478,7 @@ const typeColor: Record<string, string> = {
 export const ContentLibraryView: React.FC = () => {
     const { firebaseUser } = useAuth();
     const { addNotification } = useNotification();
+    const { navigate } = useNavigation();
     const { openGeneratorPanel } = useGeneratorPanel();
     const [materials, setMaterials] = useState<CachedMaterial[]>([]);
     const [loading, setLoading] = useState(false);
@@ -507,6 +510,12 @@ export const ContentLibraryView: React.FC = () => {
     const [dokFilter, setDokFilter] = useState<'all' | number>('all');
     const [difficultyFilter, setDifficultyFilter] = useState('all');
     const [sourceFilter, setSourceFilter] = useState<'all' | ExtractionSource>('all');
+    const [typeFilter, setTypeFilter] = useState<CachedMaterial['type'] | 'all'>('all');
+
+    // Pagination state for 'my' view
+    const [hasMoreMaterials, setHasMoreMaterials] = useState(false);
+    const [lastMaterialDoc, setLastMaterialDoc] = useState<QueryDocumentSnapshot | null>(null);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     // Wave B2 — multi-select batch actions
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -518,6 +527,8 @@ export const ContentLibraryView: React.FC = () => {
     const load = async () => {
         if (!firebaseUser?.uid) return;
         setLoading(true);
+        setLastMaterialDoc(null);
+        setHasMoreMaterials(false);
         try {
             let data: CachedMaterial[];
             if (viewMode === 'archive') {
@@ -525,11 +536,12 @@ export const ContentLibraryView: React.FC = () => {
             } else if (viewMode === 'national') {
                 data = await firestoreService.fetchGlobalLibraryMaterials();
             } else {
-                data = (await firestoreService.fetchLibraryMaterials(firebaseUser.uid))
-                    .filter(m => !m.archivedAt);
+                const page = await fetchLibraryPage(firebaseUser.uid, 50);
+                data = page.items;
+                setHasMoreMaterials(page.hasMore);
+                setLastMaterialDoc(page.lastDoc);
             }
             setMaterials(data);
-            // И3: seed rating state from loaded materials
             if (firebaseUser.uid) {
                 const seeds: Record<string, number> = {};
                 data.forEach(m => {
@@ -542,6 +554,24 @@ export const ContentLibraryView: React.FC = () => {
             addNotification('Грешка при вчитување на библиотеката.', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadMore = async () => {
+        if (!firebaseUser?.uid || !lastMaterialDoc || loadingMore) return;
+        setLoadingMore(true);
+        try {
+            const page = await fetchLibraryPage(firebaseUser.uid, 50, lastMaterialDoc);
+            setMaterials(prev => {
+                const existingIds = new Set(prev.map(m => m.id));
+                return [...prev, ...page.items.filter(m => !existingIds.has(m.id))];
+            });
+            setHasMoreMaterials(page.hasMore);
+            setLastMaterialDoc(page.lastDoc);
+        } catch {
+            addNotification('Грешка при вчитување на повеќе материјали.', 'error');
+        } finally {
+            setLoadingMore(false);
         }
     };
 
@@ -630,6 +660,9 @@ export const ContentLibraryView: React.FC = () => {
         if (sourceFilter !== 'all') {
             results = results.filter(m => getExtractionSource(m) === sourceFilter);
         }
+        if (typeFilter !== 'all') {
+            results = results.filter(m => m.type === typeFilter);
+        }
 
         // 4. И3: Min rating filter (national view)
         if (viewMode === 'national' && minRating > 0) {
@@ -667,6 +700,7 @@ export const ContentLibraryView: React.FC = () => {
         dokFilter,
         difficultyFilter,
         sourceFilter,
+        typeFilter,
     ]);
 
     const handlePublish = async (m: CachedMaterial) => {
@@ -825,6 +859,18 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 </button>
             )}
 
+            {/* Flashcard player — available for quiz/assessment/problems */}
+            {(['quiz', 'assessment', 'problems'] as CachedMaterial['type'][]).includes(m.type) && (
+                <button
+                    type="button"
+                    title="Отвори ги флешкартичките за овој материјал"
+                    onClick={() => navigate(`/flashcard-player?id=${m.id}`)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition"
+                >
+                    🃏 Флешкартички
+                </button>
+            )}
+
             {viewMode === 'national' ? (
                 <>
                     {m.isApproved ? (
@@ -879,6 +925,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
         setDokFilter('all');
         setDifficultyFilter('all');
         setSourceFilter('all');
+        setTypeFilter('all');
         setSortBy('newest');
         setMinRating(0);
     };
@@ -1024,7 +1071,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
             <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 md:p-4">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                     <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Advanced Filters</span>
-                    <span className="text-[11px] text-slate-400">grade / topic / DoK / difficulty / sort</span>
+                    <span className="text-[11px] text-slate-400">тип / одделение / тема / DoK / тежина / сортирање</span>
                     <button
                         type="button"
                         onClick={resetAdvancedFilters}
@@ -1033,7 +1080,26 @@ const handleUnpublish = async (m: CachedMaterial) => {
                         Ресет
                     </button>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-8 gap-2">
+                    <select
+                        title="Филтер по тип на материјал"
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value as CachedMaterial['type'] | 'all')}
+                        className="px-2.5 py-2 text-xs rounded-lg border border-slate-200 bg-white"
+                    >
+                        <option value="all">Тип: Сите</option>
+                        <option value="quiz">Квиз</option>
+                        <option value="assessment">Тест</option>
+                        <option value="problems">Задачи</option>
+                        <option value="analogy">Аналогија</option>
+                        <option value="outline">Резиме</option>
+                        <option value="rubric">Рубрика</option>
+                        <option value="thematicplan">Тематски план</option>
+                        <option value="ideas">Идеи</option>
+                        <option value="discussion">Дискусија</option>
+                        <option value="solver">Решение</option>
+                        <option value="package">Пакет</option>
+                    </select>
                     <select
                         title="Филтер по одделение"
                         value={gradeFilter}
@@ -1234,7 +1300,7 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 </Card>
             ) : (
                 <div className={`space-y-3 ${viewMode === 'my' && selectedIds.size > 0 ? 'pb-32' : ''}`}>
-                    {filtered.map(m => {
+                    {filtered.map((m) => {
                         const isPublished = m.status === 'published';
                         const isEditing = editingId === m.id;
                         const isSelected = selectedIds.has(m.id);
@@ -1387,6 +1453,20 @@ const handleUnpublish = async (m: CachedMaterial) => {
                             </div>
                         );
                     })}
+
+                    {viewMode === 'my' && hasMoreMaterials && (
+                        <div className="flex justify-center pt-4 pb-2">
+                            <button
+                                type="button"
+                                onClick={loadMore}
+                                disabled={loadingMore}
+                                className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 transition"
+                            >
+                                {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                {loadingMore ? 'Вчитување...' : 'Вчитај уште материјали'}
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

@@ -176,6 +176,7 @@ export interface CachedMaterial {
   approvalRef?: string;
   removedQuestionIds?: number[];
   sourceQuizId?: string;
+  contentHash?: string;
 }
 
 export interface RecoveryWorksheetApproval {

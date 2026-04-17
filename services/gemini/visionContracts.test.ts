@@ -10,6 +10,8 @@ import type {
   HomeworkFeedbackOutput,
   TestGradingOutput,
   ContentExtractionOutput,
+  SmartOCROutput,
+  WebTaskExtractionOutput,
 } from './visionContracts';
 
 // ─── Mock callGeminiProxy ──────────────────────────────────────────────────────
@@ -18,6 +20,7 @@ const mockCallGeminiProxy = vi.fn();
 vi.mock('./core', () => ({
   callGeminiProxy: (...args: unknown[]) => mockCallGeminiProxy(...args),
   DEFAULT_MODEL: 'gemini-2.5-flash',
+  ULTIMATE_MODEL: 'gemini-3.1-pro-preview',
   SAFETY_SETTINGS: [],
 }));
 
@@ -324,5 +327,140 @@ describe('contentExtractionContract', () => {
     });
     expect(fallback).toBe(false);
     expect(output.theories.length).toBeGreaterThan(0);
+  });
+});
+
+// ─── smartOCRContract ──────────────────────────────────────────────────────────
+
+const { smartOCRContract } = await import('./visionContracts');
+
+const VALID_SMART_OCR_OUTPUT: SmartOCROutput = {
+  latexCode: '$x^2 + y^2 = r^2$',
+  normalizedText: 'x squared plus y squared equals r squared',
+  formulas: ['x^2 + y^2 = r^2'],
+  quality: { score: 92, label: 'excellent' },
+  curriculumHints: {
+    suggestedGrade: 9,
+    suggestedTopicMk: 'Геометрија',
+    suggestedConceptsMk: ['Кружница', 'Равенка на кружница'],
+    dokLevel: 2,
+  },
+};
+
+describe('smartOCRContract', () => {
+  beforeEach(() => { mockCallGeminiProxy.mockReset(); });
+
+  it('returns parsed OCR output for valid image', async () => {
+    makeProxy(JSON.stringify(VALID_SMART_OCR_OUTPUT));
+    const { output, fallback } = await smartOCRContract({
+      imageBase64: 'base64data==',
+      mimeType: 'image/png',
+      mode: 'image',
+    });
+    expect(fallback).toBe(false);
+    expect(output.latexCode).toBe('$x^2 + y^2 = r^2$');
+    expect(output.quality.label).toBe('excellent');
+    expect(output.curriculumHints.dokLevel).toBe(2);
+    expect(output.formulas).toHaveLength(1);
+  });
+
+  it('returns fallback when AI returns malformed JSON', async () => {
+    makeProxy('not valid json at all');
+    const { output, fallback } = await smartOCRContract({
+      imageBase64: 'base64data==',
+      mimeType: 'image/jpeg',
+      mode: 'handwriting',
+    });
+    expect(fallback).toBe(true);
+    expect(output.latexCode).toBe('');
+    expect(output.quality.score).toBe(0);
+    expect(output.quality.label).toBe('poor');
+  });
+
+  it('includes dokLevel in curriculumHints when provided', async () => {
+    const withDok = { ...VALID_SMART_OCR_OUTPUT, curriculumHints: { ...VALID_SMART_OCR_OUTPUT.curriculumHints, dokLevel: 4 as const } };
+    makeProxy(JSON.stringify(withDok));
+    const { output } = await smartOCRContract({ imageBase64: 'x', mimeType: 'image/png', mode: 'image' });
+    expect(output.curriculumHints.dokLevel).toBe(4);
+  });
+
+  it('accepts empty curriculumHints ({}) without fallback', async () => {
+    const minimal: SmartOCROutput = {
+      latexCode: '$1+1=2$',
+      normalizedText: '1+1=2',
+      formulas: ['1+1=2'],
+      quality: { score: 75, label: 'good' },
+      curriculumHints: {},
+    };
+    makeProxy(JSON.stringify(minimal));
+    const { output, fallback } = await smartOCRContract({ imageBase64: 'x', mimeType: 'image/png', mode: 'image' });
+    expect(fallback).toBe(false);
+    expect(output.curriculumHints).toEqual({});
+  });
+});
+
+// ─── webTaskExtractionContract ─────────────────────────────────────────────────
+
+const { webTaskExtractionContract } = await import('./visionContracts');
+
+const VALID_WTE_OUTPUT: WebTaskExtractionOutput = {
+  tasks: [
+    {
+      title: 'Реши квадратна равенка',
+      statement: 'Реши ја равенката: x² - 5x + 6 = 0',
+      latexStatement: 'Реши ја равенката: $x^2 - 5x + 6 = 0$',
+      difficulty: 'intermediate',
+      topicMk: 'Алгебра',
+      imagenPrompt: 'A parabola intersecting the x-axis at two points on a coordinate plane',
+      dokLevel: 2,
+    },
+  ],
+  topicsSummary: 'Квадратни равенки',
+  quality: { score: 80, label: 'good' },
+};
+
+describe('webTaskExtractionContract', () => {
+  beforeEach(() => { mockCallGeminiProxy.mockReset(); });
+
+  it('returns extracted tasks for valid input', async () => {
+    makeProxy(JSON.stringify(VALID_WTE_OUTPUT));
+    const { output, fallback } = await webTaskExtractionContract({
+      text: 'Денес ќе решиме x²-5x+6=0',
+      sourceType: 'youtube',
+      sourceRef: 'https://youtube.com/watch?v=abc',
+    });
+    expect(fallback).toBe(false);
+    expect(output.tasks).toHaveLength(1);
+    expect(output.tasks[0].dokLevel).toBe(2);
+    expect(output.tasks[0].difficulty).toBe('intermediate');
+  });
+
+  it('returns fallback for invalid JSON response', async () => {
+    makeProxy('{ broken json');
+    const { output, fallback } = await webTaskExtractionContract({
+      text: 'some math content',
+      sourceType: 'webpage',
+    });
+    expect(fallback).toBe(true);
+    expect(output.tasks).toHaveLength(0);
+    expect(output.quality.label).toBe('poor');
+  });
+
+  it('returns fallback when tasks field is missing', async () => {
+    makeProxy(JSON.stringify({ topicsSummary: 'test', quality: { score: 50, label: 'fair' } }));
+    const { output, fallback } = await webTaskExtractionContract({
+      text: 'no tasks here',
+      sourceType: 'webpage',
+    });
+    expect(fallback).toBe(true);
+    expect(output.tasks).toEqual([]);
+  });
+
+  it('handles empty tasks array (no math found)', async () => {
+    const noMath: WebTaskExtractionOutput = { tasks: [], topicsSummary: 'Нема математички задачи', quality: { score: 10, label: 'poor' } };
+    makeProxy(JSON.stringify(noMath));
+    const { output, fallback } = await webTaskExtractionContract({ text: 'hello world', sourceType: 'webpage' });
+    expect(fallback).toBe(false);
+    expect(output.tasks).toHaveLength(0);
   });
 });

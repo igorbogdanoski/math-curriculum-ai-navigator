@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type QueryDocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion, type ScanArtifactRecord } from '../types';
@@ -400,6 +400,12 @@ export const fetchAIMaterialFeedbackSummary = async (
   }
 };
 
+async function computeContentHash(parts: string[]): Promise<string> {
+    const text = parts.join('\x00');
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export const saveToLibrary = async (content: any, meta: {
     title: string;
     type: CachedMaterial['type'];
@@ -409,15 +415,30 @@ export const saveToLibrary = async (content: any, meta: {
     gradeLevel?: number;
     isPublic?: boolean;
 }): Promise<string> => {
-    // Generate embedding for semantic search
+    const contentHash = await computeContentHash([
+        meta.teacherUid,
+        meta.type,
+        meta.conceptId ?? '',
+        meta.title.toLowerCase().trim(),
+    ]);
+
+    const dupQ = query(
+        collection(db, 'cached_ai_materials'),
+        where('contentHash', '==', contentHash),
+        limit(1),
+    );
+    const dupSnap = await getDocs(dupQ);
+    if (!dupSnap.empty) {
+        logger.info('saveToLibrary: dedup hit, returning existing id', dupSnap.docs[0].id);
+        return dupSnap.docs[0].id;
+    }
+
     let embedding: number[] | undefined;
     try {
-        // Embed the title and a snippet of the content for semantic relevance
-        const contentSnippet = typeof content === 'string' 
-            ? content.substring(0, 1000) 
+        const contentSnippet = typeof content === 'string'
+            ? content.substring(0, 1000)
             : JSON.stringify(content).substring(0, 1000);
-        const textToEmbed = `${meta.title}\n${contentSnippet}`;
-        embedding = await callEmbeddingProxy(textToEmbed);
+        embedding = await callEmbeddingProxy(`${meta.title}\n${contentSnippet}`);
     } catch (err) {
         logger.warn('Failed to generate embedding for library item:', err);
     }
@@ -431,8 +452,9 @@ export const saveToLibrary = async (content: any, meta: {
         topicId: meta.topicId,
         gradeLevel: meta.gradeLevel ?? 0,
         status: 'draft',
-        isPublic: meta.isPublic !== false, // default true; PRO can set false
+        isPublic: meta.isPublic !== false,
         embedding,
+        contentHash,
         createdAt: serverTimestamp(),
     });
     return ref.id;
@@ -448,6 +470,45 @@ export const fetchLibraryMaterials = async (teacherUid: string): Promise<CachedM
       return [];
     }
   };
+
+export const fetchLibraryPage = async (
+    teacherUid: string,
+    pageSize = 50,
+    cursor?: QueryDocumentSnapshot,
+): Promise<{ items: CachedMaterial[]; hasMore: boolean; lastDoc: QueryDocumentSnapshot | null }> => {
+    try {
+        const baseConstraints = [
+            where('teacherUid', '==', teacherUid),
+            orderBy('createdAt', 'desc'),
+            limit(pageSize + 1),
+        ];
+        const q = cursor
+            ? query(collection(db, 'cached_ai_materials'), ...baseConstraints, startAfter(cursor))
+            : query(collection(db, 'cached_ai_materials'), ...baseConstraints);
+        const snap = await getDocs(q);
+        const hasMore = snap.docs.length > pageSize;
+        const docs = hasMore ? snap.docs.slice(0, pageSize) : snap.docs;
+        return {
+            items: docs.map(d => ({ id: d.id, ...d.data() } as CachedMaterial)).filter(m => !m.archivedAt),
+            hasMore,
+            lastDoc: docs.length > 0 ? (docs[docs.length - 1] as QueryDocumentSnapshot) : null,
+        };
+    } catch (error) {
+        logger.error('Error fetching library page:', error);
+        return { items: [], hasMore: false, lastDoc: null };
+    }
+};
+
+export const getCachedMaterialById = async (id: string): Promise<CachedMaterial | null> => {
+    try {
+        const snap = await getDoc(doc(db, 'cached_ai_materials', id));
+        if (!snap.exists()) return null;
+        return { id: snap.id, ...snap.data() } as CachedMaterial;
+    } catch (error) {
+        logger.error('Error fetching material by id:', error);
+        return null;
+    }
+};
 
 export const fetchGlobalLibraryMaterials = async (): Promise<CachedMaterial[]> => {
     try {
