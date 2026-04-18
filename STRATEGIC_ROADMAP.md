@@ -583,10 +583,10 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 
 ### Фаза 5 — Strategic enhancements
 ```
-П19. ⏳ Content moderation layer пред saveToLibrary (AI illustrations safety check)
-П20. ⏳ Firestore composite indexes audit за fetchLibraryPage
+П19. ✅ Content moderation layer пред saveToLibrary (profanity/PII/oversized gate + 14 unit tests)
+П20. ✅ Firestore composite indexes audit — (teacherUid ASC + createdAt DESC) веќе постои за fetchLibraryPage
 П21. ⏳ SLO alert thresholds (p95 API latency)
-П22. ⏳ Offline-first Matura practice (622 прашања во IndexedDB)
+П22. ✅ Offline-first Matura practice (matura_exam_cache IndexedDB store, DB v4, 30-day TTL, write-through во getExamQuestions)
 ```
 
 ### Evidence log
@@ -594,4 +594,5 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-17 | AUDIT | Full app audit completed: baseline TSC 0 / 614 tests; 🔴 bundle bomb (index.js 2.93MB/552KB gzip, vendor 1.85MB/624KB gzip); security posture solid (proxied AI, RBAC rules, rate-limit 20/min); data integrity good (SHA-256 dedup, pagination, proxy-only AITutor); A11y gaps in SmartOCR toolbar + ExtractionHub progress | DONE |
 | 2026-04-17 | S25-B1 | Perf breakthrough: root chunk 552→134 kB gzip (-76%); data/matura/curriculum/secondary lazy-split; `as any` removed (FlashcardPlayer); x-forwarded-for spoof-resistant; 3× console→logger. Commit 617ed30 live on ai.mismath.net | DONE |
 | 2026-04-17 | S25-B2 | A11y: SmartOCR toolbar aria-label+role; ExtractionHub aria-live/progressbar; FlashcardPlayer role=region + keyboard Enter/Space flip. perf:budget gate (root-gzip ≤250 kB). 12 new tests (pagination + CORS). 626/626 passing | DONE |
+| 2026-04-18 | S25-B3 | Strategic: content moderation gate (profanity/PII/oversized 512 kB cap) пред saveToLibrary + 14 тестови; Firestore composite index (cached_ai_materials teacherUid+createdAt) audit потврден; IndexedDB matura_exam_cache store (DB v4, 30-day TTL) + write-through + offline-first fallback во maturaService.getExamQuestions. 640/640 passing | DONE |
 ```

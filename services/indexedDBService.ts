@@ -27,13 +27,22 @@ interface MathNavDB extends DBSchema {
       timestamp: number;
     };
   };
+  matura_exam_cache: {
+    key: string;
+    value: {
+      id: string; // examId
+      questions: any[]; // MaturaQuestion[]
+      timestamp: number;
+    };
+  };
 }
 
 const DB_NAME = 'MathNavOfflineDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const AI_CACHE_TTL_MS = 24 * 60 * 60 * 1000;   // 24 h
 const QUIZ_CACHE_TTL_MS_CLEANUP = 7 * 24 * 60 * 60 * 1000; // 7 days
+const MATURA_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days (exams rarely change)
 
 /**
  * Р3-В: Remove expired ai_cache + quiz_content_cache entries.
@@ -99,6 +108,9 @@ export const initDB = () => {
         }
         if (!db.objectStoreNames.contains('quiz_content_cache')) {
           db.createObjectStore('quiz_content_cache', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('matura_exam_cache')) {
+          db.createObjectStore('matura_exam_cache', { keyPath: 'id' });
         }
         // v3 migration: schedule stale-entry cleanup on next tick
         if (oldVersion < 3) {
@@ -180,5 +192,52 @@ export const getCachedQuizContent = async (cacheId: string): Promise<any | null>
     return null;
   } catch {
     return null;
+  }
+};
+
+// ── Matura Exam Offline Cache (П22) ───────────────────────────────────────
+//
+// Caches the full question list for a Matura examId in IndexedDB so students
+// can practice even when completely offline. TTL 30 days — matura questions
+// are historical artifacts and rarely change.
+
+export const cacheMaturaExamQuestions = async (
+  examId: string,
+  questions: unknown[],
+): Promise<void> => {
+  try {
+    const db = await initDB();
+    await db.put('matura_exam_cache', {
+      id: examId,
+      questions: questions as any[],
+      timestamp: Date.now(),
+    });
+  } catch {
+    // non-fatal: student can still fetch from Firestore when online
+  }
+};
+
+export const getCachedMaturaExamQuestions = async (
+  examId: string,
+): Promise<unknown[] | null> => {
+  try {
+    const db = await initDB();
+    const cached = await db.get('matura_exam_cache', examId);
+    if (cached && Date.now() - cached.timestamp < MATURA_CACHE_TTL_MS) {
+      return cached.questions;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+export const getAllCachedMaturaExamIds = async (): Promise<string[]> => {
+  try {
+    const db = await initDB();
+    const keys = await db.getAllKeys('matura_exam_cache');
+    return keys.map(k => String(k));
+  } catch {
+    return [];
   }
 };

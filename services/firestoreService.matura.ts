@@ -28,6 +28,10 @@ import {
 import { db } from '../firebaseConfig';
 import { OfflineError, FirestoreError } from '../utils/errors';
 import type { MaturaCurriculumRefs, StudentMaturaProfile, MaturaTrack } from '../types';
+import {
+  cacheMaturaExamQuestions,
+  getCachedMaturaExamQuestions,
+} from './indexedDBService';
 
 interface LocalMaturaRawQuestion {
   questionNumber: number;
@@ -351,8 +355,21 @@ export const maturaService = {
       }
 
       _questionCache.set(examId, questions);
+      // Write-through to IndexedDB for offline practice (non-blocking).
+      void cacheMaturaExamQuestions(examId, questions);
       return questions;
     } catch (e) {
+      // П22: try IndexedDB offline cache first (30-day TTL).
+      try {
+        const offline = await getCachedMaturaExamQuestions(examId);
+        if (offline && offline.length > 0) {
+          const cached = offline as MaturaQuestion[];
+          _questionCache.set(examId, cached);
+          return cached;
+        }
+      } catch {
+        // ignore and continue to local bundled fallback
+      }
       const local = getLocalMaturaData().byExam.get(examId);
       if (local) {
         _questionCache.set(examId, local);

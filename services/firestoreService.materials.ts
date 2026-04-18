@@ -7,6 +7,7 @@ import { type CachedMaterial, type Assignment, type AIMaterialFeedbackEvent, typ
 import { calcXP, calcStreak, computeNewAchievements } from '../utils/gamification';
 import { callEmbeddingProxy } from './gemini/core';
 import { NotFoundError, OfflineError, FirestoreError } from '../utils/errors';
+import { moderateMaterial } from '../utils/contentModeration';
 import { recordE2EAssignmentWrite } from './e2eTesting';
 
 export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
@@ -415,6 +416,21 @@ export const saveToLibrary = async (content: any, meta: {
     gradeLevel?: number;
     isPublic?: boolean;
 }): Promise<string> => {
+    // Content moderation gate — block profanity/PII/oversized payloads before they reach Firestore.
+    const moderation = moderateMaterial({ title: meta.title, content });
+    if (!moderation.ok) {
+        logger.warn('saveToLibrary blocked by moderation', {
+            reason: moderation.reason,
+            details: moderation.details,
+            teacherUid: meta.teacherUid,
+            type: meta.type,
+        });
+        throw new FirestoreError(
+            'write',
+            `Content blocked by moderation (${moderation.reason}): ${moderation.details ?? 'no details'}`,
+        );
+    }
+
     const contentHash = await computeContentHash([
         meta.teacherUid,
         meta.type,
