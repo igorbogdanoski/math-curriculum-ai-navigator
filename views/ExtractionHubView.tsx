@@ -240,6 +240,7 @@ export const ExtractionHubView: React.FC = () => {
     kind: 'docx' | 'pdf' | 'txt';
     text?: string;
     base64?: string;
+    images?: Array<{ mimeType: string; data: string }>;
   } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -295,8 +296,27 @@ export const ExtractionHubView: React.FC = () => {
       try {
         const ab = await file.arrayBuffer();
         const mammoth = await import('mammoth');
-        const { value: text } = await mammoth.extractRawText({ arrayBuffer: ab });
-        setUploadedDoc({ name, size, kind: 'docx', text });
+        const extractedImages: Array<{ mimeType: string; data: string }> = [];
+        const { value: html } = await mammoth.convertToHtml(
+          { arrayBuffer: ab },
+          {
+            convertImage: mammoth.images.imgElement(async (image) => {
+              try {
+                const ab2 = await image.read();
+                const bytes = new Uint8Array(ab2);
+                let binary = '';
+                for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+                const b64 = btoa(binary);
+                const mime = image.contentType ?? 'image/png';
+                if (extractedImages.length < 5) extractedImages.push({ mimeType: mime, data: b64 });
+              } catch { /* skip unreadable images */ }
+              return { src: '' };
+            }),
+          },
+        );
+        // Strip HTML tags to get plain text
+        const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        setUploadedDoc({ name, size, kind: 'docx', text, images: extractedImages });
       } catch {
         setError('Не може да се отвори .docx датотеката. Проверете дали е валидна.');
       }
@@ -432,7 +452,8 @@ export const ExtractionHubView: React.FC = () => {
       if (!rawText.trim()) { setError('PDF-от е празен или не содржи читлив текст.'); return; }
     }
 
-    await runChunkedExtraction(rawText, 'webpage', uploadedDoc.name);
+    const docMediaParts = uploadedDoc.images?.map(img => ({ inlineData: img }));
+    await runChunkedExtraction(rawText, 'webpage', uploadedDoc.name, docMediaParts);
   };
 
   // ── Shared chunked extraction ─────────────────────────────────────────────
@@ -441,6 +462,7 @@ export const ExtractionHubView: React.FC = () => {
     text: string,
     sourceType: 'youtube' | 'webpage',
     sourceRef: string,
+    mediaParts?: Array<{ inlineData: { mimeType: string; data: string } }>,
   ) => {
     const isLong = text.length > 10_000;
 
@@ -451,6 +473,7 @@ export const ExtractionHubView: React.FC = () => {
         text, sourceType, sourceRef,
         specificInstructions: specificInstructions.trim() || undefined,
         model: selectedModel,
+        mediaParts,
       });
       setProgressPct(95);
       if (fallback || output.tasks.length === 0) {
@@ -473,6 +496,7 @@ export const ExtractionHubView: React.FC = () => {
       text, sourceType, sourceRef,
       specificInstructions: specificInstructions.trim() || undefined,
       model: selectedModel,
+      mediaParts,
       onChunkProgress: (current, total) => {
         setProgressLabel(`Дел ${current}/${total} — Анализа на содржина...`);
         setProgressPct(30 + Math.round((current / total) * 60));
@@ -733,7 +757,7 @@ export const ExtractionHubView: React.FC = () => {
                         <p className="text-xs text-white/50 mt-0.5">
                           {(uploadedDoc.size / 1024).toFixed(0)} KB
                           {uploadedDoc.kind === 'docx' && uploadedDoc.text
-                            ? ` · ${uploadedDoc.text.length.toLocaleString()} знаци извлечени`
+                            ? ` · ${uploadedDoc.text.length.toLocaleString()} знаци извлечени${uploadedDoc.images?.length ? ` · ${uploadedDoc.images.length} слики` : ''}`
                             : uploadedDoc.kind === 'pdf' ? ' · PDF — Gemini Vision ќе чита' : ''}
                         </p>
                       </div>

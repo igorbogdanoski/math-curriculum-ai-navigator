@@ -631,10 +631,11 @@ export async function chunkAndExtractTasks(input: {
   sourceRef?: string;
   specificInstructions?: string;
   model?: string;
+  mediaParts?: Array<{ inlineData: { mimeType: string; data: string } }>;
   onChunkProgress?: (current: number, total: number) => void;
 }): Promise<ChunkExtractionResult> {
   if (input.text.length <= CHUNK_SIZE) {
-    const single = await webTaskExtractionContract(input);
+    const single = await webTaskExtractionContract({ ...input });
     return { ...single, chunksProcessed: 1, tasksBeforeDedup: single.output.tasks.length };
   }
 
@@ -654,6 +655,8 @@ export async function chunkAndExtractTasks(input: {
       sourceRef: input.sourceRef,
       specificInstructions: input.specificInstructions,
       model: input.model,
+      // Pass images only to first chunk — they describe the source document context
+      mediaParts: i === 0 ? input.mediaParts : undefined,
     });
     if (!fallback) {
       allTasks.push(...output.tasks);
@@ -700,6 +703,7 @@ export async function webTaskExtractionContract(input: {
   sourceRef?: string;
   specificInstructions?: string;
   model?: string;
+  mediaParts?: Array<{ inlineData: { mimeType: string; data: string } }>;
 }): Promise<{ output: WebTaskExtractionOutput; fallback: boolean }> {
   const instructionExtra = input.specificInstructions
     ? `\nSpecific instructions from the teacher: ${input.specificInstructions}`
@@ -747,9 +751,10 @@ ${input.text.slice(0, 12000)}`;
   const modelToUse = input.model ?? ULTIMATE_MODEL;
 
   try {
+    const extraParts = (input.mediaParts ?? []).map(mp => ({ inlineData: mp.inlineData }));
     const response = await callGeminiProxy({
       model: modelToUse,
-      contents: [{ role: 'user' as const, parts: [{ text: prompt }] }],
+      contents: [{ role: 'user' as const, parts: [{ text: prompt }, ...extraParts] }],
       generationConfig: { responseMimeType: 'application/json' },
       safetySettings: SAFETY_SETTINGS,
       skipTierOverride: true,

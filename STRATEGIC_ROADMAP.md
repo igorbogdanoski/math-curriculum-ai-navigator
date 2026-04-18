@@ -701,6 +701,41 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S32 — ЗАВРШЕНА ✅ (18 Apr 2026)
+
+```text
+Baseline: TSC 0, 689/689 unit tests
+
+RAG Elevation + DOCX Vision Mode
+
+B1: services/gemini/ragService.ts (НОВО)
+  - fetchFewShotExamples(conceptId, gradeLevel, topicId?) → few-shot RAG
+  - fetchMaturaExamples(): query matura_questions WHERE topicArea + questionType='mc'
+    ORDER BY dokLevel DESC LIMIT 3 → реални матурски примери за калибрација
+  - fetchCachedExamples(): query cached_ai_materials WHERE conceptId + type='assessment'
+    ORDER BY createdAt DESC LIMIT 4 → до 2 прашања по документ → до 8 примери
+  - TOPIC_TO_MATURA_AREA mapping (20+ topic ID prefixes → matura area strings)
+  - Non-blocking: враќа '' на секоја Firestore грешка
+  - Само за grade ≥ 7 (matura examples)
+
+B2: Интеграција ragService → assessment.ts
+  - fetchFewShotExamples() повикан после cache check, пред Gemini call
+  - Injected as { text: fewShotPart } Part во contents[]
+  - AI сега добива реални примери → подобро калибрирана тежина и стил
+
+B3: DOCX HTML mode + image extraction (ExtractionHubView.tsx)
+  - mammoth.extractRawText() → mammoth.convertToHtml() со convertImage callback
+  - Embedded PNG/JPEG слики → base64 → uploadedDoc.images[] (max 5)
+  - UI badge: „N знаци извлечени · M слики"
+
+B4: mediaParts support в webTaskExtractionContract + chunkAndExtractTasks
+  - Нов параметар mediaParts?: Array<{inlineData: {mimeType, data}}>
+  - Само до first chunk (document context) → Gemini Vision го анализира и текстот и сликите
+  - Поддршка за DOCX документи со математички дијаграми и формули во слики
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
+```
+
 ### S31 — ЗАВРШЕНА ✅ (18 Apr 2026)
 
 ```text

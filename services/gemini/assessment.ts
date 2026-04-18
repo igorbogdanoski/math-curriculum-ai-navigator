@@ -1,6 +1,7 @@
 import { Type, Part, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
 import { Concept, QuestionType, GenerationContext, TeachingProfile, DifferentiationLevel, StudentProfile, AIGeneratedAssessment, AIGeneratedPracticeMaterial } from '../../types';
 import { AIGeneratedAssessmentSchema, AIGeneratedPracticeMaterialSchema } from '../../utils/schemas';
+import { fetchFewShotExamples } from './ragService';
 
 const FRACTION_KEYWORDS = ['дропка', 'собирање', 'одземање'];
 
@@ -114,9 +115,12 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
         if (cached) return cached;
     }
 
+    const fewShotPart = await fetchFewShotExamples(conceptCacheId, context.grade.level, context.topic?.id);
+
     const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
+    if (fewShotPart) contents.push({ text: fewShotPart });
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
-    
+
     // RAG INJECTION + secondary track context
     const systemInstr = await buildDynamicSystemInstruction(
         JSON_SYSTEM_INSTRUCTION,
