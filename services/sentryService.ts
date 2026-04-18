@@ -148,9 +148,17 @@ export function captureException(
  *   TTFB good <800ms | needs improvement <1.8s | poor ≥1.8s
  */
 export function reportWebVitals(): void {
-  if (!import.meta.env.VITE_SENTRY_DSN || !import.meta.env.PROD) return;
+  // П23: telemetry runs in production whether or not Sentry DSN is configured.
+  // - Sentry path: rich event with rating + navigationType (when DSN set).
+  // - Beacon path: small POST to /api/web-vitals so the in-memory aggregator
+  //   in api/_lib/webVitalsBuffer.ts can compute p50/p75/p95 per metric on
+  //   warm containers, surfaced via GET /api/web-vitals.
+  if (!import.meta.env.PROD) return;
+
+  const hasSentry = Boolean(import.meta.env.VITE_SENTRY_DSN);
 
   const sendToSentry = (metric: Metric) => {
+    if (!hasSentry) return;
     Sentry.captureEvent({
       message: `Web Vital: ${metric.name}`,
       level: 'info',
@@ -166,9 +174,38 @@ export function reportWebVitals(): void {
     });
   };
 
-  onLCP(sendToSentry);
-  onCLS(sendToSentry);
-  onINP(sendToSentry);
-  onFCP(sendToSentry);
-  onTTFB(sendToSentry);
+  const sendBeacon = (metric: Metric) => {
+    try {
+      const value = Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value);
+      const payload = JSON.stringify({ name: metric.name, value });
+      // sendBeacon is unaffected by page-unload; works without keepalive flags.
+      // Falls back to fetch() with keepalive when sendBeacon is unavailable
+      // (older Safari / non-browser test envs).
+      const nav = typeof navigator !== 'undefined' ? navigator : undefined;
+      if (nav?.sendBeacon) {
+        const blob = new Blob([payload], { type: 'application/json' });
+        nav.sendBeacon('/api/web-vitals', blob);
+      } else if (typeof fetch !== 'undefined') {
+        void fetch('/api/web-vitals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // beacon is best-effort
+    }
+  };
+
+  const dispatch = (metric: Metric) => {
+    sendToSentry(metric);
+    sendBeacon(metric);
+  };
+
+  onLCP(dispatch);
+  onCLS(dispatch);
+  onINP(dispatch);
+  onFCP(dispatch);
+  onTTFB(dispatch);
 }

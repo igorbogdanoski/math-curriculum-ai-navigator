@@ -597,3 +597,28 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-18 | S25-B3 | Strategic: content moderation gate (profanity/PII/oversized 512 kB cap) пред saveToLibrary + 14 тестови; Firestore composite index (cached_ai_materials teacherUid+createdAt) audit потврден; IndexedDB matura_exam_cache store (DB v4, 30-day TTL) + write-through + offline-first fallback во maturaService.getExamQuestions. 640/640 passing | DONE |
 | 2026-04-18 | S25-B4 | Sprint S25 closeout: SLO latency tracker (sloTracker.ts) + 13 тестови, интегриран во api/gemini.ts; Vercel env validator (`vercel:env:check`) script за ALLOWED_ORIGIN/Firebase/Gemini/Upstash; Playwright smoke tests за SmartOCR/ExtractionHub/FlashcardPlayer routes; perf budgets recalibrated (script ≤2.5 MB, total ≤13 MB) — root-gzip останува 132 kB. TSC clean; 653/653 unit tests passing. **Sprint S25: 21/22 закачени (П4 deferred — root веќе at 134 kB gzip)** | DONE |
 ```
+
+---
+
+## Sprint S26 — State-of-the-Art Hardening (18 Apr 2026)
+
+> Baseline по S25: TSC 0 errors, 653/653 unit tests, root-gzip 132 kB, perf budgets зелени, SLO tracker и moderation gate live. Целта на S26: предупредување наместо реакција — реална телеметрија, визуелни регресии, и фино-зрнаста безбедност.
+
+### Цели по приоритет
+```
+П23. ✅ Web Vitals real telemetry — `services/sentryService.ts::reportWebVitals` сега испраќа `navigator.sendBeacon('/api/web-vitals', …)` покрај Sentry. `api/web-vitals.ts` агрегира p50/p75/p95 per metric во `api/_lib/webVitalsBuffer.ts` (200-sample ring, Google "good" buget). 16 unit тестови.
+П24. ⏳ Visual regression на 5 клучни views (Login, MaturaPortal, MaterialsGenerator, ContentLibrary, FlashcardPlayer) преку Playwright `toHaveScreenshot()`.
+П25. ⏳ Strict CSP header во vercel.json — `default-src 'self'; script-src 'self' 'wasm-unsafe-eval' …`. Чисти ги inline скриптите/eval.
+П26. ⏳ AI cost guard — мерење tokens_in/tokens_out по корисник во sloTracker; алертирај над дневен буџет.
+П27. ⏳ MaturaPracticeView offline banner — користи getCachedMaturaExamQuestions; покажи „Офлајн режим“ кога се чита од IndexedDB.
+П28. ⏳ E2E auth fixture — Firebase Emulator во CI; П14–16 smoke да дојдат до вистинските views.
+П29. ⏳ Sentry release tagging — `release: VERCEL_GIT_COMMIT_SHA`; correlation на bug со deploy.
+П30. ⏳ Firestore rules audit на 27 collections — дисциплина `allow read/write: if false` по default; sensible exceptions со коментар.
+```
+
+### Evidence log (S26)
+```
+| date | id | summary | status |
+|------|----|---------|--------|
+| 2026-04-18 | S26-П23 | Web Vitals beacon: `api/web-vitals.ts` (POST ingest + GET p50/p75/p95 snapshot) backed by `api/_lib/webVitalsBuffer.ts` (200-sample FIFO, Google "good" budgets, overBudget flag). `reportWebVitals` сега PROD-only fires Sentry event + `navigator.sendBeacon` (fetch keepalive fallback). 16 unit тестови. TSC clean; 669/669 unit tests passing | DONE |
+```
