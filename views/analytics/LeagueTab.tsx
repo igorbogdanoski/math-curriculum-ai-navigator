@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Trophy, Loader2 } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Trophy, Loader2, Star } from 'lucide-react';
 import { firestoreService, type StudentGamification } from '../../services/firestoreService';
 import { calcFibonacciLevel, getAvatar } from '../../utils/gamification';
 import { useLanguage } from '../../i18n/LanguageContext';
@@ -48,6 +48,21 @@ export const LeagueTab: React.FC<Props> = ({ teacherUid }) => {
       .finally(() => setLoading(false));
   }, [teacherUid]);
 
+  // К5-B: "Ученик на неделата" — highest streak among students active in last 7 days
+  const studentOfWeek = useMemo(() => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const recentlyActive = rows.filter(r => r.gamification.lastActivityDate >= sevenDaysAgo);
+    const pool = recentlyActive.length > 0 ? recentlyActive : rows;
+    return pool.reduce<LeaderRow | null>((best, r) => {
+      if (!best) return r;
+      const bStreak = best.gamification.currentStreak;
+      const rStreak = r.gamification.currentStreak;
+      if (rStreak > bStreak) return r;
+      if (rStreak === bStreak && r.gamification.totalXP > best.gamification.totalXP) return r;
+      return best;
+    }, null);
+  }, [rows]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-gray-400">
@@ -75,6 +90,27 @@ export const LeagueTab: React.FC<Props> = ({ teacherUid }) => {
 
   return (
     <div className="space-y-6">
+
+      {/* К5-B: Ученик на неделата */}
+      {studentOfWeek && (
+        <div className="bg-gradient-to-r from-amber-400 to-yellow-300 rounded-2xl p-4 shadow-lg flex items-center gap-4">
+          <div className="text-4xl drop-shadow">{studentOfWeek.avatar.emoji}</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <Star className="w-4 h-4 text-yellow-800 fill-yellow-800" />
+              <span className="text-xs font-black text-yellow-900 uppercase tracking-widest">Ученик на неделата</span>
+            </div>
+            <p className="text-lg font-black text-yellow-950 truncate">{studentOfWeek.gamification.studentName}</p>
+            <p className="text-xs text-yellow-800">
+              🔥 {studentOfWeek.gamification.currentStreak} ден{studentOfWeek.gamification.currentStreak === 1 ? '' : 'а'} серија
+              &nbsp;·&nbsp; {studentOfWeek.gamification.totalXP} XP
+              &nbsp;·&nbsp; {studentOfWeek.avatar.title}
+            </p>
+          </div>
+          <Trophy className="w-8 h-8 text-yellow-800 shrink-0" fill="currentColor" />
+        </div>
+      )}
+
       {/* Podium */}
       <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-6">
         <h3 className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-4 text-center">Топ 3 на одделението</h3>

@@ -700,3 +700,34 @@ Baseline: TSC 0, 689/689 unit tests
 
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
+
+### S29 — ЗАВРШЕНА ✅ (18 Apr 2026)
+
+```text
+Baseline: TSC 0, 689/689 unit tests
+
+К3: Наставнички диференцијациски Assistant во LessonPlanEditorView
+  - generateDifferentiationActivities(title, grade, theme, objectives) во geminiService.real.ts
+    → LITE_MODEL, JSON schema, 3 активности × 3 нивоа
+  - DifferentiationPanel Card во aside на LessonPlanEditorView:
+    Ниво А (Поддршка / сина), Ниво Б (Стандардно / зелена), Ниво Ц (Надградување / виолетова)
+    „Генерирај" копче → async → bullet list по ниво
+  - handleGenerateDifferentiation useCallback со isMounted guard
+
+К5: Gamification celebrations + „Ученик на неделата"
+
+К5-А: AchievementCelebrationOverlay (components/student/AchievementCelebrationOverlay.tsx)
+  - Fullscreen overlay (z-[100]) со confetti burst при секој нов achievement
+  - Емоџи badge анимирано bounce + glow, achievement label, progress dots
+  - Auto-cycle кога повеќе achievements (2.2s по achievement)
+  - Auto-dismiss по 2.8s на последниот; кликнувањето/X го затвора
+  - Интегриран во QuizResultPanel преку useEffect на gamificationUpdate.newAchievements
+
+К5-Б: „Ученик на неделата" banner во LeagueTab (analytics)
+  - Amber gradient banner на врвот на табелата
+  - Алгоритам: највисок currentStreak меѓу ученици активни во 7 дена;
+    fallback на сите ученици; тај-бреј по totalXP
+  - Прикажува: avatar emoji, ime, streak, XP, avatar title, Trophy icon
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
+```

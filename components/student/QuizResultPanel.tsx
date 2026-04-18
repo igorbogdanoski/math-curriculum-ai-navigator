@@ -5,13 +5,14 @@
  * adaptive homework, gamification, save progress modal.
  * Extracted from StudentPlayView for single-responsibility.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Star, RefreshCw, BookOpen, BarChart2, Sparkles, ExternalLink,
   Trophy, Loader2, MessageSquare, Send, Users, FileText,
 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { ACHIEVEMENTS } from '../../services/firestoreService';
+import { AchievementCelebrationOverlay } from './AchievementCelebrationOverlay';
 import { geminiService } from '../../services/geminiService';
 import { firestoreService } from '../../services/firestoreService';
 import { calcFibonacciLevel, getAvatar } from '../../utils/gamification';
@@ -53,6 +54,14 @@ export const QuizResultPanel: React.FC<QuizResultPanelProps> = ({
   } = session;
 
   const [showRecovery, setShowRecovery] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // К5-A: Fire celebration overlay when new achievements arrive
+  useEffect(() => {
+    if (gamificationUpdate?.newAchievements && gamificationUpdate.newAchievements.length > 0) {
+      setShowCelebration(true);
+    }
+  }, [gamificationUpdate]);
 
   if (!quizResult) return null;
 
@@ -404,6 +413,14 @@ export const QuizResultPanel: React.FC<QuizResultPanelProps> = ({
             onSaved={(uid) => setStudentGoogleUid(uid)}
           />
         </div>
+      )}
+
+      {/* К5-A: Achievement celebration overlay */}
+      {showCelebration && gamificationUpdate && gamificationUpdate.newAchievements.length > 0 && (
+        <AchievementCelebrationOverlay
+          achievementIds={gamificationUpdate.newAchievements}
+          onDismiss={() => setShowCelebration(false)}
+        />
       )}
     </>
   );

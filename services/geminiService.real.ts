@@ -756,6 +756,62 @@ async generateClassRecommendations(analyticsData: {
     return generateAndParseJSON<Array<{ priority: number; icon: string; title: string; explanation: string; actionLabel: string; differentiationLevel: 'support' | 'standard' | 'advanced'; conceptId?: string; conceptTitle?: string }>>([{ text: prompt }], schema, DEFAULT_MODEL);
   },
 
+/**
+ * Generates differentiated activity suggestions for a lesson plan —
+ * Level A (support), B (standard), C (advanced/extension).
+ * Each level returns 3 concrete activities tailored to that group.
+ */
+async generateDifferentiationActivities(
+  title: string,
+  grade: number,
+  theme: string,
+  objectives: string[],
+): Promise<{ support: string[]; standard: string[]; advanced: string[] }> {
+  checkDailyQuotaGuard();
+  const safeTitle = sanitizePromptInput(title, 200);
+  const safeTheme = sanitizePromptInput(theme, 200);
+  const objList = objectives.slice(0, 5).map(o => `- ${sanitizePromptInput(o, 150)}`).join('\n') || '- (без цели)';
+
+  const prompt = `Ти си искусен наставник по математика во македонско основно образование.
+Подготвуваш час за одделение ${grade}:
+Наслов: „${safeTitle}"
+Тема: „${safeTheme}"
+Цели:
+${objList}
+
+Генерирај 3 конкретни активности за секое ниво на диференцијација:
+
+НИВО А (Поддршка): Ученици кои имаат потешкотии. Активностите треба да ги зацврстат основите со визуелна поддршка, манипулативи или градуирани задачи.
+
+НИВО Б (Стандардно): Просечни ученици. Активностите ги применуваат концептите на типични задачи.
+
+НИВО Ц (Надградување): Напредни ученици. Активностите вклучуваат истражување, проблеми со повеќе чекори или примена во реален контекст.
+
+Секоја активност: 1-2 реченици, конкретна, применлива на часот. Пишувај на македонски.
+Врати JSON со клучеви "support", "standard", "advanced" — секој е низа од 3 стринга.`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      support:  { type: Type.ARRAY, items: { type: Type.STRING } },
+      standard: { type: Type.ARRAY, items: { type: Type.STRING } },
+      advanced: { type: Type.ARRAY, items: { type: Type.STRING } },
+    },
+    required: ['support', 'standard', 'advanced'],
+  };
+
+  const result = await generateAndParseJSON<{ support: string[]; standard: string[]; advanced: string[] }>(
+    [{ text: prompt }],
+    schema,
+    LITE_MODEL,
+  );
+  return {
+    support:  result.support?.slice(0, 3) ?? [],
+    standard: result.standard?.slice(0, 3) ?? [],
+    advanced: result.advanced?.slice(0, 3) ?? [],
+  };
+},
+
 async suggestNextLessons(
     recentLessons: Array<{ title: string; date: string; description?: string }>
   ): Promise<Array<{ title: string; description: string; conceptHint: string }>> {
