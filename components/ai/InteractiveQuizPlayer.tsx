@@ -52,11 +52,15 @@ interface Props {
   quiz?: AIGeneratedAssessment | AIGeneratedPracticeMaterial;
   onComplete?: (result: QuizCompletionResult) => void;
   onClose?: () => void;
+  /** Called when student scores ≥80% and wants to move to the next concept */
+  onNextConcept?: () => void;
+  /** Label shown on the next-concept button (defaults to "Следно учи ова →") */
+  nextConceptLabel?: string;
 }
 
 const SECONDS_PER_QUESTION = 20;
 
-export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQuestions, quiz, onComplete, onClose }) => {
+export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQuestions, quiz, onComplete, onClose, onNextConcept, nextConceptLabel }) => {
   // State for Step 1.3: Dynamic parallel generation
   const [dynamicQuestions, setDynamicQuestions] = useState<Question[] | null>(null);
   const [isGeneratingParallel, setIsGeneratingParallel] = useState(false);
@@ -399,6 +403,36 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
               )}
             </div>
           )}
+
+          {/* S28-К1: Next concept navigation */}
+          {(() => {
+            const pct = normalizedQuestions.length > 0
+              ? Math.round((correctCount / normalizedQuestions.length) * 100)
+              : 0;
+            if (pct >= 80 && onNextConcept) {
+              return (
+                <button
+                  type="button"
+                  onClick={onNextConcept}
+                  className="w-full mb-4 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-base transition-all shadow-lg flex items-center justify-center gap-2 active:scale-[0.98]"
+                >
+                  <ArrowRight className="w-5 h-5" />
+                  {nextConceptLabel ?? 'Следно учи ова →'}
+                </button>
+              );
+            }
+            if (pct < 60) {
+              return (
+                <div className="mb-4 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-left">
+                  <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    <span className="font-black">Препорака:</span> Пред да продолжиш, повтори ја темата уште еднаш — резултатот под 60% покажува дека има концепти кои треба да ги зацврстиш.
+                  </p>
+                </div>
+              );
+            }
+            return null;
+          })()}
 
           <div className="flex flex-col gap-3">
             <button

@@ -671,3 +671,32 @@ S27-B3: Readiness path tests — 21 постоечки тести потврде
 
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
+
+### S28 — ЗАВРШЕНА ✅ (18 Apr 2026)
+
+```text
+Baseline: TSC 0, 689/689 unit tests
+
+К1: "Следно учи ова" навигација во InteractiveQuizPlayer
+  - onNextConcept?: () => void + nextConceptLabel?: string props
+  - Score ≥80% + onNextConcept → зелено "Следно учи ова →" копче (ArrowRight)
+  - Score <60% → амбер препорака "Повтори ја темата пред да продолжиш"
+
+К2: Динамичен MaturaCountdown + exam date input во MaturaPortalView
+  - MaturaCountdown прима examDate?: Date | null prop
+  - Fallback на хардкодиран 6 јуни 2026 ако нема корисников датум
+  - MaturaPortalView: date input под countdown (Pencil icon, aria-label)
+  - Поврзан со readiness.setExamDate() → localStorage (MATURA_EXAM_DATE_KEY)
+  - Countdown автоматски се ажурира при промена на датумот
+
+К4: Recovery → Analytics → Action loop (StudentsTab)
+  - StudentsTab добива onAssignRemedialForStudent?: (name: string) => void
+  - Портокалово "Recovery" копче за секој ученик со avg <70%
+  - TeacherAnalyticsView.handleAssignRemedialForStudent():
+    → бара концепт со strugglingStudents.includes(studentName)
+    → сортира по avgPct, го зема најлошиот
+    → отвора AssignRemedialModal со тој концепт + [studentName]
+    → fallback: генерична ремедијација ако нема концепт-ниво податоци
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
+```

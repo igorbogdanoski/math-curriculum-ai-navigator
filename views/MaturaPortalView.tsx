@@ -3,7 +3,7 @@ import {
   BookOpen, BarChart3, Dumbbell, FlaskConical, GraduationCap,
   ArrowRight, Star, Target, TrendingUp, LogIn, LogOut,
   User, CheckCircle2, Loader2, School, Briefcase,
-  ChevronDown, ChevronUp, CalendarDays, AlertCircle,
+  ChevronDown, ChevronUp, CalendarDays, AlertCircle, Pencil,
 } from 'lucide-react';
 import { signInWithPopup, signOut, type User as FBUser } from 'firebase/auth';
 import { auth, googleProvider } from '../firebaseConfig';
@@ -264,7 +264,22 @@ export const MaturaPortalView: React.FC = () => {
 
         {/* Left column: countdown + quick links */}
         <div className="lg:col-span-1 space-y-4">
-          <MaturaCountdown />
+          <MaturaCountdown examDate={readiness.examDate} />
+
+          {/* S28-К2: Exam date input */}
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2.5">
+            <Pencil className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <label className="text-xs font-semibold text-gray-500 shrink-0">Датум на матура:</label>
+            <input
+              type="date"
+              value={readiness.examDate ? readiness.examDate.toISOString().split('T')[0] : ''}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={e => readiness.setExamDate(e.target.value)}
+              title="Датум на матура"
+              aria-label="Датум на матура"
+              className="flex-1 text-xs text-gray-700 border-none outline-none bg-transparent min-w-0"
+            />
+          </div>
 
           {/* Track badge */}
           {profile && (

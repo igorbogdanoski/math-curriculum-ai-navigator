@@ -204,6 +204,25 @@ const { addNotification } = useNotification();
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
+  // S28-К4: Assign remedial from student row — finds worst concept for that student
+  const handleAssignRemedialForStudent = (studentName: string) => {
+    const struggling = allConceptStats
+      .filter(c => c.strugglingStudents?.includes(studentName))
+      .sort((a, b) => a.avgPct - b.avgPct);
+    const worst = struggling[0];
+    if (worst) {
+      handleShowAssignRemedial(worst.conceptId, worst.title, [studentName], worst.misconceptions ?? []);
+    } else {
+      setAssignRemedialState({
+        conceptId: 'general',
+        title: `Ремедијација — ${studentName}`,
+        students: [studentName],
+        misconceptions: [],
+        gradeLevel: 1,
+      });
+    }
+  };
+
   const handleGetRecommendations = async () => {
     if (isLoadingRecs || localResults.length === 0) return;
     setIsLoadingRecs(true);
@@ -563,7 +582,12 @@ const { addNotification } = useNotification();
               />
             )}
             {activeTab === 'trend' && <TrendTab weeklyTrend={weeklyTrend} />}
-            {activeTab === 'students' && <StudentsTab perStudentStats={perStudentStats} />}
+            {activeTab === 'students' && (
+              <StudentsTab
+                perStudentStats={perStudentStats}
+                onAssignRemedialForStudent={handleAssignRemedialForStudent}
+              />
+            )}
             {activeTab === 'grades' && <GradeTab gradeStats={gradeStats} />}
             {activeTab === 'standards' && <StandardsTab standardsCoverage={standardsCoverage} />}
             {activeTab === 'concepts' && (

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Trophy, QrCode, Search } from 'lucide-react';
+import { Trophy, QrCode, Search, ClipboardList } from 'lucide-react';
 
 const PAGE_SIZE = 25;
 import { QRCodeSVG } from 'qrcode.react';
@@ -10,9 +10,11 @@ import { type PerStudentStat, confidenceEmoji, confidenceColor } from './shared'
 
 interface StudentsTabProps {
     perStudentStats: PerStudentStat[];
+    /** Called when teacher clicks "Recovery" for a specific student */
+    onAssignRemedialForStudent?: (studentName: string) => void;
 }
 
-export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => {
+export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats, onAssignRemedialForStudent }) => {
     const [qrStudent, setQrStudent] = useState<string | null>(null);
     const [search, setSearch]       = useState('');
     const [page, setPage]           = useState(1);
@@ -106,7 +108,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => 
                                                 <GradeBadge pct={s.avg} showLabel={true} className="px-2 py-0.5 rounded-full" />
                                             </td>
                                             <td className="py-2.5 px-3">
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     <button
                                                         type="button"
                                                         onClick={() => { window.location.hash = `/my-progress?name=${encodeURIComponent(s.name)}`; }}
@@ -114,6 +116,17 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats }) => 
                                                     >
                                                         Прогрес →
                                                     </button>
+                                                    {onAssignRemedialForStudent && s.avg < 70 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onAssignRemedialForStudent(s.name)}
+                                                            title="Додели ремедијален квиз"
+                                                            className="flex items-center gap-1 px-2 py-0.5 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
+                                                        >
+                                                            <ClipboardList className="w-3 h-3" />
+                                                            Recovery
+                                                        </button>
+                                                    )}
                                                     <button
                                                         type="button"
                                                         onClick={() => setQrStudent(s.name)}
