@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import {
   Sparkles, Globe, ChevronDown, ChevronUp, Loader2, AlertTriangle,
   Check, Copy, Save, Image as ImageIcon, Wand2, X, BookOpen,
-  Play, Tag, ExternalLink,
+  Play, Tag, ExternalLink, FileText, Upload, Link,
 } from 'lucide-react';
 import { DokBadge } from '../components/common/DokBadge';
 import { getAuth } from 'firebase/auth';
@@ -10,6 +10,8 @@ import { MathRenderer } from '../components/common/MathRenderer';
 import { Card } from '../components/common/Card';
 import {
   webTaskExtractionContract,
+  chunkAndExtractTasks,
+  extractTextFromDocument,
   type ExtractedWebTask,
   type WebTaskExtractionOutput,
 } from '../services/gemini/visionContracts';
@@ -37,14 +39,9 @@ const MODEL_OPTIONS: ModelOption[] = [
   { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro (World-Class)' },
 ];
 
-// ─── Progress stages ──────────────────────────────────────────────────────────
+// ─── Source modes ─────────────────────────────────────────────────────────────
 
-const STAGES = [
-  'Поврзување со серверите...',
-  'Вадење на скрипти и рамки...',
-  'Gemini AI: Изолација на математички задачи...',
-  'Форматирање на резултатите...',
-];
+type SourceMode = 'url' | 'document';
 
 // ─── Difficulty badge ─────────────────────────────────────────────────────────
 
@@ -57,30 +54,29 @@ const DIFF_MK: Record<ExtractedWebTask['difficulty'], string> = {
   basic: 'Основно', intermediate: 'Средно', advanced: 'Напредно',
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Progress bar ─────────────────────────────────────────────────────────────
 
-async function buildAuthHeaders(): Promise<HeadersInit> {
-  const currentUser = getAuth(app).currentUser;
-  if (!currentUser) return {};
-  const token = await currentUser.getIdToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-function isYouTubeUrl(url: string) {
-  try {
-    const h = new URL(url).hostname.replace(/^www\./, '');
-    return h === 'youtube.com' || h === 'youtu.be' || h === 'm.youtube.com';
-  } catch { return false; }
-}
+const ExtractionProgress: React.FC<{ label: string; pct: number }> = ({ label, pct }) => (
+  <div className="space-y-2">
+    <div className="flex items-center justify-between text-xs text-white/70">
+      <span className="flex items-center gap-1.5">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        {label}
+      </span>
+      <span>{Math.round(pct)}%</span>
+    </div>
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+      <div
+        className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-violet-400 transition-all duration-700 ease-out"
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  </div>
+);
 
 // ─── Per-task card ────────────────────────────────────────────────────────────
 
-interface TaskCardProps {
-  task: ExtractedWebTask;
-  index: number;
-}
-
-const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
+const TaskCard: React.FC<{ task: ExtractedWebTask; index: number }> = ({ task, index }) => {
   const [imgDataUrl, setImgDataUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
@@ -92,14 +88,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
     try {
       const res = await callImagenProxy({ prompt: task.imagenPrompt });
       if (res.error) { setImgError('Сликата не може да се генерира. Обидете се повторно.'); return; }
-      if (res.inlineData) {
-        setImgDataUrl(`data:${res.inlineData.mimeType};base64,${res.inlineData.data}`);
-      }
-    } catch {
-      setImgError('Грешка при генерирање на слика.');
-    } finally {
-      setIsGenerating(false);
-    }
+      if (res.inlineData) setImgDataUrl(`data:${res.inlineData.mimeType};base64,${res.inlineData.data}`);
+    } catch { setImgError('Грешка при генерирање на слика.'); }
+    finally { setIsGenerating(false); }
   };
 
   const copyLatex = async () => {
@@ -110,7 +101,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
 
   return (
     <Card className="p-5 space-y-3">
-      {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
@@ -129,37 +119,30 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
         </div>
       </div>
 
-      {/* Task statement */}
       <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm leading-relaxed">
         <MathRenderer text={task.latexStatement || task.statement} />
       </div>
 
-      {/* Generated image */}
       {imgDataUrl && (
         <div className="relative overflow-hidden rounded-xl border border-slate-200">
           <img src={imgDataUrl} alt={task.imagenPrompt} className="w-full object-cover" />
           <button
             type="button"
+            aria-label="Отстрани слика"
             onClick={() => setImgDataUrl(null)}
             className="absolute right-2 top-2 rounded-full bg-slate-800/60 p-1 text-white hover:bg-slate-800"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
+      {imgError && <p className="text-xs text-red-500">{imgError}</p>}
 
-      {imgError && (
-        <p className="flex items-center gap-1.5 text-xs text-red-600">
-          <AlertTriangle className="h-3.5 w-3.5" />{imgError}
-        </p>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex gap-2">
         <button
           type="button"
           onClick={copyLatex}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+          className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
         >
           {isCopied ? <><Check className="h-3 w-3 text-emerald-600" /> Копирано</> : <><Copy className="h-3 w-3" /> LaTeX</>}
         </button>
@@ -168,22 +151,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
             type="button"
             onClick={generateImage}
             disabled={isGenerating}
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:from-violet-700 hover:to-indigo-700 disabled:opacity-60 transition"
+            className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition"
           >
-            {isGenerating
-              ? <><Loader2 className="h-3 w-3 animate-spin" /> Генерирам...</>
-              : <><Wand2 className="h-3 w-3" /> Генерирај визуелизација</>}
-          </button>
-        )}
-        {imgDataUrl && (
-          <button
-            type="button"
-            onClick={generateImage}
-            disabled={isGenerating}
-            className="flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-60 transition"
-          >
-            {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
-            Регенерирај
+            {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
+            {isGenerating ? 'Генерира...' : 'Слика'}
           </button>
         )}
       </div>
@@ -191,50 +162,50 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
   );
 };
 
-// ─── Progress bar component ───────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const ExtractionProgress: React.FC<{ stage: number }> = ({ stage }) => {
-  const pct = Math.min(100, Math.round((stage / STAGES.length) * 100));
-  const currentLabel = stage < STAGES.length ? STAGES[stage] : 'Завршено!';
-  return (
-    <div
-      className="space-y-3"
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-      aria-label="Прогрес на AI екстракција"
-    >
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold text-white/90">{currentLabel}</span>
-        <span className="font-mono text-white/60">{pct}%</span>
-      </div>
-      <div
-        className="h-2 w-full overflow-hidden rounded-full bg-white/10"
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuetext={`${currentLabel} — ${pct}%`}
-      >
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-violet-400 transition-all duration-700 ease-out"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <div className="flex gap-1.5" aria-hidden="true">
-        {STAGES.map((s, i) => (
-          <div
-            key={i}
-            title={s}
-            className={`h-1 flex-1 rounded-full transition-all duration-500 ${
-              i < stage ? 'bg-indigo-400' : i === stage ? 'bg-indigo-400/60 animate-pulse' : 'bg-white/10'
-            }`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
+async function buildAuthHeaders(): Promise<HeadersInit> {
+  const currentUser = getAuth(app).currentUser;
+  if (!currentUser) return {};
+  const token = await currentUser.getIdToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function isYouTubeUrl(url: string) {
+  try {
+    const h = new URL(url).hostname.replace(/^www\./, '');
+    return h === 'youtube.com' || h === 'youtu.be' || h === 'm.youtube.com';
+  } catch { return false; }
+}
+
+function parseTimestamp(s: string): number | null {
+  const parts = s.trim().split(':').map(Number);
+  if (parts.some(isNaN)) return null;
+  if (parts.length === 2) return (parts[0] * 60 + parts[1]) * 1000;
+  if (parts.length === 3) return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
+  return null;
+}
+
+function applyTimeRange(caps: VideoCaptionsResult, timeRange: string): string {
+  if (!timeRange.trim() || !caps.segments?.length) return caps.transcript ?? '';
+  const [startStr, endStr] = timeRange.split(/\s*[-–]\s*/);
+  const startMs = startStr ? parseTimestamp(startStr) : null;
+  const endMs = endStr ? parseTimestamp(endStr) : null;
+  if (startMs === null && endMs === null) return caps.transcript ?? '';
+  const filtered = caps.segments.filter((seg) => {
+    const after = startMs === null || seg.startMs >= startMs;
+    const before = endMs === null || seg.endMs <= endMs;
+    return after && before;
+  });
+  return filtered.length ? filtered.map((s) => s.text).join(' ') : (caps.transcript ?? '');
+}
+
+function toBase64(ab: ArrayBuffer): string {
+  const bytes = new Uint8Array(ab);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 
@@ -243,111 +214,247 @@ export const ExtractionHubView: React.FC = () => {
   const { addNotification } = useNotification();
   const { navigate } = useNavigation();
 
+  // ── Source mode ───────────────────────────────────────────────────────────
+  const [sourceMode, setSourceMode] = useState<SourceMode>('url');
+
+  // ── URL mode ──────────────────────────────────────────────────────────────
   const [url, setUrl] = useState('');
+
+  // ── Document mode ─────────────────────────────────────────────────────────
+  const [uploadedDoc, setUploadedDoc] = useState<{
+    name: string;
+    size: number;
+    kind: 'docx' | 'pdf' | 'txt';
+    text?: string;
+    base64?: string;
+  } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Shared ────────────────────────────────────────────────────────────────
   const [selectedModel, setSelectedModel] = useState('gemini-3.1-pro-preview');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [timeRange, setTimeRange] = useState('');
   const [specificInstructions, setSpecificInstructions] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
-  const [progressStage, setProgressStage] = useState(0);
+  const [progressLabel, setProgressLabel] = useState('');
+  const [progressPct, setProgressPct] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const [videoPreview, setVideoPreview] = useState<VideoPreviewData | null>(null);
   const [captions, setCaptions] = useState<VideoCaptionsResult | null>(null);
   const [result, setResult] = useState<WebTaskExtractionOutput | null>(null);
+  const [chunksInfo, setChunksInfo] = useState<{ processed: number; total: number; beforeDedup: number } | null>(null);
+  const [docLabel, setDocLabel] = useState<string | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingToBank, setIsSavingToBank] = useState(false);
   const [isCopiedAll, setIsCopiedAll] = useState(false);
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Stage ticker ──────────────────────────────────────────────────────────
+  // ── Document loading ──────────────────────────────────────────────────────
 
-  const stopProgressTicker = useCallback(() => {
-    setProgressStage(STAGES.length);
+  const loadFile = useCallback(async (file: File) => {
+    const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
+    if (file.size > MAX_SIZE) {
+      setError('Датотеката е поголема од 20 MB. Изберете помала датотека.');
+      return;
+    }
+    const name = file.name;
+    const size = file.size;
+    setError(null);
+    setResult(null);
+    setUploadedDoc(null);
+    setChunksInfo(null);
+    setDocLabel(null);
+
+    const isPdf = file.type === 'application/pdf' || name.endsWith('.pdf');
+    const isDocx = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || name.endsWith('.docx');
+    const isTxt = file.type === 'text/plain' || name.endsWith('.txt');
+
+    if (isPdf) {
+      const ab = await file.arrayBuffer();
+      const base64 = toBase64(ab);
+      setUploadedDoc({ name, size, kind: 'pdf', base64 });
+    } else if (isDocx) {
+      try {
+        const ab = await file.arrayBuffer();
+        const mammoth = await import('mammoth');
+        const { value: text } = await mammoth.extractRawText({ arrayBuffer: ab });
+        setUploadedDoc({ name, size, kind: 'docx', text });
+      } catch {
+        setError('Не може да се отвори .docx датотеката. Проверете дали е валидна.');
+      }
+    } else if (isTxt) {
+      const text = await file.text();
+      setUploadedDoc({ name, size, kind: 'txt', text });
+    } else {
+      setError('Поддржани формати: PDF, DOCX, TXT');
+    }
   }, []);
+
+  const onDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) await loadFile(file);
+  }, [loadFile]);
+
+  const onFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await loadFile(file);
+    e.target.value = '';
+  }, [loadFile]);
 
   // ── Extraction pipeline ───────────────────────────────────────────────────
 
   const extract = async () => {
-    const trimmed = url.trim();
-    if (!trimmed) return;
-    if (!trimmed.startsWith('http')) { setError('Внесете валиден URL (http:// или https://)'); return; }
-
     setIsLoading(true);
     setError(null);
     setResult(null);
     setVideoPreview(null);
     setCaptions(null);
-    setProgressStage(0);
-
-    let rawText = '';
-    let sourceType: 'youtube' | 'webpage' = 'webpage';
+    setChunksInfo(null);
+    setDocLabel(null);
+    setProgressPct(5);
 
     try {
-      if (isYouTubeUrl(trimmed)) {
-        sourceType = 'youtube';
-
-        // Stage 0: fetch preview
-        setProgressStage(0);
-        const preview = await fetchVideoPreview(trimmed);
-        setVideoPreview(preview);
-
-        // Stage 1: fetch captions
-        setProgressStage(1);
-        if (preview.videoId) {
-          const caps = await fetchYouTubeCaptions(preview.videoId, 'mk');
-          setCaptions(caps);
-          if (caps.available && caps.transcript) {
-            rawText = applyTimeRange(caps, timeRange);
-          }
-        }
-        if (!rawText) rawText = `Video title: ${preview.title}\nAuthor: ${preview.authorName ?? 'unknown'}`;
-
+      if (sourceMode === 'url') {
+        await extractFromUrl();
       } else {
-        // Stage 0-1: fetch webpage
-        setProgressStage(0);
-        const headers = await buildAuthHeaders();
-        const params = new URLSearchParams({ url: trimmed });
-        setProgressStage(1);
-        const res = await fetch(`/api/webpage-extract?${params.toString()}`, { headers });
-        const data = await res.json() as { available: boolean; text?: string; title?: string; reason?: string };
-        if (!data.available) throw new Error(data.reason ?? 'Страната не е достапна.');
-        rawText = data.text ?? '';
-      }
-
-      // Stage 2: Gemini extraction
-      setProgressStage(2);
-      const { output, fallback } = await webTaskExtractionContract({
-        text: rawText,
-        sourceType,
-        sourceRef: trimmed,
-        specificInstructions: specificInstructions.trim() || undefined,
-        model: selectedModel,
-      });
-
-      // Stage 3: format
-      setProgressStage(3);
-      await new Promise(r => setTimeout(r, 400));
-      stopProgressTicker();
-
-      if (fallback || output.tasks.length === 0) {
-        setError(
-          fallback
-            ? 'AI не успеа да ги извлече задачите. Обидете се со поконкретен URL или поинакви инструкции.'
-            : 'Не се пронајдени математички задачи во оваа содржина.',
-        );
-      } else {
-        setResult(output);
+        await extractFromDocument();
       }
     } catch (err: unknown) {
-      stopProgressTicker();
       const msg = err instanceof Error ? err.message : 'Грешка при извлекување. Обидете се повторно.';
       setError(msg);
     } finally {
       setIsLoading(false);
+      setProgressLabel('');
+      setProgressPct(0);
+    }
+  };
+
+  // ── URL extraction ────────────────────────────────────────────────────────
+
+  const extractFromUrl = async () => {
+    const trimmed = url.trim();
+    if (!trimmed) { setError('Внесете URL.'); return; }
+    if (!trimmed.startsWith('http')) { setError('Внесете валиден URL (http:// или https://)'); return; }
+
+    let rawText = '';
+    let sourceType: 'youtube' | 'webpage' = 'webpage';
+
+    if (isYouTubeUrl(trimmed)) {
+      sourceType = 'youtube';
+      setProgressLabel('Вадење преглед на видеото...');
+      setProgressPct(10);
+      const preview = await fetchVideoPreview(trimmed);
+      setVideoPreview(preview);
+
+      setProgressLabel('Вадење транскрипт...');
+      setProgressPct(20);
+      if (preview.videoId) {
+        const caps = await fetchYouTubeCaptions(preview.videoId, 'mk');
+        setCaptions(caps);
+        if (caps.available && caps.transcript) {
+          rawText = applyTimeRange(caps, timeRange);
+        }
+      }
+      if (!rawText) rawText = `Video title: ${preview.title}\nAuthor: ${preview.authorName ?? 'unknown'}`;
+    } else {
+      setProgressLabel('Вадење содржина на страната...');
+      setProgressPct(15);
+      const headers = await buildAuthHeaders();
+      const params = new URLSearchParams({ url: trimmed });
+      const res = await fetch(`/api/webpage-extract?${params.toString()}`, { headers });
+      const data = await res.json() as { available: boolean; text?: string; reason?: string };
+      if (!data.available) throw new Error(data.reason ?? 'Страната не е достапна.');
+      rawText = data.text ?? '';
+    }
+
+    await runChunkedExtraction(rawText, sourceType, trimmed);
+  };
+
+  // ── Document extraction ───────────────────────────────────────────────────
+
+  const extractFromDocument = async () => {
+    if (!uploadedDoc) { setError('Изберете документ.'); return; }
+
+    let rawText = '';
+    setDocLabel(uploadedDoc.name);
+
+    if (uploadedDoc.kind === 'txt' || uploadedDoc.kind === 'docx') {
+      rawText = uploadedDoc.text ?? '';
+      if (!rawText.trim()) { setError('Документот е празен или не може да се прочита.'); return; }
+    } else if (uploadedDoc.kind === 'pdf') {
+      setProgressLabel('Gemini Vision: Читање на PDF...');
+      setProgressPct(15);
+      rawText = await extractTextFromDocument(uploadedDoc.base64 ?? '');
+      if (!rawText.trim()) { setError('PDF-от е празен или не содржи читлив текст.'); return; }
+    }
+
+    await runChunkedExtraction(rawText, 'webpage', uploadedDoc.name);
+  };
+
+  // ── Shared chunked extraction ─────────────────────────────────────────────
+
+  const runChunkedExtraction = async (
+    text: string,
+    sourceType: 'youtube' | 'webpage',
+    sourceRef: string,
+  ) => {
+    const isLong = text.length > 10_000;
+
+    if (!isLong) {
+      setProgressLabel('Gemini AI: Изолација на математички задачи...');
+      setProgressPct(60);
+      const { output, fallback } = await webTaskExtractionContract({
+        text, sourceType, sourceRef,
+        specificInstructions: specificInstructions.trim() || undefined,
+        model: selectedModel,
+      });
+      setProgressPct(95);
+      if (fallback || output.tasks.length === 0) {
+        setError(fallback
+          ? 'AI не успеа да ги извлече задачите. Пробајте со поинакви инструкции.'
+          : 'Не се пронајдени математички задачи во оваа содржина.');
+      } else {
+        setResult(output);
+        setChunksInfo({ processed: 1, total: 1, beforeDedup: output.tasks.length });
+      }
+      return;
+    }
+
+    // Long text → chunked
+    const totalChunks = Math.ceil((text.length - 400) / (10_000 - 400)) || 1;
+    setProgressLabel(`Дел 1/${totalChunks} — Анализа на содржина...`);
+    setProgressPct(30);
+
+    const chunkResult = await chunkAndExtractTasks({
+      text, sourceType, sourceRef,
+      specificInstructions: specificInstructions.trim() || undefined,
+      model: selectedModel,
+      onChunkProgress: (current, total) => {
+        setProgressLabel(`Дел ${current}/${total} — Анализа на содржина...`);
+        setProgressPct(30 + Math.round((current / total) * 60));
+      },
+    });
+
+    setProgressPct(95);
+
+    if (chunkResult.fallback || chunkResult.output.tasks.length === 0) {
+      setError(chunkResult.fallback
+        ? 'AI не успеа да ги извлече задачите. Пробајте со поинакви инструкции.'
+        : 'Не се пронајдени математички задачи во оваа содржина.');
+    } else {
+      setResult(chunkResult.output);
+      setChunksInfo({
+        processed: chunkResult.chunksProcessed,
+        total: chunkResult.chunksProcessed,
+        beforeDedup: chunkResult.tasksBeforeDedup,
+      });
     }
   };
 
@@ -363,23 +470,21 @@ export const ExtractionHubView: React.FC = () => {
     setTimeout(() => setIsCopiedAll(false), 2000);
   };
 
-  // ── Save all to library ───────────────────────────────────────────────────
+  // ── Save ──────────────────────────────────────────────────────────────────
 
   const saveAll = async () => {
     if (!result || !firebaseUser) { addNotification('Треба да сте најавени.', 'warning'); return; }
     setIsSaving(true);
     try {
+      const label = sourceMode === 'document' ? (docLabel ?? 'Документ') : url.slice(0, 60);
       await saveToLibrary(result, {
-        title: `Екстракција: ${url.slice(0, 60)}`,
+        title: `Екстракција: ${label}`,
         type: 'problems',
         teacherUid: firebaseUser.uid,
       });
       addNotification(`Зачувани ${result.tasks.length} задачи во библиотека! ✓`, 'success');
-    } catch {
-      addNotification('Зачувувањето не успеа.', 'error');
-    } finally {
-      setIsSaving(false);
-    }
+    } catch { addNotification('Зачувувањето не успеа.', 'error'); }
+    finally { setIsSaving(false); }
   };
 
   const saveAllToBank = async () => {
@@ -399,29 +504,37 @@ export const ExtractionHubView: React.FC = () => {
         })
       ));
       addNotification(`${result.tasks.length} задачи зачувани во банка! ✓`, 'success');
-    } catch {
-      addNotification('Зачувувањето не успеа.', 'error');
-    } finally {
-      setIsSavingToBank(false);
-    }
+    } catch { addNotification('Зачувувањето не успеа.', 'error'); }
+    finally { setIsSavingToBank(false); }
   };
 
   const reset = () => {
     setUrl('');
+    setUploadedDoc(null);
     setResult(null);
     setError(null);
     setVideoPreview(null);
     setCaptions(null);
-    setProgressStage(0);
-    inputRef.current?.focus();
+    setChunksInfo(null);
+    setDocLabel(null);
+    setProgressPct(0);
+    setProgressLabel('');
+    urlInputRef.current?.focus();
   };
 
-  // ── Quality colour ────────────────────────────────────────────────────────
+  // ── Quality label ─────────────────────────────────────────────────────────
 
   const qualityMk: Record<string, string> = {
     poor: 'Слабо', fair: 'Добро', good: 'Многу добро', excellent: 'Одлично',
   };
 
+  const canExtract = isLoading
+    ? false
+    : sourceMode === 'url'
+      ? url.trim().startsWith('http')
+      : uploadedDoc !== null;
+
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen">
 
@@ -437,7 +550,8 @@ export const ExtractionHubView: React.FC = () => {
         </div>
 
         <div className="relative z-10 mx-auto max-w-3xl space-y-8">
-          {/* Icon duo */}
+
+          {/* Icon trio */}
           <div className="flex items-center justify-center">
             <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-sm">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/20">
@@ -447,60 +561,175 @@ export const ExtractionHubView: React.FC = () => {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/20">
                 <Globe className="h-5 w-5 text-blue-400" />
               </div>
+              <div className="h-6 w-px bg-white/20" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20">
+                <FileText className="h-5 w-5 text-emerald-400" />
+              </div>
             </div>
           </div>
 
           {/* Title */}
           <div>
             <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-              YouTube &amp; Веб Екстрактор
+              YouTube, Веб &amp; Документ Екстрактор
             </h1>
             <p className="mt-3 text-base text-white/60">
-              Претворете каков било YouTube туторијал или веб страна во<br className="hidden sm:block" />
-              структурирани дигитални задачи со помош на Gemini 3.1 Pro.
+              Претворете YouTube туторијал, веб страна или документ (PDF, DOCX, TXT)<br className="hidden sm:block" />
+              во структурирани математички задачи со помош на Gemini AI.
             </p>
           </div>
 
-          {/* URL input card */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">🔗</span>
-                <input
-                  ref={inputRef}
-                  type="url"
-                  value={url}
-                  onChange={(e) => { setUrl(e.target.value); setError(null); setResult(null); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !isLoading) extract(); }}
-                  placeholder="Вметнете YouTube линк или било која веб-адреса..."
-                  disabled={isLoading}
-                  className="w-full rounded-xl border border-white/10 bg-white/10 py-3.5 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:border-indigo-400/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 disabled:opacity-60"
-                />
-              </div>
+          {/* Source mode toggle */}
+          <div className="flex justify-center gap-2">
+            {[
+              { mode: 'url' as SourceMode, icon: Link, label: 'URL (YouTube / Веб)' },
+              { mode: 'document' as SourceMode, icon: FileText, label: 'Документ (PDF / DOCX / TXT)' },
+            ].map(({ mode, icon: Icon, label }) => (
               <button
+                key={mode}
                 type="button"
-                onClick={extract}
-                disabled={!url.trim() || isLoading}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-3.5 font-bold text-white transition hover:from-indigo-600 hover:to-violet-600 disabled:opacity-50"
+                onClick={() => { setSourceMode(mode); setError(null); setResult(null); }}
+                disabled={isLoading}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:opacity-50 ${
+                  sourceMode === mode
+                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
+                    : 'border border-white/10 bg-white/5 text-white/60 hover:bg-white/10'
+                }`}
               >
-                <Sparkles className="h-4 w-4" />
-                Екстрахирај
+                <Icon className="h-4 w-4" />
+                {label}
               </button>
-            </div>
+            ))}
+          </div>
 
-            {/* Row 2: model + advanced */}
+          {/* Input card */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+
+            {/* ── URL mode ── */}
+            {sourceMode === 'url' && (
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">🔗</span>
+                  <input
+                    ref={urlInputRef}
+                    type="url"
+                    value={url}
+                    onChange={(e) => { setUrl(e.target.value); setError(null); setResult(null); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && canExtract) extract(); }}
+                    placeholder="Вметнете YouTube линк или било која веб-адреса..."
+                    disabled={isLoading}
+                    className="w-full rounded-xl border border-white/10 bg-white/10 py-3.5 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:border-indigo-400/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 disabled:opacity-60"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={extract}
+                  disabled={!canExtract}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-3.5 font-bold text-white transition hover:from-indigo-600 hover:to-violet-600 disabled:opacity-50"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Екстрахирај
+                </button>
+              </div>
+            )}
+
+            {/* ── Document mode ── */}
+            {sourceMode === 'document' && (
+              <div className="space-y-3">
+                {/* Drop zone */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={onDrop}
+                  className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-8 text-center transition cursor-pointer ${
+                    isDragging
+                      ? 'border-indigo-400 bg-indigo-500/10'
+                      : uploadedDoc
+                        ? 'border-emerald-400/50 bg-emerald-500/10'
+                        : 'border-white/20 bg-white/5 hover:border-white/30 hover:bg-white/8'
+                  }`}
+                  onClick={() => !isLoading && fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain"
+                    className="sr-only"
+                    aria-label="Изберете документ (PDF, DOCX или TXT)"
+                    title="Изберете документ"
+                    onChange={onFileChange}
+                    disabled={isLoading}
+                  />
+
+                  {uploadedDoc ? (
+                    <>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20">
+                        <FileText className="h-6 w-6 text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">{uploadedDoc.name}</p>
+                        <p className="text-xs text-white/50 mt-0.5">
+                          {(uploadedDoc.size / 1024).toFixed(0)} KB
+                          {uploadedDoc.kind === 'docx' && uploadedDoc.text
+                            ? ` · ${uploadedDoc.text.length.toLocaleString()} знаци извлечени`
+                            : uploadedDoc.kind === 'pdf' ? ' · PDF — Gemini Vision ќе чита' : ''}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Отстрани документ"
+                        onClick={(e) => { e.stopPropagation(); setUploadedDoc(null); setResult(null); setError(null); }}
+                        className="absolute right-3 top-3 rounded-lg p-1 text-white/40 hover:text-white/80 transition"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                        <Upload className="h-6 w-6 text-white/60" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-white/80">Повлечете датотека тука</p>
+                        <p className="text-xs text-white/40 mt-1">или кликнете за да изберете</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {['PDF', 'DOCX', 'TXT'].map(fmt => (
+                          <span key={fmt} className="rounded-lg bg-white/10 px-2.5 py-1 text-xs font-bold text-white/60">{fmt}</span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-white/30">Максимум 20 MB</p>
+                    </>
+                  )}
+                </div>
+
+                {/* Extract button */}
+                <button
+                  type="button"
+                  onClick={extract}
+                  disabled={!canExtract}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3.5 font-bold text-white transition hover:from-indigo-600 hover:to-violet-600 disabled:opacity-50"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Екстрахирај задачи
+                </button>
+              </div>
+            )}
+
+            {/* ── Model + advanced (shared) ── */}
             <div className="mt-3 flex items-center justify-between gap-3">
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
                 disabled={isLoading}
+                aria-label="Избери AI модел"
+                title="Избери AI модел"
                 className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-medium text-white/80 focus:outline-none focus:ring-1 focus:ring-indigo-400 disabled:opacity-50"
               >
                 {MODEL_OPTIONS.map((m) => (
                   <option key={m.id} value={m.id} className="bg-slate-900 text-white">{m.label}</option>
                 ))}
               </select>
-
               <button
                 type="button"
                 onClick={() => setShowAdvanced(!showAdvanced)}
@@ -511,21 +740,22 @@ export const ExtractionHubView: React.FC = () => {
               </button>
             </div>
 
-            {/* Advanced options */}
             {showAdvanced && (
               <div className="mt-3 space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
-                <div>
-                  <label className="block text-xs font-semibold text-white/60 mb-1">
-                    Временски опсег (само за YouTube, пр. 5:30 - 12:45)
-                  </label>
-                  <input
-                    type="text"
-                    value={timeRange}
-                    onChange={(e) => setTimeRange(e.target.value)}
-                    placeholder="пр. 3:00 - 18:30"
-                    className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                  />
-                </div>
+                {sourceMode === 'url' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-white/60 mb-1">
+                      Временски опсег (само за YouTube, пр. 5:30 - 12:45)
+                    </label>
+                    <input
+                      type="text"
+                      value={timeRange}
+                      onChange={(e) => setTimeRange(e.target.value)}
+                      placeholder="пр. 3:00 - 18:30"
+                      className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold text-white/60 mb-1">
                     Специфични инструкции (опционално)
@@ -542,9 +772,9 @@ export const ExtractionHubView: React.FC = () => {
             )}
 
             {/* Progress */}
-            {isLoading && (
+            {isLoading && progressLabel && (
               <div className="mt-4">
-                <ExtractionProgress stage={progressStage} />
+                <ExtractionProgress label={progressLabel} pct={progressPct} />
               </div>
             )}
 
@@ -593,16 +823,16 @@ export const ExtractionHubView: React.FC = () => {
                 {captions && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      captions.available
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-amber-100 text-amber-700'
+                      captions.available ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
                     }`}>
                       {captions.available
                         ? `✓ Транскрипт: ${(captions.charCount ?? 0).toLocaleString()} знаци`
                         : '⚠ Нема субтитли'}
                     </span>
                     {captions.truncated && (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">Скратен</span>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
+                        Скратен (&gt;80K)
+                      </span>
                     )}
                   </div>
                 )}
@@ -615,7 +845,23 @@ export const ExtractionHubView: React.FC = () => {
                   <ExternalLink className="h-3 w-3" /> Отвори видео
                 </a>
               </div>
-              <button type="button" onClick={reset} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600">
+              <button type="button" aria-label="Затвори" onClick={reset} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600">
+                <X className="h-4 w-4" />
+              </button>
+            </Card>
+          )}
+
+          {/* Document source label */}
+          {docLabel && !videoPreview && (
+            <Card className="flex items-center gap-3 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
+                <FileText className="h-5 w-5 text-indigo-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-slate-800 truncate">{docLabel}</p>
+                <p className="text-xs text-slate-400">Документ</p>
+              </div>
+              <button type="button" aria-label="Затвори" onClick={reset} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600">
                 <X className="h-4 w-4" />
               </button>
             </Card>
@@ -634,6 +880,20 @@ export const ExtractionHubView: React.FC = () => {
                       <Tag className="h-3.5 w-3.5" />
                       {result.topicsSummary}
                     </p>
+                  )}
+                  {/* Chunks badge */}
+                  {chunksInfo && chunksInfo.processed > 1 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                        <Wand2 className="h-3 w-3" />
+                        {chunksInfo.processed} делови анализирани
+                      </span>
+                      {chunksInfo.beforeDedup > result.tasks.length && (
+                        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
+                          {chunksInfo.beforeDedup - result.tasks.length} дупликати отстранети
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -665,7 +925,7 @@ export const ExtractionHubView: React.FC = () => {
                     type="button"
                     onClick={saveAllToBank}
                     disabled={isSavingToBank}
-                    title="Зачувај сите задачи во банка на задачи (saved_questions)"
+                    title="Зачувај сите задачи во банка на задачи"
                     className="flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50 transition"
                   >
                     {isSavingToBank ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
@@ -694,27 +954,3 @@ export const ExtractionHubView: React.FC = () => {
     </div>
   );
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function parseTimestamp(s: string): number | null {
-  const parts = s.trim().split(':').map(Number);
-  if (parts.some(isNaN)) return null;
-  if (parts.length === 2) return (parts[0] * 60 + parts[1]) * 1000;
-  if (parts.length === 3) return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
-  return null;
-}
-
-function applyTimeRange(caps: VideoCaptionsResult, timeRange: string): string {
-  if (!timeRange.trim() || !caps.segments?.length) return caps.transcript ?? '';
-  const [startStr, endStr] = timeRange.split(/\s*[-–]\s*/);
-  const startMs = startStr ? parseTimestamp(startStr) : null;
-  const endMs = endStr ? parseTimestamp(endStr) : null;
-  if (startMs === null && endMs === null) return caps.transcript ?? '';
-  const filtered = caps.segments.filter((seg) => {
-    const after = startMs === null || seg.startMs >= startMs;
-    const before = endMs === null || seg.endMs <= endMs;
-    return after && before;
-  });
-  return filtered.length ? filtered.map((s) => s.text).join(' ') : (caps.transcript ?? '');
-}

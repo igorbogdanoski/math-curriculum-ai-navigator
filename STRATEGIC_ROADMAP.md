@@ -701,6 +701,48 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S30 — ЗАВРШЕНА ✅ (18 Apr 2026)
+
+```text
+Baseline: TSC 0, 689/689 unit tests
+
+Темелна ревизија + world-class надградување на Extraction Engine
+
+A1: YouTube Transcript Robustness (api/youtube-captions.ts)
+  - Нова Стратегија 1: директен YouTube Timedtext API (/api/timedtext?v=...&lang=...&fmt=json3)
+    без page scraping — побрзо, не зависи од HTML структура на YouTube
+    Priority: manual preferred → auto preferred → manual mk → auto mk → manual en → auto en
+  - Стратегија 2 (fallback): page scrape со 4 regex паттерни + реален Chrome User-Agent
+  - Лимит: 80,000 знаци (наместо 12K) — покрива ~50-60 мин видео
+  - Враќа strategy: 'direct'|'page-scrape' за debugging
+  - Потполно рефакториран во конзистентна архитектура (parseJson3Events shared helper)
+
+A2: Chunked extraction (services/gemini/visionContracts.ts)
+  - extractTextFromDocument(pdfBase64): PDF → Gemini Vision → plain text со LaTeX
+  - chunkAndExtractTasks(input): долги текстови → 10K chunks (400 overlap) → секвенцијален
+    Gemini → merge → dedup по normalized statement prefix (80 chars) → единствен резултат
+  - ChunkExtractionResult type: { output, fallback, chunksProcessed, tasksBeforeDedup }
+  - onChunkProgress callback за live progress во UI
+
+A3: ExtractionHubView — World-Class Document + Video Extraction
+  - Source mode toggle: "URL (YouTube/Веб)" | "Документ (PDF/DOCX/TXT)"
+  - Document режим: drag-and-drop drop zone + file picker
+    • DOCX → mammoth.js (client-side, синхрон) → text → chunkAndExtractTasks
+    • PDF → extractTextFromDocument (Gemini Vision) → text → chunkAndExtractTasks
+    • TXT → FileReader → text → chunkAndExtractTasks
+    • Лимит: 20 MB; визуелен preview на uploadot (name, size, извлечени знаци)
+  - Chunked progress: "Дел X/Y — Анализа на содржина..." со % progress bar
+  - Results: badges за "N делови анализирани" + "M дупликати отстранети"
+  - URL режим: автоматски користи chunkAndExtractTasks за транскрипти >10K chars
+  - Document source label card во резултатите
+  - Сите accessibility errors поправени (aria-label, title на select/buttons/input)
+  - Наслов: "YouTube, Веб & Документ Екстрактор"
+
+Документација: S30_PLAN.md — темелен аудит на целата апликација
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
+```
+
 ### S29 — ЗАВРШЕНА ✅ (18 Apr 2026)
 
 ```text

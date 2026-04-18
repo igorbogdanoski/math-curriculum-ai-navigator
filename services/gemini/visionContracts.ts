@@ -541,6 +541,121 @@ const WEB_TASK_FALLBACK: WebTaskExtractionOutput = {
   quality: { score: 0, label: 'poor' },
 };
 
+// ─── Text extraction from PDF via Gemini Vision ───────────────────────────────
+
+/**
+ * Extracts plain text (with LaTeX math) from a base64-encoded PDF document.
+ * Used by ExtractionHub document-upload mode before chunked task extraction.
+ */
+export async function extractTextFromDocument(pdfBase64: string): Promise<string> {
+  const response = await callGeminiProxy({
+    model: DEFAULT_MODEL,
+    contents: [{
+      role: 'user' as const,
+      parts: [
+        {
+          text: 'Extract ALL text from this document as plain text. Preserve mathematical expressions using LaTeX notation ($...$ for inline math, $$...$$ for display math). Keep the original language. Return ONLY the extracted text with no commentary.',
+        },
+        { inlineData: { mimeType: 'application/pdf', data: pdfBase64 } },
+      ],
+    }],
+    generationConfig: { maxOutputTokens: 16384 },
+    safetySettings: SAFETY_SETTINGS,
+    skipTierOverride: true,
+  });
+  return response.text.trim();
+}
+
+// ─── Chunked extraction for long texts ───────────────────────────────────────
+
+const CHUNK_SIZE = 10_000;
+const CHUNK_OVERLAP = 400;
+
+export interface ChunkExtractionResult {
+  output: WebTaskExtractionOutput;
+  fallback: boolean;
+  chunksProcessed: number;
+  tasksBeforeDedup: number;
+}
+
+/**
+ * Splits long text into overlapping 10 K-char chunks, runs
+ * webTaskExtractionContract on each sequentially, then deduplicates.
+ * Falls back to a single call for texts ≤ CHUNK_SIZE.
+ */
+export async function chunkAndExtractTasks(input: {
+  text: string;
+  sourceType: 'youtube' | 'webpage';
+  sourceRef?: string;
+  specificInstructions?: string;
+  model?: string;
+  onChunkProgress?: (current: number, total: number) => void;
+}): Promise<ChunkExtractionResult> {
+  if (input.text.length <= CHUNK_SIZE) {
+    const single = await webTaskExtractionContract(input);
+    return { ...single, chunksProcessed: 1, tasksBeforeDedup: single.output.tasks.length };
+  }
+
+  // Build overlapping chunks
+  const chunks: string[] = [];
+  for (let pos = 0; pos < input.text.length; pos += CHUNK_SIZE - CHUNK_OVERLAP) {
+    chunks.push(input.text.slice(pos, pos + CHUNK_SIZE));
+  }
+
+  const allTasks: ExtractedWebTask[] = [];
+  const summaries: string[] = [];
+  let totalScore = 0;
+  let successfulChunks = 0;
+  let anyFallback = false;
+
+  for (let i = 0; i < chunks.length; i++) {
+    input.onChunkProgress?.(i + 1, chunks.length);
+    const { output, fallback } = await webTaskExtractionContract({
+      text: chunks[i],
+      sourceType: input.sourceType,
+      sourceRef: input.sourceRef,
+      specificInstructions: input.specificInstructions,
+      model: input.model,
+    });
+    if (!fallback) {
+      allTasks.push(...output.tasks);
+      summaries.push(output.topicsSummary);
+      totalScore += output.quality.score;
+      successfulChunks++;
+    } else {
+      anyFallback = true;
+    }
+  }
+
+  const tasksBeforeDedup = allTasks.length;
+
+  // Deduplicate by first 80 chars of normalised statement
+  const seen = new Set<string>();
+  const deduped = allTasks.filter(t => {
+    const key = t.statement.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const avgScore = successfulChunks > 0 ? Math.round(totalScore / successfulChunks) : 0;
+  const label: WebTaskExtractionOutput['quality']['label'] =
+    avgScore >= 90 ? 'excellent' : avgScore >= 70 ? 'good' : avgScore >= 40 ? 'fair' : 'poor';
+
+  return {
+    output: {
+      tasks: deduped,
+      topicsSummary: summaries.filter(Boolean).join(' · ').slice(0, 400),
+      quality: { score: avgScore, label },
+    },
+    fallback: anyFallback && deduped.length === 0,
+    chunksProcessed: chunks.length,
+    tasksBeforeDedup,
+  };
+}
+
+// ─── webTaskExtractionContract ────────────────────────────────────────────────
+
 export async function webTaskExtractionContract(input: {
   text: string;
   sourceType: 'youtube' | 'webpage';
