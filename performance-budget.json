@@ -16,5 +16,9 @@
   {
     "resourceType": "third-party",
     "budget": 7000
+  },
+  {
+    "resourceType": "root-gzip",
+    "budget": 250
   }
 ]

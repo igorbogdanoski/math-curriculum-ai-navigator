@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 
 const repoRoot = process.cwd();
 const budgetPath = path.join(repoRoot, 'performance-budget.json');
@@ -38,6 +39,11 @@ function toPosix(p) {
 
 function fileKb(filePath) {
   return fs.statSync(filePath).size / 1024;
+}
+
+function gzippedKb(filePath) {
+  const buf = fs.readFileSync(filePath);
+  return zlib.gzipSync(buf, { level: 9 }).length / 1024;
 }
 
 function matchPattern(filePath, pattern) {
@@ -98,6 +104,27 @@ for (const budget of budgets) {
       check: 'resource:total',
       status: totalKb <= budget.budget ? 'pass' : 'fail',
       message: `${totalKb.toFixed(2)} kB / budget ${budget.budget} kB`,
+    });
+    continue;
+  }
+
+  if (budget.resourceType === 'root-gzip') {
+    const rootFiles = files.filter((f) => {
+      const base = path.basename(f);
+      return base.startsWith('index-') && base.endsWith('.js');
+    });
+    if (rootFiles.length === 0) {
+      report.push({ check: 'resource:root-gzip', status: 'warn', message: 'No root index-*.js matched' });
+      continue;
+    }
+    const maxGz = rootFiles.map(gzippedKb).reduce((a, b) => Math.max(a, b), 0);
+    if (maxGz > budget.budget) {
+      failures.push(`root chunk gzip is ${maxGz.toFixed(2)} kB > ${budget.budget} kB`);
+    }
+    report.push({
+      check: 'resource:root-gzip',
+      status: maxGz <= budget.budget ? 'pass' : 'fail',
+      message: `${maxGz.toFixed(2)} kB gzip / budget ${budget.budget} kB`,
     });
     continue;
   }

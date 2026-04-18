@@ -274,7 +274,12 @@ export const FlashcardPlayerView: React.FC<Props> = ({ id: materialId }) => {
     const progress = ((currentIndex + 1) / cards.length) * 100;
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-6">
+        <div
+            className="max-w-2xl mx-auto px-4 py-6"
+            role="region"
+            aria-label={`Сесија со флешкартички${material?.title ? `: ${material.title}` : ''}`}
+            aria-roledescription="flashcard player"
+        >
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 min-w-0">
@@ -294,7 +299,14 @@ export const FlashcardPlayerView: React.FC<Props> = ({ id: materialId }) => {
 
             {/* Progress bar */}
             <div className="mb-2 flex items-center gap-3">
-                <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                <div
+                    className="flex-1 bg-gray-200 rounded-full h-1.5"
+                    role="progressbar"
+                    aria-valuenow={currentIndex + 1}
+                    aria-valuemin={1}
+                    aria-valuemax={cards.length}
+                    aria-valuetext={`Картичка ${currentIndex + 1} од ${cards.length}`}
+                >
                     <div
                         className="bg-indigo-500 h-1.5 rounded-full transition-all duration-300"
                         style={{ width: `${progress}%` }}
@@ -332,7 +344,17 @@ export const FlashcardPlayerView: React.FC<Props> = ({ id: materialId }) => {
             <div
                 ref={flipCardRef}
                 onClick={handleFlip}
-                className="cursor-pointer select-none"
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleFlip();
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isFlipped}
+                aria-label={isFlipped ? 'Одговор прикажан. Притисни Enter или Space за прашање.' : 'Прашање прикажано. Притисни Enter или Space за одговор.'}
+                className="cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 rounded-2xl"
                 style={{ perspective: '1200px' }}
             >
                 <div

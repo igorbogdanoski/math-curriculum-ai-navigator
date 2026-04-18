@@ -534,11 +534,14 @@ export const SmartOCRView: React.FC = () => {
           {/* Symbol toolbar */}
           <div className="border-b border-slate-100 px-4 py-2 space-y-2">
             {/* Category tabs */}
-            <div className="flex gap-1">
+            <div className="flex gap-1" role="tablist" aria-label="Категории на математички симболи">
               {catKeys.map((cat) => (
                 <button
                   key={cat}
                   type="button"
+                  role="tab"
+                  aria-selected={symbolCategory === cat}
+                  aria-controls="symbol-toolbar-panel"
                   onClick={() => setSymbolCategory(cat)}
                   className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${
                     symbolCategory === cat
@@ -551,12 +554,18 @@ export const SmartOCRView: React.FC = () => {
               ))}
             </div>
             {/* Symbol buttons */}
-            <div className="flex flex-wrap gap-1.5">
+            <div
+              id="symbol-toolbar-panel"
+              role="toolbar"
+              aria-label={`LaTeX симболи — ${SYMBOL_CATEGORIES[symbolCategory].label}`}
+              className="flex flex-wrap gap-1.5"
+            >
               {currentButtons.map((btn, i) => (
                 <button
                   key={i}
                   type="button"
                   title={btn.title}
+                  aria-label={btn.title ? `Вметни ${btn.title}` : `Вметни ${btn.label}`}
                   onClick={() => insertSymbol(btn.insert)}
                   className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-800"
                 >

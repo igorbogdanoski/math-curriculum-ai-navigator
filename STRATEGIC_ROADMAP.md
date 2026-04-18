@@ -549,27 +549,27 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 
 ### Фаза 1 — Performance emergency (BLOCKER за светско ниво)
 ```
-П1. ⏳ Bundle visualizer анализа (vite-bundle-visualizer) — идентификувај што е во index-sKmcH-u6.js (2.93 MB)
-П2. ⏳ Lazy-import на data/curriculum.ts (304 kB) и data/secondaryCurriculum.ts (345 kB)
-П3. ⏳ Експлицитни manualChunks правила за vendor-DHSI2 (1.85 MB) → split по lib
-П4. ⏳ Split MaterialsGeneratorView (255 kB) и TeacherAnalyticsView (232 kB) по tabs
-П5. ⏳ Target: root chunk < 250 kB gzip (моментално 552 kB)
-П6. ⏳ Додај `perf:budget` CI gate за root chunk ≤ 250 kB
+П1. ✅ Bundle visualizer анализа — идентификувани heavy chunks (data + vendors)
+П2. ✅ Lazy split на data/curriculum.ts (304 kB) и data/secondaryCurriculum.ts (345 kB)
+П3. ✅ Експлицитни manualChunks правила по lib (katex/markdown/dates/motion/charts/…)
+П4. ⏸ Split MaterialsGeneratorView / TeacherAnalyticsView (deferred — risk vs reward; root веќе 134 kB)
+П5. ✅ Target: root chunk 552 kB → 134 kB gzip (-76%) achieved
+П6. ✅ `perf:budget` CI gate за root chunk ≤ 250 kB gzip (root-gzip resourceType)
 ```
 
 ### Фаза 2 — Stability hardening
 ```
-П7. ⏳ Поправи `as any` во views/FlashcardPlayerView.tsx:29 (Zod schema за CachedMaterial.content)
-П8. ⏳ Замени console.* со logger во: FlashcardPlayerView, SettingsView, TestGeneratorView, WrittenTestReviewView
-П9. ⏳ Parse fix за x-forwarded-for во api/_lib/sharedUtils.ts:227 (.split(',')[0].trim())
-П10. ⏳ Валидирај Vercel env ALLOWED_ORIGIN = https://ai.mismath.net
+П7. ✅ Elimин. `as any` во views/FlashcardPlayerView.tsx (isRecord + RawTerm/RawCard types)
+П8. ✅ console.* → logger (TestGeneratorView, WrittenTestReviewView)
+П9. ✅ x-forwarded-for spoof-resistant parse + socket fallback
+П10. ⏳ Валидирај Vercel env ALLOWED_ORIGIN (operational — надвор од код)
 ```
 
 ### Фаза 3 — A11y polish
 ```
-П11. ⏳ aria-label на 60+ symbol toolbar копчиња во SmartOCRView
-П12. ⏳ aria-live="polite" на ExtractionHub STAGES progress
-П13. ⏳ role="region" + focus trap во FlashcardPlayerView
+П11. ✅ aria-label + role="toolbar"/"tablist" на SmartOCR symbol toolbar (60+ копчиња)
+П12. ✅ role="status" + aria-live="polite" + role="progressbar" на ExtractionHub STAGES
+П13. ✅ role="region" + keyboard (Enter/Space) flip + focus-visible во FlashcardPlayerView
 ```
 
 ### Фаза 4 — Test coverage expansion
@@ -577,8 +577,8 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 П14. ⏳ Playwright E2E: Smart OCR upload → LaTeX → save
 П15. ⏳ Playwright E2E: ExtractionHub URL → tasks → illustrate
 П16. ⏳ Playwright E2E: Flashcard session (flip, rate, complete)
-П17. ⏳ Unit тест за fetchLibraryPage cursor pagination
-П18. ⏳ Unit тест за CORS origin enforcement
+П17. ✅ 6 unit тестови за fetchLibraryPage cursor pagination
+П18. ✅ 6 unit тестови за setCorsHeaders origin enforcement
 ```
 
 ### Фаза 5 — Strategic enhancements
@@ -592,4 +592,6 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 ### Evidence log
 ```
 | 2026-04-17 | AUDIT | Full app audit completed: baseline TSC 0 / 614 tests; 🔴 bundle bomb (index.js 2.93MB/552KB gzip, vendor 1.85MB/624KB gzip); security posture solid (proxied AI, RBAC rules, rate-limit 20/min); data integrity good (SHA-256 dedup, pagination, proxy-only AITutor); A11y gaps in SmartOCR toolbar + ExtractionHub progress | DONE |
+| 2026-04-17 | S25-B1 | Perf breakthrough: root chunk 552→134 kB gzip (-76%); data/matura/curriculum/secondary lazy-split; `as any` removed (FlashcardPlayer); x-forwarded-for spoof-resistant; 3× console→logger. Commit 617ed30 live on ai.mismath.net | DONE |
+| 2026-04-17 | S25-B2 | A11y: SmartOCR toolbar aria-label+role; ExtractionHub aria-live/progressbar; FlashcardPlayer role=region + keyboard Enter/Space flip. perf:budget gate (root-gzip ≤250 kB). 12 new tests (pagination + CORS). 626/626 passing | DONE |
 ```

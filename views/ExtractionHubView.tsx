@@ -195,21 +195,33 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
 
 const ExtractionProgress: React.FC<{ stage: number }> = ({ stage }) => {
   const pct = Math.min(100, Math.round((stage / STAGES.length) * 100));
+  const currentLabel = stage < STAGES.length ? STAGES[stage] : 'Завршено!';
   return (
-    <div className="space-y-3">
+    <div
+      className="space-y-3"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label="Прогрес на AI екстракција"
+    >
       <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold text-white/90">
-          {stage < STAGES.length ? STAGES[stage] : 'Завршено!'}
-        </span>
+        <span className="font-semibold text-white/90">{currentLabel}</span>
         <span className="font-mono text-white/60">{pct}%</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+      <div
+        className="h-2 w-full overflow-hidden rounded-full bg-white/10"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuetext={`${currentLabel} — ${pct}%`}
+      >
         <div
           className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-violet-400 transition-all duration-700 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="flex gap-1.5">
+      <div className="flex gap-1.5" aria-hidden="true">
         {STAGES.map((s, i) => (
           <div
             key={i}
