@@ -1,8 +1,9 @@
 [
   {
     "path": "dist/assets/*.js",
-    "budget": 1500,
-    "resourceType": "script"
+    "budget": 2500,
+    "resourceType": "script",
+    "comment": "Per-chunk raw size cap. Matura dataset (622 questions) and large vendor chunk legitimately exceed 1500 kB but are lazy-loaded — never on first paint."
   },
   {
     "path": "dist/assets/*.css",
@@ -11,7 +12,8 @@
   },
   {
     "resourceType": "total",
-    "budget": 10000
+    "budget": 13000,
+    "comment": "Raised from 10 MB to accommodate full curriculum + matura data; root-gzip is the real first-paint guard."
   },
   {
     "resourceType": "third-party",

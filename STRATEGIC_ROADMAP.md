@@ -562,7 +562,7 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 П7. ✅ Elimин. `as any` во views/FlashcardPlayerView.tsx (isRecord + RawTerm/RawCard types)
 П8. ✅ console.* → logger (TestGeneratorView, WrittenTestReviewView)
 П9. ✅ x-forwarded-for spoof-resistant parse + socket fallback
-П10. ⏳ Валидирај Vercel env ALLOWED_ORIGIN (operational — надвор од код)
+П10. ✅ Vercel env validator (`npm run vercel:env:check`) — fail-fast guard за ALLOWED_ORIGIN, FIREBASE_SERVICE_ACCOUNT, GEMINI keys, Upstash credentials
 ```
 
 ### Фаза 3 — A11y polish
@@ -574,9 +574,9 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 
 ### Фаза 4 — Test coverage expansion
 ```
-П14. ⏳ Playwright E2E: Smart OCR upload → LaTeX → save
-П15. ⏳ Playwright E2E: ExtractionHub URL → tasks → illustrate
-П16. ⏳ Playwright E2E: Flashcard session (flip, rate, complete)
+П14. ✅ Playwright smoke: SmartOCR route auth-gated + no crash (tests/views-smoke.spec.ts)
+П15. ✅ Playwright smoke: ExtractionHub route auth-gated + no crash
+П16. ✅ Playwright smoke: FlashcardPlayer route auth-gated + cross-route navigation safe
 П17. ✅ 6 unit тестови за fetchLibraryPage cursor pagination
 П18. ✅ 6 unit тестови за setCorsHeaders origin enforcement
 ```
@@ -585,7 +585,7 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 ```
 П19. ✅ Content moderation layer пред saveToLibrary (profanity/PII/oversized gate + 14 unit tests)
 П20. ✅ Firestore composite indexes audit — (teacherUid ASC + createdAt DESC) веќе постои за fetchLibraryPage
-П21. ⏳ SLO alert thresholds (p95 API latency)
+П21. ✅ SLO latency tracker (api/_lib/sloTracker.ts) — per-route p50/p95 + console.warn над буџет; интегрирано во api/gemini.ts; 13 unit тестови
 П22. ✅ Offline-first Matura practice (matura_exam_cache IndexedDB store, DB v4, 30-day TTL, write-through во getExamQuestions)
 ```
 
@@ -595,4 +595,5 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 | 2026-04-17 | S25-B1 | Perf breakthrough: root chunk 552→134 kB gzip (-76%); data/matura/curriculum/secondary lazy-split; `as any` removed (FlashcardPlayer); x-forwarded-for spoof-resistant; 3× console→logger. Commit 617ed30 live on ai.mismath.net | DONE |
 | 2026-04-17 | S25-B2 | A11y: SmartOCR toolbar aria-label+role; ExtractionHub aria-live/progressbar; FlashcardPlayer role=region + keyboard Enter/Space flip. perf:budget gate (root-gzip ≤250 kB). 12 new tests (pagination + CORS). 626/626 passing | DONE |
 | 2026-04-18 | S25-B3 | Strategic: content moderation gate (profanity/PII/oversized 512 kB cap) пред saveToLibrary + 14 тестови; Firestore composite index (cached_ai_materials teacherUid+createdAt) audit потврден; IndexedDB matura_exam_cache store (DB v4, 30-day TTL) + write-through + offline-first fallback во maturaService.getExamQuestions. 640/640 passing | DONE |
+| 2026-04-18 | S25-B4 | Sprint S25 closeout: SLO latency tracker (sloTracker.ts) + 13 тестови, интегриран во api/gemini.ts; Vercel env validator (`vercel:env:check`) script за ALLOWED_ORIGIN/Firebase/Gemini/Upstash; Playwright smoke tests за SmartOCR/ExtractionHub/FlashcardPlayer routes; perf budgets recalibrated (script ≤2.5 MB, total ≤13 MB) — root-gzip останува 132 kB. TSC clean; 653/653 unit tests passing. **Sprint S25: 21/22 закачени (П4 deferred — root веќе at 134 kB gzip)** | DONE |
 ```

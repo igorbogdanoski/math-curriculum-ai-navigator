@@ -31,7 +31,8 @@
     "test:e2e:ui": "playwright test --ui",
     "prepare": "husky",
     "vercel:env:push": "node scripts/vercel-env-push.mjs",
-    "vercel:env:dry": "node scripts/vercel-env-push.mjs --dry-run"
+    "vercel:env:dry": "node scripts/vercel-env-push.mjs --dry-run",
+    "vercel:env:check": "node scripts/check-vercel-env.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

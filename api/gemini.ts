@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig, type Tool } from "@google/generative-ai";
 import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
+import { recordLatency } from './_lib/sloTracker.js';
 
 // Increase body size limit to 10 MB to support PDF inline data uploads
 export const config = {
@@ -12,10 +13,14 @@ export const config = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const handlerStart = Date.now();
   setCorsHeaders(res);
 
   const validated = await authenticateAndValidate(req, res);
-  if (!validated) return;
+  if (!validated) {
+    recordLatency('gemini-proxy', Date.now() - handlerStart);
+    return;
+  }
 
   // Collect all configured API keys (supports up to 6 keys for rotation)
   const apiKeys = [
@@ -86,6 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw new Error("No candidates returned. Likely safety block.");
       }
       const groundingMetadata = response.candidates[0]?.groundingMetadata ?? null;
+      recordLatency('gemini-proxy', Date.now() - handlerStart);
       return res.status(200).json({ text: response.text(), candidates: response.candidates, groundingMetadata });
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -121,6 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isRateLimit = status === 429 && !isDailyQuota;
   const quotaType = isDailyQuota ? 'daily' : isRateLimit ? 'rate_limit' : 'rate';
 
+  recordLatency('gemini-proxy', Date.now() - handlerStart);
   res.status(status).json({
     error: message,
     quotaType,
