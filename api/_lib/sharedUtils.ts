@@ -232,6 +232,7 @@ export async function authenticateAndValidate(
   const firstIp = typeof xffStr === 'string' ? xffStr.split(',')[0]?.trim() : undefined;
   const socketIp = req.socket?.remoteAddress;
   let rlIdentifier = firstIp || socketIp || 'anonymous';
+  let authenticatedUid: string | undefined;
 
   // 2. Verify Firebase ID token
   const auth = getFirebaseAdmin();
@@ -245,6 +246,7 @@ export async function authenticateAndValidate(
     try {
       const decodedToken = await auth.verifyIdToken(idToken);
       rlIdentifier = decodedToken.uid; // Limit by unique User ID
+      authenticatedUid = decodedToken.uid;
     } catch (err) {
       console.error('[auth] Token verification failed:', err);
       res.status(401).json({ error: 'Invalid or expired authentication token' });
@@ -287,5 +289,17 @@ export async function authenticateAndValidate(
     return null;
   }
 
+  // Attach the resolved identifier on the request so downstream handlers
+  // (cost tracker, audit logger) can correlate without re-decoding.
+  (req as VercelRequest & { __rateLimitId?: string; __authUid?: string }).__rateLimitId = rlIdentifier;
+  (req as VercelRequest & { __rateLimitId?: string; __authUid?: string }).__authUid = authenticatedUid;
+
   return parsed.data;
+}
+
+/** Returns the authenticated UID (or rate-limit identifier fallback) for a request that
+ *  has already passed `authenticateAndValidate`. Returns `'anonymous'` if neither is set. */
+export function getRequestPrincipal(req: VercelRequest): string {
+  const r = req as VercelRequest & { __authUid?: string; __rateLimitId?: string };
+  return r.__authUid || r.__rateLimitId || 'anonymous';
 }

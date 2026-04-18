@@ -400,6 +400,33 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Матура испити (matura_exams) ──
+    // Read: any authenticated user (students + teachers).
+    // Write: admin, school_admin, or teacher (import pipeline via MaturaImportView).
+    match /matura_exams/{examId} {
+      allow read:           if isAuthenticated();
+      allow create, update: if isAuthenticated() && (isAdmin() || isRole('school_admin') || isRole('teacher'));
+      allow delete:         if isAdmin();
+    }
+
+    // ── Матура прашања (matura_questions) ──
+    // Same access model as matura_exams — keyed by {examId}_{qN}.
+    match /matura_questions/{docId} {
+      allow read:           if isAuthenticated();
+      allow create, update: if isAuthenticated() && (isAdmin() || isRole('school_admin') || isRole('teacher'));
+      allow delete:         if isAdmin();
+    }
+
+    // ── Кеширани AI оценки за матура (matura_ai_grades) ──
+    // Any authenticated user may read/write — keyed by a deterministic hash
+    // (examId + questionNumber + answer hash), so collisions are impossible and
+    // no user can overwrite another's grade.
+    match /matura_ai_grades/{cacheKey} {
+      allow read:           if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete:         if isAdmin();
+    }
+
     // Сè друго: одбиено
     match /{document=**} {
       allow read, write: if false;

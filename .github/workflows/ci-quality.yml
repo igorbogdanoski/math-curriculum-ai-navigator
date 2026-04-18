@@ -247,3 +247,53 @@ jobs:
           SENTRY_STATS_PERIOD: 14d
           SENTRY_ISSUE_QUERY: is:unresolved
           SENTRY_UNCLASSIFIED_WARN_PCT: "30"
+
+  e2e-emulator-smoke:
+    name: E2E Auth Smoke (Firebase Emulator)
+    runs-on: ubuntu-latest
+    needs: [quality-gate]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Start Firebase Emulators and run E2E smoke tests
+        run: |
+          firebase emulators:exec \
+            --only auth,firestore \
+            --project demo-e2e \
+            "npx playwright test tests/emulator-smoke.spec.ts --reporter=list"
+        env:
+          VITE_FIREBASE_API_KEY: emulator-test-key
+          VITE_FIREBASE_AUTH_DOMAIN: demo-e2e.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: demo-e2e
+          VITE_FIREBASE_STORAGE_BUCKET: demo-e2e.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+          VITE_FIREBASE_APP_ID: "1:000000000000:web:0000000000000000"
+          VITE_GEMINI_API_KEY: dummy-gemini-key
+          VITE_USE_FIREBASE_EMULATOR: "true"
+          FIREBASE_AUTH_EMULATOR_HOST: localhost:9099
+          FIRESTORE_EMULATOR_HOST: localhost:8080
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-emulator-report
+          path: playwright-report/
+          retention-days: 7

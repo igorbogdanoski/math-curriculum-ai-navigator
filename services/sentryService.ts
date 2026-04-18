@@ -25,6 +25,7 @@ export function initSentry(): void {
 
   Sentry.init({
     dsn,
+    release: (import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA as string | undefined) ?? undefined,
     environment: import.meta.env.MODE, // 'development' | 'production'
     // Only capture events in production to avoid polluting dev data
     enabled: import.meta.env.PROD,

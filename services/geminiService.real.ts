@@ -450,6 +450,50 @@ async diagnoseMisconception(question: string, correctAnswer: string, studentAnsw
     }
   },
 
+/**
+ * Generates a Socratic hint for a quiz question — guides without revealing the answer.
+ * Level 1: big-picture direction (what type of problem is this?)
+ * Level 2: specific approach (which technique / formula family?)
+ * Level 3: key step (points to the critical operation without solving it)
+ */
+async generateSocraticHint(
+  question: string,
+  hintLevel: 1 | 2 | 3,
+): Promise<string> {
+  checkDailyQuotaGuard();
+  const safeQ = sanitizePromptInput(question, 600);
+
+  const levelInstructions: Record<1 | 2 | 3, string> = {
+    1: `Дај САМО општа насока: кој тип задача е ова (пр. линеарна равенка, дропки, геометрија…) и зошто тоа е важно.
+НЕ давај формули, НЕ давај чекори. 1-2 реченици.`,
+    2: `Ученикот веќе знае дека е задача од типот. Дај конкретна насока:
+кој метод / правило / формула треба да го примени, но НЕ покажувај го пресметувањето.
+Заврши со прашање кое го насочува кон следниот чекор. 2 реченици.`,
+    3: `Ученикот е блиску до решението. Покажи ЕДН КОнкретен критичен чекор
+(пр. „Почни со изолирање на x" или „Применете ја формулата a²+b²=c²") но НЕ го завршувај решението.
+Изразена поддршка + 1 конкретен чекор. 2 реченици.`,
+  };
+
+  const prompt = `Ти си Сократски ментор по математика. Ученикот е заглавен на ова прашање:
+
+„${safeQ}"
+
+Ниво на насока: ${hintLevel}/3
+${levelInstructions[hintLevel]}
+
+ВАЖНО: Никогаш не го давај точниот одговор. Пишувај на македонски јазик.`;
+
+  const response = await callGeminiProxy({
+    model: LITE_MODEL,
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    systemInstruction: 'Ти си Сократски педагог. Водиш со прашања и насоки, никогаш не го откриваш одговорот.',
+    safetySettings: SAFETY_SETTINGS,
+    generationConfig: { temperature: 0.4, maxOutputTokens: 120 },
+    skipTierOverride: true,
+  });
+  return response.text.trim();
+},
+
 async explainSpecificStep(problem: string, stepExplanation: string, stepExpression: string, profile?: TeachingProfile): Promise<string> {
     const safeProblem = sanitizePromptInput(problem, 500);
     const safeStepExplanation = sanitizePromptInput(stepExplanation, 500);

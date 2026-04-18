@@ -108,12 +108,21 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   const [pointsEarned, setPointsEarned] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Scaffolding / Hint State
+  // Scaffolding / Hint State (post-answer full step-by-step)
   const [scaffoldData, setScaffoldData] = useState<any>(null);
   const [isGeneratingScaffold, setIsGeneratingScaffold] = useState(false);
 
+  // Socratic pre-answer hints (level 1 → 2 → 3, never reveals answer)
+  const [socraticHint, setSocraticHint] = useState<string | null>(null);
+  const [hintLevel, setHintLevel] = useState<0 | 1 | 2 | 3>(0);
+  const [isLoadingHint, setIsLoadingHint] = useState(false);
+
   // Misconception tracking state
   const [misconceptions, setMisconceptions] = useState<{ question: string; studentAnswer: string; misconception: string }[]>([]);
+
+  // S27-A2: Personalized result feedback
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
 
     // Math tools state
     const [showMathTools, setShowMathTools] = useState(false);
@@ -215,6 +224,21 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     });
   };
 
+  const handleRequestSocraticHint = async () => {
+    if (isLoadingHint || !currentQ) return;
+    const nextLevel = Math.min(3, hintLevel + 1) as 1 | 2 | 3;
+    setIsLoadingHint(true);
+    try {
+      const hint = await geminiService.generateSocraticHint(currentQ.question, nextLevel);
+      setSocraticHint(hint);
+      setHintLevel(nextLevel);
+    } catch {
+      // non-fatal — hint is best-effort
+    } finally {
+      setIsLoadingHint(false);
+    }
+  };
+
   const nextQuestion = () => {
     if (currentIndex + 1 < normalizedQuestions.length) {
       setCurrentIndex(prev => prev + 1);
@@ -224,6 +248,8 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       setTimeLeft(SECONDS_PER_QUESTION);
       setIsTimerRunning(true);
       setScaffoldData(null);
+      setSocraticHint(null);
+      setHintLevel(0);
     } else {
       finishQuiz();
     }
@@ -237,6 +263,8 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       setTimeLeft(SECONDS_PER_QUESTION);
       setIsTimerRunning(true);
       setScaffoldData(null);
+      setSocraticHint(null);
+      setHintLevel(0);
     }
   };
 
@@ -249,6 +277,17 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       misconceptions: misconceptions.length > 0 ? misconceptions : undefined
     });
     confetti({ particleCount: 200, spread: 100 });
+
+    // S27-A2: Generate personalized AI feedback asynchronously
+    const pct = normalizedQuestions.length > 0
+      ? Math.round((correctCount / normalizedQuestions.length) * 100)
+      : 0;
+    setIsFeedbackLoading(true);
+    setAiFeedback(null);
+    geminiService.generateQuizFeedback('Ученик', pct, quizTitle, correctCount, normalizedQuestions.length, misconceptions.length > 0 ? misconceptions : undefined)
+      .then(fb => { if (isMounted.current) setAiFeedback(fb); })
+      .catch(() => { if (isMounted.current) setAiFeedback(null); })
+      .finally(() => { if (isMounted.current) setIsFeedbackLoading(false); });
   };
 
   const resetQuiz = () => {
@@ -262,6 +301,10 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     setTimeLeft(SECONDS_PER_QUESTION);
     setIsTimerRunning(true);
     setScaffoldData(null);
+    setSocraticHint(null);
+    setHintLevel(0);
+    setAiFeedback(null);
+    setIsFeedbackLoading(false);
   };
 
   const handleGenerateParallel = async () => {
@@ -339,8 +382,27 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
             </div>
           </div>
 
+          {/* S27-A2: Personalized AI Feedback */}
+          {(isFeedbackLoading || aiFeedback) && (
+            <div className="mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-left">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
+                <p className="text-xs font-black text-indigo-600 uppercase tracking-wide">Персонализирана повратна информација</p>
+              </div>
+              {isFeedbackLoading ? (
+                <div className="flex items-center gap-2 text-sm text-indigo-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Анализирам ги твоите одговори...</span>
+                </div>
+              ) : (
+                <p className="text-sm text-indigo-900 leading-relaxed">{aiFeedback}</p>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-col gap-3">
             <button
+              type="button"
               onClick={resetQuiz}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg transition-all shadow-lg hover:shadow-blue-200 flex items-center justify-center gap-2 active:scale-[0.98]"
             >
@@ -348,6 +410,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
               Обиди се повторно
             </button>
             <button
+              type="button"
               onClick={handleGenerateParallel}
               disabled={isGeneratingParallel}
               className="w-full py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-2 border-indigo-200 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
@@ -357,6 +420,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
             </button>
             {onClose && (
               <button
+                type="button"
                 onClick={onClose}
                 className="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2"
               >
@@ -498,6 +562,49 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
                   bins: currentQ.chartConfig?.bins,
                 } as ChartConfig}
               />
+            </div>
+          )}
+
+          {/* ── Socratic Hint Panel (pre-answer) ─────────────────────────── */}
+          {!selectedOption && !currentQ?.isWorkedExample && (
+            <div className="mb-5">
+              {socraticHint ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex items-start gap-2.5 mb-3">
+                    <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-xs font-black text-amber-700 uppercase tracking-wide">
+                      Насока {hintLevel}/3
+                    </p>
+                  </div>
+                  <p className="text-sm text-amber-900 leading-relaxed">{socraticHint}</p>
+                  {hintLevel < 3 && (
+                    <button
+                      type="button"
+                      onClick={handleRequestSocraticHint}
+                      disabled={isLoadingHint}
+                      className="mt-3 text-xs font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                    >
+                      {isLoadingHint
+                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Генерирам...</>
+                        : <><Lightbulb className="w-3.5 h-3.5" /> Уште насока →</>}
+                    </button>
+                  )}
+                  {hintLevel === 3 && (
+                    <p className="mt-2 text-xs text-amber-600 italic">Ова е последната насока — пробај сега!</p>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRequestSocraticHint}
+                  disabled={isLoadingHint}
+                  className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-indigo-600 transition-colors disabled:opacity-50 py-1"
+                >
+                  {isLoadingHint
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Генерирам насока...</>
+                    : <><Lightbulb className="w-3.5 h-3.5" /> Дај ми насока</>}
+                </button>
+              )}
             </div>
           )}
 

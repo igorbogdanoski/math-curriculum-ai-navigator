@@ -1043,6 +1043,21 @@ export function MaturaPracticeView() {
 
   const { completeDay } = useMaturaMissions();
 
+  // ── Offline detection — shows banner when data is served from IndexedDB ──
+  const [isOffline, setIsOffline] = useState(() =>
+    typeof navigator !== 'undefined' && !navigator.onLine,
+  );
+  useEffect(() => {
+    const onOnline  = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener('online',  onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online',  onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+
   // ── Firestore: exam list (needed by setup screen) ──
   const { exams, loading: examsLoading, error: examsError } = useMaturaExams();
 
@@ -1260,38 +1275,56 @@ export function MaturaPracticeView() {
     );
   }
 
+  const offlineBanner = isOffline ? (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-2 px-4 py-2 mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium"
+    >
+      <span className="text-base">📶</span>
+      <span>Офлајн режим — прашањата се вчитуваат од локален кеш</span>
+    </div>
+  ) : null;
+
   // ── Render ──
   if (phase === 'setup') {
     return (
-      <SetupScreen
-        allTopics={allTopics}
-        exams={exams}
-        examsLoading={examsLoading}
-        examsError={examsError}
-        onStart={handleStart}
-        prefill={recoveryPrefill}
-        onDismissPrefill={() => {
-          setRecoveryPrefill(null);
-          try { sessionStorage.removeItem('matura_recovery_prefill'); } catch { /* ignore */ }
-        }}
-      />
+      <>
+        {offlineBanner}
+        <SetupScreen
+          allTopics={allTopics}
+          exams={exams}
+          examsLoading={examsLoading}
+          examsError={examsError}
+          onStart={handleStart}
+          prefill={recoveryPrefill}
+          onDismissPrefill={() => {
+            setRecoveryPrefill(null);
+            try { sessionStorage.removeItem('matura_recovery_prefill'); } catch { /* ignore */ }
+          }}
+        />
+      </>
     );
   }
 
   if (phase === 'results') {
     return (
-      <ResultsScreen
-        items={queue}
-        states={states}
-        onRetryWrong={handleRetryWrong}
-        onNewSession={() => setPhase('setup')}
-      />
+      <>
+        {offlineBanner}
+        <ResultsScreen
+          items={queue}
+          states={states}
+          onRetryWrong={handleRetryWrong}
+          onNewSession={() => setPhase('setup')}
+        />
+      </>
     );
   }
 
   // practice
   return (
     <div className="max-w-2xl mx-auto py-6 px-4">
+      {offlineBanner}
       {/* Top bar */}
       <div className="flex items-center gap-3 mb-2">
         <h2 className="text-lg font-black text-brand-primary flex-1">Адаптивна практика</h2>

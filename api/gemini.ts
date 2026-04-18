@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI, Content, SafetySetting, GenerationConfig, type Tool } from "@google/generative-ai";
-import { setCorsHeaders, authenticateAndValidate } from './_lib/sharedUtils.js';
+import { setCorsHeaders, authenticateAndValidate, getRequestPrincipal } from './_lib/sharedUtils.js';
 import { recordLatency } from './_lib/sloTracker.js';
+import { recordTokens } from './_lib/costTracker.js';
 
 // Increase body size limit to 10 MB to support PDF inline data uploads
 export const config = {
@@ -91,6 +92,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw new Error("No candidates returned. Likely safety block.");
       }
       const groundingMetadata = response.candidates[0]?.groundingMetadata ?? null;
+      // П26 cost guard — record tokens per (user, model) and warn over daily budget.
+      try {
+        const usage = (response as { usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } }).usageMetadata;
+        if (usage) {
+          recordTokens({
+            userId: getRequestPrincipal(req),
+            model: modelName,
+            tokensIn: usage.promptTokenCount ?? 0,
+            tokensOut: usage.candidatesTokenCount ?? 0,
+          });
+        }
+      } catch {
+        // best-effort — never break the response path
+      }
       recordLatency('gemini-proxy', Date.now() - handlerStart);
       return res.status(200).json({ text: response.text(), candidates: response.candidates, groundingMetadata });
     } catch (error) {

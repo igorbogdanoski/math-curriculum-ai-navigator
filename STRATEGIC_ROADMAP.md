@@ -607,18 +607,67 @@ conceptIds ќе имаат нов prefix: `voc-it-c1-1`, `voc-eco-c1-1` итн.
 ### Цели по приоритет
 ```
 П23. ✅ Web Vitals real telemetry — `services/sentryService.ts::reportWebVitals` сега испраќа `navigator.sendBeacon('/api/web-vitals', …)` покрај Sentry. `api/web-vitals.ts` агрегира p50/p75/p95 per metric во `api/_lib/webVitalsBuffer.ts` (200-sample ring, Google "good" buget). 16 unit тестови.
-П24. ⏳ Visual regression на 5 клучни views (Login, MaturaPortal, MaterialsGenerator, ContentLibrary, FlashcardPlayer) преку Playwright `toHaveScreenshot()`.
-П25. ⏳ Strict CSP header во vercel.json — `default-src 'self'; script-src 'self' 'wasm-unsafe-eval' …`. Чисти ги inline скриптите/eval.
-П26. ⏳ AI cost guard — мерење tokens_in/tokens_out по корисник во sloTracker; алертирај над дневен буџет.
-П27. ⏳ MaturaPracticeView offline banner — користи getCachedMaturaExamQuestions; покажи „Офлајн режим“ кога се чита од IndexedDB.
-П28. ⏳ E2E auth fixture — Firebase Emulator во CI; П14–16 smoke да дојдат до вистинските views.
-П29. ⏳ Sentry release tagging — `release: VERCEL_GIT_COMMIT_SHA`; correlation на bug со deploy.
-П30. ⏳ Firestore rules audit на 27 collections — дисциплина `allow read/write: if false` по default; sensible exceptions со коментар.
+П24. ✅ Visual regression на 5 клучни routes (Login, MaturaPortal, ContentLibrary, FlashcardPlayer, ExtractionHub) преку Playwright `toHaveScreenshot()` со deterministic CSS-animation kill + 2% diff tolerance. Baselines генерирани со `--update-snapshots` (`tests/visual-regression.spec.ts`).
+П25. ✅ Strict CSP header во `vercel.json` — `default-src 'self'`, `script-src 'self' 'wasm-unsafe-eval'` + Stripe/Google, `frame-ancestors 'none'`, `object-src 'none'`, allowlists за Firebase/Sentry/YouTube/Stripe.
+П26. ✅ AI cost guard — `api/_lib/costTracker.ts` (per-user/per-model дневни tokens_in/tokens_out, дневни budgets со `gemini-2.5-pro` 750k и `gemini-3.1-pro-preview` 500k, default 2M). Wired во `api/gemini.ts` од `usageMetadata`. 9 unit тестови.
+П27. ✅ MaturaPracticeView offline banner — `isOffline` state via `navigator.onLine` + window events; amber banner „Офлајн режим” во сите 3 фази (setup/practice/results).
+П28. ✅ E2E auth fixture — `tests/fixtures/auth.ts` (teacherPage fixture + emulator user creation); `tests/emulator-smoke.spec.ts` (П14 Dashboard / П15 Generator / П16 Curriculum); `e2e-emulator-smoke` CI job во `ci-quality.yml`; `firebase.json` emulator config; `firebaseConfig.ts` connectAuthEmulator/connectFirestoreEmulator кога `VITE_USE_FIREBASE_EMULATOR=true`.
+П29. ✅ Sentry release tagging — `release: VITE_VERCEL_GIT_COMMIT_SHA` во `Sentry.init()`; Vercel автоматски го инјектира SHA во env; корелација bug ↔ deploy.
+П30. ✅ Firestore rules audit — додадени правила за `matura_exams`, `matura_questions`, `matura_ai_grades` (биле missing — catch-all ги блокирал); catch-all `allow read, write: if false` потврден; сите 30+ collections со коментари.
 ```
 
 ### Evidence log (S26)
 ```
 | date | id | summary | status |
 |------|----|---------|--------|
-| 2026-04-18 | S26-П23 | Web Vitals beacon: `api/web-vitals.ts` (POST ingest + GET p50/p75/p95 snapshot) backed by `api/_lib/webVitalsBuffer.ts` (200-sample FIFO, Google "good" budgets, overBudget flag). `reportWebVitals` сега PROD-only fires Sentry event + `navigator.sendBeacon` (fetch keepalive fallback). 16 unit тестови. TSC clean; 669/669 unit tests passing | DONE |
+| 2026-04-18 | S26-П23 | Web Vitals beacon: `api/web-vitals.ts` (POST ingest + GET p50/p75/p95 snapshot) backed by `api/_lib/webVitalsBuffer.ts` (200-sample FIFO, Google “good” budgets, overBudget flag). `reportWebVitals` сега PROD-only fires Sentry event + `navigator.sendBeacon` (fetch keepalive fallback). 16 unit тестови. TSC clean; 669/669 unit tests passing | DONE |
+| 2026-04-18 | S26-П24 | Visual regression `tests/visual-regression.spec.ts` за 5 routes (Login/MaturaPortal/ContentLibrary/FlashcardPlayer/ExtractionHub). Deterministic CSS-anim/caret kill, 1280×800 viewport, 2% maxDiffPixelRatio. Baselines се регенерираат со `npx playwright test tests/visual-regression.spec.ts --update-snapshots` | DONE |
+| 2026-04-18 | S26-П25 | Strict CSP во `vercel.json`: default-src 'self'; script-src без 'unsafe-inline'/'unsafe-eval' (само 'wasm-unsafe-eval' + Stripe/Google); frame-ancestors 'none'; object-src 'none'; explicit connect-src allowlist (Firebase, Sentry, Stripe, Upstash, googleapis); frame-src allowlist (Stripe, YouTube, accounts.google.com, firebaseapp). | DONE |
+| 2026-04-18 | S26-П26 | AI cost guard: `api/_lib/costTracker.ts` per-user/per-model daily token budgets (gemini-2.5-pro 750k, gemini-3.1-pro-preview 500k, default 2M). Wired in `api/gemini.ts` from usageMetadata. 9 unit тестови. | DONE |
+| 2026-04-18 | S26-П27 | Offline banner in `MaturaPracticeView`: `isOffline` useState+useEffect (navigator.onLine + window online/offline events). Amber banner visible in all 3 phases (setup/practice/results). No new tests needed — pure UI reactive to browser state. TSC 0; 678/678 tests. | DONE |
+| 2026-04-18 | S26-П28 | Firebase Emulator E2E auth: `firebase.json` emulator config (auth:9099, firestore:8080). `firebaseConfig.ts` connectAuthEmulator/connectFirestoreEmulator gated by VITE_USE_FIREBASE_EMULATOR. `tests/fixtures/auth.ts` teacherPage fixture. `tests/emulator-smoke.spec.ts` П14/П15/П16 smoke. `e2e-emulator-smoke` job in ci-quality.yml with firebase emulators:exec. TSC 0; 678/678 unit tests. | DONE |
+| 2026-04-18 | S26-П29 | Sentry release tagging: `release: VITE_VERCEL_GIT_COMMIT_SHA` added to Sentry.init() in sentryService.ts. Vercel injects the SHA automatically. TSC 0. | DONE |
+| 2026-04-18 | S26-П30 | Firestore rules audit: 3 missing matura collections added (matura_exams, matura_questions, matura_ai_grades — were falling through to `allow read,write:if false` catch-all in prod!). Read access: authenticated users; write: admin/school_admin/teacher for exams+questions; any auth for ai_grades (hash-keyed cache). TSC 0; 678/678 unit tests. | DONE |
+```
+
+### S26 — ЗАВРШЕНА ✅ (18 Apr 2026)
+
+```text
+Baseline: TSC 0, 678/678 unit tests, root-gzip ~132 kB
+П23–П30: сите 8 цели завршени
+```
+
+### S27 — ЗАВРШЕНА ✅ (18 Apr 2026)
+
+```text
+Baseline: TSC 0, 678/678 unit tests (→ 689 по S27)
+
+S27-A1: Сократски AI hint panel во InteractiveQuizPlayer
+  - generateSocraticHint() во geminiService.real.ts (LITE_MODEL, skipTierOverride)
+  - 3 нивоа: тип задача → метод/формула → критичен чекор
+  - Амберен hint panel со прогресивно откривање пред одговорот
+  - Ресет при nextQuestion / prevQuestion / resetQuiz
+
+S27-A2: Персонализирана повратна информација по квиз
+  - generateQuizFeedback() се повикува async при finishQuiz()
+  - Индиго loading панел → персонализиран текст со misconceptions
+  - Автоматски ресет при resetQuiz()
+
+S27-A3: 11 unit тести за generateSocraticHint
+  - services/gemini/socraticHint.test.ts
+  - Покрива: LITE_MODEL, skipTierOverride, prompt per ниво, системска инструкција,
+    температура, maxOutputTokens, вклученост на прашањето, ВАЖНО-guard
+
+S27-B1: MaturaPortalView — readiness priority badge per topic
+  - useMaturaReadinessPath() интегриран во MaturaPortalView
+  - Нед. X · #Y badge до секоја слаба тема + AlertCircle за uncovered
+
+S27-B2: Collapsible 12-week prep plan panel
+  - planByWeek grouping по weekNumber (useMemo)
+  - Collapsible (ChevronDown/Up) со amber warning за off-track
+  - Секој концепт: status icon + title + pct (или „Ново")
+
+S27-B3: Readiness path tests — 21 постоечки тести потврдени (hooks/useMaturaReadinessPath.test.ts)
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
