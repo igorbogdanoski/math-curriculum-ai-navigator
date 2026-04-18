@@ -178,6 +178,17 @@ function isYouTubeUrl(url: string) {
   } catch { return false; }
 }
 
+function isVimeoUrl(url: string) {
+  try {
+    const h = new URL(url).hostname.replace(/^www\./, '');
+    return h === 'vimeo.com' || h === 'player.vimeo.com';
+  } catch { return false; }
+}
+
+function isVideoUrl(url: string) {
+  return isYouTubeUrl(url) || isVimeoUrl(url);
+}
+
 function parseTimestamp(s: string): number | null {
   const parts = s.trim().split(':').map(Number);
   if (parts.some(isNaN)) return null;
@@ -219,6 +230,8 @@ export const ExtractionHubView: React.FC = () => {
 
   // ── URL mode ──────────────────────────────────────────────────────────────
   const [url, setUrl] = useState('');
+  const [manualTranscript, setManualTranscript] = useState('');
+  const [noTranscriptDetected, setNoTranscriptDetected] = useState(false);
 
   // ── Document mode ─────────────────────────────────────────────────────────
   const [uploadedDoc, setUploadedDoc] = useState<{
@@ -345,24 +358,41 @@ export const ExtractionHubView: React.FC = () => {
 
     let rawText = '';
     let sourceType: 'youtube' | 'webpage' = 'webpage';
+    setNoTranscriptDetected(false);
 
-    if (isYouTubeUrl(trimmed)) {
+    if (isVideoUrl(trimmed)) {
       sourceType = 'youtube';
       setProgressLabel('Вадење преглед на видеото...');
       setProgressPct(10);
-      const preview = await fetchVideoPreview(trimmed);
-      setVideoPreview(preview);
+      let preview = videoPreview;
+      if (!preview) {
+        preview = await fetchVideoPreview(trimmed);
+        setVideoPreview(preview);
+      }
 
-      setProgressLabel('Вадење транскрипт...');
-      setProgressPct(20);
-      if (preview.videoId) {
+      // Manual transcript overrides auto-fetch
+      if (manualTranscript.trim()) {
+        rawText = manualTranscript.trim();
+      } else if (isYouTubeUrl(trimmed) && preview.videoId) {
+        setProgressLabel('Вадење транскрипт...');
+        setProgressPct(20);
         const caps = await fetchYouTubeCaptions(preview.videoId, 'mk');
         setCaptions(caps);
         if (caps.available && caps.transcript) {
           rawText = applyTimeRange(caps, timeRange);
+        } else {
+          // Signal to UI to show manual transcript prompt
+          setNoTranscriptDetected(true);
         }
+      } else {
+        // Vimeo or video without videoId — always needs manual transcript
+        setNoTranscriptDetected(!manualTranscript.trim());
       }
-      if (!rawText) rawText = `Video title: ${preview.title}\nAuthor: ${preview.authorName ?? 'unknown'}`;
+
+      // If still no text and no manual transcript → use title as last resort
+      if (!rawText && !manualTranscript.trim()) {
+        rawText = `Video title: ${preview.title}\nAuthor: ${preview.authorName ?? 'unknown'}`;
+      }
     } else {
       setProgressLabel('Вадење содржина на страната...');
       setProgressPct(15);
@@ -372,6 +402,13 @@ export const ExtractionHubView: React.FC = () => {
       const data = await res.json() as { available: boolean; text?: string; reason?: string };
       if (!data.available) throw new Error(data.reason ?? 'Страната не е достапна.');
       rawText = data.text ?? '';
+    }
+
+    // If no transcript and no manual input, surface message instead of running AI on just a title
+    if (!rawText.trim() || (noTranscriptDetected && !manualTranscript.trim() && rawText.length < 200)) {
+      setError('Транскриптот не е достапен автоматски. Внесете го рачно во „Напредни параметри → Рачен транскрипт".');
+      setShowAdvanced(true);
+      return;
     }
 
     await runChunkedExtraction(rawText, sourceType, trimmed);
@@ -510,6 +547,8 @@ export const ExtractionHubView: React.FC = () => {
 
   const reset = () => {
     setUrl('');
+    setManualTranscript('');
+    setNoTranscriptDetected(false);
     setUploadedDoc(null);
     setResult(null);
     setError(null);
@@ -607,29 +646,52 @@ export const ExtractionHubView: React.FC = () => {
 
             {/* ── URL mode ── */}
             {sourceMode === 'url' && (
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">🔗</span>
-                  <input
-                    ref={urlInputRef}
-                    type="url"
-                    value={url}
-                    onChange={(e) => { setUrl(e.target.value); setError(null); setResult(null); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && canExtract) extract(); }}
-                    placeholder="Вметнете YouTube линк или било која веб-адреса..."
-                    disabled={isLoading}
-                    className="w-full rounded-xl border border-white/10 bg-white/10 py-3.5 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:border-indigo-400/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 disabled:opacity-60"
-                  />
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">🔗</span>
+                    <input
+                      ref={urlInputRef}
+                      type="url"
+                      value={url}
+                      onChange={(e) => { setUrl(e.target.value); setError(null); setResult(null); setNoTranscriptDetected(false); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && canExtract) extract(); }}
+                      placeholder="YouTube, Vimeo или веб-адреса..."
+                      disabled={isLoading}
+                      className="w-full rounded-xl border border-white/10 bg-white/10 py-3.5 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:border-indigo-400/60 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 disabled:opacity-60"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={extract}
+                    disabled={!canExtract}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-3.5 font-bold text-white transition hover:from-indigo-600 hover:to-violet-600 disabled:opacity-50"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Екстрахирај
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={extract}
-                  disabled={!canExtract}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-3.5 font-bold text-white transition hover:from-indigo-600 hover:to-violet-600 disabled:opacity-50"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Екстрахирај
-                </button>
+                {/* Vimeo real-time hint */}
+                {isVimeoUrl(url) && (
+                  <p className="flex items-center gap-1.5 text-xs text-purple-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-purple-400 shrink-0" />
+                    Vimeo — автоматски транскрипт не е достапен. Внесете го рачно во Напредни параметри.
+                  </p>
+                )}
+                {/* No-transcript prompt (after failed auto-fetch) */}
+                {noTranscriptDetected && !manualTranscript.trim() && (
+                  <div className="flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    Транскриптот не е достапен автоматски.
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvanced(true)}
+                      className="ml-auto font-bold underline hover:text-amber-200 transition"
+                    >
+                      Внесете рачно →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -743,18 +805,39 @@ export const ExtractionHubView: React.FC = () => {
             {showAdvanced && (
               <div className="mt-3 space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
                 {sourceMode === 'url' && (
-                  <div>
-                    <label className="block text-xs font-semibold text-white/60 mb-1">
-                      Временски опсег (само за YouTube, пр. 5:30 - 12:45)
-                    </label>
-                    <input
-                      type="text"
-                      value={timeRange}
-                      onChange={(e) => setTimeRange(e.target.value)}
-                      placeholder="пр. 3:00 - 18:30"
-                      className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold text-white/60 mb-1">
+                        Временски опсег (само за YouTube, пр. 5:30 - 12:45)
+                      </label>
+                      <input
+                        type="text"
+                        value={timeRange}
+                        onChange={(e) => setTimeRange(e.target.value)}
+                        placeholder="пр. 3:00 - 18:30"
+                        className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-amber-300">
+                        <FileText className="h-3.5 w-3.5" />
+                        Рачен транскрипт
+                        <span className="text-white/40 font-normal">(за Vimeo, приватни или видеа без субтитли)</span>
+                      </label>
+                      <textarea
+                        value={manualTranscript}
+                        onChange={(e) => setManualTranscript(e.target.value)}
+                        placeholder="Заалепете го транскриптот или текстот на видеото тука..."
+                        rows={4}
+                        className="w-full resize-y rounded-xl border border-amber-400/20 bg-amber-500/5 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
+                      />
+                      {manualTranscript.trim() && (
+                        <p className="mt-1 text-xs text-amber-300/70">
+                          ✓ {manualTranscript.trim().length.toLocaleString()} знаци — ќе се користи наместо автоматски транскрипт
+                        </p>
+                      )}
+                    </div>
+                  </>
                 )}
                 <div>
                   <label className="block text-xs font-semibold text-white/60 mb-1">

@@ -701,6 +701,35 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S31 — ЗАВРШЕНА ✅ (18 Apr 2026)
+
+```text
+Baseline: TSC 0, 689/689 unit tests
+
+Издигнување на Extraction Engine — world-class ниво без компромиси
+
+A1: Smart sentence-boundary chunk splitting (visionContracts.ts)
+  - splitTextIntoChunks(): при секој chunk boundary бара \n\n → '. ' → ' ' во
+    последните 300 знаци → нема пресекување на реченица на средина
+  - AI добива комплетен контекст по chunk → поквалитетни задачи извлечени
+  - taskDedupKey(): LaTeX-нормализирана дедупликација (strip $...$ и $$...$$,
+    collapse whitespace, 100 chars key наместо 80)
+
+A2: Manual transcript fallback + Vimeo detection (ExtractionHubView)
+  - isVimeoUrl() + isVideoUrl() helpers
+  - noTranscriptDetected state: кога YouTube auto-fetch пропадне или Vimeo
+  - Vimeo real-time badge: при внесување Vimeo URL → purple hint „внесете рачно"
+  - Amber prompt: „Транскриптот не е достапен → Внесете рачно →" (clickable)
+  - Рачен транскрипт textarea во Напредни параметри:
+    amber-тематизирана, 4 rows, resize-y
+    Показ на знаци: „✓ 3,420 знаци — ќе се користи наместо автоматски"
+    Ако е пополнет → секогаш go override-ира auto-fetch (YouTube и Vimeo)
+  - За Vimeo/видеа без ID → веднаш setNoTranscriptDetected(true)
+  - Доколку нема ни транскрипт ни manual → враќа error + отвора advanced
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
+```
+
 ### S30 — ЗАВРШЕНА ✅ (18 Apr 2026)
 
 ```text

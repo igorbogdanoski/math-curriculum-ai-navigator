@@ -571,6 +571,47 @@ export async function extractTextFromDocument(pdfBase64: string): Promise<string
 const CHUNK_SIZE = 10_000;
 const CHUNK_OVERLAP = 400;
 
+/**
+ * Splits text at natural boundaries (paragraph → sentence → word) so that
+ * no chunk cuts a sentence mid-way, giving the AI complete context per chunk.
+ */
+function splitTextIntoChunks(text: string, chunkSize: number, overlap: number): string[] {
+  if (text.length <= chunkSize) return [text];
+  const chunks: string[] = [];
+  let start = 0;
+  while (start < text.length) {
+    const tentativeEnd = Math.min(start + chunkSize, text.length);
+    if (tentativeEnd === text.length) { chunks.push(text.slice(start)); break; }
+    // Search last 300 chars for a clean boundary
+    const lb = Math.min(300, tentativeEnd - start);
+    const win = text.slice(tentativeEnd - lb, tentativeEnd);
+    const paraIdx = win.lastIndexOf('\n\n');
+    const sentIdx = win.lastIndexOf('. ');
+    const wordIdx = win.lastIndexOf(' ');
+    const best = paraIdx >= 0 ? tentativeEnd - lb + paraIdx + 2
+      : sentIdx >= 0 ? tentativeEnd - lb + sentIdx + 2
+      : wordIdx >= 0 ? tentativeEnd - lb + wordIdx + 1
+      : tentativeEnd;
+    chunks.push(text.slice(start, best));
+    start = Math.max(best - overlap, start + 1);
+  }
+  return chunks;
+}
+
+/**
+ * Normalizes a task statement for deduplication:
+ * strips LaTeX delimiters, collapses whitespace, lowercases.
+ */
+function taskDedupKey(task: ExtractedWebTask): string {
+  return task.statement
+    .toLowerCase()
+    .replace(/\$\$[\s\S]*?\$\$/g, ' ')  // strip display math
+    .replace(/\$[^$]*\$/g, ' ')          // strip inline math
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100);
+}
+
 export interface ChunkExtractionResult {
   output: WebTaskExtractionOutput;
   fallback: boolean;
@@ -579,8 +620,9 @@ export interface ChunkExtractionResult {
 }
 
 /**
- * Splits long text into overlapping 10 K-char chunks, runs
- * webTaskExtractionContract on each sequentially, then deduplicates.
+ * Splits long text into sentence-boundary-aware overlapping chunks,
+ * runs webTaskExtractionContract on each sequentially, then deduplicates
+ * using LaTeX-normalized statement fingerprints.
  * Falls back to a single call for texts ≤ CHUNK_SIZE.
  */
 export async function chunkAndExtractTasks(input: {
@@ -596,11 +638,7 @@ export async function chunkAndExtractTasks(input: {
     return { ...single, chunksProcessed: 1, tasksBeforeDedup: single.output.tasks.length };
   }
 
-  // Build overlapping chunks
-  const chunks: string[] = [];
-  for (let pos = 0; pos < input.text.length; pos += CHUNK_SIZE - CHUNK_OVERLAP) {
-    chunks.push(input.text.slice(pos, pos + CHUNK_SIZE));
-  }
+  const chunks = splitTextIntoChunks(input.text, CHUNK_SIZE, CHUNK_OVERLAP);
 
   const allTasks: ExtractedWebTask[] = [];
   const summaries: string[] = [];
@@ -629,10 +667,10 @@ export async function chunkAndExtractTasks(input: {
 
   const tasksBeforeDedup = allTasks.length;
 
-  // Deduplicate by first 80 chars of normalised statement
+  // Deduplicate using LaTeX-normalized statement fingerprint (100 chars)
   const seen = new Set<string>();
   const deduped = allTasks.filter(t => {
-    const key = t.statement.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 80);
+    const key = taskDedupKey(t);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
