@@ -108,6 +108,8 @@ const StudentTutorView = safeLazy(() => import('./views/StudentTutorView').then(
 const ParentPortalView = safeLazy(() => import('./views/ParentPortalView').then(module => ({ default: module.ParentPortalView })));
 const StudentPortfolioView = safeLazy(() => import('./views/StudentPortfolioView').then(module => ({ default: module.StudentPortfolioView })));
 const PricingView = safeLazy(() => import('./views/PricingView').then(module => ({ default: module.PricingView })));
+const GammaJoinView = safeLazy(() => import('./views/GammaJoinView').then(module => ({ default: module.GammaJoinView })));
+const GammaStudentView = safeLazy(() => import('./views/GammaStudentView').then(module => ({ default: module.GammaStudentView })));
 
 const LoginView = safeLazy(() => import('./views/LoginView').then(module => ({ default: module.LoginView })));
 const AcademyLessonView = safeLazy(() => import('./views/AcademyLessonView').then(module => ({ default: module.AcademyLessonView })));
@@ -191,6 +193,8 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     '#/share/',
     '#/quiz/',
     '#/school/register',
+    '#/gamma/join',
+    '#/gamma/student/',
   ];
 
   const isPublicHashRoute = (hash: string): boolean =>
@@ -257,6 +261,8 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/quiz/:data', component: SharedQuizView },
     { path: '/mindmap/:topicId', component: MindMapView },
     { path: '/gamma/presenter', component: React.lazy(() => import('./views/GammaPresenterView').then(m => ({ default: m.GammaPresenterView }))) },
+    { path: '/gamma/join', component: GammaJoinView },
+    { path: '/gamma/student/:pin', component: GammaStudentView },
 ];
 
 const AppContent: React.FC = () => {

@@ -701,6 +701,56 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S35 — ЗАВРШЕНА ✅ (19 Apr 2026)
+
+```text
+Baseline: TSC 0, 689/689 unit tests
+
+Г7: Gamma Live — реалтајм интерактивна презентација
+
+Firestore service (НОВО): services/gammaLiveService.ts
+  - Collection: live_gamma/{pin} + subcollection /responses/{studentId}
+  - startGammaLive() → генерира 6-цифрен PIN → запишува сесија
+  - broadcastGammaSlide() → синхронизира slideIdx кај сите ученици
+  - endGammaLive() → поставува isActive: false
+  - subscribeGammaSession() / subscribeGammaResponses() → onSnapshot листенери
+  - submitGammaResponse() → ученик испраќа одговор
+  - raiseGammaHand() / lowerGammaHand() → arrayUnion/arrayRemove
+
+GammaJoinView.tsx (НОВО) — views/
+  - Јавна страница: ученик внесува 6-цифрен PIN + ime
+  - Валидација на сесија преку subscribeGammaSession
+  - Navigate до /gamma/student/{pin}?name={encoded}
+  - Route: /#/gamma/join (регистрирана + PUBLIC prefix)
+
+GammaStudentView.tsx (НОВО) — views/
+  - Props: { pin: string }
+  - useStudentId() — sessionStorage анонимен ID (gamma_student_id)
+  - Парсира studentName од URL hash ?name=...
+  - Реалтајм subscription → MathRenderer slide content
+  - Slide типови: formula-centered (формула box) | task (textarea + Submit) | остати (bullets)
+  - Slide промена → ресет на answer/submitted/handRaised
+  - Raise/lower рака → raiseGammaHand/lowerGammaHand
+  - Session-ended state → завршена пораката
+
+GammaModeModal.tsx — host controls:
+  - gammaLivePin state + startLiveSession() / endLiveSession()
+  - startGammaLive() → PIN → subscribeGammaResponses + subscribeGammaSession
+  - Broadcast slideIdx кон студентите на секоја навигација (broadcastGammaSlide)
+  - Toolbar: [Radio] Live копче (disabled без auth) → активира сесија
+  - Кога Live: PIN badge (animate-pulse) + response count + hands count + Крај копче
+  - PIN overlay (bottom-right на слајдот): PIN број + join URL + одговори/раце бројач
+  - Cleanup subscriptions on unmount + endLiveSession cleanup
+  - Icons: Radio, RadioTower, Users (нови lucide-react)
+
+App.tsx:
+  - safeLazy: GammaJoinView + GammaStudentView
+  - Routes: /gamma/join, /gamma/student/:pin
+  - PUBLIC_HASH_ROUTE_PREFIXES: '#/gamma/join', '#/gamma/student/'
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
+```
+
 ### S34 — ЗАВРШЕНА ✅ (19 Apr 2026)
 
 ```text

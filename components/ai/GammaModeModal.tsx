@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users } from 'lucide-react';
 import { Shape3DViewer, Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
 import { AlgebraTilesCanvas } from '../math/AlgebraTilesCanvas';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
@@ -16,6 +16,14 @@ import { useGammaAnnotation, type AnnotMode } from './gamma/useGammaAnnotation';
 import { GammaThumbnailGrid } from './gamma/GammaThumbnailGrid';
 import { exportGammaPPTX, printGammaHandout } from './gamma/GammaExportService';
 import { useGammaExitTicket } from './gamma/useGammaExitTicket';
+import {
+  startGammaLive,
+  broadcastGammaSlide,
+  endGammaLive,
+  subscribeGammaSession,
+  subscribeGammaResponses,
+  type GammaLiveResponse,
+} from '../../services/gammaLiveService';
 
 const InteractiveQuizPlayer = React.lazy(() =>
   import('./InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer }))
@@ -46,7 +54,7 @@ const SLIDE_META: Record<PresentationSlide['type'], { label: string; color: stri
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
 export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose }) => {
-  const { user }                = useAuth();
+  const { user, firebaseUser }  = useAuth();
   const { addNotification }     = useNotification();
   const [idx, setIdx]           = useState(startIndex);
   const [revealed, setRevealed] = useState(false);
@@ -80,6 +88,13 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [isExportingPptx, setIsExportingPptx] = useState(false);
   const { exitTicket, isGenerating: isGeneratingExitTicket, generate: generateExitTicket, dismiss: dismissExitTicket } = useGammaExitTicket();
 
+  // ── Gamma Live ────────────────────────────────────────────────────────────
+  const [gammaLivePin, setGammaLivePin] = useState<string | null>(null);
+  const [isStartingLive, setIsStartingLive] = useState(false);
+  const [liveResponses, setLiveResponses] = useState<GammaLiveResponse[]>([]);
+  const [liveHandsCount, setLiveHandsCount] = useState(0);
+  const liveUnsubRef = useRef<(() => void) | null>(null);
+
   const handleExportPPTX = useCallback(async () => {
     if (isExportingPptx) return;
     setIsExportingPptx(true);
@@ -92,6 +107,48 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     );
     setIsExportingPptx(false);
   }, [data, user, isExportingPptx, addNotification]);
+
+  const liveSessionUnsubRef = useRef<(() => void) | null>(null);
+
+  const startLiveSession = useCallback(async () => {
+    if (!firebaseUser || isStartingLive || gammaLivePin) return;
+    setIsStartingLive(true);
+    try {
+      const pin = await startGammaLive(firebaseUser.uid, data.topic, data.gradeLevel, data.slides);
+      setGammaLivePin(pin);
+      liveUnsubRef.current = subscribeGammaResponses(pin, responses => {
+        setLiveResponses(responses);
+      });
+      liveSessionUnsubRef.current = subscribeGammaSession(pin, session => {
+        setLiveHandsCount(session?.handsUids?.length ?? 0);
+      });
+    } catch {
+      addNotification('Gamma Live: грешка при старт', 'error');
+    } finally {
+      setIsStartingLive(false);
+    }
+  }, [firebaseUser, isStartingLive, gammaLivePin, data, addNotification]);
+
+  const endLiveSession = useCallback(async () => {
+    if (!gammaLivePin) return;
+    await endGammaLive(gammaLivePin);
+    liveUnsubRef.current?.();
+    liveUnsubRef.current = null;
+    liveSessionUnsubRef.current?.();
+    liveSessionUnsubRef.current = null;
+    setGammaLivePin(null);
+    setLiveResponses([]);
+    setLiveHandsCount(0);
+  }, [gammaLivePin]);
+
+  // Broadcast slide to students when live
+  useEffect(() => {
+    if (!gammaLivePin) return;
+    broadcastGammaSlide(gammaLivePin, idx);
+  }, [gammaLivePin, idx]);
+
+  // Cleanup live subscriptions on unmount
+  useEffect(() => () => { liveUnsubRef.current?.(); liveSessionUnsubRef.current?.(); }, []);
 
   // ── Annotation tools ───────────────────────────────────────────────────────
   const { canvasRef, annotMode, hasAnnotations, laserPos, undoCount, toggleAnnot, clearCanvas, undoAnnotation, onCanvasMouseDown, onCanvasMouseMove, onCanvasMouseUp, onCanvasMouseLeave } = useGammaAnnotation(idx);
@@ -869,6 +926,39 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             <MonitorPlay className="w-3.5 h-3.5" />
           </button>
 
+          {/* Gamma Live */}
+          {gammaLivePin ? (
+            <div className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1 px-2 py-1 bg-red-500/20 border border-red-500/40 rounded-lg text-red-400 text-[10px] font-black animate-pulse">
+                <RadioTower className="w-3 h-3" />
+                {gammaLivePin}
+              </span>
+              {liveResponses.length > 0 && (
+                <span className="flex items-center gap-0.5 text-[10px] text-emerald-400 font-bold">
+                  <Users className="w-3 h-3" />{liveResponses.length}
+                </span>
+              )}
+              {liveHandsCount > 0 && (
+                <span className="text-[10px] text-amber-400 font-bold">✋{liveHandsCount}</span>
+              )}
+              <button type="button" onClick={endLiveSession} title="Заврши Gamma Live сесија"
+                className="px-2 py-1 rounded-lg bg-red-600/30 hover:bg-red-600/50 text-red-400 text-[10px] font-black transition">
+                Крај
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={startLiveSession}
+              disabled={isStartingLive || !firebaseUser}
+              title="Старт Gamma Live — ученици се приклучуваат со PIN"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition text-[11px] font-semibold"
+            >
+              {isStartingLive ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Radio className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">Live</span>
+            </button>
+          )}
+
           {/* Print / Handout / PPTX / Fullscreen */}
           <button type="button" onClick={() => window.print()} title="Печати слајд (P)"
             className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
@@ -993,6 +1083,23 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             style={{ '--laser-x': `${laserPos.x - 14}px`, '--laser-y': `${laserPos.y - 14}px` } as React.CSSProperties}>
             <div className="absolute inset-0 rounded-full bg-red-500/25 animate-ping" />
             <div className="absolute inset-2 rounded-full bg-red-500 shadow-[0_0_12px_4px_rgba(239,68,68,0.6)]" />
+          </div>
+        )}
+
+        {/* Gamma Live PIN overlay */}
+        {gammaLivePin && (
+          <div className="absolute bottom-4 right-4 z-40 pointer-events-none">
+            <div className="bg-slate-950/90 border border-red-500/40 rounded-2xl px-4 py-3 text-center shadow-2xl">
+              <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-0.5">Gamma Live</p>
+              <p className="text-2xl font-black text-white tracking-[0.25em]">{gammaLivePin}</p>
+              <p className="text-[9px] text-slate-500 mt-0.5">ai.mismath.net/#/gamma/join</p>
+              {liveResponses.length > 0 && (
+                <p className="text-[10px] text-emerald-400 font-bold mt-1">✓ {liveResponses.length} одговори</p>
+              )}
+              {liveHandsCount > 0 && (
+                <p className="text-[10px] text-amber-400 font-bold">✋ {liveHandsCount} крена рака</p>
+              )}
+            </div>
           </div>
         )}
 
