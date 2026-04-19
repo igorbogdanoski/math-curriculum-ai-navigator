@@ -14,6 +14,7 @@ import { useMaturaStats } from '../hooks/useMaturaStats';
 import { useMaturaReadinessPath } from '../hooks/useMaturaReadinessPath';
 import { MissionPanel } from '../components/matura/MissionPanel';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
+import { MaturaTutorChat } from '../components/matura/MaturaTutorChat';
 import {
   getStudentMaturaProfile,
   createStudentMaturaProfile,
@@ -521,6 +522,12 @@ export const MaturaPortalView: React.FC = () => {
               )}
             </Card>
           )}
+
+          {/* М2: AI Matura Tutor */}
+          <MaturaTutorChat
+            profile={profile}
+            weakTopics={topTopics.map(t => t.key)}
+          />
 
           {/* Not signed in CTA */}
           {!fbUser && !authLoading && (

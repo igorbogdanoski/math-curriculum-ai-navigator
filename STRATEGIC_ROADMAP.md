@@ -701,6 +701,29 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S36 — ЗАВРШЕНА ✅ (19 Apr 2026)
+
+```text
+Baseline: TSC 0, 689/689 unit tests
+
+М2: AI Matura Tutor — персонализиран chat тутор во MaturaPortalView
+
+MaturaTutorChat.tsx (НОВО) — components/matura/
+  - Props: { profile: StudentMaturaProfile | null, weakTopics: string[] }
+  - buildSystemPrompt(): aware на track + слаби теми → систем инструкција
+  - callGeminiProxy (gemini-2.5-flash) со целосна chat history (multi-turn)
+  - Quick chips: 5 чести матурски прашања (Интеграл, Квадратна равенка, Геометрија, Тригонометрија, Задача за вежбање)
+  - UI: collapsible card, Sparkles икона per assistant порака, X за clear историја
+  - Enter (без Shift) за испраќање; disabled кога isLoading
+  - maxOutputTokens: 1500
+
+MaturaPortalView.tsx:
+  - Интегриран MaturaTutorChat со profile + topTopics слаби теми
+  - Позициониран над "Влези" CTA — видлив за сите ученици
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
+```
+
 ### S35 — ЗАВРШЕНА ✅ (19 Apr 2026)
 
 ```text
