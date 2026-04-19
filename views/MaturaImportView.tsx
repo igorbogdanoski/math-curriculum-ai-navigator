@@ -20,7 +20,7 @@ import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiSer
 import { importMaturaFromDraft } from '../services/firestoreService.matura';
 import type { MaturaImportDraft, MaturaImportQuestion } from '../services/firestoreService.matura';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigation } from '../contexts/NavigationContext';
 
 type Step = 'upload' | 'review' | 'done';
 
@@ -36,7 +36,7 @@ function generateExamId(draft: Omit<MaturaImportDraft, 'examId' | 'questions'>):
 
 export function MaturaImportView() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { navigate } = useNavigation();
 
   const [step, setStep] = useState<Step>('upload');
   const [pdfBase64, setPdfBase64] = useState<string | null>(null);

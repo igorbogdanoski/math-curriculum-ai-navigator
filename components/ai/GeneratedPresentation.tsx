@@ -1,7 +1,7 @@
 ﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
 import { Presentation, Image as ImageIcon, ChevronLeft, ChevronRight, FileDown, Sparkles, Loader2, BookOpen, Cpu, MousePointer2, Radio, Zap, X, Users, ExternalLink, Maximize2, Minimize2, PenLine, Plus, Trash2, Save, Check, Play, ArrowUp, ArrowDown, FileText } from 'lucide-react';
-import QRCode from 'react-qr-code';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { GammaModeModal } from './GammaModeModal';
 import { SilentErrorBoundary } from '../common/SilentErrorBoundary';

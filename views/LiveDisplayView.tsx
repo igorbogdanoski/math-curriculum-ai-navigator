@@ -10,7 +10,7 @@
  *  3. ENDED  — podium (top 3) + full leaderboard
  */
 import React, { useEffect, useState } from 'react';
-import QRCode from 'react-qr-code';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { Wifi, Users, Crown, Trophy, CheckCircle } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { type LiveSession } from '../services/firestoreService.types';

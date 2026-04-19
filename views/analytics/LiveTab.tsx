@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Radio, Play, Square, Copy, Check, Loader2, Users, Trophy } from 'lucide-react';
-import QRCode from 'react-qr-code';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { firestoreService, type LiveSession } from '../../services/firestoreService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../../components/common/Card';

@@ -11,7 +11,7 @@ import {
   BarChart3, BookOpen, Share2, Printer, Copy, Check, Flame,
   UserCircle2, Building, Sparkles, Target, Loader2, TrendingUp,
 } from 'lucide-react';
-import QRCode from 'react-qr-code';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAcademyProgress } from '../contexts/AcademyProgressContext';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';

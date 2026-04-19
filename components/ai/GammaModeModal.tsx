@@ -1,6 +1,5 @@
-﻿import { logger } from '../../utils/logger';
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown } from 'lucide-react';
+﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut } from 'lucide-react';
 import { Shape3DViewer, Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
 import { AlgebraTilesCanvas } from '../math/AlgebraTilesCanvas';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
@@ -13,6 +12,9 @@ import { generateMathSVG } from '../../services/gemini/svg';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { deriveContextualFormulas, resolveSlideConcept } from '../../utils/gammaContext';
+import { useGammaAnnotation, type AnnotMode } from './gamma/useGammaAnnotation';
+import { GammaThumbnailGrid } from './gamma/GammaThumbnailGrid';
+import { exportGammaPPTX } from './gamma/GammaExportService';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -52,6 +54,15 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // ── Thumbnail grid ────────────────────────────────────────────────────────
+  const [showGrid, setShowGrid] = useState(false);
+
+  // ── Formula zoom ──────────────────────────────────────────────────────────
+  const [formulaZoom, setFormulaZoom] = useState(1);
+
+  // ── Touch/swipe ───────────────────────────────────────────────────────────
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
   // ── SVG illustration cache: slideIdx → svg string ─────────────────────────
   const [svgCache, setSvgCache]       = useState<Record<number, string>>({});
   const [svgLoading, setSvgLoading]   = useState<Record<number, boolean>>({});
@@ -63,179 +74,21 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   // ── PPTX export ───────────────────────────────────────────────────────────
   const [isExportingPptx, setIsExportingPptx] = useState(false);
 
-  const exportGammaPPTX = useCallback(async () => {
+  const handleExportPPTX = useCallback(async () => {
     if (isExportingPptx) return;
     setIsExportingPptx(true);
     addNotification('Генерирам PPTX презентација…', 'info');
-    try {
-      const { default: pptxgen } = await import('pptxgenjs');
-      const pptx = new pptxgen();
-      pptx.layout = 'LAYOUT_16x9';
-      const W = 10; // inches
-
-      // Dark Gamma theme
-      const BG    = '0F172A'; // slate-950
-      const TITLE = 'A5B4FC'; // indigo-300
-      const BODY  = 'CBD5E1'; // slate-300
-      const LINE  = '3730A3'; // indigo-800
-      const ACCT  = '818CF8'; // indigo-400
-
-      const isPro = !!(user?.isPremium);
-      const logoUrl = user?.schoolLogoUrl ?? null;
-      const footerText = isPro && user?.schoolName
-        ? user.schoolName
-        : 'ai.mismath.net';
-
-      for (let i = 0; i < data.slides.length; i++) {
-        const slide = data.slides[i];
-        const pptSlide = pptx.addSlide();
-        pptSlide.background = { color: BG };
-
-        // ── Slide header bar ──
-        pptSlide.addShape('rect', { x: 0, y: 0, w: W, h: 0.55, fill: { color: '1E1B4B' } });
-        pptSlide.addText(slide.title ?? '', {
-          x: 0.3, y: 0.05, w: W - 2, h: 0.45,
-          fontSize: 14, bold: true, color: TITLE, fontFace: 'Arial',
-        });
-        pptSlide.addText(`${i + 1} / ${data.slides.length}`, {
-          x: W - 1.5, y: 0.05, w: 1.2, h: 0.45,
-          fontSize: 11, color: '6366F1', align: 'right', fontFace: 'Arial',
-        });
-
-        // ── Slide body by type ──
-        const contentY = 0.75;
-        const contentH = 4.35;
-        const lineH = 0.44;
-
-        if (slide.type === 'title') {
-          pptSlide.addText(slide.title ?? '', {
-            x: 0.5, y: 1.5, w: W - 1, h: 1.4,
-            fontSize: 40, bold: true, color: TITLE, align: 'center', fontFace: 'Arial',
-          });
-          if (slide.content.length > 0) {
-            pptSlide.addText(slide.content.join('\n'), {
-              x: 0.5, y: 3.1, w: W - 1, h: 1.2,
-              fontSize: 18, color: BODY, align: 'center', fontFace: 'Arial',
-            });
-          }
-          pptSlide.addText(`${data.topic} · ${data.gradeLevel}. одделение`, {
-            x: 0.5, y: 4.4, w: W - 1, h: 0.4,
-            fontSize: 12, color: ACCT, align: 'center', fontFace: 'Arial',
-          });
-
-        } else if (slide.type === 'formula-centered') {
-          pptSlide.addShape('roundRect', {
-            x: 1.0, y: contentY + 0.4, w: W - 2, h: 1.6,
-            fill: { color: '1E1B4B' },
-            line: { color: LINE, width: 2 },
-          });
-          pptSlide.addText(slide.content[0] ?? slide.title ?? '', {
-            x: 1.0, y: contentY + 0.6, w: W - 2, h: 1.2,
-            fontSize: 24, bold: true, color: TITLE, align: 'center', fontFace: 'Courier New',
-          });
-          let noteY = contentY + 2.3;
-          for (const note of slide.content.slice(1)) {
-            pptSlide.addText(`• ${note}`, { x: 1.0, y: noteY, w: W - 2, h: lineH, fontSize: 14, color: BODY, fontFace: 'Arial' });
-            noteY += lineH;
-            if (noteY > contentY + contentH) break;
-          }
-
-        } else if (slide.type === 'step-by-step' || slide.type === 'proof') {
-          let curY = contentY;
-          slide.content.forEach((step, si) => {
-            pptSlide.addShape('roundRect', {
-              x: 0.4, y: curY, w: 0.5, h: 0.36,
-              fill: { color: si === 0 ? '4F46E5' : '1E1B4B' },
-              line: { color: LINE, width: 1 },
-            });
-            pptSlide.addText(String(si + 1), { x: 0.4, y: curY + 0.02, w: 0.5, h: 0.32, fontSize: 11, bold: true, color: 'FFFFFF', align: 'center' });
-            pptSlide.addText(step, { x: 1.1, y: curY, w: W - 1.5, h: lineH, fontSize: 14, color: BODY, fontFace: 'Arial' });
-            curY += lineH + 0.04;
-            if (curY > contentY + contentH) return;
-          });
-
-        } else if (slide.type === 'task' || slide.type === 'example') {
-          const isTask = slide.type === 'task';
-          const boxColor = isTask ? '451A03' : '052E16';
-          const labelColor = isTask ? 'FCD34D' : '6EE7B7';
-          pptSlide.addShape('roundRect', {
-            x: 0.5, y: contentY, w: W - 1, h: 2.2,
-            fill: { color: boxColor }, line: { color: isTask ? '92400E' : '065F46', width: 1.5 },
-          });
-          pptSlide.addText(isTask ? '📝 Задача' : '💡 Пример', {
-            x: 0.8, y: contentY + 0.15, w: 3, h: 0.35, fontSize: 11, bold: true, color: labelColor,
-          });
-          pptSlide.addText(slide.content[0] ?? '', {
-            x: 0.8, y: contentY + 0.55, w: W - 1.6, h: 1.5, fontSize: 15, color: '#E2E8F0', fontFace: 'Arial', wrap: true,
-          });
-          if (slide.solution && slide.solution.length > 0) {
-            let solY = contentY + 2.45;
-            pptSlide.addText('Решение:', { x: 0.5, y: solY, w: 2, h: 0.32, fontSize: 11, bold: true, color: '6EE7B7' });
-            solY += 0.34;
-            for (const sol of slide.solution) {
-              pptSlide.addText(`• ${sol}`, { x: 0.5, y: solY, w: W - 1, h: lineH, fontSize: 13, color: BODY, fontFace: 'Arial' });
-              solY += lineH;
-              if (solY > 5.1) break;
-            }
-          }
-
-        } else {
-          // content / summary / comparison / proof fallback
-          let curY = contentY;
-          for (const line of slide.content) {
-            pptSlide.addShape('ellipse', { x: 0.4, y: curY + 0.14, w: 0.12, h: 0.12, fill: { color: ACCT } });
-            pptSlide.addText(line, { x: 0.65, y: curY, w: W - 1.1, h: lineH, fontSize: 15, color: BODY, fontFace: 'Arial' });
-            curY += lineH + 0.04;
-            if (curY > contentY + contentH) break;
-          }
-        }
-
-        // ── Speaker notes ──
-        pptSlide.addNotes([
-          `Слајд ${i + 1}/${data.slides.length}: ${slide.title ?? ''}`,
-          slide.speakerNotes ?? '',
-          `Тема: ${data.topic} | Генерирано со Math Navigator AI (Gamma Mode)`,
-        ].filter(Boolean).join('\n'));
-
-        // ── Footer ──
-        pptSlide.addShape('line', { x: 0, y: 5.38, w: W, h: 0, line: { color: LINE, width: 0.75 } });
-        if (isPro && logoUrl) {
-          try {
-            pptSlide.addImage({ path: logoUrl, x: 0.2, y: 5.41, w: 0.6, h: 0.18 });
-          } catch { /* logo load fail — fall through to text */ }
-        }
-        pptSlide.addText(footerText, {
-          x: isPro && logoUrl ? 0.9 : 0.3, y: 5.41, w: W - 1, h: 0.2,
-          fontSize: 8, color: isPro ? ACCT : '475569', fontFace: 'Arial',
-          italic: !isPro,
-        });
-        pptSlide.addText(`${data.topic} · ${data.gradeLevel}. одд.`, {
-          x: W - 3.5, y: 5.41, w: 3.2, h: 0.2,
-          fontSize: 8, color: '475569', align: 'right',
-        });
-      }
-
-      const safeTitle = data.title.replace(/\s+/g, '_').replace(/[<>:"/\\|?*\x00-\x1f]/g, '').slice(0, 80) || 'gamma';
-      await pptx.writeFile({ fileName: `${safeTitle}_gamma.pptx` });
-      addNotification('PPTX успешно зачуван! ✅', 'success');
-    } catch (err) {
-      logger.error('[Gamma PPTX]', err);
-      addNotification('Грешка при генерирање на PPTX.', 'error');
-    } finally {
-      setIsExportingPptx(false);
-    }
+    await exportGammaPPTX(
+      data,
+      { isPro: !!(user?.isPremium), logoUrl: user?.schoolLogoUrl ?? null, schoolName: user?.schoolName ?? null },
+      (msg) => addNotification(msg, 'success'),
+      (msg) => addNotification(msg, 'error'),
+    );
+    setIsExportingPptx(false);
   }, [data, user, isExportingPptx, addNotification]);
 
   // ── Annotation tools ───────────────────────────────────────────────────────
-  type AnnotMode = 'draw' | 'highlight' | 'laser' | null;
-  const [annotMode, setAnnotMode]       = useState<AnnotMode>(null);
-  const [hasAnnotations, setHasAnnot]   = useState(false);
-  const [laserPos, setLaserPos]         = useState<{ x: number; y: number } | null>(null);
-  const canvasRef                       = useRef<HTMLCanvasElement>(null);
-  const isDrawingRef                    = useRef(false);
-  const lastPosRef                      = useRef({ x: 0, y: 0 });
-  const undoStackRef                    = useRef<ImageData[]>([]);
-  const [undoCount, setUndoCount]       = useState(0);
+  const { canvasRef, annotMode, hasAnnotations, laserPos, undoCount, toggleAnnot, clearCanvas, undoAnnotation, onCanvasMouseDown, onCanvasMouseMove, onCanvasMouseUp, onCanvasMouseLeave } = useGammaAnnotation(idx);
 
   useEffect(() => {
     previousActiveElementRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -254,63 +107,9 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     return () => media.removeEventListener('change', update);
   }, []);
 
-  // Size canvas to match its CSS size whenever layout changes
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ro = new ResizeObserver(() => {
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
-      if (w === 0 || h === 0) return; // hidden or not yet laid out
-      // Preserve existing drawings by copying to a temp canvas
-      const tmp = document.createElement('canvas');
-      tmp.width = canvas.width;
-      tmp.height = canvas.height;
-      const tmpCtx = tmp.getContext('2d');
-      if (tmpCtx) tmpCtx.drawImage(canvas, 0, 0);
-      canvas.width  = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      if (ctx) ctx.drawImage(tmp, 0, 0);
-    });
-    ro.observe(canvas);
-    return () => ro.disconnect();
-  }, []);
+  // Reset zoom on slide change (canvas clearing handled by useGammaAnnotation)
+  useEffect(() => { setFormulaZoom(1); }, [idx]);
 
-  // Clear canvas on slide change
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
-    setHasAnnot(false);
-    setLaserPos(null);
-  }, [idx]);
-
-  const clearCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    // Push current state to undo stack before clearing
-    undoStackRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-    if (undoStackRef.current.length > 20) undoStackRef.current.shift();
-    setUndoCount(undoStackRef.current.length);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setHasAnnot(false);
-  }, []);
-
-  const undoAnnotation = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || undoStackRef.current.length === 0) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const prev = undoStackRef.current.pop()!;
-    setUndoCount(undoStackRef.current.length);
-    ctx.putImageData(prev, 0, 0);
-    // Check if canvas still has content after undo
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    setHasAnnot(data.some(v => v !== 0));
-  }, []);
 
   // ── Fullscreen ────────────────────────────────────────────────────────────
   const toggleFullscreen = useCallback(() => {
@@ -327,55 +126,6 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
-  const toggleAnnot = useCallback((mode: AnnotMode) => {
-    setAnnotMode(prev => prev === mode ? null : mode);
-    setLaserPos(null);
-  }, []);
-
-  const onCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (annotMode === 'laser' || !annotMode) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      // Snapshot before each stroke for undo
-      undoStackRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-      if (undoStackRef.current.length > 20) undoStackRef.current.shift();
-      setUndoCount(undoStackRef.current.length);
-    }
-    const rect = canvas.getBoundingClientRect();
-    isDrawingRef.current = true;
-    lastPosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  }, [annotMode]);
-
-  const onCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (annotMode === 'laser') {
-      setLaserPos({ x, y });
-      return;
-    }
-    if (!isDrawingRef.current || !annotMode) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.beginPath();
-    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = annotMode === 'highlight' ? 'rgba(250,204,21,0.35)' : '#ef4444';
-    ctx.lineWidth   = annotMode === 'highlight' ? 22 : 3;
-    ctx.lineCap     = 'round';
-    ctx.lineJoin    = 'round';
-    ctx.stroke();
-    lastPosRef.current = { x, y };
-    setHasAnnot(true);
-  }, [annotMode]);
-
-  const onCanvasMouseUp = useCallback(() => { isDrawingRef.current = false; }, []);
 
   // ── Task timer ────────────────────────────────────────────────────────────
   const [taskTimer, setTaskTimer]     = useState<number | null>(null);
@@ -531,19 +281,26 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); goNext(); }
       if (e.key === 'ArrowLeft')  { e.preventDefault(); goPrev(); }
-      if (e.key === 'Escape')     { if (annotMode) { setAnnotMode(null); } else { onClose(); } }
+      if (e.key === 'Escape')     {
+        if (showGrid) { setShowGrid(false); return; }
+        if (annotMode) { toggleAnnot(annotMode); return; }
+        onClose();
+      }
       if (e.key === 'r' || e.key === 'R') setRevealed(true);
       if (e.key === 'd' || e.key === 'D') toggleAnnot('draw');
       if (e.key === 'h' || e.key === 'H') toggleAnnot('highlight');
       if (e.key === 'l' || e.key === 'L') toggleAnnot('laser');
       if (e.key === 'c' || e.key === 'C') clearCanvas();
       if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+      if (e.key === 'g' || e.key === 'G') setShowGrid(v => !v);
+      if (e.key === '+' || e.key === '=') setFormulaZoom(z => Math.min(z + 0.5, 3));
+      if (e.key === '-') setFormulaZoom(z => Math.max(z - 0.5, 1));
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoAnnotation(); }
       if (e.key === 'p' || e.key === 'P') { e.preventDefault(); window.print(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goNext, goPrev, onClose, annotMode, toggleAnnot, clearCanvas, toggleFullscreen, undoAnnotation]);
+  }, [goNext, goPrev, onClose, annotMode, showGrid, toggleAnnot, clearCanvas, toggleFullscreen, undoAnnotation]);
 
   // ── Hint for Space/Enter action ───────────────────────────────────────────
   const spaceHint = isStepSlide && stepIdx < slide.content.length - 1
@@ -600,11 +357,29 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
       case 'formula-centered':
         return (
-          <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
-            <div className="text-3xl md:text-5xl font-black text-white text-center bg-violet-900/30 border border-violet-700/40 rounded-3xl px-10 py-8 shadow-2xl max-w-3xl w-full">
+          <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
+            {/* Zoom controls */}
+            <div className="flex items-center gap-2 self-end pr-4">
+              <button type="button" title="Намали (−)" onClick={() => setFormulaZoom(z => Math.max(z - 0.5, 1))}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition disabled:opacity-30"
+                disabled={formulaZoom <= 1}>
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <span className="text-xs text-slate-500 font-mono w-10 text-center">{formulaZoom}×</span>
+              <button type="button" title="Зголеми (+)" onClick={() => setFormulaZoom(z => Math.min(z + 0.5, 3))}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition disabled:opacity-30"
+                disabled={formulaZoom >= 3}>
+                <ZoomIn className="w-4 h-4" />
+              </button>
+            </div>
+            <div
+              className="gamma-formula-zoom text-3xl md:text-5xl font-black text-white text-center bg-violet-900/30 border border-violet-700/40 rounded-3xl px-10 py-8 shadow-2xl max-w-3xl w-full cursor-zoom-in"
+              style={{ '--gamma-formula-zoom': formulaZoom } as React.CSSProperties}
+              onDoubleClick={() => setFormulaZoom(z => z < 2 ? 2 : 1)}
+            >
               <MathRenderer text={slide.content[0] ?? slide.title} />
             </div>
-            {slide.content.slice(1).map((line, i) => (
+            {formulaZoom === 1 && slide.content.slice(1).map((line, i) => (
               <p key={i} className="text-lg text-slate-400 text-center max-w-2xl">
                 <MathRenderer text={line} />
               </p>
@@ -1011,6 +786,12 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             )}
           </div>
 
+          {/* Thumbnail grid toggle */}
+          <button type="button" onClick={() => setShowGrid(v => !v)} title="Преглед на слајдови (G)"
+            className={`p-1.5 rounded-lg transition ${showGrid ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}>
+            <Grid className="w-3.5 h-3.5" />
+          </button>
+
           {/* Print / PPTX / Fullscreen */}
           <button type="button" onClick={() => window.print()} title="Печати / Зачувај PDF (P)"
             className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
@@ -1018,7 +799,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           </button>
           <button
             type="button"
-            onClick={exportGammaPPTX}
+            onClick={handleExportPPTX}
             disabled={isExportingPptx}
             title="Зачувај PPTX (PowerPoint)"
             className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition text-[11px] font-semibold"
@@ -1051,7 +832,20 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         !visible
           ? dir === 'fwd' ? 'opacity-0 translate-x-8' : 'opacity-0 -translate-x-8'
           : 'opacity-100 translate-x-0'
-      }`}>
+      }`}
+        onTouchStart={e => { touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+        onTouchEnd={e => {
+          if (!touchStartRef.current) return;
+          const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+          const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+          touchStartRef.current = null;
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+            if (dx < 0) goNext(); else goPrev();
+          } else if (dy < -80 && Math.abs(dx) < 40) {
+            setNotesOpen(true);
+          }
+        }}
+      >
 
         {/* Slide title (except for 'title' type which renders its own) */}
         {slide.type !== 'title' && (
@@ -1109,7 +903,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           onMouseDown={onCanvasMouseDown}
           onMouseMove={onCanvasMouseMove}
           onMouseUp={onCanvasMouseUp}
-          onMouseLeave={() => { onCanvasMouseUp(); setLaserPos(null); }}
+          onMouseLeave={onCanvasMouseLeave}
         />
 
         {/* Laser pointer glow */}
@@ -1135,6 +929,16 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           </div>
         )}
       </div>
+
+      {/* ── Thumbnail grid overlay ─────────────────────────────────────────── */}
+      {showGrid && (
+        <GammaThumbnailGrid
+          slides={slides}
+          activeIdx={idx}
+          onJump={jumpToSlide}
+          onClose={() => setShowGrid(false)}
+        />
+      )}
 
       {/* ── Speaker notes panel ────────────────────────────────────────────── */}
       {notesOpen && slide.speakerNotes && (
@@ -1206,7 +1010,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
         {/* Keyboard hint */}
         <p className="text-center text-[10px] text-slate-600 hidden md:block">
-          ← → навигација · Space следен · R решение · D/H/L аннотации · Ctrl+Z врати · F цел екран · P печати · Esc излез
+          ← → навигација · Space следен · R решение · D/H/L аннотации · Ctrl+Z врати · G мрежа · F цел екран · P печати · Esc излез
         </p>
         <p aria-live="polite" className="sr-only">{spaceHint}</p>
       </div>

@@ -363,6 +363,24 @@ html.high-contrast {
   will-change: transform, opacity;
 }
 
+/* Formula zoom — driven by --gamma-formula-zoom CSS custom property */
+.gamma-formula-zoom {
+  transform: scale(var(--gamma-formula-zoom, 1));
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* Thumbnail grid overlay */
+.gamma-thumbnail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+  padding: 1.5rem;
+}
+
 @keyframes pulse-bg-blue {
   0%, 100% { background-color: #EFF6FF; }
   50%      { background-color: #DBEAFE; }

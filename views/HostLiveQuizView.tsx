@@ -1,7 +1,7 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy } from 'lucide-react';
-import QRCode from 'react-qr-code';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { firestoreService } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
 import { type LiveSession } from '../services/firestoreService.types';

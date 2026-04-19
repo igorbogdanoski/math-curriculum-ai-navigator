@@ -701,6 +701,61 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S33 — ЗАВРШЕНА ✅ (19 Apr 2026)
+
+```text
+Baseline: TSC 0, 689/689 unit tests
+
+MASTER_ACTION_PLAN — критични fixes + Gamma Mode elevation + архитектурен split
+
+К1: react-router-dom → NavigationContext (MaturaImportView.tsx)
+  - useNavigate() → useNavigation().navigate() — отстранета единствената
+    зависност од react-router-dom во апликацијата
+
+К2: vite.config.ts — отстранети мртви manualChunks правила
+  - Отстранети: vendor-three, vendor-motion (пакети не постојат во dependencies)
+  - Превентира "Rollup cannot resolve module" при промена на lockfile
+
+К3: QR пакет консолидација — react-qr-code → qrcode.react
+  - ClassesTab, LiveTab, HostLiveQuizView, LiveDisplayView,
+    TeacherProfileView, GeneratedPresentation (6 фајлови)
+  - Единствен QR пакет → помал бандл, нема дупликат на React instances
+
+К4: MASTER_ACTION_PLAN.md (НОВО) — 900-линиски world-class акционен план
+  - К1–К6, А1–А6, Г1–Г11, AI1–AI8, П1–П6, Инф1–Инф7, UX1–UX5, М1–М3, С1–С4
+  - Sprint план S33–S38+, метрики цели
+
+К5+К6: (вклучени во К1 и MASTER_ACTION_PLAN)
+
+Г1: Touch/swipe навигација (GammaModeModal.tsx)
+  - onTouchStart/onTouchEnd → swipe detection (deltaX > 50px → prev/next)
+  - Swipe up (deltaY < -80px) → отвора speaker notes
+  - Целосна поддршка за таблети и паметни табли
+
+Г2: Thumbnail grid overlay (G копче / keyboard G)
+  - Преглед на сите слајдови во grid layout
+  - Клик → jumpToSlide() + затвори grid
+  - Escape → затвора grid прво, потоа излегува
+
+Г3: Formula zoom (+ / − / double-click)
+  - CSS custom property pattern (--gamma-formula-zoom) — no ESLint inline-style
+  - Zoom: 1× → 1.5× → 2× → 2.5× → 3× (scroll +0.5 чекор)
+  - Double-click → toggle 1×↔2×
+  - Reset на slide change
+
+А2: GammaModeModal архитектурен split → components/ai/gamma/
+  - useGammaAnnotation.ts (НОВО) — canvas annotation state + handlers
+    draw / highlight / laser pointer / undo stack / canvas resize
+    Clears undo stack on slide change (подобрување над оригиналот)
+  - GammaThumbnailGrid.tsx (НОВО) — thumbnail grid overlay компонент
+    Props: slides, activeIdx, onJump, onClose
+  - GammaExportService.ts (НОВО) — чиста async функција за PPTX export
+    exportGammaPPTX(data, options, onSuccess, onError): Promise<void>
+  - GammaModeModal.tsx: ~160 линии помалку, чист координатор
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
+```
+
 ### S32 — ЗАВРШЕНА ✅ (18 Apr 2026)
 
 ```text

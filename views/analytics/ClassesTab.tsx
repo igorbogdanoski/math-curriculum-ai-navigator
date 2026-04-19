@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { School, Plus, Trash2, UserPlus, X, Edit2, Check, Upload, FileText, Key, RefreshCw, Copy, CheckCircle2, BarChart2, ChevronDown, ChevronUp, Loader2, AlertCircle, Link2 } from 'lucide-react';
-import QRCode from 'react-qr-code';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { firestoreService, type SchoolClass } from '../../services/firestoreService';
 import { Card } from '../../components/common/Card';
 import { SilentErrorBoundary } from '../../components/common/SilentErrorBoundary';

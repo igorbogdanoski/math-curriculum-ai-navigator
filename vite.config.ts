@@ -342,7 +342,7 @@ export default defineConfig(({ mode }) => {
               if (id.includes('/xlsx/') || id.includes('\\xlsx\\')) return 'vendor-xlsx';
               if (id.includes('recharts')) return 'vendor-charts';
               if (id.includes('/d3-') || id.includes('\\d3-') || id.includes('d3-array') || id.includes('d3-scale') || id.includes('d3-shape') || id.includes('d3-color')) return 'vendor-d3';
-              if (id.includes('three')) return 'vendor-three';
+              // three.js: not in dependencies — rule removed
               if (id.includes('lucide-react')) return 'vendor-icons';
               if (id.includes('@tanstack/react-query')) return 'vendor-query';
               if (id.includes('@dnd-kit') || id.includes('react-joyride') || id.includes('react-router-dom') || id.includes('zustand')) return 'vendor-react-ui';
@@ -361,7 +361,7 @@ export default defineConfig(({ mode }) => {
               if (id.includes('katex')) return 'vendor-katex';
               if (id.includes('marked') || id.includes('remark') || id.includes('rehype') || id.includes('unified') || id.includes('mdast') || id.includes('micromark')) return 'vendor-markdown';
               if (id.includes('date-fns') || id.includes('dayjs')) return 'vendor-dates';
-              if (id.includes('framer-motion') || id.includes('motion-dom') || id.includes('motion-utils')) return 'vendor-motion';
+              // framer-motion: not in dependencies — rule removed
               // NOTE: do not split React core / react-dom — proven TDZ runtime errors with cyclic vendor imports.
               return 'vendor';
             }
