@@ -33,11 +33,8 @@ const transform = (p: Vec3, yaw: number, pitch: number): Vec3 => rotY(rotX(p, pi
 const pts2svg = (pts: [number, number][]) => pts.map(p => p.join(',')).join(' ');
 
 // ─── Shape types ──────────────────────────────────────────────────────────────
-export type Shape3DType = 'cube' | 'cuboid' | 'sphere' | 'cylinder' | 'cone' | 'pyramid' | 'prism';
-
-export interface ShapeDimensions {
-  a?: number; b?: number; c?: number; h?: number; r?: number;
-}
+export type { Shape3DType, ShapeDimensions } from '../../types/shape3d';
+import type { Shape3DType, ShapeDimensions } from '../../types/shape3d';
 
 interface ShapeMeta {
   label: string; mk: string;

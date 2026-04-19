@@ -6,9 +6,8 @@
  *          #/share/visual?tiles=1x2_-1x_-2u      (negative tiles)
  *   Shape: #/share/visual?shape=cylinder&r=1.5&h=3
  */
-import type { Shape3DType, ShapeDimensions } from '../components/math/Shape3DViewer';
+import type { Shape3DType, ShapeDimensions } from '../types/shape3d';
 
-// Re-export these types so callers don't need to import from Shape3DViewer directly
 export type { Shape3DType, ShapeDimensions };
 
 export type TileKind = 'x2' | 'x' | '1';
