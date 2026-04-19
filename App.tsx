@@ -37,6 +37,7 @@ import { ContextualFAB } from './components/common/ContextualFAB';
 import { UpgradeModal } from './components/common/UpgradeModal';
 import { CookieConsent } from './components/common/CookieConsent';
 import { DemoBanner } from './components/common/DemoBanner';
+import { ModalManager } from './components/common/ModalManager';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -445,6 +446,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             <CurriculumProvider>
               <PlannerProvider>
                 <ModalProvider>
+                  <ModalManager />
                   <LastVisitedProvider>
                     <AcademyProgressProvider>
                       <UIProvider>

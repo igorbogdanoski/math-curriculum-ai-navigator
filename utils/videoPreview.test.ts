@@ -81,12 +81,49 @@ describe('fetchVideoPreview', () => {
     );
   });
 
-  it('throws when oEmbed request fails', async () => {
+  it('falls back to noembed.com when the native oEmbed endpoint fails', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          title: 'Fallback title',
+          author_name: 'Noembed author',
+          thumbnail_url: 'https://img.example/thumb.jpg',
+        }),
+      });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const result = await fetchVideoPreview('https://youtu.be/dQw4w9WgXcQ');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).toContain('youtube.com/oembed');
+    expect(fetchMock.mock.calls[1][0]).toContain('noembed.com/embed');
+    expect(result.title).toBe('Fallback title');
+    expect(result.authorName).toBe('Noembed author');
+  });
+
+  it('degrades gracefully to videoId-only preview when all oEmbed sources fail', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false });
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
-    await expect(fetchVideoPreview('https://vimeo.com/123456789')).rejects.toThrow(
-      'Не можам да вчитам preview за овој видео URL.',
-    );
+    const result = await fetchVideoPreview('https://youtu.be/dQw4w9WgXcQ');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({
+      provider: 'youtube',
+      videoId: 'dQw4w9WgXcQ',
+      title: 'Видео лекција',
+      embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      normalizedUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    });
+  });
+
+  it('also degrades gracefully when oEmbed fetch throws (CORS/network)', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError('CORS blocked'));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const result = await fetchVideoPreview('https://vimeo.com/123456789');
+    expect(result.title).toBe('Видео лекција');
+    expect(result.provider).toBe('vimeo');
   });
 });

@@ -1,17 +1,27 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useModal } from '../../contexts/ModalContext';
 import { ModalType, type NationalStandard, type PlannerItem } from '../../types';
 import { ModalContainer } from './ModalContainer';
-
-// Import modal components
-import { PlannerItemModal } from '../planner/PlannerItemModal';
-import { LessonPlanQuickViewModal } from '../planner/LessonPlanQuickViewModal';
-import { TransversalStandardsModal } from '../explore/TransversalStandardsModal';
-import { AIAnnualPlanGeneratorModal } from '../planner/AIAnnualPlanGeneratorModal';
-import { AIThematicPlanGeneratorModal } from '../planner/AIThematicPlanGeneratorModal';
-import { LessonReflectionModal } from '../planner/LessonReflectionModal';
-import { NationalStandardDetailsModal } from '../explore/NationalStandardDetailsModal';
 import { ConfirmDialog } from './ConfirmDialog';
+
+// Lazy-loaded modal registry.
+// Rationale: static cross-imports (ModalManager → modal → useModal) created
+// 7 circular dependencies; lazy() defers module evaluation, breaking cycles
+// at bundler + runtime level AND keeps heavy modal chunks out of the initial
+// JS bundle (code-split at chunk granularity by Vite/Rollup).
+const PlannerItemModal               = lazy(() => import('../planner/PlannerItemModal').then(m => ({ default: m.PlannerItemModal })));
+const LessonPlanQuickViewModal       = lazy(() => import('../planner/LessonPlanQuickViewModal').then(m => ({ default: m.LessonPlanQuickViewModal })));
+const TransversalStandardsModal      = lazy(() => import('../explore/TransversalStandardsModal').then(m => ({ default: m.TransversalStandardsModal })));
+const AIAnnualPlanGeneratorModal     = lazy(() => import('../planner/AIAnnualPlanGeneratorModal').then(m => ({ default: m.AIAnnualPlanGeneratorModal })));
+const AIThematicPlanGeneratorModal   = lazy(() => import('../planner/AIThematicPlanGeneratorModal').then(m => ({ default: m.AIThematicPlanGeneratorModal })));
+const LessonReflectionModal          = lazy(() => import('../planner/LessonReflectionModal').then(m => ({ default: m.LessonReflectionModal })));
+const NationalStandardDetailsModal   = lazy(() => import('../explore/NationalStandardDetailsModal').then(m => ({ default: m.NationalStandardDetailsModal })));
+
+const ModalFallback: React.FC = () => (
+  <div className="flex items-center justify-center p-10 text-sm text-slate-500">
+    Вчитување…
+  </div>
+);
 
 export const ModalManager: React.FC = () => {
   const { modal, hideModal } = useModal();
@@ -26,22 +36,22 @@ export const ModalManager: React.FC = () => {
     switch (type) {
       case ModalType.PlannerItem:
         return <PlannerItemModal {...props} />;
-      
+
       case ModalType.LessonQuickView:
         return <LessonPlanQuickViewModal {...(props as { lessonPlanId: string })} />;
-      
+
       case ModalType.TransversalStandards:
         return <TransversalStandardsModal {...(props as { standards: NationalStandard[], gradeTitle: string })} />;
-      
+
       case ModalType.AIAnnualPlanGenerator:
           return <AIAnnualPlanGeneratorModal {...props} />;
-      
+
       case ModalType.AIThematicPlanGenerator:
           return <AIThematicPlanGeneratorModal {...props} hideModal={hideModal} />;
-      
+
       case ModalType.LessonReflection:
           return <LessonReflectionModal {...(props as { item: PlannerItem })} />;
-        
+
       case ModalType.NationalStandardDetails:
         return <NationalStandardDetailsModal {...(props as { standard: NationalStandard })} />;
 
@@ -53,15 +63,18 @@ export const ModalManager: React.FC = () => {
     }
   };
 
-  // If it's a Confirm dialog, it handles its own backdrop and container for now 
-  // (to avoid double nesting or styling conflicts)
+  // If it's a Confirm dialog, it handles its own backdrop and container for now
+  // (to avoid double nesting or styling conflicts). ConfirmDialog is eager
+  // because it must open instantly (e.g. "are you sure?" flows).
   if (type === ModalType.Confirm) {
     return renderModalContent();
   }
 
   return (
     <ModalContainer onClose={hideModal}>
-      {renderModalContent()}
+      <Suspense fallback={<ModalFallback />}>
+        {renderModalContent()}
+      </Suspense>
     </ModalContainer>
   );
 };

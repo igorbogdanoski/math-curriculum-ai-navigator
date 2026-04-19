@@ -3,7 +3,15 @@
  * Tests pure functions only; Firestore and embed API are not called.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { cosineSimilarity, SIMILARITY_THRESHOLD, CACHE_KEY, CACHE_TTL_MS } from '../services/ragService';
+import {
+  cosineSimilarity,
+  SIMILARITY_THRESHOLD,
+  CACHE_KEY,
+  CACHE_TTL_MS,
+  getEffectiveSimilarityThreshold,
+  getRagStats,
+  _resetRagStatsForTests,
+} from '../services/ragService';
 
 // ── cosineSimilarity ──────────────────────────────────────────────────────────
 
@@ -167,5 +175,77 @@ describe('vectorRagQuery construction', () => {
       ? `${context.topic?.title ?? ''} ${context.concepts.map((c: { title: string }) => c.title).join(' ')}`.trim()
       : undefined;
     expect(query).toBeUndefined();
+  });
+});
+
+// ── getEffectiveSimilarityThreshold (localStorage tuning) ────────────────────
+
+describe('getEffectiveSimilarityThreshold', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('returns default 0.7 when override not set', () => {
+    expect(getEffectiveSimilarityThreshold()).toBe(SIMILARITY_THRESHOLD);
+  });
+
+  it('honours a valid in-range override', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_THRESHOLD', '0.65');
+    expect(getEffectiveSimilarityThreshold()).toBe(0.65);
+  });
+
+  it('falls back when override is not a number', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_THRESHOLD', 'abc');
+    expect(getEffectiveSimilarityThreshold()).toBe(SIMILARITY_THRESHOLD);
+  });
+
+  it('falls back when override is negative', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_THRESHOLD', '-0.1');
+    expect(getEffectiveSimilarityThreshold()).toBe(SIMILARITY_THRESHOLD);
+  });
+
+  it('falls back when override exceeds 1', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_THRESHOLD', '1.5');
+    expect(getEffectiveSimilarityThreshold()).toBe(SIMILARITY_THRESHOLD);
+  });
+
+  it('accepts boundary value 0', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_THRESHOLD', '0');
+    expect(getEffectiveSimilarityThreshold()).toBe(0);
+  });
+
+  it('accepts boundary value 1', () => {
+    localStorage.setItem('VITE_VECTOR_RAG_THRESHOLD', '1');
+    expect(getEffectiveSimilarityThreshold()).toBe(1);
+  });
+});
+
+// ── getRagStats (latency ring) ───────────────────────────────────────────────
+
+describe('getRagStats', () => {
+  beforeEach(() => {
+    _resetRagStatsForTests();
+  });
+
+  it('returns zero count when no samples have been recorded', () => {
+    const s = getRagStats();
+    expect(s.count).toBe(0);
+    expect(Number.isNaN(s.totalP50)).toBe(true);
+    expect(s.avgHits).toBe(0);
+  });
+
+  it('snapshot shape includes all expected keys', () => {
+    const s = getRagStats();
+    expect(s).toHaveProperty('embedP50');
+    expect(s).toHaveProperty('embedP95');
+    expect(s).toHaveProperty('fetchP50');
+    expect(s).toHaveProperty('fetchP95');
+    expect(s).toHaveProperty('totalP50');
+    expect(s).toHaveProperty('totalP95');
+    expect(s).toHaveProperty('avgHits');
+    expect(s).toHaveProperty('avgDocs');
   });
 });

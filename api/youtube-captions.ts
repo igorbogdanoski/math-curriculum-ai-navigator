@@ -50,7 +50,24 @@ function isRateLimited(identifier: string): boolean {
   }
   bucket.push(now);
   requestBuckets.set(identifier, bucket);
+  // Opportunistic GC: 1% chance per call, sweep idle buckets so long-running
+  // warm containers don't leak memory across thousands of unique users.
+  if (Math.random() < 0.01) gcIdleBuckets(now);
   return false;
+}
+
+function gcIdleBuckets(now = Date.now()): number {
+  let removed = 0;
+  for (const [key, bucket] of requestBuckets.entries()) {
+    const fresh = bucket.filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+    if (fresh.length === 0) {
+      requestBuckets.delete(key);
+      removed++;
+    } else if (fresh.length !== bucket.length) {
+      requestBuckets.set(key, fresh);
+    }
+  }
+  return removed;
 }
 
 function resetRateLimitState(identifier?: string): void {
@@ -368,11 +385,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ── Strategy 2: Page scrape fallback ─────────────────────────────────────
     const tracks = await fetchCaptionTracks(videoId);
     if (tracks.length === 0) {
+      // Cache "no captions" results for 10 minutes so retries don't hammer YouTube.
+      res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
       return res.status(200).json({ available: false, reason: 'No captions available for this video', videoId });
     }
 
     const track = pickTrack(tracks, lang);
     if (!track) {
+      res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
       return res.status(200).json({
         available: false,
         reason: 'No suitable caption track found',
@@ -383,6 +403,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const payload = await fetchTranscriptText(track);
     if (!payload.transcript || payload.transcript.length < 20) {
+      res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
       return res.status(200).json({ available: false, reason: 'Transcript is empty or too short', videoId });
     }
 
@@ -407,4 +428,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export const __testables = { isRateLimited, resetRateLimitState };
+export const __testables = {
+  isRateLimited,
+  resetRateLimitState,
+  gcIdleBuckets,
+  parseJson3Events,
+  pickTrack,
+  applyTranscriptLimit,
+};

@@ -1095,6 +1095,59 @@ A3: ExtractionHubView — World-Class Document + Video Extraction
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+---
+
+## Sprint S27 — Architectural Hardening for Scale (19 Apr 2026)
+
+> Baseline: TSC 0, 742/742 unit tests, bundle OK. AI1 Vector RAG код-готов, чека 50 real-run верификација. Целта на S27: да се отстранат архитектонските долгови кои ќе кочат идни интеграции — монолитни фајлови, runtime-hazard циклуси, tight coupling на модалите. Светско ниво = секој фајл ≤ 600 LOC, 0 runtime-опасни cycles, coverage ≥ 60% на top-10 megafiles.
+
+### Цели по приоритет (S27-A1 … S27-A9)
+
+```
+S27-A1 ⏳ Split services/geminiService.real.ts (2143 LOC) → 6-8 домен-фајлови
+         (quiz, lesson, assessment, flashcards, tutor, presentation, materials)
+         + barrel index.ts за backward-compat. Runtime: нема промена.
+S27-A2 ⏳ Split services/gemini/core.ts (1222 LOC) → queue.ts / auth.ts /
+         proxies/{embed,generate,stream,vision}.ts / systemInstruction.ts
+S27-A3 ⏳ Modal registry refactor: ModalManager.tsx + ModalContext.tsx → lazy
+         registry со React.lazy (скршува 7 cycles, намалува initial bundle)
+S27-A4 ⏳ Split i18n/translations.ts (1483 LOC) по домен (common/matura/
+         planner/materials/library) + index.ts агрегатор
+S27-A5 ⏳ Split views/MaturaLibraryView.tsx (1552 LOC) →
+         useMaturaLibrary() hook + MaturaFilters + MaturaList + MaturaDetail
+S27-A6 ⏳ Split views/ContentLibraryView.tsx (1490 LOC) — ист pattern
+S27-A7 ⏳ Split views/MaturaPracticeView.tsx (1384 LOC) → 3 phase-components
+S27-A8 ⏳ Generic firestorePage<T>(ref, {cursor, limit, orderBy}) helper
+         → refactor materials / matura / forum paginations
+S27-A9 ⏳ Unit/integration тестови за top-3 untested megafiles
+         (ExtractionHubView, GeneratedPresentation, useGeneratorActions)
+         + fix за indexedDB ↔ firestoreService cross-import
+```
+
+### Health gates (по секоја акција)
+
+```
+gate-1:  TSC 0 errors
+gate-2:  Full vitest suite зелена, +Δ нови тестови
+gate-3:  Build PASS (vite build, perf:budget)
+gate-4:  madge --circular: нови cycles = 0 (старите runtime-hazard се тргнати)
+gate-5:  Визуелна проверка: нема regressions (Playwright visual-regression)
+```
+
+### Evidence log (S27)
+
+```
+| date       | id      | summary                                                                                                          | status |
+|------------|---------|------------------------------------------------------------------------------------------------------------------|--------|
+| 2026-04-19 | S27-A0  | Pre-work — `core ↔ ragService` циклус: static imports заменети со dynamic на двете страни; runtime-hazard = 0.    | DONE   |
+| 2026-04-19 | S27-A0  | Video extraction fix: `fetchVideoPreview` со noembed.com fallback + graceful degrade; 4 нови тестови.            | DONE   |
+| 2026-04-19 | S27-A0  | Индексер префрлен на firebase-admin SDK (го заобиколува `concept_embeddings: allow write: if false`).             | DONE   |
+| 2026-04-19 | S27-A3  | Modal registry: 7 модали → React.lazy + Suspense; `<ModalManager />` mount-нат на App root; 7 циклуси отстранети (madge: 10 → 3); TSC 0; 742/742 тестови. | DONE   |
+| 2026-04-19 | S27-A1  | …                                                                                                                | TODO   |
+```
+
+---
+
 ### S29 — ЗАВРШЕНА ✅ (18 Apr 2026)
 
 ```text

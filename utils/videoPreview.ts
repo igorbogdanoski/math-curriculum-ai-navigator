@@ -89,22 +89,50 @@ export function normalizeSupportedVideoUrl(rawUrl: string): { provider: 'youtube
   return null;
 }
 
+type OEmbedData = { title?: string; author_name?: string; thumbnail_url?: string };
+
+async function fetchOEmbedJson(url: string): Promise<OEmbedData | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return null;
+    return (await res.json()) as OEmbedData;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchVideoPreview(rawUrl: string): Promise<VideoPreviewData> {
   const normalized = normalizeSupportedVideoUrl(rawUrl);
   if (!normalized) {
     throw new Error('Поддржани се само YouTube или Vimeo URL линкови.');
   }
 
-  const endpoint = normalized.provider === 'youtube'
+  // 1) Native oEmbed (Vimeo sends CORS; YouTube sometimes does not).
+  const nativeEndpoint = normalized.provider === 'youtube'
     ? `https://www.youtube.com/oembed?url=${encodeURIComponent(normalized.normalizedUrl)}&format=json`
     : `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(normalized.normalizedUrl)}`;
 
-  const response = await fetch(endpoint);
-  if (!response.ok) {
-    throw new Error('Не можам да вчитам preview за овој видео URL.');
+  let data = await fetchOEmbedJson(nativeEndpoint);
+
+  // 2) CORS-friendly fallback (noembed.com is allowlisted in CSP).
+  if (!data) {
+    const fallback = `https://noembed.com/embed?url=${encodeURIComponent(normalized.normalizedUrl)}`;
+    data = await fetchOEmbedJson(fallback);
   }
 
-  const data = await response.json() as { title?: string; author_name?: string; thumbnail_url?: string };
+  // 3) If both fail, degrade gracefully instead of breaking the whole pipeline.
+  //    Downstream we can still fetch captions + run extraction; only preview UI
+  //    loses the nice title/thumbnail.
+  if (!data) {
+    return {
+      provider: normalized.provider,
+      title: 'Видео лекција',
+      embedUrl: normalized.embedUrl,
+      normalizedUrl: normalized.normalizedUrl,
+      videoId: 'videoId' in normalized ? (normalized as { videoId?: string }).videoId : undefined,
+    };
+  }
+
   return {
     provider: normalized.provider,
     title: data.title?.trim() || 'Видео лекција',

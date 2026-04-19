@@ -1,6 +1,11 @@
 import React, { useState, createContext, useContext, useCallback, useMemo } from 'react';
-import { ModalManager } from '../components/common/ModalManager';
 import { ModalType } from '../types';
+
+// NOTE: `<ModalManager />` is deliberately NOT rendered here — it is mounted
+// once at the App root (App.tsx). That keeps this context file free of any
+// import from components/common/ModalManager, which previously closed a
+// 7-way circular dependency (ModalContext → ModalManager → each modal →
+// useModal from ModalContext).
 
 interface ModalState {
   type: ModalType;
@@ -39,7 +44,6 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ModalContext.Provider value={value}>
       {children}
-      <ModalManager />
     </ModalContext.Provider>
   );
 };
