@@ -69,6 +69,24 @@
                                    ]
                     },
                     {
+                        "collectionGroup":  "matura_questions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "topicArea",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "questionType",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "dokLevel",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
                         "collectionGroup":  "matura_ai_grades",
                         "queryScope":  "COLLECTION",
                         "fields":  [

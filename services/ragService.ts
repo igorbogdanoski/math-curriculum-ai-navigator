@@ -1,12 +1,20 @@
 import { logger } from '../utils/logger';
 import { Topic, Concept } from '../types';
-import { callEmbeddingProxy } from './gemini/core';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+
+// Dynamic import of callEmbeddingProxy breaks circular dep:
+//   gemini/core (imports ragService dynamically) ↔ ragService (needs embed proxy)
+async function embedQuery(text: string): Promise<number[]> {
+  const { callEmbeddingProxy } = await import('./gemini/core');
+  return callEmbeddingProxy(text);
+}
 
 const SIMILARITY_THRESHOLD = 0.7;
 const CACHE_KEY = 'rag_concept_embeddings_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;
+const THRESHOLD_OVERRIDE_KEY = 'VITE_VECTOR_RAG_THRESHOLD';
+const LATENCY_RING_SIZE = 50;
 
 interface ConceptEmbeddingDoc {
   vector: number[];
@@ -16,6 +24,90 @@ interface ConceptEmbeddingDoc {
 interface EmbeddingCache {
   ts: number;
   data: { id: string; vector: number[]; text: string }[];
+}
+
+interface LatencySample {
+  embedMs: number;
+  fetchMs: number;
+  totalMs: number;
+  docs: number;
+  hits: number;
+  ts: number;
+}
+
+const latencyRing: LatencySample[] = [];
+
+function pushLatency(sample: LatencySample): void {
+  latencyRing.push(sample);
+  if (latencyRing.length > LATENCY_RING_SIZE) {
+    latencyRing.splice(0, latencyRing.length - LATENCY_RING_SIZE);
+  }
+}
+
+function quantile(values: readonly number[], q: number): number {
+  if (values.length === 0) return Number.NaN;
+  const sorted = [...values].sort((a, b) => a - b);
+  const pos = (sorted.length - 1) * q;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] * (1 - (pos - lo)) + sorted[hi] * (pos - lo);
+}
+
+/**
+ * Resolve effective similarity threshold. Allows in-app tuning via
+ * `localStorage.setItem('VITE_VECTOR_RAG_THRESHOLD', '0.65')` without redeploy.
+ * Falls back to the compile-time default of 0.7 on any parse failure.
+ */
+export function getEffectiveSimilarityThreshold(): number {
+  try {
+    if (typeof localStorage === 'undefined') return SIMILARITY_THRESHOLD;
+    const raw = localStorage.getItem(THRESHOLD_OVERRIDE_KEY);
+    if (!raw) return SIMILARITY_THRESHOLD;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0 || n > 1) return SIMILARITY_THRESHOLD;
+    return n;
+  } catch {
+    return SIMILARITY_THRESHOLD;
+  }
+}
+
+export interface RagStats {
+  count: number;
+  embedP50: number;
+  embedP95: number;
+  fetchP50: number;
+  fetchP95: number;
+  totalP50: number;
+  totalP95: number;
+  avgHits: number;
+  avgDocs: number;
+}
+
+/** In-memory latency stats from the last 50 vector RAG searches. */
+export function getRagStats(): RagStats {
+  const embeds = latencyRing.map(s => s.embedMs);
+  const fetches = latencyRing.map(s => s.fetchMs);
+  const totals = latencyRing.map(s => s.totalMs);
+  const hits = latencyRing.map(s => s.hits);
+  const docs = latencyRing.map(s => s.docs);
+  const avg = (arr: number[]) => (arr.length === 0 ? 0 : arr.reduce((a, b) => a + b, 0) / arr.length);
+  return {
+    count: latencyRing.length,
+    embedP50: quantile(embeds, 0.5),
+    embedP95: quantile(embeds, 0.95),
+    fetchP50: quantile(fetches, 0.5),
+    fetchP95: quantile(fetches, 0.95),
+    totalP50: quantile(totals, 0.5),
+    totalP95: quantile(totals, 0.95),
+    avgHits: avg(hits),
+    avgDocs: avg(docs),
+  };
+}
+
+/** Reset latency ring — used by tests. */
+export function _resetRagStatsForTests(): void {
+  latencyRing.length = 0;
 }
 
 export function cosineSimilarity(v1: number[], v2: number[]): number {
@@ -55,6 +147,11 @@ class RagService {
     } catch { /* storage full — silent */ }
   }
 
+  /** Force-clear the in-session embedding cache (admin / settings panel). */
+  public clearCache(): void {
+    try { sessionStorage.removeItem(CACHE_KEY); } catch { /* noop */ }
+  }
+
   private async fetchConceptEmbeddings(): Promise<EmbeddingCache['data']> {
     const cached = this.getCache();
     if (cached) return cached;
@@ -81,10 +178,11 @@ class RagService {
 
     try {
       const t0 = Date.now();
-      const queryVector = await callEmbeddingProxy(queryText);
+      const queryVector = await embedQuery(queryText);
       const tEmbed = Date.now();
       const embeddings = await this.fetchConceptEmbeddings();
       const tFetch = Date.now();
+      const threshold = getEffectiveSimilarityThreshold();
 
       const results = embeddings
         .map(item => ({
@@ -92,13 +190,22 @@ class RagService {
           conceptId: item.id,
           similarity: cosineSimilarity(queryVector, item.vector),
         }))
-        .filter(r => r.similarity > SIMILARITY_THRESHOLD)
+        .filter(r => r.similarity > threshold)
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, topK);
 
+      pushLatency({
+        embedMs: tEmbed - t0,
+        fetchMs: tFetch - tEmbed,
+        totalMs: tFetch - t0,
+        docs: embeddings.length,
+        hits: results.length,
+        ts: tFetch,
+      });
+
       logger.debug(
         `[AI1 Vector RAG] embed=${tEmbed - t0}ms fetch=${tFetch - tEmbed}ms total=${tFetch - t0}ms` +
-        ` docs=${embeddings.length} hits=${results.length}`,
+        ` docs=${embeddings.length} hits=${results.length} threshold=${threshold}`,
       );
       return results;
     } catch (error) {
@@ -113,7 +220,19 @@ class RagService {
   public async getConceptContext(gradeLevel: number, conceptId: string): Promise<string> {
     const fullCurriculumData = await this.getCurriculumData();
     const gradeData = fullCurriculumData.curriculumData.grades.find((g) => g.level === gradeLevel);
-    if (!gradeData) return '';
+    if (!gradeData) {
+      // Fallback: search secondary curriculum (grades 10–13)
+      const { secondaryCurricula } = await import('../data/secondaryCurriculum');
+      for (const mod of secondaryCurricula) {
+        for (const secGrade of mod.curriculum.grades) {
+          for (const topic of secGrade.topics) {
+            const concept = topic.concepts.find((c) => c.id === conceptId);
+            if (concept) return this.formatConceptRAG(secGrade.title, topic.title, concept);
+          }
+        }
+      }
+      return '';
+    }
 
     for (const topic of gradeData.topics) {
       const concept = topic.concepts.find((c) => c.id === conceptId);
@@ -130,7 +249,17 @@ class RagService {
   public async getTopicContext(gradeLevel: number, topicId: string): Promise<string> {
     const fullCurriculumData = await this.getCurriculumData();
     const gradeData = fullCurriculumData.curriculumData.grades.find((g) => g.level === gradeLevel);
-    if (!gradeData) return '';
+    if (!gradeData) {
+      // Fallback: search secondary curriculum (grades 10–13)
+      const { secondaryCurricula } = await import('../data/secondaryCurriculum');
+      for (const mod of secondaryCurricula) {
+        for (const secGrade of mod.curriculum.grades) {
+          const topic = secGrade.topics.find((t) => t.id === topicId);
+          if (topic) return this.formatTopicRAG(secGrade.title, topic);
+        }
+      }
+      return '';
+    }
 
     const topic = gradeData.topics.find((t) => t.id === topicId);
     if (!topic) return '';

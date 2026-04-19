@@ -194,8 +194,8 @@ const ConceptCard: React.FC<{
       <div
         ref={contentRef}
         id={`concept-content-${concept.id}`}
-        className="overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ maxHeight: isExpanded ? `${contentRef.current?.scrollHeight}px` : '0px' }}
+        className="overflow-hidden transition-all duration-500 ease-in-out"
+        style={{ maxHeight: isExpanded ? '8000px' : '0px' }}
       >
         <div className="p-4 border-t space-y-4">
           <p className="text-gray-600"><MathRenderer text={concept.description} /></p>

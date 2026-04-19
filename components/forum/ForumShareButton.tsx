@@ -15,6 +15,7 @@ import React, { useState } from 'react';
 import { Share2, Send, Loader2, X, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
+import { logger } from '../../utils/logger';
 import {
   createForumThread,
   fetchForumThread,
@@ -74,7 +75,8 @@ export const ForumShareButton: React.FC<Props> = ({
       });
       addNotification('Успешно споделено во Форумот! 🎉', 'success');
       setOpen(false);
-    } catch {
+    } catch (err) {
+      logger.error('[ForumShareButton] createForumThread failed:', err);
       addNotification('Грешка при споделување во форумот.', 'error');
     } finally {
       setSaving(false);
