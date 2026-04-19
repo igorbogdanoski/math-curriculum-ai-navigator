@@ -701,6 +701,41 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S37 — ЗАВРШЕНА ✅ (19 Apr 2026)
+
+```text
+Baseline: TSC 0, 700/700 unit tests
+
+AI2: Vimeo Captions — автоматски транскрипт за Vimeo видеа
+
+api/vimeo-captions.ts (НОВО) — Vercel serverless endpoint
+  - GET /api/vimeo-captions?videoId=<numeric>&lang=<mk|en|...>
+  - VIMEO_ACCESS_TOKEN env var (Personal Access Token, scope: public)
+  - Fetches GET https://api.vimeo.com/videos/{id}/texttracks
+  - pickBestTrack(): preferred lang → mk → en → any (captions/subtitles само)
+  - parseWebVTT(): HH:MM:SS.mmm + MM:SS.mmm формати, strips VTT cue tags
+  - Transcript limiter: 80 000 chars, [truncated] signal
+  - Same Auth/CORS/rate-limit pattern (Firebase token + 20 req/min)
+  - Returns: { available, transcript, segments, lang, source:'manual', charCount, truncated, availableLangs }
+
+utils/videoPreview.ts:
+  - fetchVimeoCaptions(videoId, lang) → /api/vimeo-captions → VideoCaptionsResult
+
+views/ExtractionHubView.tsx:
+  - Vimeo branch: fetchVimeoCaptions() → setCaptions → applyTimeRange (исто како YouTube)
+  - Hint text update: "транскриптот се вчитува автоматски (доколку видеото има субтитли)"
+
+api/vimeo-captions.hardening.test.ts (НОВО) — 11 тестови:
+  - Rate limit: 20/min per user, независни корисници
+  - parseWebVTT: стандарден VTT, VTT cue tags, HH:MM:SS формат, празен VTT
+  - pickBestTrack: preferred lang, fallback EN, exclude chapters/descriptions, null на празна листа
+
+Конфигурација потребна:
+  - Vercel env: VIMEO_ACCESS_TOKEN=<personal-access-token> (scope: public, read-only)
+
+Метрики: TSC 0 | 700/700 tests | Build PASS
+```
+
 ### S36 — ЗАВРШЕНА ✅ (19 Apr 2026)
 
 ```text

@@ -117,6 +117,30 @@ export async function fetchVideoPreview(rawUrl: string): Promise<VideoPreviewDat
 }
 
 /**
+ * Fetches captions for a Vimeo video via /api/vimeo-captions.
+ * Returns { available: false } gracefully on any failure.
+ */
+export async function fetchVimeoCaptions(
+  videoId: string,
+  lang = 'mk',
+): Promise<VideoCaptionsResult> {
+  try {
+    const currentUser = getAuth(app).currentUser;
+    const token = currentUser ? await currentUser.getIdToken() : null;
+    const res = await fetch(
+      `/api/vimeo-captions?videoId=${encodeURIComponent(videoId)}&lang=${encodeURIComponent(lang)}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      },
+    );
+    if (!res.ok) return { available: false, reason: `HTTP ${res.status}` };
+    return (await res.json()) as VideoCaptionsResult;
+  } catch (err) {
+    return { available: false, reason: err instanceof Error ? err.message : 'Network error' };
+  }
+}
+
+/**
  * Fetches the real transcript/captions for a YouTube video via our server
  * endpoint /api/youtube-captions (no API key required on the client).
  * Gracefully returns { available: false } on any failure.

@@ -23,6 +23,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import {
   fetchVideoPreview,
   fetchYouTubeCaptions,
+  fetchVimeoCaptions,
   type VideoPreviewData,
   type VideoCaptionsResult,
 } from '../utils/videoPreview';
@@ -401,11 +402,19 @@ export const ExtractionHubView: React.FC = () => {
         if (caps.available && caps.transcript) {
           rawText = applyTimeRange(caps, timeRange);
         } else {
-          // Signal to UI to show manual transcript prompt
+          setNoTranscriptDetected(true);
+        }
+      } else if (isVimeoUrl(trimmed) && preview.videoId) {
+        setProgressLabel('Вадење Vimeo транскрипт...');
+        setProgressPct(20);
+        const caps = await fetchVimeoCaptions(preview.videoId, 'mk');
+        setCaptions(caps);
+        if (caps.available && caps.transcript) {
+          rawText = applyTimeRange(caps, timeRange);
+        } else {
           setNoTranscriptDetected(true);
         }
       } else {
-        // Vimeo or video without videoId — always needs manual transcript
         setNoTranscriptDetected(!manualTranscript.trim());
       }
 
@@ -699,7 +708,7 @@ export const ExtractionHubView: React.FC = () => {
                 {isVimeoUrl(url) && (
                   <p className="flex items-center gap-1.5 text-xs text-purple-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-purple-400 shrink-0" />
-                    Vimeo — автоматски транскрипт не е достапен. Внесете го рачно во Напредни параметри.
+                    Vimeo — транскриптот се вчитува автоматски (доколку видеото има субтитли).
                   </p>
                 )}
                 {/* No-transcript prompt (after failed auto-fetch) */}
