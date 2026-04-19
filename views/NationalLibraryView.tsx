@@ -52,14 +52,17 @@ export const NationalLibraryView: React.FC = () => {
   const uiLang = (() => {
     try { return localStorage.getItem('preferred_language') ?? 'mk'; } catch { return 'mk'; }
   })();
-  const translateLang = (uiLang !== 'mk' ? uiLang : null) as SupportedTranslateLang | null;
+  const [translateLang, setTranslateLang] = useState<SupportedTranslateLang>(
+    (uiLang !== 'mk' ? uiLang : 'sq') as SupportedTranslateLang,
+  );
+  const [translationLangs, setTranslationLangs] = useState<Record<string, SupportedTranslateLang>>({});
 
   const handleTranslate = async (entry: NationalLibraryEntry) => {
-    if (translations[entry.id]) {
+    const cachedLang = translationLangs[entry.id];
+    if (translations[entry.id] && cachedLang === translateLang) {
       setShowingTranslation(prev => { const s = new Set(prev); s.has(entry.id) ? s.delete(entry.id) : s.add(entry.id); return s; });
       return;
     }
-    if (!translateLang) return;
     setTranslating(prev => new Set(prev).add(entry.id));
     try {
       const t = await geminiService.translateLibraryEntry(
@@ -67,6 +70,7 @@ export const NationalLibraryView: React.FC = () => {
         translateLang,
       );
       setTranslations(prev => ({ ...prev, [entry.id]: t }));
+      setTranslationLangs(prev => ({ ...prev, [entry.id]: translateLang }));
       setShowingTranslation(prev => new Set(prev).add(entry.id));
     } catch {
       addNotification('Преводот не успеа. Обиди се пак.', 'error');
@@ -262,6 +266,21 @@ export const NationalLibraryView: React.FC = () => {
           </select>
           <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>
+        {/* Translate-to lang picker */}
+        <div className="flex items-center gap-1 border border-gray-200 rounded-xl p-0.5 bg-white">
+          <Languages className="w-3.5 h-3.5 text-gray-400 ml-1.5" />
+          {(Object.entries(LANG_LABELS) as [SupportedTranslateLang, string][]).map(([lang, label]) => (
+            <button
+              key={lang}
+              type="button"
+              title={`Преведи на ${label}`}
+              onClick={() => setTranslateLang(lang)}
+              className={`px-2 py-1 rounded-lg text-xs font-bold transition-colors ${translateLang === lang ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         {/* DoK filter buttons */}
         <div className="flex items-center gap-1.5">
           <button
@@ -379,7 +398,7 @@ export const NationalLibraryView: React.FC = () => {
                       {isTranslated && (
                         <div className="flex items-center gap-1 text-[10px] text-indigo-600 font-bold">
                           <Languages className="w-3 h-3" />
-                          {translateLang ? LANG_LABELS[translateLang] : ''}
+                          {translationLangs[entry.id] ? LANG_LABELS[translationLangs[entry.id]] : ''}
                         </div>
                       )}
                       <p className="text-sm text-gray-800 font-medium leading-relaxed flex-1">{q}</p>
@@ -476,10 +495,10 @@ export const NationalLibraryView: React.FC = () => {
                     {entry.schoolName && <span> · {entry.schoolName}</span>}
                   </div>
                   <div className="flex items-center gap-1.5">
-                    {translateLang && remixingId !== entry.id && (
+                    {remixingId !== entry.id && (
                       <button
                         type="button"
-                        title={showingTranslation.has(entry.id) ? 'Прикажи оригинал' : `Преведи на ${LANG_LABELS[translateLang]}`}
+                        title={showingTranslation.has(entry.id) && translationLangs[entry.id] === translateLang ? 'Прикажи оригинал' : `Преведи на ${LANG_LABELS[translateLang]}`}
                         onClick={() => handleTranslate(entry)}
                         disabled={translating.has(entry.id)}
                         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition disabled:opacity-50 ${
@@ -490,11 +509,11 @@ export const NationalLibraryView: React.FC = () => {
                       >
                         {translating.has(entry.id)
                           ? <Loader2 className="w-3 h-3 animate-spin" />
-                          : showingTranslation.has(entry.id)
+                          : showingTranslation.has(entry.id) && translationLangs[entry.id] === translateLang
                             ? <RotateCcw className="w-3 h-3" />
                             : <Languages className="w-3 h-3" />
                         }
-                        {showingTranslation.has(entry.id) ? 'МК' : LANG_LABELS[translateLang]}
+                        {showingTranslation.has(entry.id) && translationLangs[entry.id] === translateLang ? 'МК' : LANG_LABELS[translateLang]}
                       </button>
                     )}
                     {remixingId !== entry.id && (

@@ -757,11 +757,28 @@ export const WrittenTestReviewView: React.FC = () => {
                           <div key={r.questionId} className={`p-3 rounded-xl border ${r.earnedPoints === r.maxPoints ? 'border-green-100 bg-green-50/50' : r.earnedPoints === 0 ? 'border-red-100 bg-red-50/50' : 'border-amber-100 bg-amber-50/50'}`}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs font-bold text-gray-500">П{ri + 1}</span>
-                              <span className="text-sm font-black text-gray-700">{r.earnedPoints}/{r.maxPoints}</span>
+                              <div className="flex items-center gap-1.5">
+                                {r.confidence !== undefined && (
+                                  <span
+                                    title={`AI сигурност: ${Math.round(r.confidence * 100)}%`}
+                                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                                      r.confidence >= 0.85 ? 'bg-green-100 text-green-700' :
+                                      r.confidence >= 0.6  ? 'bg-amber-100 text-amber-700' :
+                                      'bg-red-100 text-red-600'
+                                    }`}
+                                  >
+                                    {Math.round(r.confidence * 100)}%
+                                  </span>
+                                )}
+                                <span className="text-sm font-black text-gray-700">{r.earnedPoints}/{r.maxPoints}</span>
+                              </div>
                             </div>
                             <p className="text-xs text-gray-600">{r.feedback}</p>
                             {r.misconception && (
                               <p className="text-[10px] text-orange-600 mt-1">⚠ {r.misconception}</p>
+                            )}
+                            {r.correctionHint && r.earnedPoints < r.maxPoints && (
+                              <p className="text-[10px] text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1 mt-1">💡 {r.correctionHint}</p>
                             )}
                           </div>
                         ))}
