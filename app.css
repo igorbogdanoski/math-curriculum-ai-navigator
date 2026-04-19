@@ -372,6 +372,20 @@ html.high-contrast {
 }
 
 /* Thumbnail grid overlay */
+/* Timer bar width — driven by --timer-pct CSS custom property */
+.gamma-timer-bar {
+  width: var(--timer-pct, 100%);
+}
+
+/* Laser pointer position — driven by --laser-x / --laser-y */
+.gamma-laser-pointer {
+  position: absolute;
+  left: var(--laser-x, 0);
+  top: var(--laser-y, 0);
+  width: 28px;
+  height: 28px;
+}
+
 .gamma-thumbnail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

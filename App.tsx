@@ -256,6 +256,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/share/visual', component: ShareVisualView }, // C2.4/C3.4 — AlgebraTiles + Shape3D shareable URLs
     { path: '/quiz/:data', component: SharedQuizView },
     { path: '/mindmap/:topicId', component: MindMapView },
+    { path: '/gamma/presenter', component: React.lazy(() => import('./views/GammaPresenterView').then(m => ({ default: m.GammaPresenterView }))) },
 ];
 
 const AppContent: React.FC = () => {

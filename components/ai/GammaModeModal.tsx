@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay } from 'lucide-react';
 import { Shape3DViewer, Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
 import { AlgebraTilesCanvas } from '../math/AlgebraTilesCanvas';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
@@ -14,7 +14,12 @@ import { useNotification } from '../../contexts/NotificationContext';
 import { deriveContextualFormulas, resolveSlideConcept } from '../../utils/gammaContext';
 import { useGammaAnnotation, type AnnotMode } from './gamma/useGammaAnnotation';
 import { GammaThumbnailGrid } from './gamma/GammaThumbnailGrid';
-import { exportGammaPPTX } from './gamma/GammaExportService';
+import { exportGammaPPTX, printGammaHandout } from './gamma/GammaExportService';
+import { useGammaExitTicket } from './gamma/useGammaExitTicket';
+
+const InteractiveQuizPlayer = React.lazy(() =>
+  import('./InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer }))
+);
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -73,6 +78,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
   // ── PPTX export ───────────────────────────────────────────────────────────
   const [isExportingPptx, setIsExportingPptx] = useState(false);
+  const { exitTicket, isGenerating: isGeneratingExitTicket, generate: generateExitTicket, dismiss: dismissExitTicket } = useGammaExitTicket();
 
   const handleExportPPTX = useCallback(async () => {
     if (isExportingPptx) return;
@@ -110,6 +116,27 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   // Reset zoom on slide change (canvas clearing handled by useGammaAnnotation)
   useEffect(() => { setFormulaZoom(1); }, [idx]);
 
+  // ── Presenter Mode ────────────────────────────────────────────────────────
+  const presenterChannelRef = useRef<BroadcastChannel | null>(null);
+  const presenterWindowRef  = useRef<Window | null>(null);
+
+  const openPresenterMode = useCallback(() => {
+    if (!presenterChannelRef.current) {
+      presenterChannelRef.current = new BroadcastChannel('gamma-sync');
+    }
+    if (!presenterWindowRef.current || presenterWindowRef.current.closed) {
+      presenterWindowRef.current = window.open(
+        `${window.location.origin}${window.location.pathname}#/gamma/presenter`,
+        'gamma-presenter',
+        'width=960,height=640,menubar=no,toolbar=no,location=no',
+      );
+    } else {
+      presenterWindowRef.current.focus();
+    }
+  }, []);
+
+  // Close channel on unmount
+  useEffect(() => () => { presenterChannelRef.current?.close(); }, []);
 
   // ── Fullscreen ────────────────────────────────────────────────────────────
   const toggleFullscreen = useCallback(() => {
@@ -176,6 +203,23 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
   // Cleanup on unmount
   useEffect(() => () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); }, []);
+
+  // Broadcast slide + timer to Presenter window whenever either changes
+  useEffect(() => {
+    const bc = presenterChannelRef.current;
+    if (!bc) return;
+    bc.postMessage({
+      type: 'slide-change',
+      idx,
+      total: data.slides.length,
+      slide: data.slides[idx],
+      nextSlide: data.slides[idx + 1] ?? null,
+      topic: data.topic,
+      gradeLevel: data.gradeLevel,
+      taskTimer,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx, taskTimer]);
 
   const timerPct  = taskTimer !== null && slide.type === 'task'
     ? (taskTimer / (slide.estimatedSeconds ?? 120)) * 100
@@ -589,6 +633,33 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
                 </p>
               </div>
             ))}
+            {/* Exit Ticket */}
+            {!exitTicket && (
+              <div className="flex justify-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => generateExitTicket(data.topic, data.gradeLevel)}
+                  disabled={isGeneratingExitTicket}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-rose-300 text-sm font-bold transition disabled:opacity-50"
+                >
+                  {isGeneratingExitTicket
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Генерирам Exit Ticket…</>
+                    : <><ClipboardList className="w-4 h-4" /> Генерирај Exit Ticket</>
+                  }
+                </button>
+              </div>
+            )}
+            {exitTicket && (
+              <React.Suspense fallback={<div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-rose-400" /></div>}>
+                <div className="mt-2 rounded-2xl overflow-hidden border border-rose-500/20 max-h-[55vh] overflow-y-auto">
+                  <InteractiveQuizPlayer
+                    title={`Exit Ticket — ${data.topic}`}
+                    quiz={exitTicket}
+                    onClose={dismissExitTicket}
+                  />
+                </div>
+              </React.Suspense>
+            )}
           </div>
         );
 
@@ -730,7 +801,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           {slide.type === 'task' && taskTimer !== null && (
             <div className="flex items-center gap-1.5">
               <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div className={`h-full ${timerColor} transition-all duration-1000`} style={{ width: `${timerPct}%` }} />
+                <div className={`h-full ${timerColor} gamma-timer-bar transition-all duration-1000`} style={{ '--timer-pct': `${timerPct}%` } as React.CSSProperties} />
               </div>
               <span className={`font-mono text-xs font-bold ${taskTimer === 0 ? 'text-red-400 animate-pulse' : taskTimer < 20 ? 'text-amber-400' : 'text-slate-400'}`}>
                 {Math.floor(taskTimer / 60)}:{String(taskTimer % 60).padStart(2, '0')}
@@ -792,10 +863,20 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             <Grid className="w-3.5 h-3.5" />
           </button>
 
-          {/* Print / PPTX / Fullscreen */}
-          <button type="button" onClick={() => window.print()} title="Печати / Зачувај PDF (P)"
+          {/* Presenter Mode */}
+          <button type="button" onClick={openPresenterMode} title="Presenter Mode — отвори втор прозорец со notes"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
+            <MonitorPlay className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Print / Handout / PPTX / Fullscreen */}
+          <button type="button" onClick={() => window.print()} title="Печати слајд (P)"
             className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
             <Printer className="w-3.5 h-3.5" />
+          </button>
+          <button type="button" onClick={() => printGammaHandout(data)} title="Генерирај Handout за учениците"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
+            <BookText className="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
@@ -908,8 +989,8 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
         {/* Laser pointer glow */}
         {annotMode === 'laser' && laserPos && (
-          <div className="absolute z-30 pointer-events-none"
-            style={{ left: laserPos.x - 14, top: laserPos.y - 14, width: 28, height: 28 }}>
+          <div className="gamma-laser-pointer z-30 pointer-events-none"
+            style={{ '--laser-x': `${laserPos.x - 14}px`, '--laser-y': `${laserPos.y - 14}px` } as React.CSSProperties}>
             <div className="absolute inset-0 rounded-full bg-red-500/25 animate-ping" />
             <div className="absolute inset-2 rounded-full bg-red-500 shadow-[0_0_12px_4px_rgba(239,68,68,0.6)]" />
           </div>

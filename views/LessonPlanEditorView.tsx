@@ -20,6 +20,7 @@ import { useNetworkStatus } from '../contexts/NetworkStatusContext';
 import { LessonPlanDisplay } from '../components/planner/LessonPlanDisplay';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { PedagogicalDashboard } from '../components/lesson-plan-editor/PedagogicalDashboard';
+import { AILessonAssistant } from '../components/lesson-plan-editor/AILessonAssistant';
 import { GeneratedIllustration } from '../components/ai/GeneratedIllustration';
 import { exportLessonPlanToWord } from '../utils/wordExport';
 import { generateLessonICS, downloadICS, getGoogleCalendarUrl } from '../utils/icalExport';
@@ -750,6 +751,18 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             <aside className="w-full lg:w-80 space-y-4">
                 <PedagogicalDashboard activities={plan.scenario?.main || []} />
 
+                {/* AI7: Lesson Planning Assistant */}
+                <AILessonAssistant
+                  onApply={(suggestion) => {
+                    setPlan(prev => ({
+                      ...prev,
+                      differentiation: prev.differentiation
+                        ? `${prev.differentiation}\n\n--- AI Assistant ---\n${suggestion}`
+                        : suggestion,
+                    }));
+                  }}
+                />
+
                 {/* К3: Differentiation A/B/C Panel */}
                 <Card className="p-4">
                   <div className="flex items-center justify-between mb-3">
@@ -819,7 +832,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
           <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
             <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-            <button onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+            <button type="button" title="Затвори алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
           </div>
           <div className="flex-1 relative overflow-hidden bg-slate-50">
             <MathToolsPanel
@@ -851,6 +864,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
     {/* Floating Action Button for Math Tools */}
     <button
+      type="button"
       onClick={() => setShowMathTools(true)}
       className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95"
       title="Математички Алатки (GeoGebra, Desmos...)"

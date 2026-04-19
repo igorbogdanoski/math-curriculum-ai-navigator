@@ -701,6 +701,50 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S34 — ЗАВРШЕНА ✅ (19 Apr 2026)
+
+```text
+Baseline: TSC 0, 689/689 unit tests
+
+Gamma Mode elevation + Presenter Mode + AI Lesson Assistant
+
+Г4: Presenter Mode (BroadcastChannel API)
+  - GammaPresenterView.tsx (НОВО) — standalone popup view
+  - BroadcastChannel('gamma-sync') — реалтајм sync на секоја промена на слајд/тајмер
+  - Прикажува: моментален слајд + следен слајд + speaker notes + task timer + elapsed time
+  - Route: /#/gamma/presenter (регистрирана во App.tsx)
+  - Копче во Gamma toolbar (MonitorPlay икона)
+
+Г9: Exit Ticket auto-generation (summary слајд)
+  - useGammaExitTicket.ts (НОВО) — hook за генерирање на 3 прашања (2 MC + 1 кратко)
+  - Копче „Генерирај Exit Ticket" на summary слајд
+  - Резултатот се прикажува во InteractiveQuizPlayer (lazy loaded) под слајдот
+  - Dismiss копче за ресет
+
+Г10: Handout PDF генерирање
+  - printGammaHandout() во GammaExportService.ts
+  - Opens popup → styled HTML per slide type:
+    formula-centered: формула + 4 blank lines за белешки
+    task: задача + 8 lines за решение (без решение)
+    step-by-step: нумерирани чекори
+    summary: bullet-points + ai.mismath.net линк
+  - window.print() се активира автоматски
+  - Копче во Gamma toolbar (BookText икона)
+
+AI7: AI Lesson Planning Assistant
+  - AILessonAssistant.tsx (НОВО) во components/lesson-plan-editor/
+  - Chat UI со callGeminiProxy — Macedonia system prompt
+  - Collapsible panel во LessonPlanEditorView sidebar
+  - „Примени во план" → се запишува во differentiation field
+  - Enter за испраќање, X за бришење историја
+
+CSS fixes (inline-style → CSS custom properties):
+  - .gamma-timer-bar { width: var(--timer-pct, 100%) }
+  - .gamma-laser-pointer { position: absolute; left: var(--laser-x); top: var(--laser-y); width/height: 28px }
+
+Метрики: TSC 0 | 689/689 tests | Build PASS
+```
+
 ### S33 — ЗАВРШЕНА ✅ (19 Apr 2026)
 
 ```text

@@ -157,3 +157,99 @@ export async function exportGammaPPTX(
     onError('Грешка при генерирање на PPTX.');
   }
 }
+
+// ── Handout PDF (Г10) ─────────────────────────────────────────────────────────
+function stripLatex(text: string): string {
+  return text.replace(/\$\$?[^$]+\$\$?/g, '[формула]').replace(/\\[a-zA-Z]+\{[^}]*\}/g, '').trim();
+}
+
+function blankLines(n: number): string {
+  return Array.from({ length: n }, () => '<div class="blank-line"></div>').join('');
+}
+
+export function printGammaHandout(data: AIGeneratedPresentation): void {
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) return;
+
+  const slidesHtml = data.slides.map((slide, i) => {
+    let body = '';
+
+    if (slide.type === 'formula-centered') {
+      const formula = stripLatex(slide.content[0] ?? slide.title ?? '');
+      body = `
+        <div class="formula-box">${formula}</div>
+        <p class="notes-label">Белешки:</p>
+        ${blankLines(4)}
+        ${slide.content.slice(1).map(l => `<p class="note-item">• ${stripLatex(l)}</p>`).join('')}
+      `;
+    } else if (slide.type === 'task' || slide.type === 'example') {
+      const isTask = slide.type === 'task';
+      body = `
+        <div class="task-box ${isTask ? 'task' : 'example'}">
+          <span class="task-label">${isTask ? '📝 Задача' : '💡 Пример'}</span>
+          <p>${stripLatex(slide.content[0] ?? '')}</p>
+        </div>
+        <p class="notes-label">${isTask ? 'Решение:' : 'Забелешки:'}</p>
+        ${blankLines(isTask ? 8 : 4)}
+      `;
+    } else if (slide.type === 'step-by-step' || slide.type === 'proof') {
+      body = `<ol class="steps">${slide.content.map(s => `<li>${stripLatex(s)}</li>`).join('')}</ol>
+        <p class="notes-label">Белешки:</p>${blankLines(3)}`;
+    } else if (slide.type === 'summary') {
+      body = `<ul class="summary-list">${slide.content.map(l => `<li>${stripLatex(l)}</li>`).join('')}</ul>
+        <div class="qr-hint">🔗 ai.mismath.net</div>`;
+    } else {
+      body = `<ul class="content-list">${slide.content.map(l => `<li>${stripLatex(l)}</li>`).join('')}</ul>`;
+    }
+
+    return `
+      <div class="slide-page">
+        <div class="slide-header">
+          <span class="slide-num">${i + 1}</span>
+          <span class="slide-title">${stripLatex(slide.title ?? '')}</span>
+        </div>
+        <div class="slide-body">${body}</div>
+      </div>
+    `;
+  }).join('');
+
+  win.document.write(`<!DOCTYPE html><html lang="mk"><head>
+  <meta charset="utf-8">
+  <title>Handout — ${data.title}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; }
+    .slide-page { page-break-after: always; padding: 18mm 18mm 14mm; min-height: 140mm; }
+    .slide-page:last-child { page-break-after: avoid; }
+    .slide-header { display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #4f46e5; padding-bottom: 6px; margin-bottom: 14px; }
+    .slide-num { background: #4f46e5; color: #fff; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; flex-shrink: 0; }
+    .slide-title { font-size: 16px; font-weight: 900; color: #1e1b4b; }
+    .formula-box { background: #f5f3ff; border: 2px solid #c4b5fd; border-radius: 10px; padding: 14px 20px; font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 14px; color: #1e1b4b; }
+    .task-box { border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; }
+    .task-box.task { background: #fffbeb; border: 1.5px solid #f59e0b; }
+    .task-box.example { background: #f0fdf4; border: 1.5px solid #22c55e; }
+    .task-label { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 6px; color: #78716c; }
+    .notes-label { font-size: 11px; font-weight: 700; color: #6b7280; margin: 10px 0 6px; text-transform: uppercase; letter-spacing: .04em; }
+    .blank-line { border-bottom: 1px solid #d1d5db; margin-bottom: 16px; }
+    .note-item { color: #4b5563; font-size: 12px; margin-top: 4px; }
+    ol.steps { padding-left: 22px; }
+    ol.steps li { margin-bottom: 8px; line-height: 1.5; }
+    ul.summary-list, ul.content-list { padding-left: 18px; }
+    ul.summary-list li, ul.content-list li { margin-bottom: 8px; line-height: 1.5; }
+    .qr-hint { margin-top: 16px; font-size: 11px; color: #9ca3af; text-align: right; }
+    .slide-body { line-height: 1.6; }
+    @media print {
+      body { font-size: 12px; }
+      .slide-page { padding: 12mm 14mm 10mm; }
+    }
+  </style>
+</head><body>
+  <div style="text-align:center;padding:12px 0 20px;border-bottom:3px solid #4f46e5;margin-bottom:4px">
+    <h1 style="font-size:20px;color:#1e1b4b;font-weight:900">${data.title}</h1>
+    <p style="font-size:12px;color:#6b7280;margin-top:4px">${data.topic} · ${data.gradeLevel}. одделение · ai.mismath.net</p>
+  </div>
+  ${slidesHtml}
+  <script>window.onload = () => { window.print(); }<\/script>
+</body></html>`);
+  win.document.close();
+}
