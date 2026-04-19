@@ -80,10 +80,13 @@ class RagService {
     if (localStorage.getItem('VITE_ENABLE_VECTOR_RAG') !== 'true') return [];
 
     try {
+      const t0 = Date.now();
       const queryVector = await callEmbeddingProxy(queryText);
+      const tEmbed = Date.now();
       const embeddings = await this.fetchConceptEmbeddings();
+      const tFetch = Date.now();
 
-      return embeddings
+      const results = embeddings
         .map(item => ({
           context: item.text,
           conceptId: item.id,
@@ -92,6 +95,12 @@ class RagService {
         .filter(r => r.similarity > SIMILARITY_THRESHOLD)
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, topK);
+
+      logger.debug(
+        `[AI1 Vector RAG] embed=${tEmbed - t0}ms fetch=${tFetch - tEmbed}ms total=${tFetch - t0}ms` +
+        ` docs=${embeddings.length} hits=${results.length}`,
+      );
+      return results;
     } catch (error) {
       logger.error('RAG vector search error:', error);
       return [];

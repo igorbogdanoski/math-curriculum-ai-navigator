@@ -121,13 +121,18 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
     if (fewShotPart) contents.push({ text: fewShotPart });
     if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
 
-    // RAG INJECTION + secondary track context
+    // RAG INJECTION + Vector RAG semantic enrichment + secondary track context
+    const vectorRagQuery = context.concepts?.length
+        ? `${context.topic?.title ?? ''} ${context.concepts.map(c => `${c.title} ${c.description ?? ''}`).join(' ')}`.trim()
+        : undefined;
+
     const systemInstr = await buildDynamicSystemInstruction(
         JSON_SYSTEM_INSTRUCTION,
         context.grade.level,
         conceptCacheId !== 'gen' ? conceptCacheId : undefined,
         context.topic?.id,
         profile?.secondaryTrack,
+        vectorRagQuery,
     );
 
     const result = await generateAndParseJSON<AIGeneratedAssessment>(

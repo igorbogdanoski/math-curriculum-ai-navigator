@@ -952,16 +952,17 @@ export async function buildDynamicSystemInstruction(
     conceptId?: string,
     topicId?: string,
     secondaryTrack?: SecondaryTrack | null,
+    vectorRagQuery?: string,
 ): Promise<string> {
     let instruction = baseInstruction;
     const langRule = getAILanguageRule();
     let lang = 'mk';
     try { lang = localStorage.getItem('preferred_language') || 'mk'; } catch { /* ignore */ }
-    
+
     instruction = instruction.replace('{{LANGUAGE_RULE}}', langRule);
-    
+
     if (!instruction.includes('{{LANGUAGE_RULE}}') && lang && lang !== 'mk') {
-        instruction += "\nВАЖНА НАПОМЕНА: Сите текстуални вредности во JSON објектот (наслови, описи, задачи) МОРА да бидат напишани исклучиво на " + 
+        instruction += "\nВАЖНА НАПОМЕНА: Сите текстуални вредности во JSON објектот (наслови, описи, задачи) МОРА да бидат напишани исклучиво на " +
                        (lang === 'sq' ? 'АЛБАНСКИ (Shqip)' : lang === 'tr' ? 'ТУРСКИ (Türkçe)' : 'АНГЛИСКИ (English)') + " јазик!";
     }
 
@@ -969,6 +970,22 @@ export async function buildDynamicSystemInstruction(
         instruction += await ragService.getConceptContext(gradeLevel, conceptId);
     } else if (gradeLevel && topicId) {
         instruction += await ragService.getTopicContext(gradeLevel, topicId);
+    }
+
+    // Vector RAG: semantic enrichment with similar curriculum concepts
+    if (vectorRagQuery) {
+        const t0 = Date.now();
+        const ragResults = await ragService.searchSimilarContext(vectorRagQuery, 5);
+        const filtered = ragResults.filter(r => r.conceptId !== conceptId).slice(0, 4);
+        if (filtered.length > 0) {
+            instruction += '\n--- СЕМАНТИЧКИ СЛИЧНИ КОНЦЕПТИ (ДОПОЛНИТЕЛЕН КОНТЕКСТ) ---\n';
+            instruction += 'Следниве курикуларни стандарди се семантички слични и може да дадат корисен контекст при формулирање на задачи:\n';
+            filtered.forEach((r, i) => {
+                instruction += `[${i + 1}] ${r.context}\n`;
+            });
+            instruction += '--- КРАЈ НА ДОПОЛНИТЕЛЕН КОНТЕКСТ ---\n';
+        }
+        logger.debug(`[AI1 Vector RAG] query="${vectorRagQuery.slice(0, 60)}…" results=${ragResults.length} filtered=${filtered.length} latency=${Date.now() - t0}ms`);
     }
 
     // Inject secondary track pedagogical context when teacher is secondary

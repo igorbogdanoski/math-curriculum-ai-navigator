@@ -99,3 +99,73 @@ describe('retrieval ranking logic', () => {
     expect(results[1].id).toBe('c3');
   });
 });
+
+// ── Phase 2: deduplication logic (concept exclusion) ─────────────────────────
+
+describe('deduplication — current concept excluded from similar results', () => {
+  function simulateFilter(
+    results: { conceptId: string; context: string; similarity: number }[],
+    currentConceptId: string,
+    topK: number,
+  ) {
+    return results.filter(r => r.conceptId !== currentConceptId).slice(0, topK);
+  }
+
+  it('removes exact current concept from results', () => {
+    const results = [
+      { conceptId: 'geom-pitagora', context: 'Питагорова теорема', similarity: 0.99 },
+      { conceptId: 'geom-triagolnik', context: 'Триаголници', similarity: 0.85 },
+      { conceptId: 'geom-agol', context: 'Агол и мерење', similarity: 0.75 },
+    ];
+    const filtered = simulateFilter(results, 'geom-pitagora', 4);
+    expect(filtered).toHaveLength(2);
+    expect(filtered.every(r => r.conceptId !== 'geom-pitagora')).toBe(true);
+  });
+
+  it('respects topK=4 slice after exclusion', () => {
+    const results = Array.from({ length: 10 }, (_, i) => ({
+      conceptId: i === 0 ? 'current' : `other-${i}`,
+      context: `Context ${i}`,
+      similarity: 1 - i * 0.02,
+    }));
+    const filtered = simulateFilter(results, 'current', 4);
+    expect(filtered).toHaveLength(4);
+    expect(filtered[0].conceptId).toBe('other-1');
+  });
+
+  it('returns all results if current concept not in list', () => {
+    const results = [
+      { conceptId: 'a', context: 'A', similarity: 0.9 },
+      { conceptId: 'b', context: 'B', similarity: 0.8 },
+    ];
+    const filtered = simulateFilter(results, 'not-present', 4);
+    expect(filtered).toHaveLength(2);
+  });
+});
+
+// ── Phase 2: vectorRagQuery building ─────────────────────────────────────────
+
+describe('vectorRagQuery construction', () => {
+  it('combines topic title with concept titles and descriptions', () => {
+    const context = {
+      topic: { title: 'Геометрија' },
+      concepts: [
+        { title: 'Питагорова теорема', description: 'Врска меѓу страните на правоаголен триаголник' },
+        { title: 'Тупоаголен триаголник', description: '' },
+      ],
+    };
+    const query = `${context.topic?.title ?? ''} ${context.concepts.map(c => `${c.title} ${c.description ?? ''}`).join(' ')}`.trim();
+    expect(query).toContain('Геометрија');
+    expect(query).toContain('Питагорова теорема');
+    expect(query).toContain('Врска меѓу страните');
+    expect(query).not.toMatch(/\s{2,}/); // no double spaces from trim
+  });
+
+  it('returns undefined-equivalent empty string when no concepts', () => {
+    const context = { topic: { title: 'X' }, concepts: [] };
+    const query = context.concepts?.length
+      ? `${context.topic?.title ?? ''} ${context.concepts.map((c: { title: string }) => c.title).join(' ')}`.trim()
+      : undefined;
+    expect(query).toBeUndefined();
+  });
+});

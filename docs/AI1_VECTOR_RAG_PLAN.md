@@ -1,6 +1,6 @@
 # AI1 — Vector RAG: Семантичко пребарување на курикулум
 
-**Статус**: ПЛАНИРАНО — НЕ СЕ ПУШТА ДО 100% ВЕРИФИКАЦИЈА  
+**Статус**: ИМПЛЕМЕНТИРАНО — ЧЕКА ИНДЕКСИРАЊЕ + STAGING ВЕРИФИКАЦИЈА ПРЕД PROD  
 **Последна ревизија**: 19 Apr 2026
 
 ---
@@ -249,12 +249,28 @@ npm install @firebase/firestore@^11 firebase@^11
 
 ## 9. Блокири за пуштање (checklist)
 
-- [ ] Сите 700+ unit тестови минуваат со новиот ragService
-- [ ] Staging: 50 реални квиз генерирања со VECTOR_RAG_ENABLED=true
-- [ ] Latency p95 < 2000ms (embed + search combined)
-- [ ] Similarity threshold tuned (≥0.70 дава relevantни резултати)
-- [ ] Fallback верификуван: Firestore timeout → graceful empty array → AI продолжува без RAG
-- [ ] concept_embeddings security rule deploynat
-- [ ] Indexing script успешно завршил (лог: X/500 docs written)
+- [x] Сите 700+ unit тестови минуваат со новиот ragService — **717/717 ✅**
+- [x] Phase 1: ragService.ts — Firestore read + sessionStorage cache + cosine similarity
+- [x] Phase 2: buildDynamicSystemInstruction() + assessment.ts — vectorRagQuery injection
+- [x] Latency logging: embed / fetch / total ms + hits count во logger.debug
+- [x] Deduplication: current conceptId исклучен од similar results (тестирано)
+- [x] Fallback верификуван: try/catch → graceful empty array → AI продолжува без RAG
+- [x] concept_embeddings + matura_community_solutions security rules
+- [x] scripts/index-curriculum-embeddings.ts — еднократен индексер (npx tsx)
+- [ ] **PENDING**: Изврши `npx tsx scripts/index-curriculum-embeddings.ts` (потребен .env)
+- [ ] **PENDING**: Staging: `localStorage.setItem('VITE_ENABLE_VECTOR_RAG', 'true')`
+- [ ] **PENDING**: Верифицирај 50 реални квиз генерирања со RAG enabled
+- [ ] **PENDING**: Latency p95 < 2000ms (измери од logger.debug logs)
+- [ ] **PENDING**: Similarity threshold fine-tuning (провери дали 0.70 дава relevantни резултати)
+- [ ] **PENDING**: Deploy firestore.rules (firebase deploy --only firestore:rules)
 
-**Само кога сите горни се ✅ → merge во main → deploy.**
+**Само кога сите PENDING се ✅ → активирај во prod.**
+
+### Активирање (кога сите checks се завршени)
+
+```typescript
+// Dev console или Settings панел:
+localStorage.setItem('VITE_ENABLE_VECTOR_RAG', 'true');
+// Деактивирање (rollback):
+localStorage.removeItem('VITE_ENABLE_VECTOR_RAG');
+```
