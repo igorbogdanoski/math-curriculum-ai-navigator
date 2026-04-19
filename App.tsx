@@ -110,6 +110,8 @@ const StudentPortfolioView = safeLazy(() => import('./views/StudentPortfolioView
 const PricingView = safeLazy(() => import('./views/PricingView').then(module => ({ default: module.PricingView })));
 const GammaJoinView = safeLazy(() => import('./views/GammaJoinView').then(module => ({ default: module.GammaJoinView })));
 const GammaStudentView = safeLazy(() => import('./views/GammaStudentView').then(module => ({ default: module.GammaStudentView })));
+const EmbedConceptView = safeLazy(() => import('./views/EmbedConceptView').then(module => ({ default: module.EmbedConceptView })));
+const EmbedQuizView = safeLazy(() => import('./views/EmbedQuizView').then(module => ({ default: module.EmbedQuizView })));
 
 const LoginView = safeLazy(() => import('./views/LoginView').then(module => ({ default: module.LoginView })));
 const AcademyLessonView = safeLazy(() => import('./views/AcademyLessonView').then(module => ({ default: module.AcademyLessonView })));
@@ -195,6 +197,7 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     '#/school/register',
     '#/gamma/join',
     '#/gamma/student/',
+    '#/embed/',
   ];
 
   const isPublicHashRoute = (hash: string): boolean =>
@@ -263,6 +266,8 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/gamma/presenter', component: React.lazy(() => import('./views/GammaPresenterView').then(m => ({ default: m.GammaPresenterView }))) },
     { path: '/gamma/join', component: GammaJoinView },
     { path: '/gamma/student/:pin', component: GammaStudentView },
+    { path: '/embed/concept/:id', component: EmbedConceptView },
+    { path: '/embed/quiz/:data', component: EmbedQuizView },
 ];
 
 const AppContent: React.FC = () => {
@@ -300,6 +305,7 @@ const AppContent: React.FC = () => {
                 <main className="flex-1 flex flex-col md:pl-64 overflow-hidden relative">
                     <header className="sticky top-0 bg-brand-bg/80 backdrop-blur-sm z-10 px-4 md:px-8 pt-4 pb-2 border-b no-print flex items-center gap-2">
                         <button
+                            type="button"
                             className="p-1 text-gray-600 md:hidden"
                             onClick={openSidebar}
                             aria-label="ÐžÑ‚Ð²Ð¾Ñ€Ð¸ Ð¼ÐµÐ½Ð¸"

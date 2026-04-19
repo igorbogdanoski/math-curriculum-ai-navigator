@@ -701,6 +701,46 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S38 — ЗАВРШЕНА ✅ (19 Apr 2026)
+
+```text
+Baseline: TSC 0, 700/700 unit tests
+
+LTI 1.3 basic — iframe embed за Google Classroom / Teams / Moodle
+
+views/EmbedConceptView.tsx (НОВО) — Route: /#/embed/concept/:id
+  - useCurriculum() → getConceptDetails(id) → concept + grade + topic
+  - Рендерира: наслов, breadcrumb, description, content points, assessment standards, local context examples
+  - MathRenderer за LaTeX во сите полиња
+  - Header strip (indigo) + ExternalLink → full ConceptDetailView
+  - Footer: ai.mismath.net + „Вежбај →" линк
+  - Дизајниран за 700×500px iframe (типично LMS)
+
+views/EmbedQuizView.tsx (НОВО) — Route: /#/embed/quiz/:data
+  - shareService.decodeQuizShareData(data) → quiz object
+  - InteractiveQuizPlayer (lazy) со onClose: no-op (нема навигација во iframe)
+  - Graceful error state
+
+App.tsx:
+  - safeLazy: EmbedConceptView + EmbedQuizView
+  - Routes: /embed/concept/:id, /embed/quiz/:data
+  - PUBLIC_HASH_ROUTE_PREFIXES: '#/embed/' (без auth requirement)
+  - Fix: type="button" на hamburger menu копче (lint hint)
+
+vercel.json:
+  - Нов header блок /embed/(.*) — DOPO catch-all (override wins):
+    - X-Frame-Options: ALLOWALL
+    - CSP frame-ancestors: classroom.google.com, *.teams.microsoft.com, *.moodle.net, *.moodlecloud.com, 'self'
+    - Стриктна CSP без Stripe (embed не користи плаќање)
+  - Глобалниот X-Frame-Options: DENY останува за сите останати рути
+
+Embed URL формати:
+  - Концепт: https://ai.mismath.net/index.html#/embed/concept/{conceptId}
+  - Квиз:    https://ai.mismath.net/index.html#/embed/quiz/{shareData}
+
+Метрики: TSC 0 | 700/700 tests | Build PASS
+```
+
 ### S37 — ЗАВРШЕНА ✅ (19 Apr 2026)
 
 ```text
