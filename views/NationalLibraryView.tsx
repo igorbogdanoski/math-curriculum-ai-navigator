@@ -3,13 +3,18 @@ import type { DocumentSnapshot } from 'firebase/firestore';
 import { firestoreService } from '../services/firestoreService';
 import type { NationalLibraryEntry } from '../services/firestoreService.materials';
 import { getAvgRating, getUserRating, rateNationalLibraryEntry } from '../services/firestoreService.materials';
+import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import { Library, Search, Download, Globe, Filter, Loader2, BookOpen, ChevronDown, Wand2, X, Save, Star } from 'lucide-react';
+import { Library, Search, Download, Globe, Filter, Loader2, BookOpen, ChevronDown, Wand2, X, Save, Star, Languages, RotateCcw } from 'lucide-react';
 import { DokBadge } from '../components/common/DokBadge';
 import { DOK_META } from '../types';
 import type { DokLevel } from '../types';
+
+type SupportedTranslateLang = 'sq' | 'tr' | 'en';
+interface TranslatedEntry { question: string; options?: string[]; answer: string; solution?: string; }
+const LANG_LABELS: Record<SupportedTranslateLang, string> = { sq: 'Shqip', tr: 'Türkçe', en: 'English' };
 
 const GRADE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const TYPE_LABELS: Record<string, string> = {
@@ -38,6 +43,37 @@ export const NationalLibraryView: React.FC = () => {
   const [importing, setImporting] = useState<Set<string>>(new Set());
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
   const [imported, setImported] = useState<Set<string>>(new Set());
+
+  // Translation state
+  const [translating, setTranslating] = useState<Set<string>>(new Set());
+  const [translations, setTranslations] = useState<Record<string, TranslatedEntry>>({});
+  const [showingTranslation, setShowingTranslation] = useState<Set<string>>(new Set());
+
+  const uiLang = (() => {
+    try { return localStorage.getItem('preferred_language') ?? 'mk'; } catch { return 'mk'; }
+  })();
+  const translateLang = (uiLang !== 'mk' ? uiLang : null) as SupportedTranslateLang | null;
+
+  const handleTranslate = async (entry: NationalLibraryEntry) => {
+    if (translations[entry.id]) {
+      setShowingTranslation(prev => { const s = new Set(prev); s.has(entry.id) ? s.delete(entry.id) : s.add(entry.id); return s; });
+      return;
+    }
+    if (!translateLang) return;
+    setTranslating(prev => new Set(prev).add(entry.id));
+    try {
+      const t = await geminiService.translateLibraryEntry(
+        { question: entry.question, options: entry.options, answer: entry.answer, solution: entry.solution },
+        translateLang,
+      );
+      setTranslations(prev => ({ ...prev, [entry.id]: t }));
+      setShowingTranslation(prev => new Set(prev).add(entry.id));
+    } catch {
+      addNotification('Преводот не успеа. Обиди се пак.', 'error');
+    } finally {
+      setTranslating(prev => { const s = new Set(prev); s.delete(entry.id); return s; });
+    }
+  };
 
   // Rating state — optimistic updates per entry
   const [pendingRatings, setPendingRatings] = useState<Record<string, number>>({});
@@ -332,38 +368,47 @@ export const NationalLibraryView: React.FC = () => {
                 </div>
 
                 {/* Question */}
-                <p className="text-sm text-gray-800 font-medium leading-relaxed flex-1">
-                  {entry.question}
-                </p>
-
-                {/* Options (MC) */}
-                {entry.type === 'MULTIPLE_CHOICE' && entry.options && entry.options.length > 0 && (
-                  <ul className="space-y-1">
-                    {entry.options.map((opt, i) => (
-                      <li key={`${entry.id}-opt-${i}`} className="text-xs text-gray-600 flex items-start gap-1.5">
-                        <span className="font-bold text-gray-400 w-4 flex-shrink-0">{String.fromCharCode(65 + i)}.</span>
-                        <span>{opt}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {/* Answer reveal */}
-                <button
-                  type="button"
-                  onClick={() => toggleReveal(entry.id)}
-                  className="text-xs text-brand-primary hover:underline text-left font-medium"
-                >
-                  {revealed ? 'Скриј одговор' : 'Прикажи одговор'}
-                </button>
-                {revealed && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-2">
-                    <p className="text-xs text-green-800 font-semibold">Одговор: {entry.answer}</p>
-                    {entry.solution && (
-                      <p className="text-xs text-green-700 mt-1">{entry.solution}</p>
-                    )}
-                  </div>
-                )}
+                {(() => {
+                  const isTranslated = showingTranslation.has(entry.id) && translations[entry.id];
+                  const q = isTranslated ? translations[entry.id].question : entry.question;
+                  const opts = isTranslated ? (translations[entry.id].options ?? entry.options) : entry.options;
+                  const ans = isTranslated ? translations[entry.id].answer : entry.answer;
+                  const sol = isTranslated ? translations[entry.id].solution : entry.solution;
+                  return (
+                    <>
+                      {isTranslated && (
+                        <div className="flex items-center gap-1 text-[10px] text-indigo-600 font-bold">
+                          <Languages className="w-3 h-3" />
+                          {translateLang ? LANG_LABELS[translateLang] : ''}
+                        </div>
+                      )}
+                      <p className="text-sm text-gray-800 font-medium leading-relaxed flex-1">{q}</p>
+                      {entry.type === 'MULTIPLE_CHOICE' && opts && opts.length > 0 && (
+                        <ul className="space-y-1">
+                          {opts.map((opt, i) => (
+                            <li key={`${entry.id}-opt-${i}`} className="text-xs text-gray-600 flex items-start gap-1.5">
+                              <span className="font-bold text-gray-400 w-4 flex-shrink-0">{String.fromCharCode(65 + i)}.</span>
+                              <span>{opt}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => toggleReveal(entry.id)}
+                        className="text-xs text-brand-primary hover:underline text-left font-medium"
+                      >
+                        {revealed ? 'Скриј одговор' : 'Прикажи одговор'}
+                      </button>
+                      {revealed && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+                          <p className="text-xs text-green-800 font-semibold">Одговор: {ans}</p>
+                          {sol && <p className="text-xs text-green-700 mt-1">{sol}</p>}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {/* Remix inline editor */}
                 {remixingId === entry.id && (
@@ -431,6 +476,27 @@ export const NationalLibraryView: React.FC = () => {
                     {entry.schoolName && <span> · {entry.schoolName}</span>}
                   </div>
                   <div className="flex items-center gap-1.5">
+                    {translateLang && remixingId !== entry.id && (
+                      <button
+                        type="button"
+                        title={showingTranslation.has(entry.id) ? 'Прикажи оригинал' : `Преведи на ${LANG_LABELS[translateLang]}`}
+                        onClick={() => handleTranslate(entry)}
+                        disabled={translating.has(entry.id)}
+                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition disabled:opacity-50 ${
+                          showingTranslation.has(entry.id)
+                            ? 'border-indigo-300 text-indigo-600 bg-indigo-50'
+                            : 'border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50'
+                        }`}
+                      >
+                        {translating.has(entry.id)
+                          ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : showingTranslation.has(entry.id)
+                            ? <RotateCcw className="w-3 h-3" />
+                            : <Languages className="w-3 h-3" />
+                        }
+                        {showingTranslation.has(entry.id) ? 'МК' : LANG_LABELS[translateLang]}
+                      </button>
+                    )}
                     {remixingId !== entry.id && (
                       <button
                         type="button"

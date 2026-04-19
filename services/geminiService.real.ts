@@ -2014,7 +2014,7 @@ ${levelDesc}
     imageBase64: string,
     mimeType: string,
     testQuestions: Array<{ id: string; text: string; points: number; correctAnswer: string }>,
-  ): Promise<{ questionId: string; earnedPoints: number; maxPoints: number; feedback: string; misconception?: string }[]> {
+  ): Promise<{ questionId: string; earnedPoints: number; maxPoints: number; feedback: string; misconception?: string; correctionHint?: string; confidence?: number }[]> {
     const { PRO_MODEL } = await import('./gemini/core');
 
     const questionsStr = testQuestions.map((q, i) =>
@@ -2030,12 +2030,14 @@ ${questionsStr}
 1. Прочитај го одговорот на ученикот од сликата
 2. Спореди го со точниот одговор
 3. Дај поени (0 до max) и кратка повратна информација на македонски
-4. Ако постои типична грешка (misconception), наведи ја
+4. Ако постои типична грешка (misconception), наведи ја накратко
+5. Ако одговорот е делумно или целосно погрешен, дај конкретен совет за исправка (correctionHint) на македонски — 1 реченица
+6. confidence: веројатност дека правилно ја прочитал рачно напишаниот одговор (0.0–1.0)
 
 Врати JSON:
-{ "grades": [ { "questionId": "1", "earnedPoints": X, "maxPoints": Y, "feedback": "...", "misconception": "..." } ] }`;
+{ "grades": [ { "questionId": "1", "earnedPoints": X, "maxPoints": Y, "feedback": "...", "misconception": "...", "correctionHint": "...", "confidence": 0.9 } ] }`;
 
-    const normalizeGradeRows = (raw: unknown): Array<{ questionId: string; earnedPoints: number; maxPoints: number; feedback: string; misconception?: string }> | null => {
+    const normalizeGradeRows = (raw: unknown): Array<{ questionId: string; earnedPoints: number; maxPoints: number; feedback: string; misconception?: string; correctionHint?: string; confidence?: number }> | null => {
       if (!Array.isArray(raw)) return null;
       const normalized = raw.map((row) => {
         const item = row as Record<string, unknown>;
@@ -2045,6 +2047,8 @@ ${questionsStr}
           maxPoints: Number(item.maxPoints),
           feedback: String(item.feedback ?? ''),
           misconception: item.misconception ? String(item.misconception) : undefined,
+          correctionHint: item.correctionHint ? String(item.correctionHint) : undefined,
+          confidence: item.confidence !== undefined ? Number(item.confidence) : undefined,
         };
       });
 
@@ -2094,5 +2098,45 @@ ${questionsStr}
         throw new Error((retryError as Error).message || 'AI оценувањето не врати валиден резултат. Обидете се повторно.');
       }
     }
+  },
+
+  async translateLibraryEntry(
+    entry: { question: string; options?: string[]; answer: string; solution?: string },
+    targetLang: 'sq' | 'tr' | 'en',
+  ): Promise<{ question: string; options?: string[]; answer: string; solution?: string }> {
+    const LANG_NAMES: Record<string, string> = {
+      sq: 'Albanian (Shqip) — with cultural adaptation for Albanian-speaking students in North Macedonia',
+      tr: 'Turkish (Türkçe) — with cultural adaptation for Turkish-speaking students in North Macedonia',
+      en: 'English — standard international mathematical English',
+    };
+
+    const payload = {
+      question: entry.question,
+      ...(entry.options?.length ? { options: entry.options } : {}),
+      answer: entry.answer,
+      ...(entry.solution ? { solution: entry.solution } : {}),
+    };
+
+    const prompt = `Translate this math question from Macedonian to ${LANG_NAMES[targetLang]}.
+Keep mathematical notation, numbers, and formulas exactly as-is.
+Return ONLY a valid JSON object with the same keys as the input, translated values only.
+
+Input:
+${JSON.stringify(payload, null, 2)}`;
+
+    const result = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    const parsed = JSON.parse(result.text || '{}') as typeof payload;
+    if (!parsed.question || !parsed.answer) throw new Error('Incomplete translation response');
+    return {
+      question: parsed.question,
+      options: parsed.options,
+      answer: parsed.answer,
+      solution: parsed.solution,
+    };
   },
 };

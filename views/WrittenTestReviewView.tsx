@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import {
   Upload, Camera, FileText, Loader2, CheckCircle2, XCircle, AlertTriangle,
   Brain, Sparkles, ChevronDown, ChevronUp, Trash2, Plus, Eye,
-  Users, BarChart3, Flame, User, Wand2,
+  Users, BarChart3, Flame, User, Wand2, Lightbulb,
 } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
 import { persistScanArtifactWithObservability } from '../services/scanArtifactPersistence';
@@ -24,6 +24,8 @@ interface GradeResult {
   maxPoints: number;
   feedback: string;
   misconception?: string;
+  correctionHint?: string;
+  confidence?: number;
 }
 
 interface StudentSubmission {
@@ -859,13 +861,36 @@ const SingleResults: React.FC<{ results: GradeResult[]; questions: TestQuestion[
                 </div>
               </div>
               <div className="p-4 space-y-2">
-                <p className="text-sm text-gray-700 leading-relaxed">{r.feedback}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm text-gray-700 leading-relaxed flex-1">{r.feedback}</p>
+                  {r.confidence !== undefined && (
+                    <span
+                      title={`AI сигурност при читање на рачниот пис: ${Math.round(r.confidence * 100)}%`}
+                      className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        r.confidence >= 0.85 ? 'bg-green-100 text-green-700' :
+                        r.confidence >= 0.6  ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-600'
+                      }`}
+                    >
+                      {Math.round(r.confidence * 100)}% читливост
+                    </span>
+                  )}
+                </div>
                 {r.misconception && (
                   <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-100 rounded-xl">
                     <Brain className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <span className="text-xs font-bold text-orange-700 uppercase tracking-wider block mb-0.5">Misconception</span>
                       <span className="text-sm text-orange-800">{r.misconception}</span>
+                    </div>
+                  </div>
+                )}
+                {r.correctionHint && r.earnedPoints < r.maxPoints && (
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                    <Lightbulb className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-blue-700 uppercase tracking-wider block mb-0.5">Совет за исправка</span>
+                      <span className="text-sm text-blue-800">{r.correctionHint}</span>
                     </div>
                   </div>
                 )}
