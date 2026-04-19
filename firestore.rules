@@ -427,6 +427,23 @@ service cloud.firestore {
       allow delete:         if isAdmin();
     }
 
+    // ── Вектор ембединзи на концепти (concept_embeddings) — AI1 ──
+    // Read-only за автентицирани корисници; пишување само преку admin script.
+    match /concept_embeddings/{conceptId} {
+      allow read:  if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ── Решенија на заедницата за матура (matura_community_solutions) — М3 ──
+    match /matura_community_solutions/{solutionId} {
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.authorUid == request.auth.uid;
+      // Само upvotes/downvotes полиња (бројач + низа) смее да се менуваат
+      allow update: if isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes', 'upvoterUids']);
+      allow delete: if isAdmin();
+    }
+
     // Сè друго: одбиено
     match /{document=**} {
       allow read, write: if false;

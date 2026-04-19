@@ -1,82 +1,101 @@
-﻿import { logger } from '../utils/logger';
+import { logger } from '../utils/logger';
 import { Topic, Concept } from '../types';
-import { callGeminiEmbed } from './gemini/core';
+import { callEmbeddingProxy } from './gemini/core';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
-/**
- * Service for Retrieval-Augmented Generation (RAG).
- * Fetches exact official curriculum strings from the BDE (БРО) standards to feed to the AI.
- */
+const SIMILARITY_THRESHOLD = 0.7;
+const CACHE_KEY = 'rag_concept_embeddings_v1';
+const CACHE_TTL_MS = 30 * 60 * 1000;
+
+interface ConceptEmbeddingDoc {
+  vector: number[];
+  text: string;
+}
+
+interface EmbeddingCache {
+  ts: number;
+  data: { id: string; vector: number[]; text: string }[];
+}
+
+export function cosineSimilarity(v1: number[], v2: number[]): number {
+  if (v1.length !== v2.length || v1.length === 0) return 0;
+  let dot = 0, mag1 = 0, mag2 = 0;
+  for (let i = 0; i < v1.length; i++) {
+    dot  += v1[i] * v2[i];
+    mag1 += v1[i] * v1[i];
+    mag2 += v2[i] * v2[i];
+  }
+  const denom = Math.sqrt(mag1) * Math.sqrt(mag2);
+  return denom === 0 ? 0 : dot / denom;
+}
+
 class RagService {
-  /**
-   * Helper to lazily load the curriculum data.
-   */
   private async getCurriculumData() {
     const { fullCurriculumData } = await import('../data/curriculum');
     return fullCurriculumData;
   }
 
-  /**
-   * Helper to calculate cosine similarity between two vectors.
-   */
-  private cosineSimilarity(v1: number[], v2: number[]): number {
-    let dotProduct = 0;
-    let mag1 = 0;
-    let mag2 = 0;
-    for (let i = 0; i < v1.length; i++) {
-      dotProduct += v1[i] * v2[i];
-      mag1 += v1[i] * v1[i];
-      mag2 += v2[i] * v2[i];
-    }
-    return dotProduct / (Math.sqrt(mag1) * Math.sqrt(mag2));
+  private getCache(): EmbeddingCache['data'] | null {
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const cached: EmbeddingCache = JSON.parse(raw);
+      if (Date.now() - cached.ts > CACHE_TTL_MS) {
+        sessionStorage.removeItem(CACHE_KEY);
+        return null;
+      }
+      return cached.data;
+    } catch { return null; }
+  }
+
+  private setCache(data: EmbeddingCache['data']): void {
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+    } catch { /* storage full — silent */ }
+  }
+
+  private async fetchConceptEmbeddings(): Promise<EmbeddingCache['data']> {
+    const cached = this.getCache();
+    if (cached) return cached;
+
+    const snap = await getDocs(collection(db, 'concept_embeddings'));
+    const data = snap.docs.map(d => {
+      const doc = d.data() as ConceptEmbeddingDoc;
+      return { id: d.id, vector: doc.vector, text: doc.text };
+    });
+    this.setCache(data);
+    return data;
   }
 
   /**
-   * Performs multimodal search using Gemini Embedding 2.
-   * Supports text, images, and other parts for native cross-modal retrieval.
+   * Semantic vector search over concept_embeddings (Firestore).
+   * Returns [] when feature flag VITE_ENABLE_VECTOR_RAG is not set.
+   * Gracefully returns [] on any error so AI generation continues unaffected.
    */
-  public async searchSimilarContext(queryParts: any[]): Promise<{ context: string, similarity: number, conceptId?: string }[]> {
+  public async searchSimilarContext(
+    queryText: string,
+    topK = 5,
+  ): Promise<{ context: string; similarity: number; conceptId?: string }[]> {
+    if (localStorage.getItem('VITE_ENABLE_VECTOR_RAG') !== 'true') return [];
+
     try {
-      // 1. Generate embedding for the multimodal query
-      const result = await callGeminiEmbed({
-        model: 'gemini-embedding-2-preview',
-        contents: queryParts
-      });
-      const queryVector = result.embeddings.values;
-      
-      // 2. Load pre-indexed curriculum embeddings (simulated for now)
-      // In a full implementation, these would come from a database like Pinecone/Firestore
-      const curriculumEmbeddings = await this.getMockCurriculumEmbeddings();
-      
-      // 3. Rank results by similarity
-      const scoredResults = curriculumEmbeddings.map(item => ({
-        context: item.text,
-        conceptId: item.id,
-        similarity: this.cosineSimilarity(queryVector, item.vector)
-      }));
+      const queryVector = await callEmbeddingProxy(queryText);
+      const embeddings = await this.fetchConceptEmbeddings();
 
-      // Sort by similarity and return top 3
-      return scoredResults
+      return embeddings
+        .map(item => ({
+          context: item.text,
+          conceptId: item.id,
+          similarity: cosineSimilarity(queryVector, item.vector),
+        }))
+        .filter(r => r.similarity > SIMILARITY_THRESHOLD)
         .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, 3);
-
+        .slice(0, topK);
     } catch (error) {
-      logger.error("RAG Embedding Error:", error);
+      logger.error('RAG vector search error:', error);
       return [];
     }
-  }
-
-  /**
-   * Simulated vector store for curriculum concepts.
-   * This would normally be a real Vector DB.
-   */
-  private async getMockCurriculumEmbeddings() {
-    // Generate a few stable mock vectors for demo purposes
-    // In production, we run 'callGeminiEmbed' on all curriculum text once and store results.
-    return [
-      { id: 'c1', text: 'Собирање и одземање на дропки со еднакви именители', vector: new Array(768).fill(0).map(() => Math.random()) },
-      { id: 'c2', text: 'Плоштина и периметар на рамнини фигури', vector: new Array(768).fill(0).map(() => Math.random()) },
-      { id: 'c3', text: 'Пропорционалност и размер во секојдневниот живот', vector: new Array(768).fill(0).map(() => Math.random()) }
-    ];
   }
 
   /**
@@ -116,7 +135,7 @@ class RagService {
     rag += `Тема: ${topicTitle}\n`;
     rag += `Лекција / Наставна Единица: ${concept.title}\n`;
     if (concept.description) rag += `Опис според БРО: ${concept.description}\n`;
-    
+
     if (concept.content && concept.content.length > 0) {
       rag += `\nСодржина која мора да се опфати:\n`;
       concept.content.forEach((item) => (rag += `- ${item}\n`));
@@ -126,8 +145,8 @@ class RagService {
       rag += `\nСтандарди за оценување:\n`;
       concept.assessmentStandards.forEach((item) => (rag += `- ${item}\n`));
     }
-    
-        if (concept.localContextExamples && concept.localContextExamples.length > 0) {
+
+    if (concept.localContextExamples && concept.localContextExamples.length > 0) {
       rag += '\nЛОКАЛЕН КОНТЕКСТ (ЗАДОЛЖИТЕЛНО ЗА ПРИМЕРИТЕ):\n';
       rag += 'При креирање на текстуални задачи или примери од секојдневниот живот, користи ги следниве елементи кои се блиски на учениците во Македонија:\n';
       concept.localContextExamples.forEach((item) => (rag += '- ' + item + '\n'));
@@ -137,7 +156,7 @@ class RagService {
     }
 
     rag += `\nНАПОМЕНА ЗА AI МОДЕЛОТ: Строго придржувај се до овие стандарди. Не додавај концепти или тежина на задачи кои не се во овие БРО граници.\n--- КРАЈ НА ОФИЦИЈАЛНА ПРОГРАМА ---\n`;
-    
+
     return rag;
   }
 
@@ -147,15 +166,16 @@ class RagService {
     rag += `Тема: ${topic.title}\n`;
     rag += `Опис на тема: ${topic.description}\n`;
     rag += `Сугерирани часови: ${topic.suggestedHours}\n`;
-    
+
     rag += `\nЛекции кои припаѓаат во оваа тема:\n`;
     topic.concepts.forEach((concept) => {
-        rag += `- ${concept.title}\n`;
+      rag += `- ${concept.title}\n`;
     });
-    
+
     rag += `\nНАПОМЕНА ЗА AI МОДЕЛОТ: Организирај ја програмата стриктно според овие лекции и сугерираните часови. Не измислувај непостоечки лекции.\n--- КРАЈ НА ОФИЦИЈАЛНА ПРОГРАМА ---\n`;
     return rag;
   }
 }
 
 export const ragService = new RagService();
+export { SIMILARITY_THRESHOLD, CACHE_KEY, CACHE_TTL_MS };
