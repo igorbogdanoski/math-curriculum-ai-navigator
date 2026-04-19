@@ -1,13 +1,12 @@
 /**
  * /api/vimeo-captions
  *
- * Fetches text-track captions for a public Vimeo video.
+ * Fetches text-track captions for a public Vimeo video — no API key required.
  *
- * Strategy:
- *   1. GET https://api.vimeo.com/videos/{id}/texttracks  (Vimeo API v3.4)
- *      using VIMEO_ACCESS_TOKEN env var (Personal Access Token, scope: public)
- *   2. Pick best track: preferred lang → mk → en → any
- *   3. Fetch the WebVTT file; parse into transcript + segments
+ * Strategy (player-page scrape, same principle as youtube-captions.ts):
+ *   1. GET https://player.vimeo.com/video/{id} — parse window.playerConfig JSON
+ *   2. Extract request.text_tracks array → pick best language track
+ *   3. Fetch the WebVTT URL → parse into transcript + segments
  *   4. If no captions → { available: false }
  *
  * Request:  GET /api/vimeo-captions?videoId=<numeric-id>&lang=<mk|en|...>
@@ -24,7 +23,8 @@ import { getAuth } from 'firebase-admin/auth';
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 20;
 const TRANSCRIPT_MAX_CHARS = 80_000;
-const VIMEO_API_BASE = 'https://api.vimeo.com';
+const PLAYER_BASE = 'https://player.vimeo.com/video';
+const BOT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 const requestBuckets = new Map<string, number[]>();
 
@@ -103,13 +103,15 @@ interface VimeoTextTrack {
   type: string;       // 'captions' | 'subtitles' | 'chapters' | 'descriptions'
   language: string;   // e.g. 'en', 'mk'
   link: string;       // URL to the WebVTT file
-  link_expires_time?: string;
   name?: string;
 }
 
-interface VimeoTextTracksResponse {
-  total: number;
-  data: VimeoTextTrack[];
+// Shape of text_tracks inside window.playerConfig.request
+interface PlayerConfigTrack {
+  url: string;
+  lang: string;
+  label?: string;
+  kind?: string;      // 'subtitles' | 'captions'
 }
 
 export interface TranscriptSegment {
@@ -202,6 +204,60 @@ function applyTranscriptLimit(
   return { transcript: `${transcript}…[truncated]`, segments, truncated: true };
 }
 
+// ── Player-page scraper ───────────────────────────────────────────────────────
+
+async function fetchVimeoPlayerTracks(videoId: string): Promise<VimeoTextTrack[]> {
+  const url = `${PLAYER_BASE}/${videoId}?autoplay=0`;
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': BOT_UA,
+      'Accept': 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) throw new Error(`Vimeo player fetch failed: ${res.status}`);
+  const html = await res.text();
+
+  // Vimeo embeds config as: window.playerConfig = {...};
+  // Also appears as: var playerConfig = {...}; or JSON in <script> tags
+  const patterns = [
+    /window\.playerConfig\s*=\s*(\{[\s\S]+?\});\s*(?:\/\/|<\/script>|\n\s*(?:var|const|let|window))/,
+    /playerConfig\s*=\s*(\{[\s\S]+?\});\s*(?:\/\/|<\/script>|\n\s*[a-z])/,
+    /"text_tracks"\s*:\s*(\[[\s\S]+?\])\s*[,}]/,
+  ];
+
+  type PlayerConfig = { request?: { text_tracks?: PlayerConfigTrack[] } };
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (!match) continue;
+    try {
+      // Pattern 3 extracts just the text_tracks array
+      if (pattern.source.startsWith('"text_tracks"')) {
+        const tracks = JSON.parse(match[1]) as PlayerConfigTrack[];
+        return mapPlayerTracks(tracks);
+      }
+      const config = JSON.parse(match[1]) as PlayerConfig;
+      const tracks = config?.request?.text_tracks;
+      if (tracks?.length) return mapPlayerTracks(tracks);
+    } catch { continue; }
+  }
+
+  return [];
+}
+
+function mapPlayerTracks(tracks: PlayerConfigTrack[]): VimeoTextTrack[] {
+  return tracks.map(t => ({
+    uri: t.url,
+    active: false,
+    type: t.kind ?? 'subtitles',
+    language: t.lang,
+    link: t.url,
+    name: t.label,
+  }));
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -223,45 +279,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ available: false, reason: 'Invalid Vimeo videoId — must be numeric' });
   }
 
-  const accessToken = process.env.VIMEO_ACCESS_TOKEN;
-  if (!accessToken) {
-    return res.status(500).json({ available: false, reason: 'Vimeo access token not configured on server' });
-  }
-
   try {
-    // 1. Fetch text tracks list
-    const tracksRes = await fetch(`${VIMEO_API_BASE}/videos/${videoId}/texttracks`, {
-      headers: {
-        Authorization: `bearer ${accessToken}`,
-        Accept: 'application/vnd.vimeo.*+json;version=3.4',
-      },
-      signal: AbortSignal.timeout(8000),
-    });
+    // 1. Scrape player page for caption tracks (no API key needed)
+    const tracks = await fetchVimeoPlayerTracks(videoId);
 
-    if (!tracksRes.ok) {
-      const status = tracksRes.status;
-      if (status === 404) return res.status(200).json({ available: false, reason: 'Video not found on Vimeo' });
-      if (status === 403) return res.status(200).json({ available: false, reason: 'Video is private or access denied' });
-      return res.status(200).json({ available: false, reason: `Vimeo API error: ${status}` });
+    if (!tracks.length) {
+      return res.status(200).json({ available: false, reason: 'No captions found for this video', videoId });
     }
 
-    const tracksData = await tracksRes.json() as VimeoTextTracksResponse;
-    if (!tracksData.data?.length) {
-      return res.status(200).json({ available: false, reason: 'No captions available for this Vimeo video', videoId });
-    }
-
-    const track = pickBestTrack(tracksData.data, lang);
+    const track = pickBestTrack(tracks, lang);
     if (!track) {
       return res.status(200).json({
         available: false,
         reason: 'No suitable caption track found',
-        availableLangs: tracksData.data.map(t => ({ lang: t.language, kind: t.type })),
+        availableLangs: tracks.map(t => ({ lang: t.language, kind: t.type })),
         videoId,
       });
     }
 
     // 2. Fetch WebVTT content
-    const vttRes = await fetch(track.link, { signal: AbortSignal.timeout(10000) });
+    const vttRes = await fetch(track.link, {
+      headers: { 'User-Agent': BOT_UA },
+      signal: AbortSignal.timeout(10000),
+    });
     if (!vttRes.ok) {
       return res.status(200).json({ available: false, reason: 'Failed to fetch WebVTT file', videoId });
     }
@@ -287,7 +327,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       videoId,
       charCount: limited.transcript.length,
       truncated: limited.truncated,
-      availableLangs: tracksData.data.map(t => ({ lang: t.language, kind: t.type })),
+      availableLangs: tracks.map(t => ({ lang: t.language, kind: t.type })),
     });
 
   } catch (err: unknown) {
