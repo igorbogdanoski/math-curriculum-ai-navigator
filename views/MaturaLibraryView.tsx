@@ -28,6 +28,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
 import type { SchoolClass } from '../services/firestoreService';
 import { downloadAsPdf } from '../utils/pdfDownload';
+import { CommunitySolutionsPanel } from '../components/matura/CommunitySolutionsPanel';
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
@@ -253,6 +254,9 @@ interface CardProps {
   gradingP3: boolean;
   aiGradeP3?: AIGrade;
   aiError?: string;
+  questionDocId: string;
+  currentUid: string | null;
+  currentDisplayName: string;
 }
 
 function QuestionCard({
@@ -261,6 +265,7 @@ function QuestionCard({
   answer, setAnswer, onGradeP2, gradingP2, aiGrade,
   selfChecks, onSelfCheck,
   aiDesc, setAiDesc, onGradeP3, gradingP3, aiGradeP3, aiError,
+  questionDocId, currentUid, currentDisplayName,
 }: CardProps) {
   const open         = isOpen(q);
   const ta           = q.topicArea ?? '';
@@ -434,6 +439,11 @@ function QuestionCard({
           </button>
         )}
       </div>
+      <CommunitySolutionsPanel
+        questionDocId={questionDocId}
+        currentUid={currentUid}
+        currentDisplayName={currentDisplayName}
+      />
     </div>
   );
 }
@@ -1153,7 +1163,7 @@ export function MaturaLibraryView() {
 
   // ── Firestore data ──
   const { exams, loading: examsLoading, error: examsError } = useMaturaExams();
-  const { user } = useAuth();
+  const { user, firebaseUser } = useAuth();
 
   // ── Exam selection (smart default: prefer teacher's secondary track) ──
   const [selectedExamId, setSelectedExamId] = useState<string>('');
@@ -1525,6 +1535,9 @@ export function MaturaLibraryView() {
                   gradingP3={gradingP3.has(n)}
                   aiGradeP3={aiGradesP3[n]}
                   aiError={aiErrors[n]}
+                  questionDocId={`${q.examId}_q${String(n).padStart(2, '0')}`}
+                  currentUid={firebaseUser?.uid ?? null}
+                  currentDisplayName={firebaseUser?.displayName || firebaseUser?.email || 'Ученик'}
                 />
               );
             })}

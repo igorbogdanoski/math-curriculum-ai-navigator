@@ -701,6 +701,47 @@ Baseline: TSC 0, 689/689 unit tests
 Метрики: TSC 0 | 689/689 tests | Build PASS
 ```
 
+### S39 — ЗАВРШЕНА ✅ (19 Apr 2026)
+
+```text
+Baseline: TSC 0, 700/700 unit tests
+
+М3: Matura Community Solutions — ученичка банка на решенија
+
+services/firestoreService.community.ts (НОВО)
+  - Firestore collection: matura_community_solutions/{solutionId}
+  - CommunitySolution: { questionDocId, authorUid, authorName, text, upvotes, upvoterUids, createdAt }
+  - submitCommunitySolution() → addDoc
+  - getCommunitySolutions(questionDocId) → query by questionDocId, orderBy upvotes desc
+  - upvoteCommunitySolution() → increment(1) + arrayUnion(uid)
+  - downvoteCommunitySolution() → increment(-1) + arrayRemove(uid)
+
+components/matura/CommunitySolutionsPanel.tsx (НОВО)
+  - Props: { questionDocId, currentUid, currentDisplayName }
+  - Collapsible panel (lazy-load on first open)
+  - Submit form: textarea + „Испрати решение" (disabled без auth)
+  - Solutions list: sorted by upvotes, optimistic vote toggle (ThumbsUp)
+  - Revert on Firestore failure, Loader2 spinner per vote
+  - MathRenderer поддршка во текстот на решението
+  - „Уште нема решенија. Биди прв!" empty state
+
+views/MaturaLibraryView.tsx:
+  - Import CommunitySolutionsPanel
+  - CardProps += { questionDocId, currentUid, currentDisplayName }
+  - QuestionCard: CommunitySolutionsPanel на дното на секоја картичка
+  - Call site: questionDocId = `${q.examId}_q${padStart(n, '0', 2)}`
+  - firebaseUser додаден во MaturaLibraryView
+
+AI1 план (НЕ деплојан):
+  - docs/AI1_VECTOR_RAG_PLAN.md — полн архитектурен план
+  - Опција А (препорачана): client-side cosine без Firebase upgrade
+  - Опција Б: Firestore KNN (за кога концепти > 2000)
+  - Feature flag: localStorage VITE_ENABLE_VECTOR_RAG
+  - 9-точки checklist пред секој prod push
+
+Метрики: TSC 0 | 700/700 tests | Build PASS
+```
+
 ### S38 — ЗАВРШЕНА ✅ (19 Apr 2026)
 
 ```text
