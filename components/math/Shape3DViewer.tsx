@@ -262,13 +262,14 @@ export const Shape3DViewer: React.FC<Shape3DViewerProps> = ({
   const [showLabels,     setShowLabels]     = useState(true);
   const [crossSection,   setCrossSection]   = useState(0); // 0=none, 0.1–0.9 = cut height fraction
   const [showCrossSlider, setShowCrossSlider] = useState(false);
+  const [viewMode, setViewMode] = useState<'3d' | 'net'>('3d');
 
   const dragging = useRef<{ x: number; y: number } | null>(null);
   const svgRef   = useRef<SVGSVGElement>(null);
 
   const W=320, H=260, cx=W/2, cy=H/2+20;
 
-  useEffect(() => { setDims(SHAPE_DEFAULT_DIMS[shape]); setCrossSection(0); }, [shape]);
+  useEffect(() => { setDims(SHAPE_DEFAULT_DIMS[shape]); setCrossSection(0); setViewMode('3d'); }, [shape]);
 
   // ── Orbit: mouse ────────────────────────────────────────────────────────────
   const onMouseDown = useCallback((e: React.MouseEvent) => {
@@ -428,6 +429,160 @@ export const Shape3DViewer: React.FC<Shape3DViewerProps> = ({
     );
   };
 
+  // ── Net (unfolding) render ────────────────────────────────────────────────────
+  const renderNet = (): React.ReactNode => {
+    const FILL  = '#e0e7ff';
+    const FILL2 = '#c7d2fe';
+    const STR   = '#4338ca';
+    const FOLD  = '#818cf8';
+    const TXT   = '#1e1b4b';
+
+    if (shape === 'sphere') {
+      return (<>
+        <ellipse cx={cx} cy={cy - 20} rx={65} ry={65} fill={FILL} fillOpacity={0.25} stroke={STR} strokeWidth="1.5"/>
+        {[12, 26, 40, 54, 65].map((ry2, i) => (
+          <ellipse key={i} cx={cx} cy={cy - 20} rx={65} ry={ry2}
+            fill="none" stroke={FOLD} strokeWidth="1" strokeDasharray="5,4" opacity={0.6}/>
+        ))}
+        <text x={cx} y={cy + 58} fill={TXT} fontSize={12} fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">Сферата нема точна мрежа</text>
+        <text x={cx} y={cy + 72} fill={FOLD} fontSize={9} textAnchor="middle" fontFamily="sans-serif">(не може да се развие рамно)</text>
+        <text x={cx} y={14} fill={TXT} fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily="monospace">Развивка — Сфера</text>
+      </>);
+    }
+
+    if (shape === 'cube') {
+      const a = d.a ?? 3;
+      const sc2 = Math.min(220 / (4 * a), 160 / (3 * a));
+      const u = a * sc2;
+      const ox = cx - 2 * u, oy = cy - 1.5 * u + 5;
+      const rects = [
+        { x: ox,       y: oy + u,   w: u, h: u },
+        { x: ox + u,   y: oy + u,   w: u, h: u, hi: true },
+        { x: ox + 2*u, y: oy + u,   w: u, h: u },
+        { x: ox + 3*u, y: oy + u,   w: u, h: u },
+        { x: ox + u,   y: oy,       w: u, h: u },
+        { x: ox + u,   y: oy + 2*u, w: u, h: u },
+      ];
+      return (<>
+        {rects.map((r2, i) => <rect key={i} x={r2.x} y={r2.y} width={r2.w} height={r2.h} fill={r2.hi ? FILL2 : FILL} stroke={STR} strokeWidth="1.5"/>)}
+        {[1,2,3].map(i => <line key={`v${i}`} x1={ox+i*u} y1={oy+u} x2={ox+i*u} y2={oy+2*u} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>)}
+        <line x1={ox+u}   y1={oy}   x2={ox+u}   y2={oy+u}   stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={ox+2*u} y1={oy}   x2={ox+2*u} y2={oy+u}   stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={ox+u}   y1={oy+2*u} x2={ox+u}   y2={oy+3*u} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={ox+2*u} y1={oy+2*u} x2={ox+2*u} y2={oy+3*u} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <text x={cx} y={H - 6} fill={STR} fontSize={9} textAnchor="middle" fontFamily="monospace" fontWeight="bold">{`a = ${a}  →  мрежа: 4a × 3a`}</text>
+        <text x={cx} y={14} fill={TXT} fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily="monospace">Развивка — Коцка</text>
+      </>);
+    }
+
+    if (shape === 'cuboid') {
+      const a = d.a??3, b = d.b??2, hv = d.h??2;
+      const sc2 = Math.min(220 / (2*(a+b)), 160 / (2*b+hv));
+      const A = a*sc2, B = b*sc2, HH = hv*sc2;
+      const ox = cx - A/2 - B, oy = cy - B - HH/2 + 5;
+      return (<>
+        <rect x={ox}       y={oy} width={B}  height={HH} fill={FILL}  stroke={STR} strokeWidth="1.5"/>
+        <rect x={ox+B}     y={oy} width={A}  height={HH} fill={FILL2} stroke={STR} strokeWidth="1.5"/>
+        <rect x={ox+B+A}   y={oy} width={B}  height={HH} fill={FILL}  stroke={STR} strokeWidth="1.5"/>
+        <rect x={ox+2*B+A} y={oy} width={A}  height={HH} fill={FILL}  stroke={STR} strokeWidth="1.5"/>
+        <rect x={ox+B}     y={oy-B}  width={A} height={B} fill={FILL2} stroke={STR} strokeWidth="1.5"/>
+        <rect x={ox+B}     y={oy+HH} width={A} height={B} fill={FILL2} stroke={STR} strokeWidth="1.5"/>
+        <line x1={ox+B}     y1={oy-B}    x2={ox+B}     y2={oy+HH+B}  stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={ox+B+A}   y1={oy-B}    x2={ox+B+A}   y2={oy+HH+B}  stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={ox+2*B+A} y1={oy}      x2={ox+2*B+A} y2={oy+HH}    stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={ox}       y1={oy}      x2={ox}       y2={oy+HH}    stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <text x={cx} y={H - 6} fill={STR} fontSize={9} textAnchor="middle" fontFamily="monospace" fontWeight="bold">{`a=${a}  b=${b}  h=${hv}`}</text>
+        <text x={cx} y={14} fill={TXT} fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily="monospace">Развивка — Правоаголна призма</text>
+      </>);
+    }
+
+    if (shape === 'cylinder') {
+      const rv = d.r??1.5, hv = d.h??3;
+      const circum = 2 * π * rv;
+      const sc2 = Math.min(220 / Math.max(circum, 2*rv), 145 / (hv + 4*rv));
+      const R2 = rv * sc2, rectW = circum * sc2, rectH = hv * sc2;
+      const rx0 = cx - rectW/2, ry0 = cy - rectH/2 + 5;
+      return (<>
+        <rect x={rx0} y={ry0} width={rectW} height={rectH} fill={FILL2} stroke={STR} strokeWidth="1.5"/>
+        <circle cx={cx} cy={ry0 - R2} r={R2} fill={FILL} stroke={STR} strokeWidth="1.5"/>
+        <circle cx={cx} cy={ry0 + rectH + R2} r={R2} fill={FILL} stroke={STR} strokeWidth="1.5"/>
+        <line x1={rx0} y1={ry0}       x2={rx0+rectW} y2={ry0}       stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={rx0} y1={ry0+rectH} x2={rx0+rectW} y2={ry0+rectH} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <text x={cx} y={ry0 + rectH/2 + 4} fill={TXT} fontSize={9} textAnchor="middle" fontFamily="monospace" fontWeight="bold">{`2πr ≈ ${circum.toFixed(1)}`}</text>
+        <text x={rx0 - 5} y={ry0 + rectH/2} fill={STR} fontSize={9} textAnchor="end" fontFamily="monospace" fontWeight="bold">{`h=${hv}`}</text>
+        <text x={cx} y={H - 6} fill={STR} fontSize={9} textAnchor="middle" fontFamily="monospace" fontWeight="bold">{`r=${rv}  h=${hv}  обем=2πr≈${circum.toFixed(2)}`}</text>
+        <text x={cx} y={14} fill={TXT} fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily="monospace">Развивка — Цилиндар</text>
+      </>);
+    }
+
+    if (shape === 'cone') {
+      const rv = d.r??1.5, hv = d.h??3;
+      const l = Math.sqrt(rv*rv + hv*hv);
+      const sectorAngle = Math.min((2 * π * rv) / l, 2 * π * 0.999);
+      const sc2 = Math.min(200 / (2*l), 145 / (l + 2*rv));
+      const L2 = l * sc2, R2 = rv * sc2;
+      const apexX = cx, apexY = cy - L2/2 - 5;
+      const half = sectorAngle / 2;
+      const x1s = apexX - L2 * Math.sin(half), y1s = apexY + L2 * Math.cos(half);
+      const x2s = apexX + L2 * Math.sin(half), y2s = y1s;
+      const largeArc = sectorAngle > π ? 1 : 0;
+      const circleCy = y1s + R2 + 8;
+      return (<>
+        <path d={`M ${apexX} ${apexY} L ${x1s} ${y1s} A ${L2} ${L2} 0 ${largeArc} 1 ${x2s} ${y2s} Z`}
+          fill={FILL2} stroke={STR} strokeWidth="1.5"/>
+        <path d={`M ${x1s} ${y1s} A ${L2} ${L2} 0 ${largeArc} 1 ${x2s} ${y2s}`}
+          fill="none" stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <circle cx={apexX} cy={circleCy} r={R2} fill={FILL} stroke={STR} strokeWidth="1.5"/>
+        <line x1={apexX} y1={apexY} x2={x2s} y2={y2s} stroke={FOLD} strokeWidth="1" strokeDasharray="3,2"/>
+        <text x={(apexX+x2s)/2 + 6} y={(apexY+y2s)/2 - 3} fill={STR} fontSize={9} fontFamily="monospace" fontWeight="bold">{`l≈${fmt(l)}`}</text>
+        <text x={cx} y={H - 6} fill={STR} fontSize={9} textAnchor="middle" fontFamily="monospace" fontWeight="bold">{`r=${rv}  h=${hv}  l=√(r²+h²)≈${fmt(l)}`}</text>
+        <text x={cx} y={14} fill={TXT} fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily="monospace">Развивка — Конус</text>
+      </>);
+    }
+
+    if (shape === 'pyramid') {
+      const a = d.a??2.5, hv = d.h??3;
+      const sl = Math.sqrt((a/2)**2 + hv**2);
+      const sc2 = Math.min(180, 160) / (a + 2*sl);
+      const A = a*sc2, SL = sl*sc2;
+      const bx = cx - A/2, by = cy - A/2;
+      return (<>
+        <rect x={bx} y={by} width={A} height={A} fill={FILL2} stroke={STR} strokeWidth="1.5"/>
+        <polygon points={`${cx},${by-SL} ${bx},${by} ${bx+A},${by}`}        fill={FILL} stroke={STR} strokeWidth="1.5"/>
+        <polygon points={`${cx},${by+A+SL} ${bx},${by+A} ${bx+A},${by+A}`} fill={FILL} stroke={STR} strokeWidth="1.5"/>
+        <polygon points={`${bx-SL},${cy} ${bx},${by} ${bx},${by+A}`}       fill={FILL} stroke={STR} strokeWidth="1.5"/>
+        <polygon points={`${bx+A+SL},${cy} ${bx+A},${by} ${bx+A},${by+A}`} fill={FILL} stroke={STR} strokeWidth="1.5"/>
+        <line x1={bx}   y1={by}   x2={bx+A} y2={by}   stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={bx}   y1={by+A} x2={bx+A} y2={by+A} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={bx}   y1={by}   x2={bx}   y2={by+A} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <line x1={bx+A} y1={by}   x2={bx+A} y2={by+A} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+        <text x={cx} y={H - 6} fill={STR} fontSize={9} textAnchor="middle" fontFamily="monospace" fontWeight="bold">{`a=${a}  h=${hv}  l≈${fmt(sl)}`}</text>
+        <text x={cx} y={14} fill={TXT} fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily="monospace">Развивка — Пирамида</text>
+      </>);
+    }
+
+    // prism
+    const a = d.a??2.5, hv = d.h??1.8, c = d.c??3;
+    const leg = Math.sqrt((a/2)**2 + hv**2);
+    const sc2 = Math.min(220 / (a + 2*leg), 155 / (c + 2*hv));
+    const A = a*sc2, HH = hv*sc2, C = c*sc2, LEG = leg*sc2;
+    const stripX = cx - A/2 - LEG, stripY = cy - C/2 + 5;
+    const triX = cx - A/2;
+    return (<>
+      <rect x={stripX}       y={stripY} width={LEG} height={C} fill={FILL}  stroke={STR} strokeWidth="1.5"/>
+      <rect x={stripX+LEG}   y={stripY} width={A}   height={C} fill={FILL2} stroke={STR} strokeWidth="1.5"/>
+      <rect x={stripX+LEG+A} y={stripY} width={LEG} height={C} fill={FILL}  stroke={STR} strokeWidth="1.5"/>
+      <polygon points={`${cx},${stripY-HH} ${triX},${stripY} ${triX+A},${stripY}`}       fill={FILL} stroke={STR} strokeWidth="1.5"/>
+      <polygon points={`${cx},${stripY+C+HH} ${triX},${stripY+C} ${triX+A},${stripY+C}`} fill={FILL} stroke={STR} strokeWidth="1.5"/>
+      <line x1={stripX+LEG}   y1={stripY} x2={stripX+LEG}   y2={stripY+C} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+      <line x1={stripX+LEG+A} y1={stripY} x2={stripX+LEG+A} y2={stripY+C} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+      <line x1={triX}   y1={stripY}   x2={triX+A} y2={stripY}   stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+      <line x1={triX}   y1={stripY+C} x2={triX+A} y2={stripY+C} stroke={FOLD} strokeWidth="1.5" strokeDasharray="4,3"/>
+      <text x={cx} y={H - 6} fill={STR} fontSize={9} textAnchor="middle" fontFamily="monospace" fontWeight="bold">{`a=${a}  h=${hv}  l=${c}  страна≈${fmt(leg)}`}</text>
+      <text x={cx} y={14} fill={TXT} fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily="monospace">Развивка — Триаголна призма</text>
+    </>);
+  };
+
   return (
     <div className="flex flex-col gap-3 select-none">
       {/* Shape selector */}
@@ -449,18 +604,25 @@ export const Shape3DViewer: React.FC<Shape3DViewerProps> = ({
         <div className="flex flex-col gap-2">
           <div className="relative rounded-2xl bg-gradient-to-br from-slate-900 to-blue-950 overflow-hidden border border-blue-900">
             <svg ref={svgRef} width={W} height={H}
-              className="cursor-grab active:cursor-grabbing touch-none"
-              onMouseDown={onMouseDown} onMouseMove={onMouseMove}
-              onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-              onWheel={onWheel}
-              onTouchStart={onTouchStart} onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}
+              className={`touch-none ${viewMode === '3d' ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+              onMouseDown={viewMode === '3d' ? onMouseDown : undefined}
+              onMouseMove={viewMode === '3d' ? onMouseMove : undefined}
+              onMouseUp={viewMode === '3d' ? onMouseUp : undefined}
+              onMouseLeave={viewMode === '3d' ? onMouseUp : undefined}
+              onWheel={viewMode === '3d' ? onWheel : undefined}
+              onTouchStart={viewMode === '3d' ? onTouchStart : undefined}
+              onTouchMove={viewMode === '3d' ? onTouchMove : undefined}
+              onTouchEnd={viewMode === '3d' ? onTouchEnd : undefined}
+              onTouchCancel={viewMode === '3d' ? onTouchEnd : undefined}
             >
-              <line x1={0} y1={cy+2} x2={W} y2={cy+2} stroke="#334155" strokeWidth="0.5" strokeDasharray="4,4"/>
-              <line x1={cx} y1={0} x2={cx} y2={H} stroke="#334155" strokeWidth="0.5" strokeDasharray="4,4"/>
-              {renderShape()}
-              <text x={8} y={18} fill="#94a3b8" fontSize={11} fontWeight="bold" fontFamily="monospace">{meta.mk}</text>
-              <text x={W-8} y={H-6} fill="#475569" fontSize={9} textAnchor="end" fontFamily="monospace">влечи · scroll</text>
+              {viewMode === '3d' && (<>
+                <line x1={0} y1={cy+2} x2={W} y2={cy+2} stroke="#334155" strokeWidth="0.5" strokeDasharray="4,4"/>
+                <line x1={cx} y1={0} x2={cx} y2={H} stroke="#334155" strokeWidth="0.5" strokeDasharray="4,4"/>
+                {renderShape()}
+                <text x={8} y={18} fill="#94a3b8" fontSize={11} fontWeight="bold" fontFamily="monospace">{meta.mk}</text>
+                <text x={W-8} y={H-6} fill="#475569" fontSize={9} textAnchor="end" fontFamily="monospace">влечи · scroll</text>
+              </>)}
+              {viewMode === 'net' && renderNet()}
             </svg>
           </div>
 
@@ -490,8 +652,14 @@ export const Shape3DViewer: React.FC<Shape3DViewerProps> = ({
                 Пресек
               </button>
             )}
+            {/* Unfolding net toggle */}
+            <button type="button"
+              onClick={() => setViewMode(v => v === 'net' ? '3d' : 'net')}
+              className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors ${viewMode === 'net' ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-gray-100 text-gray-400 border-gray-200'}`}>
+              Развивка
+            </button>
             {/* Reset */}
-            <button type="button" title="Ресетирај поглед" onClick={() => { setYaw(PRESET_VIEWS.iso.yaw); setPitch(PRESET_VIEWS.iso.pitch); setScale(55); setDims(SHAPE_DEFAULT_DIMS[shape]); setCrossSection(0); setShowCrossSlider(false); }}
+            <button type="button" title="Ресетирај поглед" onClick={() => { setYaw(PRESET_VIEWS.iso.yaw); setPitch(PRESET_VIEWS.iso.pitch); setScale(55); setDims(SHAPE_DEFAULT_DIMS[shape]); setCrossSection(0); setShowCrossSlider(false); setViewMode('3d'); }}
               className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"><RefreshCw className="w-3.5 h-3.5 text-gray-600"/></button>
             {/* Share URL */}
             <button type="button"
