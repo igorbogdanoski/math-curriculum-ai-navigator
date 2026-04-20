@@ -251,6 +251,46 @@ jobs:
           SENTRY_ISSUE_QUERY: is:unresolved
           SENTRY_UNCLASSIFIED_WARN_PCT: "30"
 
+  a11y-axe:
+    name: Accessibility (axe-core)
+    runs-on: ubuntu-latest
+    needs: [quality-gate]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run axe a11y smoke tests
+        run: npx playwright test tests/a11y-smoke.spec.ts --reporter=list
+        env:
+          VITE_FIREBASE_API_KEY: dummy-key
+          VITE_FIREBASE_AUTH_DOMAIN: dummy.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: dummy-project
+          VITE_FIREBASE_STORAGE_BUCKET: dummy.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+          VITE_FIREBASE_APP_ID: "1:000000000000:web:0000000000000000"
+          VITE_GEMINI_API_KEY: dummy-gemini-key
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-axe-report
+          path: playwright-report/
+          retention-days: 7
+
   e2e-emulator-smoke:
     name: E2E Auth Smoke (Firebase Emulator)
     runs-on: ubuntu-latest
