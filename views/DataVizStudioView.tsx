@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
-  Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma
+  Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { DataTable, DEFAULT_TABLE } from '../components/dataviz/DataTable';
@@ -11,6 +11,7 @@ import type { ChartType, ChartConfig } from '../components/dataviz/ChartPreview'
 import { MathPaperGenerator } from '../components/dataviz/MathPaperGenerator';
 import { AIStatsAssistant } from '../components/dataviz/AIStatsAssistant';
 import { ProbabilityLab } from '../components/dataviz/ProbabilityLab';
+import { FunctionGrapher } from '../components/dataviz/FunctionGrapher';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import { useNotification } from '../contexts/NotificationContext';
@@ -48,7 +49,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai' | 'prob';
+type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn';
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 export const DataVizStudioView: React.FC = () => {
@@ -137,10 +138,11 @@ export const DataVizStudioView: React.FC = () => {
 
   // ── Tabs ───────────────────────────────────────────────────────────────────
   const TABS = [
-    { id: 'chart' as StudioTab, label: 'Градител на графици',  icon: BarChart2, color: 'indigo'  },
-    { id: 'paper' as StudioTab, label: 'Математичка хартија',  icon: Grid3X3,   color: 'emerald' },
-    { id: 'ai'    as StudioTab, label: 'AI Асистент',          icon: Sparkles,  color: 'violet'  },
-    { id: 'prob'  as StudioTab, label: 'Лаб. Веројатност',     icon: Sigma,     color: 'rose'    },
+    { id: 'chart' as StudioTab, label: 'Градител на графици',  icon: BarChart2,  color: 'indigo'  },
+    { id: 'fn'    as StudioTab, label: 'Граф функции',         icon: TrendingUp, color: 'cyan'    },
+    { id: 'paper' as StudioTab, label: 'Математичка хартија',  icon: Grid3X3,    color: 'emerald' },
+    { id: 'ai'    as StudioTab, label: 'AI Асистент',          icon: Sparkles,   color: 'violet'  },
+    { id: 'prob'  as StudioTab, label: 'Лаб. Веројатност',     icon: Sigma,      color: 'rose'    },
   ];
 
   return (
@@ -399,6 +401,21 @@ export const DataVizStudioView: React.FC = () => {
                 </ul>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ══ TAB: FUNCTION GRAPHER ════════════════════════════════════════ */}
+        {activeTab === 'fn' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-cyan-500" /> Граф на функции
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Исцртај до 5 математички функции · влечи за поместување · скролај за зум · МОН V–XIII одд.
+              </p>
+            </div>
+            <FunctionGrapher />
           </div>
         )}
 
