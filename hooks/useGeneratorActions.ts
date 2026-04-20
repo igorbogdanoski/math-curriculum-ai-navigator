@@ -51,7 +51,7 @@ const AI_STYLE_MAP: Record<string, string> = {
   problem: 'ОБРАЗОВЕН СТИЛ — Проблемски: реален животен контекст пред теоријата, ученикот го решава проблемот со математиката.',
 };
 
-function buildAiPersonalizationSnippet(state: { aiTone: string; aiVocabLevel: string; aiStyle: string }): string {
+export function buildAiPersonalizationSnippet(state: { aiTone: string; aiVocabLevel: string; aiStyle: string }): string {
   return [
     state.aiTone !== 'creative' ? AI_TONE_MAP[state.aiTone] : '',
     AI_VOCAB_MAP[state.aiVocabLevel] ?? '',
@@ -425,7 +425,8 @@ export function useGeneratorActions({
             const conceptObj = finalContext.concepts?.[0];
             const conceptTitle = conceptObj?.title ?? finalContext.topic?.title ?? 'Математика';
             const gradeLevel = finalContext.grade?.level ?? 1;
-            result = await geminiService.generateWorkedExample(conceptTitle, gradeLevel);
+            const workedExSecondaryTrack = finalContext.grade?.secondaryTrack ?? user?.secondaryTrack;
+            result = await geminiService.generateWorkedExample(conceptTitle, gradeLevel, workedExSecondaryTrack);
             break;
           }
           case 'EXIT_TICKET':

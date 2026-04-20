@@ -287,59 +287,40 @@ describe('DailyBriefSchema', () => {
 });
 
 // ─── WorkedExampleSchema ──────────────────────────────────────────────────────
+// Reflects AIGeneratedWorkedExample + WorkedExampleStep from types.ts
 
 describe('WorkedExampleSchema', () => {
     const validExample = {
-        title: 'Питагорова теорема — пример',
-        problem: 'Дадени се катети a=3, b=4. Најди ја хипотенузата c.',
+        concept: 'Питагорова теорема',
+        gradeLevel: 8,
         steps: [
-            { explanation: 'Примени ја формулата c² = a² + b²', formula: 'c^2 = 3^2 + 4^2' },
-            { explanation: 'Пресметај: c² = 9 + 16 = 25', formula: 'c^2 = 25' },
-            { explanation: 'Извади корен: c = 5' },
+            { phase: 'solved', title: 'Погледни — решено заедно', problem: 'Дадени a=3, b=4. Најди c.', solution: ['c² = a² + b²', 'c² = 9+16 = 25', 'c = 5'] },
+            { phase: 'partial', title: 'Заврши го ти', problem: 'Дадени a=5, b=12. Најди c.', solution: ['c² = a² + b²'], partialPlaceholder: 'Твој ред — заврши го решението' },
+            { phase: 'quiz', title: 'Самостојно!', problem: 'Дадени a=6, b=8. Најди c.' },
         ],
     };
 
-    it('parses a minimal worked example (no partialSteps, no quizQuestion)', () => {
+    it('parses a complete 3-phase worked example', () => {
         expect(WorkedExampleSchema.safeParse(validExample).success).toBe(true);
     });
 
-    it('parses example with partialSteps', () => {
-        const withPartial = {
-            ...validExample,
-            partialSteps: [
-                { explanation: 'Примени ја формулата', formula: 'c^2 = a^2 + b^2', isBlank: false },
-                { explanation: '___', isBlank: true },
-            ],
-        };
-        expect(WorkedExampleSchema.safeParse(withPartial).success).toBe(true);
+    it('parses a single-step example (min 1 step)', () => {
+        const single = { ...validExample, steps: [validExample.steps[0]] };
+        expect(WorkedExampleSchema.safeParse(single).success).toBe(true);
     });
 
-    it('parses example with quizQuestion', () => {
-        const withQuiz = {
-            ...validExample,
-            quizQuestion: {
-                question: 'Колку е c ако a=3, b=4?',
-                options: ['3', '4', '5', '6'],
-                correctIndex: 2,
-                explanation: 'c² = 9 + 16 = 25, c = 5',
-            },
-        };
-        expect(WorkedExampleSchema.safeParse(withQuiz).success).toBe(true);
+    it('allows quiz step without solution (optional)', () => {
+        expect(WorkedExampleSchema.safeParse(validExample).success).toBe(true);
     });
 
-    it('allows step without formula (optional)', () => {
-        const noFormula = { ...validExample, steps: [{ explanation: 'Објасни' }] };
-        expect(WorkedExampleSchema.safeParse(noFormula).success).toBe(true);
+    it('rejects example without concept', () => {
+        const { concept: _c, ...noConcept } = validExample;
+        expect(WorkedExampleSchema.safeParse(noConcept).success).toBe(false);
     });
 
-    it('rejects example without title', () => {
-        const { title: _t, ...noTitle } = validExample;
-        expect(WorkedExampleSchema.safeParse(noTitle).success).toBe(false);
-    });
-
-    it('rejects example without problem', () => {
-        const { problem: _p, ...noProblem } = validExample;
-        expect(WorkedExampleSchema.safeParse(noProblem).success).toBe(false);
+    it('rejects example without gradeLevel', () => {
+        const { gradeLevel: _g, ...noGrade } = validExample;
+        expect(WorkedExampleSchema.safeParse(noGrade).success).toBe(false);
     });
 
     it('rejects example without steps', () => {
@@ -347,19 +328,22 @@ describe('WorkedExampleSchema', () => {
         expect(WorkedExampleSchema.safeParse(noSteps).success).toBe(false);
     });
 
-    it('rejects quizQuestion missing correctIndex', () => {
-        const bad = {
-            ...validExample,
-            quizQuestion: { question: 'Q?', options: ['A', 'B'], explanation: 'Expl' },
-        };
+    it('rejects empty steps array', () => {
+        expect(WorkedExampleSchema.safeParse({ ...validExample, steps: [] }).success).toBe(false);
+    });
+
+    it('rejects step with invalid phase', () => {
+        const bad = { ...validExample, steps: [{ phase: 'unknown', title: 'T', problem: 'P' }] };
         expect(WorkedExampleSchema.safeParse(bad).success).toBe(false);
     });
 
-    it('rejects quizQuestion with non-number correctIndex', () => {
-        const bad = {
-            ...validExample,
-            quizQuestion: { question: 'Q?', options: ['A', 'B'], correctIndex: 'two', explanation: 'Expl' },
-        };
+    it('rejects step without title', () => {
+        const bad = { ...validExample, steps: [{ phase: 'solved', problem: 'P' }] };
+        expect(WorkedExampleSchema.safeParse(bad).success).toBe(false);
+    });
+
+    it('rejects step without problem', () => {
+        const bad = { ...validExample, steps: [{ phase: 'solved', title: 'T' }] };
         expect(WorkedExampleSchema.safeParse(bad).success).toBe(false);
     });
 });

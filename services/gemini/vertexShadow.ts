@@ -208,8 +208,8 @@ export async function runVertexShadow(
 
     const vertexLatencyMs = Math.round(performance.now() - start);
 
-    if (response.status === 404 || response.status === 501) {
-      // Vertex proxy not yet deployed — expected during spike phase
+    if (response.status === 404 || response.status === 405 || response.status === 501) {
+      // Vertex proxy not yet deployed — SPA rewrite serves HTML to POST → 405
       updateShadowEntry(ts, { vertexLatencyMs, vertexStatus: 'not_configured' });
       return;
     }

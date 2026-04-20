@@ -1,8 +1,8 @@
 import {
     Type, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, SAFETY_SETTINGS, callGeminiProxy,
-    checkDailyQuotaGuard, sanitizePromptInput, withLangRule,
+    checkDailyQuotaGuard, sanitizePromptInput, withLangRule, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION,
 } from './core';
-import { AIGeneratedWorkedExample } from '../../types';
+import type { AIGeneratedWorkedExample, SecondaryTrack } from '../../types';
 import { DailyBriefSchema, WorkedExampleSchema } from '../../utils/schemas';
 
 export const reportsAPI = {
@@ -92,7 +92,7 @@ async generateQuizFeedback(
     return response.text.trim();
   },
 
-async generateWorkedExample(conceptTitle: string, gradeLevel: number): Promise<AIGeneratedWorkedExample> {
+async generateWorkedExample(conceptTitle: string, gradeLevel: number, secondaryTrack?: SecondaryTrack): Promise<AIGeneratedWorkedExample> {
     checkDailyQuotaGuard();
     const schema = {
       type: Type.OBJECT,
@@ -102,8 +102,12 @@ async generateWorkedExample(conceptTitle: string, gradeLevel: number): Promise<A
       },
       required: ['concept', 'gradeLevel', 'steps'],
     };
-    const prompt = `Креирај Worked Example со Scaffolded Fading за концептот „${conceptTitle}", ${gradeLevel}. одделение.\n\nВрати JSON со точно 3 чекори (steps):\n\n1. phase: "solved" — Целосно решен пример (I do):\n   - Задача со реални македонски бројки\n   - solution: низа од 4-6 чекори, секој чекор е 1 реченица + пресметка\n   - title: „Погледни — решено заедно"\n\n2. phase: "partial" — Делумно решен пример (We do):\n   - Иста или слична структура на задача\n   - solution: само првите 2-3 чекори се дадени\n   - partialPlaceholder: „Твој ред — заврши го решението"\n   - title: „Заврши го ти"\n\n3. phase: "quiz" — Самостојна задача (You do):\n   - Нова задача, ист концепт, без помош\n   - title: „Самостојно!"\n   - НЕ давај solution\n\nСите текстови на македонски јазик. Задачите мора да се математички точни.`;
-    return generateAndParseJSON<AIGeneratedWorkedExample>([{ text: prompt }], schema, DEFAULT_MODEL, WorkedExampleSchema, MAX_RETRIES, false);
+    const gradeLabel = gradeLevel >= 10
+      ? `${gradeLevel === 10 ? 'X' : gradeLevel === 11 ? 'XI' : gradeLevel === 12 ? 'XII' : 'XIII'} одделение`
+      : `${gradeLevel}. одделение`;
+    const prompt = `Креирај Worked Example со Scaffolded Fading за концептот „${conceptTitle}", ${gradeLabel}.\n\nВрати JSON со точно 3 чекори (steps):\n\n1. phase: "solved" — Целосно решен пример (I do):\n   - Задача со реални македонски бројки\n   - solution: низа од 4-6 чекори, секој чекор е 1 реченица + пресметка\n   - title: „Погледни — решено заедно"\n\n2. phase: "partial" — Делумно решен пример (We do):\n   - Иста или слична структура на задача\n   - solution: само првите 2-3 чекори се дадени\n   - partialPlaceholder: „Твој ред — заврши го решението"\n   - title: „Заврши го ти"\n\n3. phase: "quiz" — Самостојна задача (You do):\n   - Нова задача, ист концепт, без помош\n   - title: „Самостојно!"\n   - НЕ давај solution\n\nСите текстови на македонски јазик. Задачите мора да се математички точни.`;
+    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, undefined, undefined, secondaryTrack);
+    return generateAndParseJSON<AIGeneratedWorkedExample>([{ text: prompt }], schema, DEFAULT_MODEL, WorkedExampleSchema, MAX_RETRIES, false, systemInstr);
   },
 
 async generateStudentNarrative(

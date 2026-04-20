@@ -213,24 +213,17 @@ export const DailyBriefSchema = z.object({
 });
 
 // ─── WorkedExample schema ─────────────────────────────────────────────────────
+// Must match AIGeneratedWorkedExample + WorkedExampleStep in types.ts
 export const WorkedExampleSchema = z.object({
-  title: z.string(),
-  problem: z.string(),
+  concept: z.string(),
+  gradeLevel: z.number(),
   steps: z.array(z.object({
-    explanation: z.string(),
-    formula: z.string().optional(),
-  })),
-  partialSteps: z.array(z.object({
-    explanation: z.string(),
-    formula: z.string().optional(),
-    isBlank: z.boolean().optional(),
-  })).optional(),
-  quizQuestion: z.object({
-    question: z.string(),
-    options: z.array(z.string()),
-    correctIndex: z.number(),
-    explanation: z.string(),
-  }).optional(),
+    phase: z.enum(['solved', 'partial', 'quiz']),
+    title: z.string(),
+    problem: z.string(),
+    solution: z.array(z.string()).optional(),
+    partialPlaceholder: z.string().optional(),
+  })).min(1),
 });
 
 // ─── Reflection summary schema ───────────────────────────────────────────────
