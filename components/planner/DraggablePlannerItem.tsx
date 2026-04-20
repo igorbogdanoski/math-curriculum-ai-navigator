@@ -11,6 +11,8 @@ interface DraggablePlannerItemProps {
   onSelect: () => void;
   hasReflection?: boolean;
   onAddReflection?: () => void;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 const itemIcons: Record<PlannerItemType, React.ComponentType<{ className?: string }>> = {
@@ -19,7 +21,7 @@ const itemIcons: Record<PlannerItemType, React.ComponentType<{ className?: strin
     [PlannerItemType.HOLIDAY]: ICONS.star,
 };
 
-export const DraggablePlannerItem: React.FC<DraggablePlannerItemProps> = memo(({ item, onSelect, hasReflection, onAddReflection }) => {
+export const DraggablePlannerItem: React.FC<DraggablePlannerItemProps> = memo(({ item, onSelect, hasReflection, onAddReflection, isSelected, onToggleSelect }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: item.id,
   });
@@ -43,6 +45,7 @@ export const DraggablePlannerItem: React.FC<DraggablePlannerItemProps> = memo(({
   };
   
   const draggingClasses = isDragging ? 'shadow-lg ring-2 ring-brand-accent scale-105' : '';
+  const selectedClasses = isSelected ? 'ring-2 ring-brand-primary bg-blue-50' : '';
   
   const handleReflectionClick = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -66,11 +69,21 @@ export const DraggablePlannerItem: React.FC<DraggablePlannerItemProps> = memo(({
       style={style}
       {...listeners}
       {...attributes}
-      className={`${baseClasses} ${typeClasses[item.type]} ${draggingClasses}`}
+      className={`${baseClasses} ${typeClasses[item.type]} ${draggingClasses} ${selectedClasses}`}
       onClick={handleSelectClick}
       title={item.description || item.title}
     >
       <div className="flex items-start gap-1.5 w-full mb-1">
+        {onToggleSelect && (
+          <input
+            type="checkbox"
+            checked={!!isSelected}
+            onChange={e => { e.stopPropagation(); onToggleSelect(item.id); }}
+            onClick={e => e.stopPropagation()}
+            className="flex-shrink-0 mt-0.5 accent-brand-primary cursor-pointer"
+            aria-label={`Избери ${item.title}`}
+          />
+        )}
         {!isNote && <Icon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-blue-600`} />}
         {isNote && <ICONS.edit className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-yellow-700" />}
         

@@ -1,7 +1,7 @@
 import { useTour } from '../hooks/useTour';
 import { useLanguage } from '../i18n/LanguageContext';
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Target, X } from 'lucide-react';
+import { Target, X, Trash2, Copy, CalendarDays } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
 import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -44,7 +44,7 @@ export const PlannerView: React.FC = () => {
     const { navigate } = useNavigation();
     const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
     const [currentDate, setCurrentDate] = useState(new Date()); // Default to today
-    const { items, updateItem, addItem, getLessonPlan, isLoading, lessonPlans } = usePlanner();
+    const { items, updateItem, addItem, deleteItem, getLessonPlan, isLoading, lessonPlans } = usePlanner();
     const { showModal } = useModal();
     const { addNotification } = useNotification();
     useTour('planner', plannerTourSteps, !isLoading);
@@ -53,6 +53,53 @@ export const PlannerView: React.FC = () => {
     const aiMenuRef = useRef<HTMLDivElement>(null);
     const [suggestions, setSuggestions] = useState<Array<{ title: string; description: string; conceptHint: string }> | null>(null);
     const [isSuggesting, setIsSuggesting] = useState(false);
+
+    // F1: Bulk selection state
+    const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+    const [bulkRescheduleDate, setBulkRescheduleDate] = useState('');
+    const [showBulkDatePicker, setShowBulkDatePicker] = useState(false);
+
+    const toggleSelectItem = useCallback((id: string) => {
+      setSelectedItems(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id); else next.add(id);
+        return next;
+      });
+    }, []);
+
+    const clearSelection = useCallback(() => setSelectedItems(new Set()), []);
+
+    const handleBulkDelete = useCallback(async () => {
+      if (selectedItems.size === 0) return;
+      const count = selectedItems.size;
+      const confirmed = window.confirm(`Избриши ${count} ставки?`);
+      if (!confirmed) return;
+      await Promise.all(Array.from(selectedItems).map(id => deleteItem(id)));
+      clearSelection();
+      addNotification(`Избришани ${count} ставки`, 'success');
+    }, [selectedItems, deleteItem, clearSelection, addNotification]);
+
+    const handleBulkDuplicate = useCallback(async () => {
+      if (selectedItems.size === 0) return;
+      const toClone = items.filter((it: PlannerItem) => selectedItems.has(it.id));
+      await Promise.all(toClone.map((it: PlannerItem) => {
+        const { id: _id, ...rest } = it as PlannerItem & { id: string };
+        void _id;
+        return addItem(rest);
+      }));
+      clearSelection();
+      addNotification(`Дуплирани ${toClone.length} ставки`, 'success');
+    }, [selectedItems, items, addItem, clearSelection, addNotification]);
+
+    const handleBulkReschedule = useCallback(async () => {
+      if (!bulkRescheduleDate || selectedItems.size === 0) return;
+      const toMove = items.filter((it: PlannerItem) => selectedItems.has(it.id));
+      await Promise.all(toMove.map((it: PlannerItem) => updateItem({ ...it, date: bulkRescheduleDate })));
+      clearSelection();
+      setShowBulkDatePicker(false);
+      setBulkRescheduleDate('');
+      addNotification(`Преместени ${toMove.length} ставки на ${bulkRescheduleDate}`, 'success');
+    }, [bulkRescheduleDate, selectedItems, items, updateItem, clearSelection, addNotification]);
 
 
     useEffect(() => {
@@ -265,11 +312,13 @@ export const PlannerView: React.FC = () => {
                                  const canReflect = item.type === PlannerItemType.LESSON && isPast;
                                  return (
                                     <div key={item.id} data-tour={item.id === firstItemForTourId ? "planner-item" : undefined}>
-                                        <DraggablePlannerItem 
-                                            item={item} 
+                                        <DraggablePlannerItem
+                                            item={item}
                                             onSelect={() => handleItemClick(item)}
                                             hasReflection={!!item.reflection}
                                             onAddReflection={canReflect ? () => handleOpenReflectionModal(item) : undefined}
+                                            isSelected={selectedItems.has(item.id)}
+                                            onToggleSelect={toggleSelectItem}
                                         />
                                     </div>
                                 );
@@ -496,6 +545,59 @@ export const PlannerView: React.FC = () => {
                     </EmptyState>
                 )}
             </div>
+
+            {/* F1: Floating bulk action toolbar */}
+            {selectedItems.size > 0 && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-gray-900 text-white px-4 py-3 rounded-2xl shadow-2xl animate-fade-in">
+                <span className="text-sm font-semibold mr-1">{selectedItems.size} избрани</span>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDatePicker(p => !p)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold transition-colors"
+                >
+                  <CalendarDays className="w-3.5 h-3.5" /> Премести
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDuplicate}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Дуплирај
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDelete}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-xs font-bold transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Избриши
+                </button>
+                <button type="button" onClick={clearSelection} title="Откажи избор" aria-label="Откажи избор" className="ml-1 p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+                {showBulkDatePicker && (
+                  <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl p-3 flex items-center gap-2">
+                    <label htmlFor="bulk-reschedule-date" className="sr-only">Нов датум</label>
+                    <input
+                      id="bulk-reschedule-date"
+                      type="date"
+                      value={bulkRescheduleDate}
+                      onChange={e => setBulkRescheduleDate(e.target.value)}
+                      placeholder="Нов датум"
+                      title="Избери нов датум"
+                      className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    />
+                    <button
+                      type="button"
+                      disabled={!bulkRescheduleDate}
+                      onClick={handleBulkReschedule}
+                      className="px-3 py-1.5 bg-brand-primary text-white rounded-lg text-sm font-bold disabled:opacity-50"
+                    >
+                      Потврди
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
         </DndContext>
     );
 };
