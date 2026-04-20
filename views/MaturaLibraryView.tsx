@@ -40,6 +40,26 @@ export function MaturaLibraryView() {
 
   // ── Exam selection (smart default: prefer teacher's secondary track) ──
   const [selectedExamId, setSelectedExamId] = useState<string>('');
+  const [filterTrack,    setFilterTrack]    = useState<string>('');
+
+  // Unique tracks ordered by first appearance (gymnasium first)
+  const availableTracks = useMemo(() => {
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+    for (const e of exams) {
+      const t = e.track ?? 'gymnasium';
+      if (!seen.has(t)) { seen.add(t); ordered.push(t); }
+    }
+    return ordered;
+  }, [exams]);
+
+  const hasMultipleTracks = availableTracks.length > 1;
+
+  // Exams visible in the exam-selector dropdown (filtered by track pill)
+  const visibleExams = useMemo(
+    () => filterTrack ? exams.filter(e => (e.track ?? 'gymnasium') === filterTrack) : exams,
+    [exams, filterTrack],
+  );
 
   useEffect(() => {
     if (examsLoading || !exams.length || selectedExamId) return;
@@ -49,7 +69,10 @@ export function MaturaLibraryView() {
     const smartDefault = relevantTracks.length > 0
       ? exams.find(e => relevantTracks.includes(e.track ?? ''))
       : undefined;
-    if (smartDefault) setSelectedExamId(smartDefault.id);
+    if (smartDefault) {
+      setSelectedExamId(smartDefault.id);
+      setFilterTrack(smartDefault.track ?? 'gymnasium');
+    }
   }, [exams, examsLoading, user?.secondaryTrack]);
 
   const resolvedId  = selectedExamId || exams[0]?.id || '';
@@ -220,35 +243,57 @@ export function MaturaLibraryView() {
                   {practiceMode ? '✏️ Режим: Вежба' : '📖 Режим: Прелистувај'}
                 </button>
 
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
                   {examsLoading ? (
                     <div className="flex gap-1">
                       {[1,2,3].map(i => <div key={i} className="h-9 w-28 bg-gray-100 animate-pulse rounded-xl" />)}
                     </div>
                   ) : (
-                    <select
-                      title="Избери испит"
-                      aria-label="Избери испит"
-                      value={resolvedId}
-                      onChange={e => switchExam(e.target.value)}
-                      className="text-sm border border-gray-200 rounded-xl px-3 py-2 font-semibold text-gray-700 bg-white focus:ring-indigo-300 focus:border-indigo-400 max-w-xs"
-                    >
-                      {(() => {
-                        const trackMap = new Map<string, MaturaExamMeta[]>();
-                        for (const e of exams) {
-                          const t = e.track ?? 'gymnasium';
-                          if (!trackMap.has(t)) trackMap.set(t, []);
-                          trackMap.get(t)!.push(e);
-                        }
-                        return Array.from(trackMap.entries()).map(([track, trackExams]) => (
-                          <optgroup key={track} label={TRACK_LABELS[track] ?? track}>
-                            {trackExams.map(e => (
-                              <option key={e.id} value={e.id}>{examLabel(e)}</option>
-                            ))}
-                          </optgroup>
-                        ));
-                      })()}
-                    </select>
+                    <>
+                      {/* Track pill selector — only when multiple tracks exist */}
+                      {hasMultipleTracks && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setFilterTrack('')}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors border ${
+                              filterTrack === '' ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                            }`}
+                          >
+                            Сите
+                          </button>
+                          {availableTracks.map(t => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => {
+                                setFilterTrack(t);
+                                const first = exams.find(e => (e.track ?? 'gymnasium') === t);
+                                if (first) switchExam(first.id);
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors border ${
+                                filterTrack === t
+                                  ? 'bg-indigo-600 text-white border-indigo-600'
+                                  : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                              }`}
+                            >
+                              {TRACK_LABELS[t] ?? t}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <select
+                        title="Избери испит"
+                        aria-label="Избери испит"
+                        value={resolvedId}
+                        onChange={e => switchExam(e.target.value)}
+                        className="text-sm border border-gray-200 rounded-xl px-3 py-2 font-semibold text-gray-700 bg-white focus:ring-indigo-300 focus:border-indigo-400 max-w-xs"
+                      >
+                        {visibleExams.map(e => (
+                          <option key={e.id} value={e.id}>{examLabel(e)}</option>
+                        ))}
+                      </select>
+                    </>
                   )}
                 </div>
               </>

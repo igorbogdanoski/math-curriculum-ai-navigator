@@ -207,10 +207,11 @@ interface NewThreadModalProps {
   authorUid: string;
   authorName: string;
   initialImageDataUrl?: string | null;
+  initialTitle?: string;
 }
 
-const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, concepts, authorUid, authorName, initialImageDataUrl }) => {
-  const [title, setTitle] = useState('');
+const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, concepts, authorUid, authorName, initialImageDataUrl, initialTitle }) => {
+  const [title, setTitle] = useState(initialTitle ?? '');
   const [body, setBody] = useState('');
   const [conceptId, setConceptId] = useState('');
   const [category, setCategory] = useState<ThreadCategory>('question');
@@ -808,6 +809,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
   const [loading, setLoading] = useState(true);
   const [activeThread, setActiveThread] = useState<ForumThread | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [draftTitle,   setDraftTitle]   = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterConceptId, setFilterConceptId] = useState('');
   const [filterCategory, setFilterCategory] = useState<ThreadCategory | ''>('');
@@ -837,11 +839,18 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
   useEffect(() => { markForumVisited(); }, [markForumVisited]);
 
   // Check for Algebra Tiles image shared from TopicView
+  // Also check for context pre-fill from ForumCTA (any view)
   useEffect(() => {
     const img = sessionStorage.getItem('forum_draft_img');
+    const ctx = sessionStorage.getItem('forum_new_context');
     if (img) {
       sessionStorage.removeItem('forum_draft_img');
       setDraftImageUrl(img);
+      setShowNewModal(true);
+    }
+    if (ctx) {
+      sessionStorage.removeItem('forum_new_context');
+      setDraftTitle(ctx);
       setShowNewModal(true);
     }
   }, []);
@@ -1222,12 +1231,13 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
 
       {showNewModal && (
         <NewThreadModal
-          onClose={() => { setShowNewModal(false); setDraftImageUrl(null); }}
+          onClose={() => { setShowNewModal(false); setDraftImageUrl(null); setDraftTitle(null); }}
           onCreated={handleThreadCreated}
           concepts={concepts}
           authorUid={myUid}
           authorName={myName}
           initialImageDataUrl={draftImageUrl}
+          initialTitle={draftTitle ?? undefined}
         />
       )}
     </div>

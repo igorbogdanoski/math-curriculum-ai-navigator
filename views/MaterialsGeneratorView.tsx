@@ -2,7 +2,7 @@
 import { useTour } from '../hooks/useTour';
 import { useGeneratorActions } from '../hooks/useGeneratorActions';
 
-import React, { useState, useMemo, Component, type ReactNode, type ErrorInfo } from 'react';
+import React, { useState, useMemo, useEffect, Component, type ReactNode, type ErrorInfo } from 'react';
 
 // Local error boundary — catches render errors in result components without crashing the whole panel
 class ResultErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -200,6 +200,22 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     
     const [state, dispatch] = useGeneratorState(props);
     const { materialType, contextType, selectedGrade, selectedTopic, selectedConcepts, selectedStandard } = state;
+
+    // Pre-fill from ExtractionHub: reads generator_extraction_context once on mount
+    useEffect(() => {
+      try {
+        const raw = sessionStorage.getItem('generator_extraction_context');
+        if (!raw) return;
+        sessionStorage.removeItem('generator_extraction_context');
+        const payload = JSON.parse(raw) as { contextType?: string; scenarioText?: string };
+        if (payload.contextType === 'SCENARIO' && payload.scenarioText) {
+          dispatch({ type: 'SET_FIELD', payload: { field: 'contextType', value: 'SCENARIO' } });
+          dispatch({ type: 'SET_FIELD', payload: { field: 'scenarioText', value: payload.scenarioText } });
+          setCurrentStep(2);
+        }
+      } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Wizard step state
     const [currentStep, setCurrentStep] = useState(1);

@@ -578,6 +578,20 @@ export const ExtractionHubView: React.FC = () => {
     finally { setIsSavingToBank(false); }
   };
 
+  const sendToGenerator = () => {
+    if (!result) return;
+    const scenarioText = result.tasks
+      .map((t, i) => `${i + 1}. ${t.title}\n${t.latexStatement || t.statement}`)
+      .join('\n\n');
+    try {
+      sessionStorage.setItem('generator_extraction_context', JSON.stringify({
+        contextType: 'SCENARIO',
+        scenarioText: `[Извлечено од: ${sourceMode === 'url' ? url : (docLabel ?? 'документ')}]\n\n${scenarioText}`,
+      }));
+    } catch { /* ignore */ }
+    navigate('/generator');
+  };
+
   const reset = () => {
     setUrl('');
     setManualTranscript('');
@@ -1046,6 +1060,15 @@ export const ExtractionHubView: React.FC = () => {
                   >
                     {isSavingToBank ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
                     Банка
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendToGenerator}
+                    title="Испрати ги извлечените задачи во Генератор за AI материјали"
+                    className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+                  >
+                    <Wand2 className="h-3.5 w-3.5" />
+                    Генератор
                   </button>
                   <button
                     type="button"
