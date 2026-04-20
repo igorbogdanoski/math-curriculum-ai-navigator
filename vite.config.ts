@@ -305,6 +305,14 @@ export default defineConfig(({ mode }) => {
           authToken: process.env.SENTRY_AUTH_TOKEN,
         }) : undefined,
       ].filter(Boolean) as Plugin[],
+      // SEC-1: Expose git SHA to client for Sentry release tagging.
+      // Vercel injects VERCEL_GIT_COMMIT_SHA at build time (system env var).
+      define: {
+        'import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA': JSON.stringify(
+          process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.VITE_VERCEL_GIT_COMMIT_SHA ?? 'local'
+        ),
+      },
+
       // NOTE: API key is NO LONGER injected into the client bundle.
       // In production, requests go through /api/gemini (Vercel serverless function).
       // In development, requests go through the Vite dev middleware above.

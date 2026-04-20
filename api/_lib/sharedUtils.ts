@@ -162,23 +162,38 @@ import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
 
 let upstashRatelimit: Ratelimit | null = null;
+let upstashIpRatelimit: Ratelimit | null = null;
 
-function getUpstashRatelimit(): Ratelimit | null {
-  if (upstashRatelimit) return upstashRatelimit;
+function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
-  try {
-    const redis = new Redis({ url, token });
-    upstashRatelimit = new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(20, '1 m'), // 20 req/min per user
-      prefix: 'rl:math',
-    });
-    return upstashRatelimit;
-  } catch {
-    return null;
-  }
+  try { return new Redis({ url, token }); } catch { return null; }
+}
+
+function getUpstashRatelimit(): Ratelimit | null {
+  if (upstashRatelimit) return upstashRatelimit;
+  const redis = getRedis();
+  if (!redis) return null;
+  upstashRatelimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(20, '1 m'), // 20 req/min per UID
+    prefix: 'rl:uid',
+  });
+  return upstashRatelimit;
+}
+
+// SEC-5: Separate IP-level limiter — looser, guards against multi-account abuse
+function getUpstashIpRatelimit(): Ratelimit | null {
+  if (upstashIpRatelimit) return upstashIpRatelimit;
+  const redis = getRedis();
+  if (!redis) return null;
+  upstashIpRatelimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(100, '1 m'), // 100 req/min per IP
+    prefix: 'rl:ip',
+  });
+  return upstashIpRatelimit;
 }
 
 // In-memory fallback (best-effort, resets on cold start)
@@ -262,11 +277,23 @@ export async function authenticateAndValidate(
     console.warn('[auth] Skipping token verification — Firebase Admin not available (Development Mode)');
   }
 
-  // 2.5 Apply Rate Limit
+  // 2.5 Apply Rate Limit — dual layer: per-UID (20/min) + per-IP (100/min)
   if (!(await checkRateLimit(rlIdentifier))) {
-    console.warn(`[rate-limit] Blocked request from ${rlIdentifier}. Too many requests.`);
+    console.warn(`[rate-limit] UID blocked: ${rlIdentifier}`);
     res.status(429).json({ error: 'Rate limit exceeded. Please wait a minute before requesting again.', quotaType: 'rate' });
     return null;
+  }
+  // IP check runs only when authenticated (UID limiter used different key)
+  if (authenticatedUid && firstIp) {
+    const ipLimiter = getUpstashIpRatelimit();
+    if (ipLimiter) {
+      const { success } = await ipLimiter.limit(firstIp);
+      if (!success) {
+        console.warn(`[rate-limit] IP blocked: ${firstIp}`);
+        res.status(429).json({ error: 'Rate limit exceeded. Please wait a minute before requesting again.', quotaType: 'rate' });
+        return null;
+      }
+    }
   }
 
   // 3. Validate request body with Zod
