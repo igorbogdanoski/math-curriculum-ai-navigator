@@ -1,255 +1,48 @@
-/**
- * MaturaPracticeView — M3 (Адаптивна практика по тема)
+﻿/**
+ * MaturaPracticeView â€” M3 (ÐÐ´Ð°Ð¿Ñ‚Ð¸Ð²Ð½Ð° Ð¿Ñ€Ð°ÐºÑ‚Ð¸ÐºÐ° Ð¿Ð¾ Ñ‚ÐµÐ¼Ð°)
  *
- * Фази:
- *   setup    → избери теми, јазик, дел, DoK, број прашања, shuffle
- *   practice → едно прашање на екран, автоматска/AI/self-assess оценка
- *   results  → детален резултат по тема + DoK, препораки, "Повтори грешки"
+ * Ð¤Ð°Ð·Ð¸:
+ *   setup    â†’ Ð¸Ð·Ð±ÐµÑ€Ð¸ Ñ‚ÐµÐ¼Ð¸, Ñ˜Ð°Ð·Ð¸Ðº, Ð´ÐµÐ», DoK, Ð±Ñ€Ð¾Ñ˜ Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ°, shuffle
+ *   practice â†’ ÐµÐ´Ð½Ð¾ Ð¿Ñ€Ð°ÑˆÐ°ÑšÐµ Ð½Ð° ÐµÐºÑ€Ð°Ð½, Ð°Ð²Ñ‚Ð¾Ð¼Ð°Ñ‚ÑÐºÐ°/AI/self-assess Ð¾Ñ†ÐµÐ½ÐºÐ°
+ *   results  â†’ Ð´ÐµÑ‚Ð°Ð»ÐµÐ½ Ñ€ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚ Ð¿Ð¾ Ñ‚ÐµÐ¼Ð° + DoK, Ð¿Ñ€ÐµÐ¿Ð¾Ñ€Ð°ÐºÐ¸, "ÐŸÐ¾Ð²Ñ‚Ð¾Ñ€Ð¸ Ð³Ñ€ÐµÑˆÐºÐ¸"
  *
- * Оценување (идентично со M2):
- *   Part 1 MC   → автоматска оценка при клик
- *   Part 2 open → Gemini AI (А+Б)
- *   Part 3 open → self-assess чекбокси + опционален AI опис
+ * ÐžÑ†ÐµÐ½ÑƒÐ²Ð°ÑšÐµ (Ð¸Ð´ÐµÐ½Ñ‚Ð¸Ñ‡Ð½Ð¾ ÑÐ¾ M2):
+ *   Part 1 MC   â†’ Ð°Ð²Ñ‚Ð¾Ð¼Ð°Ñ‚ÑÐºÐ° Ð¾Ñ†ÐµÐ½ÐºÐ° Ð¿Ñ€Ð¸ ÐºÐ»Ð¸Ðº
+ *   Part 2 open â†’ Gemini AI (Ð+Ð‘)
+ *   Part 3 open â†’ self-assess Ñ‡ÐµÐºÐ±Ð¾ÐºÑÐ¸ + Ð¾Ð¿Ñ†Ð¸Ð¾Ð½Ð°Ð»ÐµÐ½ AI Ð¾Ð¿Ð¸Ñ
  */
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { MathRenderer }    from '../components/common/MathRenderer';
 import { DokBadge }        from '../components/common/DokBadge';
-import { callGeminiProxy } from '../services/gemini/core';
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
 import { ForumCTA } from '../components/common/ForumCTA';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
-import {
-  buildGradeCacheKey,
-  getCachedAIGrade,
-  saveAIGrade,
-} from '../services/firestoreService.matura';
+import { callGeminiProxy } from '../services/gemini/core';
 import type { MaturaQuestion, MaturaExamMeta } from '../services/firestoreService.matura';
-import type { MaturaChoice, DokLevel } from '../types';
+import type { DokLevel } from '../types';
+import {
+  type PracticeItem,
+  type AIGrade,
+  type QuestionState,
+  type Phase,
+  type SetupConfig,
+  type RecoveryPrefill,
+  CHOICES,
+  TOPIC_LABELS,
+  TOPIC_COLORS,
+  SESSION_LABELS,
+  LANG_FLAGS,
+  examDisplayLabel,
+  isOpen,
+  shuffle,
+} from './maturaPractice/maturaPracticeHelpers';
+import { gradePart2, gradePart3 } from './maturaPractice/maturaPracticeGrading';
+import { TopicChip, ProgressBar, ScorePill } from './maturaPractice/MaturaPracticeUI';
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-// MaturaQuestion is imported from the service — replaces the old RawQuestion.
-// PracticeItem adds display metadata on top.
-interface PracticeItem extends MaturaQuestion {
-  examLabel: string;
-}
-interface AIGrade {
-  score: number;
-  maxScore: number;
-  feedback: string;
-  correct?: boolean;
-  comment?: string;
-}
-interface QuestionState {
-  mcPick?: string;
-  answer?: string;
-  aiGrade?: AIGrade;
-  grading?: boolean;
-  selfChecks?: boolean[];
-  aiDesc?: string;
-  aiGradeP3?: AIGrade;
-  gradingP3?: boolean;
-  aiError?: string;
-  submitted: boolean;
-  skipped?: boolean;
-}
-type Phase = 'setup' | 'practice' | 'results';
 
-// ─── Display helpers ──────────────────────────────────────────────────────────
-const SESSION_LABELS: Record<string, string> = { june: 'Јуни', august: 'Август', march: 'Март' };
-const LANG_FLAGS:     Record<string, string> = { mk: '🇲🇰 МК', al: '🇦🇱 АЛ', tr: '🇹🇷 ТР' };
-function examDisplayLabel(e: MaturaExamMeta): string {
-  return `${SESSION_LABELS[e.session] ?? e.session} ${e.year} ${LANG_FLAGS[e.language] ?? e.language.toUpperCase()}`;
-}
-
-const CHOICES: MaturaChoice[] = ['А', 'Б', 'В', 'Г'];
-const TOPIC_LABELS: Record<string, string> = {
-  algebra: 'Алгебра', analiza: 'Анализа', geometrija: 'Геометрија',
-  trigonometrija: 'Тригонометрија', 'matrici-vektori': 'Матрици/Вектори',
-  broevi: 'Броеви', statistika: 'Статистика', kombinatorika: 'Комбинаторика',
-};
-const TOPIC_COLORS: Record<string, string> = {
-  algebra: 'bg-blue-100 text-blue-800 border-blue-200',
-  analiza: 'bg-purple-100 text-purple-800 border-purple-200',
-  geometrija: 'bg-green-100 text-green-800 border-green-200',
-  trigonometrija: 'bg-orange-100 text-orange-800 border-orange-200',
-  'matrici-vektori': 'bg-teal-100 text-teal-800 border-teal-200',
-  broevi: 'bg-gray-100 text-gray-700 border-gray-200',
-  statistika: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  kombinatorika: 'bg-pink-100 text-pink-800 border-pink-200',
-};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function isOpen(q: MaturaQuestion): boolean {
-  if (q.questionType === 'open') return true;
-  if (q.questionType === 'mc')   return false;
-  return !q.choices || Object.keys(q.choices).length === 0;
-}
-function safeParseJSON(text: string): any {
-  try { const m = text.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null; }
-  catch { return null; }
-}
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-// ─── AI grading ──────────────────────────────────────────────────────────────
-async function gradePart2(q: MaturaQuestion, answer: string): Promise<AIGrade> {
-  const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, answer);
-  const maxScore = q.points ?? 4;
-
-  const cached = await getCachedAIGrade(cacheKey);
-  if (cached) {
-    return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
-  }
-
-  const prompt = `Ти си асистент за оценување матура на македонски јазик.
-
-Задача Q${q.questionNumber} (${maxScore} поени): ${q.questionText}
-Точен одговор: ${q.correctAnswer}
-Одговор на ученикот: ${answer || '(нема одговор)'}
-
-Оцени го одговорот. Споредувај математичко значење, не буквален текст.
-Врати САМО валиден JSON:
-{"score":0,"correct":false,"comment":"...","feedback":"..."}
-
-- score = цел број од 0 до ${maxScore}.
-- correct = true ако одговорот суштински совпаѓа со точниот.
-- comment = кратка реченица за одговорот (на македонски).
-- feedback = детална повратна информација (на македонски).`;
-
-  const resp = await callGeminiProxy({
-    model: DEFAULT_MODEL,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0, maxOutputTokens: 512 },
-  });
-  const p = safeParseJSON(resp.text);
-  if (!p) throw new Error('Parse error');
-  const grade: AIGrade = {
-    score: Math.min(Number(p.score ?? 0), maxScore),
-    maxScore,
-    feedback: p.feedback ?? '',
-    correct: Boolean(p.correct),
-    comment: p.comment,
-  };
-
-  saveAIGrade(cacheKey, {
-    examId: q.examId, questionNumber: q.questionNumber,
-    inputHash: cacheKey, score: grade.score, maxPoints: maxScore, feedback: grade.feedback,
-  });
-  return grade;
-}
-
-async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGrade> {
-  const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, desc);
-
-  const cached = await getCachedAIGrade(cacheKey);
-  if (cached) {
-    return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
-  }
-
-  const prompt = `Ти си асистент за оценување матура на македонски јазик.
-
-Задача Q${q.questionNumber} (${q.points} поени): ${q.questionText}
-Точен одговор: ${q.correctAnswer}
-Опис на решението на ученикот: ${desc || '(нема опис)'}
-
-Оцени го решението. Врати САМО валиден JSON:
-{"score":0,"feedback":"детален коментар на македонски"}
-
-- score: цел број 0..${q.points}
-- Биди праведен, конструктивен и охрабрувачки.`;
-
-  const resp = await callGeminiProxy({
-    model: DEFAULT_MODEL,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0, maxOutputTokens: 512 },
-  });
-  const p = safeParseJSON(resp.text);
-  if (!p) throw new Error('Parse error');
-  const score = Math.min(Number(p.score ?? 0), q.points);
-  const feedback = p.feedback ?? '';
-
-  saveAIGrade(cacheKey, {
-    examId: q.examId, questionNumber: q.questionNumber,
-    inputHash: cacheKey, score, maxPoints: q.points, feedback,
-  });
-  return { score, maxScore: q.points, feedback };
-}
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
-
-function TopicChip({ topic, active, onClick }: { topic: string; active: boolean; onClick: () => void }) {
-  const color = TOPIC_COLORS[topic] ?? 'bg-gray-100 text-gray-700 border-gray-200';
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-all ${
-        active ? color + ' ring-2 ring-offset-1 ring-current shadow-sm' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300'
-      }`}
-    >
-      {TOPIC_LABELS[topic] ?? topic}
-    </button>
-  );
-}
-
-function ProgressBar({ current, total, score, maxScore }: { current: number; total: number; score: number; maxScore: number }) {
-  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-  return (
-    <div className="flex items-center gap-3 mb-6">
-      <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
-        <progress
-          className="w-full h-full accent-indigo-600"
-          max={100}
-          value={pct}
-        />
-      </div>
-      <span className="text-sm font-bold text-gray-600 shrink-0">{current}/{total}</span>
-      <span className="text-sm font-bold text-emerald-600 shrink-0">{score}/{maxScore}pt</span>
-    </div>
-  );
-}
-
-function ScorePill({ score, max, size = 'sm' }: { score: number; max: number; size?: 'sm' | 'lg' }) {
-  const pct = max > 0 ? (score / max) * 100 : 0;
-  const color = pct >= 80 ? 'bg-emerald-100 text-emerald-800' : pct >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800';
-  if (size === 'lg') return (
-    <div className={`inline-flex items-center gap-1 px-4 py-2 rounded-full font-black text-2xl ${color}`}>
-      {score}/{max}
-    </div>
-  );
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${color}`}>{score}/{max}</span>
-  );
-}
-
-// ─── Setup Screen ─────────────────────────────────────────────────────────────
-interface SetupConfig {
-  langs: ('mk' | 'al')[];
-  sessions: ('june' | 'august')[];
-  topics: string[];
-  parts: number[];
-  dokLevels: number[];
-  doShuffle: boolean;
-  maxQ: number;
-}
-
-interface RecoveryPrefill {
-  topicArea?: string | null;
-  dokLevels?: number[];
-  maxQ?: number;
-  sourceConceptId?: string;
-  sourceConceptTitle?: string;
-  missionDay?: number;
-}
 
 function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, prefill, onDismissPrefill }: {
   allTopics: string[];
@@ -281,7 +74,7 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
     if (typeof prefill.maxQ === 'number') setMaxQ(prefill.maxQ);
   }, [prefill, allTopics]);
 
-  // Preview count: estimate based on exam count × avg questions per exam
+  // Preview count: estimate based on exam count Ã— avg questions per exam
   const matchingExams = useMemo(
     () => exams.filter(e => langs.includes(e.language as 'mk'|'al') && sessions.includes(e.session as 'june'|'august')),
     [exams, langs, sessions],
@@ -307,41 +100,41 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-4">
 
-      {/* ── Header ── */}
+      {/* â”€â”€ Header â”€â”€ */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-primary via-blue-700 to-indigo-700 px-6 py-5 text-white shadow-lg">
         <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle,white_1.5px,transparent_0)] [background-size:22px_22px]" />
         <div className="relative">
-          <h1 className="text-2xl font-black tracking-tight">Адаптивна практика</h1>
-          <p className="text-white/70 text-sm mt-0.5">Вежбај матурски прашања по тема и следи го напредокот</p>
+          <h1 className="text-2xl font-black tracking-tight">ÐÐ´Ð°Ð¿Ñ‚Ð¸Ð²Ð½Ð° Ð¿Ñ€Ð°ÐºÑ‚Ð¸ÐºÐ°</h1>
+          <p className="text-white/70 text-sm mt-0.5">Ð’ÐµÐ¶Ð±Ð°Ñ˜ Ð¼Ð°Ñ‚ÑƒÑ€ÑÐºÐ¸ Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ° Ð¿Ð¾ Ñ‚ÐµÐ¼Ð° Ð¸ ÑÐ»ÐµÐ´Ð¸ Ð³Ð¾ Ð½Ð°Ð¿Ñ€ÐµÐ´Ð¾ÐºÐ¾Ñ‚</p>
           {!examsLoading && (
             <div className="flex items-center gap-3 mt-3">
-              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2.5 py-1 text-xs font-bold">{exams.length} испити</span>
-              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2.5 py-1 text-xs font-bold">{exams.reduce((s,e)=>s+e.questionCount,0)} прашања</span>
-              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2.5 py-1 text-xs font-bold">AI оценување</span>
+              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2.5 py-1 text-xs font-bold">{exams.length} Ð¸ÑÐ¿Ð¸Ñ‚Ð¸</span>
+              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2.5 py-1 text-xs font-bold">{exams.reduce((s,e)=>s+e.questionCount,0)} Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ°</span>
+              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2.5 py-1 text-xs font-bold">AI Ð¾Ñ†ÐµÐ½ÑƒÐ²Ð°ÑšÐµ</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── Recovery banner ── */}
+      {/* â”€â”€ Recovery banner â”€â”€ */}
       {prefill && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-start justify-between gap-2">
           <div>
             <p className="text-xs font-black text-emerald-700 uppercase tracking-wide">Recovery Session</p>
             <p className="text-sm text-emerald-800 mt-0.5">
-              Препорачан фокус од M5 аналитика{prefill.sourceConceptTitle ? `: ${prefill.sourceConceptTitle}` : ''}.
+              ÐŸÑ€ÐµÐ¿Ð¾Ñ€Ð°Ñ‡Ð°Ð½ Ñ„Ð¾ÐºÑƒÑ Ð¾Ð´ M5 Ð°Ð½Ð°Ð»Ð¸Ñ‚Ð¸ÐºÐ°{prefill.sourceConceptTitle ? `: ${prefill.sourceConceptTitle}` : ''}.
             </p>
           </div>
-          <button type="button" onClick={onDismissPrefill} className="text-xs font-bold text-emerald-700 hover:text-emerald-900 flex-shrink-0">Сокриј</button>
+          <button type="button" onClick={onDismissPrefill} className="text-xs font-bold text-emerald-700 hover:text-emerald-900 flex-shrink-0">Ð¡Ð¾ÐºÑ€Ð¸Ñ˜</button>
         </div>
       )}
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">
 
-        {/* ── Lang + Session (2-col) ── */}
+        {/* â”€â”€ Lang + Session (2-col) â”€â”€ */}
         <div className="grid grid-cols-2 gap-0 divide-x divide-slate-100">
           <section className="p-4">
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Јазик</h3>
+            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5">ÐˆÐ°Ð·Ð¸Ðº</h3>
             {examsLoading ? (
               <div className="flex gap-2">{[1,2].map(i=><div key={i} className="h-9 w-16 bg-slate-100 animate-pulse rounded-lg"/>)}</div>
             ) : examsError ? (
@@ -359,7 +152,7 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
           </section>
 
           <section className="p-4">
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Испитна сесија</h3>
+            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Ð˜ÑÐ¿Ð¸Ñ‚Ð½Ð° ÑÐµÑÐ¸Ñ˜Ð°</h3>
             {examsLoading ? (
               <div className="flex gap-2">{[1,2].map(i=><div key={i} className="h-9 w-24 bg-slate-100 animate-pulse rounded-lg"/>)}</div>
             ) : (
@@ -370,7 +163,7 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
                     <button key={s} type="button" onClick={() => setSessions(prev => toggle(prev, s))}
                       className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-all ${sessions.includes(s)?'bg-brand-primary text-white border-brand-primary shadow-sm':'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}>
                       {SESSION_LABELS[s] ?? s}
-                      <span className={`ml-1.5 text-[10px] font-semibold ${sessions.includes(s)?'text-white/70':'text-slate-400'}`}>{years.join('·')}</span>
+                      <span className={`ml-1.5 text-[10px] font-semibold ${sessions.includes(s)?'text-white/70':'text-slate-400'}`}>{years.join('Â·')}</span>
                     </button>
                   );
                 })}
@@ -379,21 +172,21 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
           </section>
         </div>
 
-        {/* ── Topics ── */}
+        {/* â”€â”€ Topics â”€â”€ */}
         <section className="p-4">
           <div className="flex items-center justify-between mb-2.5">
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Теми</h3>
+            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Ð¢ÐµÐ¼Ð¸</h3>
             <button type="button"
               onClick={() => setTopics(topics.length === allTopics.length ? [] : [...allTopics])}
               className="text-xs text-brand-primary font-semibold hover:underline">
-              {topics.length === allTopics.length ? 'Откажи сè' : 'Избери сè'}
+              {topics.length === allTopics.length ? 'ÐžÑ‚ÐºÐ°Ð¶Ð¸ ÑÃ¨' : 'Ð˜Ð·Ð±ÐµÑ€Ð¸ ÑÃ¨'}
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button"
               onClick={() => setTopics([])}
               className={`px-3 py-1.5 rounded-full text-sm font-bold border transition-all ${topics.length === 0 ? 'bg-slate-800 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'}`}>
-              Сите
+              Ð¡Ð¸Ñ‚Ðµ
             </button>
             {allTopics.map(t => (
               <TopicChip key={t} topic={t}
@@ -407,15 +200,15 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
           </div>
         </section>
 
-        {/* ── Parts + DoK (2-col) ── */}
+        {/* â”€â”€ Parts + DoK (2-col) â”€â”€ */}
         <div className="grid grid-cols-2 gap-0 divide-x divide-slate-100">
           <section className="p-4">
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Дел</h3>
+            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Ð”ÐµÐ»</h3>
             <div className="flex flex-col gap-1.5">
               {[
-                { v: 1, label: 'Дел I', sub: 'MC · 1pt' },
-                { v: 2, label: 'Дел II', sub: 'Отворено · 2pt' },
-                { v: 3, label: 'Дел III', sub: 'Отворено · 3–5pt' },
+                { v: 1, label: 'Ð”ÐµÐ» I', sub: 'MC Â· 1pt' },
+                { v: 2, label: 'Ð”ÐµÐ» II', sub: 'ÐžÑ‚Ð²Ð¾Ñ€ÐµÐ½Ð¾ Â· 2pt' },
+                { v: 3, label: 'Ð”ÐµÐ» III', sub: 'ÐžÑ‚Ð²Ð¾Ñ€ÐµÐ½Ð¾ Â· 3â€“5pt' },
               ].map(({ v, label, sub }) => (
                 <button key={v} type="button" onClick={() => setParts(prev => toggle(prev, v))}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs border transition-all text-left ${parts.includes(v) ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/30 font-bold' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}>
@@ -428,13 +221,13 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
           </section>
 
           <section className="p-4">
-            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Тежина (DoK)</h3>
+            <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Ð¢ÐµÐ¶Ð¸Ð½Ð° (DoK)</h3>
             <div className="grid grid-cols-2 gap-1.5">
               {([
-                { l: 1, label: 'Запомни',   on: 'bg-emerald-50 text-emerald-800 border-emerald-200', num: 'text-emerald-600' },
-                { l: 2, label: 'Разбери',   on: 'bg-blue-50 text-blue-800 border-blue-200',           num: 'text-blue-600'    },
-                { l: 3, label: 'Примени',   on: 'bg-amber-50 text-amber-800 border-amber-200',         num: 'text-amber-600'  },
-                { l: 4, label: 'Анализирај',on: 'bg-rose-50 text-rose-800 border-rose-200',            num: 'text-rose-600'   },
+                { l: 1, label: 'Ð—Ð°Ð¿Ð¾Ð¼Ð½Ð¸',   on: 'bg-emerald-50 text-emerald-800 border-emerald-200', num: 'text-emerald-600' },
+                { l: 2, label: 'Ð Ð°Ð·Ð±ÐµÑ€Ð¸',   on: 'bg-blue-50 text-blue-800 border-blue-200',           num: 'text-blue-600'    },
+                { l: 3, label: 'ÐŸÑ€Ð¸Ð¼ÐµÐ½Ð¸',   on: 'bg-amber-50 text-amber-800 border-amber-200',         num: 'text-amber-600'  },
+                { l: 4, label: 'ÐÐ½Ð°Ð»Ð¸Ð·Ð¸Ñ€Ð°Ñ˜',on: 'bg-rose-50 text-rose-800 border-rose-200',            num: 'text-rose-600'   },
               ] as const).map(({ l, label, on, num }) => (
                 <button key={l} type="button" onClick={() => setDok(prev => toggle(prev, l))}
                   className={`px-2 py-2 rounded-lg border transition-all text-left font-bold ${dokLevels.includes(l) ? on : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'}`}>
@@ -446,15 +239,15 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
           </section>
         </div>
 
-        {/* ── Options ── */}
+        {/* â”€â”€ Options â”€â”€ */}
         <section className="px-4 py-3 flex items-center gap-6 bg-slate-50/50 rounded-b-2xl">
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" checked={doShuffle} onChange={e => setShuffle(e.target.checked)} className="w-4 h-4 accent-brand-primary" />
-            <span className="text-sm font-medium text-slate-700">Мешај ред</span>
+            <span className="text-sm font-medium text-slate-700">ÐœÐµÑˆÐ°Ñ˜ Ñ€ÐµÐ´</span>
           </label>
           <div className="flex items-center gap-2 ml-auto">
-            <span className="text-sm font-medium text-slate-500">Прашања:</span>
-            <select title="Изберете број на прашања" aria-label="Изберете број на прашања" value={maxQ} onChange={e => setMaxQ(Number(e.target.value))}
+            <span className="text-sm font-medium text-slate-500">ÐŸÑ€Ð°ÑˆÐ°ÑšÐ°:</span>
+            <select title="Ð˜Ð·Ð±ÐµÑ€ÐµÑ‚Ðµ Ð±Ñ€Ð¾Ñ˜ Ð½Ð° Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ°" aria-label="Ð˜Ð·Ð±ÐµÑ€ÐµÑ‚Ðµ Ð±Ñ€Ð¾Ñ˜ Ð½Ð° Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ°" value={maxQ} onChange={e => setMaxQ(Number(e.target.value))}
               className="text-sm border border-slate-200 rounded-lg px-2 py-1 font-semibold text-slate-700 bg-white focus:ring-brand-primary focus:border-brand-primary">
               {[5, 10, 15, 20, 30].map(n => <option key={n} value={n}>{n}</option>)}
             </select>
@@ -462,7 +255,7 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
         </section>
       </div>
 
-      {/* ── Start button ── */}
+      {/* â”€â”€ Start button â”€â”€ */}
       <button
         type="button"
         disabled={!canStart}
@@ -474,14 +267,14 @@ function SetupScreen({ allTopics, exams, examsLoading, examsError, onStart, pref
         }`}
       >
         {canStart
-          ? `Започни практика · ${previewCount} прашања`
-          : 'Нема прашања за избраните филтри'}
+          ? `Ð—Ð°Ð¿Ð¾Ñ‡Ð½Ð¸ Ð¿Ñ€Ð°ÐºÑ‚Ð¸ÐºÐ° Â· ${previewCount} Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ°`
+          : 'ÐÐµÐ¼Ð° Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ° Ð·Ð° Ð¸Ð·Ð±Ñ€Ð°Ð½Ð¸Ñ‚Ðµ Ñ„Ð¸Ð»Ñ‚Ñ€Ð¸'}
       </button>
     </div>
   );
 }
 
-// ─── Question Card ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Question Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function QuestionCard({
   item, idx, total, state, onUpdate,
 }: {
@@ -497,7 +290,7 @@ function QuestionCard({
 
   const topicColor = TOPIC_COLORS[item.topicArea ?? ''] ?? 'bg-gray-100 text-gray-700 border-gray-200';
 
-  // ── On-demand aiSolution generation (B4-2) ───────────────────────────────
+  // â”€â”€ On-demand aiSolution generation (B4-2) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const solCacheKey = `matura_ai_sol_${item.examId ?? 'local'}_${item.questionNumber}`;
   const [genSolution, setGenSolution] = useState<string | null>(() => {
     try { return localStorage.getItem(solCacheKey); } catch { return null; }
@@ -508,21 +301,21 @@ function QuestionCard({
     if (generating || genSolution) return;
     setGenerating(true);
     try {
-      const prompt = `Си математички тутор кој пишува чекор-по-чекор решенија за македонски државен испит (ДИМ). Пишувај на македонски јазик.
+      const prompt = `Ð¡Ð¸ Ð¼Ð°Ñ‚ÐµÐ¼Ð°Ñ‚Ð¸Ñ‡ÐºÐ¸ Ñ‚ÑƒÑ‚Ð¾Ñ€ ÐºÐ¾Ñ˜ Ð¿Ð¸ÑˆÑƒÐ²Ð° Ñ‡ÐµÐºÐ¾Ñ€-Ð¿Ð¾-Ñ‡ÐµÐºÐ¾Ñ€ Ñ€ÐµÑˆÐµÐ½Ð¸Ñ˜Ð° Ð·Ð° Ð¼Ð°ÐºÐµÐ´Ð¾Ð½ÑÐºÐ¸ Ð´Ñ€Ð¶Ð°Ð²ÐµÐ½ Ð¸ÑÐ¿Ð¸Ñ‚ (Ð”Ð˜Ðœ). ÐŸÐ¸ÑˆÑƒÐ²Ð°Ñ˜ Ð½Ð° Ð¼Ð°ÐºÐµÐ´Ð¾Ð½ÑÐºÐ¸ Ñ˜Ð°Ð·Ð¸Ðº.
 
-Прашање ${item.questionNumber} (Дел ${item.part ?? ''}, ${item.points ?? ''} поени):
+ÐŸÑ€Ð°ÑˆÐ°ÑšÐµ ${item.questionNumber} (Ð”ÐµÐ» ${item.part ?? ''}, ${item.points ?? ''} Ð¿Ð¾ÐµÐ½Ð¸):
 ${item.questionText}
 
-Точен одговор/модел: ${item.correctAnswer}
+Ð¢Ð¾Ñ‡ÐµÐ½ Ð¾Ð´Ð³Ð¾Ð²Ð¾Ñ€/Ð¼Ð¾Ð´ÐµÐ»: ${item.correctAnswer}
 
-Напиши КОНЦИЗНО чекор-по-чекор решение. Барања:
-- Користи LaTeX нотација ($x^2$, $\\frac{a}{b}$)
-- Максимум 200 збора
-- Не го повторувај прашањето
-- Почни директно со решението
-- Нагласи го крајниот одговор
+ÐÐ°Ð¿Ð¸ÑˆÐ¸ ÐšÐžÐÐ¦Ð˜Ð—ÐÐž Ñ‡ÐµÐºÐ¾Ñ€-Ð¿Ð¾-Ñ‡ÐµÐºÐ¾Ñ€ Ñ€ÐµÑˆÐµÐ½Ð¸Ðµ. Ð‘Ð°Ñ€Ð°ÑšÐ°:
+- ÐšÐ¾Ñ€Ð¸ÑÑ‚Ð¸ LaTeX Ð½Ð¾Ñ‚Ð°Ñ†Ð¸Ñ˜Ð° ($x^2$, $\\frac{a}{b}$)
+- ÐœÐ°ÐºÑÐ¸Ð¼ÑƒÐ¼ 200 Ð·Ð±Ð¾Ñ€Ð°
+- ÐÐµ Ð³Ð¾ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€ÑƒÐ²Ð°Ñ˜ Ð¿Ñ€Ð°ÑˆÐ°ÑšÐµÑ‚Ð¾
+- ÐŸÐ¾Ñ‡Ð½Ð¸ Ð´Ð¸Ñ€ÐµÐºÑ‚Ð½Ð¾ ÑÐ¾ Ñ€ÐµÑˆÐµÐ½Ð¸ÐµÑ‚Ð¾
+- ÐÐ°Ð³Ð»Ð°ÑÐ¸ Ð³Ð¾ ÐºÑ€Ð°Ñ˜Ð½Ð¸Ð¾Ñ‚ Ð¾Ð´Ð³Ð¾Ð²Ð¾Ñ€
 
-Врати САМО текст на решението, без JSON, без хедери.`;
+Ð’Ñ€Ð°Ñ‚Ð¸ Ð¡ÐÐœÐž Ñ‚ÐµÐºÑÑ‚ Ð½Ð° Ñ€ÐµÑˆÐµÐ½Ð¸ÐµÑ‚Ð¾, Ð±ÐµÐ· JSON, Ð±ÐµÐ· Ñ…ÐµÐ´ÐµÑ€Ð¸.`;
 
       const result = await callGeminiProxy({
         model: DEFAULT_MODEL,
@@ -535,7 +328,7 @@ ${item.questionText}
         try { localStorage.setItem(solCacheKey, text); } catch { /* ignore */ }
       }
     } catch {
-      // silently fail — user can retry
+      // silently fail â€” user can retry
     } finally {
       setGenerating(false);
     }
@@ -554,7 +347,7 @@ ${item.questionText}
       const grade = await gradePart2(item, state.answer ?? '');
       onUpdate({ grading: false, aiGrade: grade, submitted: true });
     } catch {
-      onUpdate({ grading: false, aiError: 'Грешка при оценување. Обидете се повторно.', submitted: false });
+      onUpdate({ grading: false, aiError: 'Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ Ð¾Ñ†ÐµÐ½ÑƒÐ²Ð°ÑšÐµ. ÐžÐ±Ð¸Ð´ÐµÑ‚Ðµ ÑÐµ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾.', submitted: false });
     }
   }, [item, state.answer, onUpdate]);
 
@@ -565,7 +358,7 @@ ${item.questionText}
       const grade = await gradePart3(item, state.aiDesc ?? '');
       onUpdate({ gradingP3: false, aiGradeP3: grade });
     } catch {
-      onUpdate({ gradingP3: false, aiError: 'Грешка при AI оценување.' });
+      onUpdate({ gradingP3: false, aiError: 'Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ AI Ð¾Ñ†ÐµÐ½ÑƒÐ²Ð°ÑšÐµ.' });
     }
   }, [item, state.aiDesc, onUpdate]);
 
@@ -587,7 +380,7 @@ ${item.questionText}
         </span>
         {item.topic && <span className="text-xs text-gray-400">{item.topic}</span>}
         {item.dokLevel && <DokBadge level={item.dokLevel as DokLevel} size="compact" />}
-        <span className="ml-auto text-xs font-bold text-gray-500">{item.points}pt • {item.examLabel}</span>
+        <span className="ml-auto text-xs font-bold text-gray-500">{item.points}pt â€¢ {item.examLabel}</span>
       </div>
 
       {/* Question text */}
@@ -596,12 +389,12 @@ ${item.questionText}
           <MathRenderer text={item.questionText} />
         </div>
         {item.imageUrls?.map((url, i) => (
-          <img key={i} src={url} alt={item.imageDescription ?? `Слика ${i + 1} кон задача`}
+          <img key={i} src={url} alt={item.imageDescription ?? `Ð¡Ð»Ð¸ÐºÐ° ${i + 1} ÐºÐ¾Ð½ Ð·Ð°Ð´Ð°Ñ‡Ð°`}
             className="mt-3 max-h-56 rounded-lg border" />
         ))}
       </div>
 
-      {/* ── Part 1 MC ── */}
+      {/* â”€â”€ Part 1 MC â”€â”€ */}
       {!open && (
         <div className="px-5 pb-4 space-y-2 mt-2">
           {CHOICES.filter(c => item.choices?.[c]).map(choice => {
@@ -618,7 +411,7 @@ ${item.questionText}
                 key={choice} type="button"
                 disabled={state.submitted}
                 onClick={() => handleMC(choice)}
-                aria-label={`Опција ${choice}`}
+                aria-label={`ÐžÐ¿Ñ†Ð¸Ñ˜Ð° ${choice}`}
                 aria-pressed={isPicked ? true : false}
                 aria-disabled={state.submitted ? true : false}
                 className={`w-full flex items-start gap-3 px-4 py-2.5 rounded-xl border-2 text-left transition-all font-medium focus:outline-2 focus:outline-brand-primary focus:outline-offset-2 ${bg}`}
@@ -631,27 +424,27 @@ ${item.questionText}
           {state.submitted && (
             <div className="flex items-center gap-3 mt-1">
               <p className={`text-sm font-bold flex-1 ${mcCorrect ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {mcCorrect ? '✓ Точно!' : `✗ Точен одговор: ${item.correctAnswer.trim()}`}
+                {mcCorrect ? 'âœ“ Ð¢Ð¾Ñ‡Ð½Ð¾!' : `âœ— Ð¢Ð¾Ñ‡ÐµÐ½ Ð¾Ð´Ð³Ð¾Ð²Ð¾Ñ€: ${item.correctAnswer.trim()}`}
               </p>
               {mcWrong && (
                 <ForumCTA
-                  context={TOPIC_LABELS[item.topicArea ?? ''] ?? item.topicArea ?? 'Матура'}
+                  context={TOPIC_LABELS[item.topicArea ?? ''] ?? item.topicArea ?? 'ÐœÐ°Ñ‚ÑƒÑ€Ð°'}
                   variant="inline"
                 />
               )}
             </div>
           )}
-          {/* ── Solution (after MC answer) ── */}
+          {/* â”€â”€ Solution (after MC answer) â”€â”€ */}
           {state.submitted && item.aiSolution && (
             <div className="mt-2 bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-1.5">
-              <p className="text-xs font-black text-blue-700">Решение:</p>
+              <p className="text-xs font-black text-blue-700">Ð ÐµÑˆÐµÐ½Ð¸Ðµ:</p>
               <div className="text-xs text-blue-800 leading-relaxed">
                 <MathRenderer text={item.aiSolution} />
               </div>
               {item.solutionImageUrl && (
                 <img
                   src={item.solutionImageUrl}
-                  alt="Илустрација кон решението"
+                  alt="Ð˜Ð»ÑƒÑÑ‚Ñ€Ð°Ñ†Ð¸Ñ˜Ð° ÐºÐ¾Ð½ Ñ€ÐµÑˆÐµÐ½Ð¸ÐµÑ‚Ð¾"
                   className="mt-2 max-h-56 rounded-lg border border-blue-200"
                 />
               )}
@@ -660,10 +453,10 @@ ${item.questionText}
         </div>
       )}
 
-      {/* ── Part 2 open (AI grade) ── */}
+      {/* â”€â”€ Part 2 open (AI grade) â”€â”€ */}
       {part2 && (
         <div className="px-5 pb-4 space-y-3 mt-2">
-          <p className="text-xs text-gray-500 font-medium">Внеси го твојот одговор:</p>
+          <p className="text-xs text-gray-500 font-medium">Ð’Ð½ÐµÑÐ¸ Ð³Ð¾ Ñ‚Ð²Ð¾Ñ˜Ð¾Ñ‚ Ð¾Ð´Ð³Ð¾Ð²Ð¾Ñ€:</p>
           <div>
             <input
               type="text"
@@ -671,34 +464,34 @@ ${item.questionText}
               disabled={!!state.aiGrade}
               onChange={e => onUpdate({ answer: e.target.value })}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-brand-primary focus:border-brand-primary disabled:bg-gray-50"
-              placeholder="Одговор…"
+              placeholder="ÐžÐ´Ð³Ð¾Ð²Ð¾Ñ€â€¦"
             />
             {state.aiGrade && (
               <p className={`text-xs mt-1 font-medium ${state.aiGrade.correct ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {state.aiGrade.correct ? '✓' : '✗'} {state.aiGrade.comment}
+                {state.aiGrade.correct ? 'âœ“' : 'âœ—'} {state.aiGrade.comment}
               </p>
             )}
           </div>
           {state.aiGrade ? (
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
               <p className="text-xs font-bold text-blue-700">
-                Резултат: {state.aiGrade.score}/{state.aiGrade.maxScore}pt
+                Ð ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚: {state.aiGrade.score}/{state.aiGrade.maxScore}pt
               </p>
               <p className="text-xs text-blue-600">{state.aiGrade.feedback}</p>
               <div className="pt-2 border-t border-blue-100">
-                <p className="text-xs text-gray-500 font-medium">Точен одговор:</p>
+                <p className="text-xs text-gray-500 font-medium">Ð¢Ð¾Ñ‡ÐµÐ½ Ð¾Ð´Ð³Ð¾Ð²Ð¾Ñ€:</p>
                 <div className="text-xs text-gray-700"><MathRenderer text={item.correctAnswer} /></div>
               </div>
               {(item.aiSolution || genSolution) ? (
                 <div className="pt-2 border-t border-blue-100 space-y-1">
-                  <p className="text-xs font-black text-blue-700">Решение:</p>
+                  <p className="text-xs font-black text-blue-700">Ð ÐµÑˆÐµÐ½Ð¸Ðµ:</p>
                   <div className="text-xs text-blue-800 leading-relaxed">
                     <MathRenderer text={item.aiSolution ?? genSolution ?? ''} />
                   </div>
                   {item.solutionImageUrl && (
                     <img
                       src={item.solutionImageUrl}
-                      alt="Илустрација кон решението"
+                      alt="Ð˜Ð»ÑƒÑÑ‚Ñ€Ð°Ñ†Ð¸Ñ˜Ð° ÐºÐ¾Ð½ Ñ€ÐµÑˆÐµÐ½Ð¸ÐµÑ‚Ð¾"
                       className="mt-2 max-h-56 rounded-lg border border-blue-200"
                     />
                   )}
@@ -710,7 +503,7 @@ ${item.questionText}
                   disabled={generating}
                   className="mt-1 px-3 py-1 rounded-lg text-[11px] font-bold bg-violet-100 text-violet-700 hover:bg-violet-200 transition disabled:opacity-50"
                 >
-                  {generating ? 'Генерирање решение…' : 'Генерирај решение'}
+                  {generating ? 'Ð“ÐµÐ½ÐµÑ€Ð¸Ñ€Ð°ÑšÐµ Ñ€ÐµÑˆÐµÐ½Ð¸Ðµâ€¦' : 'Ð“ÐµÐ½ÐµÑ€Ð¸Ñ€Ð°Ñ˜ Ñ€ÐµÑˆÐµÐ½Ð¸Ðµ'}
                 </button>
               )}
             </div>
@@ -720,23 +513,23 @@ ${item.questionText}
               onClick={handleGradeP2}
               className="px-4 py-2 bg-brand-primary text-white text-sm font-bold rounded-lg hover:bg-brand-secondary disabled:opacity-50 transition-colors"
             >
-              {state.grading ? 'Оценување…' : 'Провери со AI'}
+              {state.grading ? 'ÐžÑ†ÐµÐ½ÑƒÐ²Ð°ÑšÐµâ€¦' : 'ÐŸÑ€Ð¾Ð²ÐµÑ€Ð¸ ÑÐ¾ AI'}
             </button>
           )}
           {state.aiError && <p className="text-xs text-rose-600">{state.aiError}</p>}
         </div>
       )}
 
-      {/* ── Part 3 open (self-assess + opt-in AI) ── */}
+      {/* â”€â”€ Part 3 open (self-assess + opt-in AI) â”€â”€ */}
       {part3 && (
         <div className="px-5 pb-4 space-y-3 mt-2">
           {!state.submitted ? (
             <>
               <p className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                Реши ја задачата на хартија, па самооцени се подолу.
+                Ð ÐµÑˆÐ¸ Ñ˜Ð° Ð·Ð°Ð´Ð°Ñ‡Ð°Ñ‚Ð° Ð½Ð° Ñ…Ð°Ñ€Ñ‚Ð¸Ñ˜Ð°, Ð¿Ð° ÑÐ°Ð¼Ð¾Ð¾Ñ†ÐµÐ½Ð¸ ÑÐµ Ð¿Ð¾Ð´Ð¾Ð»Ñƒ.
               </p>
               <div className="space-y-1.5">
-                <p className="text-xs text-gray-500 font-medium">Штикирај за секој поен кој мислиш дека го заслужуваш:</p>
+                <p className="text-xs text-gray-500 font-medium">Ð¨Ñ‚Ð¸ÐºÐ¸Ñ€Ð°Ñ˜ Ð·Ð° ÑÐµÐºÐ¾Ñ˜ Ð¿Ð¾ÐµÐ½ ÐºÐ¾Ñ˜ Ð¼Ð¸ÑÐ»Ð¸Ñˆ Ð´ÐµÐºÐ° Ð³Ð¾ Ð·Ð°ÑÐ»ÑƒÐ¶ÑƒÐ²Ð°Ñˆ:</p>
                 {Array.from({ length: item.points }).map((_, pi) => {
                   const checked = state.selfChecks?.[pi] ?? false;
                   return (
@@ -750,7 +543,7 @@ ${item.questionText}
                         }}
                         className="w-4 h-4 accent-brand-primary"
                       />
-                      <span className="text-sm text-gray-700">Поен {pi + 1}</span>
+                      <span className="text-sm text-gray-700">ÐŸÐ¾ÐµÐ½ {pi + 1}</span>
                     </label>
                   );
                 })}
@@ -758,7 +551,7 @@ ${item.questionText}
               <button type="button" onClick={handleSelfSubmit}
                 className="px-4 py-2 bg-brand-primary text-white text-sm font-bold rounded-lg hover:bg-brand-secondary transition-colors"
               >
-                Потврди самооценка
+                ÐŸÐ¾Ñ‚Ð²Ñ€Ð´Ð¸ ÑÐ°Ð¼Ð¾Ð¾Ñ†ÐµÐ½ÐºÐ°
               </button>
             </>
           ) : (
@@ -766,22 +559,22 @@ ${item.questionText}
               {/* Self-assess result */}
               <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-2">
                 <p className="text-xs font-bold text-gray-600">
-                  Самооценка: {(state.selfChecks ?? []).filter(Boolean).length}/{item.points}pt
+                  Ð¡Ð°Ð¼Ð¾Ð¾Ñ†ÐµÐ½ÐºÐ°: {(state.selfChecks ?? []).filter(Boolean).length}/{item.points}pt
                 </p>
                 <div>
-                  <p className="text-xs text-gray-500 font-semibold mb-1">Точен одговор / модел:</p>
+                  <p className="text-xs text-gray-500 font-semibold mb-1">Ð¢Ð¾Ñ‡ÐµÐ½ Ð¾Ð´Ð³Ð¾Ð²Ð¾Ñ€ / Ð¼Ð¾Ð´ÐµÐ»:</p>
                   <div className="text-xs text-gray-700"><MathRenderer text={item.correctAnswer} /></div>
                 </div>
                 {(item.aiSolution || genSolution) ? (
                   <div className="pt-2 border-t border-gray-200 space-y-1">
-                    <p className="text-xs font-black text-blue-700">Решение:</p>
+                    <p className="text-xs font-black text-blue-700">Ð ÐµÑˆÐµÐ½Ð¸Ðµ:</p>
                     <div className="text-xs text-gray-700 leading-relaxed">
                       <MathRenderer text={item.aiSolution ?? genSolution ?? ''} />
                     </div>
                     {item.solutionImageUrl && (
                       <img
                         src={item.solutionImageUrl}
-                        alt="Илустрација кон решението"
+                        alt="Ð˜Ð»ÑƒÑÑ‚Ñ€Ð°Ñ†Ð¸Ñ˜Ð° ÐºÐ¾Ð½ Ñ€ÐµÑˆÐµÐ½Ð¸ÐµÑ‚Ð¾"
                         className="mt-2 max-h-56 rounded-lg border border-gray-200"
                       />
                     )}
@@ -793,34 +586,34 @@ ${item.questionText}
                     disabled={generating}
                     className="mt-1 px-3 py-1 rounded-lg text-[11px] font-bold bg-violet-100 text-violet-700 hover:bg-violet-200 transition disabled:opacity-50"
                   >
-                    {generating ? 'Генерирање решение…' : 'Генерирај решение'}
+                    {generating ? 'Ð“ÐµÐ½ÐµÑ€Ð¸Ñ€Ð°ÑšÐµ Ñ€ÐµÑˆÐµÐ½Ð¸Ðµâ€¦' : 'Ð“ÐµÐ½ÐµÑ€Ð¸Ñ€Ð°Ñ˜ Ñ€ÐµÑˆÐµÐ½Ð¸Ðµ'}
                   </button>
                 )}
               </div>
               {/* Opt-in AI */}
               {!state.aiGradeP3 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-gray-500">Сакаш и AI оценка? Опиши го твоето решение:</p>
+                  <p className="text-xs font-medium text-gray-500">Ð¡Ð°ÐºÐ°Ñˆ Ð¸ AI Ð¾Ñ†ÐµÐ½ÐºÐ°? ÐžÐ¿Ð¸ÑˆÐ¸ Ð³Ð¾ Ñ‚Ð²Ð¾ÐµÑ‚Ð¾ Ñ€ÐµÑˆÐµÐ½Ð¸Ðµ:</p>
                   <textarea
                     value={state.aiDesc ?? ''}
                     onChange={e => onUpdate({ aiDesc: e.target.value })}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-brand-primary focus:border-brand-primary resize-none"
                     rows={2}
-                    placeholder="Пр: Прв го решив системот, потоа го пресметав детерминантот…"
+                    placeholder="ÐŸÑ€: ÐŸÑ€Ð² Ð³Ð¾ Ñ€ÐµÑˆÐ¸Ð² ÑÐ¸ÑÑ‚ÐµÐ¼Ð¾Ñ‚, Ð¿Ð¾Ñ‚Ð¾Ð° Ð³Ð¾ Ð¿Ñ€ÐµÑÐ¼ÐµÑ‚Ð°Ð² Ð´ÐµÑ‚ÐµÑ€Ð¼Ð¸Ð½Ð°Ð½Ñ‚Ð¾Ñ‚â€¦"
                   />
                   <button
                     type="button" disabled={!!state.gradingP3 || !state.aiDesc?.trim()}
                     onClick={handleGradeP3}
                     className="px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
                   >
-                    {state.gradingP3 ? 'AI оценува…' : 'Провери со AI'}
+                    {state.gradingP3 ? 'AI Ð¾Ñ†ÐµÐ½ÑƒÐ²Ð°â€¦' : 'ÐŸÑ€Ð¾Ð²ÐµÑ€Ð¸ ÑÐ¾ AI'}
                   </button>
                 </div>
               )}
               {state.aiGradeP3 && (
                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-3">
                   <p className="text-xs font-bold text-purple-700 mb-1">
-                    AI оценка: {state.aiGradeP3.score}/{state.aiGradeP3.maxScore}pt
+                    AI Ð¾Ñ†ÐµÐ½ÐºÐ°: {state.aiGradeP3.score}/{state.aiGradeP3.maxScore}pt
                   </p>
                   <p className="text-xs text-purple-600">{state.aiGradeP3.feedback}</p>
                 </div>
@@ -834,7 +627,7 @@ ${item.questionText}
   );
 }
 
-// ─── Results Screen ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Results Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ResultsScreen({
   items, states, onRetryWrong, onNewSession,
 }: {
@@ -910,16 +703,16 @@ function ResultsScreen({
           </div>
         </div>
         <h2 className="text-xl font-black text-gray-800 mb-1">
-          {pass ? '🎉 Одличен резултат!' : pct >= 40 ? '💪 Добар обид — продолжи!' : '📚 Треба повеќе вежба'}
+          {pass ? 'ðŸŽ‰ ÐžÐ´Ð»Ð¸Ñ‡ÐµÐ½ Ñ€ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚!' : pct >= 40 ? 'ðŸ’ª Ð”Ð¾Ð±Ð°Ñ€ Ð¾Ð±Ð¸Ð´ â€” Ð¿Ñ€Ð¾Ð´Ð¾Ð»Ð¶Ð¸!' : 'ðŸ“š Ð¢Ñ€ÐµÐ±Ð° Ð¿Ð¾Ð²ÐµÑœÐµ Ð²ÐµÐ¶Ð±Ð°'}
         </h2>
         <p className="text-gray-500 text-sm">
-          {pass ? 'Го поминуваш прагот за матура (≥57%)' : 'Прагот за матура е 57% — продолжи со вежбање'}
+          {pass ? 'Ð“Ð¾ Ð¿Ð¾Ð¼Ð¸Ð½ÑƒÐ²Ð°Ñˆ Ð¿Ñ€Ð°Ð³Ð¾Ñ‚ Ð·Ð° Ð¼Ð°Ñ‚ÑƒÑ€Ð° (â‰¥57%)' : 'ÐŸÑ€Ð°Ð³Ð¾Ñ‚ Ð·Ð° Ð¼Ð°Ñ‚ÑƒÑ€Ð° Ðµ 57% â€” Ð¿Ñ€Ð¾Ð´Ð¾Ð»Ð¶Ð¸ ÑÐ¾ Ð²ÐµÐ¶Ð±Ð°ÑšÐµ'}
         </p>
       </div>
 
       {/* Topic breakdown */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
-        <h3 className="font-black text-gray-700 mb-4">Резултат по тема</h3>
+        <h3 className="font-black text-gray-700 mb-4">Ð ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚ Ð¿Ð¾ Ñ‚ÐµÐ¼Ð°</h3>
         <div className="space-y-3">
           {topicResults.map(t => {
             const tPct = t.max > 0 ? Math.round((t.scored / t.max) * 100) : 0;
@@ -949,7 +742,7 @@ function ResultsScreen({
 
       {/* DoK breakdown */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
-        <h3 className="font-black text-gray-700 mb-4">Резултат по DoK ниво</h3>
+        <h3 className="font-black text-gray-700 mb-4">Ð ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚ Ð¿Ð¾ DoK Ð½Ð¸Ð²Ð¾</h3>
         <div className="grid grid-cols-4 gap-3">
           {[1,2,3,4].map(l => {
             const d = dokMap[l];
@@ -957,7 +750,7 @@ function ResultsScreen({
             return (
               <div key={l} className="text-center p-3 bg-gray-50 rounded-xl border border-gray-100">
                 <DokBadge level={l as DokLevel} size="compact" />
-                <p className="text-lg font-black text-gray-800 mt-1">{dp !== null ? `${dp}%` : '—'}</p>
+                <p className="text-lg font-black text-gray-800 mt-1">{dp !== null ? `${dp}%` : 'â€”'}</p>
                 <p className="text-xs text-gray-400">{d.scored}/{d.max}pt</p>
               </div>
             );
@@ -968,9 +761,9 @@ function ResultsScreen({
       {/* Adaptive recommendation */}
       {weakTopics.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-          <h3 className="font-black text-amber-800 mb-2">📌 Препорака</h3>
+          <h3 className="font-black text-amber-800 mb-2">ðŸ“Œ ÐŸÑ€ÐµÐ¿Ð¾Ñ€Ð°ÐºÐ°</h3>
           <p className="text-sm text-amber-700">
-            Зајакни ги овие теми со повеќе вежба:
+            Ð—Ð°Ñ˜Ð°ÐºÐ½Ð¸ Ð³Ð¸ Ð¾Ð²Ð¸Ðµ Ñ‚ÐµÐ¼Ð¸ ÑÐ¾ Ð¿Ð¾Ð²ÐµÑœÐµ Ð²ÐµÐ¶Ð±Ð°:
           </p>
           <div className="flex flex-wrap gap-2 mt-2">
             {weakTopics.map(t => (
@@ -986,7 +779,7 @@ function ResultsScreen({
       {results.filter(r => !r.correct && !r.state.skipped).length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
           <h3 className="font-black text-gray-700 mb-3">
-            Погрешни прашања ({results.filter(r => !r.correct && !r.state.skipped).length})
+            ÐŸÐ¾Ð³Ñ€ÐµÑˆÐ½Ð¸ Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ° ({results.filter(r => !r.correct && !r.state.skipped).length})
           </h3>
           <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
             {results.filter(r => !r.correct && !r.state.skipped).map(r => (
@@ -1011,7 +804,7 @@ function ResultsScreen({
             onClick={() => onRetryWrong(wrongItems)}
             className="flex-1 py-3 rounded-xl font-black bg-rose-500 text-white hover:bg-rose-600 shadow-lg hover:-translate-y-0.5 transition-all"
           >
-            🔁 Повтори грешки ({wrongItems.length})
+            ðŸ” ÐŸÐ¾Ð²Ñ‚Ð¾Ñ€Ð¸ Ð³Ñ€ÐµÑˆÐºÐ¸ ({wrongItems.length})
           </button>
         )}
         <button
@@ -1019,14 +812,14 @@ function ResultsScreen({
           onClick={onNewSession}
           className="flex-1 py-3 rounded-xl font-black bg-brand-primary text-white hover:bg-brand-secondary shadow-lg hover:-translate-y-0.5 transition-all"
         >
-          ✦ Нова сесија
+          âœ¦ ÐÐ¾Ð²Ð° ÑÐµÑÐ¸Ñ˜Ð°
         </button>
       </div>
     </div>
   );
 }
 
-// ─── Main View ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function MaturaPracticeView() {
   const [phase, setPhase]     = useState<Phase>('setup');
   const [queue, setQueue]     = useState<PracticeItem[]>([]);
@@ -1043,7 +836,7 @@ export function MaturaPracticeView() {
 
   const { completeDay } = useMaturaMissions();
 
-  // ── Offline detection — shows banner when data is served from IndexedDB ──
+  // â”€â”€ Offline detection â€” shows banner when data is served from IndexedDB â”€â”€
   const [isOffline, setIsOffline] = useState(() =>
     typeof navigator !== 'undefined' && !navigator.onLine,
   );
@@ -1058,10 +851,10 @@ export function MaturaPracticeView() {
     };
   }, []);
 
-  // ── Firestore: exam list (needed by setup screen) ──
+  // â”€â”€ Firestore: exam list (needed by setup screen) â”€â”€
   const { exams, loading: examsLoading, error: examsError } = useMaturaExams();
 
-  // ── Firestore: questions for selected exams (loaded when practice starts) ──
+  // â”€â”€ Firestore: questions for selected exams (loaded when practice starts) â”€â”€
   const [activeExamIds, setActiveExamIds] = useState<string[]>([]);
   const { questions: firestoreQuestions, loading: qLoading } = useMaturaQuestions(activeExamIds, undefined, activeExamIds.length > 0);
 
@@ -1077,7 +870,7 @@ export function MaturaPracticeView() {
     return [...set].sort();
   }, [firestoreQuestions]);
 
-  // ── SetupConfig holds which exams the user picked ──
+  // â”€â”€ SetupConfig holds which exams the user picked â”€â”€
   // buildQueue is called after questions are already fetched
   const buildQueueFromFirestore = useCallback((
     questions: MaturaQuestion[],
@@ -1101,14 +894,14 @@ export function MaturaPracticeView() {
     return items.slice(0, cfg.maxQ);
   }, []);
 
-  // Called when user clicks "Започни" in SetupScreen
+  // Called when user clicks "Ð—Ð°Ð¿Ð¾Ñ‡Ð½Ð¸" in SetupScreen
   const handleStart = useCallback((cfg: SetupConfig) => {
     // Determine which exam IDs match the config
     const ids = exams
       .filter(e => cfg.langs.includes(e.language as 'mk'|'al') && cfg.sessions.includes(e.session as 'june'|'august'))
       .map(e => e.id);
     setActiveExamIds(ids);
-    // Store cfg for when questions arrive — handled in effect below
+    // Store cfg for when questions arrive â€” handled in effect below
     setPendingCfg(cfg);
     setRecoveryPrefill(null);
     try { sessionStorage.removeItem('matura_recovery_prefill'); } catch { /* ignore */ }
@@ -1117,7 +910,7 @@ export function MaturaPracticeView() {
   // Pending cfg: applied once questions finish loading
   const [pendingCfg, setPendingCfg] = useState<SetupConfig | null>(null);
 
-  // When firestoreQuestions updates and we have a pending config → build queue → start
+  // When firestoreQuestions updates and we have a pending config â†’ build queue â†’ start
   const prevQKey = React.useRef('');
   React.useEffect(() => {
     if (!pendingCfg || qLoading || !firestoreQuestions.length) return;
@@ -1265,12 +1058,31 @@ export function MaturaPracticeView() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [current, isLast, updateState, saveConceptProgress]);
 
-  // Loading overlay while fetching questions after "Започни"
+  // S37-D3: Keyboard-first nav — →/Enter = next, ← = back to previous
+  useEffect(() => {
+    if (phase !== 'practice') return;
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'BUTTON') return;
+      if ((e.key === 'ArrowRight' || e.key === 'Enter') && canNext) {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === 'ArrowLeft' && current > 0) {
+        e.preventDefault();
+        setCurrent(c => c - 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [phase, canNext, current, handleNext]);
+
+  // Loading overlay while fetching questions after "Ð—Ð°Ð¿Ð¾Ñ‡Ð½Ð¸"
   if (pendingCfg && (qLoading || !firestoreQuestions.length)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <div className="w-12 h-12 rounded-full border-4 border-brand-primary border-t-transparent animate-spin" />
-        <p className="text-gray-500 font-medium">Се вчитуваат прашањата…</p>
+        <p className="text-gray-500 font-medium">Ð¡Ðµ Ð²Ñ‡Ð¸Ñ‚ÑƒÐ²Ð°Ð°Ñ‚ Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ°Ñ‚Ð°â€¦</p>
       </div>
     );
   }
@@ -1281,12 +1093,12 @@ export function MaturaPracticeView() {
       aria-live="polite"
       className="flex items-center gap-2 px-4 py-2 mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium"
     >
-      <span className="text-base">📶</span>
-      <span>Офлајн режим — прашањата се вчитуваат од локален кеш</span>
+      <span className="text-base">ðŸ“¶</span>
+      <span>ÐžÑ„Ð»Ð°Ñ˜Ð½ Ñ€ÐµÐ¶Ð¸Ð¼ â€” Ð¿Ñ€Ð°ÑˆÐ°ÑšÐ°Ñ‚Ð° ÑÐµ Ð²Ñ‡Ð¸Ñ‚ÑƒÐ²Ð°Ð°Ñ‚ Ð¾Ð´ Ð»Ð¾ÐºÐ°Ð»ÐµÐ½ ÐºÐµÑˆ</span>
     </div>
   ) : null;
 
-  // ── Render ──
+  // â”€â”€ Render â”€â”€
   if (phase === 'setup') {
     return (
       <>
@@ -1327,13 +1139,13 @@ export function MaturaPracticeView() {
       {offlineBanner}
       {/* Top bar */}
       <div className="flex items-center gap-3 mb-2">
-        <h2 className="text-lg font-black text-brand-primary flex-1">Адаптивна практика</h2>
+        <h2 className="text-lg font-black text-brand-primary flex-1">ÐÐ´Ð°Ð¿Ñ‚Ð¸Ð²Ð½Ð° Ð¿Ñ€Ð°ÐºÑ‚Ð¸ÐºÐ°</h2>
         <button
           type="button"
           onClick={() => setPhase('results')}
           className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
         >
-          Заврши
+          Ð—Ð°Ð²Ñ€ÑˆÐ¸
         </button>
       </div>
 
@@ -1356,7 +1168,7 @@ export function MaturaPracticeView() {
           onClick={handleSkip}
           className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors"
         >
-          Прескокни
+          ÐŸÑ€ÐµÑÐºÐ¾ÐºÐ½Ð¸
         </button>
         <button
           type="button"
@@ -1368,16 +1180,20 @@ export function MaturaPracticeView() {
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
           }`}
         >
-          {isLast ? 'Заврши и види резултати →' : 'Следно прашање →'}
+          {isLast ? 'Ð—Ð°Ð²Ñ€ÑˆÐ¸ Ð¸ Ð²Ð¸Ð´Ð¸ Ñ€ÐµÐ·ÑƒÐ»Ñ‚Ð°Ñ‚Ð¸ â†’' : 'Ð¡Ð»ÐµÐ´Ð½Ð¾ Ð¿Ñ€Ð°ÑˆÐ°ÑšÐµ â†’'}
         </button>
       </div>
 
       {/* Hint: submit first */}
       {!canNext && (
         <p className="text-center text-xs text-gray-400 mt-2">
-          {isOpen(currentItem) ? 'Провери го одговорот за да продолжиш' : 'Избери одговор за да продолжиш'}
+          {isOpen(currentItem) ? 'ÐŸÑ€Ð¾Ð²ÐµÑ€Ð¸ Ð³Ð¾ Ð¾Ð´Ð³Ð¾Ð²Ð¾Ñ€Ð¾Ñ‚ Ð·Ð° Ð´Ð° Ð¿Ñ€Ð¾Ð´Ð¾Ð»Ð¶Ð¸Ñˆ' : 'Ð˜Ð·Ð±ÐµÑ€Ð¸ Ð¾Ð´Ð³Ð¾Ð²Ð¾Ñ€ Ð·Ð° Ð´Ð° Ð¿Ñ€Ð¾Ð´Ð¾Ð»Ð¶Ð¸Ñˆ'}
         </p>
       )}
+      {/* Keyboard nav hint */}
+      <p className="text-center text-[11px] text-gray-300 mt-3 hidden sm:block">
+        ← назад &nbsp;·&nbsp; → / Enter следно
+      </p>
     </div>
   );
 }

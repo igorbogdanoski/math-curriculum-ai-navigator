@@ -134,6 +134,7 @@ export interface QuizResult {
   misconceptions?: { question: string; studentAnswer: string; misconception: string }[];
   metacognitiveNote?: string; // П4 — рефлексивна белешка на ученикот по квизот
   classId?: string;           // И2 — одделение на ученикот (доколку се приклучил)
+  dokLevel?: 1 | 2 | 3 | 4;  // S37-C1 DoK heatmap (explicit; falls back to differentiationLevel mapping)
 }
 
 export interface Announcement {

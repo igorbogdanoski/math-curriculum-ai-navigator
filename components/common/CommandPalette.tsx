@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Fuse from 'fuse.js';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 import { useCurriculum } from '../../hooks/useCurriculum';
@@ -130,33 +131,31 @@ export const CommandPalette: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [navigate, openGeneratorPanel]);
 
-  // ── Concept search (from curriculum) ────────────────────────────────────
+  // ── Concept search (from curriculum) — Fuse.js fuzzy ────────────────────
   const conceptItems = useMemo<CommandItem[]>(() => {
     if (!query.trim() || query.length < 2) return [];
-    const q = query.toLowerCase();
-    const results: CommandItem[] = [];
+    const allConcepts: CommandItem[] = [];
     curriculum?.grades.forEach(grade => {
       grade.topics.forEach(topic => {
         topic.concepts.forEach(concept => {
-          if (
-            concept.title.toLowerCase().includes(q) ||
-            concept.description?.toLowerCase().includes(q)
-          ) {
-            results.push({
-              id: `concept-${concept.id}`,
-              label: concept.title,
-              description: `${grade.title} · ${topic.title}`,
-              icon: BookOpen,
-              group: 'concept',
-              color: 'text-emerald-600',
-              keywords: concept.description ?? '',
-              action: () => go(`/concept/${concept.id}`, concept.title, 'curriculum'),
-            });
-          }
+          allConcepts.push({
+            id: `concept-${concept.id}`,
+            label: concept.title,
+            description: `${grade.title} · ${topic.title}`,
+            icon: BookOpen,
+            group: 'concept',
+            color: 'text-emerald-600',
+            keywords: concept.description ?? '',
+            action: () => go(`/concept/${concept.id}`, concept.title, 'curriculum'),
+          });
         });
       });
     });
-    return results.slice(0, 5);
+    const fuse = new Fuse(allConcepts, {
+      keys: [{ name: 'label', weight: 0.7 }, { name: 'keywords', weight: 0.3 }],
+      threshold: 0.4,
+    });
+    return fuse.search(query).map(r => r.item).slice(0, 5);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, curriculum]);
 
@@ -178,21 +177,21 @@ export const CommandPalette: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  // ── Fuzzy filter ─────────────────────────────────────────────────────────
+  // ── Fuse.js search across nav + ai items ────────────────────────────────
   const filtered = useMemo<CommandItem[]>(() => {
     if (!query.trim()) {
       return [...recentItems, ...navItems.slice(0, 8), ...aiItems];
     }
-    const q = query.toLowerCase();
-    const match = (item: CommandItem) =>
-      item.label.toLowerCase().includes(q) ||
-      (item.description ?? '').toLowerCase().includes(q) ||
-      (item.keywords ?? '').toLowerCase().includes(q);
-    return [
-      ...conceptItems,
-      ...navItems.filter(match),
-      ...aiItems.filter(match),
-    ];
+    const fuse = new Fuse([...navItems, ...aiItems], {
+      keys: [
+        { name: 'label', weight: 0.6 },
+        { name: 'keywords', weight: 0.3 },
+        { name: 'description', weight: 0.1 },
+      ],
+      threshold: 0.4,
+      includeScore: true,
+    });
+    return [...conceptItems, ...fuse.search(query).map(r => r.item)];
   }, [query, navItems, aiItems, conceptItems, recentItems]);
 
   // ── Keyboard navigation ──────────────────────────────────────────────────
