@@ -1,0 +1,72 @@
+name: Curriculum Embeddings Re-index (S36-B1)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/curriculum/**'
+      - 'data/secondary/**'
+      - 'data/secondaryCurriculum.ts'
+      - 'scripts/index-curriculum-embeddings.ts'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — log concepts but skip Firestore writes'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+
+concurrency:
+  # Only one embedding job at a time — prevents interleaved writes
+  group: embeddings-reindex
+  cancel-in-progress: false
+
+jobs:
+  reindex-embeddings:
+    name: Re-index curriculum embeddings
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate secrets are present
+        run: |
+          if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+            echo "::error::GEMINI_API_KEY secret is not set — skipping embedding re-index."
+            exit 1
+          fi
+          if [ -z "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_BASE64 }}" ]; then
+            echo "::error::GOOGLE_APPLICATION_CREDENTIALS_BASE64 secret is not set."
+            exit 1
+          fi
+          echo "Secrets present ✅"
+
+      - name: Run embedding indexer
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS_BASE64: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_BASE64 }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          EMBEDDING_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: npx tsx scripts/index-curriculum-embeddings.ts
+
+      - name: Report result
+        if: always()
+        run: |
+          echo "### Embedding re-index result" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Dry run: \`${{ github.event.inputs.dry_run || 'false' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY

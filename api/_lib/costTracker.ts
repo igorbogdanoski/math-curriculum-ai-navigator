@@ -74,12 +74,88 @@ export function recordTokens(input: RecordTokensInput): UsageEntry {
   const budget = MODEL_DAILY_BUDGETS[input.model] ?? DEFAULT_USER_DAILY_TOKEN_BUDGET;
   if (!entry.warned && total > budget) {
     entry.warned = true;
+    const msg = `[cost-guard] user=${input.userId} model=${input.model} tokens=${total} exceeded daily budget=${budget}`;
     // eslint-disable-next-line no-console
-    console.warn(
-      `[cost-guard] user=${input.userId} model=${input.model} tokens=${total} exceeded daily budget=${budget}`,
-    );
+    console.warn(msg);
+    // S36-B4: fire-and-forget alert dispatch (non-blocking, never throws)
+    void dispatchCostAlert({ userId: input.userId, model: input.model, total, budget }).catch(() => { /* silent */ });
   }
   return entry;
+}
+
+// ── S36-B4: Alert dispatcher ─────────────────────────────────────────────────
+
+/**
+ * Sends a cost-guard alert via all configured channels:
+ *   1. Always: Sentry captureMessage (warning level) — works if SENTRY_DSN is set
+ *   2. Optional: Slack webhook if SLACK_WEBHOOK_URL env var is set
+ *   3. Optional: Email via Resend if RESEND_API_KEY + ALERT_EMAIL env vars are set
+ *
+ * This function is fire-and-forget — never throws, never blocks the request.
+ */
+async function dispatchCostAlert(opts: {
+  userId: string;
+  model: string;
+  total: number;
+  budget: number;
+}): Promise<void> {
+  const { userId, model, total, budget } = opts;
+  const pct = Math.round((total / budget) * 100);
+  const summary = `Cost-guard: user ${userId} hit ${pct}% of daily budget on ${model} (${total}/${budget} tokens)`;
+
+  // 1. Sentry — captureMessage creates a Sentry issue + email to project owners
+  try {
+    // Dynamic import via variable prevents Vite static analysis (package is server-only)
+    const sentryPkg = '@sentry/node';
+    const Sentry = await import(/* @vite-ignore */ sentryPkg).catch(() => null);
+    if (Sentry?.captureMessage) {
+      Sentry.captureMessage(summary, {
+        level: 'warning',
+        tags: { component: 'cost-guard', model },
+        extra: { userId, total, budget, pct },
+      });
+    }
+  } catch { /* Sentry not available in this runtime */ }
+
+  // 2. Slack — only if SLACK_WEBHOOK_URL is configured
+  const slackUrl = process.env.SLACK_WEBHOOK_URL;
+  if (slackUrl) {
+    try {
+      await fetch(slackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `⚠️ *Math Navigator Cost Alert*\n${summary}`,
+          blocks: [
+            {
+              type: 'section',
+              text: { type: 'mrkdwn', text: `⚠️ *Cost Guard Triggered*\n• User: \`${userId}\`\n• Model: \`${model}\`\n• Tokens used: ${total.toLocaleString()} / ${budget.toLocaleString()} (${pct}%)\n• Day: ${new Date().toISOString().slice(0, 10)}` },
+            },
+          ],
+        }),
+        signal: AbortSignal.timeout(5_000),
+      });
+    } catch { /* Slack down or misconfigured — ignore */ }
+  }
+
+  // 3. Resend email — only if RESEND_API_KEY + ALERT_EMAIL are configured
+  const resendKey = process.env.RESEND_API_KEY;
+  const alertEmail = process.env.ALERT_EMAIL;
+  if (resendKey && alertEmail) {
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
+        body: JSON.stringify({
+          from: 'alerts@ai.mismath.net',
+          to: alertEmail,
+          subject: `⚠️ Cost-guard alert — ${model} ${pct}% budget`,
+          html: `<p>${summary}</p><p>Date: ${new Date().toISOString()}</p>`,
+        }),
+        signal: AbortSignal.timeout(8_000),
+      });
+    } catch { /* Resend down or misconfigured — ignore */ }
+  }
 }
 
 export interface UsageSnapshot {

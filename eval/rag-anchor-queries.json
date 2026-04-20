@@ -1,0 +1,129 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-04-20",
+  "description": "RAG retrieval anchor queries for Math Navigator AI (S36-B2). Each query has a natural-language question and the expected top-3 concept IDs from the curriculum. Used to detect RAG recall regressions in CI.",
+  "recallThreshold": 0.70,
+  "totalQueries": 20,
+  "queries": [
+    {
+      "id": "rag-001",
+      "query": "How do I solve a quadratic equation by factoring?",
+      "goldConceptIds": ["g9-concept-1-3", "g9-concept-1-2", "g8-concept-1-4"],
+      "tags": ["grade9", "algebra", "quadratic"]
+    },
+    {
+      "id": "rag-002",
+      "query": "Kako da se presmetaat operacii so celi broevi",
+      "goldConceptIds": ["g7-concept-1-3", "g7-concept-1-2", "g6-concept-1-2"],
+      "tags": ["grade7", "integers", "operations", "mk"]
+    },
+    {
+      "id": "rag-003",
+      "query": "What is the Pythagorean theorem and how is it used?",
+      "goldConceptIds": ["g8-concept-3-1", "g8-concept-3-2", "g7-concept-3-1"],
+      "tags": ["grade8", "geometry", "pythagorean"]
+    },
+    {
+      "id": "rag-004",
+      "query": "Sabiranje i odzemanje drobki so razlicni imenateli",
+      "goldConceptIds": ["g6-concept-1-3", "g5-concept-1-2", "g6-concept-1-4"],
+      "tags": ["grade6", "fractions", "mk"]
+    },
+    {
+      "id": "rag-005",
+      "query": "How to calculate the area and perimeter of a circle?",
+      "goldConceptIds": ["g7-concept-3-3", "g7-concept-3-2", "g8-concept-3-3"],
+      "tags": ["grade7", "geometry", "circle"]
+    },
+    {
+      "id": "rag-006",
+      "query": "Sto e linearna funkcija i kako da se nacrta grafik",
+      "goldConceptIds": ["g8-concept-2-1", "g8-concept-2-2", "g7-concept-2-1"],
+      "tags": ["grade8", "functions", "linear", "mk"]
+    },
+    {
+      "id": "rag-007",
+      "query": "Probability and basic counting — coin flips and dice",
+      "goldConceptIds": ["g7-concept-4-1", "g8-concept-4-1", "g9-concept-4-1"],
+      "tags": ["grade7", "probability", "statistics"]
+    },
+    {
+      "id": "rag-008",
+      "query": "Procenti i procentni smetki vo sekojdneven zivot",
+      "goldConceptIds": ["g6-concept-1-5", "g7-concept-1-5", "g5-concept-1-3"],
+      "tags": ["grade6", "percentages", "real-world", "mk"]
+    },
+    {
+      "id": "rag-009",
+      "query": "How to find the surface area and volume of a cylinder?",
+      "goldConceptIds": ["g9-concept-3-2", "g8-concept-3-4", "g9-concept-3-3"],
+      "tags": ["grade9", "geometry", "3d-shapes", "cylinder"]
+    },
+    {
+      "id": "rag-010",
+      "query": "Resavanje linearna ravenka so edna nepoznata",
+      "goldConceptIds": ["g7-concept-2-2", "g7-concept-2-1", "g8-concept-2-3"],
+      "tags": ["grade7", "algebra", "linear-equation", "mk"]
+    },
+    {
+      "id": "rag-011",
+      "query": "What are sets and how do we find union and intersection?",
+      "goldConceptIds": ["g7-concept-1-1", "g6-concept-1-1", "g8-concept-1-1"],
+      "tags": ["grade7", "sets", "union", "intersection"]
+    },
+    {
+      "id": "rag-012",
+      "query": "Trigonometrija sinusna i kosinusna teorema vo triagolnik",
+      "goldConceptIds": ["g9-concept-3-1", "g8-concept-3-1", "g9-concept-3-2"],
+      "tags": ["grade9", "trigonometry", "triangle", "mk"]
+    },
+    {
+      "id": "rag-013",
+      "query": "Mean median mode and range in statistics",
+      "goldConceptIds": ["g8-concept-4-2", "g7-concept-4-2", "g9-concept-4-2"],
+      "tags": ["grade8", "statistics", "mean", "median"]
+    },
+    {
+      "id": "rag-014",
+      "query": "Stepenuvanje i korenuvanje so primenuvanje na pravilata",
+      "goldConceptIds": ["g7-concept-1-4", "g8-concept-1-2", "g6-concept-1-4"],
+      "tags": ["grade7", "exponents", "roots", "mk"]
+    },
+    {
+      "id": "rag-015",
+      "query": "How to solve a system of two linear equations?",
+      "goldConceptIds": ["g9-concept-2-1", "g8-concept-2-3", "g9-concept-2-2"],
+      "tags": ["grade9", "algebra", "system-of-equations"]
+    },
+    {
+      "id": "rag-016",
+      "query": "Proporcionalni golemini i soodnosi vo realni problemi",
+      "goldConceptIds": ["g7-concept-1-6", "g6-concept-1-6", "g7-concept-1-5"],
+      "tags": ["grade7", "ratio", "proportion", "real-world", "mk"]
+    },
+    {
+      "id": "rag-017",
+      "query": "Angles in triangles — sum of angles and types of triangles",
+      "goldConceptIds": ["g5-concept-3-2", "g6-concept-3-1", "g7-concept-3-1"],
+      "tags": ["grade5", "geometry", "triangles", "angles"]
+    },
+    {
+      "id": "rag-018",
+      "query": "Decimalni broevi — sporedba, sobiranje, odzemanje",
+      "goldConceptIds": ["g5-concept-1-4", "g6-concept-1-2", "g4-concept-1-3"],
+      "tags": ["grade5", "decimals", "arithmetic", "mk"]
+    },
+    {
+      "id": "rag-019",
+      "query": "What is an algebraic expression and how do we simplify it?",
+      "goldConceptIds": ["g7-concept-2-1", "g8-concept-1-3", "g6-concept-2-1"],
+      "tags": ["grade7", "algebra", "expressions"]
+    },
+    {
+      "id": "rag-020",
+      "query": "Koordinaten sistem — nacrtuv tocka na ramninata",
+      "goldConceptIds": ["g5-concept-3-1", "g6-concept-3-2", "g7-concept-3-2"],
+      "tags": ["grade5", "geometry", "coordinate-system", "mk"]
+    }
+  ]
+}

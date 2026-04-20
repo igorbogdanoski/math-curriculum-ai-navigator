@@ -1,6 +1,7 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { QuizResult } from './firestoreService';
 import { logger } from '../utils/logger';
+import * as Sentry from '@sentry/react';
 
 interface MathNavDB extends DBSchema {
   pending_quizzes: {
@@ -153,21 +154,32 @@ export const getPendingQuizzesCount = async (): Promise<number> => {
 
 export const saveAICache = async (id: string, content: any): Promise<void> => {
   const db = await initDB();
-  await db.put('ai_cache', {
-    id,
-    content,
-    timestamp: Date.now()
-  });
+  await db.put('ai_cache', { id, content, timestamp: Date.now() });
+  // S36-B3: track cache writes as Sentry custom metric
+  Sentry.addBreadcrumb({ category: 'ai.cache', message: 'cache.write', data: { key: id.slice(0, 40) }, level: 'info' });
 };
 
 export const getAICache = async (id: string): Promise<any | null> => {
   const db = await initDB();
   const cached = await db.get('ai_cache', id);
-  // Cache for 24 hours
-  if (cached && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) {
-    return cached.content;
+  const hit = !!(cached && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000);
+  // S36-B3: track cache hit/miss as Sentry custom measurement (visible in Perf dashboard)
+  Sentry.addBreadcrumb({
+    category: 'ai.cache',
+    message: hit ? 'cache.hit' : 'cache.miss',
+    data: { key: id.slice(0, 40) },
+    level: 'info',
+  });
+  if (typeof window !== 'undefined') {
+    // Rolling window counter in sessionStorage for hit-rate display (no external dep)
+    try {
+      const raw = sessionStorage.getItem('ai_cache_stats') ?? '{"hits":0,"misses":0}';
+      const stats = JSON.parse(raw) as { hits: number; misses: number };
+      if (hit) stats.hits++; else stats.misses++;
+      sessionStorage.setItem('ai_cache_stats', JSON.stringify(stats));
+    } catch { /* non-fatal */ }
   }
-  return null;
+  return hit ? cached!.content : null;
 };
 
 // ── Quiz Content Pre-Cache (О1) ────────────────────────────────────────────

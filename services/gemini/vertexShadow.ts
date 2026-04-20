@@ -20,6 +20,16 @@ export const VERTEX_SHADOW_KEY = 'vertex_ai_shadow_enabled';
 const VERTEX_SHADOW_LOG_KEY = 'vertex_ai_shadow_log';
 const MAX_LOG_ENTRIES = 50;
 
+/** Fraction of requests that get a shadow call even when manually disabled (default 10%). */
+const ROLLOUT_PERCENT = (() => {
+  try {
+    const raw = (import.meta as unknown as { env: Record<string, string> }).env
+      ?.VITE_VERTEX_SHADOW_ROLLOUT_PERCENT;
+    const parsed = parseFloat(raw ?? '');
+    return isNaN(parsed) ? 0.10 : Math.max(0, Math.min(1, parsed));
+  } catch { return 0.10; }
+})();
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ShadowLogEntry {
@@ -62,6 +72,18 @@ export function isVertexShadowEnabled(): boolean {
 
 export function setVertexShadowEnabled(enabled: boolean): void {
   try { localStorage.setItem(VERTEX_SHADOW_KEY, String(enabled)); } catch { /* ignore */ }
+}
+
+/**
+ * S36-B5: Combined rollout check.
+ * Returns true when:
+ *   - The user manually enabled shadow mode, OR
+ *   - This request falls within the automatic rollout sample (default 10%).
+ * Always use this instead of `isVertexShadowEnabled()` at call sites.
+ */
+export function shouldRunVertexShadow(): boolean {
+  if (isVertexShadowEnabled()) return true;
+  return ROLLOUT_PERCENT > 0 && Math.random() < ROLLOUT_PERCENT;
 }
 
 // ─── Log helpers ──────────────────────────────────────────────────────────────

@@ -1144,6 +1144,92 @@ gate-5:  Визуелна проверка: нема regressions (Playwright vis
 | 2026-04-19 | S27-A0  | Индексер префрлен на firebase-admin SDK (го заобиколува `concept_embeddings: allow write: if false`).             | DONE   |
 | 2026-04-19 | S27-A3  | Modal registry: 7 модали → React.lazy + Suspense; `<ModalManager />` mount-нат на App root; 7 циклуси отстранети (madge: 10 → 3); TSC 0; 742/742 тестови. | DONE   |
 | 2026-04-19 | S27-A1  | …                                                                                                                | TODO   |
+| 2026-04-20 | S34     | Vercel build fix: `fetchPendingForumThreads` export committed (commit f90e903); TSC 0.                           | DONE   |
+```
+
+---
+
+## Sprints S35 — S37 — Post-S34 Strategic Roadmap (20 Apr 2026)
+
+> Контекст: после S34 (FunctionGrapher + 858/858 тестови) се уште ни остануваат 4 отворени позиции од S27 (A6-A9) + новооткриени можности. Следните 3 sprints закрепнуваат архитектура, AI Ops и педагошки layer — без компромиси, светско ниво.
+
+### Sprint S35 — Architectural Finish (А6-А9) — 1 недела
+
+```
+S35-A6  ⏳ Split views/ContentLibraryView.tsx (1490 LOC)
+           → useContentLibrary() hook + LibraryFilters + LibraryList + LibraryDetail
+S35-A7  ⏳ Split views/MaturaPracticeView.tsx (1384 LOC)
+           → 3 phase-components (setup / exam / review) + state-machine hook
+S35-A8  ⏳ Generic firestorePage<T>({ref, cursor, limit, orderBy}) helper
+           → refactor materials / matura / forum / classroom / school / annualPlans
+S35-A9  ⏳ Тестови за top-3 untested megafiles
+           (ExtractionHubView, GeneratedPresentation, useGeneratorActions)
+S35-A10 ⏳ Firestore composite indexes audit
+           → firestore.indexes.json: сите where+orderBy пара покриени
+```
+
+### Sprint S36 — AI Ops (World-class quality gates) — 1 недела
+
+```
+S36-B1  ✅ GitHub Action "index:embeddings" — auto-run при промени во data/curriculum/*
+S36-B2  ✅ RAG evaluation harness: 20 anchor queries × gold-set top-3 → CI gate (70%)
+S36-B3  ✅ Gemini cache hit-rate tracking (Sentry breadcrumbs + sessionStorage counter)
+S36-B4  ✅ Cost-guard alerts: Sentry + Slack webhook + Resend email (all optional, fire-and-forget)
+S36-B5  ✅ Vertex Shadow A/B rollout-10% (shouldRunVertexShadow, VITE_VERTEX_SHADOW_ROLLOUT_PERCENT)
+```
+
+### Sprint S37 — Pedagogy & UX уп-ниво — 1.5 недели
+
+```
+S37-C1  ⏳ DoK 1-4 heatmap во TeacherAnalyticsView (прашања × ученици × DoK)
+S37-C2  ⏳ Adaptive difficulty v2: IRT 3-PL модел замени moving-average
+S37-C3  ⏳ Misconception mining: кластерирање на грешни одговори → мини-лекции
+S37-C4  ⏳ Интернa матура banks: филтер + врска со училиштен annual plan
+S37-D1  ⏳ Command Palette 2.0: fuse.js search + keyboard shortcuts на концепти
+S37-D2  ⏳ Offline-first quiz play: IndexedDB queue + background-sync
+S37-D3  ⏳ Keyboard-first nav во MaturaPractice (▲▼/Enter)
+S37-D4  ⏳ A11y audit: axe-core CI + MathML fallback за KaTeX
+```
+
+### Cross-sprint Security track (co-embed во секој sprint)
+
+```
+SEC-1   ⏳ Sentry release tagging + source-maps dedupe
+SEC-2   ⏳ Firestore rules coverage test (@firebase/rules-unit-testing) за сите 23 collections
+SEC-3   ⏳ CSP report-only endpoint (/api/csp-report) + Upstash log
+SEC-4   ⏳ Dependabot weekly + npm audit CI gate на critical
+SEC-5   ⏳ Rate-limit по IP+UID на /api/gemini и /api/imagen
+```
+
+### Health gates (по секоја акција — задолжителни, без исклучок)
+
+```
+gate-1: TSC 0 errors
+gate-2: Full vitest suite зелена, +Δ нови тестови
+gate-3: Build PASS (vite build, perf:budget)
+gate-4: madge --circular: без нови runtime-hazard cycles
+gate-5: Playwright visual-regression: без regressions
+gate-6: Lighthouse: Perf ≥ 90, A11y ≥ 95, Best Practices ≥ 95
+```
+
+### Evidence log (S35-S37)
+
+```
+| date       | id       | summary                                                                              | status |
+|------------|----------|--------------------------------------------------------------------------------------|--------|
+| 2026-04-20 | S35      | Plan locked: A6, A7, A8, A9, A10 се во редослед — стартува A6.                       | PLAN   |
+| 2026-04-20 | S35-A6   | ContentLibraryView split: 1490 → 1043 LOC (-30%); extracted 4 modules (contentLibraryHelpers, StarDisplay, AITutorModal, PreviewModal); TSC 0; 858/858 tests ✅; madge 3 → 2 cycles. | DONE   |
+| 2026-04-20 | S35-A7   | MaturaPracticeView split: 1384 → 1175 LOC (-15%); extracted 3 modules (maturaPracticeHelpers, maturaPracticeGrading, MaturaPracticeUI); TSC 0; 858/858 tests ✅. | DONE   |
+| 2026-04-20 | S35-A8   | Generic `firestorePage<T>({collectionName, constraints, pageSize, cursor, mapper, filter})` helper extracted to `services/firestorePagination.ts`; `fetchLibraryPage` migrated; +6 unit tests (864/864 ✅); TSC 0. | DONE   |
+| 2026-04-20 | S35-A9   | Tests for 3 untested megafiles: extracted `extractionHubHelpers.ts` + tests (17), exported `isPureMathExpr` from GeneratedPresentation + tests (5), exported `buildAiPersonalizationSnippet` from useGeneratorActions + tests (6); +28 tests total → 892/892 ✅; TSC 0. | DONE   |
+| 2026-04-20 | S35-A10  | Firestore composite indexes audit: scanned all `where + orderBy` patterns (42 indexed); added 3 missing — `forum_threads(moderationStatus, createdAt asc)` (pending moderation queue), `matura_community_solutions(questionDocId, upvotes desc)` (М3 student solutions), `national_library(gradeLevel, type, conceptId, publishedAt)` (combined filter). 39 → 42 indexes; JSON validated. | DONE   |
+| 2026-04-20 | S35      | Sprint S35 (A6-A10) **COMPLETE** — architectural finish: 2 megafile splits (-656 LOC), generic firestorePage<T>, +34 tests (892 total), 3 missing composite indexes added. Ready for S36 AI Ops. | DONE   |
+| 2026-04-20 | S36-B1   | GitHub Action `embeddings-ci.yml` — auto re-index on push to data/curriculum/** or data/secondary/**; concurrency guard (cancel-in-progress:false); secret-check step; 15-min timeout. | DONE   |
+| 2026-04-20 | S36-B2   | RAG Recall@3 evaluation harness: `eval/rag-anchor-queries.json` (20 queries, mk+en, 70% threshold), `scripts/eval-rag-recall.ts` (cosine sim, Firestore live, table output, exit 1 on fail), `ai-eval.yml` rag-recall CI job. | DONE   |
+| 2026-04-20 | S36-B3   | Gemini cache hit-rate tracking: `indexedDBService.ts` — Sentry breadcrumbs on cache.write/hit/miss + sessionStorage rolling counter `ai_cache_stats:{hits,misses}` for Settings display. | DONE   |
+| 2026-04-20 | S36-B4   | Cost-guard multi-channel alerts: `costTracker.ts` — `dispatchCostAlert()` fires Sentry captureMessage (always) + Slack webhook (SLACK_WEBHOOK_URL) + Resend email (RESEND_API_KEY + ALERT_EMAIL); fire-and-forget, never throws. `.env.example` updated. | DONE   |
+| 2026-04-20 | S36-B5   | Vertex Shadow A/B rollout-10%: `shouldRunVertexShadow()` = manual flag OR `Math.random() < ROLLOUT_PERCENT` (default 0.10, env `VITE_VERTEX_SHADOW_ROLLOUT_PERCENT`); `core.proxy.ts` uses new guard; `@sentry/node` dynamic import fixed with `@vite-ignore`. | DONE   |
+| 2026-04-20 | S36      | Sprint S36 AI Ops **COMPLETE** — B1-B5 all done; TSC 0 ✅; 892/892 tests ✅ (72 files). Vertex Shadow auto-10% rollout, RAG recall CI gate, cost-guard Slack+email alerts live. | DONE   |
 ```
 
 ---

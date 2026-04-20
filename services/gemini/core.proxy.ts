@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger';
 import { getAuth } from 'firebase/auth';
-import { isVertexShadowEnabled, runVertexShadow } from './vertexShadow';
+import { shouldRunVertexShadow, runVertexShadow } from './vertexShadow';
 import { ApiError, RateLimitError, AuthError, ServerError } from '../apiErrors';
 import { PermissionError, AIServiceError, AppError, ErrorCode } from '../../utils/errors';
 import {
@@ -112,7 +112,7 @@ export async function callGeminiProxy(params: {
       }
       const geminiLatencyMs = Math.round(performance.now() - geminiCallStart);
       const result = await response.json();
-      if (isVertexShadowEnabled()) {
+      if (shouldRunVertexShadow()) {
         runVertexShadow(modelToUse, normalizeContents(params.contents), geminiLatencyMs, token)
           .catch(() => {});
       }
