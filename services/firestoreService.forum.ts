@@ -80,6 +80,9 @@ export interface ForumThread {
   isPinned: boolean;
   /** Soft-delete */
   deleted?: boolean;
+  /** Moderation: 'pending' = awaiting admin review, 'approved' = visible to all.
+   *  Absent on legacy threads → treated as approved. */
+  moderationStatus?: 'pending' | 'approved';
   /** Webb's DoK level tag (optional) */
   dokLevel?: 1 | 2 | 3 | 4;
   /** Attached Algebra Tiles PNG (Firebase Storage URL) */
@@ -132,6 +135,8 @@ export const createForumThread = async (data: {
   dokLevel?: 1 | 2 | 3 | 4;
   forumImageUrl?: string;
   shape3dShape?: string;
+  /** Pass true for admin/school_admin authors to skip moderation queue */
+  skipModeration?: boolean;
 }): Promise<string> => {
   const ref = await addDoc(collection(db, 'forum_threads'), {
     authorUid:        data.authorUid,
@@ -152,11 +157,20 @@ export const createForumThread = async (data: {
     reactionsGreat:   [],
     isPinned:         false,
     deleted:          false,
+    moderationStatus: data.skipModeration ? 'approved' : 'pending',
     ...(data.dokLevel     ? { dokLevel:      data.dokLevel }     : {}),
     ...(data.forumImageUrl? { forumImageUrl: data.forumImageUrl }: {}),
     ...(data.shape3dShape ? { shape3dShape:  data.shape3dShape }  : {}),
   });
   return ref.id;
+};
+
+export const approveForumThread = async (threadId: string): Promise<void> => {
+  await updateDoc(doc(db, 'forum_threads', threadId), { moderationStatus: 'approved' });
+};
+
+export const rejectForumThread = async (threadId: string): Promise<void> => {
+  await updateDoc(doc(db, 'forum_threads', threadId), { deleted: true, moderationStatus: 'rejected' });
 };
 
 export const fetchForumThreads = async (opts?: {
@@ -206,17 +220,20 @@ export const subscribeForumThreads = (
   const q = query(collection(db, 'forum_threads'), ...constraints);
 
   return onSnapshot(q, snap => {
-    const threads = snap.docs.map(d => ({
-      reactionsHelpful: [],
-      reactionsSame: [],
-      reactionsGreat: [],
-      isPinned: false,
-      hasBestAnswer: false,
-      category: 'question' as ThreadCategory,
-      lastActivityAt: null,
-      ...d.data(),
-      id: d.id,
-    } as unknown as ForumThread));
+    const threads = snap.docs
+      .map(d => ({
+        reactionsHelpful: [],
+        reactionsSame: [],
+        reactionsGreat: [],
+        isPinned: false,
+        hasBestAnswer: false,
+        category: 'question' as ThreadCategory,
+        lastActivityAt: null,
+        ...d.data(),
+        id: d.id,
+      } as unknown as ForumThread))
+      // Client-side moderation filter: hide pending (legacy threads without field → visible)
+      .filter(t => !t.moderationStatus || t.moderationStatus === 'approved');
     onUpdate(threads);
   }, () => { /* ignore permission errors — returns empty */ });
 };
@@ -311,6 +328,33 @@ export const fetchAllForumThreadsAdmin = async (limitCount = 100): Promise<Forum
 /** Admin: hard-restore a soft-deleted thread */
 export const restoreThread = async (threadId: string): Promise<void> => {
   await updateDoc(doc(db, 'forum_threads', threadId), { deleted: false });
+};
+
+/** Admin: fetch threads awaiting moderation approval */
+export const fetchPendingForumThreads = async (limitCount = 50): Promise<ForumThread[]> => {
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, 'forum_threads'),
+        where('moderationStatus', '==', 'pending'),
+        orderBy('createdAt', 'asc'),
+        limit(limitCount),
+      ),
+    );
+    return snap.docs.map(d => ({
+      reactionsHelpful: [],
+      reactionsSame: [],
+      reactionsGreat: [],
+      isPinned: false,
+      hasBestAnswer: false,
+      category: 'question' as ThreadCategory,
+      lastActivityAt: null,
+      ...d.data(),
+      id: d.id,
+    } as unknown as ForumThread));
+  } catch {
+    return [];
+  }
 };
 
 // ── Replies ───────────────────────────────────────────────────────────────────
