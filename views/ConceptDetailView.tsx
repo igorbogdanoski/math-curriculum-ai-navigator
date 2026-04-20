@@ -27,6 +27,7 @@ import { DokBadge, DokDistributionBar } from '../components/common/DokBadge';
 import { firestoreService } from '../services/firestoreService';
 import type { SavedQuestion, DokLevel } from '../types';
 import type { ConceptMastery } from '../services/firestoreService';
+import { MisconceptionMiniLessonCard } from '../components/analytics/MisconceptionMiniLessonCard';
 
 const DOK_LEVELS: DokLevel[] = [1, 2, 3, 4];
 
@@ -613,6 +614,14 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                     </div>
                   )}
                 </Card>
+                {(user?.role === 'teacher' || user?.role === 'school_admin') && firebaseUser?.uid && (
+                  <MisconceptionMiniLessonCard
+                    conceptId={concept.id}
+                    conceptTitle={concept.title}
+                    teacherUid={firebaseUser.uid}
+                  />
+                )}
+
                 <Card className="bg-slate-900 border-none text-white overflow-hidden ring-4 ring-blue-500/20">
                     <div className="flex items-center gap-2 mb-6">
                        <Sparkles className="w-5 h-5 text-blue-400" />
