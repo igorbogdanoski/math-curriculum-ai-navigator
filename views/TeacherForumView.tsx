@@ -14,7 +14,7 @@ import { markForumVisited } from '../hooks/useForumUnreadCount';
 import {
   MessageSquare, Plus, ThumbsUp, Award, ChevronLeft,
   Send, Loader2, Search, Tag, X, CheckCircle2, Pin,
-  TrendingUp, Clock, Sparkles, Users, Box, Link,
+  TrendingUp, Clock, Sparkles, Users, Box, Link, Shield,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -48,6 +48,9 @@ import {
   softDeleteThread,
   pinThread,
   hotScore,
+  approveForumThread,
+  rejectForumThread,
+  fetchPendingForumThreads,
   CATEGORY_CONFIG,
   REACTIONS,
   type ThreadCategory,
@@ -208,9 +211,10 @@ interface NewThreadModalProps {
   authorName: string;
   initialImageDataUrl?: string | null;
   initialTitle?: string;
+  skipModeration?: boolean;
 }
 
-const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, concepts, authorUid, authorName, initialImageDataUrl, initialTitle }) => {
+const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, concepts, authorUid, authorName, initialImageDataUrl, initialTitle, skipModeration }) => {
   const [title, setTitle] = useState(initialTitle ?? '');
   const [body, setBody] = useState('');
   const [conceptId, setConceptId] = useState('');
@@ -240,6 +244,7 @@ const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, con
         category,
         title:  title.trim(),
         body:   body.trim(),
+        skipModeration: skipModeration ?? false,
         ...(dokLevel ? { dokLevel } : {}),
         ...(forumImageUrl ? { forumImageUrl } : {}),
         ...(show3d ? { shape3dShape } : {}),
@@ -816,6 +821,9 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
   const [filterDok, setFilterDok] = useState<DokLevel | 0>(0);
   const [sortMode, setSortMode] = useState<SortMode>('new');
   const [draftImageUrl, setDraftImageUrl] = useState<string | null>(null);
+  const [showModerationTab, setShowModerationTab] = useState(false);
+  const [pendingThreads, setPendingThreads] = useState<ForumThread[]>([]);
+  const [moderatingId, setModeratingId] = useState<string | null>(null);
   const [generatingChallenge, setGeneratingChallenge] = useState(false);
   const unsubRef = useRef<(() => void) | null>(null);
   const didDeepLink = useRef(false);
@@ -867,6 +875,30 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
       fetchForumThread(threadIdProp).then(t => { if (t) setActiveThread(t); });
     }
   }, [threadIdProp, loading, threads]);
+
+  // ── Admin moderation queue load ────────────────────────────────────────────
+  useEffect(() => {
+    if (!showModerationTab) return;
+    fetchPendingForumThreads().then(setPendingThreads);
+  }, [showModerationTab]);
+
+  const handleApprove = async (thread: ForumThread) => {
+    setModeratingId(thread.id);
+    try {
+      await approveForumThread(thread.id);
+      setPendingThreads(prev => prev.filter(t => t.id !== thread.id));
+      addNotification('Нишката е одобрена и видлива.', 'success');
+    } finally { setModeratingId(null); }
+  };
+
+  const handleReject = async (thread: ForumThread) => {
+    setModeratingId(thread.id);
+    try {
+      await rejectForumThread(thread.id);
+      setPendingThreads(prev => prev.filter(t => t.id !== thread.id));
+      addNotification('Нишката е отфрлена.', 'info');
+    } finally { setModeratingId(null); }
+  };
 
   // ── Real-time subscription ─────────────────────────────────────────────────
   useEffect(() => {
@@ -1015,8 +1047,9 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
     return bTime - aTime;
   });
 
-  const myUid  = firebaseUser?.uid ?? '';
-  const myName = user?.name ?? firebaseUser?.email ?? 'Наставник';
+  const myUid    = firebaseUser?.uid ?? '';
+  const myName   = user?.name ?? firebaseUser?.email ?? 'Наставник';
+  const isAdmin  = user?.role === 'admin' || user?.role === 'school_admin';
 
   return (
     <div className="p-6 md:p-8 animate-fade-in max-w-4xl mx-auto">
@@ -1030,6 +1063,19 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
             <h1 className="text-2xl font-black text-gray-900">Наставнички Форум</h1>
             <p className="text-sm text-gray-500">Заедница за размена на искуства, идеи и совети</p>
           </div>
+          {isAdmin && pendingThreads.length === 0 && !showModerationTab && (
+            <button type="button" onClick={() => setShowModerationTab(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-300 text-amber-700 text-xs font-bold rounded-xl hover:bg-amber-50 transition">
+              <Shield className="w-3.5 h-3.5" /> Модерација
+            </button>
+          )}
+          {isAdmin && (pendingThreads.length > 0 || showModerationTab) && (
+            <button type="button" onClick={() => setShowModerationTab(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition ${showModerationTab ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
+              <Shield className="w-3.5 h-3.5" />
+              Модерација {pendingThreads.length > 0 && `(${pendingThreads.length})`}
+            </button>
+          )}
           {user?.role === 'admin' && (
             <button
               type="button"
@@ -1058,6 +1104,43 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
         />
       ) : (
         <>
+          {/* ── Admin Moderation Queue ── */}
+          {isAdmin && showModerationTab && (
+            <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+              <h2 className="text-sm font-black text-amber-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Shield className="w-4 h-4" /> Редица за модерација
+                {pendingThreads.length > 0 && <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{pendingThreads.length}</span>}
+              </h2>
+              {pendingThreads.length === 0 ? (
+                <p className="text-sm text-amber-600">Нема нишки кои чекаат одобрување.</p>
+              ) : (
+                <div className="space-y-2">
+                  {pendingThreads.map(t => (
+                    <div key={t.id} className="bg-white border border-amber-100 rounded-xl p-3 flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 text-sm truncate">{t.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{t.body}</p>
+                        <p className="text-[10px] text-gray-400 mt-1">{t.authorName} · {t.category}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button type="button" disabled={moderatingId === t.id}
+                          onClick={() => handleApprove(t)}
+                          className="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 disabled:opacity-50 transition">
+                          {moderatingId === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : '✓ Одобри'}
+                        </button>
+                        <button type="button" disabled={moderatingId === t.id}
+                          onClick={() => handleReject(t)}
+                          className="px-3 py-1.5 bg-red-100 text-red-700 text-xs font-bold rounded-lg hover:bg-red-200 disabled:opacity-50 transition">
+                          ✕ Отфрли
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Stats */}
           <StatsBanner stats={stats} />
 
@@ -1238,6 +1321,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
           authorName={myName}
           initialImageDataUrl={draftImageUrl}
           initialTitle={draftTitle ?? undefined}
+          skipModeration={isAdmin}
         />
       )}
     </div>
