@@ -98,3 +98,8 @@ tsconfig.tsbuildinfo
 /--outputs
 
 .vercel
+
+# Local dev scratch artifacts
+/keys-check.txt
+/list-env.ps1
+/yt-tests.txt

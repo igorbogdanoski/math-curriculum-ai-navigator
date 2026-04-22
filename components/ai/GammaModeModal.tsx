@@ -964,7 +964,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
             className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
             <Printer className="w-3.5 h-3.5" />
           </button>
-          <button type="button" onClick={() => printGammaHandout(data)} title="Генерирај Handout за учениците"
+          <button type="button" onClick={() => printGammaHandout(data, { isPro: !!(user?.isPremium), schoolName: user?.schoolName ?? null, logoUrl: user?.schoolLogoUrl ?? null })} title="Генерирај Handout за учениците"
             className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition">
             <BookText className="w-3.5 h-3.5" />
           </button>

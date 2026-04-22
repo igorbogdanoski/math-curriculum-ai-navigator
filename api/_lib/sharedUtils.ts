@@ -160,6 +160,7 @@ export function setCorsHeaders(res: VercelResponse): void {
 // ---------------------------------------------------------------------------
 import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
+import { checkSlidingWindow, extractClientIp } from './rateLimitInMemory';
 
 let upstashRatelimit: Ratelimit | null = null;
 let upstashIpRatelimit: Ratelimit | null = null;
@@ -196,7 +197,7 @@ function getUpstashIpRatelimit(): Ratelimit | null {
   return upstashIpRatelimit;
 }
 
-// In-memory fallback (best-effort, resets on cold start)
+// In-memory fallback (best-effort, resets on cold start) — see ./rateLimitInMemory.ts
 const rlMap = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW_MS = 60000;
 const MAX_REQUESTS_PER_WINDOW = 20;
@@ -207,17 +208,10 @@ async function checkRateLimit(identifier: string): Promise<boolean> {
     const { success } = await limiter.limit(identifier);
     return success;
   }
-  // Fallback: in-memory
-  const now = Date.now();
-  let timestamps = rlMap.get(identifier) || [];
-  timestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-  if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
-    rlMap.set(identifier, timestamps);
-    return false;
-  }
-  timestamps.push(now);
-  rlMap.set(identifier, timestamps);
-  return true;
+  return checkSlidingWindow(rlMap, identifier, {
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    maxRequests: MAX_REQUESTS_PER_WINDOW,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -239,14 +233,9 @@ export async function authenticateAndValidate(
   }
 
   // Rate limit identifier (either Firebase UID or IP Address).
-  // x-forwarded-for on Vercel may contain a comma-separated proxy chain
-  // (client, proxy1, proxy2). Take the first (originating client) IP and
-  // fall back to the direct socket address to prevent trivial spoofing.
-  const xff = req.headers['x-forwarded-for'];
-  const xffStr = Array.isArray(xff) ? xff[0] : xff;
-  const firstIp = typeof xffStr === 'string' ? xffStr.split(',')[0]?.trim() : undefined;
-  const socketIp = req.socket?.remoteAddress;
-  let rlIdentifier = firstIp || socketIp || 'anonymous';
+  // SEC-5 — extractClientIp handles x-forwarded-for proxy chain safely.
+  const firstIp = extractClientIp(req.headers, req.socket?.remoteAddress);
+  let rlIdentifier = firstIp ?? 'anonymous';
   let authenticatedUid: string | undefined;
 
   // 2. Verify Firebase ID token

@@ -12,7 +12,8 @@ import { useNavigation } from '../../contexts/NavigationContext';
 import { geminiService } from '../../services/geminiService';
 import { sanitizePromptInput } from '../../services/gemini/core';
 import { firestoreService, type QuizResult } from '../../services/firestoreService';
-import { Sparkles, TicketCheck, ExternalLink, Users, CheckCircle2, Copy, CheckCheck } from 'lucide-react';
+import { Sparkles, TicketCheck, ExternalLink, Users, CheckCircle2, Copy, CheckCheck, FileText } from 'lucide-react';
+import { buildMaturaDeepLink, inferTopicAreaFromTheme } from '../matura/maturaDeepLink';
 
 interface PlannerItemModalProps {
   item?: Partial<PlannerItem>;
@@ -458,6 +459,27 @@ export const PlannerItemModal: React.FC<PlannerItemModalProps> = ({ item }) => {
                             Види подготовка
                         </button>
                     )}
+                    {(() => {
+                      // S37-C4 — deep-link to Internal matura bank pre-filtered by theme/topic.
+                      const lp = formData.lessonPlanId ? getLessonPlan(formData.lessonPlanId) : null;
+                      const themeText = lp?.theme || lp?.title || formData.title || '';
+                      const topicArea = inferTopicAreaFromTheme(themeText);
+                      if (!topicArea) return null;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            hideModal();
+                            navigate(buildMaturaDeepLink({ tab: 'ucilisna', topic: topicArea }));
+                          }}
+                          className="flex items-center text-violet-700 hover:text-violet-900 font-medium px-3 py-2 rounded-lg hover:bg-violet-50 transition-colors"
+                          title="Отвори ја внатрешната матура за оваа тема"
+                        >
+                          <FileText className="w-5 h-5 mr-2"/>
+                          📝 Внатрешна матура
+                        </button>
+                      );
+                    })()}
                 </div>
                 <div className="flex gap-3">
                      <button

@@ -39,6 +39,7 @@ import {
 } from './maturaPractice/maturaPracticeHelpers';
 import { gradePart2, gradePart3 } from './maturaPractice/maturaPracticeGrading';
 import { TopicChip, ProgressBar, ScorePill } from './maturaPractice/MaturaPracticeUI';
+import { resolveMCKey, nextFocusedIdx } from './maturaPractice/maturaKeyboardNav';
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
@@ -340,6 +341,32 @@ ${item.questionText}
     onUpdate({ mcPick: choice, submitted: true });
   }, [state.submitted, onUpdate]);
 
+  // S37-D3: Keyboard-first MC selection — ▲▼ cycle + А/Б/В/Г / 1-4 direct + Enter submit.
+  const availableChoices = useMemo(
+    () => (open ? [] : CHOICES.filter(c => item.choices?.[c])),
+    [open, item.choices],
+  );
+  const [focusedChoiceIdx, setFocusedChoiceIdx] = useState(0);
+  useEffect(() => { setFocusedChoiceIdx(0); }, [item.questionNumber]);
+  useEffect(() => {
+    if (open || state.submitted || availableChoices.length === 0) return;
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+      const action = resolveMCKey(e.key, availableChoices);
+      if (action.type === 'noop') return;
+      e.preventDefault();
+      if (action.type === 'select') handleMC(action.choice);
+      else if (action.type === 'cycle') {
+        setFocusedChoiceIdx(i => nextFocusedIdx(i, action.direction, availableChoices.length));
+      } else if (action.type === 'submit-focused' && availableChoices[focusedChoiceIdx]) {
+        handleMC(availableChoices[focusedChoiceIdx]);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, state.submitted, availableChoices, focusedChoiceIdx, handleMC]);
+
   // Part 2 AI grade
   const handleGradeP2 = useCallback(async () => {
     onUpdate({ grading: true, aiError: undefined });
@@ -397,15 +424,17 @@ ${item.questionText}
       {/* â”€â”€ Part 1 MC â”€â”€ */}
       {!open && (
         <div className="px-5 pb-4 space-y-2 mt-2">
-          {CHOICES.filter(c => item.choices?.[c]).map(choice => {
+          {availableChoices.map((choice, choiceIdx) => {
             const isCorrectChoice = choice === item.correctAnswer.trim();
             const isPicked        = state.mcPick === choice;
+            const isFocused       = !state.submitted && focusedChoiceIdx === choiceIdx;
             let bg = 'bg-white border-gray-200 hover:border-brand-primary hover:bg-blue-50';
             if (state.submitted) {
               if (isCorrectChoice) bg = 'bg-emerald-50 border-emerald-400 text-emerald-800';
               else if (isPicked)   bg = 'bg-rose-50 border-rose-400 text-rose-800';
               else                 bg = 'bg-white border-gray-100 opacity-60';
             } else if (isPicked)  bg = 'bg-blue-50 border-brand-primary';
+            else if (isFocused)   bg = 'bg-indigo-50 border-indigo-400 ring-2 ring-indigo-200';
             return (
               <button
                 key={choice} type="button"
@@ -1192,7 +1221,7 @@ export function MaturaPracticeView() {
       )}
       {/* Keyboard nav hint */}
       <p className="text-center text-[11px] text-gray-300 mt-3 hidden sm:block">
-        ← назад &nbsp;·&nbsp; → / Enter следно
+        ▲▼ избор &nbsp;·&nbsp; А Б В Г / 1-4 директно &nbsp;·&nbsp; Enter потврди &nbsp;·&nbsp; ← назад / → следно
       </p>
     </div>
   );

@@ -303,6 +303,13 @@ export default defineConfig(({ mode }) => {
           org: process.env.SENTRY_ORG || 'math-nav-org',
           project: process.env.SENTRY_PROJECT || 'math-nav',
           authToken: process.env.SENTRY_AUTH_TOKEN,
+          // SEC-1: explicit release tag — keeps runtime Sentry.init({release})
+          // aligned with the source-map upload, deduping issues across deploys.
+          release: {
+            name: process.env.VERCEL_GIT_COMMIT_SHA
+              ?? process.env.VITE_VERCEL_GIT_COMMIT_SHA
+              ?? `local-${Date.now()}`,
+          },
         }) : undefined,
       ].filter(Boolean) as Plugin[],
       // SEC-1: Expose git SHA to client for Sentry release tagging.

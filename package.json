@@ -26,6 +26,7 @@
     "preview": "vite preview",
     "test": "vitest run --reporter=verbose",
     "test:watch": "vitest",
+    "test:rules": "vitest run --config vitest.config.rules.ts --reporter=verbose",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",

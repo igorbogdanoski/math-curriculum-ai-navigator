@@ -28,11 +28,20 @@ import {
 import { InternalMaturaTab, collectPracticeConceptIds } from '../components/matura/InternalMaturaTab';
 export { collectPracticeConceptIds };
 import { TeacherTestBuilder } from '../components/matura/TeacherTestBuilder';
+import { parseMaturaDeepLink } from '../components/matura/maturaDeepLink';
 import type { MaturaExamMeta } from '../services/firestoreService.matura';
 
 export function MaturaLibraryView() {
-  // ── Tab ──
-  const [activeTab, setActiveTab] = useState<'dim' | 'ucilisna' | 'teacher'>('dim');
+  // ── Tab (with S37-C4 deep-link support) ──
+  const deepLink = useMemo(
+    () => (typeof window !== 'undefined' ? parseMaturaDeepLink(window.location.search) : {}),
+    [],
+  );
+  const [activeTab, setActiveTab] = useState<'dim' | 'ucilisna' | 'teacher'>(deepLink.tab ?? 'dim');
+  const internalInitialFilter = useMemo(
+    () => (deepLink.topic || deepLink.dok ? { topicArea: deepLink.topic, dokLevel: deepLink.dok } : undefined),
+    [deepLink.topic, deepLink.dok],
+  );
 
   // ── Firestore data ──
   const { exams, loading: examsLoading, error: examsError } = useMaturaExams();
@@ -321,7 +330,7 @@ export function MaturaLibraryView() {
       </div>
 
       {/* ══ Училишна матура tab ══ */}
-      {activeTab === 'ucilisna' && <InternalMaturaTab />}
+      {activeTab === 'ucilisna' && <InternalMaturaTab initialFilter={internalInitialFilter} />}
 
       {/* ══ Teacher test builder tab ══ */}
       {activeTab === 'teacher' && <TeacherTestBuilder questions={allQuestions} />}

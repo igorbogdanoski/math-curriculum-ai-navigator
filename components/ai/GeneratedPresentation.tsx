@@ -31,7 +31,7 @@ const getPptxgen = async () => {
 };
 
 /** Returns true if the entire string is a single $...$ or $$...$$ expression */
-const isPureMathExpr = (text: string): boolean => {
+export const isPureMathExpr = (text: string): boolean => {
   const t = text.trim();
   return /^\$\$[\s\S]+\$\$$/.test(t) || /^\$[^$\n]+\$$/.test(t);
 };

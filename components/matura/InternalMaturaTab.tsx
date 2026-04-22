@@ -41,13 +41,18 @@ export function collectPracticeConceptIds(
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function InternalMaturaTab() {
+export interface InternalMaturaTabProps {
+  /** S37-C4 — deep-link from Planner / AnnualPlan / URL params. */
+  initialFilter?: { topicArea?: string; dokLevel?: 1|2|3|4 };
+}
+
+export function InternalMaturaTab({ initialFilter }: InternalMaturaTabProps = {}) {
   const { firebaseUser } = useAuth();
   const [allQuestions, setAllQuestions] = useState<InternalQuestion[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [filterTopic,  setFilterTopic]  = useState('');
-  const [filterDok,    setFilterDok]    = useState<0|1|2|3|4>(0);
+  const [filterTopic,  setFilterTopic]  = useState(initialFilter?.topicArea ?? '');
+  const [filterDok,    setFilterDok]    = useState<0|1|2|3|4>(initialFilter?.dokLevel ?? 0);
   const [filterType,   setFilterType]   = useState<''|'mc'|'open'>('');
   const [search,       setSearch]       = useState('');
   const [page,         setPage]         = useState(0);

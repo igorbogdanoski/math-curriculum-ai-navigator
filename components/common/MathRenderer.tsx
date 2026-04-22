@@ -111,6 +111,9 @@ const katexOptions = {
     throwOnError: false,
     strict: false,
     trust: true,
+    // S37-D4: emit both HTML and MathML so screen-readers (and browsers
+    // without KaTeX CSS) can fall back to native MathML rendering.
+    output: 'htmlAndMathml' as const,
     macros: {
         "\\R": "\\mathbb{R}",
         "\\N": "\\mathbb{N}",

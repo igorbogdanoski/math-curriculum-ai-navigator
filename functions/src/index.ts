@@ -224,6 +224,7 @@ interface ForumReplyDeliveryResult {
   dryRun: boolean;
   successCount: number;
   failureCount: number;
+  prunedTokenUids?: string[];
 }
 
 const getUserRole = async (uid: string): Promise<string> => {
@@ -284,7 +285,7 @@ const deliverForumReplyNotification = async (
     };
   }
 
-  const tokenSet = new Set<string>();
+  const tokenToUid = new Map<string, string>();
   const missingTokenUids: string[] = [];
   await Promise.all(
     Array.from(recipientUids).map(async (uid) => {
@@ -292,7 +293,7 @@ const deliverForumReplyNotification = async (
         const tokenSnap = await db.collection('user_tokens').doc(`${uid}_web`).get();
         const token = tokenSnap.data()?.token;
         if (typeof token === 'string' && token.length > 0) {
-          tokenSet.add(token);
+          if (!tokenToUid.has(token)) tokenToUid.set(token, uid);
         } else {
           missingTokenUids.push(uid);
         }
@@ -302,7 +303,7 @@ const deliverForumReplyNotification = async (
     }),
   );
 
-  const tokens = Array.from(tokenSet);
+  const tokens = Array.from(tokenToUid.keys());
   if (tokens.length === 0) {
     console.info('[onForumReplyCreated] no tokens', {
       threadId: input.threadId,
@@ -375,11 +376,38 @@ const deliverForumReplyNotification = async (
     },
   });
 
+  // S19-P2 hardening: prune stale tokens (unregistered/invalid) so the next
+  // replay does not waste multicast slots on dead browser registrations.
+  const prunedTokenUids: string[] = [];
+  if (result.failureCount > 0) {
+    const stalePruneOps: Promise<unknown>[] = [];
+    result.responses.forEach((resp, idx) => {
+      if (resp.success) return;
+      const code = resp.error?.code ?? '';
+      const isStale =
+        code === 'messaging/registration-token-not-registered' ||
+        code === 'messaging/invalid-registration-token' ||
+        code === 'messaging/invalid-argument';
+      if (!isStale) return;
+      const token = tokens[idx];
+      const uid = token ? tokenToUid.get(token) : undefined;
+      if (!uid) return;
+      prunedTokenUids.push(uid);
+      stalePruneOps.push(
+        db.collection('user_tokens').doc(`${uid}_web`).delete().catch(() => undefined),
+      );
+    });
+    if (stalePruneOps.length > 0) {
+      await Promise.all(stalePruneOps);
+    }
+  }
+
   console.info('[onForumReplyCreated] delivery result', {
     threadId: input.threadId,
     replyId: input.replyId,
     successCount: result.successCount,
     failureCount: result.failureCount,
+    prunedTokenUids,
     source: options.source,
     dryRun: false,
   });
@@ -394,6 +422,7 @@ const deliverForumReplyNotification = async (
     dryRun: false,
     successCount: result.successCount,
     failureCount: result.failureCount,
+    prunedTokenUids,
   };
 };
 

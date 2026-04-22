@@ -167,7 +167,8 @@ function blankLines(n: number): string {
   return Array.from({ length: n }, () => '<div class="blank-line"></div>').join('');
 }
 
-export function printGammaHandout(data: AIGeneratedPresentation): void {
+export function printGammaHandout(data: AIGeneratedPresentation, options?: Pick<GammaExportOptions, 'isPro' | 'schoolName' | 'logoUrl'>): void {
+  const brandText = options?.isPro && options.schoolName ? options.schoolName : 'ai.mismath.net';
   const win = window.open('', '_blank', 'width=900,height=700');
   if (!win) return;
 
@@ -245,8 +246,9 @@ export function printGammaHandout(data: AIGeneratedPresentation): void {
   </style>
 </head><body>
   <div style="text-align:center;padding:12px 0 20px;border-bottom:3px solid #4f46e5;margin-bottom:4px">
+    ${options?.isPro && options.logoUrl ? `<img src="${options.logoUrl}" alt="лого" style="height:36px;object-fit:contain;margin:0 auto 8px;display:block" />` : ''}
     <h1 style="font-size:20px;color:#1e1b4b;font-weight:900">${data.title}</h1>
-    <p style="font-size:12px;color:#6b7280;margin-top:4px">${data.topic} · ${data.gradeLevel}. одделение · ai.mismath.net</p>
+    <p style="font-size:12px;color:#6b7280;margin-top:4px">${data.topic} · ${data.gradeLevel}. одделение · ${brandText}</p>
   </div>
   ${slidesHtml}
   <script>window.onload = () => { window.print(); }<\/script>

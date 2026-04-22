@@ -5,6 +5,10 @@ import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { ICONS } from '../../constants';
 import {
+  nextRecent, readRecent, writeRecent, nextCursor,
+  type RecentEntry,
+} from './commandPaletteHelpers';
+import {
   Home, BookOpen, Calendar, BarChart3, BookMarked, GraduationCap,
   Library, Settings, UserCircle2, Radio, FileText, ClipboardList,
   Sparkles, Wand2, PenTool, HelpCircle, Network, Search,
@@ -24,15 +28,8 @@ interface CommandItem {
   keywords?: string;
 }
 
-const RECENT_KEY = 'cmd_palette_recent_v1';
-const MAX_RECENT = 5;
-
-function saveRecent(item: { label: string; path: string; icon: string }) {
-  try {
-    const prev: typeof item[] = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]');
-    const filtered = prev.filter(r => r.path !== item.path);
-    localStorage.setItem(RECENT_KEY, JSON.stringify([item, ...filtered].slice(0, MAX_RECENT)));
-  } catch { /* noop */ }
+function saveRecent(item: RecentEntry) {
+  writeRecent(nextRecent(readRecent(), item));
 }
 
 // ─── CommandPalette ───────────────────────────────────────────────────────────
@@ -162,18 +159,15 @@ export const CommandPalette: React.FC = () => {
   // ── Recent items ─────────────────────────────────────────────────────────
   const recentItems = useMemo<CommandItem[]>(() => {
     if (query.trim()) return [];
-    try {
-      const stored: { label: string; path: string }[] = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]');
-      return stored.map(r => ({
-        id: `recent-${r.path}`,
-        label: r.label,
-        description: r.path,
-        icon: ICONS.arrowRight,
-        group: 'recent' as const,
-        color: 'text-gray-400',
-        action: () => go(r.path, r.label, 'home'),
-      }));
-    } catch { return []; }
+    return readRecent().map(r => ({
+      id: `recent-${r.path}`,
+      label: r.label,
+      description: r.path,
+      icon: ICONS.arrowRight,
+      group: 'recent' as const,
+      color: 'text-gray-400',
+      action: () => go(r.path, r.label, 'home'),
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
@@ -198,10 +192,10 @@ export const CommandPalette: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIdx(i => Math.min(i + 1, filtered.length - 1));
+      setSelectedIdx(i => nextCursor(i, 1, filtered.length));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIdx(i => Math.max(i - 1, 0));
+      setSelectedIdx(i => nextCursor(i, -1, filtered.length));
     } else if (e.key === 'Enter' && filtered[selectedIdx]) {
       filtered[selectedIdx].action();
     }

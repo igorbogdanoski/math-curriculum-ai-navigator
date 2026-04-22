@@ -593,6 +593,56 @@
                                            "order":  "DESCENDING"
                                        }
                                    ]
+                    },
+                    {
+                        "collectionGroup":  "forum_threads",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "moderationStatus",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "createdAt",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "matura_community_solutions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "questionDocId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "upvotes",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "national_library",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "gradeLevel",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "type",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "conceptId",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "publishedAt",
+                                           "order":  "DESCENDING"
+                                       }
+                                   ]
                     }
                 ],
     "fieldOverrides":  [

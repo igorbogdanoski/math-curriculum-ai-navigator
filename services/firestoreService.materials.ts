@@ -9,6 +9,7 @@ import { callEmbeddingProxy } from './gemini/core';
 import { NotFoundError, OfflineError, FirestoreError } from '../utils/errors';
 import { moderateMaterial } from '../utils/contentModeration';
 import { recordE2EAssignmentWrite } from './e2eTesting';
+import { firestorePage } from './firestorePagination';
 
 export const fetchFullCurriculum = async (): Promise<CurriculumModule> => {
     // Проверка на конекцијата пред да се вчита новиот курикулум.
@@ -492,27 +493,17 @@ export const fetchLibraryPage = async (
     pageSize = 50,
     cursor?: QueryDocumentSnapshot,
 ): Promise<{ items: CachedMaterial[]; hasMore: boolean; lastDoc: QueryDocumentSnapshot | null }> => {
-    try {
-        const baseConstraints = [
+    return firestorePage<CachedMaterial>({
+        collectionName: 'cached_ai_materials',
+        constraints: [
             where('teacherUid', '==', teacherUid),
             orderBy('createdAt', 'desc'),
-            limit(pageSize + 1),
-        ];
-        const q = cursor
-            ? query(collection(db, 'cached_ai_materials'), ...baseConstraints, startAfter(cursor))
-            : query(collection(db, 'cached_ai_materials'), ...baseConstraints);
-        const snap = await getDocs(q);
-        const hasMore = snap.docs.length > pageSize;
-        const docs = hasMore ? snap.docs.slice(0, pageSize) : snap.docs;
-        return {
-            items: docs.map(d => ({ id: d.id, ...d.data() } as CachedMaterial)).filter(m => !m.archivedAt),
-            hasMore,
-            lastDoc: docs.length > 0 ? (docs[docs.length - 1] as QueryDocumentSnapshot) : null,
-        };
-    } catch (error) {
-        logger.error('Error fetching library page:', error);
-        return { items: [], hasMore: false, lastDoc: null };
-    }
+        ],
+        pageSize,
+        cursor,
+        filter: (m) => !m.archivedAt,
+        errorTag: 'library',
+    });
 };
 
 export const getCachedMaterialById = async (id: string): Promise<CachedMaterial | null> => {
