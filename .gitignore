@@ -103,3 +103,5 @@ tsconfig.tsbuildinfo
 /keys-check.txt
 /list-env.ps1
 /yt-tests.txt
+/.commit-msg.txt
+/test-out.txt
