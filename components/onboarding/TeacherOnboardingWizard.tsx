@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sparkles, School, BookOpen, BarChart2, CheckCircle, ChevronRight, ChevronLeft, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUserPreferences } from '../../contexts/UserPreferencesContext';
 import type { TeachingProfile } from '../../types';
+import { trackEvent } from '../../services/telemetryService';
 
 const STYLES: { value: TeachingProfile['style']; label: string; desc: string }[] = [
     { value: 'Constructivist',    label: 'Конструктивизам',     desc: 'Учениците ги изградуваат знаењата преку искуство' },
@@ -35,6 +36,16 @@ export const TeacherOnboardingWizard: React.FC<Props> = ({ onClose }) => {
     const isLast = step === STEPS.length - 1;
     const StepIcon = STEPS[step].icon;
 
+    // S39-F3: telemetry — onboarding_started fires once on mount
+    useEffect(() => {
+        trackEvent('onboarding_started', { wizard: 'teacher', totalSteps: STEPS.length });
+    }, []);
+
+    const handleSkip = () => {
+        trackEvent('onboarding_skipped', { wizard: 'teacher', atStep: step });
+        onClose();
+    };
+
     const handleFinish = async () => {
         if (!user) { onClose(); return; }
         setSaving(true);
@@ -44,6 +55,11 @@ export const TeacherOnboardingWizard: React.FC<Props> = ({ onClose }) => {
                 name: name.trim() || user.name,
                 schoolName: schoolName.trim() || user.schoolName,
                 municipality: municipality.trim() || user.municipality,
+                style,
+            });
+            trackEvent('onboarding_completed', {
+                wizard: 'teacher',
+                hasSchool: Boolean(schoolName.trim()),
                 style,
             });
         } catch {
@@ -80,7 +96,7 @@ export const TeacherOnboardingWizard: React.FC<Props> = ({ onClose }) => {
                             <h2 className="text-lg font-bold text-gray-800">{STEPS[step].title}</h2>
                         </div>
                     </div>
-                    <button type="button" onClick={onClose} title="Прескокни" className="text-gray-300 hover:text-gray-500 transition">
+                    <button type="button" onClick={handleSkip} title="Прескокни" className="text-gray-300 hover:text-gray-500 transition">
                         <X className="w-5 h-5" />
                     </button>
                 </div>

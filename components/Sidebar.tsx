@@ -1,7 +1,8 @@
 import { LANGUAGES } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { trackEvent } from '../services/telemetryService';
 import { APP_NAME, ICONS } from '../constants';
 import { LanguageSelector } from './common/LanguageSelector';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -71,6 +72,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     const { navigate } = useNavigation();
     const forumUnread = useForumUnreadCount(firebaseUser?.uid ?? null);
     const { mission, streakLabel } = useMaturaMissions();
+
+    // S39-F4: emit quota_warning_seen once per session when balance is at or below threshold
+    const quotaWarningEmittedRef = useRef(false);
+    useEffect(() => {
+        if (quotaWarningEmittedRef.current) return;
+        if (user?.isPremium || user?.hasUnlimitedCredits || user?.role === 'admin') return;
+        const balance = user?.aiCreditsBalance;
+        if (typeof balance !== 'number') return;
+        if (balance > 10 || balance < 0) return;
+        quotaWarningEmittedRef.current = true;
+        trackEvent('quota_warning_seen', { balance, source: 'sidebar_meter', threshold: 10 });
+    }, [user?.aiCreditsBalance, user?.isPremium, user?.hasUnlimitedCredits, user?.role]);
 
     // Progressive disclosure — secondary nav collapsed by default, auto-opens when on a secondary path
     const [showMore, setShowMore] = useState(() => {
