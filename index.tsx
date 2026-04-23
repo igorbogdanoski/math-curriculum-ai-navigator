@@ -5,9 +5,12 @@ import { registerSW } from 'virtual:pwa-register';
 import './app.css';
 import App from './App';
 import { initSentry, reportWebVitals } from './services/sentryService';
+import { initTelemetry } from './services/telemetryService';
 
 // Initialize Sentry before rendering — no-op if VITE_SENTRY_DSN is not set
 initSentry();
+// S39-F1: Initialize PostHog telemetry — no-op if VITE_POSTHOG_KEY is not set / dev mode
+initTelemetry();
 
 const queryClient = new QueryClient({
   defaultOptions: {

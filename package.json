@@ -61,6 +61,7 @@
     "mathjs": "^15.1.1",
     "mathlive": "^0.108.3",
     "pdf-parse": "^1.1.1",
+    "posthog-js": "^1.370.1",
     "pptxgenjs": "^4.0.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.1",

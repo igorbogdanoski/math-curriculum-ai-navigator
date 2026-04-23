@@ -1,0 +1,11 @@
+feat-s39-f1: PostHog telemetry SDK + signup/login smoke events
+
+- posthog-js@1.370.1 installed (EU host default).
+- services/telemetryService.ts: init, identify, reset, trackEvent.
+- Role-based sample rates (teacher 1.0 / student 0.5 / unknown 0.25)
+  with deterministic per-user hash sampling.
+- Auto no-op in dev mode and when VITE_POSTHOG_KEY is empty.
+- Wired into index.tsx after Sentry init.
+- LoginView emits signup_completed + login_completed (email/google).
+- 9 new unit tests (1018/1018 passing, 81 files); TSC 0.
+- .env.example updated with VITE_POSTHOG_KEY/HOST.

@@ -5,6 +5,7 @@ import { APP_NAME, ICONS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
 import type { User } from "firebase/auth";
+import { trackEvent } from '../services/telemetryService';
 
 
 // Google logo SVG
@@ -354,6 +355,7 @@ export const LoginView: React.FC = () => {
         setIsGoogleLoading(true);
         try {
             await loginWithGoogle();
+            trackEvent('login_completed', { method: 'google' });
         } catch (err) {
             setError(err instanceof Error ? err.message : "Настана непозната грешка.");
         } finally {
@@ -367,6 +369,7 @@ export const LoginView: React.FC = () => {
         setIsLoading(true);
         try {
             await login(email, password);
+            trackEvent('login_completed', { method: 'email' });
         } catch (err) {
             setError(err instanceof Error ? err.message : "Настана непозната грешка.");
         } finally {
@@ -396,6 +399,7 @@ export const LoginView: React.FC = () => {
             const finalSchoolId = schoolId === '__other__' ? '' : schoolId;
             const finalSchoolName = schoolId === '__other__' ? schoolName.trim() : '';
             await register(email, password, name, photoFile, finalSchoolId, undefined, finalSchoolName);
+            trackEvent('signup_completed', { method: 'email', hasSchool: Boolean(finalSchoolId || finalSchoolName) });
             // onAuthStateChanged automatically shows VerifyEmailNotice after Firebase user is created
         } catch (err) {
             setError(err instanceof Error ? err.message : "Настана непозната грешка.");
