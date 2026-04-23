@@ -9,6 +9,7 @@ import type { User } from 'firebase/auth';
 import { geminiService } from '../../services/geminiService';
 import { firestoreService } from '../../services/firestoreService';
 import { useAcademyProgress } from '../../contexts/AcademyProgressContext';
+import { trackFirstTimeEvent, trackEvent } from '../../services/telemetryService';
 import type {
   AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric,
   AIGeneratedIllustration, AIGeneratedLearningPaths, AIGeneratedWorkedExample,
@@ -105,6 +106,11 @@ export function useGeneratorSave({
       const newAchievements = trackMaterialSaved(libType);
       const achievementMsg = newAchievements.length ? ` Ново достигнување: ${newAchievements.join(', ')}` : '';
       addNotification(`Зачувано во библиотека! Прегледај и публикувај во „Библиотека". 📚${achievementMsg}`, 'success');
+      // S39-F2: telemetry
+      trackEvent('feature_open_save_to_library', { libType, materialType: state.materialType });
+      if (libType === 'ideas' || libType === 'assessment' || libType === 'quiz') {
+        trackFirstTimeEvent(firebaseUser.uid, 'first_lesson_saved', { libType });
+      }
     } catch (err) {
       logger.error('[Save to library]', err);
       const msg = err instanceof Error ? err.message : '';

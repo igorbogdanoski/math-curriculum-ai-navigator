@@ -11,6 +11,7 @@ import { geminiService } from '../../services/geminiService';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { firestoreService } from '../../services/firestoreService';
+import { trackCreditConsumed } from '../../services/telemetryService';
 
 // ─── Helpers for LaTeX→Image conversion ──────────────────────────────────────
 const HAS_MATH = /\$[\s\S]+?\$/;
@@ -414,12 +415,19 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
 
       // Deduct credits
       if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+          const previousBalance = user.aiCreditsBalance || 0;
+          const newBalance = Math.max(0, previousBalance - cost);
           const { getFunctions, httpsCallable } = await import('firebase/functions');
           const { app } = await import('../../firebaseConfig');
           const functions = getFunctions(app);
           const deductFn = httpsCallable(functions, 'deductCredits');
           await deductFn({ amount: cost });
-          updateLocalProfile({ aiCreditsBalance: (user.aiCreditsBalance || 0) - cost });
+          updateLocalProfile({ aiCreditsBalance: newBalance });
+          // S39-F2: telemetry
+          trackCreditConsumed({
+              uid: firebaseUser?.uid, amount: cost, previousBalance, newBalance,
+              reason: 'presentation_slide_visual',
+          });
       }
 
       setVisuals(prev => ({ ...prev, [idx]: { loading: false, url: result.imageUrl } }));

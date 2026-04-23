@@ -51,6 +51,7 @@ import type { AIGeneratedAssessment, AIGeneratedIdeas, AIGeneratedRubric, Genera
 import { DOK_META } from '../types';
 import { ModalType, PlannerItemType, QuestionType } from '../types';
 import { firestoreService } from '../services/firestoreService';
+import { trackCreditConsumed, trackFirstTimeEvent, trackEvent } from '../services/telemetryService';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { AILoadingIndicator } from '../components/common/AILoadingIndicator';
 import { useAuth } from '../contexts/AuthContext';
@@ -179,6 +180,15 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
             const functions = getFunctions(app);
             const deductFn = httpsCallable(functions, 'deductCredits');
             await deductFn({ amount });
+
+            // S39-F2: telemetry — credit_consumed (+ quota_warning_seen on threshold cross)
+            trackCreditConsumed({
+                uid: firebaseUser?.uid,
+                amount,
+                previousBalance: originalBalance,
+                newBalance,
+                reason: 'materials_generator',
+            });
         } catch (err) {
             logger.error("Failed to deduct credits remotely", err);
             updateLocalProfile({ aiCreditsBalance: originalBalance });

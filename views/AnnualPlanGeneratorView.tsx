@@ -12,6 +12,7 @@ import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
 import { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
 import { geminiService } from '../services/geminiService';
+import { trackCreditConsumed } from '../services/telemetryService';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { generatePlanICS, downloadICS } from '../utils/icalExport';
@@ -255,6 +256,8 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                 
                 // Deduct credits
                 if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+                    const previousBalance = user.aiCreditsBalance || 0;
+                    const newBalance = Math.max(0, previousBalance - cost);
                     try {
                         const { getFunctions, httpsCallable } = await import('firebase/functions');
                         const { app } = await import('../firebaseConfig');
@@ -262,7 +265,12 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                         const deductFn = httpsCallable(functions, 'deductCredits');
                         await deductFn({ amount: cost });
                         // Update local state
-                        updateLocalProfile({ aiCreditsBalance: (user.aiCreditsBalance || 0) - cost });
+                        updateLocalProfile({ aiCreditsBalance: newBalance });
+                        // S39-F2: telemetry
+                        trackCreditConsumed({
+                            uid: firebaseUser?.uid, amount: cost, previousBalance, newBalance,
+                            reason: 'annual_plan_generator',
+                        });
                     } catch (err) {
                         logger.error("Error deducting credits:", err);
                     }

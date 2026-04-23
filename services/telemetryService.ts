@@ -156,3 +156,92 @@ export function shouldSampleEvent(
   const bucket = (hash % 1000) / 1000;
   return bucket < rate;
 }
+
+// ─── S39-F2: Activation funnel helpers ──────────────────────────────────────
+
+const FIRST_EVENT_PREFIX = 'tlm_first_event:';
+
+interface StorageLike {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+function getStorage(): StorageLike | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) return window.localStorage;
+  } catch { /* SSR / privacy mode */ }
+  return null;
+}
+
+/** Pure logic: was this first-time event already recorded? */
+export function hasFirstEventBeenRecorded(
+  storage: StorageLike | null,
+  uid: string,
+  eventName: TelemetryEventName,
+): boolean {
+  if (!storage) return false;
+  return storage.getItem(`${FIRST_EVENT_PREFIX}${uid}:${eventName}`) === '1';
+}
+
+/** Pure logic: mark a first-time event as recorded (idempotent). */
+export function markFirstEventRecorded(
+  storage: StorageLike | null,
+  uid: string,
+  eventName: TelemetryEventName,
+): void {
+  if (!storage) return;
+  try { storage.setItem(`${FIRST_EVENT_PREFIX}${uid}:${eventName}`, '1'); } catch { /* quota */ }
+}
+
+/**
+ * Track a first-time-only event for a user. The event fires at most once
+ * per (uid, eventName) pair across sessions on the same browser profile.
+ * Returns true if the event was emitted now, false if it was already recorded.
+ */
+export function trackFirstTimeEvent(
+  uid: string | null | undefined,
+  eventName: TelemetryEventName,
+  properties: Record<string, string | number | boolean | undefined | null> = {},
+): boolean {
+  if (!uid) return false;
+  const storage = getStorage();
+  if (hasFirstEventBeenRecorded(storage, uid, eventName)) return false;
+  markFirstEventRecorded(storage, uid, eventName);
+  trackEvent(eventName, { ...properties, firstTime: true });
+  return true;
+}
+
+/** Pure: returns true when the new balance crossed the low-quota warning threshold. */
+export function shouldEmitQuotaWarning(
+  previousBalance: number,
+  newBalance: number,
+  threshold = 10,
+): boolean {
+  return previousBalance > threshold && newBalance <= threshold && newBalance >= 0;
+}
+
+/**
+ * Records a credit consumption event and, if the new balance crossed below
+ * the low-quota threshold, also fires `quota_warning_seen` exactly once at
+ * the crossing moment.
+ */
+export function trackCreditConsumed(opts: {
+  uid?: string | null;
+  amount: number;
+  previousBalance: number;
+  newBalance: number;
+  reason?: string;
+  threshold?: number;
+}): void {
+  trackEvent('credit_consumed', {
+    amount: opts.amount,
+    balanceAfter: opts.newBalance,
+    reason: opts.reason,
+  });
+  if (shouldEmitQuotaWarning(opts.previousBalance, opts.newBalance, opts.threshold)) {
+    trackEvent('quota_warning_seen', {
+      threshold: opts.threshold ?? 10,
+      balance: opts.newBalance,
+    });
+  }
+}

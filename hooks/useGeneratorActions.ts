@@ -10,6 +10,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { buildExtractionBundle, evaluateExtractionQuality } from '../utils/extractionBundle';
 import { inferConceptIdsFromExtraction } from '../utils/extractionConceptMap';
 import { buildPedagogicalVideoSegments } from '../utils/videoSegmentation';
+import { trackFirstTimeEvent, trackEvent } from '../services/telemetryService';
 import type {
   AIGeneratedAssessment, AIGeneratedRubric, AIGeneratedIdeas,
   Topic, Concept, Grade, NationalStandard,
@@ -704,6 +705,18 @@ export function useGeneratorActions({
       }
 
       setGeneratedMaterial(result);
+
+      // S39-F2: telemetry — first-time activation events
+      if (result && firebaseUser?.uid) {
+        const mt = materialType;
+        if (mt === 'QUIZ' || mt === 'ASSESSMENT') {
+          trackFirstTimeEvent(firebaseUser.uid, 'first_quiz_generated', { materialType: mt });
+        }
+        if (mt === 'IMAGE_EXTRACTOR' || mt === 'WEB_EXTRACTOR' || mt === 'VIDEO_EXTRACTOR') {
+          trackFirstTimeEvent(firebaseUser.uid, 'first_extraction_run', { sourceType: mt });
+        }
+        trackEvent(`feature_open_generator_${String(mt ?? 'unknown').toLowerCase()}`);
+      }
     } catch (error) {
       if (cancelRef.current) { cancelRef.current = false; return; }
       logger.error('[AI Generator]', error);
@@ -793,6 +806,16 @@ export function useGeneratorActions({
 
       if (deductCredits && result) await deductCredits(AI_COSTS.TEXT_BASIC);
       setGeneratedMaterial(result);
+
+      // S39-F2: telemetry — first-time quiz from extraction pipeline
+      if (result && firebaseUser?.uid) {
+        if (targetType === 'QUIZ' || targetType === 'ASSESSMENT') {
+          trackFirstTimeEvent(firebaseUser.uid, 'first_quiz_generated', {
+            materialType: targetType, fromExtraction: true,
+          });
+        }
+        trackEvent(`feature_open_extraction_to_${String(targetType).toLowerCase()}`);
+      }
     } catch (error) {
       if (error instanceof RateLimitError) {
         setQuotaBannerFromStorage();
