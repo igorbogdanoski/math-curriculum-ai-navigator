@@ -33,11 +33,20 @@ vi.mock('./useGeneratorState', () => ({ getInitialState: () => ({}) }));
 vi.mock('./useGeneratorQueries', () => ({ useVerifiedQuestions: () => null }));
 vi.mock('./useQuotaManager', () => ({ useQuotaManager: () => ({}) }));
 vi.mock('./useVariantGenerate', () => ({ useVariantGenerate: () => ({}) }));
-vi.mock('./generator', () => ({
-  useGeneratorContext: () => ({}),
-  useGeneratorTeacherNote: () => ({}),
-  useGeneratorSave: () => ({}),
-}));
+vi.mock('./generator', async () => {
+  const actual = await vi.importActual<typeof import('./generator/generatorHelpers')>('./generator/generatorHelpers');
+  return {
+    useGeneratorContext: () => ({}),
+    useGeneratorTeacherNote: () => ({}),
+    useGeneratorSave: () => ({}),
+    useBulkGenerate: () => ({}),
+    useMainGenerate: () => ({}),
+    buildAiPersonalizationSnippet: actual.buildAiPersonalizationSnippet,
+    makeBuildEffectiveInstruction: actual.makeBuildEffectiveInstruction,
+    makePersistExtractionArtifact: actual.makePersistExtractionArtifact,
+    MACEDONIAN_CONTEXT_HINT: actual.MACEDONIAN_CONTEXT_HINT,
+  };
+});
 
 import { buildAiPersonalizationSnippet } from './useGeneratorActions';
 
