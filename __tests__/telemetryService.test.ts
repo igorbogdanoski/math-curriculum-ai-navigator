@@ -6,6 +6,7 @@ import {
   hasFirstEventBeenRecorded,
   markFirstEventRecorded,
   shouldEmitQuotaWarning,
+  assignExperimentBucket,
 } from '../services/telemetryService';
 
 describe('telemetryService.sanitizeProps', () => {
@@ -118,5 +119,47 @@ describe('telemetryService.shouldEmitQuotaWarning', () => {
 
   it('does not fire on negative balance', () => {
     expect(shouldEmitQuotaWarning(5, -1)).toBe(false);
+  });
+});
+
+// ─── S39-F6: experiment bucketing ────────────────────────────────────────────
+
+describe('telemetryService.assignExperimentBucket', () => {
+  it('returns A for splitPercent=1 (control everywhere)', () => {
+    expect(assignExperimentBucket('uid-x', 'exp1', 1)).toBe('A');
+    expect(assignExperimentBucket('uid-y', 'exp1', 1)).toBe('A');
+  });
+
+  it('returns B for splitPercent=0 (kill-switch fully on)', () => {
+    expect(assignExperimentBucket('uid-x', 'exp1', 0)).toBe('B');
+    expect(assignExperimentBucket('uid-y', 'exp1', 0)).toBe('B');
+  });
+
+  it('is deterministic for same uid+experiment', () => {
+    const a = assignExperimentBucket('uid-stable', 'onboarding_v1', 0.5);
+    const b = assignExperimentBucket('uid-stable', 'onboarding_v1', 0.5);
+    expect(a).toBe(b);
+  });
+
+  it('roughly 50/50 across a population at split=0.5', () => {
+    let A = 0;
+    const N = 2000;
+    for (let i = 0; i < N; i++) {
+      if (assignExperimentBucket(`uid-${i}`, 'onboarding_v1', 0.5) === 'A') A++;
+    }
+    const rate = A / N;
+    expect(rate).toBeGreaterThan(0.4);
+    expect(rate).toBeLessThan(0.6);
+  });
+
+  it('different experiments may bucket the same uid differently', () => {
+    let differs = 0;
+    for (let i = 0; i < 200; i++) {
+      const a = assignExperimentBucket(`uid-${i}`, 'expA', 0.5);
+      const b = assignExperimentBucket(`uid-${i}`, 'expB', 0.5);
+      if (a !== b) differs++;
+    }
+    // Independent hashes → ~50% should differ
+    expect(differs).toBeGreaterThan(60);
   });
 });

@@ -28,7 +28,9 @@ export type TelemetryEventName =
   | 'onboarding_started'
   | 'onboarding_completed'
   | 'onboarding_skipped'
-  | `feature_open_${string}`;
+  | 'experiment_assigned'
+  | `feature_open_${string}`
+  | `experiment_${string}`;
 
 export interface TelemetryUserProperties {
   userRole?: TelemetryUserRole;
@@ -225,6 +227,55 @@ export function shouldEmitQuotaWarning(
  * the low-quota threshold, also fires `quota_warning_seen` exactly once at
  * the crossing moment.
  */
+// ─── S39-F6: A/B activation kill-switch ─────────────────────────────────────
+
+export type ExperimentBucket = 'A' | 'B';
+
+/**
+ * Deterministically assigns a user to bucket A or B for a named experiment.
+ * `splitPercent` is the fraction (0..1) routed to bucket A (control).
+ *   splitPercent = 0.5  →  50/50 split
+ *   splitPercent = 1.0  →  everyone in A (kill-switch OFF, control everywhere)
+ *   splitPercent = 0.0  →  everyone in B (kill-switch fully ON)
+ *
+ * Same (uid, experimentName) pair always returns the same bucket, so
+ * users have a consistent experience across sessions.
+ */
+export function assignExperimentBucket(
+  uid: string,
+  experimentName: string,
+  splitPercent = 0.5,
+): ExperimentBucket {
+  if (splitPercent >= 1) return 'A';
+  if (splitPercent <= 0) return 'B';
+  let hash = 0;
+  const seed = `exp:${experimentName}:${uid}`;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  const bucket = (hash % 1000) / 1000;
+  return bucket < splitPercent ? 'A' : 'B';
+}
+
+/**
+ * Records an experiment assignment exactly once per (uid, experimentName).
+ * Returns the chosen bucket regardless of whether the event was emitted now.
+ */
+export function trackExperimentAssignment(
+  uid: string | null | undefined,
+  experimentName: string,
+  splitPercent = 0.5,
+): ExperimentBucket | null {
+  if (!uid) return null;
+  const bucket = assignExperimentBucket(uid, experimentName, splitPercent);
+  const storage = getStorage();
+  const key = `exp_assigned:${uid}:${experimentName}`;
+  const already = storage?.getItem(key) ?? null;
+  if (already !== bucket) {
+    try { storage?.setItem(key, bucket); } catch { /* quota */ }
+    trackEvent('experiment_assigned', { experiment: experimentName, bucket, splitPercent });
+  }
+  return bucket;
+}
+
 export function trackCreditConsumed(opts: {
   uid?: string | null;
   amount: number;

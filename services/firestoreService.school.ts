@@ -158,10 +158,10 @@ export const schoolService = {
     }
   },
 
-  fetchAllUsers: async (): Promise<{ uid: string; name: string; email?: string; role?: string; schoolId?: string }[]> => {
+  fetchAllUsers: async (): Promise<Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>> => {
     try {
       const snap = await getDocs(collection(db, 'users'));
-      return snap.docs.map(d => ({ uid: d.id, ...d.data() as Record<string, unknown> })) as { uid: string; name: string; email?: string; role?: string; schoolId?: string }[];
+      return snap.docs.map(d => ({ uid: d.id, ...d.data() as Record<string, unknown> })) as Array<{ uid: string; name: string; email?: string; role?: string; schoolId?: string; createdAt?: unknown; lastLoginAt?: unknown; lastSeenAt?: unknown; aiCreditsBalance?: number; isPremium?: boolean; hasUnlimitedCredits?: boolean; tier?: string }>;
     } catch (error) {
       logger.error('Error fetching all users:', error);
       return [];
