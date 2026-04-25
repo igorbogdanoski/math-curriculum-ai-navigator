@@ -1,0 +1,18 @@
+{
+  "version": "1.1.0",
+  "language": "sr",
+  "createdAt": "2026-04-25",
+  "description": "S42-E5 OCR golden set за српски — ћирилични и латинични математички изрази из уџбеника.",
+  "minRecall": 0.8,
+  "samples": [
+    { "id": "ocr-sr-001", "image": "eval/ocr-golden/images/sr/print-001.png", "kind": "print",       "groundTruthLatex": "x^2 - 5x + 6 = 0",                              "sourceText": "Реши квадратну једначину." },
+    { "id": "ocr-sr-002", "image": "eval/ocr-golden/images/sr/print-002.png", "kind": "print",       "groundTruthLatex": "\\sin^2 x + \\cos^2 x = 1",                     "sourceText": "Основни тригонометријски идентитет." },
+    { "id": "ocr-sr-003", "image": "eval/ocr-golden/images/sr/print-003.png", "kind": "print",       "groundTruthLatex": "\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1",       "sourceText": "Лимес синус функције." },
+    { "id": "ocr-sr-004", "image": "eval/ocr-golden/images/sr/print-004.png", "kind": "print",       "groundTruthLatex": "P = a \\cdot b",                                 "sourceText": "Површина правоугаоника." },
+    { "id": "ocr-sr-005", "image": "eval/ocr-golden/images/sr/handwr-001.png","kind": "handwriting", "groundTruthLatex": "3x - 4 = 11",                                   "sourceText": "Линеарна једначина." }
+  ],
+  "notes": [
+    "Узорци покривају кирилицу (уџбеници ћир.) и латиницу (Хрватска издања у Србији).",
+    "Слике: eval/ocr-golden/images/sr/ — без слика evaluator прескаче узорак (није failure)."
+  ]
+}

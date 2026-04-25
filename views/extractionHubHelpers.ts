@@ -2,6 +2,64 @@
  * Pure helpers extracted from ExtractionHubView.tsx for unit testability.
  */
 import type { VideoCaptionsResult } from '../utils/videoPreview';
+import { OCR_SUPPORTED_LANGUAGES, type OcrLanguage } from '../services/gemini/visionContracts';
+
+// ─── S42-E2a: Image MIME detection ────────────────────────────────────────────
+
+const SUPPORTED_IMAGE_MIMES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
+const IMAGE_EXT_TO_MIME: Record<string, string> = {
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+};
+
+/** Returns a normalized image MIME (image/png, image/jpeg, image/webp) or null. */
+export function detectImageMime(name: string, mimeType: string): string | null {
+  const lower = (mimeType || '').toLowerCase();
+  if (SUPPORTED_IMAGE_MIMES.has(lower)) {
+    return lower === 'image/jpg' ? 'image/jpeg' : lower;
+  }
+  const lowerName = name.toLowerCase();
+  for (const ext of Object.keys(IMAGE_EXT_TO_MIME)) {
+    if (lowerName.endsWith(ext)) return IMAGE_EXT_TO_MIME[ext];
+  }
+  return null;
+}
+
+// ─── S42-E2b: Clipboard paste classification ──────────────────────────────────
+
+export type PasteClassification =
+  | { kind: 'image'; mimeType: string; file: File }
+  | { kind: 'text'; text: string }
+  | { kind: 'ignored' };
+
+const MIN_PASTED_TEXT_LEN = 200;
+
+/** Classify a clipboard paste event into image / long-text / ignored. */
+export function classifyClipboard(items: DataTransferItemList | null, text: string | null): PasteClassification {
+  if (items) {
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.kind === 'file' && it.type.startsWith('image/')) {
+        const f = it.getAsFile();
+        if (f) return { kind: 'image', mimeType: f.type || 'image/png', file: f };
+      }
+    }
+  }
+  if (text && text.trim().length >= MIN_PASTED_TEXT_LEN) {
+    return { kind: 'text', text: text.trim() };
+  }
+  return { kind: 'ignored' };
+}
+
+// ─── S42-E3: OCR language hint ────────────────────────────────────────────────
+
+/** Type-guard for the OCR language enum (for safe parsing of select values). */
+export function isOcrLanguage(value: unknown): value is OcrLanguage {
+  return typeof value === 'string' && (OCR_SUPPORTED_LANGUAGES as readonly string[]).includes(value);
+}
+
 
 export function isYouTubeUrl(url: string): boolean {
   try {

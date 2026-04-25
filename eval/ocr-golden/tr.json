@@ -1,0 +1,18 @@
+{
+  "version": "1.1.0",
+  "language": "tr",
+  "createdAt": "2026-04-25",
+  "description": "S42-E5 OCR golden set Türkçe için — diakritiği olan Latin harfleri (ğ ş ı İ ç ö ü).",
+  "minRecall": 0.8,
+  "samples": [
+    { "id": "ocr-tr-001", "image": "eval/ocr-golden/images/tr/print-001.png", "kind": "print",       "groundTruthLatex": "ax^2 + bx + c = 0",                             "sourceText": "İkinci dereceden denklem." },
+    { "id": "ocr-tr-002", "image": "eval/ocr-golden/images/tr/print-002.png", "kind": "print",       "groundTruthLatex": "\\tan x = \\frac{\\sin x}{\\cos x}",            "sourceText": "Tanjant tanımı." },
+    { "id": "ocr-tr-003", "image": "eval/ocr-golden/images/tr/print-003.png", "kind": "print",       "groundTruthLatex": "P(A \\cup B) = P(A) + P(B) - P(A \\cap B)",     "sourceText": "Olasılık toplama kuralı." },
+    { "id": "ocr-tr-004", "image": "eval/ocr-golden/images/tr/print-004.png", "kind": "print",       "groundTruthLatex": "\\binom{n}{k} = \\frac{n!}{k!(n-k)!}",          "sourceText": "Kombinasyon formülü." },
+    { "id": "ocr-tr-005", "image": "eval/ocr-golden/images/tr/handwr-001.png","kind": "handwriting", "groundTruthLatex": "4x + 8 = 20",                                   "sourceText": "Birinci dereceden denklem." }
+  ],
+  "notes": [
+    "Türkçe diakritiği (ğ, ş, ı, İ, ç, ö, ü) OCR sonrası bozulmamalı — bu set bunu doğrular.",
+    "Görseller: eval/ocr-golden/images/tr/ — görsel yoksa evaluator örneği atlar (hata değil)."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "version": "1.1.0",
+  "language": "ru",
+  "createdAt": "2026-04-25",
+  "description": "S42-E5 OCR golden set для русского — кириллические математические выражения из учебников.",
+  "minRecall": 0.8,
+  "samples": [
+    { "id": "ocr-ru-001", "image": "eval/ocr-golden/images/ru/print-001.png", "kind": "print",       "groundTruthLatex": "x^2 + px + q = 0",                              "sourceText": "Приведённое квадратное уравнение." },
+    { "id": "ocr-ru-002", "image": "eval/ocr-golden/images/ru/print-002.png", "kind": "print",       "groundTruthLatex": "D = b^2 - 4ac",                                  "sourceText": "Дискриминант квадратного уравнения." },
+    { "id": "ocr-ru-003", "image": "eval/ocr-golden/images/ru/print-003.png", "kind": "print",       "groundTruthLatex": "S = \\frac{a + b}{2} \\cdot h",                  "sourceText": "Площадь трапеции." },
+    { "id": "ocr-ru-004", "image": "eval/ocr-golden/images/ru/print-004.png", "kind": "print",       "groundTruthLatex": "V = \\frac{4}{3} \\pi r^3",                      "sourceText": "Объём шара." },
+    { "id": "ocr-ru-005", "image": "eval/ocr-golden/images/ru/handwr-001.png","kind": "handwriting", "groundTruthLatex": "5x - 3 = 2x + 9",                               "sourceText": "Линейное уравнение." }
+  ],
+  "notes": [
+    "Образцы покрывают кириллицу с сохранением ё, ъ, ы — типичных ошибок OCR.",
+    "Изображения: eval/ocr-golden/images/ru/ — без изображений evaluator пропускает образец."
+  ]
+}

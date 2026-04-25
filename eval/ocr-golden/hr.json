@@ -1,0 +1,18 @@
+{
+  "version": "1.1.0",
+  "language": "hr",
+  "createdAt": "2026-04-25",
+  "description": "S42-E5 OCR golden set za hrvatski — latinično pismo s dijakriticima (čćžšđ).",
+  "minRecall": 0.8,
+  "samples": [
+    { "id": "ocr-hr-001", "image": "eval/ocr-golden/images/hr/print-001.png", "kind": "print",       "groundTruthLatex": "a^2 + b^2 = c^2",                               "sourceText": "Pitagorin poučak." },
+    { "id": "ocr-hr-002", "image": "eval/ocr-golden/images/hr/print-002.png", "kind": "print",       "groundTruthLatex": "\\frac{d}{dx} x^n = n x^{n-1}",                "sourceText": "Derivacija potencije." },
+    { "id": "ocr-hr-003", "image": "eval/ocr-golden/images/hr/print-003.png", "kind": "print",       "groundTruthLatex": "\\int_a^b f(x)\\,dx = F(b) - F(a)",             "sourceText": "Newton-Leibnizov poučak." },
+    { "id": "ocr-hr-004", "image": "eval/ocr-golden/images/hr/print-004.png", "kind": "print",       "groundTruthLatex": "\\vec{AB} = B - A",                              "sourceText": "Vektor između dviju točaka." },
+    { "id": "ocr-hr-005", "image": "eval/ocr-golden/images/hr/handwr-001.png","kind": "handwriting", "groundTruthLatex": "2x + 5 = 13",                                   "sourceText": "Jednadžba s jednom nepoznanicom." }
+  ],
+  "notes": [
+    "Uzorci testiraju čuvanje dijakritika: č, ć, ž, š, đ u tekstu uz LaTeX izraz.",
+    "Slike: eval/ocr-golden/images/hr/ — bez slika evaluator preskače uzorak."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "version": "1.1.0",
+  "language": "en",
+  "createdAt": "2026-04-25",
+  "description": "S42-E5 OCR golden set for English — printed and handwritten math expressions from textbooks.",
+  "minRecall": 0.8,
+  "samples": [
+    { "id": "ocr-en-001", "image": "eval/ocr-golden/images/en/print-001.png", "kind": "print",       "groundTruthLatex": "e^{i\\pi} + 1 = 0",                             "sourceText": "Euler's identity." },
+    { "id": "ocr-en-002", "image": "eval/ocr-golden/images/en/print-002.png", "kind": "print",       "groundTruthLatex": "\\frac{d}{dx} e^x = e^x",                       "sourceText": "Derivative of the exponential function." },
+    { "id": "ocr-en-003", "image": "eval/ocr-golden/images/en/print-003.png", "kind": "print",       "groundTruthLatex": "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",     "sourceText": "Quadratic formula." },
+    { "id": "ocr-en-004", "image": "eval/ocr-golden/images/en/print-004.png", "kind": "print",       "groundTruthLatex": "\\sum_{k=1}^{n} k = \\frac{n(n+1)}{2}",         "sourceText": "Sum of natural numbers." },
+    { "id": "ocr-en-005", "image": "eval/ocr-golden/images/en/handwr-001.png","kind": "handwriting", "groundTruthLatex": "y = mx + b",                                    "sourceText": "Slope-intercept form." }
+  ],
+  "notes": [
+    "Baseline English golden set — all Latin script, no diacritics, high expected recall.",
+    "Images: eval/ocr-golden/images/en/ — missing images cause the sample to be skipped, not failed."
+  ]
+}

@@ -541,25 +541,93 @@ const WEB_TASK_FALLBACK: WebTaskExtractionOutput = {
   quality: { score: 0, label: 'poor' },
 };
 
-// ─── Text extraction from PDF via Gemini Vision ───────────────────────────────
+// ─── Text extraction from PDF / image via Gemini Vision ──────────────────────
+
+/**
+ * Supported source languages for OCR/document extraction. The hint is passed
+ * to the model so it preserves diacritics and chooses the right decoder for
+ * Cyrillic vs. Latin scripts.
+ *
+ * S42-E3 — multi-language hint added so old textbooks in MK/SR/HR/RU/TR/EN
+ * are decoded correctly without prompt-engineering by the user.
+ */
+export const OCR_SUPPORTED_LANGUAGES = ['auto', 'mk', 'sr', 'hr', 'ru', 'tr', 'en'] as const;
+export type OcrLanguage = typeof OCR_SUPPORTED_LANGUAGES[number];
+
+const LANGUAGE_LABEL: Record<OcrLanguage, string> = {
+  auto: 'Auto-detect',
+  mk:   'Macedonian (Cyrillic)',
+  sr:   'Serbian (Cyrillic + Latin)',
+  hr:   'Croatian (Latin, diacritics: čćžšđ)',
+  ru:   'Russian (Cyrillic)',
+  tr:   'Turkish (Latin, diacritics: ğşıİçöü)',
+  en:   'English (Latin)',
+};
+
+/**
+ * Build the language-aware OCR prompt fragment. Pure helper so it can be
+ * unit-tested without invoking Gemini.
+ */
+export function buildOcrLanguagePromptFragment(lang: OcrLanguage = 'auto'): string {
+  if (lang === 'auto') {
+    return 'Detect the source language automatically. Preserve all diacritics and original script (Cyrillic / Latin) exactly as written.';
+  }
+  return `Original language: ${LANGUAGE_LABEL[lang]}. Preserve diacritics and the source script exactly. Do NOT transliterate.`;
+}
+
+const BASE_OCR_INSTRUCTION = 'Extract ALL text from this source as plain text. Preserve mathematical expressions using LaTeX notation ($...$ for inline math, $$...$$ for display math). Return ONLY the extracted text with no commentary.';
+
+export interface DocumentExtractionOptions {
+  language?: OcrLanguage;
+}
 
 /**
  * Extracts plain text (with LaTeX math) from a base64-encoded PDF document.
  * Used by ExtractionHub document-upload mode before chunked task extraction.
  */
-export async function extractTextFromDocument(pdfBase64: string): Promise<string> {
+export async function extractTextFromDocument(
+  pdfBase64: string,
+  options: DocumentExtractionOptions = {},
+): Promise<string> {
+  const langFragment = buildOcrLanguagePromptFragment(options.language);
   const response = await callGeminiProxy({
     model: DEFAULT_MODEL,
     contents: [{
       role: 'user' as const,
       parts: [
-        {
-          text: 'Extract ALL text from this document as plain text. Preserve mathematical expressions using LaTeX notation ($...$ for inline math, $$...$$ for display math). Keep the original language. Return ONLY the extracted text with no commentary.',
-        },
+        { text: `${BASE_OCR_INSTRUCTION}\n${langFragment}` },
         { inlineData: { mimeType: 'application/pdf', data: pdfBase64 } },
       ],
     }],
     generationConfig: { maxOutputTokens: 16384 },
+    safetySettings: SAFETY_SETTINGS,
+    skipTierOverride: true,
+  });
+  return response.text.trim();
+}
+
+/**
+ * S42-E2a — Extracts text + LaTeX from a single base64 image (PNG/JPEG/WEBP).
+ * Reuses the same prompt skeleton as the PDF path so downstream chunked
+ * extraction is identical.
+ */
+export async function extractTextFromImage(
+  imageBase64: string,
+  mimeType: string,
+  options: DocumentExtractionOptions = {},
+): Promise<string> {
+  const safeMime = mimeType && mimeType.startsWith('image/') ? mimeType : 'image/png';
+  const langFragment = buildOcrLanguagePromptFragment(options.language);
+  const response = await callGeminiProxy({
+    model: DEFAULT_MODEL,
+    contents: [{
+      role: 'user' as const,
+      parts: [
+        { text: `${BASE_OCR_INSTRUCTION}\n${langFragment}` },
+        { inlineData: { mimeType: safeMime, data: imageBase64 } },
+      ],
+    }],
+    generationConfig: { maxOutputTokens: 8192 },
     safetySettings: SAFETY_SETTINGS,
     skipTierOverride: true,
   });

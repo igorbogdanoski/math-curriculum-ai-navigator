@@ -1,0 +1,18 @@
+{
+  "version": "1.1.0",
+  "language": "mk",
+  "createdAt": "2026-04-25",
+  "description": "S42-E5 OCR golden set за македонски — кирилични математички изрази (печатен + ракописен).",
+  "minRecall": 0.8,
+  "samples": [
+    { "id": "ocr-mk-001", "image": "eval/ocr-golden/images/mk/print-001.png", "kind": "print",       "groundTruthLatex": "x^2 + 2x + 1 = 0",                              "sourceText": "Реши ја равенката." },
+    { "id": "ocr-mk-002", "image": "eval/ocr-golden/images/mk/print-002.png", "kind": "print",       "groundTruthLatex": "\\frac{a}{b} + \\frac{c}{d} = \\frac{ad + bc}{bd}", "sourceText": "Собирање разломки." },
+    { "id": "ocr-mk-003", "image": "eval/ocr-golden/images/mk/print-003.png", "kind": "print",       "groundTruthLatex": "\\sqrt{a^2 + b^2} = c",                          "sourceText": "Питагорова теорема." },
+    { "id": "ocr-mk-004", "image": "eval/ocr-golden/images/mk/print-004.png", "kind": "print",       "groundTruthLatex": "f(x) = ax^2 + bx + c",                          "sourceText": "Квадратна функција." },
+    { "id": "ocr-mk-005", "image": "eval/ocr-golden/images/mk/handwr-001.png","kind": "handwriting", "groundTruthLatex": "2x + 3 = 7",                                    "sourceText": "Линеарна равенка." }
+  ],
+  "notes": [
+    "Мигриран од eval/ocr-mk-golden.json во S42-E5; оригиналниот фајл се задржува за backward compat.",
+    "Слики: eval/ocr-golden/images/mk/ — без слики evaluator-от ги прескокнува примероците (не fail)."
+  ]
+}

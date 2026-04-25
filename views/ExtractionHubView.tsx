@@ -12,6 +12,9 @@ import {
   webTaskExtractionContract,
   chunkAndExtractTasks,
   extractTextFromDocument,
+  extractTextFromImage,
+  OCR_SUPPORTED_LANGUAGES,
+  type OcrLanguage,
   type ExtractedWebTask,
   type WebTaskExtractionOutput,
 } from '../services/gemini/visionContracts';
@@ -34,7 +37,22 @@ import {
   isVideoUrl,
   applyTimeRange,
   toBase64,
+  detectImageMime,
+  classifyClipboard,
+  isOcrLanguage,
 } from './extractionHubHelpers';
+
+// ─── OCR language labels (МК) ─────────────────────────────────────────────────
+
+const OCR_LANG_MK: Record<OcrLanguage, string> = {
+  auto: 'Автоматски (препорачано)',
+  mk:   'Македонски (Кирилица)',
+  sr:   'Српски (Кирилица / Латиница)',
+  hr:   'Хрватски (Латиница, čćžšđ)',
+  ru:   'Руски (Кирилица)',
+  tr:   'Турски (Латиница, ğşıçöü)',
+  en:   'Англиски (Латиница)',
+};
 
 // ─── Model options ────────────────────────────────────────────────────────────
 
@@ -198,11 +216,13 @@ export const ExtractionHubView: React.FC = () => {
   const [uploadedDoc, setUploadedDoc] = useState<{
     name: string;
     size: number;
-    kind: 'docx' | 'pdf' | 'txt';
+    kind: 'docx' | 'pdf' | 'txt' | 'image';
     text?: string;
     base64?: string;
+    mimeType?: string;
     images?: Array<{ mimeType: string; data: string }>;
   } | null>(null);
+  const [ocrLanguage, setOcrLanguage] = useState<OcrLanguage>('auto');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -248,8 +268,13 @@ export const ExtractionHubView: React.FC = () => {
     const isPdf = file.type === 'application/pdf' || name.endsWith('.pdf');
     const isDocx = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || name.endsWith('.docx');
     const isTxt = file.type === 'text/plain' || name.endsWith('.txt');
+    const imageMime = detectImageMime(name, file.type);
 
-    if (isPdf) {
+    if (imageMime) {
+      const ab = await file.arrayBuffer();
+      const base64 = toBase64(ab);
+      setUploadedDoc({ name, size, kind: 'image', base64, mimeType: imageMime });
+    } else if (isPdf) {
       const ab = await file.arrayBuffer();
       const base64 = toBase64(ab);
       setUploadedDoc({ name, size, kind: 'pdf', base64 });
@@ -285,7 +310,7 @@ export const ExtractionHubView: React.FC = () => {
       const text = await file.text();
       setUploadedDoc({ name, size, kind: 'txt', text });
     } else {
-      setError('Поддржани формати: PDF, DOCX, TXT');
+      setError('Поддржани формати: PDF, DOCX, TXT, PNG, JPG, WEBP');
     }
   }, []);
 
@@ -295,6 +320,22 @@ export const ExtractionHubView: React.FC = () => {
     const file = e.dataTransfer.files[0];
     if (file) await loadFile(file);
   }, [loadFile]);
+
+  // ── S42-E2b: Clipboard paste handler ──────────────────────────────────────
+  const onPaste = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>) => {
+    if (isLoading) return;
+    const text = e.clipboardData?.getData('text/plain') ?? null;
+    const cls = classifyClipboard(e.clipboardData?.items ?? null, text);
+    if (cls.kind === 'image') {
+      e.preventDefault();
+      setSourceMode('document');
+      await loadFile(cls.file);
+    } else if (cls.kind === 'text' && sourceMode === 'url') {
+      e.preventDefault();
+      setManualTranscript(cls.text);
+      setShowAdvanced(true);
+    }
+  }, [loadFile, isLoading, sourceMode]);
 
   const onFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -417,8 +458,17 @@ export const ExtractionHubView: React.FC = () => {
     } else if (uploadedDoc.kind === 'pdf') {
       setProgressLabel('Gemini Vision: Читање на PDF...');
       setProgressPct(15);
-      rawText = await extractTextFromDocument(uploadedDoc.base64 ?? '');
+      rawText = await extractTextFromDocument(uploadedDoc.base64 ?? '', { language: ocrLanguage });
       if (!rawText.trim()) { setError('PDF-от е празен или не содржи читлив текст.'); return; }
+    } else if (uploadedDoc.kind === 'image') {
+      setProgressLabel('Gemini Vision: OCR на сликата...');
+      setProgressPct(20);
+      rawText = await extractTextFromImage(
+        uploadedDoc.base64 ?? '',
+        uploadedDoc.mimeType ?? 'image/png',
+        { language: ocrLanguage },
+      );
+      if (!rawText.trim()) { setError('Сликата не содржи читлив текст.'); return; }
     }
 
     const docMediaParts = uploadedDoc.images?.map(img => ({ inlineData: img }));
@@ -722,9 +772,9 @@ export const ExtractionHubView: React.FC = () => {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain"
+                    accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
                     className="sr-only"
-                    aria-label="Изберете документ (PDF, DOCX или TXT)"
+                    aria-label="Изберете документ (PDF, DOCX, TXT, PNG, JPG, WEBP)"
                     title="Изберете документ"
                     onChange={onFileChange}
                     disabled={isLoading}
@@ -762,12 +812,12 @@ export const ExtractionHubView: React.FC = () => {
                         <p className="font-semibold text-white/80">Повлечете датотека тука</p>
                         <p className="text-xs text-white/40 mt-1">или кликнете за да изберете</p>
                       </div>
-                      <div className="flex gap-2">
-                        {['PDF', 'DOCX', 'TXT'].map(fmt => (
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {['PDF', 'DOCX', 'TXT', 'PNG', 'JPG', 'WEBP'].map(fmt => (
                           <span key={fmt} className="rounded-lg bg-white/10 px-2.5 py-1 text-xs font-bold text-white/60">{fmt}</span>
                         ))}
                       </div>
-                      <p className="text-xs text-white/30">Максимум 20 MB</p>
+                      <p className="text-xs text-white/30">Максимум 20 MB · Ctrl+V за залепување слика</p>
                     </>
                   )}
                 </div>
@@ -845,6 +895,27 @@ export const ExtractionHubView: React.FC = () => {
                       )}
                     </div>
                   </>
+                )}
+                {sourceMode === 'document' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-white/60 mb-1">
+                      Јазик на документот (OCR hint)
+                    </label>
+                    <select
+                      value={ocrLanguage}
+                      onChange={(e) => { if (isOcrLanguage(e.target.value)) setOcrLanguage(e.target.value); }}
+                      disabled={isLoading}
+                      aria-label="Јазик на OCR"
+                      title="Јазик на OCR"
+                      className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-1 focus:ring-indigo-400 disabled:opacity-50"
+                    >
+                      {OCR_SUPPORTED_LANGUAGES.map((lang) => (
+                        <option key={lang} value={lang} className="bg-slate-900 text-white">
+                          {OCR_LANG_MK[lang]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 )}
                 <div>
                   <label className="block text-xs font-semibold text-white/60 mb-1">

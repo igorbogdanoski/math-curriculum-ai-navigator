@@ -1,26 +1,26 @@
 #!/usr/bin/env node
 /**
- * scripts/eval-ocr-cyrillic.mjs — S41-D6 МОН OCR recall evaluator.
+ * scripts/eval-ocr-cyrillic.mjs — S42-E5 МОН OCR recall evaluator (multi-language).
  *
- * Loads eval/ocr-mk-golden.json, computes token-level recall between the
- * ground-truth LaTeX and Gemini Vision OCR output for each sample, and
- * fails the run when the average recall drops below the configured
- * minRecall (default 0.8).
+ * Loads every JSON under eval/ocr-golden/<lang>.json, computes token-level
+ * recall per sample, and fails when any language's average recall drops below
+ * the configured minRecall (default 0.8).
+ *
+ * Falls back to eval/ocr-mk-golden.json when the folder is absent so the
+ * old behaviour is preserved for existing CI pipelines.
  *
  * Usage:
- *   node scripts/eval-ocr-cyrillic.mjs [--min-recall 0.8] [--dry-run]
+ *   node scripts/eval-ocr-cyrillic.mjs [--min-recall 0.8] [--dry-run] [--lang mk]
  *
  * Behaviour:
- *   --dry-run        Skip the actual Gemini call; print golden set summary.
- *   No GEMINI_API_KEY → prints a friendly skip notice and exits with code 0
- *                      so the CI gate is non-blocking until creds + images
- *                      are wired in.
- *   Missing image    → sample is reported as "skipped" (not failure) so the
- *                      golden set can grow incrementally.
+ *   --dry-run        Skip Gemini calls; print golden set summary.
+ *   --lang <code>    Evaluate only this language (e.g. --lang mk).
+ *   No GEMINI_API_KEY → prints a skip notice and exits 0 (non-blocking).
+ *   Missing image    → sample is reported as "skipped" (not failure).
  *
  * Exit codes:
- *   0   success or skipped (no creds / dry-run / no usable samples)
- *   1   recall fell below the threshold
+ *   0   success, skipped, or dry-run
+ *   1   recall fell below threshold for at least one language
  *   2   golden set malformed
  */
 
@@ -28,31 +28,56 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const args = process.argv.slice(2);
-const dryRun = args.includes('--dry-run');
+const dryRun      = args.includes('--dry-run');
+const langIdx     = args.indexOf('--lang');
+const langFilter  = langIdx !== -1 ? args[langIdx + 1] : null;
 const minRecallIdx = args.indexOf('--min-recall');
 const minRecallFlag = minRecallIdx !== -1 ? Number(args[minRecallIdx + 1]) : null;
 
-const ROOT = process.cwd();
-const GOLDEN_PATH = path.join(ROOT, 'eval', 'ocr-mk-golden.json');
+const ROOT              = process.cwd();
+const GOLDEN_DIR        = path.join(ROOT, 'eval', 'ocr-golden');
+const LEGACY_GOLDEN     = path.join(ROOT, 'eval', 'ocr-mk-golden.json');
 
-function loadGolden() {
-  if (!fs.existsSync(GOLDEN_PATH)) {
-    console.error(`✗ Golden set not found at ${GOLDEN_PATH}`);
-    process.exit(2);
-  }
+// ─── Load golden files ────────────────────────────────────────────────────────
+
+function loadGoldenFile(filePath) {
   let parsed;
   try {
-    parsed = JSON.parse(fs.readFileSync(GOLDEN_PATH, 'utf8'));
+    parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch (e) {
-    console.error('✗ Failed to parse golden set:', e.message);
+    console.error(`✗ Failed to parse ${filePath}: ${e.message}`);
     process.exit(2);
   }
   if (!Array.isArray(parsed?.samples)) {
-    console.error('✗ Golden set missing `samples` array.');
+    console.error(`✗ Missing 'samples' array in ${filePath}`);
     process.exit(2);
   }
   return parsed;
 }
+
+function collectGoldenFiles() {
+  // Prefer per-language folder
+  if (fs.existsSync(GOLDEN_DIR)) {
+    const files = fs.readdirSync(GOLDEN_DIR)
+      .filter(f => f.endsWith('.json'))
+      .filter(f => !langFilter || f === `${langFilter}.json`)
+      .map(f => path.join(GOLDEN_DIR, f));
+    if (files.length > 0) return files;
+  }
+
+  // Fallback: legacy mk-only file
+  if (fs.existsSync(LEGACY_GOLDEN)) {
+    if (!langFilter || langFilter === 'mk') {
+      console.log('⚠ eval/ocr-golden/ not found — using legacy eval/ocr-mk-golden.json');
+      return [LEGACY_GOLDEN];
+    }
+  }
+
+  console.error('✗ No golden files found.');
+  process.exit(2);
+}
+
+// ─── Token recall ─────────────────────────────────────────────────────────────
 
 /** Normalize LaTeX for comparison: lowercase, strip whitespace + braces. */
 function tokenize(latex) {
@@ -74,57 +99,56 @@ export function tokenRecall(groundTruth, ocr) {
   return hit / gt.length;
 }
 
-async function ocrViaGemini(imagePath, apiKey) {
+// ─── Gemini OCR ───────────────────────────────────────────────────────────────
+
+async function ocrViaGemini(imagePath, language, apiKey) {
   const { GoogleGenerativeAI } = await import('@google/generative-ai');
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const data = fs.readFileSync(imagePath);
-  const mime = imagePath.endsWith('.jpg') || imagePath.endsWith('.jpeg') ? 'image/jpeg' : 'image/png';
+  const mime = /\.jpe?g$/i.test(imagePath) ? 'image/jpeg' : 'image/png';
+
+  const langHint = language && language !== 'auto'
+    ? `Original language: ${language}. Preserve diacritics and the source script exactly. Do NOT transliterate.`
+    : 'Detect the source language automatically. Preserve all diacritics and original script exactly.';
+
   const result = await model.generateContent([
-    {
-      inlineData: { data: data.toString('base64'), mimeType: mime },
-    },
-    'Extract the mathematical expression from this image. Return ONLY the LaTeX without any commentary, no $ delimiters.',
+    { inlineData: { data: data.toString('base64'), mimeType: mime } },
+    `Extract the mathematical expression from this image. ${langHint} Return ONLY the LaTeX without any commentary, no $ delimiters.`,
   ]);
   return result.response.text().trim();
 }
 
-async function main() {
-  const golden = loadGolden();
-  const minRecall = Number.isFinite(minRecallFlag) ? minRecallFlag : Number(golden.minRecall ?? 0.8);
+// ─── Evaluate one golden file ─────────────────────────────────────────────────
 
-  console.log(`▶ МОН OCR cyrillic recall evaluator`);
-  console.log(`  Golden samples: ${golden.samples.length}`);
-  console.log(`  Min recall:     ${(minRecall * 100).toFixed(0)}%`);
+async function evaluateFile(filePath, minRecallDefault, apiKey) {
+  const golden = loadGoldenFile(filePath);
+  const lang     = golden.language ?? path.basename(filePath, '.json');
+  const minRecall = Number.isFinite(minRecallFlag) ? minRecallFlag
+    : Number.isFinite(Number(golden.minRecall)) ? Number(golden.minRecall)
+    : minRecallDefault;
+
+  console.log(`\n▶ Language: ${lang.toUpperCase()}  (${golden.samples.length} samples, threshold ${(minRecall * 100).toFixed(0)}%)`);
 
   if (dryRun) {
-    console.log('\n— Dry-run — listing samples:');
     for (const s of golden.samples) {
       console.log(`  ${s.id}  [${s.kind}]  ${s.image}  →  ${s.groundTruthLatex}`);
     }
-    process.exit(0);
+    return { lang, pass: true, skipped: golden.samples.length, scored: 0 };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
-    console.log('\n⚠ No GEMINI_API_KEY set — skipping live OCR. CI gate is non-blocking in this state.');
-    process.exit(0);
-  }
-
-  let scored = 0;
-  let skipped = 0;
-  let recallSum = 0;
+  let scored = 0, skipped = 0, recallSum = 0;
   const failures = [];
 
   for (const s of golden.samples) {
     const imgPath = path.join(ROOT, s.image);
     if (!fs.existsSync(imgPath)) {
-      console.log(`  ${s.id}: SKIPPED (image missing: ${s.image})`);
+      console.log(`  ${s.id}: SKIPPED (image missing)`);
       skipped++;
       continue;
     }
     try {
-      const ocr = await ocrViaGemini(imgPath, apiKey);
+      const ocr = await ocrViaGemini(imgPath, lang, apiKey);
       const recall = tokenRecall(s.groundTruthLatex, ocr);
       recallSum += recall;
       scored++;
@@ -139,22 +163,53 @@ async function main() {
   }
 
   if (scored === 0) {
-    console.log('\n⚠ No usable samples — gate is a no-op until images land.');
-    process.exit(0);
+    console.log('  ⚠ No usable samples — gate is a no-op until images land.');
+    return { lang, pass: true, skipped, scored: 0 };
   }
 
   const avg = recallSum / scored;
-  console.log(`\n=== Result ===`);
-  console.log(`  Scored:   ${scored}`);
-  console.log(`  Skipped:  ${skipped}`);
-  console.log(`  Avg recall: ${(avg * 100).toFixed(1)}%`);
-  console.log(`  Failures:   ${failures.length}`);
+  const pass = avg >= minRecall;
+  console.log(`  Avg recall: ${(avg * 100).toFixed(1)}%  Failures: ${failures.length}  ${pass ? '✓ PASS' : '✗ FAIL'}`);
+  return { lang, pass, skipped, scored, avg, failures };
+}
 
-  if (avg < minRecall) {
-    console.error(`\n✗ Avg recall ${(avg * 100).toFixed(1)}% < threshold ${(minRecall * 100).toFixed(0)}%.`);
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+async function main() {
+  const files = collectGoldenFiles();
+
+  console.log(`▶ МОН OCR multi-language recall evaluator`);
+  console.log(`  Golden files: ${files.length} (${files.map(f => path.basename(f, '.json')).join(', ')})`);
+
+  if (dryRun) {
+    console.log('  Mode: dry-run\n');
+    for (const f of files) await evaluateFile(f, 0.8, null);
+    process.exit(0);
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    console.log('\n⚠ No GEMINI_API_KEY — skipping live OCR. CI gate is non-blocking in this state.');
+    process.exit(0);
+  }
+
+  const results = [];
+  for (const f of files) {
+    results.push(await evaluateFile(f, 0.8, apiKey));
+  }
+
+  const failed = results.filter(r => !r.pass);
+  console.log(`\n=== Summary ===`);
+  for (const r of results) {
+    const avgStr = r.avg !== undefined ? `${(r.avg * 100).toFixed(1)}%` : 'n/a (no images)';
+    console.log(`  ${r.lang.toUpperCase()}: ${avgStr}  ${r.pass ? '✓' : '✗'}`);
+  }
+
+  if (failed.length > 0) {
+    console.error(`\n✗ ${failed.length} language(s) below threshold: ${failed.map(r => r.lang).join(', ')}`);
     process.exit(1);
   }
-  console.log(`\n✓ Recall meets gate (≥ ${(minRecall * 100).toFixed(0)}%).`);
+  console.log(`\n✓ All languages meet the recall gate.`);
   process.exit(0);
 }
 
