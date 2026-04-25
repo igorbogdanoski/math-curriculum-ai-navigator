@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
-  Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp
+  Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp, Triangle
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { DataTable, DEFAULT_TABLE } from '../components/dataviz/DataTable';
@@ -12,6 +12,7 @@ import { MathPaperGenerator } from '../components/dataviz/MathPaperGenerator';
 import { AIStatsAssistant } from '../components/dataviz/AIStatsAssistant';
 import { ProbabilityLab } from '../components/dataviz/ProbabilityLab';
 import { FunctionGrapher } from '../components/dataviz/FunctionGrapher';
+import { GeoGebraViewer } from '../components/dataviz/GeoGebraViewer';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import { useNotification } from '../contexts/NotificationContext';
@@ -49,7 +50,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn';
+type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo';
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 export const DataVizStudioView: React.FC = () => {
@@ -140,6 +141,7 @@ export const DataVizStudioView: React.FC = () => {
   const TABS = [
     { id: 'chart' as StudioTab, label: 'Градител на графици',  icon: BarChart2,  color: 'indigo'  },
     { id: 'fn'    as StudioTab, label: 'Граф функции',         icon: TrendingUp, color: 'cyan'    },
+    { id: 'geo'   as StudioTab, label: 'GeoGebra',             icon: Triangle,   color: 'teal'    },
     { id: 'paper' as StudioTab, label: 'Математичка хартија',  icon: Grid3X3,    color: 'emerald' },
     { id: 'ai'    as StudioTab, label: 'AI Асистент',          icon: Sparkles,   color: 'violet'  },
     { id: 'prob'  as StudioTab, label: 'Лаб. Веројатност',     icon: Sigma,      color: 'rose'    },
@@ -401,6 +403,24 @@ export const DataVizStudioView: React.FC = () => {
                 </ul>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ══ TAB: GEOGEBRA ════════════════════════════════════════════════ */}
+        {activeTab === 'geo' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Triangle className="h-5 w-5 text-teal-600" />
+                GeoGebra — Интерактивна математика
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Функции, геометрија, CAS калкулатор и 3D простор — директно во апликацијата
+              </p>
+            </div>
+            <SilentErrorBoundary>
+              <GeoGebraViewer />
+            </SilentErrorBoundary>
           </div>
         )}
 

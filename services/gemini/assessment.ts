@@ -154,9 +154,127 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
     return hardenedResult;
   },
 
+async generateABCTest(
+  numQuestions: number,
+  context: GenerationContext,
+  profile?: TeachingProfile,
+): Promise<{ a: AIGeneratedAssessment; b: AIGeneratedAssessment; c: AIGeneratedAssessment }> {
+  const [a, b, c] = await Promise.all([
+    this.generateAssessment(
+      'ASSESSMENT',
+      [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER],
+      numQuestions,
+      context,
+      profile,
+      'support',
+      undefined,
+      undefined,
+      'ВАРИЈАНТА А — ПОДДРШКА: Едноставни прашања со детални упатства. Нека бидат постепени, со многу структура.',
+    ),
+    this.generateAssessment(
+      'ASSESSMENT',
+      [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER],
+      numQuestions,
+      context,
+      profile,
+      'standard',
+      undefined,
+      undefined,
+      'ВАРИЈАНТА Б — СТАНДАРДНО: Прашања на просечно ниво без дополнителни помагала.',
+    ),
+    this.generateAssessment(
+      'ASSESSMENT',
+      [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER, QuestionType.ESSAY],
+      numQuestions,
+      context,
+      profile,
+      'advanced',
+      undefined,
+      undefined,
+      'ВАРИЈАНТА В — НАПРЕДНО: Предизвикувачки прашања со повеќечекорно решавање, апликација во реален контекст и критичко размислување.',
+    ),
+  ]);
+  return { a, b, c };
+},
+
 async generateExitTicket(numQuestions: number, focus: string, context: GenerationContext, profile?: TeachingProfile, customInstruction?: string): Promise<AIGeneratedAssessment> {
     const safeFocus = sanitizePromptInput(focus, 200);
     const safeExtra = sanitizePromptInput(customInstruction);
     return this.generateAssessment('ASSESSMENT', [QuestionType.SHORT_ANSWER], numQuestions, context, profile, 'standard', undefined, undefined, `Фокус: ${safeFocus}.${safeExtra ? ` ${safeExtra}` : ''}`);
+  },
+
+async generateExamVariants(
+  numQuestions: number,
+  context: GenerationContext,
+  profile?: TeachingProfile,
+): Promise<{ A: AIGeneratedAssessment; B: AIGeneratedAssessment; V: AIGeneratedAssessment; G: AIGeneratedAssessment }> {
+  const variantInstructions = [
+    'ВАРИЈАНТА А: Стандардно ниво. Различен редослед на прашањата и различни броеви/вредности.',
+    'ВАРИЈАНТА Б: Стандардно ниво. Различен редослед на прашањата и различни броеви/вредности.',
+    'ВАРИЈАНТА В: Стандардно ниво. Различен редослед на прашањата и различни броеви/вредности.',
+    'ВАРИЈАНТА Г: Стандардно ниво. Различен редослед на прашањата и различни броеви/вредности.',
+  ];
+  const [A, B, V, G] = await Promise.all(
+    variantInstructions.map(instr =>
+      this.generateAssessment(
+        'ASSESSMENT',
+        [QuestionType.MULTIPLE_CHOICE, QuestionType.SHORT_ANSWER, QuestionType.ESSAY],
+        numQuestions,
+        context,
+        profile,
+        'standard',
+        undefined,
+        undefined,
+        instr,
+      ),
+    ),
+  );
+  return { A, B, V, G };
+},
+
+async gradeExamResponses(
+  questions: Array<{ id: string; question: string; answer: string; points: number }>,
+  answers: Record<string, string>,
+): Promise<{ questionId: string; correct: boolean; points: number; feedback: string }[]> {
+  const pairs = questions.map((q, i) => ({
+    questionId: q.id,
+    questionIndex: i,
+    question: q.question,
+    correctAnswer: q.answer,
+    studentAnswer: answers[`q${i}`] ?? '',
+    maxPoints: q.points,
+  }));
+
+  const prompt = `Оцени ги следните одговори на ученикот на матемтички испит. За секој одговор врати: correct (boolean), points (0 до maxPoints), feedback (кратко 1 реченица на македонски). Одговори само со валиден JSON array.
+
+Прашања и одговори:
+${JSON.stringify(pairs, null, 2)}`;
+
+  const schema = {
+    type: Type.ARRAY,
+    items: {
+      type: Type.OBJECT,
+      properties: {
+        questionId: { type: Type.STRING },
+        correct: { type: Type.BOOLEAN },
+        points: { type: Type.NUMBER },
+        feedback: { type: Type.STRING },
+      },
+      required: ['questionId', 'correct', 'points', 'feedback'],
+    },
+  };
+
+  try {
+    const result = await generateAndParseJSON<{ questionId: string; correct: boolean; points: number; feedback: string }[]>(
+      [{ text: prompt }],
+      schema,
+      DEFAULT_MODEL,
+      undefined,
+      2,
+    );
+    return Array.isArray(result) ? result : [];
+  } catch {
+    return questions.map(q => ({ questionId: q.id, correct: false, points: 0, feedback: 'Не може да се оцени автоматски.' }));
   }
+},
 };

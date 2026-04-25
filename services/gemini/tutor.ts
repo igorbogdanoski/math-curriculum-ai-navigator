@@ -198,6 +198,65 @@ async explainSpecificStep(problem: string, stepExplanation: string, stepExpressi
     return response.text || '';
   },
 
+async verifyUserStep(
+  problem: string,
+  completedSteps: Array<{ explanation: string; expression: string }>,
+  userAttempt: string,
+  correctNextStep: { explanation: string; expression: string },
+): Promise<{ correct: boolean; feedback: string; hint: string }> {
+  const safeProblem = sanitizePromptInput(problem, 400);
+  const safeAttempt = sanitizePromptInput(userAttempt, 300);
+  const completedSummary = completedSteps
+    .map((s, i) => `${i + 1}. ${s.explanation}: ${s.expression}`)
+    .join('\n');
+
+  const prompt = `Ти си AI наставник по математика. Ученикот решава задача чекор по чекор.
+
+ЗАДАЧА: "${safeProblem}"
+
+ДОСЕГА ЗАВРШЕНИ ЧЕКОРИ:
+${completedSummary || '(Ова е прв чекор)'}
+
+ПРЕДЛОГ НА УЧЕНИКОТ ЗА СЛЕДНИОТ ЧЕКОР:
+"${safeAttempt}"
+
+ТОЧНИОТ СЛЕДЕН ЧЕКОР (НЕ ГО ОТКРИВАЈ ДИРЕКТНО):
+Objасни: "${correctNextStep.explanation}" | Израз: "${correctNextStep.expression}"
+
+Твоја задача:
+1. Оцени дали ученичкиот чекор е математички точен и во правилна насока.
+2. Ако е точен: потврди и охрабри.
+3. Ако е делумно точен: укажи што е добро, а што треба да се поправи.
+4. Ако е погрешен: дај педагошки hint без да го откриеш точниот одговор.
+
+Врати JSON:
+{"correct": true/false, "feedback": "реченица за оценка (1-2 реченици)", "hint": "сократски hint ако е грешно, или следна насока ако е точно"}`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      correct: { type: Type.BOOLEAN },
+      feedback: { type: Type.STRING },
+      hint: { type: Type.STRING },
+    },
+    required: ['correct', 'feedback', 'hint'],
+  };
+
+  try {
+    const result = await generateAndParseJSON<{ correct: boolean; feedback: string; hint: string }>(
+      [{ text: prompt }],
+      schema,
+      LITE_MODEL,
+      undefined,
+      2,
+      false,
+    );
+    return result;
+  } catch {
+    return { correct: false, feedback: 'Не можев да го оценам чекорот.', hint: 'Обиди се повторно или побарај помош.' };
+  }
+},
+
 async explainConcept(conceptTitle: string, gradeLevel?: number): Promise<string> {
     const safeConceptTitle = sanitizePromptInput(conceptTitle, 120);
     const cacheKey = `explanation_${safeConceptTitle.replace(/\s+/g, '_').toLowerCase()}_${gradeLevel || 'gen'}`;

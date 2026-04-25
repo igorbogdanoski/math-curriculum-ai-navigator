@@ -839,3 +839,74 @@ ${input.text.slice(0, 12000)}`;
 
   return { output: WEB_TASK_FALLBACK, fallback: true };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PEDAGOGY ENRICHMENT — S45-C (MathDigitizer integration)
+// Enriches extracted tasks with Bloom level, prerequisite concepts, knowledge
+// graph keywords and estimated grade range. Runs as a lightweight post-process
+// step after webTaskExtractionContract / chunkAndExtractTasks.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface PedagogyEnrichment {
+  bloomLevel: 'Remember' | 'Understand' | 'Apply' | 'Analyze' | 'Evaluate' | 'Create';
+  bloomLevelMk: string;
+  prerequisiteConcepts: string[];
+  knowledgeGraphKeywords: string[];
+  estimatedGradeRange: string;
+  cognitiveLoad: 'low' | 'medium' | 'high';
+  realWorldContext?: string;
+}
+
+export type EnrichedWebTask = ExtractedWebTask & { pedagogy?: PedagogyEnrichment };
+
+export async function enrichExtractedPedagogy(
+  tasks: ExtractedWebTask[],
+): Promise<EnrichedWebTask[]> {
+  if (!tasks.length) return [];
+
+  const taskList = tasks
+    .map((t, i) => `${i + 1}. [${t.difficulty}] ${t.topicMk}: ${t.statement}`)
+    .join('\n');
+
+  const prompt = `You are an expert math curriculum designer. Enrich the following extracted math tasks with pedagogical metadata.
+
+TASKS:
+${taskList}
+
+For EACH task (in the same order), return a JSON array where each item has:
+{
+  "bloomLevel": "Remember|Understand|Apply|Analyze|Evaluate|Create",
+  "bloomLevelMk": "Помни|Разбира|Применува|Анализира|Оценува|Создава",
+  "prerequisiteConcepts": ["concept1 in Macedonian", "concept2"],
+  "knowledgeGraphKeywords": ["keyword1", "keyword2", "keyword3"],
+  "estimatedGradeRange": "e.g. 7-9 одделение",
+  "cognitiveLoad": "low|medium|high",
+  "realWorldContext": "Optional: one sentence real-world application in Macedonian"
+}
+
+Return ONLY the JSON array with exactly ${tasks.length} items, no markdown.`;
+
+  try {
+    const response = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user' as const, parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' },
+      safetySettings: SAFETY_SETTINGS,
+      skipTierOverride: true,
+    });
+
+    const stripped = response.text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    const parsed = JSON.parse(stripped) as unknown;
+
+    if (Array.isArray(parsed) && parsed.length === tasks.length) {
+      return tasks.map((task, i) => ({
+        ...task,
+        pedagogy: parsed[i] as PedagogyEnrichment,
+      }));
+    }
+  } catch {
+    // Return tasks without enrichment on any error
+  }
+
+  return tasks;
+}

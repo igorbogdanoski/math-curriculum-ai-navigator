@@ -64,33 +64,24 @@ export function useVariantGenerate({
     setVariants(null);
     setGeneratedMaterial(null);
 
-    const levels = ['support', 'standard', 'advanced'] as const;
-    const newVariants: Partial<Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>> = {};
-    let quotaHit = false;
-    for (const level of levels) {
-      if (quotaHit) break;
-      try {
-        newVariants[level] = await geminiService.generateAssessment(
-          state.materialType as 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS',
-          state.questionTypes, state.numQuestions, finalContext,
-          user ?? undefined, level, undefined, undefined, effectiveInstruction, state.includeSelfAssessment
-        );
-      } catch (error) {
-        if (error instanceof RateLimitError) {
-          setQuotaBannerFromStorage();
-          quotaHit = true;
-        } else {
-          logger.warn(`Failed to generate ${level} variant:`, error);
-        }
+    try {
+      // S45-B: parallel A/B/C generation via generateABCTest (3× faster than sequential)
+      const { a, b, c } = await geminiService.generateABCTest(
+        state.numQuestions,
+        finalContext,
+        user ?? undefined,
+      );
+      setVariants({ support: a, standard: b, advanced: c });
+      if (typeof deductCredits === 'function') {
+        await deductCredits(cost);
       }
-    }
-    if (!quotaHit && Object.keys(newVariants).length > 0) {
-      setVariants(newVariants as Record<'support' | 'standard' | 'advanced', AIGeneratedAssessment>);        
-        // Deduct credits for variants generation if deductCredits is provided
-        if (typeof deductCredits === 'function') {
-            await deductCredits(cost);
-        }    } else if (!quotaHit) {
-      addNotification('Не можеше да се генерираат варијантите. Обидете се повторно.', 'error');
+    } catch (error) {
+      if (error instanceof RateLimitError) {
+        setQuotaBannerFromStorage();
+      } else {
+        logger.warn('Failed to generate differentiated variants:', error);
+        addNotification('Не можеше да се генерираат варијантите. Обидете се повторно.', 'error');
+      }
     }
     setIsGeneratingVariants(false);
   };
