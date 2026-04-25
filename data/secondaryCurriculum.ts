@@ -9,7 +9,6 @@
  */
 
 import type { SecondaryCurriculumModule, SecondaryTrack } from '../types';
-import { SECONDARY_TRACK_LABELS } from '../types';
 import { gymnasiumGrade10, gymnasiumGrade11, gymnasiumGrade12, gymnasiumGrade13 } from './secondary/gymnasium';
 import {
   elementaryAlgebraGrade11,
@@ -25,14 +24,14 @@ import { vocational2Grade10, vocational2Grade11 } from './secondary/vocational2'
 export const secondaryCurricula: SecondaryCurriculumModule[] = [
   {
     track: 'gymnasium',
-    label: SECONDARY_TRACK_LABELS.gymnasium,
+    label: 'Гимназиско (X–XIII)',
     curriculum: {
       grades: [gymnasiumGrade10, gymnasiumGrade11, gymnasiumGrade12, gymnasiumGrade13],
     },
   },
   {
     track: 'gymnasium_elective',
-    label: SECONDARY_TRACK_LABELS.gymnasium_elective,
+    label: 'Гимназија — Изборни предмети',
     curriculum: {
       grades: [
         elementaryAlgebraGrade11,
@@ -45,21 +44,21 @@ export const secondaryCurricula: SecondaryCurriculumModule[] = [
   },
   {
     track: 'vocational4',
-    label: SECONDARY_TRACK_LABELS.vocational4,
+    label: 'Стручно 4-год (X–XIII)',
     curriculum: {
       grades: [vocational4Grade10, vocational4Grade11, vocational4Grade12, vocational4Grade13],
     },
   },
   {
     track: 'vocational3',
-    label: SECONDARY_TRACK_LABELS.vocational3,
+    label: 'Стручно 3-год (X–XII)',
     curriculum: {
       grades: [vocational3Grade10, vocational3Grade11, vocational3Grade12],
     },
   },
   {
     track: 'vocational2',
-    label: SECONDARY_TRACK_LABELS.vocational2,
+    label: 'Стручно 2-год (X–XI)',
     curriculum: {
       grades: [vocational2Grade10, vocational2Grade11],
     },
