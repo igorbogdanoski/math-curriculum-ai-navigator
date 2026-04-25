@@ -8,6 +8,7 @@ import * as chatMethods from './firestoreService.chat';
 import { studentAccountService } from './firestoreService.studentAccount';
 import * as gdprMethods from './firestoreService.gdpr';
 import { materialFeedbackService } from './firestoreService.materialFeedback';
+import { examService } from './firestoreService.exam';
 
 export * from './firestoreService.types';
 export * from './firestoreService.school';
@@ -21,6 +22,7 @@ export * from './firestoreService.studentAccount';
 export * from './firestoreService.gdpr';
 export * from './firestoreService.materialFeedback';
 export * from './firestoreService.matura';
+export * from './firestoreService.exam';
 
 export const firestoreService = {
   ...schoolService,
@@ -33,4 +35,5 @@ export const firestoreService = {
   ...studentAccountService,
   ...gdprMethods,
   ...materialFeedbackService,
+  ...examService,
 };

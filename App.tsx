@@ -167,6 +167,11 @@ const MaturaPracticeView   = safeLazy(() => import('./views/MaturaPracticeView')
 const MaturaAnalyticsView  = safeLazy(() => import('./views/MaturaAnalyticsView').then(module => ({ default: module.MaturaAnalyticsView })));
 const MaturaImportView     = safeLazy(() => import('./views/MaturaImportView').then(module => ({ default: module.MaturaImportView })));
 const MaturaPortalView     = safeLazy(() => import('./views/MaturaPortalView').then(module => ({ default: module.MaturaPortalView })));
+const ExamBuilderView      = safeLazy(() => import('./views/ExamBuilderView').then(module => ({ default: module.ExamBuilderView })));
+const ExamPlayerView       = safeLazy(() => import('./views/ExamPlayerView').then(module => ({ default: module.ExamPlayerView })));
+const ExamPresenterView    = safeLazy(() => import('./views/ExamPresenterView').then(module => ({ default: module.ExamPresenterView })));
+const ExamResultsView      = safeLazy(() => import('./views/ExamResultsView').then(module => ({ default: module.ExamResultsView })));
+const PrintExamView        = safeLazy(() => import('./views/PrintExamView').then(module => ({ default: module.PrintExamView })));
 const AIGeneratorPanel = safeLazy(() => import('./components/ai/AIGeneratorPanel').then(module => ({ default: module.AIGeneratorPanel })));
 const AIChatPanel = safeLazy(() => import('./components/ai/AIChatPanel').then(module => ({ default: module.AIChatPanel })));
 const CommandPalette = safeLazy(() => import('./components/common/CommandPalette').then(module => ({ default: module.CommandPalette })));
@@ -199,6 +204,7 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     '#/gamma/join',
     '#/gamma/student/',
     '#/embed/',
+    '#/exam/play',
   ];
 
   const isPublicHashRoute = (hash: string): boolean =>
@@ -257,6 +263,12 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/matura-stats', component: MaturaAnalyticsView },
     { path: '/matura-import', component: MaturaImportView },
     { path: '/matura-portal', component: MaturaPortalView },
+    { path: '/exam/build', component: ExamBuilderView },
+    { path: '/exam/play', component: ExamPlayerView },
+    { path: '/exam/presenter/:id', component: ExamPresenterView },
+    { path: '/exam/results/:id', component: ExamResultsView },
+    { path: '/exam/print/:id', component: PrintExamView },
+    { path: '/exam/print', component: PrintExamView },
     { path: '/slo', component: SLODashboardView }, // L1 — admin-only SLO dashboard
     { path: '/share/:data', component: SharedPlanView },
     { path: '/share/annual/:data', component: SharedAnnualPlanView },

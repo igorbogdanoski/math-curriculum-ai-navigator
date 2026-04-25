@@ -38,6 +38,9 @@ export interface LiveSession {
     completedAt?: Timestamp;
   }>;
   createdAt?: Timestamp;
+  /** S47 — mkd-slidea async homework mode: session stays joinable until this timestamp */
+  homeworkDeadline?: Timestamp | null;
+  homeworkMode?: boolean;
 }
 
 export interface StudentGroup {
@@ -194,6 +197,55 @@ export interface RecoveryWorksheetApproval {
   assignedStudentCount?: number;
   createdAt?: Timestamp;
 }
+
+// ─── S46: Central Exam Mode ───────────────────────────────────────────────────
+
+export type ExamVariantKey = 'A' | 'B' | 'V' | 'G';
+
+export interface ExamQuestion {
+  id: string;
+  type: 'multiple_choice' | 'short_answer' | 'essay' | 'calculation';
+  question: string;
+  options?: string[];
+  answer: string;
+  solution?: string;
+  points: number;
+  svgDiagram?: string;
+}
+
+export interface ExamSession {
+  id: string;
+  title: string;
+  subject: string;
+  gradeLevel: number;
+  variants: Record<ExamVariantKey, ExamQuestion[]>;
+  duration: number; // seconds
+  joinCode: string; // 6 digits
+  status: 'draft' | 'waiting' | 'active' | 'ended';
+  createdBy: string; // uid
+  createdAt?: Timestamp;
+  startedAt?: Timestamp;
+  endsAt?: Timestamp;
+  totalPoints: number;
+}
+
+export interface ExamResponse {
+  id: string; // studentId / deviceId
+  sessionId: string;
+  studentName: string;
+  variantKey: ExamVariantKey;
+  answers: Record<string, string>; // q0, q1, ...
+  photoUrls?: Record<string, string>;
+  status: 'joined' | 'solving' | 'submitted';
+  submittedAt?: Timestamp;
+  timeRemainingOnSubmit?: number;
+  score?: number;
+  maxScore?: number;
+  aiFeedback?: { questionId: string; correct: boolean; points: number; feedback: string }[];
+  gradedAt?: Timestamp;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export type AIMaterialType = 'assessment' | 'ideas' | 'presentation' | 'lesson_plan' | 'rubric' | 'annual_plan' | 'learning_paths' | 'illustration' | 'other';
 
