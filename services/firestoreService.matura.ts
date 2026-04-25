@@ -198,10 +198,12 @@ function sortExams(exams: MaturaExamMeta[]): MaturaExamMeta[] {
   );
 }
 
-function getLocalMaturaData(): { exams: MaturaExamMeta[]; byExam: Map<string, MaturaQuestion[]> } {
+async function getLocalMaturaData(): Promise<{ exams: MaturaExamMeta[]; byExam: Map<string, MaturaQuestion[]> }> {
   if (_localCache) return _localCache;
 
-  const modules = import.meta.glob('../data/matura/raw/*.json', { eager: true });
+  const loaders = import.meta.glob('../data/matura/raw/*.json');
+  const loaded = await Promise.all(Object.values(loaders).map(fn => fn()));
+
   const exams: MaturaExamMeta[] = [];
   const byExam = new Map<string, MaturaQuestion[]>();
 
@@ -209,7 +211,7 @@ function getLocalMaturaData(): { exams: MaturaExamMeta[]; byExam: Map<string, Ma
   const keyFiles = new Map<string, LocalMaturaRawDoc>(); // e.g. "dim-gymnasium-2022-june" → doc
   const examDocs: LocalMaturaRawDoc[] = [];
 
-  Object.values(modules).forEach((mod) => {
+  loaded.forEach((mod) => {
     const parsed = (mod as { default?: LocalMaturaRawDoc }).default ?? (mod as LocalMaturaRawDoc);
     if (!parsed?.exam?.id || !Array.isArray(parsed?.questions)) return;
 
@@ -318,11 +320,11 @@ export const maturaService = {
         return _examCache;
       }
 
-      const local = getLocalMaturaData();
+      const local = await getLocalMaturaData();
       _examCache = local.exams;
       return _examCache;
     } catch (e) {
-      const local = getLocalMaturaData();
+      const local = await getLocalMaturaData();
       if (local.exams.length > 0) {
         _examCache = local.exams;
         return _examCache;
@@ -349,7 +351,7 @@ export const maturaService = {
         .sort((a, b) => a.questionNumber - b.questionNumber);
 
       if (!questions.length) {
-        const local = getLocalMaturaData().byExam.get(examId) ?? [];
+        const local = (await getLocalMaturaData()).byExam.get(examId) ?? [];
         _questionCache.set(examId, local);
         return local;
       }
@@ -370,7 +372,7 @@ export const maturaService = {
       } catch {
         // ignore and continue to local bundled fallback
       }
-      const local = getLocalMaturaData().byExam.get(examId);
+      const local = (await getLocalMaturaData()).byExam.get(examId);
       if (local) {
         _questionCache.set(examId, local);
         return local;
