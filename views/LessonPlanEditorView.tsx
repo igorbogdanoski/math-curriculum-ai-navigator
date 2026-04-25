@@ -1,14 +1,13 @@
-﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { logger } from '../utils/logger';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import type { LessonPlan, LessonScenario, AIPedagogicalAnalysis, GenerationContext, Grade, Topic, Concept, AIGeneratedIllustration, InfographicLayout } from '../types';
+import type { LessonPlan } from '../types';
 import { InfographicPreviewModal } from '../components/ai/InfographicPreviewModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { ICONS } from '../constants';
-import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -22,38 +21,19 @@ import { usePersistentState } from '../hooks/usePersistentState';
 import { PedagogicalDashboard } from '../components/lesson-plan-editor/PedagogicalDashboard';
 import { AILessonAssistant } from '../components/lesson-plan-editor/AILessonAssistant';
 import { GeneratedIllustration } from '../components/ai/GeneratedIllustration';
-import { exportLessonPlanToWord } from '../utils/wordExport';
-import { generateLessonICS, downloadICS, getGoogleCalendarUrl } from '../utils/icalExport';
-import { saveAICache, getAICache } from '../services/indexedDBService';
+import { initialPlanState } from '../components/lesson-plan-editor/lessonPlanEditorHelpers';
+import { useLessonPlanAIActions } from '../components/lesson-plan-editor/useLessonPlanAIActions';
+import { useLessonPlanExport } from '../components/lesson-plan-editor/useLessonPlanExport';
+import { LessonPlanExportMenu } from '../components/lesson-plan-editor/LessonPlanExportMenu';
+import { LessonPlanDifferentiationPanel } from '../components/lesson-plan-editor/LessonPlanDifferentiationPanel';
 
 
 interface LessonPlanEditorViewProps {
   id?: string;
-  // Pre-fill from Annual Plan bridge (query params)
   prefillTopic?: string;
   prefillGrade?: string;
   prefillSubject?: string;
 }
-
-const initialPlanState: Partial<LessonPlan> = {
-  title: '',
-  grade: 6,
-  topicId: '',
-  conceptIds: [],
-  subject: 'Математика',
-  theme: '',
-  lessonNumber: 1,
-  objectives: [],
-  assessmentStandards: [],
-  scenario: { introductory: { text: '' }, main: [], concluding: { text: '' } },
-  materials: [],
-  progressMonitoring: [],
-  differentiation: '',
-  reflectionPrompt: '1. Што помина добро на часот и зошто?\n2. Каде учениците имаа најголеми потешкотии и зошто?\n3. Што би променил/а следниот пат кога ќе го предавам овој час?',
-  selfAssessmentPrompt: '',
-};
-
-const stringToArray = (str: string = '') => str.split('\n').filter(line => line.trim() !== '');
 
 export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, prefillTopic, prefillGrade, prefillSubject }) => {
   const { navigate } = useNavigation();
@@ -62,36 +42,17 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const { addNotification } = useNotification();
   const { user } = useAuth();
   const { isOnline } = useNetworkStatus();
-  
-  // Use persistent state for drafts
+
   const [plan, setPlan, clearDraft, lastSaved] = usePersistentState<Partial<LessonPlan>>(
     id ? `lesson-plan-draft-${id}` : 'lesson-plan-new-draft',
     initialPlanState
   );
 
-  const [isGenerating, setIsGenerating] = useState(false);
   const [showMathTools, setShowMathTools] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState<AIPedagogicalAnalysis | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
-  const [isGeneratingWord, setIsGeneratingWord] = useState(false);
-  const [isGeneratingIllustration, setIsGeneratingIllustration] = useState(false);
-  const [generatedIllustration, setGeneratedIllustration] = useState<AIGeneratedIllustration | null>(null);
-  const [isGeneratingInfographic, setIsGeneratingInfographic] = useState(false);
-  const [infographicLayout, setInfographicLayout] = useState<InfographicLayout | null>(null);
-  const exportMenuRef = useRef<HTMLDivElement>(null);
-  const [enhancingField, setEnhancingField] = useState<string | null>(null);
-
-  // К3: Differentiation panel state
-  const [diffActivities, setDiffActivities] = useState<{ support: string[]; standard: string[]; advanced: string[] } | null>(null);
-  const [isGeneratingDiff, setIsGeneratingDiff] = useState(false);
-  const [isRegeneratingSection, setIsRegeneratingSection] = useState<'introductory' | 'main' | 'concluding' | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
-  
-  // Ref to track mounted status for async operations
-  const isMounted = useRef(true);
 
+  const isMounted = useRef(true);
   const isEditing = useMemo(() => id !== undefined, [id]);
 
   useEffect(() => {
@@ -111,330 +72,79 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         navigate('/my-lessons');
       }
     } else {
-        setPlan((currentPlan: Partial<LessonPlan>) => {
-            if (currentPlan.topicId === '' && curriculum && curriculum.grades.length > 0) {
-                // Annual Plan bridge — prefill from topic title + grade string
-                if (prefillTopic) {
-                    // Parse grade number from string like "6-то одделение" or "6"
-                    const gradeNum = prefillGrade ? parseInt(prefillGrade, 10) || 6 : 6;
-                    const gradeData = curriculum.grades.find(g => g.level === gradeNum)
-                        ?? curriculum.grades.find(g => prefillGrade?.includes(String(g.level)))
-                        ?? curriculum.grades[0];
-                    // Find topic by title similarity
-                    const matchedTopic = gradeData?.topics.find(t =>
-                        t.title.toLowerCase().includes(prefillTopic.toLowerCase()) ||
-                        prefillTopic.toLowerCase().includes(t.title.toLowerCase())
-                    ) ?? gradeData?.topics[0];
-                    return {
-                        ...initialPlanState,
-                        grade: gradeData?.level || gradeNum,
-                        topicId: matchedTopic?.id || '',
-                        theme: prefillTopic,
-                        subject: prefillSubject || 'Математика',
-                        title: `${prefillSubject || 'Математика'} — ${prefillTopic}`,
-                    };
-                }
-                const defaultGrade = curriculum.grades[0];
-                const defaultTopic = defaultGrade?.topics[0];
-                return {
-                    ...initialPlanState,
-                    grade: defaultGrade?.level || 6,
-                    topicId: defaultTopic?.id || '',
-                    theme: defaultTopic?.title || '',
-                };
-            }
-            return currentPlan;
-        });
+      setPlan((currentPlan: Partial<LessonPlan>) => {
+        if (currentPlan.topicId === '' && curriculum && curriculum.grades.length > 0) {
+          if (prefillTopic) {
+            const gradeNum = prefillGrade ? parseInt(prefillGrade, 10) || 6 : 6;
+            const gradeData = curriculum.grades.find(g => g.level === gradeNum)
+              ?? curriculum.grades.find(g => prefillGrade?.includes(String(g.level)))
+              ?? curriculum.grades[0];
+            const matchedTopic = gradeData?.topics.find(t =>
+              t.title.toLowerCase().includes(prefillTopic.toLowerCase()) ||
+              prefillTopic.toLowerCase().includes(t.title.toLowerCase())
+            ) ?? gradeData?.topics[0];
+            return {
+              ...initialPlanState,
+              grade: gradeData?.level || gradeNum,
+              topicId: matchedTopic?.id || '',
+              theme: prefillTopic,
+              subject: prefillSubject || 'Математика',
+              title: `${prefillSubject || 'Математика'} — ${prefillTopic}`,
+            };
+          }
+          const defaultGrade = curriculum.grades[0];
+          const defaultTopic = defaultGrade?.topics[0];
+          return {
+            ...initialPlanState,
+            grade: defaultGrade?.level || 6,
+            topicId: defaultTopic?.id || '',
+            theme: defaultTopic?.title || '',
+          };
+        }
+        return currentPlan;
+      });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEditing, getLessonPlan, navigate, addNotification, curriculum, isCurriculumLoading]);
-  
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-        if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-            setIsExportMenuOpen(false);
-        }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-  
-  const handleGenerateWithAI = useCallback(async (context: GenerationContext) => {
-    if (!isOnline) {
-        addNotification('Нема интернет конекција. Оваа функција е недостапна.', 'error');
-        return;
-    }
-    setIsGenerating(true);
-    try {
-        const generatedData = await geminiService.generateDetailedLessonPlan(context, user ?? undefined);
-        
-        if (isMounted.current) {
-            setPlan((prev: Partial<LessonPlan>) => {
-                const basePlan = { ...prev, ...generatedData };
-                // Preserve key context fields depending on generation source
-                if (context.type === 'CONCEPT' || context.type === 'ACTIVITY') {
-                    basePlan.grade = prev.grade;
-                    basePlan.topicId = prev.topicId;
-                    basePlan.conceptIds = prev.conceptIds;
-                    basePlan.theme = prev.theme;
-                } else if (context.type === 'STANDARD') {
-                    if (context.standard?.gradeLevel) {
-                        basePlan.grade = context.standard.gradeLevel;
-                        const gradeData = curriculum?.grades.find((g: Grade) => g.level === context.standard!.gradeLevel);
-                        if (gradeData) {
-                            const relevantTopic = gradeData.topics.find((t: Topic) => t.concepts.some((c: Concept) => c.nationalStandardIds?.includes(context.standard!.id)));
-                            basePlan.topicId = relevantTopic?.id || gradeData.topics[0]?.id || '';
-                            basePlan.theme = relevantTopic?.title || gradeData.topics[0]?.title || '';
-                        }
-                    }
-                }
-                return basePlan;
-            });
-            addNotification('AI успешно генерираше нацрт-подготовку!', 'success');
-        }
-    } catch (error) {
-        if (isMounted.current) {
-            addNotification((error as Error).message, 'error');
-        }
-    } finally {
-        if (isMounted.current) {
-            setIsGenerating(false);
-        }
-    }
-  }, [user, curriculum, addNotification, isOnline]);
 
-  const handleGenerateDifferentiation = useCallback(async () => {
-    if (!plan.title && !plan.theme) return;
-    setIsGeneratingDiff(true);
-    setDiffActivities(null);
-    try {
-      const result = await geminiService.generateDifferentiationActivities(
-        plan.title ?? '',
-        plan.grade ?? 6,
-        plan.theme ?? '',
-        (plan.objectives ?? []).map(o => typeof o === 'string' ? o : o.text),
-      );
-      if (isMounted.current) setDiffActivities(result);
-    } catch {
-      // non-fatal
-    } finally {
-      if (isMounted.current) setIsGeneratingDiff(false);
-    }
-  }, [plan.title, plan.grade, plan.theme, plan.objectives]);
+  const ai = useLessonPlanAIActions({
+    plan, setPlan, user, curriculum, isOnline, isMounted, addNotification,
+  });
 
-  const handleEnhanceField = useCallback(async (fieldName: string, currentText: string, action: string = 'auto', selection?: { start: number, end: number }) => {
-    if (!isOnline) {
-        addNotification('Нема интернет конекција. Оваа функција е недостапна.', 'error');
-        return;
-    }
-    if (!currentText || enhancingField) return;
-
-    setEnhancingField(fieldName);
-    try {
-        const textToEnhance = selection ? currentText.substring(selection.start, selection.end) : currentText;
-        const aiResult = await geminiService.enhanceText(textToEnhance, action, fieldName, plan.grade || 6, user ?? undefined);
-        const enhancedText = selection ? currentText.substring(0, selection.start) + aiResult + currentText.substring(selection.end) : aiResult;
-        
-        if (isMounted.current) {
-            setPlan((prev: Partial<LessonPlan>) => {
-                const newPlan = { ...prev };
-                
-                if (fieldName === 'objectives') {
-                    newPlan.objectives = enhancedText.split('\n')
-                        .filter(line => line.trim() !== '')
-                        .map(text => ({ text }));
-                } else if (fieldName === 'assessmentStandards' || fieldName === 'materials' || fieldName === 'progressMonitoring') {
-                    const key = fieldName as 'assessmentStandards' | 'materials' | 'progressMonitoring';
-                    newPlan[key] = enhancedText.split('\n').filter(line => line.trim() !== '');
-                } else if (fieldName.startsWith('scenario.')) {
-                    const scenarioField = fieldName.split('.')[1] as keyof LessonPlan['scenario'];
-                    const scenario = { ...(newPlan.scenario || { introductory: { text: '' }, main: [], concluding: { text: '' } }) };
-                    
-                    if (scenarioField === 'main') {
-                        scenario.main = enhancedText.split('\n')
-                            .filter(line => line.trim() !== '')
-                            .map(text => ({ text, bloomsLevel: 'Understanding' }));
-                    } else if (scenarioField === 'introductory' || scenarioField === 'concluding') {
-                        scenario[scenarioField] = { text: enhancedText };
-                    }
-                    newPlan.scenario = scenario;
-                } else {
-                    const key = fieldName as 'title' | 'subject' | 'theme' | 'differentiation' | 'reflectionPrompt' | 'selfAssessmentPrompt';
-                    newPlan[key] = enhancedText;
-                }
-                return newPlan;
-            });
-            addNotification(`Полето е успешно подобрено со AI!`, 'success');
-        }
-    } catch (error) {
-        if (isMounted.current) {
-            addNotification((error as Error).message, 'error');
-        }
-    } finally {
-        if (isMounted.current) {
-            setEnhancingField(null);
-        }
-    }
-  }, [plan.grade, user, addNotification, enhancingField, isOnline]);
-
-  const handleRegenerateSection = useCallback(async (section: 'introductory' | 'main' | 'concluding') => {
-    if (!isOnline) {
-        addNotification('Нема интернет конекција.', 'error');
-        return;
-    }
-
-    const cacheKey = `regen-${section}-${plan.topicId}-${plan.grade}`;
-    const cachedData = await getAICache(cacheKey);
-
-    if (cachedData) {
-        setPlan((prev: Partial<LessonPlan>) => {
-            const newPlan = { ...prev };
-            const scenario = { ...(newPlan.scenario || { introductory: { text: '' }, main: [], concluding: { text: '' } }) };
-            if (section === 'main') scenario.main = cachedData;
-            else scenario[section] = cachedData;
-            newPlan.scenario = scenario;
-            return newPlan;
-        });
-        addNotification(`Вчитано од кеш!`, 'info');
-        return;
-    }
-
-    setIsRegeneratingSection(section);
-    try {
-        const newData = await geminiService.regenerateLessonPlanSection(section, plan, "");
-        await saveAICache(cacheKey, newData);
-        
-        if (isMounted.current) {
-            setPlan((prev: Partial<LessonPlan>) => {
-                const newPlan = { ...prev };
-                const scenario = { ...(newPlan.scenario || { introductory: { text: '' }, main: [], concluding: { text: '' } }) };
-                
-                if (section === 'main') {
-                    scenario.main = newData as LessonScenario['main'];
-                } else {
-                    scenario[section] = newData as LessonScenario['introductory'];
-                }
-                
-                newPlan.scenario = scenario;
-                return newPlan;
-            });
-            addNotification(`Секцијата е успешно регенерирана!`, 'success');
-        }
-    } catch (error) {
-        if (isMounted.current) {
-            addNotification((error as Error).message, 'error');
-        }
-    } finally {
-        if (isMounted.current) {
-            setIsRegeneratingSection(null);
-        }
-    }
-  }, [plan, user, addNotification, isOnline]);
-  
-  const handleGenerateIllustration = useCallback(async (prompt: string) => {
-    if (!isOnline) {
-        addNotification('Нема интернет конекција.', 'error');
-        return;
-    }
-    setIsGeneratingIllustration(true);
-    setGeneratedIllustration(null);
-    try {
-        const illustration = await geminiService.generateIllustration(`Наставна илустрација за математика: ${prompt}`);
-        if (isMounted.current) {
-            setGeneratedIllustration(illustration);
-            setPlan((prev: Partial<LessonPlan>) => ({
-                ...prev,
-                illustrationUrl: illustration.imageUrl
-            }));
-            addNotification('Илустрацијата е успешно генерирана!', 'success');
-        }
-    } catch (error) {
-        if (isMounted.current) {
-            addNotification((error as Error).message, 'error');
-        }
-    } finally {
-        if (isMounted.current) {
-            setIsGeneratingIllustration(false);
-        }
-    }
-  }, [addNotification, isOnline]);
-
-  const handleGenerateInfographic = useCallback(async () => {
-    if (!isOnline) { addNotification('Нема интернет конекција.', 'error'); return; }
-    if (user?.tier !== 'Pro' && user?.tier !== 'Unlimited') { addNotification('Инфографиците се достапни само за Pro корисници.', 'warning'); return; }
-    if (!plan?.title) { addNotification('Прво генерирајте подготовка пред да направите инфографик.', 'warning'); return; }
-    setIsGeneratingInfographic(true);
-    try {
-        const layout = await geminiService.generateInfographicLayout(plan, user ?? undefined);
-        if (isMounted.current) setInfographicLayout(layout);
-    } catch (error) {
-        if (isMounted.current) addNotification('Грешка при генерирање на инфографикот.', 'error');
-    } finally {
-        if (isMounted.current) setIsGeneratingInfographic(false);
-    }
-  }, [plan, user, addNotification, isOnline]);
-
-  const handleAnalyze = useCallback(async () => {
-    if (!isOnline) {
-        addNotification('Нема интернет конекција. Оваа функција е недостапна.', 'error');
-        return;
-    }
-    if (!plan || !plan.title) {
-        addNotification("Ве молиме пополнете ја подготовката пред да побарате анализа.", 'warning');
-        return;
-    }
-    setIsAnalyzing(true);
-    setAiAnalysis(null);
-    try {
-        const analysisResult = await geminiService.analyzeLessonPlan(plan, user ?? undefined);
-        if (isMounted.current) {
-            setAiAnalysis(analysisResult);
-        }
-    } catch(error) {
-        if (isMounted.current) {
-            addNotification((error as Error).message, 'error');
-        }
-    } finally {
-        if (isMounted.current) {
-            setIsAnalyzing(false);
-        }
-    }
-  }, [plan, user, addNotification, isOnline]);
-
+  const exporter = useLessonPlanExport({ plan, user, addNotification });
 
   const handleSave = useCallback(async () => {
     if (!plan.title) {
-        addNotification('Насловот е задолжителен.', 'error');
-        return;
+      addNotification('Насловот е задолжителен.', 'error');
+      return;
     }
     setIsSaving(true);
     try {
-        if (isEditing) {
-            await updateLessonPlan(plan as LessonPlan);
-            clearDraft();
-            if (isMounted.current) {
-                addNotification('Подготовката е успешно ажурирана!', 'success');
-                navigate('/my-lessons');
-            }
-        } else {
-            const newPlanId = await addLessonPlan(plan as Omit<LessonPlan, 'id'>);
-            clearDraft();
-            if (isMounted.current) {
-                addNotification('Подготовката е успешно креирана!', 'success');
-                navigate(`/planner/lesson/${newPlanId}`);
-            }
-        }
-    } catch (error) {
-        logger.error("Failed to save lesson plan:", error);
+      if (isEditing) {
+        await updateLessonPlan(plan as LessonPlan);
+        clearDraft();
         if (isMounted.current) {
-            addNotification('Грешка при зачувување на подготовката.', 'error');
+          addNotification('Подготовката е успешно ажурирана!', 'success');
+          navigate('/my-lessons');
         }
+      } else {
+        const newPlanId = await addLessonPlan(plan as Omit<LessonPlan, 'id'>);
+        clearDraft();
+        if (isMounted.current) {
+          addNotification('Подготовката е успешно креирана!', 'success');
+          navigate(`/planner/lesson/${newPlanId}`);
+        }
+      }
+    } catch (error) {
+      logger.error('Failed to save lesson plan:', error);
+      if (isMounted.current) {
+        addNotification('Грешка при зачувување на подготовката.', 'error');
+      }
     } finally {
-        if (isMounted.current) setIsSaving(false);
+      if (isMounted.current) setIsSaving(false);
     }
-  }, [plan, isEditing, addNotification, clearDraft, navigate, isMounted]);
+  }, [plan, isEditing, addNotification, clearDraft, navigate, addLessonPlan, updateLessonPlan]);
 
-  // Cmd+S / Ctrl+S keyboard shortcut to save
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
@@ -450,114 +160,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
     e.preventDefault();
     await handleSave();
   };
-  
-    const arrayToLines = (arr: any[] = []) => arr.map(item => `- ${typeof item === 'string' ? item : item.text}${item.bloomsLevel ? ` [${item.bloomsLevel}]` : ''}`).join('\n');
 
-  const handleExport = async (format: 'md' | 'pdf' | 'doc' | 'clipboard' | 'ics' | 'google' | 'teams') => {
-    if (!plan || !plan.title) {
-        addNotification('Насловот е задолжителен за извоз.', 'error');
-        return;
-    };
-    setIsExportMenuOpen(false);
-
-    if (format === 'pdf') {
-        // This relies on @media print styles which now correctly show the clean LessonPlanDisplay
-        window.print();
-        return;
-    }
-    
-    const { title, grade, theme, objectives, assessmentStandards, scenario, materials, progressMonitoring, differentiation, reflectionPrompt } = plan;
-
-    const introductoryText = typeof scenario?.introductory === 'string' ? scenario.introductory : scenario?.introductory?.text;
-    const concludingText = typeof scenario?.concluding === 'string' ? scenario.concluding : scenario?.concluding?.text;
-    const mainActivitiesText = (scenario?.main || []).map((a: any) => typeof a === 'string' ? a : `${a.text}${a.bloomsLevel ? ` [${a.bloomsLevel}]` : ''}`).join('; ');
-
-    const fullText = `Наслов: ${title}\nОдделение: ${grade}\nТема: ${theme}\n\nЦЕЛИ:\n${arrayToLines(objectives || [])}\n\nСТАНДАРДИ ЗА ОЦЕНУВАЊЕ:\n${(assessmentStandards || []).join('\n')}\n\nСЦЕНАРИО:\nВовед: ${introductoryText}\nГлавни: ${mainActivitiesText}\nЗавршна: ${concludingText}\n\nМАТЕРИЈАЛИ:\n${(materials || []).join('\n')}\n\nСЛЕДЕЊЕ НА НАПРЕДОК:\n${(progressMonitoring || []).join('\n')}\n`;
-    
-    if (format === 'clipboard') {
-        navigator.clipboard.writeText(fullText)
-            .then(() => addNotification('Подготовката е копирана како обичен текст.', 'success'))
-            .catch(() => addNotification('Грешка при копирање.', 'error'));
-        return;
-    }
-    
-    let content = '';
-    let mimeType = '';
-    let extension = '';
-    const filename = `${(title || 'plan').replace(/[^a-z0-9а-шѓѕјљњќџч]/gi, '_').toLowerCase()}`;
-    const escapeHtml = (unsafe: string = '') => unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    
-    if (format === 'doc') {
-          setIsGeneratingWord(true);
-          try {
-              await exportLessonPlanToWord(plan as LessonPlan, user || undefined);
-              addNotification('Word документот е успешно преземен', 'success');
-          } catch (error) {
-              logger.error('Export to Word failed:', error);
-              addNotification('Грешка при генерирање на Word документ.', 'error');
-          } finally {
-              setIsGeneratingWord(false);
-          }
-        return;
-    }
-
-    if (format === 'ics') {
-        try {
-            const ics = generateLessonICS(plan as LessonPlan);
-            downloadICS(ics, `${filename}.ics`);
-            addNotification('Календарскиот настан е успешно преземен', 'success');
-        } catch (error) {
-            logger.error('Export to ICS failed:', error);
-            addNotification('Грешка при генерирање на ICS.', 'error');
-        }
-        return;
-    }
-
-    if (format === 'google') {
-        try {
-            const url = getGoogleCalendarUrl(plan as LessonPlan);
-            window.open(url, '_blank');
-            addNotification('Се отвора Google Calendar...', 'success');
-        } catch (error) {
-            logger.error('Google Calendar link failed:', error);
-            addNotification('Грешка при креирање на Google Calendar линк.', 'error');
-        }
-        return;
-    }
-
-    if (format === 'teams') {
-        const teamsUrl = `https://teams.microsoft.com/share?href=${encodeURIComponent(window.location.href)}&msgText=${encodeURIComponent(`Погледнете ја мојата подготовка за час по Математика: ${plan.title}`)}`;
-        window.open(teamsUrl, '_blank');
-        addNotification('Се отвора Microsoft Teams...', 'info');
-        return;
-    }
-    
-    if (format === 'md') {
-        content = `# ${title || 'Без наслов'}\n\n**Одделение:** ${grade || ''}\n**Тема:** ${theme || ''}\n\n---\n\n## Цели\n${arrayToLines(objectives)}\n\n## Стандарди за оценување\n${arrayToLines(assessmentStandards)}\n\n## Сценарио\n### Вовед\n${introductoryText || ''}\n### Главни активности\n${arrayToLines(scenario?.main)}\n### Завршна активност\n${concludingText || ''}\n\n---\n\n## Материјали\n${arrayToLines(materials)}\n\n## Следење на напредокот\n${arrayToLines(progressMonitoring)}`;
-        mimeType = 'text/markdown;charset=utf-8';
-        extension = 'md';
-    } else {
-        addNotification(`Извозот во .${format} формат не е имплементиран тука.`, 'info');
-        return;
-    }
-
-    try {
-        const blob = new Blob([content], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${filename}.${extension}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        addNotification('Документот е преземен.', 'success');
-    } catch (error) {
-        logger.error('Export failed:', error);
-        addNotification('Грешка при преземање на документот.', 'error');
-    }
-  };
-  
   if (isCurriculumLoading) {
     return (
       <div className="p-8">
@@ -571,13 +174,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       </div>
     );
   }
-  
+
   if (!curriculum) {
     return (
-        <div className="p-8 text-center text-red-500">
-            <h2 className="text-2xl font-bold">Податоците за наставната програма не можеа да се вчитаат.</h2>
-            <p className="mt-2">Ве молиме обидете се повторно да ја вчитате страницата.</p>
-        </div>
+      <div className="p-8 text-center text-red-500">
+        <h2 className="text-2xl font-bold">Податоците за наставната програма не можеа да се вчитаат.</h2>
+        <p className="mt-2">Ве молиме обидете се повторно да ја вчитате страницата.</p>
+      </div>
     );
   }
 
@@ -585,302 +188,220 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
     <div className="p-8 animate-fade-in">
       <header className="mb-6 no-print flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-            <button onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">
-                &larr; Назад кон моите подготовки
-            </button>
-            <h1 className="text-4xl font-bold text-brand-primary">
-                {isEditing ? 'Уреди подготовка за час' : 'Креирај нова подготовка'}
-            </h1>
+          <button onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">
+            &larr; Назад кон моите подготовки
+          </button>
+          <h1 className="text-4xl font-bold text-brand-primary">
+            {isEditing ? 'Уреди подготовка за час' : 'Креирај нова подготовка'}
+          </h1>
         </div>
 
         {lastSaved && (
-            <div className="flex flex-col items-end gap-2 text-sm">
-                <div className="flex items-center text-gray-500 gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full border">
-                    <ICONS.check className="w-4 h-4 text-green-500" />
-                    <span>Автоматски зачувано во {new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-                <button
-                    onClick={() => {
-                        setConfirmDialog({
-                            message: 'Дали сте сигурни дека сакате да го отфрлите нацртот? Сите промени ќе бидат изгубени.',
-                            variant: 'danger',
-                            onConfirm: () => { setConfirmDialog(null); clearDraft(); }
-                        });
-                    }}
-                    className="text-red-600 hover:text-red-700 hover:underline transition-colors flex items-center gap-1"
-                >
-                    <ICONS.trash className="w-3.5 h-3.5" />
-                    Отфрли нацрт
-                </button>
+          <div className="flex flex-col items-end gap-2 text-sm">
+            <div className="flex items-center text-gray-500 gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full border">
+              <ICONS.check className="w-4 h-4 text-green-500" />
+              <span>Автоматски зачувано во {new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
+            <button
+              onClick={() => {
+                setConfirmDialog({
+                  message: 'Дали сте сигурни дека сакате да го отфрлите нацртот? Сите промени ќе бидат изгубени.',
+                  variant: 'danger',
+                  onConfirm: () => { setConfirmDialog(null); clearDraft(); }
+                });
+              }}
+              className="text-red-600 hover:text-red-700 hover:underline transition-colors flex items-center gap-1"
+            >
+              <ICONS.trash className="w-3.5 h-3.5" />
+              Отфрли нацрт
+            </button>
+          </div>
         )}
       </header>
 
       <div className="no-print">
         <div className="flex flex-col lg:flex-row gap-6">
-            <div className="flex-1">
-                <Card>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
-                        {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
-                        <AIContextSelector
-                            plan={plan}
-                            onGenerate={handleGenerateWithAI}
-                            isGenerating={isGenerating}
-                        />
-                    </div>
-                    
-                    <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
-                        {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
-                        <AIPedagogicalAnalysisDisplay
-                            analysis={aiAnalysis}
-                            onAnalyze={handleAnalyze}
-                            isAnalyzing={isAnalyzing}
-                            planTitle={plan.title}
-                        />
-                    </div>
+          <div className="flex-1">
+            <Card>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
+                  {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
+                  <AIContextSelector
+                    plan={plan}
+                    onGenerate={ai.handleGenerateWithAI}
+                    isGenerating={ai.isGenerating}
+                  />
+                </div>
 
-                    <LessonPlanFormFields 
-                        plan={plan}
-                        setPlan={setPlan}
-                        onEnhanceField={handleEnhanceField}
-                        onRegenerateSection={handleRegenerateSection}
-                        onGenerateIllustration={handleGenerateIllustration}
-                        enhancingField={enhancingField}
-                        isRegenerating={isRegeneratingSection || (isGeneratingIllustration ? 'illustration' : null)}
-                    />
-                    
-                    {isGeneratingIllustration && (
-                        <div className="flex flex-col items-center justify-center p-8 bg-teal-50 rounded-xl border-2 border-dashed border-teal-200 animate-pulse">
-                            <ICONS.spinner className="w-10 h-10 text-teal-500 animate-spin mb-3" />
-                            <p className="text-teal-700 font-semibold text-lg">Генерирам илустрација за вашата активност...</p>
-                        </div>
-                    )}
+                <div className={`${!isOnline ? 'opacity-50 pointer-events-none grayscale relative' : ''}`}>
+                  {!isOnline && <div className="absolute inset-0 z-10 bg-gray-100/20 cursor-not-allowed flex items-center justify-center"><span className="bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-600">Офлајн</span></div>}
+                  <AIPedagogicalAnalysisDisplay
+                    analysis={ai.aiAnalysis}
+                    onAnalyze={ai.handleAnalyze}
+                    isAnalyzing={ai.isAnalyzing}
+                    planTitle={plan.title}
+                  />
+                </div>
 
-                    {generatedIllustration && (
-                        <div className="mt-6 relative">
-                            <button 
-                                onClick={() => setGeneratedIllustration(null)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors z-10"
-                            >
-                                <ICONS.close className="w-4 h-4" />
-                            </button>
-                            <GeneratedIllustration material={generatedIllustration} />
-                        </div>
-                    )}
-                    
-                    <div className="flex justify-end items-center pt-4 gap-3 border-t mt-6 flex-wrap">
-                        {/* Infographic button — Premium only */}
-                        {(user?.tier === 'Pro' || user?.tier === 'Unlimited') && plan?.title && (
-                            <button
-                                type="button"
-                                onClick={handleGenerateInfographic}
-                                disabled={isGeneratingInfographic}
-                                className="flex items-center gap-2 bg-purple-600 text-white px-4 py-3 rounded-lg shadow hover:bg-purple-700 transition-colors font-semibold disabled:bg-purple-300 text-sm"
-                                title="Генерирај инфографик за овој час (Premium)"
-                            >
-                                {isGeneratingInfographic
-                                    ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Генерирам…</>
-                                    : <>🎨 Инфографик</>}
-                            </button>
-                        )}
-                        <div className="relative" ref={exportMenuRef}>
-                            <button
-                                type="button"
-                                onClick={() => setIsExportMenuOpen((prev: boolean) => !prev)}
-                                disabled={!plan.title}
-                                className="flex items-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-lg shadow hover:bg-gray-700 transition-colors font-semibold disabled:bg-gray-400"
-                                title="Извези ја оваа нацрт-подготовка"
-                            >
-                                <ICONS.download className="w-5 h-5" />
-                                Извези
-                                <ICONS.chevronDown className={`w-4 h-4 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                            {isExportMenuOpen && (
-                                <div className="absolute bottom-full right-0 mb-2 w-72 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 animate-fade-in-up">
-                                    <div className="py-1">
-                                        <button type="button" onClick={() => handleExport('md')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.download className="w-5 h-5 mr-3" /> Сними како Markdown (.md)
-                                        </button>
-                                        <button type="button" onClick={() => handleExport('doc')} disabled={isGeneratingWord} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50">
-                                            {isGeneratingWord ? <ICONS.spinner className="w-5 h-5 mr-3 animate-spin" /> : <ICONS.edit className="w-5 h-5 mr-3" />}
-                                            {isGeneratingWord ? 'Генерирам Word...' : 'Сними како Word (.doc)'}
-                                        </button>
-                                        <button type="button" onClick={() => handleExport('ics')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.calendar className="w-5 h-5 mr-3" /> Сними како Календар (.ics)
-                                        </button>
-                                        <button type="button" onClick={() => handleExport('google')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.calendar className="w-5 h-5 mr-3 text-blue-600" /> Додај во Google Calendar
-                                        </button>
-                                        <button type="button" onClick={() => handleExport('teams')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.externalLink className="w-5 h-5 mr-3 text-indigo-600" /> Сподели во Microsoft Teams
-                                        </button>
-                                        <button type="button" onClick={() => handleExport('pdf')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.printer className="w-5 h-5 mr-3" /> Печати/Сними како PDF
-                                        </button>
-                                        <button type="button" onClick={() => handleExport('clipboard')} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <ICONS.edit className="w-5 h-5 mr-3" /> Копирај како обичен текст
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={isSaving}
-                            title="Зачувај (Ctrl+S)"
-                            className="flex items-center bg-brand-primary text-white px-6 py-3 rounded-lg shadow hover:bg-brand-secondary transition-colors font-semibold disabled:bg-gray-400"
-                        >
-                            {isSaving ? (
-                                <>
-                                    <ICONS.spinner className="w-5 h-5 mr-2 animate-spin" />
-                                    <span>Зачувувам...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <ICONS.check className="w-5 h-5 mr-2" />
-                                    {isEditing ? 'Зачувај промени' : 'Зачувај подготовка'}
-                                </>
-                            )}
-                        </button>
-                    </div>
-                    </form>
-                </Card>
-            </div>
-
-            <aside className="w-full lg:w-80 space-y-4">
-                <PedagogicalDashboard activities={plan.scenario?.main || []} />
-
-                {/* AI7: Lesson Planning Assistant */}
-                <AILessonAssistant
-                  onApply={(suggestion) => {
-                    setPlan(prev => ({
-                      ...prev,
-                      differentiation: prev.differentiation
-                        ? `${prev.differentiation}\n\n--- AI Assistant ---\n${suggestion}`
-                        : suggestion,
-                    }));
-                  }}
+                <LessonPlanFormFields
+                  plan={plan}
+                  setPlan={setPlan}
+                  onEnhanceField={ai.handleEnhanceField}
+                  onRegenerateSection={ai.handleRegenerateSection}
+                  onGenerateIllustration={ai.handleGenerateIllustration}
+                  enhancingField={ai.enhancingField}
+                  isRegenerating={ai.isRegeneratingSection || (ai.isGeneratingIllustration ? 'illustration' : null)}
                 />
 
-                {/* К3: Differentiation A/B/C Panel */}
-                <Card className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-xs font-black text-gray-700 uppercase tracking-wide">Диференцирана настава</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">AI предлози за 3 нивоа</p>
-                    </div>
+                {ai.isGeneratingIllustration && (
+                  <div className="flex flex-col items-center justify-center p-8 bg-teal-50 rounded-xl border-2 border-dashed border-teal-200 animate-pulse">
+                    <ICONS.spinner className="w-10 h-10 text-teal-500 animate-spin mb-3" />
+                    <p className="text-teal-700 font-semibold text-lg">Генерирам илустрација за вашата активност...</p>
+                  </div>
+                )}
+
+                {ai.generatedIllustration && (
+                  <div className="mt-6 relative">
+                    <button
+                      onClick={() => ai.setGeneratedIllustration(null)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors z-10"
+                    >
+                      <ICONS.close className="w-4 h-4" />
+                    </button>
+                    <GeneratedIllustration material={ai.generatedIllustration} />
+                  </div>
+                )}
+
+                <div className="flex justify-end items-center pt-4 gap-3 border-t mt-6 flex-wrap">
+                  {(user?.tier === 'Pro' || user?.tier === 'Unlimited') && plan?.title && (
                     <button
                       type="button"
-                      onClick={handleGenerateDifferentiation}
-                      disabled={isGeneratingDiff || (!plan.title && !plan.theme)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition disabled:opacity-40"
+                      onClick={ai.handleGenerateInfographic}
+                      disabled={ai.isGeneratingInfographic}
+                      className="flex items-center gap-2 bg-purple-600 text-white px-4 py-3 rounded-lg shadow hover:bg-purple-700 transition-colors font-semibold disabled:bg-purple-300 text-sm"
+                      title="Генерирај инфографик за овој час (Premium)"
                     >
-                      {isGeneratingDiff
-                        ? <><ICONS.spinner className="w-3.5 h-3.5 animate-spin" /> Генерирам...</>
-                        : <><ICONS.sparkles className="w-3.5 h-3.5" /> Генерирај</>}
+                      {ai.isGeneratingInfographic
+                        ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Генерирам…</>
+                        : <>🎨 Инфографик</>}
                     </button>
-                  </div>
-
-                  {diffActivities ? (
-                    <div className="space-y-3">
-                      {([
-                        { key: 'support' as const,  label: 'Ниво А — Поддршка',    color: 'bg-blue-50 border-blue-200',   badge: 'bg-blue-100 text-blue-700'   },
-                        { key: 'standard' as const, label: 'Ниво Б — Стандардно',  color: 'bg-emerald-50 border-emerald-200', badge: 'bg-emerald-100 text-emerald-700' },
-                        { key: 'advanced' as const, label: 'Ниво Ц — Надградување', color: 'bg-violet-50 border-violet-200', badge: 'bg-violet-100 text-violet-700' },
-                      ] as const).map(({ key, label, color, badge }) => (
-                        <div key={key} className={`rounded-xl border p-3 ${color}`}>
-                          <span className={`text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full ${badge}`}>
-                            {label}
-                          </span>
-                          <ul className="mt-2 space-y-1.5">
-                            {diffActivities[key].map((act, i) => (
-                              <li key={i} className="text-xs text-gray-700 leading-relaxed flex gap-1.5">
-                                <span className="text-gray-400 shrink-0 mt-0.5">•</span>
-                                <span>{act}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  ) : !isGeneratingDiff && (
-                    <p className="text-xs text-gray-400 text-center py-2">
-                      Притисни „Генерирај" за AI предлози за секое ниво.
-                    </p>
                   )}
-                </Card>
-            </aside>
+                  <LessonPlanExportMenu
+                    disabled={!plan.title}
+                    isOpen={exporter.isExportMenuOpen}
+                    setIsOpen={exporter.setIsExportMenuOpen}
+                    isGeneratingWord={exporter.isGeneratingWord}
+                    onExport={exporter.handleExport}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    title="Зачувај (Ctrl+S)"
+                    className="flex items-center bg-brand-primary text-white px-6 py-3 rounded-lg shadow hover:bg-brand-secondary transition-colors font-semibold disabled:bg-gray-400"
+                  >
+                    {isSaving ? (
+                      <>
+                        <ICONS.spinner className="w-5 h-5 mr-2 animate-spin" />
+                        <span>Зачувувам...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ICONS.check className="w-5 h-5 mr-2" />
+                        {isEditing ? 'Зачувај промени' : 'Зачувај подготовка'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </Card>
+          </div>
+
+          <aside className="w-full lg:w-80 space-y-4">
+            <PedagogicalDashboard activities={plan.scenario?.main || []} />
+
+            <AILessonAssistant
+              onApply={(suggestion) => {
+                setPlan(prev => ({
+                  ...prev,
+                  differentiation: prev.differentiation
+                    ? `${prev.differentiation}\n\n--- AI Assistant ---\n${suggestion}`
+                    : suggestion,
+                }));
+              }}
+            />
+
+            <LessonPlanDifferentiationPanel
+              diffActivities={ai.diffActivities}
+              isGenerating={ai.isGeneratingDiff}
+              canGenerate={!!(plan.title || plan.theme)}
+              onGenerate={ai.handleGenerateDifferentiation}
+            />
+          </aside>
         </div>
       </div>
 
-      {/* Specialized print view - Hidden on screen, visible on print. 
-          Uses ID="printable-area" to ensure only this is printed based on global CSS. */}
       <div id="printable-area" className="hidden print:block">
-         {/* Print header */}
-         <div className="mb-6 border-b pb-4">
-             <p className="text-md text-gray-500">Предмет: {plan.subject}</p>
-             <p className="text-md text-gray-500">Тема: {plan.theme}</p>
-             <h1 className="text-2xl font-bold text-brand-primary mt-2">{plan.title}</h1>
-             <p className="text-lg text-gray-600">{plan.grade}. Одделение</p>
+        <div className="mb-6 border-b pb-4">
+          <p className="text-md text-gray-500">Предмет: {plan.subject}</p>
+          <p className="text-md text-gray-500">Тема: {plan.theme}</p>
+          <h1 className="text-2xl font-bold text-brand-primary mt-2">{plan.title}</h1>
+          <p className="text-lg text-gray-600">{plan.grade}. Одделение</p>
         </div>
         <LessonPlanDisplay plan={plan as LessonPlan} />
       </div>
 
-    {showMathTools && (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
-          <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
-            <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
-            <button type="button" title="Затвори алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
-          </div>
-          <div className="flex-1 relative overflow-hidden bg-slate-50">
-            <MathToolsPanel
-              onClose={() => setShowMathTools(false)}
-              className="h-full"
-              onExportImage={(dataUrl, tool) => {
-                setPlan(prev => ({
-                  ...prev,
-                  mathEmbeds: [
-                    ...(prev.mathEmbeds ?? []),
-                    { tool, dataUrl, createdAt: new Date().toISOString() },
-                  ],
-                }));
-                addNotification(`${tool === 'geogebra' ? 'GeoGebra' : 'Desmos'} сликата е додадена во планот.`, 'success');
-              }}
-            />
+      {showMathTools && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in no-print">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] md:h-[80vh] relative flex flex-col overflow-hidden border border-gray-200 mt-4 md:mt-0">
+            <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+              <h3 className="font-bold text-gray-700 flex items-center justify-center gap-2"><ICONS.math className="w-5 h-5" />Математички Алатки</h3>
+              <button type="button" title="Затвори алатки" onClick={() => setShowMathTools(false)} className="text-gray-500 hover:text-red-500 bg-white border p-1 rounded-md transition-colors"><ICONS.close className="w-5 h-5" /></button>
+            </div>
+            <div className="flex-1 relative overflow-hidden bg-slate-50">
+              <MathToolsPanel
+                onClose={() => setShowMathTools(false)}
+                className="h-full"
+                onExportImage={(dataUrl, tool) => {
+                  setPlan(prev => ({
+                    ...prev,
+                    mathEmbeds: [
+                      ...(prev.mathEmbeds ?? []),
+                      { tool, dataUrl, createdAt: new Date().toISOString() },
+                    ],
+                  }));
+                  addNotification(`${tool === 'geogebra' ? 'GeoGebra' : 'Desmos'} сликата е додадена во планот.`, 'success');
+                }}
+              />
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
-    {/* Infographic Preview Modal */}
-    {infographicLayout && (
+      {ai.infographicLayout && (
         <InfographicPreviewModal
-            layout={infographicLayout}
-            onClose={() => setInfographicLayout(null)}
+          layout={ai.infographicLayout}
+          onClose={() => ai.setInfographicLayout(null)}
         />
-    )}
+      )}
 
-    {/* Floating Action Button for Math Tools */}
-    <button
-      type="button"
-      onClick={() => setShowMathTools(true)}
-      className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95"
-      title="Математички Алатки (GeoGebra, Desmos...)"
-    >
-      <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
-      <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки за креирање</span>
-    </button>
-    {confirmDialog && (
-      <ConfirmDialog
-        message={confirmDialog.message}
-        title={confirmDialog.title}
-        variant={confirmDialog.variant ?? 'warning'}
-        onConfirm={confirmDialog.onConfirm}
-        onCancel={() => setConfirmDialog(null)}
-      />
-    )}
+      <button
+        type="button"
+        onClick={() => setShowMathTools(true)}
+        className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center group no-print hover:scale-110 active:scale-95"
+        title="Математички Алатки (GeoGebra, Desmos...)"
+      >
+        <ICONS.math className="w-6 h-6 group-hover:animate-pulse" />
+        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap pl-0 group-hover:pl-2 font-black tracking-wide text-sm">Алатки за креирање</span>
+      </button>
+      {confirmDialog && (
+        <ConfirmDialog
+          message={confirmDialog.message}
+          title={confirmDialog.title}
+          variant={confirmDialog.variant ?? 'warning'}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 };
