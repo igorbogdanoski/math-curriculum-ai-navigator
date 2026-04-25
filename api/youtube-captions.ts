@@ -9,8 +9,10 @@
  *      across preferred language → mk → en.
  *   2. YouTube page scrape — parses ytInitialPlayerResponse from the watch page
  *      to discover available caption tracks, then fetches the best one.
- *   3. If both fail, returns { available: false } — client falls back to
- *      title-only mode (existing MVP behaviour).
+ *   3. youtube-transcript npm package — maintained third-party scraper used as
+ *      last resort when both strategies above fail (e.g. obfuscated pages).
+ *   4. If all fail, returns { available: false } — client shows manual transcript
+ *      textarea so teacher can paste the text manually.
  *
  * Request:  GET /api/youtube-captions?videoId=<id>&lang=<mk|en|...>
  * Response: {
@@ -33,6 +35,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { YoutubeTranscript } from 'youtube-transcript';
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 20;
@@ -341,6 +344,64 @@ function applyTranscriptLimit(
   return { transcript: `${transcript}…[truncated]`, segments, truncated: true };
 }
 
+// ─── Strategy 2 wrapper ───────────────────────────────────────────────────────
+// Returns the full response object on success, null if any step fails or
+// yields no usable transcript. Never throws — caller falls through to S3.
+
+async function tryPageScrape(videoId: string, lang: string): Promise<Record<string, unknown> | null> {
+  try {
+    const tracks = await fetchCaptionTracks(videoId);
+    if (tracks.length === 0) return null;
+    const track = pickTrack(tracks, lang);
+    if (!track) return null;
+    const payload = await fetchTranscriptText(track);
+    if (!payload.transcript || payload.transcript.length < 20) return null;
+    const limited = applyTranscriptLimit(payload);
+    return {
+      available: true,
+      transcript: limited.transcript,
+      segments: limited.segments,
+      lang: track.languageCode,
+      source: track.kind === 'asr' ? 'auto' : 'manual',
+      videoId,
+      charCount: limited.transcript.length,
+      truncated: limited.truncated,
+      availableLangs: tracks.map(t => ({ lang: t.languageCode, kind: t.kind === 'asr' ? 'auto' : 'manual' })),
+    };
+  } catch { return null; }
+}
+
+// ─── Strategy 3: youtube-transcript npm package ───────────────────────────────
+// Maintained third-party scraper — last resort when the two native strategies
+// above fail (e.g. when YouTube changes page structure between package updates).
+
+async function tryYoutubeTranscriptPkg(
+  videoId: string,
+  preferLang: string,
+): Promise<TranscriptPayload | null> {
+  try {
+    const baseLang = preferLang.split('-')[0].toLowerCase();
+    const langsToTry = [...new Set([baseLang, 'mk', 'en'])];
+
+    for (const lang of langsToTry) {
+      try {
+        const items = await YoutubeTranscript.fetchTranscript(videoId, { lang });
+        if (!items?.length) continue;
+
+        const segments = items.map(item => ({
+          startMs: Math.round((item.offset ?? 0) * 1000),
+          endMs: Math.round(((item.offset ?? 0) + (item.duration ?? 0)) * 1000),
+          text: (item.text ?? '').replace(/\n/g, ' ').trim(),
+        })).filter(s => s.text.length > 0);
+
+        const transcript = segments.map(s => s.text).join(' ').replace(/\s{2,}/g, ' ').trim();
+        if (transcript.length >= 20) return { transcript, segments };
+      } catch { continue; }
+    }
+    return null;
+  } catch { return null; }
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -383,44 +444,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // ── Strategy 2: Page scrape fallback ─────────────────────────────────────
-    const tracks = await fetchCaptionTracks(videoId);
-    if (tracks.length === 0) {
-      // Cache "no captions" results for 10 minutes so retries don't hammer YouTube.
-      res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
-      return res.status(200).json({ available: false, reason: 'No captions available for this video', videoId });
+    const s2 = await tryPageScrape(videoId, lang);
+    if (s2) {
+      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+      return res.status(200).json({ ...s2, strategy: 'page-scrape' });
     }
 
-    const track = pickTrack(tracks, lang);
-    if (!track) {
-      res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
+    // ── Strategy 3: youtube-transcript npm package ────────────────────────────
+    const pkg3 = await tryYoutubeTranscriptPkg(videoId, lang);
+    if (pkg3) {
+      const limited = applyTranscriptLimit(pkg3);
+      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
       return res.status(200).json({
-        available: false,
-        reason: 'No suitable caption track found',
-        availableLangs: tracks.map(t => t.languageCode),
+        available: true,
+        transcript: limited.transcript,
+        segments: limited.segments,
+        lang,
+        source: 'auto',
         videoId,
+        charCount: limited.transcript.length,
+        truncated: limited.truncated,
+        strategy: 'npm-package',
       });
     }
 
-    const payload = await fetchTranscriptText(track);
-    if (!payload.transcript || payload.transcript.length < 20) {
-      res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
-      return res.status(200).json({ available: false, reason: 'Transcript is empty or too short', videoId });
-    }
-
-    const limited = applyTranscriptLimit(payload);
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
-    return res.status(200).json({
-      available: true,
-      transcript: limited.transcript,
-      segments: limited.segments,
-      lang: track.languageCode,
-      source: track.kind === 'asr' ? 'auto' : 'manual',
-      videoId,
-      charCount: limited.transcript.length,
-      truncated: limited.truncated,
-      availableLangs: tracks.map(t => ({ lang: t.languageCode, kind: t.kind === 'asr' ? 'auto' : 'manual' })),
-      strategy: 'page-scrape',
-    });
+    // All strategies exhausted — client will show manual transcript textarea
+    res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
+    return res.status(200).json({ available: false, reason: 'No captions available for this video', videoId });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';

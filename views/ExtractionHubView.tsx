@@ -13,9 +13,11 @@ import {
   chunkAndExtractTasks,
   extractTextFromDocument,
   extractTextFromImage,
+  enrichExtractedPedagogy,
   OCR_SUPPORTED_LANGUAGES,
   type OcrLanguage,
   type ExtractedWebTask,
+  type EnrichedWebTask,
   type WebTaskExtractionOutput,
 } from '../services/gemini/visionContracts';
 import { callImagenProxy } from '../services/gemini/core';
@@ -78,7 +80,7 @@ const MODEL_OPTIONS: ModelOption[] = [
 
 // ─── Source modes ─────────────────────────────────────────────────────────────
 
-type SourceMode = 'url' | 'document';
+type SourceMode = 'url' | 'youtube' | 'document';
 
 // ─── Difficulty badge ─────────────────────────────────────────────────────────
 
@@ -113,7 +115,7 @@ const ExtractionProgress: React.FC<{ label: string; pct: number }> = ({ label, p
 
 // ─── Per-task card ────────────────────────────────────────────────────────────
 
-const TaskCard: React.FC<{ task: ExtractedWebTask; index: number }> = ({ task, index }) => {
+const TaskCard: React.FC<{ task: EnrichedWebTask; index: number }> = ({ task, index }) => {
   const [imgDataUrl, setImgDataUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
@@ -159,6 +161,30 @@ const TaskCard: React.FC<{ task: ExtractedWebTask; index: number }> = ({ task, i
       <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm leading-relaxed">
         <MathRenderer text={task.latexStatement || task.statement} />
       </div>
+
+      {/* S45-C: pedagogy enrichment badges */}
+      {task.pedagogy && (
+        <div className="flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+            Bloom: {task.pedagogy.bloomLevelMk}
+          </span>
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+            {task.pedagogy.estimatedGradeRange}
+          </span>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+            task.pedagogy.cognitiveLoad === 'low' ? 'bg-emerald-100 text-emerald-700' :
+            task.pedagogy.cognitiveLoad === 'medium' ? 'bg-blue-100 text-blue-700' :
+            'bg-red-100 text-red-700'
+          }`}>
+            {task.pedagogy.cognitiveLoad === 'low' ? 'Низок' : task.pedagogy.cognitiveLoad === 'medium' ? 'Среден' : 'Висок'} когн. товар
+          </span>
+          {task.pedagogy.prerequisiteConcepts.slice(0, 2).map(c => (
+            <span key={c} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">
+              ← {c}
+            </span>
+          ))}
+        </div>
+      )}
 
       {imgDataUrl && (
         <div className="relative overflow-hidden rounded-xl border border-slate-200">
@@ -223,6 +249,12 @@ export const ExtractionHubView: React.FC = () => {
   const [manualTranscript, setManualTranscript] = useState('');
   const [noTranscriptDetected, setNoTranscriptDetected] = useState(false);
 
+  // ── YouTube mode ──────────────────────────────────────────────────────────
+  const [ytUrl, setYtUrl] = useState('');
+  const [ytTimeStart, setYtTimeStart] = useState('');
+  const [ytTimeEnd, setYtTimeEnd] = useState('');
+  const [ytLang, setYtLang] = useState<OcrLanguage>('mk');
+
   // ── Document mode ─────────────────────────────────────────────────────────
   const [uploadedDoc, setUploadedDoc] = useState<{
     name: string;
@@ -258,6 +290,7 @@ export const ExtractionHubView: React.FC = () => {
   const [isSavingToBank, setIsSavingToBank] = useState(false);
   const [isCopiedAll, setIsCopiedAll] = useState(false);
 
+  const [enriching, setEnriching] = useState(false);
   const [genMaterialType, setGenMaterialType] = useState<QuickGenType>('SCENARIO');
   const [showGenDropdown, setShowGenDropdown] = useState(false);
   const genDropdownRef = useRef<HTMLDivElement>(null);
@@ -383,6 +416,8 @@ export const ExtractionHubView: React.FC = () => {
     try {
       if (sourceMode === 'url') {
         await extractFromUrl();
+      } else if (sourceMode === 'youtube') {
+        await extractFromYouTube();
       } else {
         await extractFromDocument();
       }
@@ -393,6 +428,68 @@ export const ExtractionHubView: React.FC = () => {
       setIsLoading(false);
       setProgressLabel('');
       setProgressPct(0);
+    }
+  };
+
+  // ── YouTube extraction (S48) ──────────────────────────────────────────────
+
+  const extractFromYouTube = async () => {
+    const trimmed = ytUrl.trim();
+    if (!trimmed) { setError('Внесете YouTube URL.'); return; }
+
+    setProgressLabel('Вадење преглед на видеото...');
+    setProgressPct(10);
+
+    let preview = videoPreview;
+    if (!preview || !isYouTubeUrl(trimmed)) {
+      preview = await fetchVideoPreview(trimmed);
+      setVideoPreview(preview);
+    }
+
+    let rawText = '';
+    setNoTranscriptDetected(false);
+
+    if (preview.videoId) {
+      setProgressLabel('Вадење транскрипт...');
+      setProgressPct(20);
+      const timeRange = [ytTimeStart.trim(), ytTimeEnd.trim()].filter(Boolean).join(' - ');
+      const caps = await fetchYouTubeCaptions(preview.videoId, ytLang);
+      setCaptions(caps);
+      if (caps.available && caps.transcript) {
+        rawText = applyTimeRange(caps, timeRange);
+      } else {
+        setNoTranscriptDetected(true);
+      }
+    }
+
+    if (!rawText && manualTranscript.trim()) rawText = manualTranscript.trim();
+    if (!rawText) rawText = `Наслов: ${preview.title}\nАвтор: ${preview.authorName ?? 'unknown'}`;
+
+    const chunkResult = await chunkAndExtractTasks({
+      text: rawText,
+      sourceType: 'youtube',
+      sourceRef: trimmed,
+      specificInstructions: specificInstructions.trim() || undefined,
+      model: selectedModel,
+      onChunkProgress: (current, total) => {
+        setProgressLabel(`Дел ${current}/${total} — Анализа...`);
+        setProgressPct(30 + Math.round((current / total) * 60));
+      },
+    });
+
+    setProgressPct(95);
+
+    if (chunkResult.fallback || chunkResult.output.tasks.length === 0) {
+      setError(chunkResult.fallback
+        ? 'AI не успеа да ги извлече задачите. Пробајте со поинакви инструкции.'
+        : 'Не се пронајдени математички задачи во ова видео.');
+    } else {
+      setResult(chunkResult.output);
+      setChunksInfo({ processed: chunkResult.chunksProcessed, total: chunkResult.chunksProcessed, beforeDedup: chunkResult.tasksBeforeDedup });
+      setEnriching(true);
+      enrichExtractedPedagogy(chunkResult.output.tasks).then(enriched => {
+        setResult(prev => prev ? { ...prev, tasks: enriched } : prev);
+      }).finally(() => setEnriching(false));
     }
   };
 
@@ -527,6 +624,11 @@ export const ExtractionHubView: React.FC = () => {
       } else {
         setResult(output);
         setChunksInfo({ processed: 1, total: 1, beforeDedup: output.tasks.length });
+        // S45-C: pedagogy enrichment in background — does not block the UI
+        setEnriching(true);
+        enrichExtractedPedagogy(output.tasks).then(enriched => {
+          setResult(prev => prev ? { ...prev, tasks: enriched } : prev);
+        }).finally(() => setEnriching(false));
       }
       return;
     }
@@ -560,6 +662,11 @@ export const ExtractionHubView: React.FC = () => {
         total: chunkResult.chunksProcessed,
         beforeDedup: chunkResult.tasksBeforeDedup,
       });
+      // S45-C: pedagogy enrichment in background
+      setEnriching(true);
+      enrichExtractedPedagogy(chunkResult.output.tasks).then(enriched => {
+        setResult(prev => prev ? { ...prev, tasks: enriched } : prev);
+      }).finally(() => setEnriching(false));
     }
   };
 
@@ -654,6 +761,8 @@ export const ExtractionHubView: React.FC = () => {
     ? false
     : sourceMode === 'url'
       ? url.trim().startsWith('http')
+      : sourceMode === 'youtube'
+      ? ytUrl.trim().startsWith('http')
       : uploadedDoc !== null;
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -702,11 +811,12 @@ export const ExtractionHubView: React.FC = () => {
           </div>
 
           {/* Source mode toggle */}
-          <div className="flex justify-center gap-2">
+          <div className="flex justify-center gap-2 flex-wrap">
             {[
-              { mode: 'url' as SourceMode, icon: Link, label: 'URL (YouTube / Веб)' },
-              { mode: 'document' as SourceMode, icon: FileText, label: 'Документ (PDF / DOCX / TXT)' },
-            ].map(({ mode, icon: Icon, label }) => (
+              { mode: 'youtube' as SourceMode, icon: Play, label: 'YouTube', iconClass: 'fill-red-400 text-red-400' },
+              { mode: 'url' as SourceMode, icon: Link, label: 'Веб URL', iconClass: '' },
+              { mode: 'document' as SourceMode, icon: FileText, label: 'Документ', iconClass: '' },
+            ].map(({ mode, icon: Icon, label, iconClass }) => (
               <button
                 key={mode}
                 type="button"
@@ -718,7 +828,7 @@ export const ExtractionHubView: React.FC = () => {
                     : 'border border-white/10 bg-white/5 text-white/60 hover:bg-white/10'
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className={`h-4 w-4 ${iconClass}`} />
                 {label}
               </button>
             ))}
@@ -773,6 +883,113 @@ export const ExtractionHubView: React.FC = () => {
                     >
                       Внесете рачно →
                     </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── YouTube mode (S48) ── */}
+            {sourceMode === 'youtube' && (
+              <div className="space-y-3">
+                {/* URL input */}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-red-400">▶</span>
+                    <input
+                      type="url"
+                      value={ytUrl}
+                      onChange={e => { setYtUrl(e.target.value); setError(null); setResult(null); setVideoPreview(null); }}
+                      onKeyDown={e => { if (e.key === 'Enter' && canExtract) extract(); }}
+                      placeholder="https://youtube.com/watch?v=..."
+                      disabled={isLoading}
+                      className="w-full rounded-xl border border-white/10 bg-white/10 py-3.5 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:border-red-400/60 focus:outline-none focus:ring-2 focus:ring-red-400/20 disabled:opacity-60"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={extract}
+                    disabled={!canExtract}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 px-5 py-3.5 font-bold text-white transition hover:from-red-600 hover:to-orange-600 disabled:opacity-50"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Екстрахирај
+                  </button>
+                </div>
+
+                {/* Time range (upfront — most important YT control) */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-white/50 mb-1">Почеток (пр. 3:00)</label>
+                    <input
+                      type="text"
+                      value={ytTimeStart}
+                      onChange={e => setYtTimeStart(e.target.value)}
+                      placeholder="0:00"
+                      disabled={isLoading}
+                      className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-red-400 disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-white/50 mb-1">Крај (пр. 18:30)</label>
+                    <input
+                      type="text"
+                      value={ytTimeEnd}
+                      onChange={e => setYtTimeEnd(e.target.value)}
+                      placeholder="до крај"
+                      disabled={isLoading}
+                      className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-red-400 disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                {/* Language selector */}
+                <div className="flex items-center gap-3">
+                  <label className="text-xs text-white/50 shrink-0">Јазик на транскрипт:</label>
+                  <select
+                    value={ytLang}
+                    onChange={e => { if (isOcrLanguage(e.target.value)) setYtLang(e.target.value as OcrLanguage); }}
+                    disabled={isLoading}
+                    aria-label="Јазик на транскрипт"
+                    title="Јазик на транскрипт"
+                    className="rounded-xl border border-white/10 bg-white/10 px-3 py-1.5 text-xs text-white/80 focus:outline-none focus:ring-1 focus:ring-red-400 disabled:opacity-50"
+                  >
+                    {(['mk', 'sq', 'tr', 'en', 'sr'] as OcrLanguage[]).map(l => (
+                      <option key={l} value={l} className="bg-slate-900 text-white">{OCR_LANG_MK[l]}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Video preview card */}
+                {videoPreview && (
+                  <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+                    {videoPreview.thumbnailUrl && (
+                      <img src={videoPreview.thumbnailUrl} alt="" className="w-24 h-14 object-cover rounded-lg shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{videoPreview.title}</p>
+                      {videoPreview.authorName && <p className="text-xs text-white/50 mt-0.5">{videoPreview.authorName}</p>}
+                      {captions && (
+                        <p className={`text-xs mt-1 ${captions.available ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {captions.available ? `✓ Транскрипт достапен` : '⚠ Транскриптот не е достапен'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual transcript fallback */}
+                {noTranscriptDetected && (
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-amber-300">
+                      Рачен транскрипт (видеото нема субтитли)
+                    </label>
+                    <textarea
+                      value={manualTranscript}
+                      onChange={e => setManualTranscript(e.target.value)}
+                      placeholder="Заалепете го транскриптот тука..."
+                      rows={4}
+                      className="w-full resize-y rounded-xl border border-amber-400/20 bg-amber-500/5 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
+                    />
                   </div>
                 )}
               </div>
@@ -1066,6 +1283,12 @@ export const ExtractionHubView: React.FC = () => {
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
                       <Tag className="h-3.5 w-3.5" />
                       {result.topicsSummary}
+                    </p>
+                  )}
+                  {enriching && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-indigo-500">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      AI додава педагошки метаподатоци (Bloom, DOK, предуслови)...
                     </p>
                   )}
                   {/* Chunks badge */}
