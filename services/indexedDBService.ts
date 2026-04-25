@@ -32,7 +32,7 @@ interface MathNavDB extends DBSchema {
     key: string;
     value: {
       id: string; // examId
-      questions: any[]; // MaturaQuestion[]
+      questions: unknown[];
       timestamp: number;
     };
   };
@@ -221,7 +221,7 @@ export const cacheMaturaExamQuestions = async (
     const db = await initDB();
     await db.put('matura_exam_cache', {
       id: examId,
-      questions: questions as any[],
+      questions,
       timestamp: Date.now(),
     });
   } catch {

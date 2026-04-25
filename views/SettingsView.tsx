@@ -389,15 +389,15 @@ export const SettingsView: React.FC = () => {
         try {
             const data = await exportUserData(firebaseUser.uid);
             downloadUserDataAsJson(data, firebaseUser.uid);
-            const warnings = Array.isArray((data as any).exportWarnings) ? (data as any).exportWarnings : [];
+            const warnings = Array.isArray(data['exportWarnings']) ? (data['exportWarnings'] as string[]) : [];
             if (warnings.length > 0) {
                 addNotification(`Податоците се преземени со ${warnings.length} предупредувања. Проверете го полето "exportWarnings" во JSON.`, 'warning');
             } else {
                 addNotification('Вашите податоци се преземени успешно.', 'success');
             }
-        } catch (err: any) {
-            const code = err?.code ? String(err.code) : '';
-            const message = err?.message ? String(err.message) : '';
+        } catch (err: unknown) {
+            const code = err != null && typeof err === 'object' && 'code' in err ? String((err as { code: unknown }).code) : '';
+            const message = err instanceof Error ? err.message : '';
             if (code.includes('permission-denied')) {
                 addNotification('Грешка при извоз: немате дозвола за дел од податоците. Обидете се повторно по refresh/login.', 'error');
             } else if (message) {
