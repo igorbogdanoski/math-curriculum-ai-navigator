@@ -25,24 +25,42 @@ export const fetchCachedQuizList = async (): Promise<{ id: string; title: string
     }
   };
 
-export const createLiveSession = async (hostUid: string, quizId: string, quizTitle: string, conceptId?: string): Promise<string> => {
+export const createLiveSession = async (
+  hostUid: string,
+  quizId: string,
+  quizTitle: string,
+  conceptId?: string,
+  /** S47 — async homework mode: optional deadline (mkd-slidea pattern) */
+  homeworkDeadlineMs?: number,
+): Promise<string> => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let joinCode = '';
     for (let i = 0; i < 4; i++) joinCode += chars[Math.floor(Math.random() * chars.length)];
     const ref = await addDoc(collection(db, 'live_sessions'), {
       hostUid, quizId, quizTitle, conceptId: conceptId ?? null,
       status: 'active', joinCode, studentResponses: {}, createdAt: serverTimestamp(),
+      homeworkMode: !!homeworkDeadlineMs,
+      homeworkDeadline: homeworkDeadlineMs
+        ? new Date(homeworkDeadlineMs)
+        : null,
     });
     return ref.id;
   };
 
 export const getLiveSessionByCode = async (joinCode: string): Promise<LiveSession | null> => {
     try {
-      const q = query(collection(db, 'live_sessions'), where('joinCode', '==', joinCode.toUpperCase()), where('status', '==', 'active'), limit(1));
+      const q = query(collection(db, 'live_sessions'), where('joinCode', '==', joinCode.toUpperCase()), limit(1));
       const snap = await getDocs(q);
       if (snap.empty) return null;
       const d = snap.docs[0];
-      return { id: d.id, ...d.data() } as LiveSession;
+      const session = { id: d.id, ...d.data() } as LiveSession;
+      // S47: session is joinable if active OR if in homework mode with a future deadline
+      const isLive = session.status === 'active';
+      const isHomeworkOpen = session.homeworkMode &&
+        session.homeworkDeadline &&
+        (session.homeworkDeadline as unknown as { toMillis: () => number }).toMillis() > Date.now();
+      if (!isLive && !isHomeworkOpen) return null;
+      return session;
     } catch (error) {
       logger.error('Error fetching live session by code:', error);
       return null;

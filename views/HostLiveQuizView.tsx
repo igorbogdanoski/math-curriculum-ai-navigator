@@ -1,6 +1,6 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy } from 'lucide-react';
+import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy, BookOpen, Clock } from 'lucide-react';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { firestoreService } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +14,9 @@ export const HostLiveQuizView: React.FC = () => {
     const [session, setSession] = useState<LiveSession | null>(null);
     const [creating, setCreating] = useState(false);
     const [copied, setCopied] = useState(false);
+    // S47: async homework mode (mkd-slidea pattern)
+    const [homeworkMode, setHomeworkMode] = useState(false);
+    const [homeworkHours, setHomeworkHours] = useState(24);
     const unsubRef = useRef<(() => void) | null>(null);
 
     useEffect(() => {
@@ -41,8 +44,8 @@ export const HostLiveQuizView: React.FC = () => {
         if (!firebaseUser) return;
         setCreating(true);
         try {
-            // createLiveSession returns the Firestore doc ID (session ID)
-            const id = await firestoreService.createLiveSession(firebaseUser.uid, quiz.id, quiz.title, quiz.conceptId);
+            const deadlineMs = homeworkMode ? Date.now() + homeworkHours * 3600_000 : undefined;
+            const id = await firestoreService.createLiveSession(firebaseUser.uid, quiz.id, quiz.title, quiz.conceptId, deadlineMs);
             setSessionId(id);
         } catch (error) {
             logger.error('Error creating live session:', error);
@@ -290,6 +293,48 @@ export const HostLiveQuizView: React.FC = () => {
                     </h1>
                     <p className="text-slate-500 text-sm">Избери квиз и започни сесија во реално време</p>
                 </div>
+            </div>
+
+            {/* S47: Homework mode toggle */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
+                    <BookOpen className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">Режим домашна задача</p>
+                    <p className="text-xs text-slate-500">Квизот останува отворен без присуство на наставник</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHomeworkMode(m => !m)}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${homeworkMode ? 'bg-amber-500' : 'bg-slate-200'}`}
+                  role="switch"
+                  aria-checked={homeworkMode}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${homeworkMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+              {homeworkMode && (
+                <div className="mt-4 flex items-center gap-3 pt-4 border-t border-slate-100">
+                  <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                  <label className="text-sm text-slate-700 font-medium" htmlFor="hw-hours">Рок за предавање:</label>
+                  <select
+                    id="hw-hours"
+                    value={homeworkHours}
+                    onChange={e => setHomeworkHours(Number(e.target.value))}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  >
+                    <option value={12}>12 часа</option>
+                    <option value={24}>24 часа (1 ден)</option>
+                    <option value={48}>48 часа (2 дена)</option>
+                    <option value={72}>72 часа (3 дена)</option>
+                    <option value={168}>7 дена (1 недела)</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {quizzes.length === 0 ? (
