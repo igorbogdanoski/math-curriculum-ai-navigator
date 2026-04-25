@@ -31,6 +31,20 @@ interface Window {
   katex?: { renderToString(latex: string, options?: { output?: string; throwOnError?: boolean; displayMode?: boolean; strict?: boolean | string; trust?: boolean }): string };
 }
 
+// JSX declaration for MathLive's <math-field> custom element
+declare namespace React {
+  namespace JSX {
+    interface IntrinsicElements {
+      'math-field': Partial<import('mathlive').MathfieldElementAttributes> & {
+        ref?: React.Ref<import('mathlive').MathfieldElement>;
+        style?: React.CSSProperties;
+        placeholder?: string;
+        children?: never;
+      };
+    }
+  }
+}
+
 declare module 'pdf-parse' {
   interface PdfParseInfo {
     Title?: string;
