@@ -1,14 +1,18 @@
 ﻿import { logger } from '../utils/logger';
-import React, { useState } from 'react';
-import { 
-  ArrowDown, 
-  CheckCircle, 
-  HelpCircle, 
-  RefreshCw, 
-  Volume2, 
+import React, { useState, useRef } from 'react';
+import {
+  ArrowDown,
+  CheckCircle,
+  HelpCircle,
+  RefreshCw,
+  Volume2,
   BrainCircuit,
-  Loader2 
+  Loader2,
+  Send,
+  XCircle,
+  PenLine,
 } from 'lucide-react';
+import { DrawingCanvas } from './solver/DrawingCanvas';
 
 import { geminiService } from '../services/geminiService';
 import { useVoice } from '../hooks/useVoice';
@@ -37,6 +41,14 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
   const [deepExplanations, setDeepExplanations] = useState<Record<number, string>>({});
   const [loadingStep, setLoadingStep] = useState<number | null>(null);
 
+  // verifyUserStep state
+  const [userAttempt, setUserAttempt] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<{ correct: boolean; feedback: string; hint: string } | null>(null);
+
+  const [showCanvas, setShowCanvas] = useState(false);
+  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+
   const { speak } = useVoice();
 
   // Функција за активирање на Сократовиот метод (Зошто?)
@@ -64,12 +76,35 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
     } else {
       setIsComplete(true);
     }
+    setUserAttempt('');
+    setVerifyResult(null);
   };
 
   const reset = () => {
     setCurrentStep(0);
     setIsComplete(false);
     setDeepExplanations({});
+    setUserAttempt('');
+    setVerifyResult(null);
+  };
+
+  const handleVerify = async () => {
+    if (!userAttempt.trim() || currentStep >= steps.length) return;
+    setVerifying(true);
+    setVerifyResult(null);
+    try {
+      const result = await geminiService.verifyUserStep(
+        problem,
+        steps.slice(0, currentStep),
+        userAttempt.trim(),
+        steps[currentStep],
+      );
+      setVerifyResult(result);
+    } catch (e) {
+      logger.error('verifyUserStep error', e);
+    } finally {
+      setVerifying(false);
+    }
   };
 
   return (
@@ -171,10 +206,78 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
             </div>
         )}
 
+        {/* S45-A: verifyUserStep — ученикот го погодува следниот чекор */}
+        {!isComplete && currentStep > 0 && currentStep < steps.length && (
+          <div className="mt-8 rounded-2xl border border-indigo-100 bg-indigo-50 p-5 space-y-3">
+            <p className="text-xs font-black uppercase tracking-widest text-indigo-500">
+              🧠 Обиди се сам — каков е следниот чекор?
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={userAttempt}
+                onChange={e => { setUserAttempt(e.target.value); setVerifyResult(null); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleVerify(); }}
+                placeholder="Напиши го твојот следен чекор..."
+                className="flex-1 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <button
+                type="button"
+                onClick={handleVerify}
+                disabled={verifying || !userAttempt.trim()}
+                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50 hover:bg-indigo-700 transition"
+              >
+                {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Провери
+              </button>
+            </div>
+
+            {verifyResult && (
+              <div className={`rounded-xl p-4 text-sm ${verifyResult.correct ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
+                <div className="flex items-start gap-2">
+                  {verifyResult.correct
+                    ? <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+                    : <XCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />}
+                  <div className="space-y-1">
+                    <p className={`font-semibold ${verifyResult.correct ? 'text-emerald-800' : 'text-amber-800'}`}>
+                      {verifyResult.feedback}
+                    </p>
+                    {verifyResult.hint && (
+                      <p className="text-slate-600 text-xs italic">💡 {verifyResult.hint}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Drawing canvas toggle */}
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => {
+              setShowCanvas(v => !v);
+              if (!showCanvas) setTimeout(() => canvasContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+            }}
+            className="flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            <PenLine className="w-4 h-4" />
+            {showCanvas ? 'Скриј платно' : 'Цртај / работи на хартија'}
+          </button>
+
+          {showCanvas && (
+            <div ref={canvasContainerRef} className="mt-3">
+              <DrawingCanvas />
+            </div>
+          )}
+        </div>
+
         {/* Главно копче за навигација низ чекорите */}
-        <div className="mt-10 pt-6 border-t border-slate-100 flex justify-center">
+        <div className="mt-6 pt-6 border-t border-slate-100 flex justify-center">
             {!isComplete ? (
-                <button 
+                <button
+                  type="button"
                   onClick={nextStep}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-2xl font-black shadow-xl transition-all active:scale-95 flex items-center gap-2"
                 >
@@ -182,7 +285,8 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
                     <ArrowDown className="w-5 h-5" />
                 </button>
             ) : (
-                <button 
+                <button
+                  type="button"
                   onClick={reset}
                   className="flex items-center gap-2 text-slate-400 font-bold hover:text-blue-600 transition"
                 >

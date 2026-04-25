@@ -357,6 +357,7 @@ export default defineConfig(({ mode }) => {
               if (id.includes('/xlsx/') || id.includes('\\xlsx\\')) return 'vendor-xlsx';
               if (id.includes('recharts')) return 'vendor-charts';
               if (id.includes('/d3-') || id.includes('\\d3-') || id.includes('d3-array') || id.includes('d3-scale') || id.includes('d3-shape') || id.includes('d3-color')) return 'vendor-d3';
+              if (id.includes('konva') || id.includes('react-konva')) return 'vendor-konva';
               // three.js: not in dependencies — rule removed
               if (id.includes('lucide-react')) return 'vendor-icons';
               if (id.includes('@tanstack/react-query')) return 'vendor-query';

@@ -29,6 +29,35 @@ import type { SavedQuestion, DokLevel } from '../types';
 import type { ConceptMastery } from '../services/firestoreService';
 import { MisconceptionMiniLessonCard } from '../components/analytics/MisconceptionMiniLessonCard';
 
+const KnowledgeGraphView = React.lazy(() =>
+  import('../components/dataviz/KnowledgeGraphView').then(m => ({ default: m.KnowledgeGraphView })),
+);
+
+function KnowledgeGraphSection({ conceptId }: { conceptId: string }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="rounded-2xl border border-gray-200 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-5 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+      >
+        <span className="font-semibold text-gray-700 flex items-center gap-2">
+          🕸️ Поврзани концепти — визуелна мрежа
+        </span>
+        <span className="text-gray-400 text-xs">{open ? '▲ Скриј' : '▼ Прикажи'}</span>
+      </button>
+      {open && (
+        <div className="p-3">
+          <React.Suspense fallback={<div className="h-40 flex items-center justify-center text-gray-400 text-sm">Вчитување…</div>}>
+            <KnowledgeGraphView conceptId={conceptId} width={680} height={420} />
+          </React.Suspense>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const DOK_LEVELS: DokLevel[] = [1, 2, 3, 4];
 
 const InteractiveQuizPlayer = React.lazy(() => import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
@@ -648,6 +677,11 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
         {/* Матурски прашања (B1/N2) */}
         <div className="max-w-4xl mx-auto px-4">
           <MaturaQuestionsBlock conceptId={concept.id} />
+        </div>
+
+        {/* Knowledge Graph — поврзани концепти */}
+        <div className="max-w-4xl mx-auto px-4 mt-6">
+          <KnowledgeGraphSection conceptId={concept.id} />
         </div>
 
         {/* СКРИЕН ДЕЛ ЗА PDF ЕКСПОРТ (Оптимизиран) */}
