@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Sparkles, Globe, ChevronDown, ChevronUp, Loader2, AlertTriangle,
   Check, Copy, Save, Image as ImageIcon, Wand2, X, BookOpen,
@@ -41,6 +41,17 @@ import {
   classifyClipboard,
   isOcrLanguage,
 } from './extractionHubHelpers';
+
+// ─── Quick-generate material types ───────────────────────────────────────────
+
+type QuickGenType = 'SCENARIO' | 'QUIZ' | 'FLASHCARDS' | 'ASSESSMENT';
+
+const GEN_OPTIONS: Array<{ type: QuickGenType; label: string; title: string }> = [
+  { type: 'SCENARIO',   label: 'Работен лист', title: 'Генерирај работен лист од извлечените задачи' },
+  { type: 'QUIZ',       label: 'Квиз',         title: 'Генерирај квиз со прашања' },
+  { type: 'FLASHCARDS', label: 'Флешкарти',    title: 'Генерирај флешкарти за учење' },
+  { type: 'ASSESSMENT', label: 'Тест',          title: 'Генерирај формален тест' },
+];
 
 // ─── OCR language labels (МК) ─────────────────────────────────────────────────
 
@@ -247,7 +258,21 @@ export const ExtractionHubView: React.FC = () => {
   const [isSavingToBank, setIsSavingToBank] = useState(false);
   const [isCopiedAll, setIsCopiedAll] = useState(false);
 
+  const [genMaterialType, setGenMaterialType] = useState<QuickGenType>('SCENARIO');
+  const [showGenDropdown, setShowGenDropdown] = useState(false);
+  const genDropdownRef = useRef<HTMLDivElement>(null);
+
   const urlInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleClickOut = (e: MouseEvent) => {
+      if (genDropdownRef.current && !genDropdownRef.current.contains(e.target as Node)) {
+        setShowGenDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOut);
+    return () => document.removeEventListener('mousedown', handleClickOut);
+  }, []);
 
   // ── Document loading ──────────────────────────────────────────────────────
 
@@ -588,7 +613,7 @@ export const ExtractionHubView: React.FC = () => {
     finally { setIsSavingToBank(false); }
   };
 
-  const sendToGenerator = () => {
+  const sendToGenerator = (materialType: QuickGenType = genMaterialType) => {
     if (!result) return;
     const scenarioText = result.tasks
       .map((t, i) => `${i + 1}. ${t.title}\n${t.latexStatement || t.statement}`)
@@ -596,6 +621,7 @@ export const ExtractionHubView: React.FC = () => {
     try {
       sessionStorage.setItem('generator_extraction_context', JSON.stringify({
         contextType: 'SCENARIO',
+        materialType,
         scenarioText: `[Извлечено од: ${sourceMode === 'url' ? url : (docLabel ?? 'документ')}]\n\n${scenarioText}`,
       }));
     } catch { /* ignore */ }
@@ -1092,15 +1118,47 @@ export const ExtractionHubView: React.FC = () => {
                     {isSavingToBank ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
                     Банка
                   </button>
-                  <button
-                    type="button"
-                    onClick={sendToGenerator}
-                    title="Испрати ги извлечените задачи во Генератор за AI материјали"
-                    className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
-                  >
-                    <Wand2 className="h-3.5 w-3.5" />
-                    Генератор
-                  </button>
+                  {/* Quick-generate split button */}
+                  <div ref={genDropdownRef} className="relative">
+                    <div className="flex overflow-hidden rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => sendToGenerator(genMaterialType)}
+                        title={GEN_OPTIONS.find(o => o.type === genMaterialType)?.title}
+                        className="flex items-center gap-1.5 bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+                      >
+                        <Wand2 className="h-3.5 w-3.5" />
+                        {GEN_OPTIONS.find(o => o.type === genMaterialType)?.label ?? 'Генератор'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowGenDropdown(v => !v)}
+                        title="Избери тип на материјал"
+                        aria-label="Избери тип на материјал"
+                        className="border-l border-indigo-500 bg-indigo-600 px-1.5 py-2 text-white hover:bg-indigo-700 transition"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    {showGenDropdown && (
+                      <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+                        {GEN_OPTIONS.map(opt => (
+                          <button
+                            key={opt.type}
+                            type="button"
+                            onClick={() => { setGenMaterialType(opt.type); setShowGenDropdown(false); }}
+                            className={`flex w-full items-center px-4 py-2.5 text-sm font-medium transition ${
+                              genMaterialType === opt.type
+                                ? 'bg-indigo-50 text-indigo-700'
+                                : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={reset}

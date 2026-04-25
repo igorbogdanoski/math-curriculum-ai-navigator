@@ -123,10 +123,13 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         const raw = sessionStorage.getItem('generator_extraction_context');
         if (!raw) return;
         sessionStorage.removeItem('generator_extraction_context');
-        const payload = JSON.parse(raw) as { contextType?: string; scenarioText?: string };
+        const payload = JSON.parse(raw) as { contextType?: string; scenarioText?: string; materialType?: string };
         if (payload.contextType === 'SCENARIO' && payload.scenarioText) {
           dispatch({ type: 'SET_FIELD', payload: { field: 'contextType', value: 'SCENARIO' } });
           dispatch({ type: 'SET_FIELD', payload: { field: 'scenarioText', value: payload.scenarioText } });
+          if (payload.materialType) {
+            dispatch({ type: 'SET_FIELD', payload: { field: 'materialType', value: payload.materialType as MaterialType } });
+          }
           setCurrentStep(2);
         }
       } catch { /* ignore */ }
