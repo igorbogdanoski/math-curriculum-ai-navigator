@@ -4,11 +4,14 @@
  * Route:  #/share/visual?tiles=1x2_3x_2u
  *         #/share/visual?shape=cylinder&r=1.5&h=3
  */
-import React, { useMemo, useState } from 'react';
-import { Link2, CheckCheck, AlertTriangle } from 'lucide-react';
+import React, { useMemo, useState, Suspense } from 'react';
+import { Link2, CheckCheck, AlertTriangle, Loader2 } from 'lucide-react';
 import { AlgebraTilesCanvas } from '../components/math/AlgebraTilesCanvas';
-import { Shape3DViewer, SHAPE_ORDER } from '../components/math/Shape3DViewer';
+import { SHAPE_ORDER } from '../components/math/Shape3DViewer';
 import type { Shape3DType } from '../components/math/Shape3DViewer';
+const Shape3DViewer = React.lazy(() =>
+  import('../components/math/Shape3DViewer').then(m => ({ default: m.Shape3DViewer }))
+);
 import { decodeTileSpecs, parseVisualShareParams } from '../utils/visualShareUrl';
 
 export const ShareVisualView: React.FC = () => {
@@ -70,12 +73,14 @@ export const ShareVisualView: React.FC = () => {
               <AlgebraTilesCanvas initialTileSpecs={tileSpecs} />
             )}
             {shape !== null && (
-              <Shape3DViewer
-                initialShape={shape}
-                initialDims={shareParams.dims}
-                hideSelector={false}
-                compact={false}
-              />
+              <Suspense fallback={<div className="flex items-center justify-center p-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin" /></div>}>
+                <Shape3DViewer
+                  initialShape={shape}
+                  initialDims={shareParams.dims}
+                  hideSelector={false}
+                  compact={false}
+                />
+              </Suspense>
             )}
           </div>
         ) : (

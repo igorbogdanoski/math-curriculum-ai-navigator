@@ -18,7 +18,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Activity, RefreshCw, Download, CheckCircle2, AlertTriangle, XCircle,
-  Zap, ShieldCheck, GitMerge, Server, Clock, TrendingUp,
+  Zap, ShieldCheck, GitMerge, Server, Clock, TrendingUp, Smartphone,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -48,6 +48,28 @@ interface SloAPISummary {
     topErrors: { code: string; count: number }[];
     periodDays: number;
   };
+}
+
+type WebVitalName = 'LCP' | 'CLS' | 'INP' | 'FCP' | 'TTFB';
+type WebVitalDevice = 'mobile' | 'tablet' | 'desktop' | 'unknown';
+
+interface WebVitalSnapshot {
+  metric: WebVitalName;
+  count: number;
+  p50: number;
+  p75: number;
+  p95: number;
+  budget: number;
+  overBudget: boolean;
+}
+
+interface WebVitalDeviceSnapshot extends WebVitalSnapshot {
+  device: WebVitalDevice;
+}
+
+interface WebVitalsSplitResponse {
+  samples: WebVitalSnapshot[];
+  byDevice: WebVitalDeviceSnapshot[];
 }
 
 // ─── Thresholds ───────────────────────────────────────────────────────────────
@@ -176,6 +198,8 @@ export const SLODashboardView: React.FC = () => {
   const [apiServerBlocked, setApiServerBlocked] = useState(false);
   const [refreshedAt, setRefreshedAt] = useState<string>(new Date().toISOString());
   const [copied, setCopied] = useState(false);
+  const [webVitals, setWebVitals] = useState<WebVitalsSplitResponse | null>(null);
+  const [webVitalsLoading, setWebVitalsLoading] = useState(true);
 
   // ── Client-side metrics ──────────────────────────────────────────────────────
   const shadowLog    = getShadowLog();
@@ -262,6 +286,23 @@ export const SLODashboardView: React.FC = () => {
     }
   }, [firebaseUser]);
 
+  const fetchWebVitals = useCallback(async () => {
+    setWebVitalsLoading(true);
+    try {
+      const res = await fetch('/api/web-vitals?split=device');
+      if (!res.ok) {
+        setWebVitals(null);
+        return;
+      }
+      const json = (await res.json()) as WebVitalsSplitResponse;
+      setWebVitals(json);
+    } catch {
+      setWebVitals(null);
+    } finally {
+      setWebVitalsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!authLoading && user?.role !== 'admin') {
       navigate('/');
@@ -271,8 +312,9 @@ export const SLODashboardView: React.FC = () => {
   useEffect(() => {
     if (!authLoading && user?.role === 'admin') {
       void fetchApiData();
+      void fetchWebVitals();
     }
-  }, [authLoading, user, fetchApiData]);
+  }, [authLoading, user, fetchApiData, fetchWebVitals]);
 
   useEffect(() => {
     if (authLoading || user?.role !== 'admin' || apiAuthBlocked || apiServerBlocked) return;
@@ -281,17 +323,19 @@ export const SLODashboardView: React.FC = () => {
       if (document.visibilityState === 'visible') {
         setRefreshedAt(new Date().toISOString());
         void fetchApiData();
+        void fetchWebVitals();
       }
     }, 60000);
 
     return () => window.clearInterval(interval);
-  }, [authLoading, user, fetchApiData, apiAuthBlocked, apiServerBlocked]);
+  }, [authLoading, user, fetchApiData, fetchWebVitals, apiAuthBlocked, apiServerBlocked]);
 
   const refresh = () => {
     setApiAuthBlocked(false);
     setApiServerBlocked(false);
     setRefreshedAt(new Date().toISOString());
     void fetchApiData();
+    void fetchWebVitals();
   };
 
   if (authLoading) {
@@ -310,6 +354,14 @@ export const SLODashboardView: React.FC = () => {
   // CI Reliability derived
   const ciPassRate   = apiData?.ci.passRate ?? null;
   const ciStatus     = rag(ciPassRate, { green: SLO_THRESHOLDS.ciPassRatePct.green, amber: SLO_THRESHOLDS.ciPassRatePct.amber });
+
+  // Web Vitals device split derived
+  const webVitalsByDevice = webVitals?.byDevice ?? [];
+  const webVitalsAll = webVitals?.samples ?? [];
+  const webVitalsAnyOver = webVitalsAll.some(s => s.overBudget);
+  const webVitalsStatus: RAGStatus = webVitalsAll.length === 0
+    ? 'unknown'
+    : webVitalsAnyOver ? 'amber' : 'green';
 
   // Sentry health derived
   const unclassifiedPct = apiData?.sentry.unclassifiedRatio != null
@@ -538,6 +590,47 @@ export const SLODashboardView: React.FC = () => {
               />
               {apiData.ci.lastRunAt && (
                 <p className="text-[10px] text-gray-400">Последен run: {relativeTime(apiData.ci.lastRunAt)}</p>
+              )}
+            </>
+          )}
+        </Panel>
+
+        {/* ── Panel: Web Vitals × Device (S40-M1) ───────────────────────────── */}
+        <Panel title="Web Vitals × Device" icon={<Smartphone className="w-4 h-4" />} status={webVitalsStatus} refreshedAt={refreshedAt}>
+          {webVitalsLoading && <p className="text-xs text-gray-400 animate-pulse">Вчитување…</p>}
+          {!webVitalsLoading && webVitalsAll.length === 0 && (
+            <p className="text-xs text-gray-400">Нема собрани samples (warm container reset).</p>
+          )}
+          {!webVitalsLoading && webVitalsAll.length > 0 && (
+            <>
+              <div className="space-y-1">
+                {webVitalsAll.map(s => (
+                  <Metric
+                    key={`all-${s.metric}`}
+                    label={`${s.metric} p75 (сите)`}
+                    value={s.metric === 'CLS' ? (s.p75 / 1000).toFixed(3) : `${Math.round(s.p75)}ms`}
+                    status={s.overBudget ? 'amber' : 'green'}
+                    sub={`n=${s.count} · бюџ ${s.metric === 'CLS' ? (s.budget / 1000).toFixed(2) : `${s.budget}ms`}`}
+                  />
+                ))}
+              </div>
+              {webVitalsByDevice.length > 0 && (
+                <div className="mt-2 border-t border-gray-200 pt-2">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">По уред (p75)</p>
+                  <div className="space-y-0.5">
+                    {webVitalsByDevice.map(s => (
+                      <div key={`${s.metric}-${s.device}`} className="flex items-center justify-between text-[10px]">
+                        <span className="font-mono text-gray-600">
+                          {s.metric}/<span className="text-gray-500">{s.device}</span>
+                        </span>
+                        <span className={`font-mono font-bold ${s.overBudget ? 'text-amber-700' : 'text-gray-700'}`}>
+                          {s.metric === 'CLS' ? (s.p75 / 1000).toFixed(3) : `${Math.round(s.p75)}ms`}
+                          <span className="text-gray-400 ml-1">(n={s.count})</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </>
           )}

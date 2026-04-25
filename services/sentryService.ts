@@ -137,6 +137,33 @@ export function captureException(
 }
 
 /**
+ * Best-effort device-type detection (S40-M1) for Web Vitals bucketing.
+ * Uses User-Agent Client Hints when available; otherwise a UA + viewport
+ * heuristic. Returns one of mobile / tablet / desktop / unknown.
+ */
+export type DetectedDevice = 'mobile' | 'tablet' | 'desktop' | 'unknown';
+
+export function detectDeviceType(): DetectedDevice {
+  if (typeof navigator === 'undefined') return 'unknown';
+  // UA-CH first (Chromium browsers)
+  const uaData = (navigator as unknown as { userAgentData?: { mobile?: boolean } }).userAgentData;
+  const ua = navigator.userAgent || '';
+  const isTabletUA = /iPad|Tablet|PlayBook|Silk|Kindle/i.test(ua) ||
+    (/Android/i.test(ua) && !/Mobile/i.test(ua));
+  if (isTabletUA) return 'tablet';
+  if (uaData && typeof uaData.mobile === 'boolean') {
+    return uaData.mobile ? 'mobile' : 'desktop';
+  }
+  if (/Mobi|iPhone|iPod|Android.*Mobile|BlackBerry|Opera Mini|IEMobile/i.test(ua)) return 'mobile';
+  // viewport fallback for environments without UA hints
+  const w = typeof window !== 'undefined' ? window.innerWidth || 0 : 0;
+  if (w > 0 && w < 768) return 'mobile';
+  if (w >= 768 && w < 1024) return 'tablet';
+  if (w >= 1024) return 'desktop';
+  return 'unknown';
+}
+
+/**
  * Measure and report Core Web Vitals to Sentry.
  * Call once after app renders. No-op when Sentry DSN is not configured.
  *
@@ -157,6 +184,7 @@ export function reportWebVitals(): void {
   if (!import.meta.env.PROD) return;
 
   const hasSentry = Boolean(import.meta.env.VITE_SENTRY_DSN);
+  const detectedDevice = detectDeviceType();
 
   const sendToSentry = (metric: Metric) => {
     if (!hasSentry) return;
@@ -171,6 +199,7 @@ export function reportWebVitals(): void {
       tags: {
         'web_vital': metric.name,
         'web_vital_rating': metric.rating,
+        'device_type': detectedDevice,
       },
     });
   };
@@ -178,7 +207,8 @@ export function reportWebVitals(): void {
   const sendBeacon = (metric: Metric) => {
     try {
       const value = Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value);
-      const payload = JSON.stringify({ name: metric.name, value });
+      const device = detectDeviceType();
+      const payload = JSON.stringify({ name: metric.name, value, device });
       // sendBeacon is unaffected by page-unload; works without keepalive flags.
       // Falls back to fetch() with keepalive when sendBeacon is unavailable
       // (older Safari / non-browser test envs).

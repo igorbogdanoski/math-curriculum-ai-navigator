@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { firestoreService } from '../services/firestoreService';
 import type { User } from "firebase/auth";
 import { trackEvent } from '../services/telemetryService';
+import { isDemoMode, getDemoCredentials } from '../services/demoMode';
 
 
 // Google logo SVG
@@ -323,6 +324,16 @@ export const LoginView: React.FC = () => {
     
     const [resendCooldown, setResendCooldown] = useState(0);
     const [resendMessage, setResendMessage] = useState('');
+    const demoActive = isDemoMode();
+
+    useEffect(() => {
+        if (demoActive && !email && !password) {
+            const creds = getDemoCredentials();
+            setEmail(creds.email);
+            setPassword(creds.password);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [demoActive]);
 
     const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -478,6 +489,11 @@ export const LoginView: React.FC = () => {
                     <h1 className="text-2xl font-bold text-brand-primary">{APP_NAME}</h1>
                     <p className="text-gray-500 mt-1">{headerText}</p>
                 </div>
+                {demoActive && (
+                    <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs text-center">
+                        <strong>МОН демо режим</strong> — креденцијалите се пополнети автоматски. Креирањето нови сметки е оневозможено.
+                    </div>
+                )}
                 {content}
             </Card>
         </div>

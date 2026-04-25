@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-04-25",
+  "description": "S41-D6 МОН OCR golden set за кирилични математички изрази (печатен + ракописен). Sample IDs follow `ocr-mk-XXX`. Each entry references an image path under eval/ocr-mk-images/ relative to repo root. Ground truth is canonical LaTeX. Recall is computed by token-level overlap with the OCR-returned LaTeX after normalization.",
+  "minRecall": 0.8,
+  "samples": [
+    { "id": "ocr-mk-001", "image": "eval/ocr-mk-images/print-001.png",   "kind": "print",  "groundTruthLatex": "x^2 + 2x + 1 = 0", "macedonianText": "Реши ја равенката." },
+    { "id": "ocr-mk-002", "image": "eval/ocr-mk-images/print-002.png",   "kind": "print",  "groundTruthLatex": "\\frac{a}{b} + \\frac{c}{d} = \\frac{ad + bc}{bd}", "macedonianText": "Собирање разломки." },
+    { "id": "ocr-mk-003", "image": "eval/ocr-mk-images/print-003.png",   "kind": "print",  "groundTruthLatex": "\\sqrt{a^2 + b^2} = c", "macedonianText": "Питагорова теорема." },
+    { "id": "ocr-mk-004", "image": "eval/ocr-mk-images/print-004.png",   "kind": "print",  "groundTruthLatex": "f(x) = ax^2 + bx + c", "macedonianText": "Квадратна функција." },
+    { "id": "ocr-mk-005", "image": "eval/ocr-mk-images/handwriting-001.png", "kind": "handwriting", "groundTruthLatex": "2x + 3 = 7", "macedonianText": "Линеарна равенка." }
+  ],
+  "notes": [
+    "Производна golden база ќе се прошири на 50 примероци (печатен + ракописен) од македонски учебници и тетратки.",
+    "Овој starter set го омогучува CI gate-от да биде прицврстен; без слики evaluator-от ќе го прескокне samplе и ќе го пријави како 'skipped' (не fail).",
+    "Threshold за recall е 80% по token-level overlap; може да се олесни на 70% во прв пас."
+  ]
+}

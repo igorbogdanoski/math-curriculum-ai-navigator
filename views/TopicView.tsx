@@ -17,7 +17,9 @@ import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import type { AIGeneratedPresentation } from '../types';
 import { MonitorPlay, Loader2, Wand2, Layers, Box } from 'lucide-react';
 import { AlgebraTilesCanvas } from '../components/math/AlgebraTilesCanvas';
-import { Shape3DViewer } from '../components/math/Shape3DViewer';
+const Shape3DViewer = React.lazy(() =>
+  import('../components/math/Shape3DViewer').then(m => ({ default: m.Shape3DViewer }))
+);
 
 /**
  * Returns true when the concept suggests algebraic manipulation (Algebra Tiles).
@@ -285,7 +287,9 @@ const ConceptCard: React.FC<{
               </button>
               {show3DViewer && (
                 <div className="mt-3 p-4 bg-white border border-blue-100 rounded-2xl shadow-sm overflow-x-auto">
-                  <Shape3DViewer />
+                  <React.Suspense fallback={<div className="flex items-center justify-center p-6 text-gray-400"><Loader2 className="w-5 h-5 animate-spin" /></div>}>
+                    <Shape3DViewer />
+                  </React.Suspense>
                 </div>
               )}
             </div>

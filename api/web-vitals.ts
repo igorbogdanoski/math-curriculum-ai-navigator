@@ -18,7 +18,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
   recordWebVital,
   getWebVitalsSnapshot,
+  getWebVitalsSnapshotByDevice,
   isSupportedMetric,
+  normalizeDevice,
   type WebVitalName,
 } from './_lib/webVitalsBuffer.js';
 
@@ -34,12 +36,14 @@ function setCors(res: VercelResponse): void {
 interface SamplePayload {
   name: unknown;
   value: unknown;
+  device?: unknown;
 }
 
-function ingest(payload: SamplePayload): boolean {
+function ingest(payload: SamplePayload, fallbackDevice?: unknown): boolean {
   if (!isSupportedMetric(payload.name)) return false;
   const value = typeof payload.value === 'number' ? payload.value : Number(payload.value);
-  return recordWebVital(payload.name as WebVitalName, value);
+  const device = normalizeDevice(payload.device ?? fallbackDevice);
+  return recordWebVital(payload.name as WebVitalName, value, device);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -52,6 +56,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     res.setHeader('Cache-Control', 'no-store');
+    const split = req.query?.split === 'device';
+    if (split) {
+      res.status(200).json({
+        samples: getWebVitalsSnapshot(),
+        byDevice: getWebVitalsSnapshotByDevice(),
+      });
+      return;
+    }
     res.status(200).json({ samples: getWebVitalsSnapshot() });
     return;
   }
@@ -80,14 +92,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let accepted = 0;
   let rejected = 0;
-  const obj = body as { samples?: unknown; name?: unknown; value?: unknown };
+  const obj = body as { samples?: unknown; name?: unknown; value?: unknown; device?: unknown };
+  const fallbackDevice = obj.device;
   if (Array.isArray(obj.samples)) {
     for (const s of obj.samples) {
-      if (s && typeof s === 'object' && ingest(s as SamplePayload)) accepted++;
+      if (s && typeof s === 'object' && ingest(s as SamplePayload, fallbackDevice)) accepted++;
       else rejected++;
     }
   } else if ('name' in obj && 'value' in obj) {
-    if (ingest(obj as SamplePayload)) accepted++;
+    if (ingest(obj as SamplePayload, fallbackDevice)) accepted++;
     else rejected++;
   } else {
     res.status(400).json({ error: 'Body must include { name, value } or { samples: [...] }' });

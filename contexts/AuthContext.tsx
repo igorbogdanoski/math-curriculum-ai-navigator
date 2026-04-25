@@ -8,6 +8,7 @@ import { app, db, storage, googleProvider } from '../firebaseConfig';
 import { setSentryUser, clearSentryUser } from '../services/sentryService';
 import { parseFirestoreDoc, TeachingProfileSchema } from '../schemas/firestoreSchemas';
 import { deleteAllUserData } from '../services/firestoreService.gdpr';
+import { isDemoMode } from '../services/demoMode';
 
 interface AuthState {
     firebaseUser: User | null;
@@ -223,6 +224,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [auth]);
 
   const register = useCallback(async (email: string, password: string, name: string, photoFile: File | null, schoolId?: string, role?: 'teacher' | 'school_admin' | 'admin', schoolName?: string): Promise<void> => {
+    if (isDemoMode()) {
+        throw new Error('МОН демо режим: креирањето нови сметки е оневозможено. Ве молиме најавете се со демо креденцијалите.');
+    }
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;

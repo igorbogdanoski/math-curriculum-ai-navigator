@@ -1,6 +1,9 @@
 ﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users } from 'lucide-react';
-import { Shape3DViewer, Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
+import { Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
+const Shape3DViewer = React.lazy(() =>
+  import('../math/Shape3DViewer').then(m => ({ default: m.Shape3DViewer }))
+);
 import { AlgebraTilesCanvas } from '../math/AlgebraTilesCanvas';
 import { AIGeneratedPresentation, PresentationSlide } from '../../types';
 import { MathRenderer } from '../common/MathRenderer';
@@ -766,11 +769,13 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         return (
           <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4 overflow-auto">
             <div className="bg-slate-800 rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden">
-              <Shape3DViewer
-                initialShape={(SHAPE_ORDER.includes(slide.shape3dShape as Shape3DType) ? slide.shape3dShape : 'cube') as Shape3DType}
-                hideSelector={false}
-                compact={false}
-              />
+              <React.Suspense fallback={<div className="flex items-center justify-center p-8 text-slate-300"><Loader2 className="w-5 h-5 animate-spin" /></div>}>
+                <Shape3DViewer
+                  initialShape={(SHAPE_ORDER.includes(slide.shape3dShape as Shape3DType) ? slide.shape3dShape : 'cube') as Shape3DType}
+                  hideSelector={false}
+                  compact={false}
+                />
+              </React.Suspense>
             </div>
             {slide.content.length > 0 && (
               <div className="flex flex-wrap justify-center gap-3">
