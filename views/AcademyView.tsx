@@ -15,6 +15,11 @@ const AcademyCertificateButton = React.lazy(() =>
 import { AcademyDailyHub } from '../components/academy/AcademyDailyHub';
 import AcademySpacedRep from '../components/academy/AcademySpacedRep';
 import { useAuth } from '../contexts/AuthContext';
+import { CalendarClock } from 'lucide-react';
+
+const SRSReviewPanel = React.lazy(() =>
+  import('../components/academy/SRSReviewPanel').then(m => ({ default: m.SRSReviewPanel }))
+);
 
 export const AcademyView: React.FC = () => {
   const { navigate } = useNavigation();
@@ -223,6 +228,22 @@ export const AcademyView: React.FC = () => {
           completedQuizzes={completedQuizzes}
         />
       )}
+
+      {/* Math Concept SRS Review Panel */}
+      <div className="mb-8 rounded-2xl border-2 border-gray-100 bg-white p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="p-2 bg-indigo-50 rounded-xl">
+            <CalendarClock className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-800">Математички концепти — Распоред за повторување</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Базирано на SM-2 алгоритмот — само концепти кои ги решавте со квизови</p>
+          </div>
+        </div>
+        <React.Suspense fallback={<div className="h-16 flex items-center justify-center text-gray-400 text-sm">Се вчитува...</div>}>
+          <SRSReviewPanel />
+        </React.Suspense>
+      </div>
 
       {/* TPACK Section */}
       <div className={`mb-8 rounded-2xl border-2 p-6 ${tpackMaster ? 'border-yellow-300 bg-yellow-50' : 'border-gray-100 bg-white'}`}>
