@@ -33,6 +33,7 @@ import { DailyBriefCard } from '../components/dashboard/DailyBriefCard';
 import { FormativeNextStepCard } from '../components/dashboard/FormativeNextStepCard';
 import { SpacedRepDueCard } from '../components/dashboard/SpacedRepDueCard';
 import { MaturaNextStepWidget } from '../components/dashboard/MaturaNextStepWidget';
+import { SmartHomeDashboard } from '../components/home/SmartHomeDashboard';
 
 // ── Quick Actions strip — 5 most-used teacher actions ────────────────────────
 const getQuickActions = (t: any) => [
@@ -345,6 +346,9 @@ export const HomeView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ── SMART DASHBOARD — Command Center ─────────────────────────── */}
+      <SmartHomeDashboard weakConcepts={weakConcepts} />
 
       <section className="space-y-3" aria-label="Today Focus">
         <div className="flex items-center gap-2">
