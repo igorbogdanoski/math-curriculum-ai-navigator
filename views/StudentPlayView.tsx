@@ -14,6 +14,7 @@ import { useStudentQuiz } from '../hooks/useStudentQuiz';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { StudentOnboardingWizard } from '../components/student/StudentOnboardingWizard';
 import { QuizResultPanel } from '../components/student/QuizResultPanel';
+import { LearningLoopPanel } from '../components/student/LearningLoopPanel';
 
 // Re-export reducer primitives so existing tests (quizSessionReducer.test.ts) keep working
 export { quizSessionReducer, QUIZ_SESSION_INITIAL } from '../components/student/quizSessionReducer';
@@ -219,6 +220,23 @@ export const StudentPlayView: React.FC = () => {
         isMountedRef={isMountedRef}
         getConceptDetails={getConceptDetails}
       />
+
+      {/* S55: Automated learning loop — misconception explainer + next step */}
+      {(() => {
+        const conceptId = quizData?._meta.conceptId;
+        const conceptTitle = conceptId
+          ? (getConceptDetails(conceptId).concept?.title ?? quizData?.title ?? 'концептот')
+          : (quizData?.title ?? 'концептот');
+        return (
+          <LearningLoopPanel
+            quizResult={session.quizResult}
+            conceptTitle={conceptTitle}
+            gradeLevel={quizData?._meta.gradeLevel ?? 6}
+            quizId={id}
+            conceptId={conceptId}
+          />
+        );
+      })()}
 
       <footer className="mt-8 text-white/50 text-xs font-bold uppercase tracking-widest">
         Powered by Math Curriculum AI Navigator

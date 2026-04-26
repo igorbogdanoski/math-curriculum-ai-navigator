@@ -158,6 +158,61 @@ async diagnoseMisconception(question: string, correctAnswer: string, studentAnsw
     }
   },
 
+async explainMisconception(
+  conceptTitle: string,
+  misconceptionDesc: string,
+  gradeLevel: number,
+): Promise<{ steps: [string, string, string]; commonMistake: string }> {
+  const safeConcept = sanitizePromptInput(conceptTitle, 120);
+  const safeMisconception = sanitizePromptInput(misconceptionDesc, 300);
+  const prompt = `
+Ти си педагошки асистент по математика. Ученик во ${gradeLevel}. одделение направил грешка при задача за концептот „${safeConcept}".
+
+Дијагноза на грешката: ${safeMisconception}
+
+Креирај кратка 3-чекорна мини-лекција. Правила:
+- Секој чекор е максимум 2-3 реченици на едноставен македонски
+- Без сложени LaTeX формули — само зборови и прости изрази
+- Чекор 1: Зошто е честа оваа грешка (охрабрувачки тон)
+- Чекор 2: Точниот пристап — чекор по чекор
+- Чекор 3: Конкретен едноставен пример со решение
+
+Врати JSON:
+{
+  "commonMistake": "кратко именување (пр. 'Мешање периметар и плоштина')",
+  "step1": "зошто е честа...",
+  "step2": "точен пристап...",
+  "step3": "конкретен пример..."
+}`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      commonMistake: { type: Type.STRING },
+      step1: { type: Type.STRING },
+      step2: { type: Type.STRING },
+      step3: { type: Type.STRING },
+    },
+    required: ['commonMistake', 'step1', 'step2', 'step3'],
+  };
+
+  try {
+    const r = await generateAndParseJSON<{
+      commonMistake: string; step1: string; step2: string; step3: string;
+    }>([{ text: prompt }], schema, LITE_MODEL, undefined, 2, false);
+    return { steps: [r.step1, r.step2, r.step3], commonMistake: r.commonMistake };
+  } catch {
+    return {
+      steps: [
+        'Оваа грешка е многу честа — не се грижи, многу ученици минуваат низ ова.',
+        'Обиди се да го прочиташ прашањето уште еднаш и да идентификуваш точно што е побарано.',
+        'Следниот пат, запиши го решението чекор по чекор и провери секој чекор поединечно.',
+      ],
+      commonMistake: 'Честа концептуална грешка',
+    };
+  }
+},
+
 async generateSocraticHint(question: string, hintLevel: 1 | 2 | 3): Promise<string> {
     checkDailyQuotaGuard();
     const safeQ = sanitizePromptInput(question, 600);
