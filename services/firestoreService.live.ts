@@ -32,6 +32,8 @@ export const createLiveSession = async (
   conceptId?: string,
   /** S47 — async homework mode: optional deadline (mkd-slidea pattern) */
   homeworkDeadlineMs?: number,
+  /** S50-A — Kahoot timer: seconds per question */
+  timerPerQuestion?: number,
 ): Promise<string> => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let joinCode = '';
@@ -43,6 +45,7 @@ export const createLiveSession = async (
       homeworkDeadline: homeworkDeadlineMs
         ? new Date(homeworkDeadlineMs)
         : null,
+      ...(timerPerQuestion != null ? { timerPerQuestion } : {}),
     });
     return ref.id;
   };

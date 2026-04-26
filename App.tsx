@@ -173,6 +173,7 @@ const ExamPresenterView    = safeLazy(() => import('./views/ExamPresenterView').
 const ExamResultsView      = safeLazy(() => import('./views/ExamResultsView').then(module => ({ default: module.ExamResultsView })));
 const PrintExamView        = safeLazy(() => import('./views/PrintExamView').then(module => ({ default: module.PrintExamView })));
 const StudentTelemetryView = safeLazy(() => import('./views/StudentTelemetryView').then(module => ({ default: module.StudentTelemetryView })));
+const KahootMakerView = safeLazy(() => import('./views/KahootMakerView').then(module => ({ default: module.KahootMakerView })));
 const AIGeneratorPanel = safeLazy(() => import('./components/ai/AIGeneratorPanel').then(module => ({ default: module.AIGeneratorPanel })));
 const AIChatPanel = safeLazy(() => import('./components/ai/AIChatPanel').then(module => ({ default: module.AIChatPanel })));
 const CommandPalette = safeLazy(() => import('./components/common/CommandPalette').then(module => ({ default: module.CommandPalette })));
@@ -271,6 +272,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/exam/print/:id', component: PrintExamView },
     { path: '/exam/print', component: PrintExamView },
     { path: '/analytics/telemetry', component: StudentTelemetryView },
+    { path: '/kahoot/make', component: KahootMakerView },
     { path: '/slo', component: SLODashboardView }, // L1 — admin-only SLO dashboard
     { path: '/share/:data', component: SharedPlanView },
     { path: '/share/annual/:data', component: SharedAnnualPlanView },

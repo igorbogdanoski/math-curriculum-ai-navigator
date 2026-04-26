@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         '/explore', '/graph', '/roadmap',
         '/planner', '/annual-planner', '/annual-gallery',
         '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
-        '/matura', '/matura-library', '/matura-practice', '/matura-stats', '/test-review', '/live', '/data-viz',
+        '/matura', '/matura-library', '/matura-practice', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot',
         '/academy', '/my-profile', '/my-progress', '/portfolio',
         '/national-library', '/gallery', '/favorites', '/reports/coverage',
       ];
@@ -177,6 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/matura-stats" currentPath={currentPath} icon={ICONS.analytics} label="Аналитика матура" onClick={onClose} badge={mission?.streakCount ? `🔥${mission.streakCount}` : 'M5'} />
               <NavItem path="/test-review" currentPath={currentPath} icon={ICONS.camera} label="AI Прегледувач" onClick={onClose} badge="NEW" />
               <NavItem path="/live/host" currentPath={currentPath} icon={ICONS.live} label="Час во живо" onClick={onClose} badge="LIVE" />
+              <NavItem path="/kahoot/make" currentPath={currentPath} icon={ICONS.live} label="Kahoot Maker" onClick={onClose} badge="NEW" />
               <NavItem path="/exam/build" currentPath={currentPath} icon={ICONS.assessment} label="Дигитален испит" onClick={onClose} badge="S46" />
               <NavItem path="/data-viz" currentPath={currentPath} icon={ICONS.chart} label="DataViz Studio" onClick={onClose} badge="NEW" />
 

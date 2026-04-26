@@ -41,6 +41,8 @@ export interface LiveSession {
   /** S47 — mkd-slidea async homework mode: session stays joinable until this timestamp */
   homeworkDeadline?: Timestamp | null;
   homeworkMode?: boolean;
+  /** S50-A — Kahoot Maker: seconds per question (undefined = no enforced timer) */
+  timerPerQuestion?: number;
 }
 
 export interface StudentGroup {

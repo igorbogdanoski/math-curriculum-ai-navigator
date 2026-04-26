@@ -1,10 +1,14 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy, BookOpen, Clock } from 'lucide-react';
+import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy, BookOpen, Clock, Timer, Gamepad2 } from 'lucide-react';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { firestoreService } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
 import { type LiveSession } from '../services/firestoreService.types';
+
+const AUTO_LAUNCH_KEY = 'kahoot_auto_launch';
+
+const MEDALS = ['🥇', '🥈', '🥉'];
 
 export const HostLiveQuizView: React.FC = () => {
     const { firebaseUser } = useAuth();
@@ -20,10 +24,34 @@ export const HostLiveQuizView: React.FC = () => {
     const unsubRef = useRef<(() => void) | null>(null);
 
     useEffect(() => {
-        firestoreService.fetchCachedQuizList().then(list => {
+        firestoreService.fetchCachedQuizList().then(async list => {
             setQuizzes(list);
             setLoading(false);
+
+            // S50-A: auto-launch from KahootMaker
+            if (!firebaseUser) return;
+            try {
+                const raw = sessionStorage.getItem(AUTO_LAUNCH_KEY);
+                if (!raw) return;
+                sessionStorage.removeItem(AUTO_LAUNCH_KEY);
+                const { quizId, quizTitle, timerPerQuestion } = JSON.parse(raw) as {
+                    quizId: string;
+                    quizTitle: string;
+                    timerPerQuestion?: number;
+                };
+                if (!quizId || !quizTitle) return;
+                setCreating(true);
+                const id = await firestoreService.createLiveSession(
+                    firebaseUser.uid, quizId, quizTitle, undefined, undefined, timerPerQuestion
+                );
+                setSessionId(id);
+            } catch (err) {
+                logger.error('Kahoot auto-launch failed:', err);
+            } finally {
+                setCreating(false);
+            }
         });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Subscribe to session when sessionId changes
@@ -86,8 +114,12 @@ export const HostLiveQuizView: React.FC = () => {
     // ── ACTIVE SESSION DASHBOARD ──────────────────────────────────────────────
     if (session && session.status === 'active') {
         const joinLink = `${window.location.origin}/#/live?code=${session.joinCode}`;
+        // Leaderboard: completed first sorted by score desc, then in_progress, then joined
         const participants = Object.entries(session.studentResponses || {})
             .sort(([, a], [, b]) => {
+                if (a.status === 'completed' && b.status === 'completed') {
+                    return (b.percentage ?? 0) - (a.percentage ?? 0);
+                }
                 const order = { completed: 0, in_progress: 1, joined: 2 };
                 return (order[a.status] ?? 3) - (order[b.status] ?? 3);
             });
@@ -102,10 +134,20 @@ export const HostLiveQuizView: React.FC = () => {
                 {/* Header */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="flex items-center gap-1.5 text-xs font-black text-red-700 bg-red-100 border border-red-200 px-3 py-1 rounded-full animate-pulse">
                                 <Radio className="w-3.5 h-3.5" /> LIVE
                             </span>
+                            {session.timerPerQuestion != null && (
+                                <span className="flex items-center gap-1 text-xs font-bold text-indigo-700 bg-indigo-100 border border-indigo-200 px-3 py-1 rounded-full">
+                                    <Timer className="w-3 h-3" /> {session.timerPerQuestion}с/прашање
+                                </span>
+                            )}
+                            {session.quizTitle.toLowerCase().includes('kahoot') && (
+                                <span className="flex items-center gap-1 text-xs font-bold text-purple-700 bg-purple-100 border border-purple-200 px-3 py-1 rounded-full">
+                                    <Gamepad2 className="w-3 h-3" /> Kahoot
+                                </span>
+                            )}
                         </div>
                         <h1 className="text-2xl font-bold text-slate-800">{session.quizTitle}</h1>
                         <p className="text-slate-500 text-sm mt-0.5">{participants.length} ученик{participants.length !== 1 ? 'и' : ''} приклучен{participants.length !== 1 ? 'и' : ''}</p>
@@ -196,12 +238,12 @@ export const HostLiveQuizView: React.FC = () => {
                     </div>
                 )}
 
-                {/* Students table */}
+                {/* Leaderboard */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                         <h2 className="font-bold text-slate-800 flex items-center gap-2">
-                            <Users className="w-5 h-5 text-indigo-600" />
-                            Ученици
+                            <Trophy className="w-5 h-5 text-yellow-500" />
+                            Лидерборд
                         </h2>
                         <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-bold">
                             {participants.length}
@@ -219,19 +261,27 @@ export const HostLiveQuizView: React.FC = () => {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="text-xs text-slate-400 uppercase tracking-widest text-left border-b border-slate-100 bg-slate-50">
+                                        <th className="py-3 px-4 font-semibold text-center w-12">#</th>
                                         <th className="py-3 px-6 font-semibold">Ученик</th>
                                         <th className="py-3 px-4 text-center font-semibold">Статус</th>
                                         <th className="py-3 px-6 text-center font-semibold">Резултат</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {participants.map(([name, data]) => (
-                                        <tr key={name} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                            <td className="py-3 px-6 font-semibold text-slate-800 flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
-                                                    {name.charAt(0).toUpperCase()}
+                                    {participants.map(([name, data], idx) => {
+                                        const isTop3 = data.status === 'completed' && idx < 3;
+                                        return (
+                                        <tr key={name} className={`border-b border-slate-50 transition-colors ${isTop3 ? 'bg-yellow-50/50' : 'hover:bg-slate-50'}`}>
+                                            <td className="py-3 px-4 text-center text-base">
+                                                {isTop3 ? MEDALS[idx] : <span className="text-slate-300 text-xs font-bold">{idx + 1}</span>}
+                                            </td>
+                                            <td className="py-3 px-6 font-semibold text-slate-800">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${isTop3 ? 'bg-yellow-100 text-yellow-700' : 'bg-indigo-100 text-indigo-600'}`}>
+                                                        {name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    {name}
                                                 </div>
-                                                {name}
                                             </td>
                                             <td className="py-3 px-4 text-center">
                                                 {data.status === 'completed' && <span className="text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full">✅ Завршено</span>}
@@ -244,7 +294,8 @@ export const HostLiveQuizView: React.FC = () => {
                                                     : <span className="text-slate-300">—</span>}
                                             </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -256,22 +307,58 @@ export const HostLiveQuizView: React.FC = () => {
 
     // ── ENDED SESSION SUMMARY ────────────────────────────────────────────────
     if (session && session.status === 'ended') {
-        const participants = Object.entries(session.studentResponses || {});
-        const completedCount = participants.filter(([, v]) => v.status === 'completed').length;
-        const avgScore = completedCount > 0
-            ? Math.round(participants.filter(([, v]) => v.status === 'completed')
-                .reduce((s, [, v]) => s + (v.percentage ?? 0), 0) / completedCount)
+        const allParticipants = Object.entries(session.studentResponses || {});
+        const completed = allParticipants
+            .filter(([, v]) => v.status === 'completed')
+            .sort(([, a], [, b]) => (b.percentage ?? 0) - (a.percentage ?? 0));
+        const avgScore = completed.length > 0
+            ? Math.round(completed.reduce((s, [, v]) => s + (v.percentage ?? 0), 0) / completed.length)
             : null;
+
         return (
-            <div className="p-8 max-w-2xl mx-auto text-center space-y-4">
-                <div className="text-5xl mb-2">🎉</div>
-                <h2 className="text-2xl font-black text-slate-800">Сесијата е завршена!</h2>
-                <p className="text-slate-500">{session.quizTitle} · {participants.length} ученик{participants.length !== 1 ? 'и' : ''} учествуваа</p>
-                {avgScore !== null && <p className="text-lg font-bold text-indigo-600">Просечен резултат: {avgScore}%</p>}
+            <div className="p-6 max-w-2xl mx-auto space-y-5 animate-in fade-in duration-500">
+                {/* Confetti header */}
+                <div className="text-center py-8 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl text-white relative overflow-hidden">
+                    {/* Confetti dots */}
+                    <div className="absolute top-4 left-8 w-3 h-3 rounded-full opacity-70 animate-bounce bg-yellow-400" />
+                    <div className="absolute top-8 right-12 w-3 h-3 rounded-full opacity-70 animate-bounce delay-150 bg-emerald-400" />
+                    <div className="absolute top-2 left-1/3 w-3 h-3 rounded-full opacity-70 animate-bounce delay-300 bg-red-400" />
+                    <div className="absolute top-6 right-1/4 w-3 h-3 rounded-full opacity-70 animate-bounce delay-500 bg-blue-400" />
+                    <div className="absolute top-3 left-2/3 w-3 h-3 rounded-full opacity-70 animate-bounce delay-700 bg-violet-400" />
+                    <div className="text-5xl mb-3">🎉</div>
+                    <h2 className="text-2xl font-black">Сесијата е завршена!</h2>
+                    <p className="text-indigo-200 mt-1 text-sm">{session.quizTitle}</p>
+                    {avgScore !== null && (
+                        <p className="mt-3 text-3xl font-black text-yellow-300">{avgScore}%</p>
+                    )}
+                    <p className="text-indigo-300 text-xs mt-1">{allParticipants.length} учесник{allParticipants.length !== 1 ? 'и' : ''}</p>
+                </div>
+
+                {/* Final leaderboard */}
+                {completed.length > 0 && (
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
+                            <Trophy className="w-4 h-4 text-yellow-500" />
+                            <span className="font-bold text-slate-800 text-sm">Финален лидерборд</span>
+                        </div>
+                        <ul className="divide-y divide-slate-50">
+                            {completed.map(([name, data], idx) => (
+                                <li key={name} className={`flex items-center gap-4 px-5 py-3 ${idx < 3 ? 'bg-yellow-50/50' : ''}`}>
+                                    <span className="text-xl w-8 text-center">{idx < 3 ? MEDALS[idx] : <span className="text-slate-300 text-sm font-bold">{idx + 1}</span>}</span>
+                                    <span className="flex-1 font-semibold text-slate-800 text-sm">{name}</span>
+                                    <span className={`font-black text-base ${(data.percentage ?? 0) >= 70 ? 'text-green-600' : 'text-amber-500'}`}>
+                                        {data.percentage ?? 0}%
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 <button
                     type="button"
                     onClick={() => { setSession(null); setSessionId(null); }}
-                    className="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition"
+                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition"
                 >
                     Нова сесија →
                 </button>

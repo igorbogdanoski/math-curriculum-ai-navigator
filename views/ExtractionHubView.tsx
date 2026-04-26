@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Sparkles, Globe, ChevronDown, ChevronUp, Loader2, AlertTriangle,
   Check, Copy, Save, Image as ImageIcon, Wand2, X, BookOpen,
-  Play, Tag, ExternalLink, FileText, Upload, Link,
+  Play, Tag, ExternalLink, FileText, Upload, Link, Gamepad2,
 } from 'lucide-react';
 import { DokBadge } from '../components/common/DokBadge';
 import { getAuth } from 'firebase/auth';
@@ -735,6 +735,14 @@ export const ExtractionHubView: React.FC = () => {
     navigate('/generator');
   };
 
+  const sendToKahoot = () => {
+    if (!result) return;
+    try {
+      sessionStorage.setItem('kahoot_tasks', JSON.stringify(result.tasks));
+    } catch { /* quota */ }
+    navigate('/kahoot/make');
+  };
+
   const reset = () => {
     setUrl('');
     setManualTranscript('');
@@ -1382,6 +1390,15 @@ export const ExtractionHubView: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={sendToKahoot}
+                    title="Направи Kahoot live квиз од извлечените задачи"
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 rounded-xl transition"
+                  >
+                    <Gamepad2 className="h-3.5 w-3.5" />
+                    Kahoot
+                  </button>
                   <button
                     type="button"
                     onClick={reset}
