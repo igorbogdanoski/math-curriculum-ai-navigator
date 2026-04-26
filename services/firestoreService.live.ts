@@ -45,9 +45,20 @@ export const createLiveSession = async (
       homeworkDeadline: homeworkDeadlineMs
         ? new Date(homeworkDeadlineMs)
         : null,
-      ...(timerPerQuestion != null ? { timerPerQuestion } : {}),
+      timerPerQuestion: timerPerQuestion ?? null,
     });
     return ref.id;
+  };
+
+export const getLiveSessionById = async (sessionId: string): Promise<LiveSession | null> => {
+    try {
+      const snap = await getDoc(doc(db, 'live_sessions', sessionId));
+      if (!snap.exists()) return null;
+      return { id: snap.id, ...snap.data() } as LiveSession;
+    } catch (error) {
+      logger.error('Error fetching live session by id:', error);
+      return null;
+    }
   };
 
 export const getLiveSessionByCode = async (joinCode: string): Promise<LiveSession | null> => {

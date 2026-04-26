@@ -15,6 +15,8 @@ export interface SRSItem {
   repetitions: number;
   lastReviewedAt: string;
   overdue: boolean;
+  /** Signed days from now — negative = overdue (used for sort priority) */
+  daysFromNow: number;
 }
 
 export interface ReviewSchedule {
@@ -28,7 +30,8 @@ export interface ReviewSchedule {
 function daysUntil(record: SpacedRepRecord): number {
   const now = new Date();
   const next = new Date(record.nextReviewDate);
-  return Math.round((next.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  // Math.floor: an item due in 0.9 days still belongs to "today", not "tomorrow"
+  return Math.floor((next.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export function buildReviewSchedule(records: SpacedRepRecord[]): ReviewSchedule {
@@ -51,6 +54,7 @@ export function buildReviewSchedule(records: SpacedRepRecord[]): ReviewSchedule 
       repetitions: r.repetitions,
       lastReviewedAt: r.lastReviewedAt,
       overdue: days < 0,
+      daysFromNow: days,
     };
 
     if (days <= 0) {
@@ -64,17 +68,18 @@ export function buildReviewSchedule(records: SpacedRepRecord[]): ReviewSchedule 
     }
   }
 
-  // Sort each group: overdue first within today, else by nextReviewDate ascending
-  const byDate = (a: SRSItem, b: SRSItem) => {
+  // Sort: overdue items first (most overdue = most negative daysFromNow first), then due-today by interval
+  const byUrgency = (a: SRSItem, b: SRSItem) => {
     if (a.overdue && !b.overdue) return -1;
     if (!a.overdue && b.overdue) return 1;
+    if (a.overdue && b.overdue) return a.daysFromNow - b.daysFromNow; // most negative first
     return a.interval - b.interval;
   };
 
-  today.sort(byDate);
+  today.sort(byUrgency);
   tomorrow.sort((a, b) => a.interval - b.interval);
-  thisWeek.sort((a, b) => a.interval - b.interval);
-  later.sort((a, b) => a.interval - b.interval);
+  thisWeek.sort((a, b) => a.daysFromNow - b.daysFromNow);
+  later.sort((a, b) => a.daysFromNow - b.daysFromNow);
 
   return {
     today,

@@ -56,11 +56,14 @@ interface Props {
   onNextConcept?: () => void;
   /** Label shown on the next-concept button (defaults to "Следно учи ова →") */
   nextConceptLabel?: string;
+  /** Override the default 20s per-question timer (e.g. from a live session's timerPerQuestion) */
+  secondsPerQuestion?: number;
 }
 
 const SECONDS_PER_QUESTION = 20;
 
-export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQuestions, quiz, onComplete, onClose, onNextConcept, nextConceptLabel }) => {
+export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQuestions, quiz, onComplete, onClose, onNextConcept, nextConceptLabel, secondsPerQuestion }) => {
+  const perQ = secondsPerQuestion ?? SECONDS_PER_QUESTION;
   // State for Step 1.3: Dynamic parallel generation
   const [dynamicQuestions, setDynamicQuestions] = useState<Question[] | null>(null);
   const [isGeneratingParallel, setIsGeneratingParallel] = useState(false);
@@ -103,7 +106,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [streak, setStreak] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
+  const [timeLeft, setTimeLeft] = useState(perQ);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
   
   const [showResult, setShowResult] = useState(false);
@@ -249,7 +252,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       setSelectedOption(null);
       setShortAnswer('');
       setIsCorrect(null);
-      setTimeLeft(SECONDS_PER_QUESTION);
+      setTimeLeft(perQ);
       setIsTimerRunning(true);
       setScaffoldData(null);
       setSocraticHint(null);
@@ -264,7 +267,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       setCurrentIndex(prev => prev - 1);
       setSelectedOption(null);
       setIsCorrect(null);
-      setTimeLeft(SECONDS_PER_QUESTION);
+      setTimeLeft(perQ);
       setIsTimerRunning(true);
       setScaffoldData(null);
       setSocraticHint(null);
@@ -302,7 +305,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     setShowResult(false);
     setSelectedOption(null);
     setIsCorrect(null);
-    setTimeLeft(SECONDS_PER_QUESTION);
+    setTimeLeft(perQ);
     setIsTimerRunning(true);
     setScaffoldData(null);
     setSocraticHint(null);
@@ -468,7 +471,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   }
 
   // --- QUIZ SCREEN ---
-  const timePercentage = (timeLeft / SECONDS_PER_QUESTION) * 100;
+  const timePercentage = (timeLeft / perQ) * 100;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start md:items-center justify-center md:p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
@@ -532,7 +535,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
         {/* TIMER BAR */}
         <div className="w-full bg-gray-200 h-2">
           <div
-            className={`h-full transition-all duration-1000 linear ${timeLeft < 5 ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}
+            className={`h-full transition-all duration-1000 linear ${timeLeft <= Math.max(5, Math.floor(perQ * 0.2)) ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}
             style={{ width: `${timePercentage}%` }}
           ></div>
         </div>

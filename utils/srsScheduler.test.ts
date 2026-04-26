@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { buildReviewSchedule, getScheduleStats } from './srsScheduler';
 import type { SpacedRepRecord } from './spacedRepetition';
 
@@ -31,11 +31,17 @@ describe('buildReviewSchedule', () => {
     expect(schedule.today[0].overdue).toBe(true);
   });
 
-  it('places daysFromNow=0 record into today (due today)', () => {
-    const r = makeRecord({ daysFromNow: 0, conceptId: 'c2' });
+  it('places a record due within 24h into today bucket', () => {
+    // Use daysFromNow=0 but set nextReviewDate 12h in the future for stable "not overdue" check
+    const next = new Date(Date.now() + 12 * 3600_000);
+    const r: SpacedRepRecord = {
+      studentId: 'stu', conceptId: 'c2', easeFactor: 2.5, interval: 1, repetitions: 1,
+      nextReviewDate: next.toISOString(), lastReviewedAt: new Date().toISOString(),
+    };
     const schedule = buildReviewSchedule([r]);
     expect(schedule.today).toHaveLength(1);
     expect(schedule.today[0].overdue).toBe(false);
+    expect(schedule.tomorrow).toHaveLength(0);
   });
 
   it('places daysFromNow=1 record into tomorrow', () => {
@@ -121,6 +127,27 @@ describe('buildReviewSchedule', () => {
     expect(item.interval).toBe(4);
     expect(item.repetitions).toBe(3);
     expect(typeof item.nextReviewLabel).toBe('string');
+    expect(typeof item.daysFromNow).toBe('number');
+  });
+
+  it('Math.floor: item due in 0.9 days goes to today, not tomorrow', () => {
+    // nextReviewDate = 22 hours from now → daysUntil = Math.floor(0.916) = 0 → today
+    const next = new Date(Date.now() + 22 * 3600_000);
+    const r: SpacedRepRecord = {
+      studentId: 'stu', conceptId: 'boundary', easeFactor: 2.5, interval: 1, repetitions: 1,
+      nextReviewDate: next.toISOString(), lastReviewedAt: new Date().toISOString(),
+    };
+    const schedule = buildReviewSchedule([r]);
+    expect(schedule.today).toHaveLength(1);
+    expect(schedule.tomorrow).toHaveLength(0);
+  });
+
+  it('sorts most-overdue items first within today bucket', () => {
+    const veryOverdue = makeRecord({ daysFromNow: -5, conceptId: 'very', interval: 2 });
+    const slightlyOverdue = makeRecord({ daysFromNow: -1, conceptId: 'slight', interval: 10 });
+    const schedule = buildReviewSchedule([slightlyOverdue, veryOverdue]);
+    expect(schedule.today[0].conceptId).toBe('very');
+    expect(schedule.today[1].conceptId).toBe('slight');
   });
 });
 

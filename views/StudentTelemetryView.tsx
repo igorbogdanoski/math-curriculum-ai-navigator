@@ -149,20 +149,31 @@ export const StudentTelemetryView: React.FC = () => {
   const { firebaseUser } = useAuth();
   const [records, setRecords] = useState<StepTelemetryRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'hints' | 'time' | 'records'>('hints');
 
   useEffect(() => {
     if (!firebaseUser?.uid) { setLoading(false); return; }
-    fetchTeacherTelemetry(firebaseUser.uid).then(r => {
-      setRecords(r);
-      setLoading(false);
-    });
+    let alive = true;
+    fetchTeacherTelemetry(firebaseUser.uid)
+      .then(r => { if (alive) { setRecords(r); setLoading(false); } })
+      .catch(() => { if (alive) { setFetchError('Грешка при вчитување на телеметриски податоци.'); setLoading(false); } });
+    return () => { alive = false; };
   }, [firebaseUser?.uid]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-red-500">
+        <AlertCircle className="w-10 h-10 opacity-60" />
+        <p className="font-semibold">{fetchError}</p>
       </div>
     );
   }

@@ -3,7 +3,7 @@
  * Business logic lives in: useStudentIdentity, useStudentQuiz, useQuizSession.
  * UI components: StudentOnboardingWizard, QuizResultPanel.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, AlertCircle, Home, User, Users } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { ICONS } from '../constants';
@@ -38,6 +38,17 @@ export const StudentPlayView: React.FC = () => {
     const p = new URLSearchParams(search);
     return { sessionId: p.get('sessionId'), tid: p.get('tid') ?? undefined, assignId: p.get('assignId') ?? undefined };
   })();
+
+  // ── Live session timer — fetched once when joining a live session ─────────────
+  const [liveTimerSeconds, setLiveTimerSeconds] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    if (!sessionId) return;
+    let alive = true;
+    firestoreService.getLiveSessionById(sessionId).then(s => {
+      if (alive && s?.timerPerQuestion != null) setLiveTimerSeconds(s.timerPerQuestion);
+    }).catch(() => { /* non-fatal — fall back to default timer */ });
+    return () => { alive = false; };
+  }, [sessionId]);
 
   // ── Hooks ────────────────────────────────────────────────────────────────────
   const identity = useStudentIdentity();
@@ -184,6 +195,7 @@ export const StudentPlayView: React.FC = () => {
                     answer: item.answer,
                     explanation: item.solution || item.explanation,
                   }))}
+                  secondsPerQuestion={identity.isIEP ? undefined : liveTimerSeconds}
                   onComplete={({ score, correctCount, totalQuestions, misconceptions }) => {
                     handleQuizComplete(score, correctCount, totalQuestions, misconceptions);
                   }}

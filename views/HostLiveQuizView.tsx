@@ -1,6 +1,6 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy, BookOpen, Clock, Timer, Gamepad2 } from 'lucide-react';
+import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy, BookOpen, Clock, Timer } from 'lucide-react';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { firestoreService } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,36 +23,33 @@ export const HostLiveQuizView: React.FC = () => {
     const [homeworkHours, setHomeworkHours] = useState(24);
     const unsubRef = useRef<(() => void) | null>(null);
 
+    // Load quiz list (runs once, cleanup flag prevents stale state updates)
     useEffect(() => {
-        firestoreService.fetchCachedQuizList().then(async list => {
-            setQuizzes(list);
-            setLoading(false);
-
-            // S50-A: auto-launch from KahootMaker
-            if (!firebaseUser) return;
-            try {
-                const raw = sessionStorage.getItem(AUTO_LAUNCH_KEY);
-                if (!raw) return;
-                sessionStorage.removeItem(AUTO_LAUNCH_KEY);
-                const { quizId, quizTitle, timerPerQuestion } = JSON.parse(raw) as {
-                    quizId: string;
-                    quizTitle: string;
-                    timerPerQuestion?: number;
-                };
-                if (!quizId || !quizTitle) return;
-                setCreating(true);
-                const id = await firestoreService.createLiveSession(
-                    firebaseUser.uid, quizId, quizTitle, undefined, undefined, timerPerQuestion
-                );
-                setSessionId(id);
-            } catch (err) {
-                logger.error('Kahoot auto-launch failed:', err);
-            } finally {
-                setCreating(false);
-            }
+        let alive = true;
+        firestoreService.fetchCachedQuizList().then(list => {
+            if (alive) { setQuizzes(list); setLoading(false); }
         });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        return () => { alive = false; };
     }, []);
+
+    // S50-A: auto-launch from KahootMaker — runs when auth + quiz list are both ready
+    useEffect(() => {
+        if (loading || !firebaseUser) return;
+        const raw = sessionStorage.getItem(AUTO_LAUNCH_KEY);
+        if (!raw) return;
+        sessionStorage.removeItem(AUTO_LAUNCH_KEY);
+        let parsed: { quizId?: string; quizTitle?: string; timerPerQuestion?: number } = {};
+        try { parsed = JSON.parse(raw); } catch { return; }
+        const { quizId, quizTitle, timerPerQuestion } = parsed;
+        if (!quizId || !quizTitle) return;
+        setCreating(true);
+        firestoreService.createLiveSession(
+            firebaseUser.uid, quizId, quizTitle, undefined, undefined, timerPerQuestion
+        )
+            .then(id => setSessionId(id))
+            .catch(err => logger.error('Kahoot auto-launch failed:', err))
+            .finally(() => setCreating(false));
+    }, [loading, firebaseUser]);
 
     // Subscribe to session when sessionId changes
     useEffect(() => {
@@ -141,11 +138,6 @@ export const HostLiveQuizView: React.FC = () => {
                             {session.timerPerQuestion != null && (
                                 <span className="flex items-center gap-1 text-xs font-bold text-indigo-700 bg-indigo-100 border border-indigo-200 px-3 py-1 rounded-full">
                                     <Timer className="w-3 h-3" /> {session.timerPerQuestion}с/прашање
-                                </span>
-                            )}
-                            {session.quizTitle.toLowerCase().includes('kahoot') && (
-                                <span className="flex items-center gap-1 text-xs font-bold text-purple-700 bg-purple-100 border border-purple-200 px-3 py-1 rounded-full">
-                                    <Gamepad2 className="w-3 h-3" /> Kahoot
                                 </span>
                             )}
                         </div>

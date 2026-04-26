@@ -65,7 +65,14 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
 
   const flushTelemetry = (correct: boolean) => {
     if (!conceptId || currentStep >= steps.length) return;
-    const studentId = firebaseUser?.uid ?? (localStorage.getItem('exam_device_id') ?? 'anon');
+    // Use firebase UID, then device-specific ID, never a shared "anon" bucket
+    const studentId = firebaseUser?.uid
+      ?? localStorage.getItem('exam_device_id')
+      ?? (() => {
+        const id = `dev_${Math.random().toString(36).slice(2, 10)}`;
+        try { localStorage.setItem('exam_device_id', id); } catch { /* storage full */ }
+        return id;
+      })();
     logStepEvent({
       studentId,
       teacherUid: teacherUid ?? firebaseUser?.uid,
@@ -82,8 +89,8 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
   // Функција за активирање на Сократовиот метод (Зошто?)
   const handleAskWhy = async (index: number) => {
     if (deepExplanations[index]) return;
-    // Hint used — increment counter for the current step
-    if (index === currentStep) hintsRef.current += 1;
+    // Count any "Why?" click as a hint for the current active step's telemetry
+    hintsRef.current += 1;
 
     setLoadingStep(index);
     try {
@@ -101,9 +108,10 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
   };
 
   const nextStep = () => {
-    // Flush telemetry for the completed step (no verify attempted = correct by progression)
-    if (currentStep < steps.length && attemptsRef.current === 0) {
-      flushTelemetry(true);
+    // Only flush telemetry when the student actually attempted verification.
+    // attemptsRef === 0 means they read the step and progressed without engaging — not a signal.
+    if (currentStep < steps.length && attemptsRef.current > 0) {
+      flushTelemetry(verifyResult?.correct ?? false);
     }
     if (currentStep < steps.length) {
       setCurrentStep(prev => prev + 1);
