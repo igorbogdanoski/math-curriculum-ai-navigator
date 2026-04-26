@@ -10,6 +10,12 @@ import { visionAPI } from './gemini/vision';
 import { reportsAPI } from './gemini/reports';
 import { testgenAPI } from './gemini/testgen';
 import { annualAPI } from './gemini/annual';
+import {
+  generateKahootFromTasks,
+  generateKahootFromPrompt,
+  generateKahootFromDocument,
+} from './gemini/kahootGenerator';
+export type { KahootQuestion } from './gemini/kahootGenerator';
 
 // Core flag/utility re-exports (consumed directly by views/hooks)
 export {
@@ -45,4 +51,7 @@ export const realGeminiService = {
   ...reportsAPI,
   ...testgenAPI,
   ...annualAPI,
+  generateKahootFromTasks,
+  generateKahootFromPrompt,
+  generateKahootFromDocument,
 };
