@@ -2,7 +2,7 @@ import {
     Type, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, SAFETY_SETTINGS, callGeminiProxy,
     checkDailyQuotaGuard, getCached, setCached, sanitizePromptInput,
 } from './core';
-import { getSecondaryTrackContext } from './core.instructions';
+import { getSecondaryTrackContext, getAILanguageRule } from './core.instructions';
 import {
     GeneratedTest, ProGeneratedTest, DifferentiatedLevel, AssessmentQuestion, AIGeneratedAssessment,
     type SecondaryTrack,
@@ -132,7 +132,8 @@ async extractTestQuestions(input: { kind: 'image' | 'pdf'; base64: string; mimeT
 async gradeTestWithVision(imageBase64: string, mimeType: string, testQuestions: Array<{ id: string; text: string; points: number; correctAnswer: string }>): Promise<{ questionId: string; earnedPoints: number; maxPoints: number; feedback: string; misconception?: string; correctionHint?: string; confidence?: number }[]> {
     const { PRO_MODEL } = await import('./core');
     const questionsStr = testQuestions.map((q, i) => `${i + 1}. [${q.points}п] ${q.text} → Точен одговор: ${q.correctAnswer}`).join('\n');
-    const prompt = `Си наставник по математика. Прегледај ја сликата на пишаниот тест на ученикот.\n\nПрашања и точни одговори:\n${questionsStr}\n\nЗа секое прашање:\n1. Прочитај го одговорот на ученикот од сликата\n2. Спореди го со точниот одговор\n3. Дај поени (0 до max) и кратка повратна информација на македонски\n4. Ако постои типична грешка (misconception), наведи ја накратко\n5. Ако одговорот е делумно или целосно погрешен, дај correctionHint (1 реченица на македонски)\n6. confidence: веројатност дека правилно ја прочитал рачно напишаниот одговор (0.0–1.0)\n\nВрати JSON:\n{ "grades": [ { "questionId": "1", "earnedPoints": X, "maxPoints": Y, "feedback": "...", "misconception": "...", "correctionHint": "...", "confidence": 0.9 } ] }`;
+    const langRule = getAILanguageRule();
+    const prompt = `Си наставник по математика. Прегледај ја сликата на пишаниот тест на ученикот.\n\nПрашања и точни одговори:\n${questionsStr}\n\nЗа секое прашање:\n1. Прочитај го одговорот на ученикот од сликата\n2. Спореди го со точниот одговор\n3. Дај поени (0 до max) и кратка повратна информација\n4. Ако постои типична грешка (misconception), наведи ја накратко\n5. Ако одговорот е делумно или целосно погрешен, дај correctionHint (1 реченица)\n6. confidence: веројатност дека правилно ја прочитал рачно напишаниот одговор (0.0–1.0)\nЈАЗИК НА ОДГОВОР: ${langRule}\n\nВрати JSON:\n{ "grades": [ { "questionId": "1", "earnedPoints": X, "maxPoints": Y, "feedback": "...", "misconception": "...", "correctionHint": "...", "confidence": 0.9 } ] }`;
 
     const normalizeGradeRows = (raw: unknown) => {
       if (!Array.isArray(raw)) return null;

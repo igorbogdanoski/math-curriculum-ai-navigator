@@ -1,6 +1,6 @@
 import {
     DEFAULT_MODEL, SAFETY_SETTINGS, callGeminiProxy,
-    checkDailyQuotaGuard, getResolvedTextSystemInstruction,
+    checkDailyQuotaGuard, getResolvedTextSystemInstruction, getAILanguageRule,
 } from './core';
 
 export const visionAPI = {
@@ -27,7 +27,7 @@ async analyzeHandwriting(
 4. **Проценка** — дај процентуална оценка (пр. 75%) врз основа на точноста.
 ${detailInstruction}
 
-Пишувај топло и охрабрувачки. Одговори на македонски јазик.`;
+Пишувај топло и охрабрувачки. ЈАЗИК НА ОДГОВОР: ${getAILanguageRule()}`;
 
     const response = await callGeminiProxy({
       model: DEFAULT_MODEL,
@@ -63,7 +63,7 @@ ${documentText.slice(0, 8000)}
 4. **Проценка** — дај процентуална оценка (пр. 75%) врз основа на точноста.
 ${detailInstruction}
 
-Пишувај топло и охрабрувачки. Одговори на македонски јазик.`;
+Пишувај топло и охрабрувачки. ЈАЗИК НА ОДГОВОР: ${getAILanguageRule()}`;
 
     const response = await callGeminiProxy({
       model: DEFAULT_MODEL,
