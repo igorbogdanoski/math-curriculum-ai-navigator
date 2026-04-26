@@ -7,7 +7,8 @@ import { geminiService, isRecoveryWorksheetEnabled } from '../services/geminiSer
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Card } from '../components/common/Card';
-import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download, FileSpreadsheet } from 'lucide-react';
+import { BarChart3, Users, Award, TrendingUp, RefreshCw, Download, FileSpreadsheet, Brain } from 'lucide-react';
+import { useNavigation } from '../contexts/NavigationContext';
 import { exportAnalyticsXlsx } from '../utils/exportExcel';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useTeacherAnalytics } from '../hooks/useTeacherAnalytics';
@@ -52,6 +53,7 @@ export const TeacherAnalyticsView: React.FC = () => {
   const recoveryWorksheetEnabled = isRecoveryWorksheetEnabled();
   const feedbackTaxonomyEnabled = isFeedbackTaxonomyRolloutEnabled();
   const { firebaseUser } = useAuth();
+  const { navigate } = useNavigation();
 const { addNotification } = useNotification();
   const { data: analyticsData, isLoading, error, refetch: loadResults } = useTeacherAnalytics(firebaseUser?.uid);
 
@@ -414,6 +416,15 @@ const { addNotification } = useNotification();
             <p className="text-lg text-gray-600 mt-2">{t('analytics.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => navigate('/analytics/telemetry')}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-sm font-medium transition active:scale-95"
+              title="Когнитивна телеметрија — по чекори анализа"
+            >
+              <Brain className="w-4 h-4" />
+              Телеметрија
+            </button>
             <button
               type="button"
               onClick={handleExportCSV}

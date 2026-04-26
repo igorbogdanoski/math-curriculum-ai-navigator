@@ -16,6 +16,8 @@ import { DrawingCanvas } from './solver/DrawingCanvas';
 
 import { geminiService } from '../services/geminiService';
 import { useVoice } from '../hooks/useVoice';
+import { logStepEvent } from '../services/firestoreService.telemetry';
+import { useAuth } from '../contexts/AuthContext';
 
 // Интерфејси за целосна TypeScript безбедност
 export interface SolverStep {
@@ -28,12 +30,16 @@ interface StepByStepSolverProps {
   strategy?: string;
   steps: SolverStep[];
   mentalMap?: any;
+  conceptId?: string;
+  teacherUid?: string;
 }
 
-export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({ 
-  problem, 
-  strategy, 
-  steps 
+export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
+  problem,
+  strategy,
+  steps,
+  conceptId,
+  teacherUid,
 }) => {
   // States за менаџирање на интеракцијата
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -49,17 +55,41 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
   const [showCanvas, setShowCanvas] = useState(false);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // Cognitive telemetry — per-step timing + hints + attempts
+  const stepStartRef = useRef<number>(Date.now());
+  const hintsRef = useRef(0);
+  const attemptsRef = useRef(0);
+
   const { speak } = useVoice();
+  const { firebaseUser } = useAuth();
+
+  const flushTelemetry = (correct: boolean) => {
+    if (!conceptId || currentStep >= steps.length) return;
+    const studentId = firebaseUser?.uid ?? (localStorage.getItem('exam_device_id') ?? 'anon');
+    logStepEvent({
+      studentId,
+      teacherUid: teacherUid ?? firebaseUser?.uid,
+      conceptId,
+      problemText: problem.slice(0, 200),
+      stepIndex: currentStep,
+      timeSpentMs: Date.now() - stepStartRef.current,
+      hintsUsed: hintsRef.current,
+      attempts: attemptsRef.current,
+      correct,
+    });
+  };
 
   // Функција за активирање на Сократовиот метод (Зошто?)
   const handleAskWhy = async (index: number) => {
-    if (deepExplanations[index]) return; // Веќе е вчитано
-    
+    if (deepExplanations[index]) return;
+    // Hint used — increment counter for the current step
+    if (index === currentStep) hintsRef.current += 1;
+
     setLoadingStep(index);
     try {
       const why = await geminiService.explainSpecificStep(
-        problem, 
-        steps[index].explanation, 
+        problem,
+        steps[index].explanation,
         steps[index].expression
       );
       setDeepExplanations(prev => ({ ...prev, [index]: why }));
@@ -71,11 +101,19 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
   };
 
   const nextStep = () => {
+    // Flush telemetry for the completed step (no verify attempted = correct by progression)
+    if (currentStep < steps.length && attemptsRef.current === 0) {
+      flushTelemetry(true);
+    }
     if (currentStep < steps.length) {
       setCurrentStep(prev => prev + 1);
     } else {
       setIsComplete(true);
     }
+    // Reset per-step counters for next step
+    stepStartRef.current = Date.now();
+    hintsRef.current = 0;
+    attemptsRef.current = 0;
     setUserAttempt('');
     setVerifyResult(null);
   };
@@ -86,10 +124,14 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
     setDeepExplanations({});
     setUserAttempt('');
     setVerifyResult(null);
+    stepStartRef.current = Date.now();
+    hintsRef.current = 0;
+    attemptsRef.current = 0;
   };
 
   const handleVerify = async () => {
     if (!userAttempt.trim() || currentStep >= steps.length) return;
+    attemptsRef.current += 1;
     setVerifying(true);
     setVerifyResult(null);
     try {
@@ -100,6 +142,7 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
         steps[currentStep],
       );
       setVerifyResult(result);
+      if (result.correct) flushTelemetry(true);
     } catch (e) {
       logger.error('verifyUserStep error', e);
     } finally {
