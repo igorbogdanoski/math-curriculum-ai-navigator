@@ -8,7 +8,7 @@ import {
     Type, DEFAULT_MODEL, LITE_MODEL, MAX_RETRIES, generateAndParseJSON, CACHE_COLLECTION,
     SAFETY_SETTINGS, callGeminiProxy, callImagenProxy, IMAGEN_MODEL,
     getCached, setCached, minifyContext, sanitizePromptInput,
-    getResolvedTextSystemInstruction, getSecondaryTrackContext,
+    getResolvedTextSystemInstruction, getSecondaryTrackContext, getAILanguageRule,
 } from './core';
 import {
     AIGeneratedLearningPathsSchema, AIGeneratedRubricSchema, AIPedagogicalAnalysisSchema,
@@ -170,13 +170,14 @@ async analyzeConceptPedagogically(concept: Concept, priorTitles: string[], futur
     const priorStr = priorTitles.length ? priorTitles.join(', ') : 'нема дефинирани предуслови';
     const futureStr = futureTitles.length ? futureTitles.join(', ') : 'нема дефинирани следни теми';
     const prompt = `Си педагошки експерт за македонски основношколски наставни програми по математика.
-Анализирај го следниот концепт и врати структуриран одговор на македонски јазик.
+Анализирај го следниот концепт и врати структуриран одговор.
 
 КОНЦЕПТ: "${concept.title}"
 ОПИС: "${concept.description || 'нема опис'}"
 ПРЕДЗНАЕЊЕ (мора да се знае пред): ${priorStr}
 СЛЕДНИ ТЕМИ (се гради врз ова): ${futureStr}
 
+ЈАЗИК НА ОДГОВОР: ${getAILanguageRule()}
 Врати структуриран JSON со: bloomLevel, bloomDetails, misconceptions (array), pedagogicalBridge, diagnosticQuestion.`;
     const schema = {
       type: Type.OBJECT,

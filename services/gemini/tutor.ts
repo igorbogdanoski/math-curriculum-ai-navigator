@@ -3,7 +3,7 @@ import { Concept, TeachingProfile } from '../../types';
 import {
     DEFAULT_MODEL, LITE_MODEL, MAX_RETRIES, generateAndParseJSON, CACHE_COLLECTION,
     checkDailyQuotaGuard, SAFETY_SETTINGS, callGeminiProxy, getCached, setCached,
-    sanitizePromptInput, getResolvedTextSystemInstruction, Type,
+    sanitizePromptInput, getResolvedTextSystemInstruction, getAILanguageRule, withLangRule, Type,
 } from './core';
 import { shouldUseLiteModel, logRouterDecision } from './intentRouter';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -146,7 +146,7 @@ async diagnoseMisconception(question: string, correctAnswer: string, studentAnsw
         const response = await callGeminiProxy({
             model: misconceptionModel,
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            systemInstruction: 'Врати само една кратка реченица со дијагноза на грешката.',
+            systemInstruction: withLangRule('Врати само една кратка реченица со дијагноза на грешката.'),
             generationConfig: { temperature: 0.1 },
             safetySettings: SAFETY_SETTINGS,
             skipTierOverride: useLiteMisconception,
@@ -165,17 +165,19 @@ async explainMisconception(
 ): Promise<{ steps: [string, string, string]; commonMistake: string }> {
   const safeConcept = sanitizePromptInput(conceptTitle, 120);
   const safeMisconception = sanitizePromptInput(misconceptionDesc, 300);
+  const langRule = getAILanguageRule();
   const prompt = `
 Ти си педагошки асистент по математика. Ученик во ${gradeLevel}. одделение направил грешка при задача за концептот „${safeConcept}".
 
 Дијагноза на грешката: ${safeMisconception}
 
 Креирај кратка 3-чекорна мини-лекција. Правила:
-- Секој чекор е максимум 2-3 реченици на едноставен македонски
+- Секој чекор е максимум 2-3 реченици на едноставен јазик
 - Без сложени LaTeX формули — само зборови и прости изрази
 - Чекор 1: Зошто е честа оваа грешка (охрабрувачки тон)
 - Чекор 2: Точниот пристап — чекор по чекор
 - Чекор 3: Конкретен едноставен пример со решение
+- ЈАЗИК НА ОДГОВОР: ${langRule}
 
 Врати JSON:
 {
@@ -221,11 +223,11 @@ async generateSocraticHint(question: string, hintLevel: 1 | 2 | 3): Promise<stri
         2: `Ученикот веќе знае дека е задача од типот. Дај конкретна насока:\nкој метод / правило / формула треба да го примени, но НЕ покажувај го пресметувањето.\nЗаврши со прашање кое го насочува кон следниот чекор. 2 реченици.`,
         3: `Ученикот е блиску до решението. Покажи ЕДН КОнкретен критичен чекор\n(пр. „Почни со изолирање на x" или „Применете ја формулата a²+b²=c²") но НЕ го завршувај решението.\nИзразена поддршка + 1 конкретен чекор. 2 реченици.`,
     };
-    const prompt = `Ти си Сократски ментор по математика. Ученикот е заглавен на ова прашање:\n\n„${safeQ}"\n\nНиво на насока: ${hintLevel}/3\n${levelInstructions[hintLevel]}\n\nВАЖНО: Никогаш не го давај точниот одговор. Пишувај на македонски јазик.`;
+    const prompt = `Ти си Сократски ментор по математика. Ученикот е заглавен на ова прашање:\n\n„${safeQ}"\n\nНиво на насока: ${hintLevel}/3\n${levelInstructions[hintLevel]}\n\nВАЖНО: Никогаш не го давај точниот одговор. ЈАЗИК НА ОДГОВОР: ${getAILanguageRule()}`;
     const response = await callGeminiProxy({
         model: LITE_MODEL,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        systemInstruction: 'Ти си Сократски педагог. Водиш со прашања и насоки, никогаш не го откриваш одговорот.',
+        systemInstruction: withLangRule('Ти си Сократски педагог. Водиш со прашања и насоки, никогаш не го откриваш одговорот.'),
         safetySettings: SAFETY_SETTINGS,
         generationConfig: { temperature: 0.4, maxOutputTokens: 120 },
         skipTierOverride: true,
@@ -312,13 +314,83 @@ Objасни: "${correctNextStep.explanation}" | Израз: "${correctNextStep.e
   }
 },
 
+async generateVerificationQuestions(
+  conceptTitle: string,
+  misconception: string,
+  gradeLevel: number,
+): Promise<Array<{ question: string; options: [string, string, string]; answer: string }>> {
+  const safeConcept = sanitizePromptInput(conceptTitle, 120);
+  const safeMisconception = sanitizePromptInput(misconception, 300);
+  const langRule = getAILanguageRule();
+
+  const prompt = `Ти си наставник по математика. Ученик во ${gradeLevel}. одделение направил грешка при задача за „${safeConcept}".
+Дијагноза: ${safeMisconception}
+
+Генерирај 3 кратки проверочни прашања со по 3 опции (A, B, C). Правила:
+- Прашањата директно ги тестираат мисконцепциите
+- Точно 1 точна опција, другите 2 се типични грешки
+- Полето "answer" мора да биде текстуално идентично со точната опција
+- ЈАЗИК НА ОДГОВОР: ${langRule}
+
+Врати JSON array:
+[{"question": "...", "options": ["опција А", "опција Б", "опција В"], "answer": "точната опција"}]`;
+
+  const schema = {
+    type: Type.ARRAY,
+    items: {
+      type: Type.OBJECT,
+      properties: {
+        question: { type: Type.STRING },
+        options: { type: Type.ARRAY, items: { type: Type.STRING } },
+        answer: { type: Type.STRING },
+      },
+      required: ['question', 'options', 'answer'],
+    },
+  };
+
+  try {
+    const result = await generateAndParseJSON<Array<{ question: string; options: string[]; answer: string }>>(
+      [{ text: prompt }],
+      schema,
+      LITE_MODEL,
+      undefined,
+      2,
+      false,
+    );
+    if (!Array.isArray(result) || result.length === 0) throw new Error('empty');
+    return result.slice(0, 3).map(q => ({
+      question: q.question,
+      options: [q.options[0] ?? 'А', q.options[1] ?? 'Б', q.options[2] ?? 'В'] as [string, string, string],
+      answer: q.answer,
+    }));
+  } catch {
+    return [
+      {
+        question: `Кој е правилниот пристап за задача поврзана со „${conceptTitle}"?`,
+        options: ['Го следиш редоследот на операции', 'Директно пресметуваш', 'Ги игнорираш дадените вредности'],
+        answer: 'Го следиш редоследот на операции',
+      },
+      {
+        question: 'Кој прв чекор е правилен?',
+        options: ['Го запишуваш даденото и побараното', 'Директно пишуваш резултат', 'Го множиш сè со 2'],
+        answer: 'Го запишуваш даденото и побараното',
+      },
+      {
+        question: 'Која е најчеста грешка при ваков тип задачи?',
+        options: ['Мешање на операции', 'Погрешно запишување', 'Пресметковна грешка'],
+        answer: 'Мешање на операции',
+      },
+    ];
+  }
+},
+
 async explainConcept(conceptTitle: string, gradeLevel?: number): Promise<string> {
     const safeConceptTitle = sanitizePromptInput(conceptTitle, 120);
     const cacheKey = `explanation_${safeConceptTitle.replace(/\s+/g, '_').toLowerCase()}_${gradeLevel || 'gen'}`;
     const cached = await getCached<string>(cacheKey);
     if (cached) return cached;
 
-    const prompt = `Објасни го математичкиот концепт „${safeConceptTitle}"${gradeLevel ? ` за ученик во ${gradeLevel}. одделение` : ''} на едноставен, детски македонски јазик. Максимум 3 кратки реченици. Без математички формули — само со зборови и секојдневни примери.`;
+    const prompt = `Објасни го математичкиот концепт „${safeConceptTitle}"${gradeLevel ? ` за ученик во ${gradeLevel}. одделение` : ''} на едноставен, разбирлив јазик. Максимум 3 кратки реченици. Без математички формули — само со зборови и секојдневни примери. ЈАЗИК НА ОДГОВОР: ${getAILanguageRule()}`;
 
     try {
       const useLiteExplain = shouldUseLiteModel('concept_explain');

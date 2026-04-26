@@ -1,4 +1,4 @@
-import { Type, Part, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
+import { Type, Part, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput, getAILanguageRule } from './core';
 import { Concept, QuestionType, GenerationContext, TeachingProfile, DifferentiationLevel, StudentProfile, AIGeneratedAssessment, AIGeneratedPracticeMaterial } from '../../types';
 import { AIGeneratedAssessmentSchema, AIGeneratedPracticeMaterialSchema } from '../../utils/schemas';
 import { fetchFewShotExamples } from './ragService';
@@ -245,7 +245,7 @@ async gradeExamResponses(
     maxPoints: q.points,
   }));
 
-  const prompt = `Оцени ги следните одговори на ученикот на матемтички испит. За секој одговор врати: correct (boolean), points (0 до maxPoints), feedback (кратко 1 реченица на македонски). Одговори само со валиден JSON array.
+  const prompt = `Оцени ги следните одговори на ученикот на математички испит. За секој одговор врати: correct (boolean), points (0 до maxPoints), feedback (кратко 1 реченица). ЈАЗИК НА ОДГОВОР: ${getAILanguageRule()}. Одговори само со валиден JSON array.
 
 Прашања и одговори:
 ${JSON.stringify(pairs, null, 2)}`;

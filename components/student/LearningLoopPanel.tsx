@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useStudentLearningLoop } from '../../hooks/useStudentLearningLoop';
 import { MisconceptionExplainer } from './MisconceptionExplainer';
 import { StudentNextStepCard } from './StudentNextStepCard';
+import { VerificationMicroQuiz } from './VerificationMicroQuiz';
 import type { QuizResult } from './quizSessionReducer';
 
 interface LearningLoopPanelProps {
@@ -15,7 +16,7 @@ interface LearningLoopPanelProps {
 
 /**
  * Post-quiz learning loop panel — automatically activates when score < 70%.
- * Flow: loading explanation → 3-step MisconceptionExplainer → StudentNextStepCard.
+ * Flow: loading → 3-step MisconceptionExplainer → VerificationMicroQuiz → StudentNextStepCard.
  * Renders nothing for passing scores (handled by existing QuizResultPanel).
  */
 export const LearningLoopPanel: React.FC<LearningLoopPanelProps> = ({
@@ -25,7 +26,14 @@ export const LearningLoopPanel: React.FC<LearningLoopPanelProps> = ({
   quizId,
   conceptId,
 }) => {
-  const { phase, explanation, stepIndex, advanceStep } = useStudentLearningLoop({
+  const {
+    phase,
+    explanation,
+    stepIndex,
+    advanceStep,
+    verificationQuestions,
+    handleVerificationComplete,
+  } = useStudentLearningLoop({
     quizResult,
     conceptTitle,
     gradeLevel,
@@ -50,6 +58,16 @@ export const LearningLoopPanel: React.FC<LearningLoopPanelProps> = ({
         explanation={explanation}
         stepIndex={stepIndex}
         onNext={advanceStep}
+      />
+    );
+  }
+
+  if (phase === 'verifying' && verificationQuestions.length > 0) {
+    return (
+      <VerificationMicroQuiz
+        questions={verificationQuestions}
+        conceptTitle={conceptTitle}
+        onComplete={handleVerificationComplete}
       />
     );
   }
