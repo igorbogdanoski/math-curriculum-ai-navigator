@@ -22,6 +22,7 @@ vi.mock('./core', () => ({
   checkDailyQuotaGuard: vi.fn(),
   sanitizePromptInput: vi.fn((s: string, _max: number) => s),
   withLangRule: vi.fn((s: string) => s),
+  getAILanguageRule: vi.fn(() => 'Користи литературен македонски јазик.'),
   getResolvedTextSystemInstruction: vi.fn(),
   getSecondaryTrackContext: vi.fn(() => ''),
   minifyContext: vi.fn((s: string) => s),
