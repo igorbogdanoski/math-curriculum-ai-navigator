@@ -34,15 +34,15 @@ export const ExamPlayerView: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
-  // Load backup from localStorage
+  // Load backup — only if student hasn't already submitted this session
   useEffect(() => {
-    if (responseDocId && session) {
+    if (responseDocId && session && phase === 'solving') {
       const backup = localStorage.getItem(LS_KEY(session.id, deviceId));
       if (backup) {
         try { setAnswers(JSON.parse(backup)); } catch { /* ignore */ }
       }
     }
-  }, [responseDocId, session, deviceId]);
+  }, [responseDocId, session, deviceId]); // phase intentionally omitted — runs once on mount
 
   // Auto-save to localStorage on every answer change
   useEffect(() => {
@@ -59,14 +59,18 @@ export const ExamPlayerView: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handler);
   }, [phase]);
 
-  // Subscribe to session status changes (waiting → active)
+  // Subscribe to session status changes (waiting → active, active → ended)
   useEffect(() => {
-    if (!session || phase !== 'waiting') return;
+    if (!session || (phase !== 'waiting' && phase !== 'solving')) return;
     return examService.subscribeExamSession(session.id, updated => {
-      if (updated?.status === 'active') setPhase('solving');
-      if (updated?.status === 'ended') setPhase('submitted');
+      if (updated?.status === 'active' && phase === 'waiting') setPhase('solving');
+      if (updated?.status === 'ended') {
+        // Teacher ended the exam — clear backup so a refresh doesn't restore old answers
+        localStorage.removeItem(LS_KEY(session.id, deviceId));
+        setPhase('submitted');
+      }
     });
-  }, [session, phase]);
+  }, [session, phase, deviceId]);
 
   const handleJoin = async () => {
     if (!joinCode.trim() || !studentName.trim()) {

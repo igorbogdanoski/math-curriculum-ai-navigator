@@ -35,6 +35,22 @@ const KnowledgeGraphView = React.lazy(() =>
 
 function KnowledgeGraphSection({ conceptId }: { conceptId: string }) {
   const [open, setOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [graphWidth, setGraphWidth] = React.useState(600);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      if (w > 0) setGraphWidth(Math.floor(w));
+    });
+    ro.observe(el);
+    setGraphWidth(Math.floor(el.clientWidth || 600));
+    return () => ro.disconnect();
+  }, [open]);
+
   return (
     <div className="rounded-2xl border border-gray-200 overflow-hidden">
       <button
@@ -48,9 +64,9 @@ function KnowledgeGraphSection({ conceptId }: { conceptId: string }) {
         <span className="text-gray-400 text-xs">{open ? '▲ Скриј' : '▼ Прикажи'}</span>
       </button>
       {open && (
-        <div className="p-3">
+        <div ref={containerRef} className="p-3">
           <React.Suspense fallback={<div className="h-40 flex items-center justify-center text-gray-400 text-sm">Вчитување…</div>}>
-            <KnowledgeGraphView conceptId={conceptId} width={680} height={420} />
+            <KnowledgeGraphView conceptId={conceptId} width={graphWidth} height={420} />
           </React.Suspense>
         </div>
       )}
