@@ -3,6 +3,7 @@ import {
   DEFAULT_MODEL, SAFETY_SETTINGS,
   callGeminiProxy, checkDailyQuotaGuard,
 } from './core';
+import { getAILanguageRule } from './core.instructions';
 import type { EnrichedWebTask } from './visionContracts';
 import type { DokLevel } from '../../types';
 
@@ -52,10 +53,12 @@ function parseResponse(raw: string): KahootQuestion[] {
     .filter(q => q.question.length > 0 && q.options.every(o => o.length > 0));
 }
 
-const SCHEMA = `JSON array only — no markdown, no explanation.
+function buildSchema(): string {
+  const langRule = getAILanguageRule();
+  return `JSON array only — no markdown, no explanation.
 [
   {
-    "question": "Question text in Macedonian (mk)",
+    "question": "Question text",
     "options": ["option A", "option B", "option C", "option D"],
     "correctIndex": 0,
     "difficulty": "basic",
@@ -72,8 +75,9 @@ Rules:
     3 = Strategic — multi-step reasoning or non-routine problem (e.g. compare two methods)
     4 = Extended — transfer to novel context, justify/generalise (rare in Kahoot)
   Most questions should be DoK 1–2; use 3 sparingly, 4 almost never.
-- all text in Macedonian (МК)
+- ЈАЗИК НА ОДГОВОР: ${langRule}
 - wrong options must be plausible math distractors (common mistakes, off-by-one, wrong sign, etc.)`;
+}
 
 // ─── Generation from extracted tasks ─────────────────────────────────────────
 
@@ -86,7 +90,7 @@ export async function generateKahootFromTasks(
     .filter(Boolean)
     .join('\n');
 
-  const prompt = `You are an expert Macedonian math teacher creating a Kahoot-style multiple-choice quiz.
+  const prompt = `You are an expert math teacher creating a Kahoot-style multiple-choice quiz.
 
 Convert each of the following math problems into a multiple-choice question with exactly 4 answer options.
 Generate 3 plausible but wrong distractors (common student mistakes: wrong sign, arithmetic error, step skipped, etc.).
@@ -96,7 +100,7 @@ Assign a dokLevel (1–4 Webb's Depth of Knowledge) to each question — most sh
 Problems:
 ${list}
 
-${SCHEMA}`;
+${buildSchema()}`;
 
   const response = await callGeminiProxy({
     model: DEFAULT_MODEL,
@@ -120,20 +124,19 @@ export async function generateKahootFromPrompt(
 ): Promise<KahootQuestion[]> {
   checkDailyQuotaGuard();
 
-  const prompt = `You are an expert Macedonian math teacher creating a Kahoot-style multiple-choice quiz.
+  const prompt = `You are an expert math teacher creating a Kahoot-style multiple-choice quiz.
 
 Generate exactly ${count} multiple-choice math questions based on this teacher request:
 "${teacherPrompt}"
 
 Requirements:
-- All questions and answers must be in Macedonian (МК)
 - Each question must have exactly 4 answer options
 - Exactly one correct answer per question
 - 3 plausible distractors (common student mistakes)
 - Mix of difficulty levels unless specified otherwise
 - Assign a dokLevel (1–4 Webb's Depth of Knowledge) to each question
 
-${SCHEMA}`;
+${buildSchema()}`;
 
   const response = await callGeminiProxy({
     model: DEFAULT_MODEL,
@@ -158,14 +161,13 @@ export async function generateKahootFromDocument(
 ): Promise<KahootQuestion[]> {
   checkDailyQuotaGuard();
 
-  const prompt = `You are an expert Macedonian math teacher.
+  const prompt = `You are an expert math teacher.
 Analyze this document (it may be a worksheet, test, or exercise sheet).
 Extract up to ${count} math problems from it and convert each into a multiple-choice question with exactly 4 answer options.
 Generate plausible wrong distractors based on common student mistakes.
-All text must be in Macedonian (МК).
 Assign a dokLevel (1–4 Webb's Depth of Knowledge) to each question.
 
-${SCHEMA}`;
+${buildSchema()}`;
 
   const response = await callGeminiProxy({
     model: DEFAULT_MODEL,

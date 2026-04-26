@@ -86,8 +86,19 @@ export const QuizResultPanel: React.FC<QuizResultPanelProps> = ({
         </div>
       )}
 
+      {/* S57-C: Perfect score celebration */}
+      {quizResult.percentage === 100 && !justMastered && (
+        <div className="w-full max-w-4xl mt-4 bg-gradient-to-r from-yellow-400 to-amber-400 rounded-2xl p-4 flex items-center gap-3 animate-celebrate shadow-lg">
+          <span className="text-2xl flex-shrink-0" aria-hidden="true">🎉</span>
+          <div>
+            <p className="font-black text-yellow-900 text-lg">Совршено!</p>
+            <p className="text-yellow-800 text-sm">Сите одговори точни — извонредна работа!</p>
+          </div>
+        </div>
+      )}
+
       {/* Streak badge */}
-      {!justMastered && consecutive > 0 && passed && (
+      {!justMastered && quizResult.percentage < 100 && consecutive > 0 && passed && (
         <div className="w-full max-w-4xl mt-4 bg-white/10 border border-white/20 rounded-2xl px-4 py-2.5 flex items-center gap-2">
           <Star className="w-4 h-4 text-yellow-300" fill="currentColor" />
           <p className="text-white text-sm font-bold">

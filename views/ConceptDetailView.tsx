@@ -429,10 +429,19 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
             <span className="text-brand-primary font-semibold max-w-[180px] truncate">{concept.title}</span>
         </nav>
         <header className="mb-8 md:mb-10">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <h1 className="text-4xl font-black text-brand-primary tracking-tight">
                   <MathRenderer text={concept.title} />
                 </h1>
+                {/* S57-C: Mastery badge — shown when student has mastered this concept */}
+                {conceptMastery?.mastered && (
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-sm font-bold animate-celebrate">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Совладано
+                  </span>
+                )}
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => toggleFavoriteConcept(concept.id)} aria-label={isFavoriteConcept(concept.id) ? 'Отстрани од омилени' : 'Додај во омилени'} className="text-yellow-500 hover:scale-110 transition">
                     {isFavoriteConcept(concept.id) ? <ICONS.starSolid className="w-8 h-8" /> : <ICONS.star className="w-8 h-8" />}
