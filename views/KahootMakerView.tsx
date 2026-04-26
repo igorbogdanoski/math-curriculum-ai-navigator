@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, Gamepad2, Timer, Check, ChevronRight, AlertCircle, Zap, ArrowLeft } from 'lucide-react';
+import { Loader2, Gamepad2, Timer, Check, ChevronRight, AlertCircle, Zap, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { firestoreService } from '../services/firestoreService';
@@ -19,6 +19,7 @@ const TIMER_OPTIONS: { label: string; value: number | undefined }[] = [
   { label: '10 сек', value: 10 },
   { label: '20 сек', value: 20 },
   { label: '30 сек', value: 30 },
+  { label: '45 сек', value: 45 },
   { label: '60 сек', value: 60 },
 ];
 
@@ -34,6 +35,7 @@ export const KahootMakerView: React.FC = () => {
 
   const [tasks, setTasks] = useState<EnrichedWebTask[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [timerSeconds, setTimerSeconds] = useState<number | undefined>(20);
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
@@ -63,6 +65,16 @@ export const KahootMakerView: React.FC = () => {
   const toggleAll = () => {
     if (selected.size === tasks.length) setSelected(new Set());
     else setSelected(new Set(tasks.map((_, i) => i)));
+  };
+
+  const toggleExpanded = (i: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
   };
 
   const selectedTasks = tasks.filter((_, i) => selected.has(i));
@@ -151,38 +163,63 @@ export const KahootMakerView: React.FC = () => {
           </div>
           {tasks.map((task, i) => {
             const isSelected = selected.has(i);
+            const isExpanded = expanded.has(i);
             return (
-              <button
+              <div
                 key={i}
-                type="button"
-                onClick={() => toggleTask(i)}
-                className={`w-full text-left rounded-2xl border-2 px-4 py-3 transition-all ${
+                className={`rounded-2xl border-2 transition-all ${
                   isSelected
                     ? 'border-indigo-400 bg-indigo-50'
                     : 'border-gray-100 bg-white hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-start gap-3">
-                  <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-gray-300'
-                  }`}>
-                    {isSelected && <Check className="w-3 h-3 text-white" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase ${DIFF_COLORS[task.difficulty] ?? 'bg-gray-100 text-gray-600'}`}>
-                        {task.difficulty}
-                      </span>
-                      {task.topicMk && (
-                        <span className="text-[10px] text-gray-400 truncate max-w-[120px]">{task.topicMk}</span>
-                      )}
+                <button
+                  type="button"
+                  onClick={() => toggleTask(i)}
+                  className="w-full text-left px-4 py-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                      isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-gray-300'
+                    }`}>
+                      {isSelected && <Check className="w-3 h-3 text-white" />}
                     </div>
-                    <p className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">{task.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{task.statement}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase ${DIFF_COLORS[task.difficulty] ?? 'bg-gray-100 text-gray-600'}`}>
+                          {task.difficulty}
+                        </span>
+                        {task.topicMk && (
+                          <span className="text-[10px] text-gray-400 truncate max-w-[120px]">{task.topicMk}</span>
+                        )}
+                      </div>
+                      <p className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">{task.title ?? task.statement}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={e => toggleExpanded(i, e)}
+                      className="ml-1 p-1 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors flex-shrink-0"
+                      title={isExpanded ? 'Скриј детали' : 'Прикажи детали'}
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
                   </div>
-                </div>
-              </button>
+                </button>
+                {isExpanded && (
+                  <div className="px-4 pb-3 pt-1 border-t border-indigo-100 text-xs text-gray-600 space-y-1">
+                    {task.statement && (
+                      <p className="leading-relaxed">{task.statement}</p>
+                    )}
+                    {task.latexStatement && task.latexStatement !== task.statement && (
+                      <p className="font-mono bg-white border border-gray-100 rounded-lg px-2 py-1 text-gray-700">{task.latexStatement}</p>
+                    )}
+                    {task.dokLevel && (
+                      <p className="text-gray-400">DoK ниво: <strong className="text-gray-600">{task.dokLevel}</strong></p>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -210,7 +247,7 @@ export const KahootMakerView: React.FC = () => {
               <Timer className="w-4 h-4 text-indigo-500" />
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Тајмер по прашање</span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {TIMER_OPTIONS.map(opt => (
                 <button
                   key={String(opt.value)}

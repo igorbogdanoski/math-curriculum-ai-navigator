@@ -91,9 +91,19 @@ export const joinLiveSession = async (sessionId: string, studentName: string): P
     });
   };
 
-export const submitLiveResponse = async (sessionId: string, studentName: string, percentage: number): Promise<void> => {
+export const submitLiveResponse = async (
+  sessionId: string,
+  studentName: string,
+  percentage: number,
+  answers?: Record<string, boolean>,
+): Promise<void> => {
     await updateDoc(doc(db, 'live_sessions', sessionId), {
-      [`studentResponses.${studentName}`]: { status: 'completed', percentage, completedAt: serverTimestamp() },
+      [`studentResponses.${studentName}`]: {
+        status: 'completed',
+        percentage,
+        completedAt: serverTimestamp(),
+        ...(answers ? { answers } : {}),
+      },
     }).catch(err => logger.warn('[Live] submitLiveResponse failed:', err));
   };
 

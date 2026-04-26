@@ -103,6 +103,7 @@ export function useQuizSession({
     correctCount: number,
     totalQuestions: number,
     misconceptions?: { question: string; studentAnswer: string; misconception: string }[],
+    answers?: Record<string, boolean>,
   ) => {
     const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     const meta = quizData!._meta || {};
@@ -251,7 +252,7 @@ export function useQuizSession({
 
     // 4. Live session response
     if (!isE2E && sessionId && studentName) {
-      firestoreService.submitLiveResponse(sessionId, studentName, percentage)
+      firestoreService.submitLiveResponse(sessionId, studentName, percentage, answers)
         .catch(err => logger.warn('[Live] submitLiveResponse failed:', err));
     }
 

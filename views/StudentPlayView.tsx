@@ -196,8 +196,8 @@ export const StudentPlayView: React.FC = () => {
                     explanation: item.solution || item.explanation,
                   }))}
                   secondsPerQuestion={identity.isIEP ? undefined : liveTimerSeconds}
-                  onComplete={({ score, correctCount, totalQuestions, misconceptions }) => {
-                    handleQuizComplete(score, correctCount, totalQuestions, misconceptions);
+                  onComplete={({ score, correctCount, totalQuestions, misconceptions, answers }) => {
+                    handleQuizComplete(score, correctCount, totalQuestions, misconceptions, answers);
                   }}
                   onClose={() => { window.location.hash = '/'; }}
                 />

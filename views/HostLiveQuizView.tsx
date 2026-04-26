@@ -1,6 +1,6 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy, BookOpen, Clock, Timer } from 'lucide-react';
+import { Loader2, Play, Users, ArrowLeft, Hash, Monitor, Radio, Trophy, Square, Check, Copy, BookOpen, Clock, Timer, Download, BarChart2, Gamepad2 } from 'lucide-react';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { firestoreService } from '../services/firestoreService';
 import { useAuth } from '../contexts/AuthContext';
@@ -307,11 +307,50 @@ export const HostLiveQuizView: React.FC = () => {
             ? Math.round(completed.reduce((s, [, v]) => s + (v.percentage ?? 0), 0) / completed.length)
             : null;
 
+        // Per-question analytics — derive from stored answers maps
+        const maxQIndex = completed.reduce((max, [, v]) => {
+            if (!v.answers) return max;
+            const indices = Object.keys(v.answers).map(Number);
+            return Math.max(max, ...indices);
+        }, -1);
+        const perQStats = maxQIndex >= 0
+            ? Array.from({ length: maxQIndex + 1 }, (_, i) => {
+                const answered = completed.filter(([, v]) => v.answers && String(i) in v.answers);
+                const correct = answered.filter(([, v]) => v.answers![String(i)] === true).length;
+                const pct = answered.length > 0 ? Math.round((correct / answered.length) * 100) : 0;
+                return { correct, total: answered.length, pct };
+            })
+            : [];
+
+        const handleExportCSV = () => {
+            const qHeaders = perQStats.map((_, i) => `П${i + 1}`);
+            const rows: string[][] = [
+                ['Ученик', 'Резултат (%)', ...qHeaders],
+                ...completed.map(([name, v]) => [
+                    name,
+                    String(v.percentage ?? 0),
+                    ...perQStats.map((_, i) => {
+                        if (!v.answers || !(String(i) in v.answers)) return '—';
+                        return v.answers[String(i)] ? '✓' : '✗';
+                    }),
+                ]),
+            ];
+            const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\r\n');
+            const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${session.quizTitle}_${new Date().toLocaleDateString('mk-MK').replace(/\//g, '-')}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
         return (
-            <div className="p-6 max-w-2xl mx-auto space-y-5 animate-in fade-in duration-500">
+            <div className="p-6 max-w-3xl mx-auto space-y-5 animate-in fade-in duration-500">
                 {/* Confetti header */}
                 <div className="text-center py-8 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl text-white relative overflow-hidden">
-                    {/* Confetti dots */}
                     <div className="absolute top-4 left-8 w-3 h-3 rounded-full opacity-70 animate-bounce bg-yellow-400" />
                     <div className="absolute top-8 right-12 w-3 h-3 rounded-full opacity-70 animate-bounce delay-150 bg-emerald-400" />
                     <div className="absolute top-2 left-1/3 w-3 h-3 rounded-full opacity-70 animate-bounce delay-300 bg-red-400" />
@@ -328,22 +367,91 @@ export const HostLiveQuizView: React.FC = () => {
 
                 {/* Final leaderboard */}
                 {completed.length > 0 && (
-                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
-                            <Trophy className="w-4 h-4 text-yellow-500" />
-                            <span className="font-bold text-slate-800 text-sm">Финален лидерборд</span>
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Trophy className="w-4 h-4 text-yellow-500" />
+                                <span className="font-bold text-slate-800 text-sm">Финален лидерборд</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleExportCSV}
+                                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                Извези CSV
+                            </button>
                         </div>
                         <ul className="divide-y divide-slate-50">
                             {completed.map(([name, data], idx) => (
                                 <li key={name} className={`flex items-center gap-4 px-5 py-3 ${idx < 3 ? 'bg-yellow-50/50' : ''}`}>
-                                    <span className="text-xl w-8 text-center">{idx < 3 ? MEDALS[idx] : <span className="text-slate-300 text-sm font-bold">{idx + 1}</span>}</span>
-                                    <span className="flex-1 font-semibold text-slate-800 text-sm">{name}</span>
-                                    <span className={`font-black text-base ${(data.percentage ?? 0) >= 70 ? 'text-green-600' : 'text-amber-500'}`}>
+                                    <span className="text-xl w-8 text-center flex-shrink-0">
+                                        {idx < 3 ? MEDALS[idx] : <span className="text-slate-300 text-sm font-bold">{idx + 1}</span>}
+                                    </span>
+                                    <span className="flex-1 font-semibold text-slate-800 text-sm truncate">{name}</span>
+                                    {/* Per-Q mini dots (if answers available) */}
+                                    {data.answers && perQStats.length > 0 && (
+                                        <div className="hidden sm:flex gap-0.5">
+                                            {perQStats.map((_, i) => {
+                                                const ans = data.answers![String(i)];
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        title={`П${i + 1}: ${ans ? 'точно' : 'неточно'}`}
+                                                        className={`w-2.5 h-2.5 rounded-full ${ans === true ? 'bg-emerald-400' : ans === false ? 'bg-red-400' : 'bg-slate-200'}`}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    <span className={`font-black text-base flex-shrink-0 ${(data.percentage ?? 0) >= 70 ? 'text-green-600' : 'text-amber-500'}`}>
                                         {data.percentage ?? 0}%
                                     </span>
                                 </li>
                             ))}
                         </ul>
+                    </div>
+                )}
+
+                {/* Per-question analytics heatmap */}
+                {perQStats.length > 0 && (
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
+                            <BarChart2 className="w-4 h-4 text-indigo-500" />
+                            <span className="font-bold text-slate-800 text-sm">Анализа по прашање</span>
+                            <span className="text-xs text-slate-400 ml-1">— кое прашање беше најтешко?</span>
+                        </div>
+                        <div className="p-5">
+                            <div className="flex flex-wrap gap-3">
+                                {perQStats.map((s, i) => {
+                                    const color = s.pct >= 70
+                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                        : s.pct >= 40
+                                        ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                        : 'bg-red-50 border-red-200 text-red-800';
+                                    return (
+                                        <div
+                                            key={i}
+                                            className={`flex flex-col items-center px-4 py-3 rounded-xl border text-xs font-semibold min-w-[72px] ${color}`}
+                                        >
+                                            <span className="text-lg font-black">П{i + 1}</span>
+                                            <span className="text-base font-black mt-0.5">{s.pct}%</span>
+                                            <span className="opacity-60 mt-0.5">{s.correct}/{s.total} точни</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {/* Hardest question callout */}
+                            {perQStats.length > 0 && (() => {
+                                const minPct = Math.min(...perQStats.map(s => s.pct));
+                                const hardestIdx = perQStats.findIndex(s => s.pct === minPct);
+                                return minPct < 60 ? (
+                                    <p className="mt-4 text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
+                                        💡 Нај-тешко беше <strong className="text-slate-700">Прашање {hardestIdx + 1}</strong> — само {minPct}% точни одговори. Размисли за дополнителна обработка на оваа тема.
+                                    </p>
+                                ) : null;
+                            })()}
+                        </div>
                     </div>
                 )}
 
@@ -361,17 +469,26 @@ export const HostLiveQuizView: React.FC = () => {
     // ── QUIZ SELECTION ────────────────────────────────────────────────────────
     return (
         <div className="p-8 max-w-5xl mx-auto space-y-6">
-            <div className="flex items-center gap-4 mb-8">
-                <a href="#/" aria-label="Назад" className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                    <ArrowLeft className="w-6 h-6 text-slate-500" />
-                </a>
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
-                        <Radio className="w-8 h-8 text-red-500" />
-                        Квизови во живо
-                    </h1>
-                    <p className="text-slate-500 text-sm">Избери квиз и започни сесија во реално време</p>
+            <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
+                <div className="flex items-center gap-4">
+                    <a href="#/" aria-label="Назад" className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                        <ArrowLeft className="w-6 h-6 text-slate-500" />
+                    </a>
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+                            <Radio className="w-8 h-8 text-red-500" />
+                            Квизови во живо
+                        </h1>
+                        <p className="text-slate-500 text-sm">Избери квиз и започни сесија во реално време</p>
+                    </div>
                 </div>
+                <a
+                    href="#/kahoot/make"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm"
+                >
+                    <Gamepad2 className="w-4 h-4" />
+                    Kahoot Maker
+                </a>
             </div>
 
             {/* S47: Homework mode toggle */}

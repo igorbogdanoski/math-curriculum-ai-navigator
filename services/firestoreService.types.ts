@@ -36,6 +36,8 @@ export interface LiveSession {
     status: 'joined' | 'in_progress' | 'completed';
     percentage?: number;
     completedAt?: Timestamp;
+    /** Per-question correctness: key = question index as string, value = correct */
+    answers?: Record<string, boolean>;
   }>;
   createdAt?: Timestamp;
   /** S47 — mkd-slidea async homework mode: session stays joinable until this timestamp */

@@ -44,6 +44,8 @@ export interface QuizCompletionResult {
   correctCount: number;
   totalQuestions: number;
   misconceptions?: { question: string; studentAnswer: string; misconception: string }[];
+  /** Per-question correctness map: key = question index as string, value = correct */
+  answers?: Record<string, boolean>;
 }
 
 interface Props {
@@ -127,6 +129,9 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
   // Misconception tracking state
   const [misconceptions, setMisconceptions] = useState<{ question: string; studentAnswer: string; misconception: string }[]>([]);
 
+  // Per-question answer map for live-session analytics: index string → correct
+  const [answersMap, setAnswersMap] = useState<Record<string, boolean>>({});
+
   // S27-A2: Personalized result feedback
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
@@ -178,6 +183,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     setSelectedOption('TIME_UP');
     setIsCorrect(false);
     setStreak(0);
+    setAnswersMap(prev => ({ ...prev, [String(currentIndex)]: false }));
   };
 
   const handleAnswer = (option: string) => {
@@ -190,6 +196,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     const correct = checkMathEquivalence(option, currentQ.answer ?? '');
 
     setIsCorrect(correct);
+    setAnswersMap(prev => ({ ...prev, [String(currentIndex)]: correct }));
 
     if (correct) {
       const timeBonus = timeLeft * 10;
@@ -281,7 +288,8 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
       score,
       correctCount,
       totalQuestions: normalizedQuestions.length,
-      misconceptions: misconceptions.length > 0 ? misconceptions : undefined
+      misconceptions: misconceptions.length > 0 ? misconceptions : undefined,
+      answers: Object.keys(answersMap).length > 0 ? answersMap : undefined,
     });
     confetti({ particleCount: 200, spread: 100 });
 
@@ -312,6 +320,7 @@ export const InteractiveQuizPlayer: React.FC<Props> = ({ title, questions: propQ
     setHintLevel(0);
     setAiFeedback(null);
     setIsFeedbackLoading(false);
+    setAnswersMap({});
   };
 
   const handleGenerateParallel = async () => {
