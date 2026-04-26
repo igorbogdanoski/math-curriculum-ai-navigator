@@ -1,5 +1,6 @@
 ﻿import { logger } from '../../utils/logger';
 import { Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
+import { streamGeminiProxy } from './core.proxy';
 import { Concept, Topic, Grade, TeachingProfile, LessonPlan, LessonScenario, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, AIGeneratedPresentation, GenerationContext } from '../../types';
 import { AIGeneratedIdeasSchema, AnnualPlanSchema, AIGeneratedThematicPlanSchema } from '../../utils/schemas';
 
@@ -418,3 +419,69 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
     return generateAndParseJSON<AIGeneratedPresentation>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   }
 };
+
+/**
+ * Streaming variant of plansAPI.generateLessonPlanIdeas.
+ * Yields raw text chunks (JSON fragments) as they arrive from the model.
+ * Caller is responsible for accumulating chunks and parsing the final JSON.
+ * No Firestore cache — streaming is always a fresh generation.
+ */
+export async function* streamLessonPlan(
+  concepts: Concept[],
+  topic: Topic,
+  gradeLevel: number,
+  profile?: TeachingProfile,
+  options?: { focus: string; tone: string; learningDesign?: string },
+  customInstruction?: string,
+  signal?: AbortSignal,
+): AsyncGenerator<string, void, unknown> {
+  const conceptList = concepts.map(c => c.title).join(', ');
+  const topicTitle = topic?.title || 'Општа математичка тема';
+  const conceptId = concepts?.[0]?.id || 'no_concept';
+
+  let prompt = `
+### УЛОГА
+Ти си врвен експерт за методика на наставата по математика со 20-годишно искуство во креирање иновативни сценарија за часови според најновите Кембриџ и национални стандарди.
+
+### КОНТЕКСТ
+- Одделение: ${gradeLevel}
+- Тема: ${topicTitle}
+- Клучни поими: ${conceptList}
+${options?.focus ? `- Примарен фокус: ${options.focus}` : ''}
+${options?.learningDesign ? `- Педагошки модел: ${options.learningDesign}` : ''}
+
+### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА (Chain-of-Thought)
+Пред да го дадеш финалниот JSON, размисли (интерно) за следниве чекори:
+1. АНАЛИЗА: Кои се најчестите мисконцепции кај учениците за овие поими?
+2. СТРАТЕГИЈА (Tree of Thoughts): Разгледај три различни пристапи (на пр. истражувачки, директна инструкција, игровен). Избери го оној кој е најсоодветен за оваа тема и возраст.
+3. ПЛАНИРАЊЕ: Како активностите да водат од пониски (Паметење) кон повисоки (Креирање) нивоа на Блумовата таксономија?
+
+### ИНСТРУКЦИИ ЗА СОДРЖИНА
+- Биди екстремно креативен. Избегнувај генерички задачи.
+- Вметни реални македонски контексти (денри, локални имиња, градови).
+- ВКУПНО ВРЕМЕ: Планирај за наставен час од 40 минути.
+- Секоја активност МОРА да биде детално објаснета "чекор-по-чекор".
+- СТАНДАРДИ: Користи ги официјалните национални стандарди од контекстот.
+
+### ФОРМАТ
+Генерирај го сценариото СТРИКТНО според официјалниот JSON шаблон.
+`;
+
+  const safeInstruction = sanitizePromptInput(customInstruction, 500);
+  if (safeInstruction) prompt += `\nДополнителна инструкција од наставникот: ${safeInstruction}`;
+
+  const systemInstr = await buildDynamicSystemInstruction(
+    JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id, profile?.secondaryTrack,
+  );
+
+  yield* streamGeminiProxy(
+    {
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.7 },
+      systemInstruction: systemInstr,
+      userTier: profile?.tier,
+    },
+    signal,
+  );
+}

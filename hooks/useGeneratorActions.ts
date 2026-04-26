@@ -234,6 +234,8 @@ export function useGeneratorActions({
     isGenerating: main.isGenerating,
     generatedMaterial: main.generatedMaterial,
     setGeneratedMaterial: main.setGeneratedMaterial,
+    isStreaming: main.isStreaming,
+    streamingText: main.streamingText,
     isThrottled,
     isPlayingQuiz,
     setIsPlayingQuiz,

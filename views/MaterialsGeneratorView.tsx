@@ -158,6 +158,8 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
         isGenerating,
         generatedMaterial,
         setGeneratedMaterial,
+        isStreaming,
+        streamingText,
         isPlayingQuiz,
         setIsPlayingQuiz,
         quotaError,
@@ -391,6 +393,8 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                     bulkResults={bulkResults}
                     generatedMaterial={generatedMaterial}
                     setGeneratedMaterial={setGeneratedMaterial}
+                    isStreaming={isStreaming}
+                    streamingText={streamingText}
                     variants={variants}
                     activeVariantTab={activeVariantTab}
                     setActiveVariantTab={setActiveVariantTab}

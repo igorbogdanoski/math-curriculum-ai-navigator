@@ -3,6 +3,7 @@ import { ClipboardList, BookmarkPlus, CheckCircle, Globe, Lock, X } from 'lucide
 import { ICONS } from '../../constants';
 import { logger } from '../../utils/logger';
 import { AILoadingIndicator } from '../common/AILoadingIndicator';
+import { StreamingTextPreview } from './StreamingTextPreview';
 import { DokDistributionBar } from '../common/DokBadge';
 import { GeneratedIllustration } from '../ai/GeneratedIllustration';
 import { GeneratedIdeas } from '../ai/GeneratedIdeas';
@@ -77,6 +78,8 @@ interface GeneratorResultPanelProps {
   isGenerating: boolean;
   isGeneratingVariants: boolean;
   isGeneratingBulk: boolean;
+  isStreaming?: boolean;
+  streamingText?: string;
   bulkStep: MaterialType | null;
   bulkResults: { scenario?: any; quiz?: AIGeneratedAssessment; assessment?: AIGeneratedAssessment; rubric?: AIGeneratedRubric } | null;
   generatedMaterial: any;
@@ -105,6 +108,8 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
   isGenerating,
   isGeneratingVariants,
   isGeneratingBulk,
+  isStreaming = false,
+  streamingText = '',
   bulkStep,
   bulkResults,
   generatedMaterial,
@@ -144,16 +149,22 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
 
       {/* Smart Loading Indicator + Cancel button */}
       {isGenerating && !generatedMaterial && (
-        <div className="mt-6 flex flex-col items-center gap-3">
-          <AILoadingIndicator />
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-red-500 transition"
-          >
-            <X className="w-3.5 h-3.5" />
-            Откажи генерирање
-          </button>
+        <div className="mt-6 w-full">
+          {isStreaming && streamingText ? (
+            <StreamingTextPreview text={streamingText} onCancel={handleCancel} />
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              <AILoadingIndicator />
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-red-500 transition"
+              >
+                <X className="w-3.5 h-3.5" />
+                Откажи генерирање
+              </button>
+            </div>
+          )}
         </div>
       )}
 

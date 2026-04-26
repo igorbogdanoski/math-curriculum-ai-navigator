@@ -3,6 +3,8 @@ import { useState, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { geminiService, isDailyQuotaKnownExhausted } from '../../services/geminiService';
 import { AI_COSTS, sanitizePromptInput } from '../../services/gemini/core';
+import { streamLessonPlan } from '../../services/gemini/plans';
+import { AIGeneratedIdeasSchema } from '../../utils/schemas';
 import { RateLimitError } from '../../services/apiErrors';
 import { ValidationError } from '../../utils/errors';
 import { buildExtractionBundle, evaluateExtractionQuality } from '../../utils/extractionBundle';
@@ -55,6 +57,8 @@ export function useMainGenerate({
 }: UseMainGenerateParams) {
   const [isGenerating, setIsLoading] = useState(false);
   const [generatedMaterial, setGeneratedMaterial] = useState<GeneratedMaterial>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
   const cancelRef = useRef(false);
 
   const handleCancel = () => {
@@ -109,15 +113,36 @@ export function useMainGenerate({
         result = await geminiService.generateLearningPaths(finalContext, studentProfilesToPass, user ?? undefined, effectiveInstruction);
       } else if (materialType) {
         switch (materialType) {
-          case 'SCENARIO':
+          case 'SCENARIO': {
             if (!finalContext.grade) throw new ValidationError('Одделение', 'потребно за генерирање на сценарио');
             if (!finalContext.topic) throw new ValidationError('Тема', 'потребна за генерирање на сценарио');
-            result = await geminiService.generateLessonPlanIdeas(
-              finalContext.concepts || [], finalContext.topic, finalContext.grade.level,
-              user ?? undefined, { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel }, effectiveInstruction,
-            );
+            // S58-A: Streaming generation — user sees text appear in real-time
+            setIsStreaming(true);
+            setStreamingText('');
+            let fullText = '';
+            try {
+              for await (const chunk of streamLessonPlan(
+                finalContext.concepts || [], finalContext.topic, finalContext.grade.level,
+                user ?? undefined, { focus: activityFocus, tone: scenarioTone, learningDesign: learningDesignModel },
+                effectiveInstruction,
+              )) {
+                if (cancelRef.current) break;
+                fullText += chunk;
+                setStreamingText(fullText);
+              }
+            } finally {
+              setIsStreaming(false);
+            }
+            if (cancelRef.current) break;
+            // Parse accumulated JSON response
+            const cleaned = fullText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            const parsed: unknown = JSON.parse(cleaned);
+            const validated = AIGeneratedIdeasSchema.safeParse(parsed);
+            result = (validated.success ? validated.data : parsed) as AIGeneratedIdeas;
             (result as AIGeneratedIdeas).generationContext = finalContext;
+            setStreamingText('');
             break;
+          }
           case 'ASSESSMENT':
           case 'FLASHCARDS':
           case 'QUIZ':
@@ -541,6 +566,8 @@ export function useMainGenerate({
     isGenerating,
     generatedMaterial,
     setGeneratedMaterial,
+    isStreaming,
+    streamingText,
     handleCancel,
     handleGenerate,
     handleGenerateFromExtraction,
