@@ -116,7 +116,7 @@ export const ExamBuilderView: React.FC = () => {
         <p className="text-gray-500 text-sm mb-6">4 варијанти А/Б/В/Г — автоматски генерирани со AI</p>
 
         {/* Settings form */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
+        <div className="bg-white rounded-(--radius-card) border border-gray-200 p-(--spacing-card) mb-6 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Наслов на испитот</label>
@@ -185,7 +185,7 @@ export const ExamBuilderView: React.FC = () => {
             type="button"
             onClick={handleGenerate}
             disabled={generating}
-            className="mt-5 flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-semibold text-sm transition-colors"
+            className="mt-5 w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-semibold text-sm transition-colors"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
             {generating ? 'Генерирам 4 варијанти…' : 'AI Генерирај 4 варијанти (А/Б/В/Г)'}
@@ -194,7 +194,7 @@ export const ExamBuilderView: React.FC = () => {
 
         {/* Variant preview */}
         {variants && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+          <div className="bg-white rounded-(--radius-card) border border-gray-200 shadow-sm mb-6 overflow-hidden">
             {/* Tabs */}
             <div className="flex border-b border-gray-200">
               {VARIANT_LABELS.map(vk => (
@@ -226,7 +226,7 @@ export const ExamBuilderView: React.FC = () => {
                       <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${VARIANT_COLORS[activeTab]}`}>
                         {activeTab}{i + 1}
                       </span>
-                      <span className="text-gray-800 truncate max-w-xs">{q.question}</span>
+                      <span className="text-gray-800 truncate max-w-[10rem] sm:max-w-xs">{q.question}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs text-gray-400">{q.points} бод.</span>

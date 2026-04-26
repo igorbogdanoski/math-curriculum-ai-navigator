@@ -208,7 +208,7 @@ export const NationalLibraryView: React.FC = () => {
   };
 
   return (
-    <div className="p-6 md:p-8 animate-fade-in">
+    <div className="p-4 md:p-8 animate-fade-in">
       {/* Header */}
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-brand-primary flex items-center gap-3">
@@ -225,7 +225,7 @@ export const NationalLibraryView: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="flex flex-wrap gap-2 md:gap-3 mb-6">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -282,7 +282,7 @@ export const NationalLibraryView: React.FC = () => {
           ))}
         </div>
         {/* DoK filter buttons */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => setFilterDok(0)}

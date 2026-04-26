@@ -39,7 +39,7 @@ export const GeneratorActionBar: React.FC<GeneratorActionBarProps> = ({
     (['ASSESSMENT', 'QUIZ', 'FLASHCARDS'] as MaterialType[]).includes(materialType);
 
   return (
-    <div data-tour="generator-generate-button" className="flex items-center justify-between pt-6 border-t mt-auto gap-3">
+    <div data-tour="generator-generate-button" className="sticky bottom-0 z-10 bg-white flex items-center justify-between pt-4 pb-3 border-t mt-auto gap-3 -mx-6 px-6 xl:relative xl:bottom-auto xl:mx-0 xl:px-0 xl:pt-6 xl:pb-0">
       {currentStep > 1 ? (
         <button
           type="button"
