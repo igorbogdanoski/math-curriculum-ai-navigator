@@ -166,20 +166,20 @@ export const TestGeneratorView: React.FC = () => {
   const activeModelMeta = MODELS.find(m => m.id === assessmentModel)!;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto pb-32 space-y-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto pb-32 space-y-4 md:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
+        <h1 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-3">
           <div className="p-2.5 bg-brand-primary/10 rounded-2xl text-brand-primary">
             <Sparkles className="w-7 h-7" />
           </div>
           АИ Креатор на писмени работи
         </h1>
-        <p className="text-gray-500 mt-1 ml-14">Креирајте професионални сумативни тестови за неколку секунди</p>
+        <p className="text-gray-500 mt-1 md:ml-14">Креирајте професионални сумативни тестови за неколку секунди</p>
       </div>
 
       {/* Main Config Card */}
-      <Card className="p-6 space-y-6 border-gray-100 shadow-sm">
+      <Card className="p-4 md:p-6 space-y-4 md:space-y-6 border-gray-100 shadow-sm">
 
         {/* Row 1: Assessment model + Grade */}
         <div className="flex flex-col lg:flex-row gap-6">

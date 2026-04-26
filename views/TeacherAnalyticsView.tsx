@@ -406,16 +406,16 @@ const { addNotification } = useNotification();
 
   return (
     <>
-      <div className="p-8 animate-fade-in">
-        <header className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+      <div className="p-4 md:p-8 animate-fade-in">
+        <header className="mb-4 md:mb-8 flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-4xl font-bold text-brand-primary flex items-center gap-3">
-              <BarChart3 className="w-9 h-9" />
+            <h1 className="text-2xl md:text-4xl font-bold text-brand-primary flex items-center gap-3">
+              <BarChart3 className="w-7 h-7 md:w-9 md:h-9" />
               {t('analytics.title')}
             </h1>
-            <p className="text-lg text-gray-600 mt-2">{t('analytics.subtitle')}</p>
+            <p className="text-base md:text-lg text-gray-600 mt-2">{t('analytics.subtitle')}</p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap overflow-x-auto pb-1">
             <button
               type="button"
               onClick={() => navigate('/analytics/telemetry')}
