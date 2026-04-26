@@ -270,6 +270,8 @@ export interface PresentationSlide {
   algebraTilesExpression?: string;
   type: 'title' | 'content' | 'example' | 'task' | 'summary' | 'step-by-step'
       | 'formula-centered' | 'chart-embed' | 'comparison' | 'proof' | 'shape-3d' | 'algebra-tiles';
+  /** Webb's Depth of Knowledge level for this slide's primary task/objective */
+  dokLevel?: 1 | 2 | 3 | 4;
 }
 
 export interface AIGeneratedPresentation {
@@ -862,6 +864,7 @@ export interface TestQuestion {
     points: number;
     difficulty?: 'easy'|'medium'|'hard';
     cognitiveLevel?: string;
+    dokLevel?: 1 | 2 | 3 | 4;
 }
 
 export interface TestGroup {

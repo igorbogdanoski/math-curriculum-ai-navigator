@@ -13,6 +13,7 @@ import {
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../utils/logger';
+import { DokDistributionBar } from '../components/common/DokBadge';
 
 // ── Assessment model metadata ──────────────────────────────────────────────
 
@@ -79,7 +80,7 @@ const BLOOM_LEVELS: DifferentiatedLevel[] = [
 export const TestGeneratorView: React.FC = () => {
   const { curriculum } = useCurriculum();
   const { addNotification } = useNotification();
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, user } = useAuth();
 
   // Params
   const [selectedGradeId, setSelectedGradeId] = useState('grade-6');
@@ -131,7 +132,7 @@ export const TestGeneratorView: React.FC = () => {
       } else {
         // standard / cbe — use existing parallel test with first topic
         const topic = selectedTopics.join(', ');
-        result = await geminiService.generateParallelTest(topic, gradeNum, qCount, 'medium');
+        result = await geminiService.generateParallelTest(topic, gradeNum, qCount, 'medium', user?.secondaryTrack);
       }
       setGeneratedTest(result);
     } catch (e) {
@@ -471,6 +472,16 @@ export const TestGeneratorView: React.FC = () => {
               </div>
             </div>
           </Card>
+
+          {/* DoK distribution across all questions */}
+          {(() => {
+            const allQs = generatedTest.groups.flatMap(g => g.questions);
+            return allQs.some(q => q.dokLevel) ? (
+              <Card className="p-4">
+                <DokDistributionBar questions={allQs} />
+              </Card>
+            ) : null;
+          })()}
 
           {/* Rubric */}
           {'rubric' in generatedTest && generatedTest.rubric && (

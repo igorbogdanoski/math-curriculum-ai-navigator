@@ -370,6 +370,7 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
 - solution: ЗАДОЛЖИТЕЛНО за type='task' и type='example' — детални чекори; НЕ вклучувај за останатите
 - speakerNotes: белешки за наставникот (на македонски, 1-3 реченици; педагошки совет или временска насока)
 - estimatedSeconds: препорачано траење на слајдот во секунди (60-300)
+- dokLevel: Webb's Depth of Knowledge за овој слајд (1=Recall, 2=Skills, 3=Strategic, 4=Extended). Насловни и содржински слајдови → 1-2; задачи → 2-3; докази и проширувања → 3-4.
 
 ВАЖНО — нови типови:
 - type='proof': content[] ги листа чекорите на доказот (секоја точка = 1 чекор); visualPrompt = геометриска фигура или дијаграм
@@ -403,7 +404,8 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
               visualPrompt: { type: Type.STRING },
               speakerNotes: { type: Type.STRING },
               estimatedSeconds: { type: Type.INTEGER },
-              type: { type: Type.STRING, enum: ['title', 'content', 'example', 'task', 'summary', 'step-by-step', 'formula-centered', 'comparison', 'proof'] }
+              type: { type: Type.STRING, enum: ['title', 'content', 'example', 'task', 'summary', 'step-by-step', 'formula-centered', 'comparison', 'proof'] },
+              dokLevel: { type: Type.INTEGER }
             },
             required: ["title", "content", "type"]
           }

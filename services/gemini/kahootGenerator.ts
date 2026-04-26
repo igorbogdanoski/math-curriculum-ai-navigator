@@ -4,6 +4,7 @@ import {
   callGeminiProxy, checkDailyQuotaGuard,
 } from './core';
 import type { EnrichedWebTask } from './visionContracts';
+import type { DokLevel } from '../../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,7 @@ export interface KahootQuestion {
   options: [string, string, string, string];
   correctIndex: 0 | 1 | 2 | 3;
   difficulty: 'basic' | 'intermediate' | 'advanced';
+  dokLevel?: DokLevel;
 }
 
 // ─── Parser ───────────────────────────────────────────────────────────────────
@@ -43,6 +45,9 @@ function parseResponse(raw: string): KahootQuestion[] {
       difficulty: (['basic', 'intermediate', 'advanced'].includes(String(q.difficulty))
         ? q.difficulty
         : 'intermediate') as 'basic' | 'intermediate' | 'advanced',
+      dokLevel: ([1, 2, 3, 4].includes(Number(q.dokLevel))
+        ? Number(q.dokLevel)
+        : 2) as DokLevel,
     }))
     .filter(q => q.question.length > 0 && q.options.every(o => o.length > 0));
 }
@@ -53,13 +58,20 @@ const SCHEMA = `JSON array only — no markdown, no explanation.
     "question": "Question text in Macedonian (mk)",
     "options": ["option A", "option B", "option C", "option D"],
     "correctIndex": 0,
-    "difficulty": "basic"
+    "difficulty": "basic",
+    "dokLevel": 1
   }
 ]
 Rules:
-- exacty 4 options per question
+- exactly 4 options per question
 - correctIndex is 0–3 (index in options array)
 - difficulty: "basic" | "intermediate" | "advanced"
+- dokLevel (Webb's Depth of Knowledge):
+    1 = Recall — direct recall of a fact, formula or definition (e.g. "What is 3²?")
+    2 = Skills  — apply a single procedure or concept (e.g. "Solve 2x + 5 = 11")
+    3 = Strategic — multi-step reasoning or non-routine problem (e.g. compare two methods)
+    4 = Extended — transfer to novel context, justify/generalise (rare in Kahoot)
+  Most questions should be DoK 1–2; use 3 sparingly, 4 almost never.
 - all text in Macedonian (МК)
 - wrong options must be plausible math distractors (common mistakes, off-by-one, wrong sign, etc.)`;
 
@@ -79,6 +91,7 @@ export async function generateKahootFromTasks(
 Convert each of the following math problems into a multiple-choice question with exactly 4 answer options.
 Generate 3 plausible but wrong distractors (common student mistakes: wrong sign, arithmetic error, step skipped, etc.).
 The correct answer must be mathematically accurate.
+Assign a dokLevel (1–4 Webb's Depth of Knowledge) to each question — most should be 1 or 2.
 
 Problems:
 ${list}
@@ -118,6 +131,7 @@ Requirements:
 - Exactly one correct answer per question
 - 3 plausible distractors (common student mistakes)
 - Mix of difficulty levels unless specified otherwise
+- Assign a dokLevel (1–4 Webb's Depth of Knowledge) to each question
 
 ${SCHEMA}`;
 
@@ -149,6 +163,7 @@ Analyze this document (it may be a worksheet, test, or exercise sheet).
 Extract up to ${count} math problems from it and convert each into a multiple-choice question with exactly 4 answer options.
 Generate plausible wrong distractors based on common student mistakes.
 All text must be in Macedonian (МК).
+Assign a dokLevel (1–4 Webb's Depth of Knowledge) to each question.
 
 ${SCHEMA}`;
 

@@ -1,5 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2 } from 'lucide-react';
+import { DokBadge } from '../common/DokBadge';
+import type { DokLevel } from '../../types';
 import { Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
 const Shape3DViewer = React.lazy(() =>
   import('../math/Shape3DViewer').then(m => ({ default: m.Shape3DViewer }))
@@ -1026,9 +1028,34 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         {/* Slide title (except for 'title' type which renders its own) */}
         {slide.type !== 'title' && (
           <div className="px-8 md:px-16 pt-8 pb-2 flex-shrink-0">
-            <h2 className="text-2xl md:text-4xl font-black text-white leading-tight">
-              <MathRenderer text={slide.title} />
-            </h2>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-2xl md:text-4xl font-black text-white leading-tight flex-1">
+                <MathRenderer text={slide.title} />
+              </h2>
+              <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+                {slide.dokLevel && (
+                  <DokBadge level={slide.dokLevel as DokLevel} size="compact" showTooltip />
+                )}
+                {slide.type === 'task' && (
+                  <button
+                    type="button"
+                    title="Создај Kahoot квиз од оваа задача"
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem('kahoot_gamma_prompt', JSON.stringify({
+                          prompt: slide.content.join(' '),
+                          count: 4,
+                        }));
+                      } catch { /* quota */ }
+                      window.open('#/kahoot-maker', '_blank');
+                    }}
+                    className="p-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white transition flex items-center gap-1 text-[10px] font-bold"
+                  >
+                    <Gamepad2 className="w-3.5 h-3.5" /> Kahoot
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

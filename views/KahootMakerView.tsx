@@ -15,6 +15,8 @@ import { firestoreService } from '../services/firestoreService';
 import { geminiService } from '../services/geminiService';
 import type { KahootQuestion } from '../services/geminiService';
 import type { EnrichedWebTask } from '../services/gemini/visionContracts';
+import { DokBadge, DokDistributionBar } from '../components/common/DokBadge';
+import { DOK_META, type DokLevel } from '../types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -61,6 +63,7 @@ function makeBlankQuestion(): KahootQuestion {
     options: ['', '', '', ''],
     correctIndex: 0,
     difficulty: 'intermediate',
+    dokLevel: 2,
   };
 }
 
@@ -100,6 +103,7 @@ function QuestionCard({ q, idx, total, onChange, onDelete, onMoveUp, onMoveDown 
         </p>
         <div className="flex items-center gap-1 flex-shrink-0">
           {isComplete && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+          {q.dokLevel && <DokBadge level={q.dokLevel} size="compact" showTooltip={false} />}
           <button type="button" onClick={onMoveUp} disabled={idx === 0} aria-label="Помести нагоре"
             className="p-1 rounded text-gray-400 hover:text-indigo-600 disabled:opacity-20 transition-colors">
             <ArrowUp className="w-3.5 h-3.5" />
@@ -185,6 +189,26 @@ function QuestionCard({ q, idx, total, onChange, onDelete, onMoveUp, onMoveDown 
               </button>
             ))}
           </div>
+
+          {/* DoK Level */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">DoK:</span>
+            {([1, 2, 3, 4] as DokLevel[]).map(lvl => (
+              <button
+                key={lvl}
+                type="button"
+                onClick={() => onChange({ ...q, dokLevel: lvl })}
+                title={DOK_META[lvl].title}
+                className={`text-[10px] px-2 py-0.5 rounded-full border font-bold transition-all ${
+                  q.dokLevel === lvl
+                    ? DOK_META[lvl].color
+                    : 'border-gray-200 text-gray-400 hover:border-gray-300'
+                }`}
+              >
+                {DOK_META[lvl].label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -222,7 +246,7 @@ export const KahootMakerView: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load session tasks on mount
+  // Load session tasks + Gamma quick-launch on mount
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(SESSION_KEY);
@@ -230,6 +254,17 @@ export const KahootMakerView: React.FC = () => {
         const parsed: EnrichedWebTask[] = JSON.parse(raw);
         setSessionTasks(parsed);
         setSelectedTaskIndices(new Set(parsed.map((_, i) => i)));
+      }
+    } catch { /* corrupted — ignore */ }
+
+    try {
+      const gammaRaw = sessionStorage.getItem('kahoot_gamma_prompt');
+      if (gammaRaw) {
+        const { prompt, count } = JSON.parse(gammaRaw) as { prompt: string; count: number };
+        sessionStorage.removeItem('kahoot_gamma_prompt');
+        setActiveSource('prompt');
+        setPromptText(prompt);
+        setPromptCount(count);
       }
     } catch { /* corrupted — ignore */ }
   }, []);
@@ -313,6 +348,7 @@ export const KahootMakerView: React.FC = () => {
           options: q.options,
           answer: q.options[q.correctIndex],
           difficulty_level: q.difficulty,
+          ...(q.dokLevel ? { dok_level: q.dokLevel } : {}),
         })),
       };
       const quizId = await firestoreService.saveToLibrary(quizContent, {
@@ -473,6 +509,13 @@ export const KahootMakerView: React.FC = () => {
                 )}
               </div>
             </div>
+
+            {/* DoK distribution */}
+            {questions.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-100 p-4">
+                <DokDistributionBar questions={questions} />
+              </div>
+            )}
 
             {saveError && (
               <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
@@ -659,6 +702,7 @@ export const KahootMakerView: React.FC = () => {
             type="file"
             accept=".pdf,.png,.jpg,.jpeg,.webp"
             className="hidden"
+            aria-label="Прикачи документ (PDF, PNG, JPG, WEBP)"
             onChange={e => setDocFile(e.target.files?.[0] ?? null)}
           />
           <div

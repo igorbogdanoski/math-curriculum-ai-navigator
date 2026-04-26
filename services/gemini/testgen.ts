@@ -2,23 +2,27 @@ import {
     Type, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, SAFETY_SETTINGS, callGeminiProxy,
     checkDailyQuotaGuard, getCached, setCached, sanitizePromptInput,
 } from './core';
+import { getSecondaryTrackContext } from './core.instructions';
 import {
     GeneratedTest, ProGeneratedTest, DifferentiatedLevel, AssessmentQuestion, AIGeneratedAssessment,
+    type SecondaryTrack,
 } from '../../types';
 import { GeneratedTestSchema } from '../../utils/schemas';
 
 export const testgenAPI = {
 
-async generateParallelTest(topic: string, gradeLevel: number, questionCount: number, difficulty: 'easy' | 'medium' | 'hard'): Promise<GeneratedTest> {
+async generateParallelTest(topic: string, gradeLevel: number, questionCount: number, difficulty: 'easy' | 'medium' | 'hard', secondaryTrack?: SecondaryTrack | null): Promise<GeneratedTest> {
     const safeTopic = sanitizePromptInput(topic, 160);
-    const cacheKey = `test_parallel_${safeTopic.replace(/\s+/g, '_').toLowerCase()}_g${gradeLevel}_n${questionCount}_${difficulty}`;
+    const trackKey = secondaryTrack ? `_${secondaryTrack}` : '';
+    const cacheKey = `test_parallel_${safeTopic.replace(/\s+/g, '_').toLowerCase()}_g${gradeLevel}_n${questionCount}_${difficulty}${trackKey}`;
     const cached = await getCached<GeneratedTest>(cacheKey);
     if (cached) return cached;
 
     const gradeLevelPrompt = gradeLevel <= 3 ? 'ЗАБЕЛЕШКА: Ова е за рана училишна возраст (1-3 одд). Користи многу едноставни зборови и секојдневни предмети во текстуалните задачи.' : 'Вклучи и текстуални задачи.';
-    const prompt = `Генерирај тест по математика за "${safeTopic}" (одделение ${gradeLevel}).\nТестот треба да има ДВЕ ГРУПИ (Група А и Група Б).\nВкупно прашања по група: ТОЧНО ${questionCount} прашања.\nВАЖНО:\n- Прашањата во Група А и Група Б мора да бидат "паралелни" (исти по тип и тежина, но со различни бројки или примери).\n- Типот на прашањето ("type") МОРА ДА БИДЕ ЕДНО ОД СЛЕДНИВЕ: "multiple-choice", "short-answer", ИЛИ "word-problem".\n- ${gradeLevelPrompt}\n- МАТЕМАТИЧКИ ЗАПИС (КРИТИЧНО): Строго е забрането користење на ASCII знаци за математика! НИКОГАШ не користи '*' за множење (секогаш користи '\\cdot'). Сите математички изрази мора да бидат форматирани како чист LaTeX опкружен со '$'.\n\nВрати JSON:\n{\n  "title": "Тест по Математика: ${safeTopic}",\n  "groups": [\n    { "groupName": "Group A", "questions": [ ... ] },\n    { "groupName": "Group B", "questions": [ ... ] }\n  ]\n}`;
+    const trackContext = getSecondaryTrackContext(secondaryTrack);
+    const prompt = `${trackContext ? trackContext + '\n\n' : ''}Генерирај тест по математика за "${safeTopic}" (одделение ${gradeLevel}).\nТестот треба да има ДВЕ ГРУПИ (Група А и Група Б).\nВкупно прашања по група: ТОЧНО ${questionCount} прашања.\nВАЖНО:\n- Прашањата во Група А и Група Б мора да бидат "паралелни" (исти по тип и тежина, но со различни бројки или примери).\n- Типот на прашањето ("type") МОРА ДА БИДЕ ЕДНО ОД СЛЕДНИВЕ: "multiple-choice", "short-answer", ИЛИ "word-problem".\n- ${gradeLevelPrompt}\n- Додај "dokLevel" (1-4 Webb DoK) за секое прашање: 1=Припомнување, 2=Вештини, 3=Стратешко, 4=Проширено. Целна распределба: ~40% DoK-1, ~40% DoK-2, ~20% DoK-3.\n- МАТЕМАТИЧКИ ЗАПИС (КРИТИЧНО): Строго е забрането користење на ASCII знаци за математика! НИКОГАШ не користи '*' за множење (секогаш користи '\\cdot'). Сите математички изрази мора да бидат форматирани како чист LaTeX опкружен со '$'.\n\nВрати JSON:\n{\n  "title": "Тест по Математика: ${safeTopic}",\n  "groups": [\n    { "groupName": "Group A", "questions": [ ... ] },\n    { "groupName": "Group B", "questions": [ ... ] }\n  ]\n}`;
 
-    const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, groups: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { groupName: { type: Type.STRING }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, text: { type: Type.STRING }, type: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, correctAnswer: { type: Type.STRING }, points: { type: Type.NUMBER }, cognitiveLevel: { type: Type.STRING } }, required: ['id', 'text', 'correctAnswer', 'points'] } } }, required: ['groupName', 'questions'] } } }, required: ['title', 'groups'] };
+    const schema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, groups: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { groupName: { type: Type.STRING }, questions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, text: { type: Type.STRING }, type: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, correctAnswer: { type: Type.STRING }, points: { type: Type.NUMBER }, cognitiveLevel: { type: Type.STRING }, dokLevel: { type: Type.NUMBER } }, required: ['id', 'text', 'correctAnswer', 'points'] } } }, required: ['groupName', 'questions'] } } }, required: ['title', 'groups'] };
 
     const result = await generateAndParseJSON<GeneratedTest>([{ text: prompt }], schema, DEFAULT_MODEL, GeneratedTestSchema);
     const enrichedResult: GeneratedTest = {

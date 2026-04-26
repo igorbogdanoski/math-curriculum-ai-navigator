@@ -6,6 +6,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { PresentationSlide } from '../types';
 import { MathRenderer } from '../components/common/MathRenderer';
+import { DokBadge } from '../components/common/DokBadge';
+import type { DokLevel } from '../types';
 
 interface SyncMessage {
   type: 'slide-change';
@@ -46,7 +48,10 @@ function SlideCard({ slide, label, large }: { slide: PresentationSlide; label: s
   return (
     <div className={`rounded-2xl overflow-hidden border border-white/10 ${large ? '' : 'opacity-80'}`}>
       <div className={`${color} px-3 py-1.5 flex items-center justify-between`}>
-        <span className="text-[10px] font-black uppercase tracking-widest text-white/90">{typeLabel}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/90">{typeLabel}</span>
+          {slide.dokLevel && <DokBadge level={slide.dokLevel as DokLevel} size="compact" showTooltip={false} />}
+        </div>
         <span className="text-[10px] text-white/50 font-medium">{label}</span>
       </div>
       <div className="bg-slate-800 px-4 py-3">
