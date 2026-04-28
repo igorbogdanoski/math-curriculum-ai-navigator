@@ -160,7 +160,7 @@ export function setCorsHeaders(res: VercelResponse): void {
 // ---------------------------------------------------------------------------
 import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
-import { checkSlidingWindow, extractClientIp } from './rateLimitInMemory';
+import { checkSlidingWindow, extractClientIp } from './rateLimitInMemory.js';
 
 let upstashRatelimit: Ratelimit | null = null;
 let upstashIpRatelimit: Ratelimit | null = null;
