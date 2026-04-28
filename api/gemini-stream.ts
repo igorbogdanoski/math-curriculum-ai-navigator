@@ -27,11 +27,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { model, contents, config } = validated;
   let modelName = model;
-  
-  // Upgrade logic: route to best available models on paid tier
-  if (modelName.includes('pro')) modelName = 'gemini-2.5-pro';
-  else if (modelName.includes('flash')) modelName = 'gemini-2.5-flash';
-  else modelName = 'gemini-2.5-flash';
+
+  // Pass confirmed-working models through; map unknown variants to safe defaults.
+  const CONFIRMED = new Set([
+    'gemini-2.5-pro', 'gemini-2.5-flash',
+    'gemini-3-flash-preview', 'gemini-3.1-flash-lite-preview',
+  ]);
+  if (!CONFIRMED.has(modelName)) {
+    if (modelName.includes('pro')) modelName = 'gemini-2.5-pro';
+    else if (modelName.includes('flash')) modelName = 'gemini-3-flash-preview';
+    else modelName = 'gemini-3-flash-preview';
+  }
 
   const { systemInstruction, safetySettings, ...generationConfig } = config || {};
 

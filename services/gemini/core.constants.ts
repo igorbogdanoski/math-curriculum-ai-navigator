@@ -2,8 +2,8 @@
 // No imports from other core.* files — this is the dependency root.
 
 export const CACHE_COLLECTION = 'cached_ai_materials';
-export const LITE_MODEL = 'gemini-2.5-flash';
-export const DEFAULT_MODEL = 'gemini-2.5-flash';
+export const LITE_MODEL = 'gemini-3.1-flash-lite-preview';
+export const DEFAULT_MODEL = 'gemini-3-flash-preview';
 export const PRO_MODEL = 'gemini-2.5-pro';
 export const ULTIMATE_MODEL = 'gemini-2.5-pro';
 export const IMAGEN_MODEL = 'imagen-4.0-generate-001';
