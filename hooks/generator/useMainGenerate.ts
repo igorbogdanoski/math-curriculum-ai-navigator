@@ -134,8 +134,13 @@ export function useMainGenerate({
               setIsStreaming(false);
             }
             if (cancelRef.current) break;
-            // Parse accumulated JSON response
-            const cleaned = fullText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            // Parse accumulated JSON response — strip markdown fences and extract first {...} block
+            let cleaned = fullText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            const jsonStart = cleaned.indexOf('{');
+            const jsonEnd = cleaned.lastIndexOf('}');
+            if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+              cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
+            }
             const parsed: unknown = JSON.parse(cleaned);
             const validated = AIGeneratedIdeasSchema.safeParse(parsed);
             result = (validated.success ? validated.data : parsed) as AIGeneratedIdeas;

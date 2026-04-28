@@ -464,7 +464,18 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
 - СТАНДАРДИ: Користи ги официјалните национални стандарди од контекстот.
 
 ### ФОРМАТ
-Генерирај го сценариото СТРИКТНО според официјалниот JSON шаблон.
+Врати САМО валиден JSON без никаков дополнителен текст, објаснување или markdown.
+Следи го следниов JSON шаблон ТОЧНО:
+{
+  "title": "Наслов на часот",
+  "openingActivity": "Опис на воведната активност (чекор-по-чекор)",
+  "mainActivity": [
+    { "text": "Опис на главна активност", "bloomsLevel": "Разбирање" },
+    { "text": "Опис на втора активност", "bloomsLevel": "Примена" }
+  ],
+  "differentiation": "Опис на диференцијација за различни нивоа",
+  "assessmentIdea": "Опис на евалуација/проверка на знаење"
+}
 `;
 
   const safeInstruction = sanitizePromptInput(customInstruction, 500);
@@ -478,7 +489,7 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
     {
       model: DEFAULT_MODEL,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7 },
+      generationConfig: { temperature: 0.7, responseMimeType: 'application/json' },
       systemInstruction: systemInstr,
       userTier: profile?.tier,
     },
