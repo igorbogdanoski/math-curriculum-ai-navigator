@@ -47,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server.' });
   }
 
-  const { model, contents } = validated;
+  const { model, contents, taskType, outputDimensionality } = validated;
   const text = extractEmbeddingText(contents);
   const responseShape = req.query.responseShape === 'embeddings' ? 'embeddings' : 'embedding';
 
@@ -60,9 +60,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const apiKey = apiKeys[i];
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const modelInstance = genAI.getGenerativeModel({ model: model || "text-embedding-004" });
-      
-      const result = await modelInstance.embedContent(text);
+      const modelInstance = genAI.getGenerativeModel({ model: model || "gemini-embedding-2" });
+
+      const embedRequest: Record<string, unknown> = { content: { parts: [{ text }] } };
+      if (taskType) embedRequest.taskType = taskType;
+      if (outputDimensionality) embedRequest.outputDimensionality = outputDimensionality;
+
+      const result = await modelInstance.embedContent(embedRequest as Parameters<typeof modelInstance.embedContent>[0]);
       const embedding = result.embedding;
 
       if (responseShape === 'embeddings') {

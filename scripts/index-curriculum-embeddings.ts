@@ -4,6 +4,10 @@
  * Reads every concept from fullCurriculumData, generates a 768-dim Gemini
  * embedding for each, and writes it to Firestore concept_embeddings/{conceptId}.
  *
+ * Model: gemini-embedding-2 (Gemini Embedding 2)
+ *   - taskType: RETRIEVAL_DOCUMENT (indexed docs — paired with RETRIEVAL_QUERY at search time)
+ *   - outputDimensionality: 768 (Matryoshka — 4× smaller than default 3072, still high quality)
+ *
  * Uses Firebase Admin SDK to bypass security rules (the concept_embeddings
  * collection is `allow write: if false` for client SDK).
  *
@@ -67,15 +71,21 @@ const db = getFirestore();
 
 // ── Gemini embedding ──────────────────────────────────────────────────────────
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? process.env.VITE_GEMINI_API_KEY ?? '';
-const EMBED_MODEL    = 'text-embedding-004';
-const EMBED_URL      = `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${GEMINI_API_KEY}`;
+const GEMINI_API_KEY  = process.env.GEMINI_API_KEY ?? process.env.VITE_GEMINI_API_KEY ?? '';
+const EMBED_MODEL     = 'gemini-embedding-2';
+const EMBED_TASK_TYPE = 'RETRIEVAL_DOCUMENT';
+const EMBED_DIMS      = 768; // Matryoshka — 4× smaller than default 3072
+const EMBED_URL       = `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${GEMINI_API_KEY}`;
 
 async function getEmbedding(text: string): Promise<number[]> {
   const res = await fetch(EMBED_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content: { parts: [{ text }] } }),
+    body: JSON.stringify({
+      content: { parts: [{ text }] },
+      taskType: EMBED_TASK_TYPE,
+      outputDimensionality: EMBED_DIMS,
+    }),
   });
   if (!res.ok) throw new Error(`Embed API ${res.status}: ${await res.text()}`);
   const json = await res.json() as { embedding: { values: number[] } };
@@ -113,7 +123,7 @@ async function main() {
     }
   }
 
-  console.log(`Indexing ${concepts.length} concepts…`);
+  console.log(`Indexing ${concepts.length} concepts with ${EMBED_MODEL} (task=${EMBED_TASK_TYPE}, dims=${EMBED_DIMS})…`);
 
   let done = 0;
   let errors = 0;
@@ -124,6 +134,9 @@ async function main() {
       await db.collection('concept_embeddings').doc(id).set({
         vector,
         text,
+        model: EMBED_MODEL,
+        taskType: EMBED_TASK_TYPE,
+        dimensions: EMBED_DIMS,
         updatedAt: FieldValue.serverTimestamp(),
       });
       done++;

@@ -50,9 +50,23 @@ S54–S58 целосно завршени. Build чист, 0 TS грешки, 11
 
 | # | Задача |
 |---|--------|
-| P6 | Matura AI-грейдирање за отворени прашања |
+| P6 | Matura AI-грејдирање за отворени прашања |
 | P7 | Teacher onboarding flow (wizard за нов наставник) |
 | P8 | Sentry DSN конфигурација во Vercel |
+
+### P9 — Gemini Embedding 2 upgrade ✅ ЗАВРШЕНО
+
+**Проблем:** RAG инфраструктурата користеше `text-embedding-004` без task types → суб-оптимален recall
+
+**Решение:**
+
+- `api/embed.ts` — accept `taskType` + `outputDimensionality` параметри
+- `core.proxy.ts` — `callEmbeddingProxy()` прима `taskType` + `outputDimensionality`
+- `ragService.ts` — query со `RETRIEVAL_QUERY` + 768 dims; cache key bump → `v2`
+- `api/_lib/sharedUtils.ts` — Zod schema extended со task type enum + dims validation
+- `scripts/index-curriculum-embeddings.ts` — upgraded: `gemini-embedding-2` + `RETRIEVAL_DOCUMENT` + 768 dims + model metadata во Firestore
+**Matryoshka benefit:** 768 dims vs 3072 default → 4× помали вектори во Firestore, побрз cosine similarity
+**Следен чекор:** `npx tsx scripts/index-curriculum-embeddings.ts` → re-индексирај curriculum со новиот модел
 
 ---
 
@@ -60,8 +74,9 @@ S54–S58 целосно завршени. Build чист, 0 TS грешки, 11
 
 | Task | Статус | Commit |
 |------|--------|--------|
-| P1 — Bundle split matura | ⏳ ВО ТЕК | — |
-| P2 — PWA precache | ⏳ Следно | — |
-| P3 — Matura Practice UX | ⏳ Следно | — |
+| P1 — Bundle split matura | ✅ ЗАВРШЕНО | vite.config globIgnores |
+| P2 — PWA precache | ✅ ЗАВРШЕНО | -4.8MB precache |
+| P3 — Matura Practice UX | ✅ ЗАВРШЕНО | MaturaPortalView weak-topic buttons |
 | P4 — Generator audit | ⏳ Планирано | — |
 | P5 — IMAGE_EXTRACTOR | ⏳ Планирано | — |
+| P9 — Gemini Embedding 2 | ✅ ЗАВРШЕНО | task types + 768 dims |

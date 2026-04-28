@@ -7,11 +7,13 @@ import { db } from '../firebaseConfig';
 //   gemini/core (imports ragService dynamically) ↔ ragService (needs embed proxy)
 async function embedQuery(text: string): Promise<number[]> {
   const { callEmbeddingProxy } = await import('./gemini/core');
-  return callEmbeddingProxy(text);
+  // RETRIEVAL_QUERY + 768 dims matches the indexing script (RETRIEVAL_DOCUMENT + 768 dims)
+  return callEmbeddingProxy(text, undefined, 'RETRIEVAL_QUERY', 768);
 }
 
 const SIMILARITY_THRESHOLD = 0.7;
-const CACHE_KEY = 'rag_concept_embeddings_v1';
+// v2: gemini-embedding-2 vectors (768-dim, task-typed) replace v1 text-embedding-004 vectors
+const CACHE_KEY = 'rag_concept_embeddings_v2';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const THRESHOLD_OVERRIDE_KEY = 'VITE_VECTOR_RAG_THRESHOLD';
 const LATENCY_RING_SIZE = 50;

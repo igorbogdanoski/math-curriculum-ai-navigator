@@ -151,14 +151,29 @@ export async function callImagenProxy(params: { model?: string; prompt: string }
   });
 }
 
-export async function callEmbeddingProxy(text: string, signal?: AbortSignal): Promise<number[]> {
+export type EmbeddingTaskType =
+  | 'RETRIEVAL_QUERY'
+  | 'RETRIEVAL_DOCUMENT'
+  | 'SEMANTIC_SIMILARITY'
+  | 'CLASSIFICATION'
+  | 'CLUSTERING';
+
+export async function callEmbeddingProxy(
+  text: string,
+  signal?: AbortSignal,
+  taskType?: EmbeddingTaskType,
+  outputDimensionality?: number,
+): Promise<number[]> {
   return queueRequest(async () => {
     try {
       const token = await getAuthToken();
+      const body: Record<string, unknown> = { model: EMBEDDING_MODEL, contents: text };
+      if (taskType) body.taskType = taskType;
+      if (outputDimensionality) body.outputDimensionality = outputDimensionality;
       const response = await fetch('/api/embed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ model: EMBEDDING_MODEL, contents: text }),
+        body: JSON.stringify(body),
         signal
       });
       if (!response.ok) {

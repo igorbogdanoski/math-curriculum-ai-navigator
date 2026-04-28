@@ -131,6 +131,18 @@ const SafeConfigSchema = z.object({
   responseModalities: z.array(z.string()).optional(),
 }).passthrough().optional();
 
+// Embedding task types supported by Gemini Embedding 2
+const EMBEDDING_TASK_TYPES = [
+  'RETRIEVAL_QUERY',
+  'RETRIEVAL_DOCUMENT',
+  'SEMANTIC_SIMILARITY',
+  'CLASSIFICATION',
+  'CLUSTERING',
+  'QUESTION_ANSWERING',
+  'FACT_VERIFICATION',
+  'CODE_RETRIEVAL_QUERY',
+] as const;
+
 // Full request body
 export const GeminiRequestSchema = z.object({
   model: z.string().refine(
@@ -145,6 +157,10 @@ export const GeminiRequestSchema = z.object({
   config: SafeConfigSchema,
   // Optional Gemini tools — used for Google Search grounding
   tools: z.array(z.any()).optional(),
+  // Gemini Embedding 2 — task type for retrieval accuracy improvement
+  taskType: z.enum(EMBEDDING_TASK_TYPES).optional(),
+  // Gemini Embedding 2 — Matryoshka variable dimensions (64–3072, default 3072)
+  outputDimensionality: z.number().int().min(64).max(3072).optional(),
 });
 
 export type GeminiRequest = z.infer<typeof GeminiRequestSchema>;
