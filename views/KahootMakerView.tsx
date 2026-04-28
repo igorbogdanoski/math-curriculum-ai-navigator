@@ -3,18 +3,20 @@
  * Three creation paths: Extraction Hub tasks / document upload / free-text prompt
  * AI generates proper MC questions; teacher can edit every question before launch.
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Loader2, Gamepad2, Timer, Check, ChevronRight, AlertCircle, Zap,
   ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Upload, Lightbulb,
-  FileText, Brain, ArrowUp, ArrowDown, RefreshCw,
+  FileText, Brain, ArrowUp, ArrowDown, RefreshCw, BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { firestoreService } from '../services/firestoreService';
 import { geminiService } from '../services/geminiService';
+import { useCurriculum } from '../hooks/useCurriculum';
 import type { KahootQuestion } from '../services/geminiService';
 import type { EnrichedWebTask } from '../services/gemini/visionContracts';
+import type { Grade, Topic } from '../types';
 import { DokBadge, DokDistributionBar } from '../components/common/DokBadge';
 import { DOK_META, type DokLevel } from '../types';
 
@@ -220,6 +222,7 @@ function QuestionCard({ q, idx, total, onChange, onDelete, onMoveUp, onMoveDown 
 export const KahootMakerView: React.FC = () => {
   const { firebaseUser } = useAuth();
   const { navigate } = useNavigation();
+  const { curriculum } = useCurriculum();
 
   // Workflow state
   const [step, setStep] = useState<Step>('source');
@@ -232,6 +235,19 @@ export const KahootMakerView: React.FC = () => {
   const [docCount, setDocCount] = useState(8);
   const [promptText, setPromptText] = useState('');
   const [promptCount, setPromptCount] = useState(6);
+
+  // Curriculum context for prompt path
+  const [promptGradeId, setPromptGradeId] = useState('');
+  const [promptTopicId, setPromptTopicId] = useState('');
+  const promptGrade = useMemo(
+    () => curriculum?.grades.find(g => g.id === promptGradeId),
+    [curriculum, promptGradeId],
+  );
+  const promptTopics = promptGrade?.topics ?? [];
+  const promptTopicObj = useMemo(
+    () => promptTopics.find(t => t.id === promptTopicId),
+    [promptTopics, promptTopicId],
+  );
 
   // Editor state
   const [questions, setQuestions] = useState<KahootQuestion[]>([]);
@@ -314,7 +330,21 @@ export const KahootMakerView: React.FC = () => {
         qs = await geminiService.generateKahootFromDocument(base64, mimeType, docCount);
         if (!title) setTitle(`Kahoot — ${docFile.name.replace(/\.[^.]+$/, '')}`);
       } else if (activeSource === 'prompt' && promptText.trim()) {
-        qs = await geminiService.generateKahootFromPrompt(promptText.trim(), promptCount);
+        let enriched = promptText.trim();
+        if (promptGrade) {
+          enriched += `\n\n[Наставна програма: ${promptGrade.title}`;
+          if (promptTopicObj) {
+            enriched += ` — ${promptTopicObj.title}`;
+            const standards = promptTopicObj.concepts
+              .flatMap(c => c.assessmentStandards ?? [])
+              .slice(0, 6);
+            if (standards.length > 0) {
+              enriched += `\nСтандарди: ${standards.join('; ')}`;
+            }
+          }
+          enriched += ']';
+        }
+        qs = await geminiService.generateKahootFromPrompt(enriched, promptCount);
         if (!title) setTitle(`Kahoot — ${promptText.trim().slice(0, 40)}`);
       }
       if (qs.length === 0) throw new Error('AI не врати ниту едно прашање. Обиди се со поинаков опис.');
@@ -744,10 +774,11 @@ export const KahootMakerView: React.FC = () => {
       {activeSource === 'prompt' && (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+            <label htmlFor="kahoot-prompt-text" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
               Опиши ја темата или идејата
             </label>
             <textarea
+              id="kahoot-prompt-text"
               value={promptText}
               onChange={e => setPromptText(e.target.value)}
               placeholder="Пример: 5 прашања за множење дроби за 6-то одделение, среден степен на тежина"
@@ -755,6 +786,54 @@ export const KahootMakerView: React.FC = () => {
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 resize-none focus:outline-none focus:border-purple-400 transition"
             />
           </div>
+
+          {/* Curriculum context picker */}
+          <div className="rounded-xl border border-purple-100 bg-purple-50/50 p-3 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 mb-1">
+              <BookOpen className="w-3.5 h-3.5" />
+              Поврзи со наставна програма
+              <span className="font-normal text-purple-500">(опционално — го прецизира AI-от)</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label htmlFor="kahoot-prompt-grade" className="block text-[10px] font-semibold text-gray-500 mb-1">Одделение</label>
+                <select
+                  id="kahoot-prompt-grade"
+                  value={promptGradeId}
+                  onChange={e => { setPromptGradeId(e.target.value); setPromptTopicId(''); }}
+                  title="Одделение за curriculum контекст"
+                  className="w-full text-xs border border-purple-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-purple-400"
+                >
+                  <option value="">— Сите —</option>
+                  {curriculum?.grades.map(g => (
+                    <option key={g.id} value={g.id}>{g.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="kahoot-prompt-topic" className="block text-[10px] font-semibold text-gray-500 mb-1">Тема</label>
+                <select
+                  id="kahoot-prompt-topic"
+                  value={promptTopicId}
+                  onChange={e => setPromptTopicId(e.target.value)}
+                  disabled={!promptGradeId}
+                  title="Тема за curriculum контекст"
+                  className="w-full text-xs border border-purple-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-purple-400 disabled:opacity-50"
+                >
+                  <option value="">— Сите теми —</option>
+                  {promptTopics.map(t => (
+                    <option key={t.id} value={t.id}>{t.title}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {promptGrade && (
+              <p className="text-[10px] text-purple-600">
+                ✓ AI ќе ги применува стандардите на <strong>{promptGrade.title}{promptTopicObj ? ` — ${promptTopicObj.title}` : ''}</strong>
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center gap-3">
             <label htmlFor="prompt-count" className="text-sm font-semibold text-gray-600 whitespace-nowrap">Број на прашања:</label>
             <input
@@ -764,6 +843,7 @@ export const KahootMakerView: React.FC = () => {
               max={20}
               value={promptCount}
               onChange={e => setPromptCount(Math.min(20, Math.max(2, Number(e.target.value))))}
+              title="Број на прашања"
               className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-bold text-center focus:outline-none focus:border-purple-400"
             />
           </div>

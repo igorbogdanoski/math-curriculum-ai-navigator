@@ -4,10 +4,10 @@
 export const CACHE_COLLECTION = 'cached_ai_materials';
 export const LITE_MODEL = 'gemini-3.1-flash-lite-preview';
 export const DEFAULT_MODEL = 'gemini-3-flash-preview';
-export const PRO_MODEL = 'gemini-2.5-pro';
-export const ULTIMATE_MODEL = 'gemini-2.5-pro';
+export const PRO_MODEL = 'gemini-3-pro-preview';
+export const ULTIMATE_MODEL = 'gemini-3.1-pro-preview';
 export const IMAGEN_MODEL = 'imagen-4.0-generate-001';
-export const EMBEDDING_MODEL = 'text-embedding-004';
+export const EMBEDDING_MODEL = 'gemini-embedding-2';
 export const MAX_RETRIES = 2;
 export const GENERATION_TIMEOUT_MS = 60_000;
 

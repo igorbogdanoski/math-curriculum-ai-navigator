@@ -102,7 +102,7 @@ export interface Grade {
   levelDescription?: string;
   /** Set on secondary grades — identifies the track they belong to */
   secondaryTrack?: SecondaryTrack;
-  /** Math hours per week for this grade (secondary only): 2 | 3 | 4 */
+  /** Math hours per week for this grade: 3 (primary 1–3) | 4 (primary 4–9, gymnasium) | 2–3 (vocational) */
   weeklyHours?: 2 | 3 | 4;
 }
 

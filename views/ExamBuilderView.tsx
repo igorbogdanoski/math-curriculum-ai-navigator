@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useCurriculum } from '../hooks/useCurriculum';
 import { geminiService } from '../services/geminiService';
 import { examService } from '../services/firestoreService.exam';
 import type { ExamVariantKey, ExamQuestion } from '../services/firestoreService.types';
-import type { AIGeneratedAssessment, GenerationContext } from '../types';
+import type { AIGeneratedAssessment, GenerationContext, Concept } from '../types';
 import { Loader2, Wand2, Save, Play, ChevronDown, ChevronUp, Eye, Printer } from 'lucide-react';
 
 const VARIANT_LABELS: ExamVariantKey[] = ['A', 'B', 'V', 'G'];
@@ -39,13 +40,15 @@ export const ExamBuilderView: React.FC = () => {
   const { firebaseUser, user } = useAuth();
   const { navigate } = useNavigation();
   const { addNotification } = useNotification();
+  const { curriculum, isLoading: curriculumLoading } = useCurriculum();
 
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('Математика');
-  const [gradeLevel, setGradeLevel] = useState(8);
+  const [selectedGradeId, setSelectedGradeId] = useState('');
+  const [selectedTopicId, setSelectedTopicId] = useState('');
+  const [selectedConceptIds, setSelectedConceptIds] = useState<string[]>([]);
   const [numQuestions, setNumQuestions] = useState(10);
   const [durationMin, setDurationMin] = useState(45);
-  const [topic, setTopic] = useState('');
 
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -54,17 +57,65 @@ export const ExamBuilderView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ExamVariantKey>('A');
   const [expandedQ, setExpandedQ] = useState<number | null>(null);
 
+  // Default to grade 8 when curriculum loads
+  useEffect(() => {
+    if (curriculum && !selectedGradeId) {
+      const grade8 = curriculum.grades.find(g => g.level === 8 && !g.secondaryTrack);
+      if (grade8) setSelectedGradeId(grade8.id);
+    }
+  }, [curriculum, selectedGradeId]);
+
+  const selectedGrade = useMemo(
+    () => curriculum?.grades.find(g => g.id === selectedGradeId),
+    [curriculum, selectedGradeId],
+  );
+  const availableTopics = selectedGrade?.topics ?? [];
+  const selectedTopic = useMemo(
+    () => availableTopics.find(t => t.id === selectedTopicId),
+    [availableTopics, selectedTopicId],
+  );
+  const availableConcepts: Concept[] = selectedTopic?.concepts ?? [];
+
+  const handleGradeChange = (gradeId: string) => {
+    setSelectedGradeId(gradeId);
+    setSelectedTopicId('');
+    setSelectedConceptIds([]);
+    setVariants(null);
+    setSavedSessionId(null);
+  };
+
+  const handleTopicChange = (topicId: string) => {
+    setSelectedTopicId(topicId);
+    setSelectedConceptIds([]);
+    setVariants(null);
+    setSavedSessionId(null);
+  };
+
+  const toggleConcept = (id: string) => {
+    setSelectedConceptIds(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id],
+    );
+  };
+
   const handleGenerate = async () => {
     if (!title.trim()) { addNotification('Внесете наслов на испитот.', 'error'); return; }
-    if (!topic.trim()) { addNotification('Внесете тема/единица.', 'error'); return; }
+    if (!selectedGrade)  { addNotification('Изберете одделение.', 'error'); return; }
+    if (!selectedTopic)  { addNotification('Изберете тема.', 'error'); return; }
+
     setGenerating(true);
     setVariants(null);
     try {
+      const conceptsToUse = selectedConceptIds.length > 0
+        ? availableConcepts.filter(c => selectedConceptIds.includes(c.id))
+        : availableConcepts;
+
       const context: GenerationContext = {
-        type: 'SCENARIO',
-        grade: { id: `grade_${gradeLevel}`, level: gradeLevel, title: `${gradeLevel} одделение`, topics: [] },
-        scenario: `${subject} — ${topic}. Испит за ${gradeLevel}. одделение.`,
+        type: 'CONCEPT',
+        grade: selectedGrade,
+        topic: selectedTopic,
+        concepts: conceptsToUse,
       };
+
       const result = await (geminiService as any).generateExamVariants(numQuestions, context, user ?? undefined);
       const mapped: Record<ExamVariantKey, ExamQuestion[]> = {
         A: aiQuestionsToExam(result.A.questions),
@@ -81,7 +132,7 @@ export const ExamBuilderView: React.FC = () => {
   };
 
   const handleSave = async (startNow = false) => {
-    if (!variants) return;
+    if (!variants || !selectedGrade) return;
     if (!firebaseUser) { addNotification('Најавете се за да зачувате.', 'error'); return; }
     setSaving(true);
     try {
@@ -89,7 +140,7 @@ export const ExamBuilderView: React.FC = () => {
       const id = await examService.createExamSession(firebaseUser.uid, {
         title: title.trim(),
         subject,
-        gradeLevel,
+        gradeLevel: selectedGrade.level,
         variants,
         duration: durationMin * 60,
         totalPoints,
@@ -106,6 +157,8 @@ export const ExamBuilderView: React.FC = () => {
     }
     setSaving(false);
   };
+
+  const canGenerate = !!selectedGrade && !!selectedTopic && !!title.trim() && !generating;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -127,51 +180,78 @@ export const ExamBuilderView: React.FC = () => {
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Предмет</label>
+              <label htmlFor="eb-subject" className="block text-sm font-medium text-gray-700 mb-1">Предмет</label>
               <input
+                id="eb-subject"
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
+                title="Предмет"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Одделение</label>
+              <label htmlFor="eb-grade" className="block text-sm font-medium text-gray-700 mb-1">Одделение</label>
               <select
-                value={gradeLevel}
-                onChange={e => setGradeLevel(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm bg-white"
+                id="eb-grade"
+                value={selectedGradeId}
+                onChange={e => handleGradeChange(e.target.value)}
+                disabled={curriculumLoading}
+                title="Одделение"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm bg-white disabled:opacity-60"
               >
-                {Array.from({ length: 13 }, (_, i) => i + 1).map(g => (
-                  <option key={g} value={g}>{g}. одделение</option>
+                {curriculumLoading
+                  ? <option value="">Вчитување...</option>
+                  : <>
+                      {!selectedGradeId && <option value="">— Избери одделение —</option>}
+                      {curriculum?.grades.map(g => (
+                        <option key={g.id} value={g.id}>{g.title}</option>
+                      ))}
+                    </>
+                }
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="eb-topic" className="block text-sm font-medium text-gray-700 mb-1">Тема</label>
+              <select
+                id="eb-topic"
+                value={selectedTopicId}
+                onChange={e => handleTopicChange(e.target.value)}
+                disabled={!selectedGradeId || availableTopics.length === 0}
+                title="Тема"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm bg-white disabled:opacity-60"
+              >
+                <option value="">— Избери тема —</option>
+                {availableTopics.map(t => (
+                  <option key={t.id} value={t.id}>{t.title}</option>
                 ))}
               </select>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Тема / Наставна единица</label>
+              <label htmlFor="eb-num-q" className="block text-sm font-medium text-gray-700 mb-1">Број прашања по варијанта</label>
               <input
-                value={topic}
-                onChange={e => setTopic(e.target.value)}
-                placeholder="пр. Линеарни равенки"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Број прашања по варијанта</label>
-              <input
+                id="eb-num-q"
                 type="number"
                 min={3}
                 max={20}
                 value={numQuestions}
                 onChange={e => setNumQuestions(Number(e.target.value))}
+                title="Број прашања по варијанта"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Траење (минути)</label>
+              <label htmlFor="eb-duration" className="block text-sm font-medium text-gray-700 mb-1">Траење (минути)</label>
               <select
+                id="eb-duration"
                 value={durationMin}
                 onChange={e => setDurationMin(Number(e.target.value))}
+                title="Траење во минути"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm bg-white"
               >
                 {[20, 30, 45, 60, 90, 120].map(m => (
@@ -181,10 +261,50 @@ export const ExamBuilderView: React.FC = () => {
             </div>
           </div>
 
+          {/* Concept chips — shown once topic is selected */}
+          {selectedTopic && availableConcepts.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Специфични поими
+                <span className="ml-1.5 text-gray-400 font-normal">(опционално — ако нема избор, се покрива целата тема)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {availableConcepts.map(c => {
+                  const active = selectedConceptIds.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => toggleConcept(c.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        active
+                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                          : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
+                      }`}
+                    >
+                      {active && <span className="mr-1">✓</span>}{c.title}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Curriculum context summary — shown when topic chosen */}
+          {selectedTopic && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-indigo-700 bg-indigo-50 rounded-xl px-3 py-2">
+              <span className="font-semibold">Контекст:</span>
+              <span>{selectedGrade?.title} · {selectedTopic.title}</span>
+              {selectedConceptIds.length > 0 && (
+                <span className="text-indigo-500">· {selectedConceptIds.length} поими избрани</span>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleGenerate}
-            disabled={generating}
+            disabled={!canGenerate}
             className="mt-5 w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-semibold text-sm transition-colors"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}

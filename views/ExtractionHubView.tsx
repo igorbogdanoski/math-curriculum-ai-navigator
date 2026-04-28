@@ -463,7 +463,10 @@ export const ExtractionHubView: React.FC = () => {
     }
 
     if (!rawText && manualTranscript.trim()) rawText = manualTranscript.trim();
-    if (!rawText) rawText = `Наслов: ${preview.title}\nАвтор: ${preview.authorName ?? 'unknown'}`;
+    if (!rawText) {
+      setError('Транскриптот не е достапен автоматски. Внесете го рачно во полето подолу.');
+      return;
+    }
 
     const chunkResult = await chunkAndExtractTasks({
       text: rawText,
@@ -985,21 +988,31 @@ export const ExtractionHubView: React.FC = () => {
                   </div>
                 )}
 
-                {/* Manual transcript fallback */}
-                {noTranscriptDetected && (
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-amber-300">
-                      Рачен транскрипт (видеото нема субтитли)
-                    </label>
-                    <textarea
-                      value={manualTranscript}
-                      onChange={e => setManualTranscript(e.target.value)}
-                      placeholder="Заалепете го транскриптот тука..."
-                      rows={4}
-                      className="w-full resize-y rounded-xl border border-amber-400/20 bg-amber-500/5 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-amber-400/50"
-                    />
-                  </div>
-                )}
+                {/* Manual transcript — always visible so users can paste before extraction */}
+                <div>
+                  <label className={`mb-1 block text-xs font-semibold ${noTranscriptDetected ? 'text-amber-300' : 'text-white/50'}`}>
+                    Рачен транскрипт
+                    <span className="ml-1 font-normal">
+                      {noTranscriptDetected ? '(видеото нема субтитли — задолжително)' : '(опционално — залепи ако видеото нема субтитли)'}
+                    </span>
+                  </label>
+                  <textarea
+                    value={manualTranscript}
+                    onChange={e => setManualTranscript(e.target.value)}
+                    placeholder="Заалепете го транскриптот тука..."
+                    rows={noTranscriptDetected ? 5 : 3}
+                    className={`w-full resize-y rounded-xl border px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 ${
+                      noTranscriptDetected
+                        ? 'border-amber-400/40 bg-amber-500/10 focus:ring-amber-400/50'
+                        : 'border-white/10 bg-white/5 focus:ring-white/20'
+                    }`}
+                  />
+                  {manualTranscript.trim() && (
+                    <p className="mt-1 text-xs text-emerald-400/80">
+                      ✓ {manualTranscript.trim().length.toLocaleString()} знаци — ќе се користи наместо автоматски транскрипт
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 

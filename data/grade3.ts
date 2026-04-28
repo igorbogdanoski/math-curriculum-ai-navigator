@@ -3,6 +3,7 @@ import { type Grade } from '../types';
 export const grade3Data: Grade = {
   "id": "grade-3",
   "level": 3,
+  weeklyHours: 3,
   "title": "III (трето) Одделение",
   "topics": [
     {

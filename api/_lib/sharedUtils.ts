@@ -24,6 +24,10 @@ export const ALLOWED_MODELS = new Set([
   'gemini-2.0-flash-001',
   'gemini-2.0-flash-lite',
   'gemini-2.0-flash-lite-001',
+  // Gemma family
+  'gemma-3-1b-it', 'gemma-3-4b-it', 'gemma-3-12b-it', 'gemma-3-27b-it',
+  'gemma-3n-e4b-it', 'gemma-3n-e2b-it',
+  'gemma-4-26b-a4b-it', 'gemma-4-31b-it',
   // Gemini 1.5 (legacy)
   'gemini-1.5-pro-002',
   'gemini-1.5-flash-002',
@@ -35,6 +39,7 @@ export const ALLOWED_MODELS = new Set([
   'text-embedding-004',
   'gemini-embedding-001',
   'gemini-embedding-2-preview',
+  'gemini-embedding-2',
   // Imagen 4 family
   'imagen-4.0-generate-001',
   'imagen-4.0-ultra-generate-001',

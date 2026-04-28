@@ -28,13 +28,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { model, contents, config } = validated;
   let modelName = model;
 
-  // Pass confirmed-working models through; map unknown variants to safe defaults.
+  // Pass confirmed-available models through; map unknown variants to safe defaults.
   const CONFIRMED = new Set([
-    'gemini-2.5-pro', 'gemini-2.5-flash',
+    'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite',
     'gemini-3-flash-preview', 'gemini-3.1-flash-lite-preview',
+    'gemini-3-pro-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-pro-preview-customtools',
+    'gemini-flash-latest', 'gemini-pro-latest', 'gemini-flash-lite-latest',
   ]);
   if (!CONFIRMED.has(modelName)) {
-    if (modelName.includes('pro')) modelName = 'gemini-2.5-pro';
+    if (modelName.includes('pro')) modelName = 'gemini-3.1-pro-preview';
     else if (modelName.includes('flash')) modelName = 'gemini-3-flash-preview';
     else modelName = 'gemini-3-flash-preview';
   }
