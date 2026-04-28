@@ -393,14 +393,28 @@ export const MaturaPortalView: React.FC = () => {
                   onClick={() => navigate('/matura-practice')}
                   className="text-xs text-indigo-600 hover:underline font-semibold"
                 >
-                  Вежбај →
+                  Сите теми →
                 </button>
               </div>
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {topTopics.map(t => {
                   const step = readiness.steps.find(s => s.topicArea === t.key);
+                  const drillTopic = () => {
+                    sessionStorage.setItem('matura_recovery_prefill', JSON.stringify({
+                      topicArea: t.key,
+                      dokLevels: [1, 2, 3, 4],
+                      maxQ: 10,
+                      savedAt: new Date().toISOString(),
+                    }));
+                    navigate('/matura-practice');
+                  };
                   return (
-                    <div key={t.key}>
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={drillTopic}
+                      className="w-full text-left group hover:bg-gray-50 rounded-lg px-2 py-1.5 transition-colors"
+                    >
                       <div className="flex items-center justify-between text-xs mb-1">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className={`px-2 py-0.5 rounded-full font-semibold border text-xs shrink-0 ${TOPIC_COLORS[t.key] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
@@ -415,20 +429,44 @@ export const MaturaPortalView: React.FC = () => {
                             <AlertCircle className="w-3 h-3 text-rose-400 shrink-0" title="Неопфатена тема" />
                           )}
                         </div>
-                        <span className={`font-bold tabular-nums ${t.pct >= 70 ? 'text-emerald-600' : t.pct >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
-                          {t.pct.toFixed(0)}%
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`font-bold tabular-nums ${t.pct >= 70 ? 'text-emerald-600' : t.pct >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
+                            {t.pct.toFixed(0)}%
+                          </span>
+                          <span className="text-[10px] font-bold text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            Вежбај 10 пр. →
+                          </span>
+                        </div>
                       </div>
-                      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                      <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${t.pct >= 70 ? 'bg-emerald-400' : t.pct >= 50 ? 'bg-amber-400' : 'bg-rose-400'}`}
                           style={{ width: `${Math.max(3, t.pct)}%` }}
                         />
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
+              {/* Quick drill CTA for weakest topic */}
+              {topTopics[0] && topTopics[0].pct < 70 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sessionStorage.setItem('matura_recovery_prefill', JSON.stringify({
+                      topicArea: topTopics[0].key,
+                      dokLevels: [1, 2, 3, 4],
+                      maxQ: 10,
+                      savedAt: new Date().toISOString(),
+                    }));
+                    navigate('/matura-practice');
+                  }}
+                  className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-bold text-xs hover:bg-rose-100 transition-colors"
+                >
+                  <Dumbbell className="w-3.5 h-3.5" />
+                  Денес: 10 прашања — {TOPIC_LABELS[topTopics[0].key] ?? topTopics[0].key}
+                </button>
+              )}
             </Card>
           )}
 
