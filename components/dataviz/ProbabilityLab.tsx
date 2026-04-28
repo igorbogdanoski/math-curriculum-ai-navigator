@@ -160,7 +160,7 @@ const SpinnerSVG: React.FC<{ sectors: SpinnerSector[]; lastResult?: string }> = 
   let ang = -Math.PI / 2;
 
   return (
-    <svg viewBox="0 0 200 200" width="170" height="170">
+    <svg viewBox="0 0 200 200" className="w-full max-w-[240px]">
       {sectors.map((sec, i) => {
         const sweep = (sec.weight / total) * 2 * Math.PI;
         const sa = ang; ang += sweep; const ea = ang;
@@ -513,8 +513,8 @@ const BinomialDistributionChart: React.FC<BinomialChartProps> = ({ n, p, counts,
   const sigma = Math.sqrt(n * p * (1 - p));
   const maxPMF = Math.max(...pmf);
 
-  const W = 560; const H = 280;
-  const padL = 40; const padR = 20; const padT = 30; const padB = 50;
+  const W = 680; const H = 340;
+  const padL = 48; const padR = 24; const padT = 36; const padB = 56;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
   const barW = Math.min(28, plotW / (n + 2));

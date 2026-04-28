@@ -74,7 +74,7 @@ const COLORS = [
 // ── Bar Chart ─────────────────────────────────────────────────────────────────
 
 function BarChart({ labels, values, color = '#6366f1' }: { labels: string[]; values: number[]; color?: string }) {
-  const W = 340, H = 180, padL = 40, padB = 30, padT = 10, padR = 10;
+  const W = 480, H = 260, padL = 44, padB = 34, padT = 14, padR = 14;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
   const maxV = Math.max(...values, 1);
@@ -82,7 +82,7 @@ function BarChart({ labels, values, color = '#6366f1' }: { labels: string[]; val
   const gap = chartW / Math.max(labels.length, 1);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
       {/* Y axis */}
       <line x1={padL} y1={padT} x2={padL} y2={padT + chartH} stroke="#cbd5e1" strokeWidth={1} />
       {/* X axis */}
@@ -120,7 +120,7 @@ function BarChart({ labels, values, color = '#6366f1' }: { labels: string[]; val
 // ── Line Chart ────────────────────────────────────────────────────────────────
 
 function LineChartSvg({ labels, values, color = '#6366f1' }: { labels: string[]; values: number[]; color?: string }) {
-  const W = 340, H = 180, padL = 40, padB = 30, padT = 10, padR = 10;
+  const W = 480, H = 260, padL = 44, padB = 34, padT = 14, padR = 14;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
   const maxV = Math.max(...values, 1);
@@ -135,7 +135,7 @@ function LineChartSvg({ labels, values, color = '#6366f1' }: { labels: string[];
   const polyline = pts.map(p => `${p.x},${p.y}`).join(' ');
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
       <line x1={padL} y1={padT} x2={padL} y2={padT + chartH} stroke="#cbd5e1" strokeWidth={1} />
       <line x1={padL} y1={padT + chartH} x2={padL + chartW} y2={padT + chartH} stroke="#cbd5e1" strokeWidth={1} />
       {[0, 0.5, 1].map(f => {
@@ -171,7 +171,7 @@ function LineChartSvg({ labels, values, color = '#6366f1' }: { labels: string[];
 // ── Pie Chart ─────────────────────────────────────────────────────────────────
 
 function PieChartSvg({ labels, values }: { labels: string[]; values: number[] }) {
-  const cx = 90, cy = 90, r = 78;
+  const cx = 130, cy = 120, r = 108;
   const total = values.reduce((a, b) => a + b, 0) || 1;
   let startAngle = -Math.PI / 2;
 
@@ -193,12 +193,12 @@ function PieChartSvg({ labels, values }: { labels: string[]; values: number[] })
   });
 
   return (
-    <svg viewBox="0 0 260 200" className="w-full max-w-xs">
+    <svg viewBox="0 0 380 270" className="w-full">
       {slices.map((s, i) => (
         <g key={i}>
           <path d={s.path} fill={s.color} opacity={0.9} />
-          {s.pct >= 7 && (
-            <text x={s.lx} y={s.ly} fontSize={10} fill="white" textAnchor="middle" dominantBaseline="middle" fontWeight="bold">
+          {s.pct >= 5 && (
+            <text x={s.lx} y={s.ly} fontSize={12} fill="white" textAnchor="middle" dominantBaseline="middle" fontWeight="bold">
               {s.pct}%
             </text>
           )}
@@ -206,10 +206,10 @@ function PieChartSvg({ labels, values }: { labels: string[]; values: number[] })
       ))}
       {/* Legend */}
       {slices.map((s, i) => (
-        <g key={i} transform={`translate(190, ${20 + i * 18})`}>
-          <rect x={0} y={0} width={11} height={11} fill={s.color} rx={2} />
-          <text x={15} y={9} fontSize={10} fill="#475569">
-            {s.label?.length > 10 ? s.label.substring(0, 9) + '…' : s.label} ({s.pct}%)
+        <g key={i} transform={`translate(272, ${24 + i * 22})`}>
+          <rect x={0} y={0} width={13} height={13} fill={s.color} rx={2} />
+          <text x={18} y={11} fontSize={11} fill="#475569">
+            {s.label?.length > 12 ? s.label.substring(0, 11) + '…' : s.label} ({s.pct}%)
           </text>
         </g>
       ))}
@@ -220,7 +220,7 @@ function PieChartSvg({ labels, values }: { labels: string[]; values: number[] })
 // ── Dot Plot ──────────────────────────────────────────────────────────────────
 
 function DotPlot({ values }: { values: number[] }) {
-  const W = 340, H = 120, padL = 30, padR = 10, padB = 25, padT = 10;
+  const W = 480, H = 160, padL = 36, padR = 14, padB = 30, padT = 14;
   const chartW = W - padL - padR;
   const sorted = [...values].sort((a, b) => a - b);
   const minV = sorted[0] ?? 0;
@@ -237,7 +237,7 @@ function DotPlot({ values }: { values: number[] }) {
   const axisY = padT + (maxStack + 0.5) * (dotR * 2 + 2);
 
   return (
-    <svg viewBox={`0 0 ${W} ${axisY + padB}`} className="w-full max-w-sm">
+    <svg viewBox={`0 0 ${W} ${axisY + padB}`} className="w-full">
       <line x1={padL} y1={axisY} x2={padL + chartW} y2={axisY} stroke="#cbd5e1" strokeWidth={1.5} />
       {Object.entries(stacks).map(([vStr, count]) => {
         const v = Number(vStr);
