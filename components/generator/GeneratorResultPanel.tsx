@@ -1,5 +1,5 @@
-import React, { Component, type ReactNode, type ErrorInfo } from 'react';
-import { ClipboardList, BookmarkPlus, CheckCircle, Globe, Lock, X } from 'lucide-react';
+import React, { Component, useState, type ReactNode, type ErrorInfo } from 'react';
+import { ClipboardList, BookmarkPlus, CheckCircle, Globe, Lock, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { ICONS } from '../../constants';
 import { logger } from '../../utils/logger';
 import { AILoadingIndicator } from '../common/AILoadingIndicator';
@@ -28,6 +28,68 @@ import type {
   Grade,
 } from '../../types';
 import type { GeneratorState } from '../../hooks/useGeneratorState';
+
+// ── Extraction Inspector — quality badge + collapsible formulas/tasks/theories ─
+interface ExtractionInspectorProps {
+  quality?: { score: number; label: string; formulaCoverage: number; theoryCoverage: number; taskCoverage: number };
+  bundle?:  { formulas: string[]; theories: string[]; tasks: string[] };
+  qualityColors: Record<string, string>;
+  qualityIcon:   Record<string, string>;
+  qualityLabel:  Record<string, string>;
+}
+const ExtractionInspector: React.FC<ExtractionInspectorProps> = ({ quality, bundle, qualityColors, qualityIcon, qualityLabel }) => {
+  const [open, setOpen] = useState(false);
+  const label  = quality?.label ?? 'fair';
+  const colors = qualityColors[label] ?? qualityColors.fair;
+  const hasItems = bundle && (bundle.formulas.length + bundle.theories.length + bundle.tasks.length) > 0;
+  return (
+    <div className={`rounded-2xl border p-3 ${colors}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span>{qualityIcon[label]}</span>
+          <span className="text-xs font-black uppercase tracking-widest">
+            Квалитет на извлекување — {qualityLabel[label]} ({quality?.score ?? '?'}/100)
+          </span>
+        </div>
+        {hasItems && (
+          <button type="button" onClick={() => setOpen(o => !o)}
+            className="flex items-center gap-1 text-xs font-bold opacity-70 hover:opacity-100 transition">
+            {open ? <><ChevronUp className="w-3.5 h-3.5" /> Скриј</> : <><ChevronDown className="w-3.5 h-3.5" /> Прикажи извлечено</>}
+          </button>
+        )}
+      </div>
+      {quality && (
+        <div className="flex gap-3 mt-2 text-[10px] font-semibold opacity-70">
+          <span>Формули: {quality.formulaCoverage}/30</span>
+          <span>Теорија: {quality.theoryCoverage}/25</span>
+          <span>Задачи: {quality.taskCoverage}/25</span>
+        </div>
+      )}
+      {open && hasItems && bundle && (
+        <div className="mt-3 space-y-3 border-t border-current/10 pt-3">
+          {bundle.formulas.length > 0 && (
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-1">📐 Формули ({bundle.formulas.length})</p>
+              <ul className="space-y-0.5">{bundle.formulas.slice(0, 6).map((f, i) => <li key={i} className="text-xs font-mono bg-white/50 rounded px-2 py-0.5">{f}</li>)}</ul>
+            </div>
+          )}
+          {bundle.theories.length > 0 && (
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-1">📖 Теорија ({bundle.theories.length})</p>
+              <ul className="space-y-0.5">{bundle.theories.slice(0, 4).map((t, i) => <li key={i} className="text-xs truncate">{t}</li>)}</ul>
+            </div>
+          )}
+          {bundle.tasks.length > 0 && (
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-1">✏️ Задачи ({bundle.tasks.length})</p>
+              <ul className="space-y-0.5">{bundle.tasks.slice(0, 4).map((t, i) => <li key={i} className="text-xs truncate">{t}</li>)}</ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Local error boundary — catches render errors in result components without crashing the whole panel
 export class ResultErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -220,6 +282,22 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
               </div>
             </div>
           )}
+
+          {state.materialType === 'IMAGE_EXTRACTOR' && (() => {
+            const ideas = generatedMaterial as AIGeneratedIdeas;
+            const quality = ideas.sourceMeta?.extractionQuality;
+            const bundle  = ideas.extractionBundle;
+            if (!quality && !bundle) return null;
+            const QUALITY_COLORS: Record<string, string> = {
+              excellent: 'bg-green-50 border-green-200 text-green-800',
+              good:      'bg-blue-50 border-blue-200 text-blue-800',
+              fair:      'bg-amber-50 border-amber-200 text-amber-800',
+              poor:      'bg-red-50 border-red-200 text-red-800',
+            };
+            const QUALITY_ICON: Record<string, string> = { excellent: '🟢', good: '🔵', fair: '🟡', poor: '🔴' };
+            const QUALITY_LABEL: Record<string, string> = { excellent: 'Одлично', good: 'Добро', fair: 'Задоволително', poor: 'Слабо' };
+            return <ExtractionInspector quality={quality} bundle={bundle} qualityColors={QUALITY_COLORS} qualityIcon={QUALITY_ICON} qualityLabel={QUALITY_LABEL} />;
+          })()}
 
           {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
           {'openingActivity' in generatedMaterial && (

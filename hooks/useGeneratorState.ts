@@ -60,6 +60,8 @@ export interface GeneratorState {
     dokTarget?: DokLevel | 'mixed';
     /** Raw text extracted by IMAGE_EXTRACTOR (vision analysis result) — used for pre-fill pipeline */
     extractedText: string | null;
+    /** IMAGE_EXTRACTOR: type of source image — changes the extraction prompt hint */
+    imageMode: 'textbook' | 'handwriting' | 'exam';
 }
 
 // Actions
@@ -144,6 +146,7 @@ export const getInitialState = (curriculum: any, allNationalStandards: any, seco
         aiStyle: 'standard',
         dokTarget: undefined,
         extractedText: null,
+        imageMode: 'textbook',
     };
 };
 

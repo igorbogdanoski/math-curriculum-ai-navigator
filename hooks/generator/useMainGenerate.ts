@@ -213,8 +213,16 @@ export function useMainGenerate({
               const gradeLevel = finalContext.grade?.level ?? 1;
               const conceptsList = finalContext.concepts?.map(c => c.title).join(', ') || '';
 
+              const IMAGE_MODE_HINTS: Record<string, string> = {
+                textbook:    'Ова е страница од учебник или работен лист — извлечи ги задачите, теоријата и дефинициите точно онака како се напишани.',
+                handwriting: 'Ова е рачно напишан запис или фотографија од табла — обрни внимание на читливоста и интерпретирај нечитливи делови во контекст.',
+                exam:        'Ова е испитен лист или тест — извлечи ги сите задачи нумерирано и ги зачувај бодовите ако се видливи.',
+              };
+              const modehint = IMAGE_MODE_HINTS[state.imageMode ?? 'textbook'];
+
               const extractionContext = [
                 `РЕЖИМ: Извлекување на задачи (не оценување)`,
+                `ТИП НА СЛИКА: ${modehint}`,
                 `Тема: ${topicTitle}`,
                 conceptsList ? `Концепти: ${conceptsList}` : '',
                 `Одделение: ${gradeLevel}`,

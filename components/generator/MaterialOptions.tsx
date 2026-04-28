@@ -921,7 +921,7 @@ const IMAGE_MODES = [
 type ImageMode = typeof IMAGE_MODES[number]['id'];
 
 const ImageExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispatch'>> = ({ state, dispatch }) => {
-    const [imageMode, setImageMode] = useState<ImageMode>('textbook');
+    const imageMode: ImageMode = (state.imageMode as ImageMode) ?? 'textbook';
     const [dragOver, setDragOver] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -960,7 +960,7 @@ const ImageExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'disp
                         <button
                             key={m.id}
                             type="button"
-                            onClick={() => setImageMode(m.id)}
+                            onClick={() => dispatch({ type: 'SET_FIELD', payload: { field: 'imageMode', value: m.id } })}
                             title={m.hint}
                             className={`flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-3 text-xs font-semibold transition-all ${
                                 imageMode === m.id
@@ -1037,8 +1037,6 @@ const ImageExtractorOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'disp
                 }
             </div>
 
-            {/* Hidden field to pass imageMode into state via customInstruction supplement */}
-            <input type="hidden" value={imageMode} readOnly />
         </div>
     );
 };
