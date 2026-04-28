@@ -240,10 +240,36 @@ export default defineConfig(({ mode }) => {
             clientsClaim: true,
             maximumFileSizeToCacheInBytes: 5000000,
             globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+            // Exclude large on-demand data chunks from precache — they are loaded
+            // lazily and cached at runtime via NetworkFirst. Precaching them adds
+            // ~3MB to the SW install download (bad for rural/3G connections).
+            globIgnores: [
+              'assets/data-matura-*.js',
+              'assets/data-secondary-curriculum-*.js',
+              'assets/data-curriculum-*.js',
+              'assets/vendor-mammoth-*.js',
+              'assets/vendor-pdf-*.js',
+              'assets/vendor-mathlive-*.js',
+            ],
             // Show offline page when navigation request fails
             navigateFallback: '/offline.html',
             navigateFallbackDenylist: [/^\/api\//, /^\/admin\//],
             runtimeCaching: [
+              {
+                // Large on-demand chunks (matura data, mammoth, mathlive, pdf)
+                // are excluded from precache. Cache them at runtime on first use
+                // so subsequent offline visits still work.
+                urlPattern: /\/assets\/(data-matura|data-curriculum|data-secondary-curriculum|vendor-mammoth|vendor-pdf|vendor-mathlive)-[^/]+\.js$/,
+                handler: 'NetworkFirst',
+                options: {
+                  cacheName: 'large-chunks-cache',
+                  expiration: {
+                    maxEntries: 20,
+                    maxAgeSeconds: 60 * 60 * 24 * 30,
+                  },
+                  cacheableResponse: { statuses: [200] },
+                },
+              },
               {
                 urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
                 handler: 'CacheFirst',
@@ -350,6 +376,7 @@ export default defineConfig(({ mode }) => {
               // circular runtime references (TDZ in production).
               if (id.includes('@react-pdf')) return 'vendor-pdf';     // has its own React copy
               if (id.includes('firebase')) return 'vendor-firebase';
+              if (id.includes('mammoth')) return 'vendor-mammoth';   // 884KB, only used in docx-upload views
               if (id.includes('pptxgenjs')) return 'vendor-pptx';
               if (id.includes('mathjs')) return 'vendor-mathjs';
               if (id.includes('mathlive')) return 'vendor-mathlive';
