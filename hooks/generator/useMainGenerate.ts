@@ -134,6 +134,7 @@ export function useMainGenerate({
               setIsStreaming(false);
             }
             if (cancelRef.current) break;
+            if (!fullText.trim()) throw new Error('AI не врати содржина. Обидете се повторно.');
             // Parse accumulated JSON response — strip markdown fences and extract first {...} block
             let cleaned = fullText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
             const jsonStart = cleaned.indexOf('{');
@@ -141,7 +142,12 @@ export function useMainGenerate({
             if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
               cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
             }
-            const parsed: unknown = JSON.parse(cleaned);
+            let parsed: unknown;
+            try {
+              parsed = JSON.parse(cleaned);
+            } catch {
+              throw new Error('AI генерира невалидна структура. Обидете се повторно.');
+            }
             const validated = AIGeneratedIdeasSchema.safeParse(parsed);
             result = (validated.success ? validated.data : parsed) as AIGeneratedIdeas;
             (result as AIGeneratedIdeas).generationContext = finalContext;

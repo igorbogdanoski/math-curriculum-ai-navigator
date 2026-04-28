@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "ai:verify-models": "node scripts/verify-models.mjs",
+    "ai:list-models": "node scripts/list-gemini-models.mjs",
     "perf:budget": "node scripts/enforce-perf-budget.mjs",
     "backup:readiness-check": "node scripts/check-backup-readiness.mjs",
     "obs:incident-summary": "node scripts/sentry-incident-summary.mjs",
