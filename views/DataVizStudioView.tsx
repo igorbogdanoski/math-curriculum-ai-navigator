@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
-  Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp, Triangle
+  Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp, Triangle,
+  FlaskConical, FunctionSquare, Layers
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { DataTable, DEFAULT_TABLE } from '../components/dataviz/DataTable';
@@ -11,6 +12,9 @@ import type { ChartType, ChartConfig } from '../components/dataviz/ChartPreview'
 import { MathPaperGenerator } from '../components/dataviz/MathPaperGenerator';
 import { AIStatsAssistant } from '../components/dataviz/AIStatsAssistant';
 import { ProbabilityLab } from '../components/dataviz/ProbabilityLab';
+import { SecondaryStatsLab } from '../components/dataviz/SecondaryStatsLab';
+import { CalculusLab } from '../components/dataviz/CalculusLab';
+import { LinearAlgebraLab } from '../components/dataviz/LinearAlgebraLab';
 import { FunctionGrapher } from '../components/dataviz/FunctionGrapher';
 import { GeoGebraViewer } from '../components/dataviz/GeoGebraViewer';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
@@ -50,7 +54,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo';
+type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg';
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 export const DataVizStudioView: React.FC = () => {
@@ -139,12 +143,15 @@ export const DataVizStudioView: React.FC = () => {
 
   // ── Tabs ───────────────────────────────────────────────────────────────────
   const TABS = [
-    { id: 'chart' as StudioTab, label: 'Градител на графици',  icon: BarChart2,  color: 'indigo'  },
-    { id: 'fn'    as StudioTab, label: 'Граф функции',         icon: TrendingUp, color: 'cyan'    },
-    { id: 'geo'   as StudioTab, label: 'GeoGebra',             icon: Triangle,   color: 'teal'    },
-    { id: 'paper' as StudioTab, label: 'Математичка хартија',  icon: Grid3X3,    color: 'emerald' },
-    { id: 'ai'    as StudioTab, label: 'AI Асистент',          icon: Sparkles,   color: 'violet'  },
-    { id: 'prob'  as StudioTab, label: 'Лаб. Веројатност',     icon: Sigma,      color: 'rose'    },
+    { id: 'chart'  as StudioTab, label: 'Градител на графици',  icon: BarChart2,      color: 'indigo'  },
+    { id: 'fn'     as StudioTab, label: 'Граф функции',         icon: TrendingUp,     color: 'cyan'    },
+    { id: 'geo'    as StudioTab, label: 'GeoGebra',             icon: Triangle,       color: 'teal'    },
+    { id: 'paper'  as StudioTab, label: 'Математичка хартија',  icon: Grid3X3,        color: 'emerald' },
+    { id: 'ai'     as StudioTab, label: 'AI Асистент',          icon: Sparkles,       color: 'violet'  },
+    { id: 'prob'   as StudioTab, label: 'Лаб. Веројатност',     icon: Sigma,          color: 'rose'    },
+    { id: 'stats'  as StudioTab, label: 'Напредна Статистика',  icon: FlaskConical,   color: 'fuchsia' },
+    { id: 'calc'   as StudioTab, label: 'Анализа (Калкулус)',   icon: FunctionSquare, color: 'amber'   },
+    { id: 'linalg' as StudioTab, label: 'Линеарна Алгебра',     icon: Layers,         color: 'sky'     },
   ];
 
   return (
@@ -158,12 +165,12 @@ export const DataVizStudioView: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-extrabold text-gray-900">DataViz Studio</h1>
-              <p className="text-xs text-gray-400">Статистика · Графици · Математичка хартија · AI</p>
+              <p className="text-xs text-gray-400">Графици · Калкулус · Линеарна Алгебра · Статистика · Веројатност · AI</p>
             </div>
           </div>
 
           {/* Tab navigation */}
-          <div className="flex gap-1 mt-4 bg-gray-100 p-1 rounded-xl w-fit">
+          <div className="flex gap-1 mt-4 bg-gray-100 p-1 rounded-xl overflow-x-auto max-w-full">
             {TABS.map(tab => {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
@@ -493,6 +500,57 @@ export const DataVizStudioView: React.FC = () => {
               }}
               onGoToChart={() => setActiveTab('chart')}
             />
+          </div>
+        )}
+
+        {/* ══ TAB: SECONDARY STATS LAB ════════════════════════════════════ */}
+        {activeTab === 'stats' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <FlaskConical className="w-5 h-5 text-fuchsia-500" /> Напредна Статистика
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Нормална дистрибуција · Регресија · Баесова теорема · Монте Карло · Хи-квадрат тест
+              </p>
+            </div>
+            <SilentErrorBoundary>
+              <SecondaryStatsLab />
+            </SilentErrorBoundary>
+          </div>
+        )}
+
+        {/* ══ TAB: CALCULUS LAB ════════════════════════════════════════════ */}
+        {activeTab === 'calc' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <FunctionSquare className="w-5 h-5 text-amber-500" /> Анализа — Калкулус
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Изводи (тангента) · Риманови суми (интеграли) · Граници на функции
+              </p>
+            </div>
+            <SilentErrorBoundary>
+              <CalculusLab />
+            </SilentErrorBoundary>
+          </div>
+        )}
+
+        {/* ══ TAB: LINEAR ALGEBRA LAB ══════════════════════════════════════ */}
+        {activeTab === 'linalg' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Layers className="w-5 h-5 text-sky-500" /> Линеарна Алгебра
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Матрични операции · 2D вектори и скаларен производ · Линеарни трансформации
+              </p>
+            </div>
+            <SilentErrorBoundary>
+              <LinearAlgebraLab />
+            </SilentErrorBoundary>
           </div>
         )}
       </div>
