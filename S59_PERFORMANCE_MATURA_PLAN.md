@@ -75,8 +75,11 @@ S54–S58 целосно завршени. Build чист, 0 TS грешки, 11
 | Task | Статус | Commit |
 |------|--------|--------|
 | P1 — Bundle split matura | ✅ ЗАВРШЕНО | vite.config globIgnores |
-| P2 — PWA precache | ✅ ЗАВРШЕНО | -4.8MB precache |
+| P2 — PWA precache | ✅ ЗАВРШЕНО | -4.8MB precache (-35%) |
 | P3 — Matura Practice UX | ✅ ЗАВРШЕНО | MaturaPortalView weak-topic buttons |
-| P4 — Generator audit | ⏳ Планирано | — |
-| P5 — IMAGE_EXTRACTOR | ⏳ Планирано | — |
-| P9 — Gemini Embedding 2 | ✅ ЗАВРШЕНО | task types + 768 dims |
+| P4 — Generator audit | ✅ ЗАВРШЕНО | `cc2c3fb` — 5 slide types + PPTX |
+| P5 — IMAGE_EXTRACTOR | ✅ ЗАВРШЕНО | `0b24b4b` — imageMode + ExtractionInspector |
+| P6 — Matura AI-грејдирање | ⏳ Следно | — |
+| P7 — Teacher onboarding wizard | ⏳ Планирано | — |
+| P8 — Sentry DSN | ⏳ Планирано | треба DSN клуч |
+| P9 — Gemini Embedding 2 | ✅ ЗАВРШЕНО | `c88561e` + re-indexed 169 concepts |
