@@ -45,8 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let modelName = model;
   
   // Upgrade logic: route to best available models on paid tier
-  if (modelName.includes('3.1') || modelName.includes('3-pro') || modelName.includes('ultra')) modelName = 'gemini-3.1-pro-preview';
-  else if (modelName.includes('pro')) modelName = 'gemini-2.5-pro';
+  if (modelName.includes('pro')) modelName = 'gemini-2.5-pro';
   else if (modelName.includes('flash')) modelName = 'gemini-2.5-flash';
   else modelName = 'gemini-2.5-flash';
 

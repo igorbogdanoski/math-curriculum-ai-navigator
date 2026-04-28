@@ -53,7 +53,7 @@ export async function generateAndParseJSON<T>(
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
         throw new OfflineError('AI generation requires network connection');
     }
-    const activeModel = useThinking ? 'gemini-3.1-pro' : model;
+    const activeModel = useThinking ? 'gemini-2.5-pro' : model;
     const _controller = new AbortController();
     const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
     try {
