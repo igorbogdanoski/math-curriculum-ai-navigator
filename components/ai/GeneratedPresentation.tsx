@@ -220,6 +220,132 @@ const FormulaCenteredSlide: React.FC<{ content: string[]; theme: 'modern' | 'cla
   );
 };
 
+// ─── Proof slide UI ───────────────────────────────────────────────────────────
+const ProofSlide: React.FC<{ steps: string[]; theme: 'modern' | 'classic' | 'dark' | 'creative' }> = ({ steps, theme }) => {
+  const [revealed, setRevealed] = useState(0);
+  const accentBg  = theme === 'dark' ? 'bg-indigo-600' : theme === 'creative' ? 'bg-purple-600' : 'bg-brand-primary';
+  const revealed_ = theme === 'dark' ? 'border-indigo-400 bg-indigo-900/30' : 'border-brand-primary/40 bg-blue-50/80';
+  const hidden_   = 'border-transparent bg-black/5 opacity-40';
+  return (
+    <div className="flex flex-col gap-2 w-full">
+      {steps.map((step, idx) => (
+        <div key={idx} className={`flex items-start gap-3 rounded-xl px-4 py-2.5 border transition-all duration-300 ${idx < revealed ? revealed_ : hidden_}`}>
+          <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white ${idx < revealed ? accentBg : 'bg-gray-300'}`}>
+            {idx + 1}
+          </div>
+          <span className={`text-base leading-snug ${theme === 'dark' ? 'text-indigo-100' : 'text-gray-700'}`}>
+            <MathRenderer text={step} />
+          </span>
+        </div>
+      ))}
+      {revealed < steps.length ? (
+        <button type="button" onClick={() => setRevealed(r => r + 1)}
+          className={`mt-2 self-start text-sm font-bold px-4 py-2 rounded-xl transition ${
+            theme === 'dark' ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary'
+          }`}>
+          Следен чекор →
+        </button>
+      ) : (
+        <div className={`mt-3 self-end flex items-center gap-2 text-sm font-black uppercase tracking-widest ${
+          theme === 'dark' ? 'text-indigo-300' : 'text-brand-primary'
+        }`}>
+          <span>Q.E.D.</span><span className="text-xl">□</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Comparison slide UI ──────────────────────────────────────────────────────
+const ComparisonSlide: React.FC<{
+  left: string[]; right: string[];
+  theme: 'modern' | 'classic' | 'dark' | 'creative';
+}> = ({ left, right, theme }) => {
+  const colBorder = theme === 'dark' ? 'border-indigo-400/30 bg-indigo-900/20' : theme === 'creative' ? 'border-amber-300/50 bg-amber-50/40' : 'border-gray-200 bg-gray-50/60';
+  const dotColor  = theme === 'dark' ? 'bg-indigo-400' : theme === 'creative' ? 'bg-amber-500' : 'bg-brand-primary';
+  const textColor = theme === 'dark' ? 'text-indigo-100' : 'text-gray-700';
+  const vsColor   = theme === 'dark' ? 'text-indigo-400' : 'text-gray-300';
+  const renderCol = (items: string[]) => (
+    <ul className="space-y-3">
+      {items.map((item, i) => (
+        <li key={i} className={`flex items-start gap-3 text-base ${textColor}`}>
+          <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${dotColor}`} />
+          <MathRenderer text={item} />
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <div className="flex gap-3 w-full h-full">
+      <div className={`flex-1 rounded-2xl border p-5 ${colBorder}`}>{renderCol(left)}</div>
+      <div className={`flex items-center justify-center text-lg font-black ${vsColor}`}>VS</div>
+      <div className={`flex-1 rounded-2xl border p-5 ${colBorder}`}>{renderCol(right)}</div>
+    </div>
+  );
+};
+
+// ─── Example / Task slide UI ──────────────────────────────────────────────────
+const ExampleSlide: React.FC<{
+  content: string[]; solution?: string[];
+  theme: 'modern' | 'classic' | 'dark' | 'creative';
+  isTask?: boolean;
+}> = ({ content, solution, theme, isTask = false }) => {
+  const [showSolution, setShowSolution] = useState(false);
+  const border = theme === 'dark' ? 'border-indigo-400/50 bg-indigo-900/20' : theme === 'creative' ? 'border-amber-300/50 bg-amber-50/40' : 'border-brand-primary/30 bg-blue-50/50';
+  const label  = theme === 'dark' ? 'text-indigo-300' : theme === 'creative' ? 'text-amber-700' : 'text-brand-primary';
+  const btn    = theme === 'dark' ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-brand-primary hover:bg-brand-primary/80';
+  return (
+    <div className="flex flex-col gap-4 w-full">
+      <div className={`rounded-2xl border-2 p-5 ${border}`}>
+        <p className={`text-xs font-black uppercase tracking-widest mb-2 ${label}`}>{isTask ? '📝 Задача' : '📐 Пример'}</p>
+        <ul className="space-y-2">
+          {content.map((line, i) => (
+            <li key={i} className={`text-base ${theme === 'dark' ? 'text-indigo-100' : 'text-gray-800'}`}>
+              <MathRenderer text={line} />
+            </li>
+          ))}
+        </ul>
+      </div>
+      {solution && solution.length > 0 && (
+        !showSolution ? (
+          <button type="button" onClick={() => setShowSolution(true)}
+            className={`self-start flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-xl transition ${btn}`}>
+            Прикажи решение ▾
+          </button>
+        ) : (
+          <div className="rounded-2xl border border-green-200 bg-green-50/60 p-5">
+            <p className="text-xs font-black text-green-700 uppercase tracking-widest mb-2">✅ Решение</p>
+            <ol className="space-y-2">
+              {solution.map((step, i) => (
+                <li key={i} className="flex items-start gap-2 text-base text-gray-800">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-600 text-white text-xs flex items-center justify-center font-bold">{i + 1}</span>
+                  <MathRenderer text={step} />
+                </li>
+              ))}
+            </ol>
+          </div>
+        )
+      )}
+    </div>
+  );
+};
+
+// ─── Summary slide UI ─────────────────────────────────────────────────────────
+const SummarySlide: React.FC<{ content: string[]; theme: 'modern' | 'classic' | 'dark' | 'creative' }> = ({ content, theme }) => {
+  const starColor = theme === 'dark' ? 'text-indigo-300' : theme === 'creative' ? 'text-amber-500' : 'text-brand-primary';
+  const textColor = theme === 'dark' ? 'text-indigo-100' : 'text-gray-800';
+  return (
+    <ul className="space-y-4">
+      {content.map((point, idx) => (
+        <li key={idx} className={`flex items-start gap-3 text-xl ${textColor}`}>
+          <span className={`text-lg flex-shrink-0 mt-0.5 ${starColor}`}>★</span>
+          <MathRenderer text={point} />
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 interface GeneratedPresentationProps {
   data: AIGeneratedPresentation;
   conceptId?: string;
@@ -486,8 +612,12 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             if (HAS_MATH.test(s)) { const k = `${s}::${colors.body}`; if (!mathJobs.has(k)) mathJobs.set(k, { text: s, color: colors.body }); }
           }
         }
-        if (slide.type !== 'title' && slide.type !== 'formula-centered' && slide.type !== 'step-by-step') {
-          for (const b of slide.content) {
+        if (slide.type === 'proof') {
+          for (const s of slide.content) {
+            if (HAS_MATH.test(s)) { const k = `${s}::${colors.body}`; if (!mathJobs.has(k)) mathJobs.set(k, { text: s, color: colors.body }); }
+          }
+        } else if (slide.type !== 'title' && slide.type !== 'formula-centered' && slide.type !== 'step-by-step') {
+          for (const b of [...slide.content, ...(slide.rightContent ?? [])]) {
             if (HAS_MATH.test(b)) { const k = `• ${b}::${colors.body}`; if (!mathJobs.has(k)) mathJobs.set(k, { text: `• ${b}`, color: colors.body }); }
           }
         }
@@ -620,6 +750,52 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
           const progressW = (SLIDE_W - 0.8) * Math.min(slide.content.length, 8) / 8;
           pptSlide.addShape('rect', { x: 0.4, y: 5.1, w: SLIDE_W - 0.8, h: 0.06, fill: { color: colors.line } });
           pptSlide.addShape('rect', { x: 0.4, y: 5.1, w: progressW, h: 0.06, fill: { color: colors.title } });
+        } else if (slide.type === 'proof') {
+          pptSlide.addText(slide.title, { x: 0.4, y: 0.25, w: SLIDE_W - 0.8, h: 0.75, fontSize: 28, bold: true, color: colors.title, fontFace: 'Arial' });
+          pptSlide.addShape('line', { x: 0.4, y: 1.05, w: SLIDE_W - 0.8, h: 0, line: { color: colors.line, width: 1.5 } });
+          const stepColors = ['0D47A1', '1565C0', '1976D2', '1E88E5', '2196F3', '42A5F5'];
+          let proofY = 1.15;
+          const proofH = 0.52;
+          for (let si = 0; si < slide.content.length; si++) {
+            const stepText = slide.content[si];
+            pptSlide.addShape('ellipse', { x: 0.4, y: proofY + 0.07, w: 0.35, h: 0.35, fill: { color: stepColors[si % stepColors.length] } });
+            pptSlide.addText(`${si + 1}`, { x: 0.4, y: proofY + 0.07, w: 0.35, h: 0.35, fontSize: 12, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle' });
+            const entry = HAS_MATH.test(stepText) ? mathImgMap.get(`${stepText}::${colors.body}`) : undefined;
+            let added = false;
+            if (entry) {
+              try {
+                const ratio = await resolveImgRatio(entry);
+                const imgW = Math.min(SLIDE_W - 1.2, 7.5);
+                const imgH = Math.min(imgW * ratio, proofH + 0.1);
+                pptSlide.addImage({ data: entry.data, x: 0.9, y: proofY, w: imgW, h: imgH });
+                proofY += imgH + 0.1; added = true;
+              } catch { /* fall through */ }
+            }
+            if (!added) { pptSlide.addText(stepText, { x: 0.9, y: proofY, w: SLIDE_W - 1.3, h: proofH, fontSize: 15, color: colors.body, fontFace: 'Arial' }); proofY += proofH; }
+            if (proofY > 4.8) break;
+          }
+          pptSlide.addText('Q.E.D.  □', { x: SLIDE_W - 2.0, y: 5.0, w: 1.6, h: 0.35, fontSize: 14, bold: true, color: colors.title, align: 'right', fontFace: 'Arial' });
+        } else if (slide.type === 'comparison') {
+          pptSlide.addText(slide.title, { x: 0.4, y: 0.25, w: SLIDE_W - 0.8, h: 0.75, fontSize: 28, bold: true, color: colors.title, fontFace: 'Arial' });
+          pptSlide.addShape('line', { x: 0.4, y: 1.05, w: SLIDE_W - 0.8, h: 0, line: { color: colors.line, width: 1.5 } });
+          const colW = (SLIDE_W - 1.0) / 2 - 0.1;
+          const leftX = 0.4, rightX = leftX + colW + 0.4;
+          // Column headers
+          pptSlide.addShape('rect', { x: leftX, y: 1.1, w: colW, h: 0.38, fill: { color: colors.line } });
+          pptSlide.addText(slide.content[0] ?? '', { x: leftX, y: 1.1, w: colW, h: 0.38, fontSize: 13, bold: true, color: colors.title, align: 'center', valign: 'middle' });
+          pptSlide.addShape('rect', { x: rightX, y: 1.1, w: colW, h: 0.38, fill: { color: colors.line } });
+          pptSlide.addText((slide.rightContent ?? [])[0] ?? '', { x: rightX, y: 1.1, w: colW, h: 0.38, fontSize: 13, bold: true, color: colors.title, align: 'center', valign: 'middle' });
+          // VS divider
+          pptSlide.addText('VS', { x: leftX + colW + 0.05, y: 2.2, w: 0.3, h: 0.4, fontSize: 12, bold: true, color: colors.line, align: 'center' });
+          const leftItems  = slide.content.slice(1);
+          const rightItems = (slide.rightContent ?? []).slice(1);
+          const maxRows = Math.max(leftItems.length, rightItems.length);
+          let rowY = 1.55;
+          for (let ri = 0; ri < maxRows && rowY < 5.0; ri++) {
+            if (leftItems[ri])  pptSlide.addText(`• ${leftItems[ri]}`,  { x: leftX,  y: rowY, w: colW, h: 0.42, fontSize: 14, color: colors.body, fontFace: 'Arial' });
+            if (rightItems[ri]) pptSlide.addText(`• ${rightItems[ri]}`, { x: rightX, y: rowY, w: colW, h: 0.42, fontSize: 14, color: colors.body, fontFace: 'Arial' });
+            rowY += 0.44;
+          }
         } else {
           // Title bar with bottom line
           pptSlide.addText(slide.title, {
@@ -726,6 +902,16 @@ export const GeneratedPresentation: React.FC<GeneratedPresentationProps> = ({ da
             <StepByStepSlide steps={slide.content} theme={theme} key={slideIdx} />
           ) : slide.type === 'formula-centered' ? (
             <FormulaCenteredSlide content={slide.content} theme={theme} />
+          ) : slide.type === 'proof' ? (
+            <ProofSlide steps={slide.content} theme={theme} key={slideIdx} />
+          ) : slide.type === 'comparison' ? (
+            <ComparisonSlide left={slide.content} right={slide.rightContent ?? []} theme={theme} />
+          ) : slide.type === 'example' ? (
+            <ExampleSlide content={slide.content} solution={slide.solution} theme={theme} />
+          ) : slide.type === 'task' ? (
+            <ExampleSlide content={slide.content} solution={slide.solution} theme={theme} isTask />
+          ) : slide.type === 'summary' ? (
+            <SummarySlide content={slide.content} theme={theme} />
           ) : (
             <ul className="space-y-6">
               {slide.content.map((point, idx) => (

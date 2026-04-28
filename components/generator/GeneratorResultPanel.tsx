@@ -297,9 +297,9 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
             </div>
           )}
           {'criteria' in generatedMaterial && <GeneratedRubric material={generatedMaterial} />}
-          {'slides' in generatedMaterial && <GeneratedPresentation data={generatedMaterial as import('../../types').AIGeneratedPresentation} conceptId={state.selectedConcepts[0]} />}
+          {state.materialType === 'PRESENTATION' && 'slides' in generatedMaterial && <GeneratedPresentation data={generatedMaterial as import('../../types').AIGeneratedPresentation} conceptId={state.selectedConcepts[0]} />}
           {'paths' in generatedMaterial && <GeneratedLearningPaths material={generatedMaterial} />}
-          {'steps' in generatedMaterial && <WorkedExample example={generatedMaterial as AIGeneratedWorkedExample} />}
+          {state.materialType === 'WORKED_EXAMPLE' && 'steps' in generatedMaterial && <WorkedExample example={generatedMaterial as AIGeneratedWorkedExample} />}
 
           <AIFeedbackBar
             materialKey={('title' in generatedMaterial ? (generatedMaterial as { title?: string }).title ?? '' : '') + String(state.materialType)}
