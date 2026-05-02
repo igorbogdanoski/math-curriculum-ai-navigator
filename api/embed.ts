@@ -66,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (taskType) embedRequest.taskType = taskType;
       if (outputDimensionality) embedRequest.outputDimensionality = outputDimensionality;
 
-      const result = await modelInstance.embedContent(embedRequest as Parameters<typeof modelInstance.embedContent>[0]);
+      const result = await modelInstance.embedContent(embedRequest as unknown as Parameters<typeof modelInstance.embedContent>[0]);
       const embedding = result.embedding;
 
       if (responseShape === 'embeddings') {
