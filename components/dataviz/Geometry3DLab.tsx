@@ -665,10 +665,68 @@ const NETS: NetDef[] = [
   },
 ];
 
+const NET_VEF: Record<string, { V: number; E: number; F: number }> = {
+  cube:      { V: 8, E: 12, F: 6 },
+  tetra:     { V: 4, E: 6,  F: 4 },
+  sqpyramid: { V: 5, E: 8,  F: 5 },
+  triprism:  { V: 6, E: 9,  F: 5 },
+  octa:      { V: 6, E: 12, F: 8 },
+};
+
 function NetsExplorer() {
   const [selId, setSelId] = useState('cube');
   const [showLabels, setShowLabels] = useState(true);
   const net = NETS.find(n => n.id === selId) ?? NETS[0];
+
+  function printNet() {
+    const vef = NET_VEF[net.id] ?? { V: 0, E: 0, F: 0 };
+    const svgFaces = net.faces.map(face =>
+      `<polygon points="${face.points}" fill="${face.color}" fill-opacity="0.8" stroke="white" stroke-width="2.5"/>` +
+      `<text x="${face.textX}" y="${face.textY}" text-anchor="middle" dominant-baseline="middle" font-size="10" font-weight="bold" fill="white">${face.label}</text>`
+    ).join('');
+    const euler = vef.V - vef.E + vef.F;
+    const html =
+      `<!DOCTYPE html><html lang="mk"><head><meta charset="UTF-8"><title>${net.name}</title><style>` +
+      `@page{size:A4 portrait;margin:15mm}*{box-sizing:border-box}` +
+      `body{font-family:Arial,Helvetica,sans-serif;color:#1a1a2e;margin:0}` +
+      `h1{font-size:20px;text-align:center;margin:0 0 4px;color:#1e3a8a}` +
+      `.sub{text-align:center;font-size:12px;color:#64748b;margin-bottom:14px}` +
+      `svg{display:block;margin:0 auto;width:100%;max-width:460px}` +
+      `.instr{margin-top:18px;border:2px dashed #3b82f6;border-radius:8px;padding:12px}` +
+      `.instr h2{font-size:14px;color:#1d4ed8;margin:0 0 6px}` +
+      `.instr ol{margin:0;padding-left:18px;font-size:12px;line-height:1.8}` +
+      `.euler{margin-top:14px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:10px;text-align:center}` +
+      `.euler h3{font-size:13px;color:#92400e;margin:0 0 6px}` +
+      `.vef{display:flex;justify-content:center;align-items:center;gap:16px;margin-top:6px}` +
+      `.vi{text-align:center}.vn{font-size:24px;font-weight:bold;color:#1e3a8a}.vl{font-size:10px;color:#64748b}` +
+      `.op{font-size:20px;color:#6b7280}.res{font-size:13px;margin-top:8px;color:#92400e}` +
+      `@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}` +
+      `</style></head><body>` +
+      `<h1>${net.name}</h1>` +
+      `<div class="sub">✂️ Исечи по надворешниот контур &nbsp;·&nbsp; 📐 Свиткај по внатрешните линии &nbsp;·&nbsp; 🖊️ Залепи</div>` +
+      `<svg viewBox="${net.viewBox}">${svgFaces}</svg>` +
+      `<div class="instr"><h2>📋 Упатство за склопување:</h2><ol>` +
+      `<li>Испечати ја оваа страница (A4 · без скалирање — <strong>„Actual size" / 100%</strong>)</li>` +
+      `<li>Исечи ја мрежата по <strong>надворешниот контур</strong></li>` +
+      `<li>Свиткај нагоре по секоја <strong>внатрешна линија</strong> помеѓу лицата</li>` +
+      `<li>Залепи ги лицата со лепак или двострана лента</li>` +
+      `<li>Провери ја добиената форма — знаете ли ги сите нејзини особини?</li>` +
+      `</ol></div>` +
+      `<div class="euler"><h3>Ојлерова формула: <em>V &minus; E + F = 2</em></h3>` +
+      `<div class="vef">` +
+      `<div class="vi"><div class="vn">${vef.V}</div><div class="vl">Темиња (V)</div></div>` +
+      `<div class="op">&minus;</div>` +
+      `<div class="vi"><div class="vn">${vef.E}</div><div class="vl">Рабови (E)</div></div>` +
+      `<div class="op">+</div>` +
+      `<div class="vi"><div class="vn">${vef.F}</div><div class="vl">Лица (F)</div></div>` +
+      `<div class="op">=</div>` +
+      `<div class="vi"><div class="vn">${euler}</div><div class="vl">✓</div></div>` +
+      `</div><div class="res">${vef.V} &minus; ${vef.E} + ${vef.F} = ${euler} ✓</div></div>` +
+      `<script>window.onload=function(){setTimeout(function(){window.print()},300)}<` + `/script>` +
+      `</body></html>`;
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(html); w.document.close(); }
+  }
 
   return (
     <div className="space-y-4">
@@ -691,6 +749,10 @@ function NetsExplorer() {
         <button type="button" onClick={() => setShowLabels(l => !l)}
           className={`ml-auto px-3 py-1.5 text-xs font-semibold rounded-lg border-2 transition ${showLabels ? 'border-gray-400 bg-gray-100 text-gray-700' : 'border-gray-200 text-gray-400'}`}>
           {showLabels ? 'Скриј ознаки' : 'Прикажи ознаки'}
+        </button>
+        <button type="button" onClick={printNet}
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg border-2 border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100 transition">
+          🖨️ Печати мрежа
         </button>
       </div>
 
