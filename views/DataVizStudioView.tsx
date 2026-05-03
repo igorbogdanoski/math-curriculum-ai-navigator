@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
   Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp, Triangle,
-  FlaskConical, FunctionSquare, Layers
+  FlaskConical, FunctionSquare, Layers, Box, Shapes
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { DataTable, DEFAULT_TABLE } from '../components/dataviz/DataTable';
@@ -15,6 +15,8 @@ import { ProbabilityLab } from '../components/dataviz/ProbabilityLab';
 import { SecondaryStatsLab } from '../components/dataviz/SecondaryStatsLab';
 import { CalculusLab } from '../components/dataviz/CalculusLab';
 import { LinearAlgebraLab } from '../components/dataviz/LinearAlgebraLab';
+import { Geometry3DLab } from '../components/dataviz/Geometry3DLab';
+import { Geometry2DLab } from '../components/dataviz/Geometry2DLab';
 import { FunctionGrapher } from '../components/dataviz/FunctionGrapher';
 import { GeoGebraViewer } from '../components/dataviz/GeoGebraViewer';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
@@ -54,7 +56,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg';
+type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d';
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 export const DataVizStudioView: React.FC = () => {
@@ -152,6 +154,8 @@ export const DataVizStudioView: React.FC = () => {
     { id: 'stats'  as StudioTab, label: 'Напредна Статистика',  icon: FlaskConical,   color: 'fuchsia' },
     { id: 'calc'   as StudioTab, label: 'Анализа (Калкулус)',   icon: FunctionSquare, color: 'amber'   },
     { id: 'linalg' as StudioTab, label: 'Линеарна Алгебра',     icon: Layers,         color: 'sky'     },
+    { id: 'geo2d'  as StudioTab, label: '2D Геометрија',          icon: Shapes,         color: 'pink'    },
+    { id: 'solid'  as StudioTab, label: '3D Геометрија',          icon: Box,            color: 'orange'  },
   ];
 
   return (
@@ -533,6 +537,40 @@ export const DataVizStudioView: React.FC = () => {
             </div>
             <SilentErrorBoundary>
               <CalculusLab />
+            </SilentErrorBoundary>
+          </div>
+        )}
+
+        {/* ══ TAB: 2D GEOMETRY LAB ═════════════════════════════════════════ */}
+        {activeTab === 'geo2d' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Shapes className="w-5 h-5 text-pink-500" /> 2D Геометрија — Планиметрија
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Триаголник · Питагорова теорема · Кружница · Многуаголници — МОН V–VIII одд.
+              </p>
+            </div>
+            <SilentErrorBoundary>
+              <Geometry2DLab />
+            </SilentErrorBoundary>
+          </div>
+        )}
+
+        {/* ══ TAB: 3D GEOMETRY LAB ═════════════════════════════════════════ */}
+        {activeTab === 'solid' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Box className="w-5 h-5 text-orange-500" /> 3D Геометрија — Полиедри
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                17 тела · Платонски · Архимедски · Призми · Антипризми · Пирамиди · Планови и проекции · Мрежи
+              </p>
+            </div>
+            <SilentErrorBoundary>
+              <Geometry3DLab />
             </SilentErrorBoundary>
           </div>
         )}

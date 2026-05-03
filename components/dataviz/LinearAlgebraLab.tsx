@@ -468,16 +468,165 @@ function TransformationsLab() {
   );
 }
 
+// ─── Linear Systems sub-tab ──────────────────────────────────────────────────
+const SS_W = 380, SS_H = 300, SS_CX = 190, SS_CY = 150, SS_SC = 35;
+
+function ssToSVG(mx: number, my: number) {
+  return { x: SS_CX + mx * SS_SC, y: SS_CY - my * SS_SC };
+}
+
+function SystemsLab() {
+  const [m1, setM1] = useState(1);
+  const [b1, setB1] = useState(1);
+  const [m2, setM2] = useState(-1);
+  const [b2, setB2] = useState(3);
+
+  const parallel = Math.abs(m1 - m2) < 1e-9;
+  const coincident = parallel && Math.abs(b1 - b2) < 1e-9;
+  const ix = parallel ? 0 : (b2 - b1) / (m1 - m2);
+  const iy = parallel ? 0 : m1 * ix + b1;
+  const ixPt = ssToSVG(ix, iy);
+  const inView = !parallel && Math.abs(ix) < 4.8 && Math.abs(iy) < 3.8;
+
+  function sLinePath(m: number, b: number) {
+    const p0 = ssToSVG(-7, m * -7 + b);
+    const p1 = ssToSVG(7, m * 7 + b);
+    return `M${p0.x.toFixed(1)},${p0.y.toFixed(1)} L${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs font-bold text-indigo-600 mb-2">Линија 1: y = m₁x + b₁</p>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs font-semibold text-gray-400 w-6">m₁</span>
+            <input type="range" min={-3} max={3} step={0.25} value={m1}
+              onChange={e => setM1(parseFloat(e.target.value))}
+              className="flex-1 accent-indigo-600" aria-label="наклон 1" />
+            <span className="text-sm font-bold text-indigo-700 w-8 text-right">{m1}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 w-6">b₁</span>
+            <input type="range" min={-3} max={3} step={0.25} value={b1}
+              onChange={e => setB1(parseFloat(e.target.value))}
+              className="flex-1 accent-indigo-600" aria-label="исечок 1" />
+            <span className="text-sm font-bold text-indigo-700 w-8 text-right">{b1}</span>
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-rose-600 mb-2">Линија 2: y = m₂x + b₂</p>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs font-semibold text-gray-400 w-6">m₂</span>
+            <input type="range" min={-3} max={3} step={0.25} value={m2}
+              onChange={e => setM2(parseFloat(e.target.value))}
+              className="flex-1 accent-rose-600" aria-label="наклон 2" />
+            <span className="text-sm font-bold text-rose-700 w-8 text-right">{m2}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 w-6">b₂</span>
+            <input type="range" min={-3} max={3} step={0.25} value={b2}
+              onChange={e => setB2(parseFloat(e.target.value))}
+              className="flex-1 accent-rose-600" aria-label="исечок 2" />
+            <span className="text-sm font-bold text-rose-700 w-8 text-right">{b2}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl p-2.5 bg-indigo-50 border border-indigo-200 text-center">
+          <p className="text-[10px] text-gray-400 font-semibold">Равенка 1</p>
+          <p className="text-sm font-extrabold text-indigo-700 font-mono">
+            y = {m1}x {b1 >= 0 ? '+ ' : '− '}{Math.abs(b1)}
+          </p>
+        </div>
+        <div className="rounded-xl p-2.5 bg-rose-50 border border-rose-200 text-center">
+          <p className="text-[10px] text-gray-400 font-semibold">Равенка 2</p>
+          <p className="text-sm font-extrabold text-rose-700 font-mono">
+            y = {m2}x {b2 >= 0 ? '+ ' : '− '}{Math.abs(b2)}
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border-2 border-indigo-200 bg-white overflow-hidden">
+        <svg viewBox={`0 0 ${SS_W} ${SS_H}`} className="w-full" style={{ maxHeight: 280 }}>
+          <defs><clipPath id="sys-clip"><rect x={0} y={0} width={SS_W} height={SS_H} /></clipPath></defs>
+          {[-3,-2,-1,0,1,2,3].map(g => {
+            const gx = ssToSVG(g, 0).x;
+            const gy = ssToSVG(0, g).y;
+            return (
+              <g key={g}>
+                <line x1={gx} y1={0} x2={gx} y2={SS_H} stroke={g===0?'#9ca3af':'#f1f5f9'} strokeWidth={g===0?1.5:1}/>
+                <line x1={0} y1={gy} x2={SS_W} y2={gy} stroke={g===0?'#9ca3af':'#f1f5f9'} strokeWidth={g===0?1.5:1}/>
+                {g!==0 && <text x={SS_CX+4} y={gy+3} fontSize={9} fill="#cbd5e1">{g}</text>}
+                {g!==0 && <text x={gx} y={SS_CY+14} textAnchor="middle" fontSize={9} fill="#cbd5e1">{g}</text>}
+              </g>
+            );
+          })}
+          <path d={sLinePath(m1, b1)} stroke="#6366f1" strokeWidth={2.5} fill="none" clipPath="url(#sys-clip)"/>
+          <path d={sLinePath(m2, b2)} stroke="#f43f5e" strokeWidth={2.5} fill="none" clipPath="url(#sys-clip)"/>
+          {inView && (
+            <g clipPath="url(#sys-clip)">
+              <circle cx={ixPt.x} cy={ixPt.y} r={7} fill="#10b981" stroke="white" strokeWidth={2}/>
+              <text x={ixPt.x+10} y={ixPt.y-6} fontSize={11} fill="#10b981" fontWeight="bold">
+                ({fmt(ix)}, {fmt(iy)})
+              </text>
+            </g>
+          )}
+        </svg>
+      </div>
+
+      <div className={`rounded-xl p-3 border-2 text-center ${coincident?'border-amber-400 bg-amber-50':parallel?'border-red-300 bg-red-50':'border-emerald-400 bg-emerald-50'}`}>
+        {coincident ? (
+          <>
+            <p className="text-sm font-bold text-amber-700">Совпаднати прави — Бесконечно многу решенија</p>
+            <p className="text-xs text-amber-600 mt-0.5">Двете равенки ја опишуваат истата права</p>
+          </>
+        ) : parallel ? (
+          <>
+            <p className="text-sm font-bold text-red-700">Паралелни прави — Нема решение</p>
+            <p className="text-xs text-red-600 mt-0.5">Системот е противречен (inconsistent)</p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-bold text-emerald-700">Единствено решение — Пресечна точка</p>
+            <p className="text-xl font-extrabold text-emerald-800 mt-1 font-mono">
+              x = {fmt(ix)},&nbsp; y = {fmt(iy)}
+            </p>
+          </>
+        )}
+      </div>
+
+      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-700 space-y-1">
+        <p><strong>Метод на замена:</strong> Постави m₁x + b₁ = m₂x + b₂, реши за x, нај y.</p>
+        <p className="font-mono">x = (b₂ − b₁) / (m₁ − m₂)  [m₁ ≠ m₂]</p>
+        <p><strong>Три случаи:</strong> m₁≠m₂ → 1 решение · m₁=m₂, b₁≠b₂ → 0 · m₁=m₂, b₁=b₂ → ∞</p>
+      </div>
+
+      <div className="bg-white border border-gray-100 rounded-xl p-2.5">
+        <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+        <div className="flex flex-wrap gap-1 mt-1">
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">МОН VIII одд.</span>
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">МОН IX одд.</span>
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">Гимн. I год.</span>
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700">Стручно I год.</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
-type LinAlgTab = 'matrices' | 'vectors' | 'transforms';
+type LinAlgTab = 'matrices' | 'vectors' | 'transforms' | 'systems';
 
 export function LinearAlgebraLab() {
   const [tab, setTab] = useState<LinAlgTab>('matrices');
 
   const TABS: { id: LinAlgTab; label: string; color: string }[] = [
-    { id: 'matrices',   label: '⊞ Матрици',         color: 'indigo' },
-    { id: 'vectors',    label: '→ Вектори',          color: 'rose'   },
-    { id: 'transforms', label: '⊡ Трансформации',   color: 'teal'   },
+    { id: 'matrices',   label: '⊞ Матрици',         color: 'indigo'  },
+    { id: 'vectors',    label: '→ Вектори',          color: 'rose'    },
+    { id: 'transforms', label: '⊡ Трансформации',   color: 'teal'    },
+    { id: 'systems',    label: '⊕ Системи',          color: 'emerald' },
   ];
 
   return (
@@ -494,6 +643,7 @@ export function LinearAlgebraLab() {
       {tab === 'matrices'   && <MatricesLab />}
       {tab === 'vectors'    && <VectorsLab />}
       {tab === 'transforms' && <TransformationsLab />}
+      {tab === 'systems'    && <SystemsLab />}
     </div>
   );
 }
