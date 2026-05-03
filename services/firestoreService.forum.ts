@@ -104,6 +104,10 @@ export interface ForumReply {
   reactionsGreat: string[];
   /** Marks the accepted / best answer */
   isBestAnswer: boolean;
+  /** Attached image (Firebase Storage URL) */
+  forumImageUrl?: string | null;
+  /** Server-side edit timestamp */
+  editedAt?: Timestamp | null;
 }
 
 export interface ForumStats {
@@ -364,6 +368,7 @@ export const createForumReply = async (data: {
   authorUid: string;
   authorName: string;
   body: string;
+  forumImageUrl?: string;
 }): Promise<string> => {
   const ref = await addDoc(collection(db, 'forum_replies'), {
     threadId:         data.threadId,
@@ -376,6 +381,7 @@ export const createForumReply = async (data: {
     reactionsSame:    [],
     reactionsGreat:   [],
     isBestAnswer:     false,
+    ...(data.forumImageUrl ? { forumImageUrl: data.forumImageUrl } : {}),
   });
   // Update thread: increment reply count + refresh lastActivityAt
   await updateDoc(doc(db, 'forum_threads', data.threadId), {
@@ -431,6 +437,26 @@ export const fetchForumReplies = async (threadId: string): Promise<ForumReply[]>
 export const toggleReplyUpvote = async (replyId: string, teacherUid: string, hasUpvoted: boolean): Promise<void> => {
   await updateDoc(doc(db, 'forum_replies', replyId), {
     upvotedBy: hasUpvoted ? arrayRemove(teacherUid) : arrayUnion(teacherUid),
+  });
+};
+
+export const updateForumThread = async (
+  threadId: string,
+  data: { title?: string; body?: string },
+): Promise<void> => {
+  await updateDoc(doc(db, 'forum_threads', threadId), {
+    ...data,
+    editedAt: serverTimestamp(),
+  });
+};
+
+export const updateForumReply = async (
+  replyId: string,
+  data: { body: string },
+): Promise<void> => {
+  await updateDoc(doc(db, 'forum_replies', replyId), {
+    body: data.body,
+    editedAt: serverTimestamp(),
   });
 };
 

@@ -15,12 +15,14 @@ import {
   MessageSquare, Plus, ThumbsUp, Award, ChevronLeft,
   Send, Loader2, Search, Tag, X, CheckCircle2, Pin,
   TrendingUp, Clock, Sparkles, Users, Box, Link, Shield,
+  Pencil, Camera, Check,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import type { Concept } from '../types';
 import { DokBadge } from '../components/common/DokBadge';
+import { MathRenderer } from '../components/common/MathRenderer';
 import { DOK_META } from '../types';
 import type { DokLevel } from '../types';
 import { uploadForumImage } from '../services/storageService';
@@ -51,6 +53,7 @@ import {
   approveForumThread,
   rejectForumThread,
   fetchPendingForumThreads,
+  updateForumReply,
   CATEGORY_CONFIG,
   REACTIONS,
   type ThreadCategory,
@@ -533,6 +536,11 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
   const [loadingReplies, setLoadingReplies] = useState(true);
   const [replyBody, setReplyBody] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
+  const [replyImg, setReplyImg] = useState<string | null>(null);
+  const replyImgRef = useRef<HTMLInputElement | null>(null);
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editingReplyBody, setEditingReplyBody] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
   const replyUnsubRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -550,16 +558,32 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
     if (!replyBody.trim()) return;
     setSendingReply(true);
     try {
+      let imgUrl: string | undefined;
+      if (replyImg) imgUrl = await uploadForumImage(replyImg, myUid);
       await createForumReply({
         threadId:   thread.id,
         authorUid:  myUid,
         authorName: myName,
         body:       replyBody.trim(),
+        ...(imgUrl ? { forumImageUrl: imgUrl } : {}),
       });
       setReplyBody('');
-      // onSnapshot subscription delivers the new reply automatically
+      setReplyImg(null);
+      if (replyImgRef.current) replyImgRef.current.value = '';
     } finally {
       setSendingReply(false);
+    }
+  };
+
+  const handleSaveReplyEdit = async (reply: ForumReply) => {
+    if (!editingReplyBody.trim()) return;
+    setSavingEdit(true);
+    try {
+      await updateForumReply(reply.id, { body: editingReplyBody.trim() });
+      setReplies(prev => prev.map(r => r.id === reply.id ? { ...r, body: editingReplyBody.trim() } : r));
+      setEditingReplyId(null);
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -658,7 +682,9 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
             </div>
 
             <h2 className="text-xl font-black text-gray-900 leading-snug mb-3">{thread.title}</h2>
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{thread.body}</p>
+            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+              {thread.body.includes('$') ? <MathRenderer text={thread.body} /> : thread.body}
+            </div>
             {thread.forumImageUrl && (
               <img
                 src={thread.forumImageUrl}
@@ -740,20 +766,56 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
                           <Award className="w-3.5 h-3.5" /> Најдобар одговор
                         </div>
                       )}
-                      <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{reply.body}</p>
+                      {editingReplyId === reply.id ? (
+                        <div className="space-y-2">
+                          <textarea
+                            rows={4}
+                            value={editingReplyBody}
+                            onChange={e => setEditingReplyBody(e.target.value)}
+                            className="w-full border border-indigo-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none"
+                          />
+                          <div className="flex gap-2">
+                            <button type="button" disabled={savingEdit} onClick={() => handleSaveReplyEdit(reply)}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition">
+                              {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Зачувај
+                            </button>
+                            <button type="button" onClick={() => setEditingReplyId(null)}
+                              className="px-3 py-1.5 text-xs font-bold text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                              Откажи
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+                            {reply.body.includes('$') ? <MathRenderer text={reply.body} /> : reply.body}
+                          </div>
+                          {reply.forumImageUrl && (
+                            <img src={reply.forumImageUrl} alt="Прикачена слика"
+                              className="mt-2 rounded-xl border border-gray-200 max-h-56 w-auto" />
+                          )}
+                        </>
+                      )}
                       <div className="flex items-center gap-3 mt-2 flex-wrap">
                         <AuthorAvatar name={reply.authorName} />
                         <div>
                           <div className="text-[11px] font-semibold text-gray-600">{reply.authorName}</div>
                           <div className="text-[10px] text-gray-400">{timeAgo(reply.createdAt)}</div>
                         </div>
-                        <div className="ml-auto">
+                        <div className="ml-auto flex items-center gap-2">
                           <ReactionBar
                             reactions={reply}
                             myUid={myUid}
                             onReact={(field) => handleReactReply(reply, field)}
                             compact
                           />
+                          {reply.authorUid === myUid && editingReplyId !== reply.id && (
+                            <button type="button" title="Уреди одговор"
+                              onClick={() => { setEditingReplyId(reply.id); setEditingReplyBody(reply.body); }}
+                              className="p-1 rounded text-gray-300 hover:text-indigo-500 transition">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -768,19 +830,45 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
       {/* Reply box */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
         <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-3">Твој одговор</h4>
+        <div className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1.5 mb-3">
+          Tip: Употребете <code className="font-mono bg-indigo-100 px-1 rounded">$x^2 + 2x$</code> за LaTeX математика во одговорот.
+        </div>
         <form onSubmit={handleSendReply} className="flex flex-col gap-3">
           <textarea
             rows={4}
             value={replyBody}
             onChange={e => setReplyBody(e.target.value)}
-            placeholder="Напиши одговор... Биди конкретен и педагошки јасен."
+            placeholder="Напиши одговор... Биди конкретен и педагошки јасен. За математика: $x^2 + 3x + 2$"
             className="w-full border border-gray-300 rounded-lg text-sm p-3 focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none"
           />
-          <div className="flex justify-end">
+          {/* Image upload */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <input ref={replyImgRef} type="file" accept="image/*" className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => setReplyImg(reader.result as string);
+                reader.readAsDataURL(file);
+              }}
+            />
+            <button type="button" onClick={() => replyImgRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:border-indigo-300 hover:text-indigo-600 transition">
+              <Camera className="w-3.5 h-3.5" /> Прикачи слика
+            </button>
+            {replyImg && (
+              <div className="relative inline-block">
+                <img src={replyImg} alt="Preview" className="h-14 w-auto rounded-lg border border-gray-200 object-cover" />
+                <button type="button" onClick={() => { setReplyImg(null); if (replyImgRef.current) replyImgRef.current.value = ''; }}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center font-bold hover:bg-red-600 transition">
+                  ×
+                </button>
+              </div>
+            )}
             <button
               type="submit"
               disabled={sendingReply || !replyBody.trim()}
-              className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+              className="ml-auto flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
             >
               {sendingReply ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Одговори
@@ -825,6 +913,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
   const [pendingThreads, setPendingThreads] = useState<ForumThread[]>([]);
   const [moderatingId, setModeratingId] = useState<string | null>(null);
   const [generatingChallenge, setGeneratingChallenge] = useState(false);
+  const [showMyOnly, setShowMyOnly] = useState(false);
   const unsubRef = useRef<(() => void) | null>(null);
   const didDeepLink = useRef(false);
 
@@ -1028,6 +1117,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
   const unpinned = threads.filter(t => !t.isPinned);
 
   const filtered = unpinned.filter(t => {
+    if (showMyOnly && t.authorUid !== myUid) return false;
     if (filterCategory && t.category !== filterCategory) return false;
     if (filterDok && t.dokLevel !== filterDok) return false;
     if (search && !t.title.toLowerCase().includes(search.toLowerCase()) && !t.body.toLowerCase().includes(search.toLowerCase())) return false;
@@ -1160,6 +1250,14 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
                 <span>{cat.emoji}</span> {cat.label}
               </button>
             ))}
+            <button type="button" onClick={() => setShowMyOnly(v => !v)}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ml-auto ${
+                showMyOnly
+                  ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300 hover:text-violet-600'
+              }`}>
+              👤 Моите нишки
+            </button>
           </div>
 
           {/* DoK filter row */}
@@ -1321,7 +1419,7 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
           authorName={myName}
           initialImageDataUrl={draftImageUrl}
           initialTitle={draftTitle ?? undefined}
-          skipModeration={isAdmin}
+          skipModeration={true}
         />
       )}
     </div>

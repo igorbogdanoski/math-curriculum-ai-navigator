@@ -1,7 +1,7 @@
 import { educationalHints } from '../data/educationalModelsInfo';
 import React from 'react';
 import { Card } from '../components/common/Card';
-import { Target, Shapes, Wand2, Play, GraduationCap, CheckCircle2, Trophy, Star, Cpu, BookOpenCheck, FlaskConical, Brain } from 'lucide-react';
+import { Target, Shapes, Wand2, Play, GraduationCap, CheckCircle2, Trophy, Star, Cpu, BookOpenCheck, FlaskConical, Brain, Users } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAcademyProgress, MATERIAL_ACHIEVEMENTS } from '../contexts/AcademyProgressContext';
 import { slugify } from '../utils/slugify';
@@ -106,6 +106,34 @@ export const AcademyView: React.FC = () => {
         { title: 'Алгебарски плочки — манипулативна алгебра', id: 'visual-tiles' },
         { title: '3D Геометрија со технологија', id: 'visual-3d' },
         { title: 'Кога и зошто — избор на визуелни претстави', id: 'visual-when-why' },
+      ]
+    },
+    {
+      id: 'formative',
+      title: 'Формативно оценување',
+      description: 'Прекинете го циклусот на „оцени и продолжи". Научете ги техниките кои ги трансформираат секундите во класот во моменти на менување на разбирањето — во реално време.',
+      icon: Brain,
+      color: 'bg-rose-50 text-rose-700',
+      borderColor: 'border-rose-200',
+      badge: 'НОВО',
+      topics: [
+        { title: 'Излезни картички и моментална проверка', id: 'formative-exit-tickets' },
+        { title: 'Семафор, самопроценка и метакогнитивни стратегии', id: 'formative-traffic-light' },
+        { title: 'Ефикасна повратна информација — Hattie & Timperley', id: 'formative-feedback' },
+      ]
+    },
+    {
+      id: 'cooperative',
+      title: 'Кооперативно учење',
+      description: 'Не е групна работа — тоа е структурирана взаемна зависност. Научете ги методите кои го гарантираат учеството на СЕКОЈ ученик во СЕКОЈ час.',
+      icon: Users,
+      color: 'bg-amber-50 text-amber-700',
+      borderColor: 'border-amber-200',
+      badge: 'НОВО',
+      topics: [
+        { title: 'Jigsaw метода — Учење преку взаемно поучување', id: 'cooperative-jigsaw' },
+        { title: 'Мисли-Работи-Споделувај и Wait Time', id: 'cooperative-think-pair-share' },
+        { title: 'Gallery Walk — Мобилно учење и peer review', id: 'cooperative-gallery-walk' },
       ]
     },
   ];
