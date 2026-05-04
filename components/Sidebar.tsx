@@ -180,6 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/kahoot/make" currentPath={currentPath} icon={ICONS.live} label="Kahoot Maker" onClick={onClose} badge="NEW" />
               <NavItem path="/exam/build" currentPath={currentPath} icon={ICONS.assessment} label="Дигитален испит" onClick={onClose} badge="S46" />
               <NavItem path="/data-viz" currentPath={currentPath} icon={ICONS.chart} label="DataViz Studio" onClick={onClose} badge="NEW" />
+              <NavItem path="/math-editor" currentPath={currentPath} icon={ICONS.sparkles} label="Мат. Уредник" onClick={onClose} badge="Σ" />
 
               {/* Развој на наставник */}
               <hr className="my-2 border-gray-100" />
