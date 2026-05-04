@@ -227,6 +227,7 @@ const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, con
   const [imageDataUrl] = useState<string | null>(initialImageDataUrl ?? null);
   const [show3d, setShow3d] = useState(false);
   const [shape3dShape, setShape3dShape] = useState<string>('cube');
+  const [showBodyPreview, setShowBodyPreview] = useState(false);
 
   const selectedConcept = concepts.find(c => c.id === conceptId);
 
@@ -329,15 +330,29 @@ const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, con
 
           {/* Body */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Содржина *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-gray-600">Содржина *</label>
+              {body.includes('$') && (
+                <button type="button" onClick={() => setShowBodyPreview(v => !v)}
+                  className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  {showBodyPreview ? 'Скрај преглед' : 'Преглед на математика'}
+                </button>
+              )}
+            </div>
             <textarea
               required
               rows={5}
               value={body}
               onChange={e => setBody(e.target.value)}
-              placeholder="Детално опишете го прашањето, контекстот, она што сте го пробале..."
+              placeholder="Детално опишете го прашањето, контекстот, она што сте го пробале... За математика: $x^2 + 3x + 2 = 0$"
               className="w-full border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none"
             />
+            {showBodyPreview && body.includes('$') && (
+              <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-800">
+                <MathRenderer text={body} />
+              </div>
+            )}
           </div>
 
           {/* DoK level (optional) */}
@@ -542,6 +557,11 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
   const [editingReplyBody, setEditingReplyBody] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const replyUnsubRef = useRef<(() => void) | null>(null);
+  // AI features
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [loadingAIAnswer, setLoadingAIAnswer] = useState(false);
+  const [showReplyPreview, setShowReplyPreview] = useState(false);
 
   useEffect(() => {
     setLoadingReplies(true);
@@ -602,6 +622,51 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
       ? { ...r, [field]: hasReacted ? arr.filter((u: string) => u !== myUid) : [...arr, myUid] }
       : r));
     await toggleForumReaction('forum_replies', reply.id, field, myUid, hasReacted);
+  };
+
+  const handleAIThreadSummary = async () => {
+    if (loadingSummary || replies.length < 2) return;
+    setLoadingSummary(true);
+    try {
+      const context = `Нишка: ${thread.title}\n\n${thread.body}\n\nОдговори:\n${replies.map((r, i) => `${i + 1}. ${r.authorName}: ${r.body}`).join('\n')}`;
+      const resp = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ parts: [{ text: `Ти си педагошки асистент. Резимирај ја следнава дискусија на македонски наставници по математика во 3 кратки точки (bullet points). Биди конкретен. Нагласи ги клучните педагошки увиди и решенија.\n\n${context}` }] }],
+        systemInstruction: 'Пиши на македонски. Врати само 3 bullet point резиме, без воведна реченица.',
+        generationConfig: { maxOutputTokens: 300 },
+      });
+      setAiSummary(resp.text?.trim() ?? '');
+    } catch {
+      setAiSummary('Резимето не успеа. Обиди се повторно.');
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
+  const handleAskAIExpert = async () => {
+    if (loadingAIAnswer) return;
+    setLoadingAIAnswer(true);
+    try {
+      const context = `Прашање: ${thread.title}\n\n${thread.body}${replies.length > 0 ? `\n\nПостоечки одговори:\n${replies.map(r => `• ${r.authorName}: ${r.body}`).join('\n')}` : ''}`;
+      const resp = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ parts: [{ text: `Ти си искусен македонски наставник по математика и педагошки ментор. Одговори на следново прашање од колега наставник со детален, педагошки структуриран одговор. Вклучи конкретни примери, LaTeX формули каде е потребно ($формула$), и практични совети.\n\n${context}` }] }],
+        systemInstruction: 'Пиши на македонски. Биди практичен, педагошки и конкретен.',
+        generationConfig: { maxOutputTokens: 800 },
+      });
+      const aiBody = resp.text?.trim();
+      if (!aiBody) return;
+      await createForumReply({
+        threadId: thread.id,
+        authorUid: 'ai-expert',
+        authorName: '🤖 AI Eксперт',
+        body: aiBody,
+      });
+    } catch {
+      // non-critical
+    } finally {
+      setLoadingAIAnswer(false);
+    }
   };
 
   const handleMarkBest = async (reply: ForumReply) => {
@@ -724,9 +789,35 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
 
       {/* Replies */}
       <div>
-        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">
-          {replies.length} {replies.length === 1 ? 'одговор' : 'одговори'}
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+            {replies.length} {replies.length === 1 ? 'одговор' : 'одговори'}
+          </h3>
+          {replies.length >= 2 && (
+            <button type="button" onClick={handleAIThreadSummary} disabled={loadingSummary}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-violet-200 text-violet-600 bg-violet-50 hover:bg-violet-100 transition disabled:opacity-50">
+              {loadingSummary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              AI Резиме
+            </button>
+          )}
+        </div>
+
+        {/* AI Summary panel */}
+        {aiSummary && (
+          <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+              <span className="text-xs font-bold text-violet-700">AI Резиме на дискусијата</span>
+              <button type="button" aria-label="Затвори резиме" onClick={() => setAiSummary(null)} className="ml-auto text-gray-400 hover:text-gray-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">
+              <MathRenderer text={aiSummary} />
+            </div>
+          </div>
+        )}
+
 
         {loadingReplies ? (
           <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
@@ -736,7 +827,7 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
               const hasUpvoted = reply.upvotedBy.includes(myUid);
               return (
                 <div key={reply.id}
-                     className={`bg-white rounded-xl border shadow-sm p-4 ${reply.isBestAnswer ? 'border-emerald-300 bg-emerald-50/40' : 'border-gray-200'}`}>
+                     className={`bg-white rounded-xl border shadow-sm p-4 ${reply.isBestAnswer ? 'border-emerald-300 bg-emerald-50/40' : reply.authorUid === 'ai-expert' ? 'border-violet-200 bg-violet-50/30' : 'border-gray-200'}`}>
                   <div className="flex gap-3">
                     <div className="flex flex-col items-center gap-1 flex-shrink-0">
                       <button
@@ -799,7 +890,12 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
                       <div className="flex items-center gap-3 mt-2 flex-wrap">
                         <AuthorAvatar name={reply.authorName} />
                         <div>
-                          <div className="text-[11px] font-semibold text-gray-600">{reply.authorName}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-semibold text-gray-600">{reply.authorName}</span>
+                            {reply.authorUid === 'ai-expert' && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">AI</span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-gray-400">{timeAgo(reply.createdAt)}</div>
                         </div>
                         <div className="ml-auto flex items-center gap-2">
@@ -829,18 +925,39 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
 
       {/* Reply box */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-3">Твој одговор</h4>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wide">Твој одговор</h4>
+          <button type="button" onClick={handleAskAIExpert} disabled={loadingAIAnswer}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 transition disabled:opacity-50 shadow-sm">
+            {loadingAIAnswer ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            AI Eксперт одговор
+          </button>
+        </div>
         <div className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1.5 mb-3">
-          Tip: Употребете <code className="font-mono bg-indigo-100 px-1 rounded">$x^2 + 2x$</code> за LaTeX математика во одговорот.
+          Tip: Употребете <code className="font-mono bg-indigo-100 px-1 rounded">$x^2 + 2x$</code> за LaTeX математика.
         </div>
         <form onSubmit={handleSendReply} className="flex flex-col gap-3">
           <textarea
             rows={4}
             value={replyBody}
-            onChange={e => setReplyBody(e.target.value)}
+            onChange={e => { setReplyBody(e.target.value); if (showReplyPreview && !e.target.value) setShowReplyPreview(false); }}
             placeholder="Напиши одговор... Биди конкретен и педагошки јасен. За математика: $x^2 + 3x + 2$"
             className="w-full border border-gray-300 rounded-lg text-sm p-3 focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none"
           />
+          {replyBody.includes('$') && (
+            <div>
+              <button type="button" onClick={() => setShowReplyPreview(v => !v)}
+                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                {showReplyPreview ? 'Скрај преглед' : 'Преглед на математика'}
+              </button>
+              {showReplyPreview && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-800">
+                  <MathRenderer text={replyBody} />
+                </div>
+              )}
+            </div>
+          )}
           {/* Image upload */}
           <div className="flex items-center gap-3 flex-wrap">
             <input ref={replyImgRef} type="file" accept="image/*" className="hidden"
