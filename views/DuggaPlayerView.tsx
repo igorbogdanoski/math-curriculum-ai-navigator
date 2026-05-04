@@ -9,82 +9,14 @@ import { MathInput } from '../components/common/MathInput';
 import { getDuggaTestByCode, submitDuggaTest } from '../services/firestoreService.dugga';
 import type { DuggaTest, DuggaQuestion } from '../services/firestoreService.dugga';
 import { duggaAPI } from '../services/gemini/dugga';
+import { autoScore, needsAIGrade, parseAIEarnedPoints, percentageToMkGrade } from '../utils/duggaScoring';
+import type { QResult } from '../utils/duggaScoring';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Phase = 'code' | 'name' | 'test' | 'submitting' | 'results';
-
-interface QResult {
-  earned: number;
-  maxPoints: number;
-  correct: boolean | null; // null = AI/manual
-  feedback: string;
-  aiGrade?: string;
-}
-
-// ─── Auto-scoring ──────────────────────────────────────────────────────────────
-
-function autoScore(q: DuggaQuestion, answer: string): QResult | null {
-  const base = { maxPoints: q.points };
-  switch (q.type) {
-    case 'multiple_choice': {
-      const opt = q.options?.find(o => o.id === answer);
-      const correct = opt?.isCorrect === true || (!!opt && opt.text === q.correctAnswer);
-      return { ...base, earned: correct ? q.points : 0, correct, feedback: correct ? '' : `Точен: ${q.correctAnswer}` };
-    }
-    case 'checklist': {
-      const selected = answer ? answer.split(',').filter(Boolean) : [];
-      const correctIds = (q.options ?? []).filter(o => o.isCorrect).map(o => o.id);
-      if (!correctIds.length) return null;
-      const allCorrect = correctIds.length === selected.length && correctIds.every(id => selected.includes(id));
-      const hits = selected.filter(id => correctIds.includes(id)).length;
-      const wrong = selected.filter(id => !correctIds.includes(id)).length;
-      const ratio = hits / correctIds.length;
-      const earned = allCorrect ? q.points : Math.floor(q.points * ratio * (wrong > 0 ? 0.6 : 1));
-      const correctTexts = (q.options ?? []).filter(o => o.isCorrect).map(o => o.text).join(', ');
-      return { ...base, earned, correct: allCorrect, feedback: allCorrect ? '' : `Точни: ${correctTexts}` };
-    }
-    case 'true_false':
-    case 'statement_eval': {
-      if (!q.correctAnswer) return null;
-      const correct = answer.toLowerCase() === q.correctAnswer.toLowerCase();
-      return { ...base, earned: correct ? q.points : 0, correct, feedback: correct ? '' : `Точен: ${q.correctAnswer}` };
-    }
-    case 'fill_blanks': {
-      if (!q.correctAnswer) return null;
-      const correct = answer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
-      return { ...base, earned: correct ? q.points : 0, correct, feedback: correct ? '' : `Точен: ${q.correctAnswer}` };
-    }
-    case 'ordering': {
-      if (!q.orderItems?.length) return null;
-      const studentOrder = answer ? answer.split('|') : [];
-      const correct = q.orderItems.length === studentOrder.length && q.orderItems.every((item, i) => studentOrder[i] === item);
-      // Partial credit: count correctly placed items
-      const hits = q.orderItems.filter((item, i) => studentOrder[i] === item).length;
-      const ratio = hits / q.orderItems.length;
-      return { ...base, earned: correct ? q.points : Math.floor(q.points * ratio * 0.7), correct, feedback: correct ? '' : `Точен редослед: ${q.orderItems.join(' → ')}` };
-    }
-    case 'multi_match': {
-      if (!q.matchPairs?.length) return null;
-      let parsed: Record<string, string> = {};
-      try { parsed = answer ? JSON.parse(answer) : {}; } catch { /* */ }
-      const hits = q.matchPairs.filter(p => parsed[p.left] === p.right).length;
-      const correct = hits === q.matchPairs.length;
-      const earned = correct ? q.points : Math.floor(q.points * (hits / q.matchPairs.length));
-      return { ...base, earned, correct, feedback: correct ? '' : `Точни поврзувања: ${hits}/${q.matchPairs.length}` };
-    }
-    case 'section_header':
-      return { ...base, maxPoints: 0, earned: 0, correct: true, feedback: '' };
-    default:
-      return null; // needs AI / manual
-  }
-}
-
-function needsAIGrade(q: DuggaQuestion): boolean {
-  return q.type === 'essay' || (q.type === 'short_answer' && !q.correctAnswer);
-}
 
 // ─── Answer Input Components ──────────────────────────────────────────────────
 
@@ -187,7 +119,7 @@ function AnswerInput({ q, answer, onChange, disabled }: {
               <span className="flex-1 text-sm text-gray-800"><MathRenderer text={item} /></span>
               {!disabled && (
                 <div className="flex gap-0.5">
-                  <button type="button" disabled={idx === 0}
+                  <button type="button" disabled={idx === 0} aria-label="Помести нагоре"
                     onClick={() => {
                       const next = [...currentOrder];
                       [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
@@ -196,7 +128,7 @@ function AnswerInput({ q, answer, onChange, disabled }: {
                     className="p-1 hover:bg-gray-200 rounded disabled:opacity-20 transition-colors">
                     <ArrowUp className="w-3.5 h-3.5" />
                   </button>
-                  <button type="button" disabled={idx === currentOrder.length - 1}
+                  <button type="button" disabled={idx === currentOrder.length - 1} aria-label="Помести надолу"
                     onClick={() => {
                       const next = [...currentOrder];
                       [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
@@ -226,6 +158,7 @@ function AnswerInput({ q, answer, onChange, disabled }: {
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
               <select disabled={disabled} value={parsed[pair.left] ?? ''}
+                aria-label={`Поврзи: ${pair.left}`}
                 onChange={e => {
                   const next = { ...parsed, [pair.left]: e.target.value };
                   onChange(JSON.stringify(next));
@@ -263,6 +196,8 @@ function AnswerInput({ q, answer, onChange, disabled }: {
                     <td key={ci} className="border border-gray-200 px-2 py-1.5 text-center bg-white">
                       {cell === '' ? (
                         <input type="text" disabled={disabled} value={cells[`${ri}_${ci}`] ?? ''}
+                          aria-label={`Ред ${ri + 1}, колона ${ci + 1}`}
+                          placeholder="?"
                           onChange={e => {
                             const next = { ...cells, [`${ri}_${ci}`]: e.target.value };
                             onChange(JSON.stringify(next));
@@ -291,6 +226,8 @@ function AnswerInput({ q, answer, onChange, disabled }: {
             <div key={ii} className="flex items-center gap-2">
               <span className="text-xs text-gray-500 w-5 text-right shrink-0">{ii + 1}.</span>
               <input type="text" disabled={disabled} value={item}
+                aria-label={`Ставка ${ii + 1}`}
+                placeholder={`${ii + 1}. одговор`}
                 onChange={e => {
                   const next = [...items];
                   next[ii] = e.target.value;
@@ -322,7 +259,7 @@ function AnswerInput({ q, answer, onChange, disabled }: {
           <table className="text-sm border-collapse">
             <thead>
               <tr className="bg-gray-50">
-                <th className="border border-gray-200 px-3 py-2"></th>
+                <th className="border border-gray-200 px-3 py-2" aria-label="Ред"></th>
                 {headers.map((h, hi) => (
                   <th key={hi} className="border border-gray-200 px-4 py-2 text-center font-semibold text-gray-700">
                     <MathRenderer text={h} />
@@ -339,6 +276,7 @@ function AnswerInput({ q, answer, onChange, disabled }: {
                   {headers.map((_, ci) => (
                     <td key={ci} className="border border-gray-200 px-4 py-2 text-center">
                       <input type="checkbox" className="accent-indigo-600 w-4 h-4" disabled={disabled}
+                        aria-label={`${row[0] ?? `Ред ${ri + 1}`} — ${headers[ci] ?? `Кол ${ci + 1}`}`}
                         checked={!!checked[`${ri}_${ci}`]}
                         onChange={e => {
                           const next = { ...checked, [`${ri}_${ci}`]: e.target.checked };
@@ -693,8 +631,9 @@ export function DuggaPlayerView() {
                   {answeredCount}
                 </span>/{totalAnswerable} одговорено
               </div>
-              <div className="w-20 h-2 rounded-full bg-gray-200">
-                <div className="h-2 rounded-full bg-indigo-500 transition-all"
+              <div className="w-20 h-2 rounded-full bg-gray-200 overflow-hidden">
+                <div role="progressbar" aria-label="Напредок"
+                  className="h-full rounded-full bg-indigo-500 transition-all"
                   style={{ width: `${totalAnswerable > 0 ? (answeredCount / totalAnswerable) * 100 : 0}%` }} />
               </div>
             </div>

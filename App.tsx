@@ -28,6 +28,7 @@ import { Sidebar } from './components/Sidebar';
 import { SilentErrorBoundary } from './components/common/SilentErrorBoundary';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Breadcrumbs } from './components/common/Breadcrumbs';
+import { RelatedTools } from './components/common/RelatedTools';
 import { GlobalSearchBar } from './components/common/GlobalSearchBar';
 import { Card } from './components/common/Card';
 import { OfflineBanner } from './components/common/OfflineBanner';
@@ -342,6 +343,7 @@ const AppContent: React.FC = () => {
                         <GlobalSearchBar />
                     </header>
                     <Breadcrumbs crumbs={breadcrumbs} />
+                    <RelatedTools path={path} />
                     <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
                         <ErrorBoundary>
                             <Suspense fallback={<AppSkeleton />}>
