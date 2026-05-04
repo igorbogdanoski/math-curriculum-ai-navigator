@@ -193,6 +193,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <hr className="my-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.resources')}</p>
               <NavItem path="/national-library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.nationalLibrary")} onClick={onClose} />
+              <NavItem path="/olympiad" currentPath={currentPath} icon={ICONS.star} label="Олимписка Архива" onClick={onClose} badge="🏆" />
               <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label={t("nav.gallery")} onClick={onClose} />
               <NavItem path="/favorites" currentPath={currentPath} icon={ICONS.star} label={t("nav.favorites")} onClick={onClose} />
               <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label={t("nav.coverage")} onClick={onClose} />
