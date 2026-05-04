@@ -183,6 +183,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/math-editor" currentPath={currentPath} icon={ICONS.sparkles} label="ÐœÐ°Ñ‚. Ð£Ñ€ÐµÐ´Ð½Ð¸Ðº" onClick={onClose} badge="Î£" />
               <NavItem path="/dugga/build" currentPath={currentPath} icon={ICONS.assessment} label="Ð”Ð¸Ð³Ð° â€” Ð¢ÐµÑÑ‚ Ð“Ñ€Ð°Ð´Ð¸Ñ‚ÐµÐ»" onClick={onClose} badge="ÐÐžÐ’Ðž" />
               <NavItem path="/dugga/play" currentPath={currentPath} icon={ICONS.education} label="Дига — Играј Тест" onClick={onClose} badge="НОВО" />
+              <NavItem path="/dugga" currentPath={currentPath} icon={ICONS.analytics} label="Дига — Библиотека" onClick={onClose} />
 
               {/* Ð Ð°Ð·Ð²Ð¾Ñ˜ Ð½Ð° Ð½Ð°ÑÑ‚Ð°Ð²Ð½Ð¸Ðº */}
               <hr className="my-2 border-gray-100" />
