@@ -109,7 +109,7 @@ $${latex}$
     grade: number;
     subject: string;
     topics: string[];
-    testType: 'topic' | 'midterm' | 'annual' | 'exam';
+    testType: 'topic' | 'midterm' | 'annual' | 'exam' | 'custom';
     totalQuestions: number;
     dokDistribution: { 1: number; 2: number; 3: number; 4: number };
     language?: string;
