@@ -9,8 +9,29 @@ import { safeParseJSON, type AIGrade } from './maturaPracticeHelpers';
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
-export async function gradePart2(q: MaturaQuestion, answer: string): Promise<AIGrade> {
-  const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, answer);
+async function urlToBase64(url: string): Promise<{ data: string; mimeType: string } | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        const [header, data] = result.split(',');
+        const mimeType = header.match(/data:([^;]+);/)?.[1] ?? 'image/jpeg';
+        resolve(data ? { data, mimeType } : null);
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function gradePart2(q: MaturaQuestion, answer: string, imageUrl?: string): Promise<AIGrade> {
+  const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, answer + (imageUrl ? '_img' : ''));
   const maxScore = q.points ?? 4;
 
   const cached = await getCachedAIGrade(cacheKey);
@@ -18,11 +39,14 @@ export async function gradePart2(q: MaturaQuestion, answer: string): Promise<AIG
     return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
   }
 
+  const hasImage = Boolean(imageUrl);
   const prompt = `Ти си асистент за оценување матура на македонски јазик.
 
 Задача Q${q.questionNumber} (${maxScore} поени): ${q.questionText}
 Точен одговор: ${q.correctAnswer}
-Одговор на ученикот: ${answer || '(нема одговор)'}
+${hasImage
+    ? `Ученикот испратил фотографија на своето решение${answer ? ` (дополнително: "${answer}")` : ''}.`
+    : `Одговор на ученикот: ${answer || '(нема одговор)'}`}
 
 Оцени го одговорот. Споредувај математичко значење, не буквален текст.
 Врати САМО валиден JSON:
@@ -33,9 +57,16 @@ export async function gradePart2(q: MaturaQuestion, answer: string): Promise<AIG
 - comment = кратка реченица за одговорот (на македонски).
 - feedback = детална повратна информација (на македонски).`;
 
+  const textPart = { text: prompt };
+  const parts: object[] = [textPart];
+  if (imageUrl) {
+    const img = await urlToBase64(imageUrl);
+    if (img) parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+  }
+
   const resp = await callGeminiProxy({
     model: DEFAULT_MODEL,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts }],
     generationConfig: { temperature: 0, maxOutputTokens: 512 },
   });
   const p = safeParseJSON(resp.text);
@@ -74,19 +105,22 @@ export async function explainWrongAnswer(q: MaturaQuestion, wrongChoice: string,
   return resp.text?.trim() ?? 'Не можев да генерирам објаснување.';
 }
 
-export async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGrade> {
-  const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, desc);
+export async function gradePart3(q: MaturaQuestion, desc: string, imageUrl?: string): Promise<AIGrade> {
+  const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, desc + (imageUrl ? '_img' : ''));
 
   const cached = await getCachedAIGrade(cacheKey);
   if (cached) {
     return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
   }
 
+  const hasImage = Boolean(imageUrl);
   const prompt = `Ти си асистент за оценување матура на македонски јазик.
 
 Задача Q${q.questionNumber} (${q.points} поени): ${q.questionText}
 Точен одговор: ${q.correctAnswer}
-Опис на решението на ученикот: ${desc || '(нема опис)'}
+${hasImage
+    ? `Ученикот испратил фотографија на своето решение${desc ? ` (опис: "${desc}")` : ''}.`
+    : `Опис на решението на ученикот: ${desc || '(нема опис)'}`}
 
 Оцени го решението. Врати САМО валиден JSON:
 {"score":0,"feedback":"детален коментар на македонски"}
@@ -94,9 +128,16 @@ export async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGra
 - score: цел број 0..${q.points}
 - Биди праведен, конструктивен и охрабрувачки.`;
 
+  const textPart = { text: prompt };
+  const parts: object[] = [textPart];
+  if (imageUrl) {
+    const img = await urlToBase64(imageUrl);
+    if (img) parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+  }
+
   const resp = await callGeminiProxy({
     model: DEFAULT_MODEL,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts }],
     generationConfig: { temperature: 0, maxOutputTokens: 512 },
   });
   const p = safeParseJSON(resp.text);

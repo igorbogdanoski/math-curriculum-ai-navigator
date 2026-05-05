@@ -374,23 +374,23 @@ ${item.questionText}
   const handleGradeP2 = useCallback(async () => {
     onUpdate({ grading: true, aiError: undefined });
     try {
-      const grade = await gradePart2(item, state.answer ?? '');
+      const grade = await gradePart2(item, state.answer ?? '', state.studentSolutionImageUrl);
       onUpdate({ grading: false, aiGrade: grade, submitted: true });
     } catch {
       onUpdate({ grading: false, aiError: 'Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ Ð¾Ñ†ÐµÐ½ÑƒÐ²Ð°ÑšÐµ. ÐžÐ±Ð¸Ð´ÐµÑ‚Ðµ ÑÐµ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾.', submitted: false });
     }
-  }, [item, state.answer, onUpdate]);
+  }, [item, state.answer, state.studentSolutionImageUrl, onUpdate]);
 
   // Part 3 AI grade
   const handleGradeP3 = useCallback(async () => {
     onUpdate({ gradingP3: true, aiError: undefined });
     try {
-      const grade = await gradePart3(item, state.aiDesc ?? '');
+      const grade = await gradePart3(item, state.aiDesc ?? '', state.studentSolutionImageUrl);
       onUpdate({ gradingP3: false, aiGradeP3: grade });
     } catch {
       onUpdate({ gradingP3: false, aiError: 'Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ AI Ð¾Ñ†ÐµÐ½ÑƒÐ²Ð°ÑšÐµ.' });
     }
-  }, [item, state.aiDesc, onUpdate]);
+  }, [item, state.aiDesc, state.studentSolutionImageUrl, onUpdate]);
 
   // Explain wrong MC answer
   const handleExplainWrong = useCallback(async () => {
@@ -626,21 +626,6 @@ ${item.questionText}
                   );
                 })}
               </div>
-              <QRSolutionUpload
-                questionKey={item.examId + '_q' + item.questionNumber + '_p3'}
-                onImageUrl={url => onUpdate({ studentSolutionImageUrl: url })}
-                existingUrl={state.studentSolutionImageUrl}
-              />
-              <QRSolutionUpload
-                questionKey={item.examId + '_q' + item.questionNumber + '_p3'}
-                onImageUrl={url => onUpdate({ studentSolutionImageUrl: url })}
-                existingUrl={state.studentSolutionImageUrl}
-              />
-              <QRSolutionUpload
-                questionKey={item.examId + '_q' + item.questionNumber + '_p3'}
-                onImageUrl={url => onUpdate({ studentSolutionImageUrl: url })}
-                existingUrl={state.studentSolutionImageUrl}
-              />
               <QRSolutionUpload
                 questionKey={item.examId + '_q' + item.questionNumber + '_p3'}
                 onImageUrl={url => onUpdate({ studentSolutionImageUrl: url })}
