@@ -81,7 +81,7 @@ S54–S58 целосно завршени. Build чист, 0 TS грешки, 11
 | P5 — IMAGE_EXTRACTOR | ✅ ЗАВРШЕНО | `0b24b4b` — imageMode + ExtractionInspector |
 | P6 — Matura AI-грејдирање | ✅ ЗАВРШЕНО | `7a31650` — Vision grading (photo → Gemini), 4x QRSolutionUpload bug fix |
 | P7 — Teacher onboarding wizard | ✅ ЗАВРШЕНО | `ff0a48e` — 5-step wizard + class creation + join code |
-| P8 — Sentry DSN | ⏳ Планирано | треба DSN клуч |
+| P8 — Sentry DSN | ✅ ЗАВРШЕНО | VITE_SENTRY_DSN поставен на Vercel (Preview + Production, Mar 16) |
 | P9 — Gemini Embedding 2 | ✅ ЗАВРШЕНО | `c88561e` + re-indexed 169 concepts |
 | QR Solution Upload | ✅ ЗАВРШЕНО | `581d91a` — QRSolutionUpload + SolutionUploadPage + Storage rules |
 | MaturaAssignmentView | ✅ ЗАВРШЕНО | `581d91a` — student view на teacher-assigned matura |
