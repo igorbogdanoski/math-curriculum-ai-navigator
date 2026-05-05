@@ -14,6 +14,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigation } from '../contexts/NavigationContext';
 import { SECONDARY_TRACK_TO_MATURA_TRACKS } from '../types';
 
 import {
@@ -46,6 +47,7 @@ export function MaturaLibraryView() {
   // ── Firestore data ──
   const { exams, loading: examsLoading, error: examsError } = useMaturaExams();
   const { user, firebaseUser } = useAuth();
+  const { navigate } = useNavigation();
 
   // ── Exam selection (smart default: prefer teacher's secondary track) ──
   const [selectedExamId, setSelectedExamId] = useState<string>('');
@@ -233,7 +235,7 @@ export function MaturaLibraryView() {
               )}
               {(user?.role === 'admin' || user?.role === 'school_admin') && (
                 <button type="button"
-                  onClick={() => { window.location.href = '/matura-import'; }}
+                  onClick={() => navigate('/matura-import')}
                   className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all text-gray-500 hover:text-violet-700 hover:bg-violet-50">
                   ☁ Увози PDF
                 </button>

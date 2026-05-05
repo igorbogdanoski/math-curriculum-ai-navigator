@@ -23,9 +23,17 @@ export function initSentry(): void {
     return;
   }
 
+  // Release tag (T0.3): prefer Vercel SHA, fall back to manual VITE_GIT_SHA, then 'dev'.
+  // Truncate to 7-char short SHA for readability in Sentry UI.
+  const fullSha =
+    (import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA as string | undefined) ??
+    (import.meta.env.VITE_GIT_SHA as string | undefined) ??
+    'dev';
+  const release = fullSha === 'dev' ? 'dev' : `mismath@${fullSha.slice(0, 7)}`;
+
   Sentry.init({
     dsn,
-    release: (import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA as string | undefined) ?? undefined,
+    release,
     environment: import.meta.env.MODE, // 'development' | 'production'
     // Only capture events in production to avoid polluting dev data
     enabled: import.meta.env.PROD,
