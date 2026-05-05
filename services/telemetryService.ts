@@ -28,6 +28,7 @@ export type TelemetryEventName =
   | 'onboarding_started'
   | 'onboarding_completed'
   | 'onboarding_skipped'
+  | 'onboarding_class_created'
   | 'experiment_assigned'
   | `feature_open_${string}`
   | `experiment_${string}`;
