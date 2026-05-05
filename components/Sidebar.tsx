@@ -85,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         trackEvent('quota_warning_seen', { balance, source: 'sidebar_meter', threshold: 10 });
     }, [user?.aiCreditsBalance, user?.isPremium, user?.hasUnlimitedCredits, user?.role]);
 
-    // Progressive disclosure â€” secondary nav collapsed by default, auto-opens when on a secondary path
+    // Progressive disclosure — secondary nav collapsed by default, auto-opens when on a secondary path
     const [showMore, setShowMore] = useState(() => {
       const secondaryPaths = [
         '/explore', '/graph', '/roadmap',
@@ -106,14 +106,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         <button type="button"
           onClick={onClose}
           className="md:hidden p-1 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
-          aria-label="Ð—Ð°Ñ‚Ð²Ð¾Ñ€Ð¸ ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ‡Ð½Ð° Ð»ÐµÐ½Ñ‚Ð°"
+          aria-label="Затвори странична лента"
         >
           <ICONS.close className="w-6 h-6" />
         </button>
       </div>
 
-      <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar" aria-label="Ð“Ð»Ð°Ð²Ð½Ð° Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸Ñ˜Ð°">
-        {/* â”€â”€ PRIMARY NAV (7 core items, always visible) â”€â”€ */}
+      <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar" aria-label="Главна навигација">
+        {/* ── PRIMARY NAV (7 core items, always visible) ── */}
         <div className="space-y-0.5">
           <NavItem path="/" currentPath={currentPath} icon={ICONS.home} label={t("nav.home")} onClick={onClose} />
           <NavItem path="/generator" currentPath={currentPath} icon={ICONS.generator} label={t("nav.generator")} onClick={onClose} isGenerator={true} badge="AI" />
@@ -138,7 +138,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
           <NavItem path="/settings" currentPath={currentPath} icon={ICONS.settings} label={t("nav.settings")} onClick={onClose} />
         </div>
 
-        {/* â”€â”€ SECONDARY NAV (collapsible, grouped) â”€â”€ */}
+        {/* ── SECONDARY NAV (collapsible, grouped) ── */}
         <div className="mt-3">
           <button
             type="button"
@@ -151,54 +151,54 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
 
           {showMore && (
             <div className="mt-1 space-y-0.5 animate-fade-in">
-              {/* ÐŸÐ»Ð°Ð½Ð¸Ñ€Ð°ÑšÐµ */}
+              {/* Планирање */}
               <hr className="mb-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.planning')}</p>
               <NavItem path="/planner" currentPath={currentPath} icon={ICONS.planner} label={t("nav.planner")} onClick={onClose} />
-              <NavItem path="/annual-planner" currentPath={currentPath} icon={ICONS.planner} label="Ð“Ð¾Ð´Ð¸ÑˆÐ½Ð° ÐŸÑ€Ð¾Ð³Ñ€Ð°Ð¼Ð°" onClick={onClose} badge="AI" />
-              <NavItem path="/annual-gallery" currentPath={currentPath} icon={ICONS.database} label="Ð“Ð°Ð»ÐµÑ€Ð¸Ñ˜Ð° Ð½Ð° ÐŸÐ»Ð°Ð½Ð¾Ð²Ð¸" onClick={onClose} badge="CoM" />
+              <NavItem path="/annual-planner" currentPath={currentPath} icon={ICONS.planner} label="Годишна Програма" onClick={onClose} badge="AI" />
+              <NavItem path="/annual-gallery" currentPath={currentPath} icon={ICONS.database} label="Галерија на Планови" onClick={onClose} badge="CoM" />
 
-              {/* Ð˜ÑÑ‚Ñ€Ð°Ð¶Ð¸ ÐŸÑ€Ð¾Ð³Ñ€Ð°Ð¼Ð° */}
+              {/* Истражи Програма */}
               <hr className="my-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.programme')}</p>
               <NavItem path="/explore" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.explore")} onClick={onClose} />
               <NavItem path="/graph" currentPath={currentPath} icon={ICONS.share} label={t("nav.graph")} onClick={onClose} />
               <NavItem path="/roadmap" currentPath={currentPath} icon={ICONS.mindmap} label={t("nav.roadmap")} onClick={onClose} />
 
-              {/* AI ÐÐ»Ð°Ñ‚ÐºÐ¸ */}
+              {/* AI Алатки */}
               <hr className="my-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.aitools')}</p>
               <NavItem path="/assistant" currentPath={currentPath} icon={ICONS.assistant} label={t("nav.assistant")} onClick={onClose} />
               <NavItem path="/vision-assessment" currentPath={currentPath} icon={ICONS.camera} label={t("nav.visionAssessment")} onClick={onClose} badge="NEW" />
               <NavItem path="/test-generator" currentPath={currentPath} icon={ICONS.assessment} label={t("nav.testgenerator")} onClick={onClose} />
-              <NavItem path="/grade-book" currentPath={currentPath} icon={ICONS.gradeBook} label="Ð¢ÐµÑ‚Ñ€Ð°Ñ‚ÐºÐ° Ð·Ð° Ð¾Ñ†ÐµÐ½ÐºÐ¸" onClick={onClose} badge="NEW" />
-              <NavItem path="/matura-library" currentPath={currentPath} icon={ICONS.education} label="Ð‘Ð¸Ð±Ð»Ð¸Ð¾Ñ‚ÐµÐºÐ° Ð¼Ð°Ñ‚ÑƒÑ€Ð°" onClick={onClose} badge="Ð”Ð˜Ðœ" />
-              <NavItem path="/matura-practice" currentPath={currentPath} icon={ICONS.assessment} label="ÐŸÑ€Ð°ÐºÑ‚Ð¸ÐºÐ° Ð¼Ð°Ñ‚ÑƒÑ€Ð°" onClick={onClose} badge="AI" />
-              <NavItem path="/matura" currentPath={currentPath} icon={ICONS.assessment} label="Ð¡Ð¸Ð¼ÑƒÐ»Ð°Ñ†Ð¸Ñ˜Ð° Ð¼Ð°Ñ‚ÑƒÑ€Ð°" onClick={onClose} />
-              <NavItem path="/matura-stats" currentPath={currentPath} icon={ICONS.analytics} label="ÐÐ½Ð°Ð»Ð¸Ñ‚Ð¸ÐºÐ° Ð¼Ð°Ñ‚ÑƒÑ€Ð°" onClick={onClose} badge={mission?.streakCount ? `ðŸ”¥${mission.streakCount}` : 'M5'} />
-              <NavItem path="/test-review" currentPath={currentPath} icon={ICONS.camera} label="AI ÐŸÑ€ÐµÐ³Ð»ÐµÐ´ÑƒÐ²Ð°Ñ‡" onClick={onClose} badge="NEW" />
-              <NavItem path="/live/host" currentPath={currentPath} icon={ICONS.live} label="Ð§Ð°Ñ Ð²Ð¾ Ð¶Ð¸Ð²Ð¾" onClick={onClose} badge="LIVE" />
+              <NavItem path="/grade-book" currentPath={currentPath} icon={ICONS.gradeBook} label="Тетратка за оценки" onClick={onClose} badge="NEW" />
+              <NavItem path="/matura-library" currentPath={currentPath} icon={ICONS.education} label="Библиотека матура" onClick={onClose} badge="ДИМ" />
+              <NavItem path="/matura-practice" currentPath={currentPath} icon={ICONS.assessment} label="Практика матура" onClick={onClose} badge="AI" />
+              <NavItem path="/matura" currentPath={currentPath} icon={ICONS.assessment} label="Симулација матура" onClick={onClose} />
+              <NavItem path="/matura-stats" currentPath={currentPath} icon={ICONS.analytics} label="Аналитика матура" onClick={onClose} badge={mission?.streakCount ? `🔥${mission.streakCount}` : 'M5'} />
+              <NavItem path="/test-review" currentPath={currentPath} icon={ICONS.camera} label="AI Прегледувач" onClick={onClose} badge="NEW" />
+              <NavItem path="/live/host" currentPath={currentPath} icon={ICONS.live} label="Час во живо" onClick={onClose} badge="LIVE" />
               <NavItem path="/kahoot/make" currentPath={currentPath} icon={ICONS.live} label="Kahoot Maker" onClick={onClose} badge="NEW" />
-              <NavItem path="/exam/build" currentPath={currentPath} icon={ICONS.assessment} label="Ð”Ð¸Ð³Ð¸Ñ‚Ð°Ð»ÐµÐ½ Ð¸ÑÐ¿Ð¸Ñ‚" onClick={onClose} badge="S46" />
+              <NavItem path="/exam/build" currentPath={currentPath} icon={ICONS.assessment} label="Дигитален испит" onClick={onClose} badge="S46" />
               <NavItem path="/data-viz" currentPath={currentPath} icon={ICONS.chart} label="DataViz Studio" onClick={onClose} badge="NEW" />
-              <NavItem path="/math-editor" currentPath={currentPath} icon={ICONS.sparkles} label="ÐœÐ°Ñ‚. Ð£Ñ€ÐµÐ´Ð½Ð¸Ðº" onClick={onClose} badge="Î£" />
-              <NavItem path="/dugga/build" currentPath={currentPath} icon={ICONS.assessment} label="Ð”Ð¸Ð³Ð° â€” Ð¢ÐµÑÑ‚ Ð“Ñ€Ð°Ð´Ð¸Ñ‚ÐµÐ»" onClick={onClose} badge="ÐÐžÐ’Ðž" />
+              <NavItem path="/math-editor" currentPath={currentPath} icon={ICONS.sparkles} label="Мат. Уредник" onClick={onClose} badge="Σ" />
+              <NavItem path="/dugga/build" currentPath={currentPath} icon={ICONS.assessment} label="Дига — Тест Градител" onClick={onClose} badge="НОВО" />
               <NavItem path="/dugga/play" currentPath={currentPath} icon={ICONS.education} label="Дига — Играј Тест" onClick={onClose} badge="НОВО" />
               <NavItem path="/dugga" currentPath={currentPath} icon={ICONS.analytics} label="Дига — Библиотека" onClick={onClose} />
 
-              {/* Ð Ð°Ð·Ð²Ð¾Ñ˜ Ð½Ð° Ð½Ð°ÑÑ‚Ð°Ð²Ð½Ð¸Ðº */}
+              {/* Развој на наставник */}
               <hr className="my-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.development')}</p>
               <NavItem path="/academy" currentPath={currentPath} icon={ICONS.education} label={t("nav.academy")} onClick={onClose} badge="NEW" />
-              <NavItem path="/my-profile" currentPath={currentPath} icon={ICONS.profile} label="ÐœÐ¾Ñ˜ ÐŸÑ€Ð¾Ñ„Ð¸Ð» (CPD)" onClick={onClose} badge="ÐÐžÐ’Ðž" />
-              <NavItem path="/my-progress" currentPath={currentPath} icon={ICONS.analytics} label="ÐœÐ¾Ñ˜ ÐÐ°Ð¿Ñ€ÐµÐ´Ð¾Ðº" onClick={onClose} />
-              <NavItem path="/portfolio" currentPath={currentPath} icon={ICONS.star} label="ÐŸÐ¾Ñ€Ñ‚Ñ„Ð¾Ð»Ð¸Ð¾" onClick={onClose} badge="NEW" />
+              <NavItem path="/my-profile" currentPath={currentPath} icon={ICONS.profile} label="Мој Профил (CPD)" onClick={onClose} badge="НОВО" />
+              <NavItem path="/my-progress" currentPath={currentPath} icon={ICONS.analytics} label="Мој Напредок" onClick={onClose} />
+              <NavItem path="/portfolio" currentPath={currentPath} icon={ICONS.star} label="Портфолио" onClick={onClose} badge="NEW" />
 
-              {/* Ð ÐµÑÑƒÑ€ÑÐ¸ */}
+              {/* Ресурси */}
               <hr className="my-2 border-gray-100" />
               <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">{t('sidebar.sec.resources')}</p>
               <NavItem path="/national-library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.nationalLibrary")} onClick={onClose} />
-              <NavItem path="/olympiad" currentPath={currentPath} icon={ICONS.star} label="ÐžÐ»Ð¸Ð¼Ð¿Ð¸ÑÐºÐ° ÐÑ€Ñ…Ð¸Ð²Ð°" onClick={onClose} badge="ðŸ†" />
+              <NavItem path="/olympiad" currentPath={currentPath} icon={ICONS.star} label="Олимписка Архива" onClick={onClose} badge="🏆" />
               <NavItem path="/gallery" currentPath={currentPath} icon={ICONS.gallery} label={t("nav.gallery")} onClick={onClose} />
               <NavItem path="/favorites" currentPath={currentPath} icon={ICONS.star} label={t("nav.favorites")} onClick={onClose} />
               <NavItem path="/reports/coverage" currentPath={currentPath} icon={ICONS.chart} label={t("nav.coverage")} onClick={onClose} />
@@ -211,12 +211,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value as import('../i18n').Language)}
-              aria-label="Ð˜Ð·Ð±ÐµÑ€Ð¸ Ñ˜Ð°Ð·Ð¸Ðº Ð½Ð° Ð¸Ð½Ñ‚ÐµÑ€Ñ„ÐµÑ˜ÑÐ¾Ñ‚"
+              aria-label="Избери јазик на интерфејсот"
               className="w-full text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary py-1.5 px-2"
             >
-              <option value="mk">ðŸ‡²ðŸ‡° ÐœÐ°ÐºÐµÐ´Ð¾Ð½ÑÐºÐ¸</option>
-              <option value="sq">ðŸ‡¦ðŸ‡± Shqip</option>
-              <option value="tr">ðŸ‡¹ðŸ‡· TÃ¼rkÃ§e</option>
+              <option value="mk">🇲🇰 Македонски</option>
+              <option value="sq">🇦🇱 Shqip</option>
+              <option value="tr">🇹🇷 Türkçe</option>
             </select>
         </div>
             <InstallPWAButton />
@@ -225,17 +225,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         <div className="px-2 pb-1">
           {user?.isPremium || user?.hasUnlimitedCredits || user?.role === 'admin' ? (
             <div className="w-full flex items-center justify-between bg-gradient-to-r from-brand-primary to-purple-800 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm border border-purple-500/30">
-              <span className="flex items-center gap-1.5"><ICONS.star className="w-3.5 h-3.5 text-yellow-300" /> Pro ÐÐ°ÑÑ‚Ð°Ð²Ð½Ð¸Ðº</span>
-              <span className="opacity-80">âˆž</span >
+              <span className="flex items-center gap-1.5"><ICONS.star className="w-3.5 h-3.5 text-yellow-300" /> Pro Наставник</span>
+              <span className="opacity-80">∞</span >
             </div>
           ) : (
             <div className="w-full flex items-center justify-between bg-white text-gray-700 text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:border-brand-primary hover:bg-gray-50 transition-colors"
                  onClick={() => {
                    // This could dispatch an event or use a Context to open the Upgrade Modal globally
-                   window.dispatchEvent(new CustomEvent('openUpgradeModal', { detail: { reason: 'ÐžÐ²Ð¾Ñ˜ Ð¿Ñ€ÐµÐ³Ð»ÐµÐ´ Ð²Ð¸ Ð³Ð¸ Ð¿Ñ€Ð¸ÐºÐ°Ð¶ÑƒÐ²Ð° Ñ‚ÐµÐºÐ¾Ð²Ð½Ð¸Ñ‚Ðµ ÐºÑ€ÐµÐ´Ð¸Ñ‚Ð¸. ÐÐ°Ð´Ð³Ñ€Ð°Ð´ÐµÑ‚Ðµ Ð·Ð° Ð½ÐµÐ¾Ð³Ñ€Ð°Ð½Ð¸Ñ‡ÐµÐ½Ð¾!' }}));
+                   window.dispatchEvent(new CustomEvent('openUpgradeModal', { detail: { reason: 'Овој преглед ви ги прикажува тековните кредити. Надградете за неограничено!' }}));
                  }}
             >
-              <span className="flex items-center gap-1.5"><ICONS.coins className="w-3.5 h-3.5 text-brand-primary" /> ÐšÑ€ÐµÐ´Ð¸Ñ‚Ð¸</span>
+              <span className="flex items-center gap-1.5"><ICONS.coins className="w-3.5 h-3.5 text-brand-primary" /> Кредити</span>
               <span className={user?.aiCreditsBalance && user.aiCreditsBalance > 10 ? "text-emerald-600" : "text-red-500"}>
                 {user?.aiCreditsBalance || 0}
               </span>

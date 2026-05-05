@@ -228,7 +228,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/live/display', component: LiveDisplayView }, // Fullscreen projector display
     { path: '/live', component: StudentLiveView }, // Live session join route
     { path: '/tutor', component: StudentTutorView }, // AI Tutor for Students
-    { path: '/parent', component: ParentPortalView }, // Parent Portal â€” public
+    { path: '/parent', component: ParentPortalView }, // Parent Portal — public
     { path: '/portfolio', component: StudentPortfolioView }, // Ж7.5 Student Portfolio
     { path: '/pricing', component: PricingView }, // Н2 Pricing page — public
     { path: '/school/register', component: SchoolOnboardingView }, // Н3 School self-registration — public
@@ -340,7 +340,7 @@ const AppContent: React.FC = () => {
                             type="button"
                             className="p-1 text-gray-600 md:hidden"
                             onClick={openSidebar}
-                            aria-label="ÐžÑ‚Ð²Ð¾Ñ€Ð¸ Ð¼ÐµÐ½Ð¸"
+                            aria-label="Отвори мени"
                         >
                             <ICONS.menu className="w-6 h-6" />
                         </button>
@@ -408,7 +408,7 @@ const AuthenticatedApp: React.FC = () => {
         return (
             <div className="flex items-center justify-center h-screen bg-brand-bg">
                 <Card className="text-center max-w-lg">
-                    <h1 className="text-xl font-bold text-red-600">Ð“Ñ€ÐµÑˆÐºÐ° Ð¿Ñ€Ð¸ Ð²Ñ‡Ð¸Ñ‚ÑƒÐ²Ð°ÑšÐµ Ð½Ð° Ð¿Ð¾Ð´Ð°Ñ‚Ð¾Ñ†Ð¸</h1>
+                    <h1 className="text-xl font-bold text-red-600">Грешка при вчитување на податоци</h1>
                     <p className="mt-2 text-gray-700">{error}</p>
                 </Card>
             </div>
@@ -423,14 +423,14 @@ const AIGeneratorPanelFallback: React.FC = () => {
     return (
         <div className="fixed inset-0 bg-gray-900/40 z-50 flex items-center justify-center no-print">
             <div className="bg-white rounded-2xl p-8 max-w-sm shadow-xl text-center mx-4">
-                <p className="text-red-600 text-xl font-bold mb-2">âš ï¸ Ð“Ñ€ÐµÑˆÐºÐ° Ð²Ð¾ Ð³ÐµÐ½ÐµÑ€Ð°Ñ‚Ð¾Ñ€Ð¾Ñ‚</p>
-                <p className="text-gray-500 text-sm mb-6">ÐÐ°ÑÑ‚Ð°Ð½Ð° Ð½ÐµÐ¾Ñ‡ÐµÐºÑƒÐ²Ð°Ð½Ð° Ð³Ñ€ÐµÑˆÐºÐ°. Ð’Ðµ Ð¼Ð¾Ð»Ð¸Ð¼Ðµ Ð·Ð°Ñ‚Ð²Ð¾Ñ€ÐµÑ‚Ðµ Ð¸ Ð¾Ð±Ð¸Ð´ÐµÑ‚Ðµ ÑÐµ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾.</p>
+                <p className="text-red-600 text-xl font-bold mb-2">⚠️ Грешка во генераторот</p>
+                <p className="text-gray-500 text-sm mb-6">Настана неочекувана грешка. Ве молиме затворете и обидете се повторно.</p>
                 <button
                     type="button"
                     onClick={closeGeneratorPanel}
                     className="px-5 py-2.5 bg-brand-primary text-white rounded-xl hover:bg-brand-secondary font-bold"
                 >
-                    Ð—Ð°Ñ‚Ð²Ð¾Ñ€Ð¸
+                    Затвори
                 </button>
             </div>
         </div>
@@ -516,7 +516,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </ErrorBoundary>
 );
 
-// E2.2 â€” Apply global accessibility settings from localStorage on startup
+// E2.2 — Apply global accessibility settings from localStorage on startup
 function applyAccessibilityOnStartup() {
   try {
     if (localStorage.getItem('accessibility_dyslexic') === 'true') {
