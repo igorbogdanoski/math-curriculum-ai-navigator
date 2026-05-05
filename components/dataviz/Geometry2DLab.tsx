@@ -1157,8 +1157,277 @@ function AbsoluteValueLab() {
   );
 }
 
+// ─── Quadrilaterals Explorer ──────────────────────────────────────────────────
+const QUAD_CUR: CurRef = {
+  primary: ['V', 'VI', 'VII'],
+  gymnasium: ['I год.'],
+  vocational: ['Стручно I год.', 'Стручно II год.'],
+};
+
+const QUAD_PRESETS: { name: string; pts: Pt[] }[] = [
+  { name: 'Квадрат',      pts: [[150,260],[290,260],[290,120],[150,120]] },
+  { name: 'Правоаголник', pts: [[90,270],[330,270],[330,155],[90,155]] },
+  { name: 'Ромб',         pts: [[200,280],[310,185],[200,90],[90,185]] },
+  { name: 'Паралелограм', pts: [[80,265],[280,265],[320,135],[120,135]] },
+  { name: 'Трапез',       pts: [[100,265],[330,265],[270,130],[160,130]] },
+  { name: 'Змеј (Kite)',  pts: [[200,285],[295,185],[200,75],[105,185]] },
+];
+
+type QuadToggle = 'none' | 'diagonals' | 'midpoints';
+
+function areParallel2D(ux: number, uy: number, vx: number, vy: number, tol = 0.10): boolean {
+  const cross = Math.abs(ux * vy - uy * vx);
+  const mag = Math.sqrt(ux*ux + uy*uy) * Math.sqrt(vx*vx + vy*vy);
+  return mag > 5 && cross / mag < tol;
+}
+
+function quadArea(pts: Pt[]): number {
+  let area = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i + 1) % pts.length;
+    area += pts[i][0] * pts[j][1] - pts[j][0] * pts[i][1];
+  }
+  return Math.abs(area) / 2;
+}
+
+function detectQuadType(pts: Pt[]): string {
+  const [A, B, C, D] = pts;
+  const s = [dist(A,B), dist(B,C), dist(C,D), dist(D,A)];
+  const ang = [angleDeg(D,A,B), angleDeg(A,B,C), angleDeg(B,C,D), angleDeg(C,D,A)];
+  const eqS = (a: number, b: number) => Math.abs(a - b) / (Math.max(a, b) + 1e-6) < 0.06;
+  const rightAng = (a: number) => Math.abs(a - 90) < 6;
+  const allSidesEq = eqS(s[0],s[1]) && eqS(s[1],s[2]) && eqS(s[2],s[3]);
+  const allRight = ang.every(rightAng);
+  const oppSidesEq = eqS(s[0],s[2]) && eqS(s[1],s[3]);
+  const abParDC = areParallel2D(B[0]-A[0], B[1]-A[1], C[0]-D[0], C[1]-D[1]);
+  const bcParAD = areParallel2D(C[0]-B[0], C[1]-B[1], D[0]-A[0], D[1]-A[1]);
+  const kite1 = eqS(s[0],s[3]) && eqS(s[1],s[2]);
+  const kite2 = eqS(s[0],s[1]) && eqS(s[2],s[3]);
+  if (allSidesEq && allRight) return 'Квадрат';
+  if (allRight && oppSidesEq) return 'Правоаголник';
+  if (allSidesEq) return 'Ромб';
+  if (abParDC && bcParAD) return 'Паралелограм';
+  if (abParDC || bcParAD) return 'Трапез';
+  if (kite1 || kite2) return 'Змеј (Kite)';
+  return 'Четириаголник';
+}
+
+const QUAD_TYPE_STYLE: Record<string, { border: string; bg: string; text: string; formula: string; desc: string }> = {
+  'Квадрат':      { border: 'border-indigo-300', bg: 'bg-indigo-50',  text: 'text-indigo-700',  formula: 'P = 4a  ·  S = a²',            desc: '4 еднакви страни, 4 прави агли' },
+  'Правоаголник': { border: 'border-blue-300',   bg: 'bg-blue-50',    text: 'text-blue-700',    formula: 'P = 2(a+b)  ·  S = a·b',        desc: 'Спротивни страни еднакви, 4 прави агли' },
+  'Ромб':         { border: 'border-violet-300', bg: 'bg-violet-50',  text: 'text-violet-700',  formula: 'P = 4a  ·  S = d₁·d₂/2',       desc: '4 еднакви страни, дијагонали ⊥' },
+  'Паралелограм': { border: 'border-emerald-300',bg: 'bg-emerald-50', text: 'text-emerald-700', formula: 'P = 2(a+b)  ·  S = a·h',        desc: 'Два пара паралелни спротивни страни' },
+  'Трапез':       { border: 'border-amber-300',  bg: 'bg-amber-50',   text: 'text-amber-700',   formula: 'S = (a+c)·h/2',                 desc: 'Точно еден пар паралелни страни' },
+  'Змеј (Kite)':  { border: 'border-rose-300',   bg: 'bg-rose-50',    text: 'text-rose-700',    formula: 'S = d₁·d₂/2',                  desc: 'Два пара соседни еднакви страни' },
+  'Четириаголник':{ border: 'border-gray-300',   bg: 'bg-gray-50',    text: 'text-gray-700',    formula: 'S = Гаусова (Shoelace) формула', desc: 'Општ четириаголник · ∑агли = 360°' },
+};
+
+function QuadrilateralsExplorer() {
+  const QSC = 40;
+  const [pts, setPts] = useState<Pt[]>([[80,265],[280,265],[320,135],[120,135]]);
+  const [toggle, setToggle] = useState<QuadToggle>('none');
+  const dragging = useRef<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const getSVGPt = useCallback((e: React.MouseEvent | React.TouchEvent): Pt => {
+    const svg = svgRef.current;
+    if (!svg) return [0, 0];
+    const rect = svg.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    return [
+      clamp((clientX - rect.left) * (420 / rect.width), 10, 410),
+      clamp((clientY - rect.top) * (360 / rect.height), 10, 350),
+    ];
+  }, []);
+
+  const onDown = useCallback((i: number) => (e: React.MouseEvent<SVGCircleElement>) => {
+    dragging.current = i; e.preventDefault();
+  }, []);
+  const onTouchStart = useCallback((i: number) => (e: React.TouchEvent<SVGCircleElement>) => {
+    dragging.current = i; e.preventDefault();
+  }, []);
+  const onMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (dragging.current === null) return;
+    const p = getSVGPt(e);
+    setPts(prev => prev.map((pt, i) => i === dragging.current ? p : pt) as Pt[]);
+  }, [getSVGPt]);
+  const onTouchMove = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    if (dragging.current === null) return;
+    const p = getSVGPt(e);
+    setPts(prev => prev.map((pt, i) => i === dragging.current ? p : pt) as Pt[]);
+    e.preventDefault();
+  }, [getSVGPt]);
+  const onUp = useCallback(() => { dragging.current = null; }, []);
+
+  const [A, B, C, D] = pts;
+  const sAB = dist(A,B), sBC = dist(B,C), sCD = dist(C,D), sDA = dist(D,A);
+  const angA = angleDeg(D,A,B), angB = angleDeg(A,B,C), angC = angleDeg(B,C,D), angD = angleDeg(C,D,A);
+  const dAC = dist(A,C), dBD = dist(B,D);
+  const perim = sAB + sBC + sCD + sDA;
+  const areaVal = quadArea(pts);
+  const quadType = detectQuadType(pts);
+  const sumAng = angA + angB + angC + angD;
+  const midAB = midpoint(A,B), midBC = midpoint(B,C), midCD = midpoint(C,D), midDA = midpoint(D,A);
+  const ptsStr = `${A[0]},${A[1]} ${B[0]},${B[1]} ${C[0]},${C[1]} ${D[0]},${D[1]}`;
+  const vtC = ['#ef4444','#10b981','#3b82f6','#f59e0b'];
+  const qStyle = QUAD_TYPE_STYLE[quadType] ?? QUAD_TYPE_STYLE['Четириаголник'];
+
+  const QTOGGLES: { id: QuadToggle; label: string }[] = [
+    { id: 'none', label: 'Основно' },
+    { id: 'diagonals', label: 'Дијагонали' },
+    { id: 'midpoints', label: 'Средишта' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {QUAD_PRESETS.map(p => (
+          <button key={p.name} type="button" onClick={() => setPts(p.pts)}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border-2 border-teal-200 text-teal-700 hover:bg-teal-50 transition">
+            {p.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4">
+        <div className="space-y-2">
+          <div className="rounded-2xl border-2 border-teal-200 bg-gradient-to-br from-teal-50 to-white overflow-hidden select-none cursor-crosshair">
+            <svg ref={svgRef} viewBox="0 0 420 360" className="w-full touch-none"
+              onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+              onTouchMove={onTouchMove} onTouchEnd={onUp}>
+              {Array.from({ length: 7 }, (_, i) => (i+1)*60).map(x => (
+                <line key={`gx${x}`} x1={x} y1={0} x2={x} y2={360} stroke="#f0fdfa" strokeWidth={1} />
+              ))}
+              {Array.from({ length: 5 }, (_, i) => (i+1)*60).map(y => (
+                <line key={`gy${y}`} x1={0} y1={y} x2={420} y2={y} stroke="#f0fdfa" strokeWidth={1} />
+              ))}
+              <polygon points={ptsStr} fill="rgba(20,184,166,0.12)" stroke="none" />
+
+              {toggle === 'diagonals' && (
+                <>
+                  <line x1={A[0]} y1={A[1]} x2={C[0]} y2={C[1]} stroke="#8b5cf6" strokeWidth={2} strokeDasharray="7 4" />
+                  <line x1={B[0]} y1={B[1]} x2={D[0]} y2={D[1]} stroke="#f59e0b" strokeWidth={2} strokeDasharray="7 4" />
+                  <circle cx={(A[0]+C[0])/2} cy={(A[1]+C[1])/2} r={4} fill="#8b5cf6" />
+                  <circle cx={(B[0]+D[0])/2} cy={(B[1]+D[1])/2} r={4} fill="#f59e0b" />
+                  <text x={(A[0]+C[0])/2+7} y={(A[1]+C[1])/2-4} fontSize={9} fill="#8b5cf6" fontWeight="bold">d₁={fmtNum(dAC/QSC)}</text>
+                  <text x={(B[0]+D[0])/2+7} y={(B[1]+D[1])/2-4} fontSize={9} fill="#f59e0b" fontWeight="bold">d₂={fmtNum(dBD/QSC)}</text>
+                </>
+              )}
+              {toggle === 'midpoints' && (
+                <>
+                  {[midAB, midBC, midCD, midDA].map((m, i) => (
+                    <circle key={i} cx={m[0]} cy={m[1]} r={5} fill="#6366f1" stroke="white" strokeWidth={1.5} />
+                  ))}
+                  <polygon
+                    points={`${midAB[0]},${midAB[1]} ${midBC[0]},${midBC[1]} ${midCD[0]},${midCD[1]} ${midDA[0]},${midDA[1]}`}
+                    fill="rgba(99,102,241,0.18)" stroke="#6366f1" strokeWidth={1.5} strokeDasharray="5 3" />
+                </>
+              )}
+
+              <polygon points={ptsStr} fill="none" stroke="#14b8a6" strokeWidth={2.5} strokeLinejoin="round" />
+
+              {[
+                { v: A, ang: angA, c: vtC[0], dx: -22, dy: 15 },
+                { v: B, ang: angB, c: vtC[1], dx: 7,   dy: 15 },
+                { v: C, ang: angC, c: vtC[2], dx: 7,   dy: -8 },
+                { v: D, ang: angD, c: vtC[3], dx: -27, dy: -8 },
+              ].map(({ v, ang, c, dx, dy }, i) => (
+                <text key={i} x={v[0]+dx} y={v[1]+dy} fontSize={9} fontWeight="bold" fill={c}>{fmtNum(ang,0)}°</text>
+              ))}
+
+              <text x={(A[0]+B[0])/2} y={(A[1]+B[1])/2+14} textAnchor="middle" fontSize={9} fill="#14b8a6" fontWeight="bold">a={fmtNum(sAB/QSC)}</text>
+              <text x={(B[0]+C[0])/2+10} y={(B[1]+C[1])/2+4} textAnchor="start"  fontSize={9} fill="#14b8a6" fontWeight="bold">b={fmtNum(sBC/QSC)}</text>
+              <text x={(C[0]+D[0])/2} y={(C[1]+D[1])/2-8}  textAnchor="middle" fontSize={9} fill="#14b8a6" fontWeight="bold">c={fmtNum(sCD/QSC)}</text>
+              <text x={(D[0]+A[0])/2-10} y={(D[1]+A[1])/2+4} textAnchor="end"  fontSize={9} fill="#14b8a6" fontWeight="bold">d={fmtNum(sDA/QSC)}</text>
+
+              {(['A','B','C','D'] as const).map((label, i) => (
+                <g key={label}>
+                  <circle cx={pts[i][0]} cy={pts[i][1]} r={14} fill="transparent" style={{ cursor: 'grab' }}
+                    onMouseDown={onDown(i)} onTouchStart={onTouchStart(i)} />
+                  <circle cx={pts[i][0]} cy={pts[i][1]} r={7} fill={vtC[i]} stroke="white" strokeWidth={2} style={{ pointerEvents: 'none' }} />
+                  <text x={pts[i][0]} y={pts[i][1]-11} textAnchor="middle" fontSize={11} fontWeight="bold"
+                    fill={vtC[i]} style={{ pointerEvents: 'none' }}>{label}</text>
+                </g>
+              ))}
+            </svg>
+          </div>
+
+          <div className="flex gap-1.5 flex-wrap">
+            {QTOGGLES.map(t => (
+              <button key={t.id} type="button" onClick={() => setToggle(t.id)}
+                className={`flex-1 min-w-[80px] px-2 py-1.5 text-xs font-bold rounded-lg border-2 transition ${toggle === t.id ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-gray-200 text-gray-500 hover:border-teal-300'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className={`rounded-xl p-3 border-2 text-center ${qStyle.border} ${qStyle.bg}`}>
+            <p className="text-xs text-gray-500 font-semibold uppercase">Тип</p>
+            <p className={`text-xl font-extrabold ${qStyle.text} mt-0.5`}>{quadType}</p>
+            <p className={`text-xs ${qStyle.text} opacity-80 mt-0.5`}>{qStyle.desc}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: 'Страна a (AB)', val: fmtNum(sAB/QSC) + ' ед.', bg: 'bg-red-50',     border: 'border-red-200',    color: 'text-red-700'    },
+              { label: 'Страна b (BC)', val: fmtNum(sBC/QSC) + ' ед.', bg: 'bg-green-50',   border: 'border-green-200',  color: 'text-green-700'  },
+              { label: 'Страна c (CD)', val: fmtNum(sCD/QSC) + ' ед.', bg: 'bg-blue-50',    border: 'border-blue-200',   color: 'text-blue-700'   },
+              { label: 'Страна d (DA)', val: fmtNum(sDA/QSC) + ' ед.', bg: 'bg-amber-50',   border: 'border-amber-200',  color: 'text-amber-700'  },
+              { label: 'Периметар',     val: fmtNum(perim/QSC) + ' ед.', bg: 'bg-teal-50',  border: 'border-teal-200',   color: 'text-teal-700'   },
+              { label: 'Плоштина',      val: fmtNum(areaVal/QSC/QSC) + ' ед²', bg: 'bg-violet-50', border: 'border-violet-200', color: 'text-violet-700' },
+            ].map(({ label, val, bg, border, color }) => (
+              <div key={label} className={`rounded-xl border p-2.5 text-center ${bg} ${border}`}>
+                <p className="text-[10px] text-gray-500 font-semibold">{label}</p>
+                <p className={`text-base font-extrabold ${color}`}>{val}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: '∠A', val: fmtNum(angA,0)+'°', bg: 'bg-red-50',   text: 'text-red-700',   border: 'border-red-200'   },
+              { label: '∠B', val: fmtNum(angB,0)+'°', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+              { label: '∠C', val: fmtNum(angC,0)+'°', bg: 'bg-blue-50',  text: 'text-blue-700',  border: 'border-blue-200'  },
+              { label: '∠D', val: fmtNum(angD,0)+'°', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+            ].map(({ label, val, bg, text, border }) => (
+              <div key={label} className={`rounded-xl border p-2.5 text-center ${bg} ${border}`}>
+                <p className="text-[10px] text-gray-500 font-semibold">{label}</p>
+                <p className={`text-xl font-extrabold ${text}`}>{val}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className={`rounded-xl border p-2.5 text-center ${Math.abs(sumAng - 360) < 4 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <p className="text-[10px] text-gray-400 font-semibold">∠A + ∠B + ∠C + ∠D</p>
+            <p className={`text-lg font-extrabold ${Math.abs(sumAng - 360) < 4 ? 'text-green-700' : 'text-red-600'}`}>
+              {fmtNum(sumAng,0)}°{Math.abs(sumAng - 360) < 4 ? ' = 360° ✓' : ' ≠ 360°'}
+            </p>
+          </div>
+
+          <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 text-xs text-teal-900 space-y-1">
+            <p className="font-bold">Формула ({quadType}):</p>
+            <p className="font-mono">{qStyle.formula}</p>
+            <p className="mt-1"><strong>Теорема:</strong> Збирот на внатрешните агли на секој четириаголник = <strong>360°</strong></p>
+            {toggle === 'midpoints' && (
+              <p className="text-indigo-700 font-semibold mt-1">Вариньонова теорема: Средиштата на страните на секој четириаголник секогаш формираат паралелограм!</p>
+            )}
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-xl p-2.5">
+            <p className="text-[10px] font-bold text-gray-400 uppercase">Наставна програма</p>
+            <CurrBadges cur={QUAD_CUR} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
-type Geo2DTab = 'triangle' | 'pythagoras' | 'circle' | 'polygons' | 'quadratic' | 'absvalue';
+type Geo2DTab = 'triangle' | 'pythagoras' | 'circle' | 'polygons' | 'quadratic' | 'absvalue' | 'quads';
 
 export function Geometry2DLab() {
   const [tab, setTab] = useState<Geo2DTab>('triangle');
@@ -1168,6 +1437,7 @@ export function Geometry2DLab() {
     { id: 'pythagoras',label: '² Питагорова теорема', color: 'blue'    },
     { id: 'circle',    label: '○ Кружница',           color: 'rose'    },
     { id: 'polygons',  label: '⬡ Многуаголници',      color: 'violet'  },
+    { id: 'quads',     label: '▱ Четириаголници',     color: 'teal'    },
     { id: 'quadratic', label: '∪ Квадратна ф-ја',    color: 'indigo'  },
     { id: 'absvalue',  label: '|x| Апс. вредност',   color: 'emerald' },
   ];
@@ -1187,6 +1457,7 @@ export function Geometry2DLab() {
       {tab === 'pythagoras' && <PythagoreanLab />}
       {tab === 'circle'     && <CircleExplorer />}
       {tab === 'polygons'   && <PolygonsExplorer />}
+      {tab === 'quads'      && <QuadrilateralsExplorer />}
       {tab === 'quadratic'  && <QuadraticExplorer />}
       {tab === 'absvalue'   && <AbsoluteValueLab />}
     </div>
