@@ -235,3 +235,13 @@ export const createAssignment = async (
   return ref.id;
 };
 
+export const fetchMaturaAssignmentsByClass = async (classId: string): Promise<MaturaAssignment[]> => {
+  const q = query(
+    collection(db, 'matura_assignments'),
+    where('classId', '==', classId),
+    orderBy('createdAt', 'desc'),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as MaturaAssignment));
+};
+

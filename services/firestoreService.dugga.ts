@@ -78,6 +78,7 @@ export interface DuggaSubmission {
   id: string;
   testId: string;
   testTitle: string;
+  teacherUid: string;
   studentUid: string;
   studentName: string;
   answers: Record<string, string | string[]>;

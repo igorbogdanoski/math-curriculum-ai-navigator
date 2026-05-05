@@ -18,7 +18,7 @@ import { ErrorCode, toAppError } from '../utils/errors';
 export function initSentry(): void {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
   // Basic validation to prevent "Invalid Sentry Dsn" noise in console
-  if (!dsn || !dsn.startsWith('https://') || !dsn.includes('.sentry.io')) {
+  if (!dsn || !dsn.startsWith('https://') || !dsn.includes('@') || !dsn.includes('.sentry.io')) {
     // DSN not configured or invalid — Sentry disabled (expected in envs without DSN set)
     return;
   }

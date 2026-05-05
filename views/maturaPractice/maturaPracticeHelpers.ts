@@ -25,6 +25,9 @@ export interface QuestionState {
   aiError?: string;
   submitted: boolean;
   skipped?: boolean;
+  mcExplanation?: string;
+  explainLoading?: boolean;
+  studentSolutionImageUrl?: string;
 }
 
 export type Phase = 'setup' | 'practice' | 'results';

@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         '/explore', '/graph', '/roadmap',
         '/planner', '/annual-planner', '/annual-gallery',
         '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
-        '/matura', '/matura-library', '/matura-practice', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot',
+        '/matura', '/matura-library', '/matura-practice', '/matura-assignments', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot',
         '/academy', '/my-profile', '/my-progress', '/portfolio',
         '/national-library', '/gallery', '/favorites', '/reports/coverage',
       ];
@@ -117,6 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         <div className="space-y-0.5">
           <NavItem path="/" currentPath={currentPath} icon={ICONS.home} label={t("nav.home")} onClick={onClose} />
           <NavItem path="/generator" currentPath={currentPath} icon={ICONS.generator} label={t("nav.generator")} onClick={onClose} isGenerator={true} badge="AI" />
+              <NavItem path="/matura-assignments" currentPath={currentPath} icon={ICONS.education} label="Задачи матура" onClick={onClose} badge="NEW" />
           <NavItem path="/my-lessons" currentPath={currentPath} icon={ICONS.myLessons} label={t("nav.mylessons")} onClick={onClose} />
           <NavItem path="/analytics" currentPath={currentPath} icon={ICONS.analytics} label={t("nav.analytics")} onClick={onClose} />
           <NavItem path="/library" currentPath={currentPath} icon={ICONS.bookOpen} label={t("nav.library")} onClick={onClose} />

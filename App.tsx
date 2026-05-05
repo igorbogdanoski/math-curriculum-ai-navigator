@@ -172,7 +172,9 @@ const MaturaLibraryView    = safeLazy(() => import('./views/MaturaLibraryView').
 const MaturaPracticeView   = safeLazy(() => import('./views/MaturaPracticeView').then(module => ({ default: module.MaturaPracticeView })));
 const MaturaAnalyticsView  = safeLazy(() => import('./views/MaturaAnalyticsView').then(module => ({ default: module.MaturaAnalyticsView })));
 const MaturaImportView     = safeLazy(() => import('./views/MaturaImportView').then(module => ({ default: module.MaturaImportView })));
-const MaturaPortalView     = safeLazy(() => import('./views/MaturaPortalView').then(module => ({ default: module.MaturaPortalView })));
+const MaturaPortalView        = safeLazy(() => import('./views/MaturaPortalView').then(module => ({ default: module.MaturaPortalView })));
+const MaturaAssignmentView    = safeLazy(() => import('./views/MaturaAssignmentView').then(module => ({ default: module.MaturaAssignmentView })));
+const SolutionUploadPage      = safeLazy(() => import('./views/SolutionUploadPage').then(module => ({ default: module.SolutionUploadPage })));
 const ExamBuilderView      = safeLazy(() => import('./views/ExamBuilderView').then(module => ({ default: module.ExamBuilderView })));
 const ExamPlayerView       = safeLazy(() => import('./views/ExamPlayerView').then(module => ({ default: module.ExamPlayerView })));
 const ExamPresenterView    = safeLazy(() => import('./views/ExamPresenterView').then(module => ({ default: module.ExamPresenterView })));
@@ -213,6 +215,7 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     '#/gamma/student/',
     '#/embed/',
     '#/exam/play',
+    '#/upload/',
   ];
 
   const isPublicHashRoute = (hash: string): boolean =>
@@ -276,6 +279,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/matura-stats', component: MaturaAnalyticsView },
     { path: '/matura-import', component: MaturaImportView },
     { path: '/matura-portal', component: MaturaPortalView },
+    { path: '/matura-assignments', component: MaturaAssignmentView },
     { path: '/exam/build', component: ExamBuilderView },
     { path: '/exam/play', component: ExamPlayerView },
     { path: '/exam/presenter/:id', component: ExamPresenterView },
@@ -447,6 +451,16 @@ const AppCore: React.FC = () => {
         return (
             <Suspense fallback={<AppSkeleton />}>
                 <SchoolOnboardingView />
+            </Suspense>
+        );
+    }
+
+    // QR solution upload — standalone mobile page, no sidebar required
+    if (window.location.hash.startsWith('#/upload/')) {
+        const token = window.location.hash.replace('#/upload/', '').split('/')[0];
+        return (
+            <Suspense fallback={<AppSkeleton />}>
+                <SolutionUploadPage token={token} />
             </Suspense>
         );
     }

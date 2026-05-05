@@ -14,11 +14,14 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { MathRenderer }    from '../components/common/MathRenderer';
+import { MathInput }       from '../components/common/MathInput';
+import { QRSolutionUpload } from '../components/common/QRSolutionUpload';
 import { DokBadge }        from '../components/common/DokBadge';
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
 import { ForumCTA } from '../components/common/ForumCTA';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
 import { callGeminiProxy } from '../services/gemini/core';
+import { maturaService } from '../services/firestoreService.matura';
 import type { MaturaQuestion, MaturaExamMeta } from '../services/firestoreService.matura';
 import type { DokLevel } from '../types';
 import {
@@ -37,7 +40,7 @@ import {
   isOpen,
   shuffle,
 } from './maturaPractice/maturaPracticeHelpers';
-import { gradePart2, gradePart3 } from './maturaPractice/maturaPracticeGrading';
+import { gradePart2, gradePart3, explainWrongAnswer } from './maturaPractice/maturaPracticeGrading';
 import { TopicChip, ProgressBar, ScorePill } from './maturaPractice/MaturaPracticeUI';
 import { resolveMCKey, nextFocusedIdx } from './maturaPractice/maturaKeyboardNav';
 
@@ -389,6 +392,19 @@ ${item.questionText}
     }
   }, [item, state.aiDesc, onUpdate]);
 
+  // Explain wrong MC answer
+  const handleExplainWrong = useCallback(async () => {
+    if (!state.mcPick || state.explainLoading || state.mcExplanation) return;
+    const wrongText = item.choices?.[state.mcPick] ?? '';
+    onUpdate({ explainLoading: true });
+    try {
+      const explanation = await explainWrongAnswer(item, state.mcPick, wrongText);
+      onUpdate({ explainLoading: false, mcExplanation: explanation });
+    } catch {
+      onUpdate({ explainLoading: false, mcExplanation: 'Не можев да генерирам објаснување. Обидете се повторно.' });
+    }
+  }, [item, state.mcPick, state.explainLoading, state.mcExplanation, onUpdate]);
+
   // Part 3 self-assess submit
   const handleSelfSubmit = useCallback(() => {
     onUpdate({ submitted: true });
@@ -463,6 +479,28 @@ ${item.questionText}
               )}
             </div>
           )}
+          {mcWrong && !state.mcExplanation && (
+            <button
+              type="button"
+              disabled={!!state.explainLoading}
+              onClick={() => void handleExplainWrong()}
+              className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition disabled:opacity-50"
+            >
+              {state.explainLoading ? (
+                <><span className="animate-spin">⏳</span> Генерирање…</>
+              ) : (
+                <>💡 Зошто е погрешно?</>
+              )}
+            </button>
+          )}
+          {mcWrong && state.mcExplanation && (
+            <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-1">
+              <p className="text-xs font-bold text-amber-700">💡 Објаснување:</p>
+              <div className="text-xs text-amber-900 leading-relaxed">
+                <MathRenderer text={state.mcExplanation} />
+              </div>
+            </div>
+          )}
           {/* â”€â”€ Solution (after MC answer) â”€â”€ */}
           {state.submitted && item.aiSolution && (
             <div className="mt-2 bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-1.5">
@@ -487,20 +525,31 @@ ${item.questionText}
         <div className="px-5 pb-4 space-y-3 mt-2">
           <p className="text-xs text-gray-500 font-medium">Ð’Ð½ÐµÑÐ¸ Ð³Ð¾ Ñ‚Ð²Ð¾Ñ˜Ð¾Ñ‚ Ð¾Ð´Ð³Ð¾Ð²Ð¾Ñ€:</p>
           <div>
-            <input
-              type="text"
-              value={state.answer ?? ''}
-              disabled={!!state.aiGrade}
-              onChange={e => onUpdate({ answer: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-brand-primary focus:border-brand-primary disabled:bg-gray-50"
-              placeholder="ÐžÐ´Ð³Ð¾Ð²Ð¾Ñ€â€¦"
-            />
+            {!state.aiGrade ? (
+              <MathInput
+                value={state.answer ?? ''}
+                onChange={v => onUpdate({ answer: v })}
+                className="w-full"
+              />
+            ) : (
+              <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600 min-h-[38px]">
+                {state.answer || ''}
+              </div>
+            )}
             {state.aiGrade && (
               <p className={`text-xs mt-1 font-medium ${state.aiGrade.correct ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {state.aiGrade.correct ? 'âœ“' : 'âœ—'} {state.aiGrade.comment}
               </p>
             )}
           </div>
+          {!state.aiGrade && (
+            <QRSolutionUpload
+              questionKey={item.examId + '_q' + item.questionNumber + '_p2'}
+              onImageUrl={url => onUpdate({ studentSolutionImageUrl: url })}
+              existingUrl={state.studentSolutionImageUrl}
+              disabled={!!state.aiGrade}
+            />
+          )}
           {state.aiGrade ? (
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
               <p className="text-xs font-bold text-blue-700">
@@ -577,6 +626,26 @@ ${item.questionText}
                   );
                 })}
               </div>
+              <QRSolutionUpload
+                questionKey={item.examId + '_q' + item.questionNumber + '_p3'}
+                onImageUrl={url => onUpdate({ studentSolutionImageUrl: url })}
+                existingUrl={state.studentSolutionImageUrl}
+              />
+              <QRSolutionUpload
+                questionKey={item.examId + '_q' + item.questionNumber + '_p3'}
+                onImageUrl={url => onUpdate({ studentSolutionImageUrl: url })}
+                existingUrl={state.studentSolutionImageUrl}
+              />
+              <QRSolutionUpload
+                questionKey={item.examId + '_q' + item.questionNumber + '_p3'}
+                onImageUrl={url => onUpdate({ studentSolutionImageUrl: url })}
+                existingUrl={state.studentSolutionImageUrl}
+              />
+              <QRSolutionUpload
+                questionKey={item.examId + '_q' + item.questionNumber + '_p3'}
+                onImageUrl={url => onUpdate({ studentSolutionImageUrl: url })}
+                existingUrl={state.studentSolutionImageUrl}
+              />
               <button type="button" onClick={handleSelfSubmit}
                 className="px-4 py-2 bg-brand-primary text-white text-sm font-bold rounded-lg hover:bg-brand-secondary transition-colors"
               >
@@ -862,6 +931,27 @@ export function MaturaPracticeView() {
       return null;
     }
   });
+
+  const [assignmentTitle, setAssignmentTitle] = useState<string | null>(null);
+
+  // Assignment launch: skip setup, load specific questions by doc IDs
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('matura_assignment_launch');
+      if (!raw) return;
+      sessionStorage.removeItem('matura_assignment_launch');
+      const { title, questionDocIds } = JSON.parse(raw) as { title: string; questionDocIds: string[] };
+      if (!questionDocIds?.length) return;
+      setAssignmentTitle(title);
+      maturaService.getQuestionsByDocIds(questionDocIds).then(questions => {
+        const items: PracticeItem[] = questions.map(q => ({ ...q, examLabel: title }));
+        setQueue(items);
+        setCurrent(0);
+        setStates(items.map(() => ({ submitted: false })));
+        setPhase('practice');
+      }).catch(() => { /* fallback to setup if fetch fails */ });
+    } catch { /* ignore */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { completeDay } = useMaturaMissions();
 
@@ -1168,7 +1258,11 @@ export function MaturaPracticeView() {
       {offlineBanner}
       {/* Top bar */}
       <div className="flex items-center gap-3 mb-2">
-        <h2 className="text-lg font-black text-brand-primary flex-1">ÐÐ´Ð°Ð¿Ñ‚Ð¸Ð²Ð½Ð° Ð¿Ñ€Ð°ÐºÑ‚Ð¸ÐºÐ°</h2>
+        <h2 className="text-lg font-black text-brand-primary flex-1">
+          {assignmentTitle ? (
+            <><span className="text-indigo-600">📋</span> {assignmentTitle}</>
+          ) : 'Адаптивна практика'}
+        </h2>
         <button
           type="button"
           onClick={() => setPhase('results')}

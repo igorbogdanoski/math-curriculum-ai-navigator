@@ -31,6 +31,7 @@ export const ExamPlayerView: React.FC = () => {
   const [responseDocId, setResponseDocId] = useState<string | null>(null);
   const [variantKey, setVariantKey] = useState<ExamVariantKey | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [solutionImages, setSolutionImages] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
@@ -95,6 +96,10 @@ export const ExamPlayerView: React.FC = () => {
     setPhase(found.status === 'active' ? 'solving' : 'waiting');
     setJoining(false);
   };
+
+  const handleSolutionImage = useCallback((questionIndex: number, url: string) => {
+    setSolutionImages(prev => ({ ...prev, [`q${questionIndex}`]: url }));
+  }, []);
 
   const handleAnswer = useCallback(async (questionIndex: number, value: string) => {
     setAnswers(prev => ({ ...prev, [`q${questionIndex}`]: value }));
@@ -232,6 +237,8 @@ export const ExamPlayerView: React.FC = () => {
           questions={questions}
           answers={answers}
           onAnswer={handleAnswer}
+          solutionImages={solutionImages}
+          onSolutionImage={handleSolutionImage}
         />
         {/* Bottom submit */}
         <div className="mt-8 flex justify-center">

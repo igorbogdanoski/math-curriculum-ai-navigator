@@ -124,6 +124,17 @@ service firebase.storage {
       allow write: if false; // Само преку Admin SDK (import pipeline)
     }
 
+    // ── QR решенија прикачени од ученици ─────────────────────
+    // /solution-uploads/{token}/{fileName}
+    // Само автентицирани (вклучувајќи анонимни) можат да прикачат; read за наставникот.
+    match /solution-uploads/{token}/{fileName} {
+      allow read:  if isAuthenticated();
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && request.resource.size <= 10 * 1024 * 1024; // Max 10MB
+      allow delete: if false;
+    }
+
     // ── Блокирај сè останато ──────────────────────────────────
     match /{allPaths=**} {
       allow read, write: if false;

@@ -74,7 +74,7 @@ export function TeacherTestBuilder({ questions }: TeacherTestBuilderProps) {
         firebaseUser.uid,
         classId,
         title || 'Тест — Матура',
-        selectedQs.map(q => `${q.examId}_${q.questionNumber}`),
+        selectedQs.map(q => `${q.examId}_q${String(q.questionNumber).padStart(2, '0')}`),
       );
       setStatus(`✅ Доделено (${selectedQs.length} пр.)`);
     } catch {

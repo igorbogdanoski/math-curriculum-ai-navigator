@@ -86,6 +86,11 @@ const RELATED_TOOLS_MAP: Record<string, RelatedTool[]> = {
     { label: 'Матура Симул.', path: '/matura', icon: 'education' },
     { label: 'Дига Тест', path: '/dugga/build', icon: 'assessment' },
   ],
+  '/matura-assignments': [
+    { label: 'Практика', path: '/matura-practice', icon: 'assessment' },
+    { label: 'Матура Библ.', path: '/matura-library', icon: 'education' },
+    { label: 'Симулација', path: '/matura', icon: 'education' },
+  ],
   '/matura-stats': [
     { label: 'Матура Библ.', path: '/matura-library', icon: 'education' },
     { label: 'Матура Практика', path: '/matura-practice', icon: 'education' },

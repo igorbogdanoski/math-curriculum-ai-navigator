@@ -202,7 +202,7 @@ describe('submitDuggaTest', () => {
 
     const subId = await submitDuggaTest({
       testId: 'test-1', testTitle: 'Тест',
-      studentUid: 'uid-1', studentName: 'Петар',
+      teacherUid: 'teacher-1', studentUid: 'uid-1', studentName: 'Петар',
       answers: { q1: 'a' }, score: 8, totalPoints: 10, percentage: 80,
     });
 

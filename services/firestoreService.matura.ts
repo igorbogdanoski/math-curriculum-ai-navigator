@@ -409,6 +409,17 @@ export const maturaService = {
     _examCache = null;
     _questionCache.clear();
   },
+
+  /**
+   * Fetch specific questions by their Firestore document IDs.
+   * Doc ID format: `{examId}_q{NN}` (e.g. `dim-gymnasium-2022-june-mk_q05`).
+   * Used by the student assignment flow to load only the assigned questions.
+   */
+  async getQuestionsByDocIds(docIds: string[]): Promise<MaturaQuestion[]> {
+    if (!docIds.length) return [];
+    const snaps = await Promise.all(docIds.map(id => getDoc(doc(db, 'matura_questions', id))));
+    return snaps.filter(s => s.exists()).map(s => s.data() as MaturaQuestion);
+  },
 };
 
 // ─── AI Grade Cache ───────────────────────────────────────────────────────────

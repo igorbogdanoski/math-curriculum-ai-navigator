@@ -393,9 +393,15 @@ service cloud.firestore {
     // Само авторот или admin може да ги менува/брише.
     match /forum_replies/{replyId} {
       allow read:   if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.authorUid == request.auth.uid;
+      // 'ai-expert' is a sentinel UID for AI-generated replies posted by authenticated teachers
+      allow create: if isAuthenticated() && (
+        request.resource.data.authorUid == request.auth.uid ||
+        request.resource.data.authorUid == 'ai-expert'
+      );
       allow update: if isAuthenticated() && (
-        resource.data.authorUid == request.auth.uid || isAdmin()
+        resource.data.authorUid == request.auth.uid ||
+        resource.data.authorUid == 'ai-expert' ||
+        isAdmin()
       );
       allow delete: if isAdmin();
     }
@@ -441,6 +447,76 @@ service cloud.firestore {
       // Само upvotes/downvotes полиња (бројач + низа) смее да се менуваат
       allow update: if isAuthenticated() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes', 'upvoterUids']);
+      allow delete: if isAdmin();
+    }
+
+    // ── Матурски задачи (matura_assignments) ──
+    // Создавање: само наставник (не анонимен).
+    // Читање: наставникот-создавач или ученик во тој класот (verified via classId query).
+    //   Практично: дозволуваме read на сите автентицирани — класот е знаен само на ученикот.
+    // Бришење: само наставникот или admin.
+    match /matura_assignments/{assignmentId} {
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && !isAnonymousStudent()
+                    && request.resource.data.teacherUid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.teacherUid == request.auth.uid || isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.teacherUid == request.auth.uid || isAdmin()
+      );
+    }
+
+    // ── Дига тестови (dugga_tests) ──
+    // Читање: сите автентицирани (вклучувајќи анонимни ученици — им треба за пронаоѓање по код).
+    // Создавање/уредување/бришење: само сопственичкиот наставник или admin.
+    match /dugga_tests/{testId} {
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && !isAnonymousStudent()
+                    && request.resource.data.teacherUid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.teacherUid == request.auth.uid || isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.teacherUid == request.auth.uid || isAdmin()
+      );
+    }
+
+    // ── Дига поднесувања (dugga_submissions) ──
+    // Создавање: ученикот (анонимен или Google) — мора да го постави сопствениот studentUid.
+    // Читање: ученикот (сопственик на поднесувањето) или наставникот (сопственик на тестот) или admin.
+    // Уредување: само наставникот или admin (за рачна оценка / AI белешки).
+    // Бришење: само admin.
+    match /dugga_submissions/{subId} {
+      allow read:   if isAuthenticated() && (
+        resource.data.studentUid == request.auth.uid ||
+        resource.data.teacherUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated()
+                    && request.resource.data.studentUid == request.auth.uid
+                    && request.resource.data.keys().hasAll(['testId', 'teacherUid', 'studentUid', 'studentName', 'score', 'totalPoints', 'percentage']);
+      allow update: if isAuthenticated() && (
+        resource.data.teacherUid == request.auth.uid || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ── QR решенија (solution_uploads) ──
+    // Токен (UUID) важи 10 мин. Само записот кој сè уште не е истечен може да добие imageUrl.
+    // Читање: сите автентицирани — потребно за верификација на токенот од мобилен.
+    // Создавање: автентицираниот корисник кој ја генерира (desktop или server).
+    // Ажурирање: само полето imageUrl (мобилен ученик по прикачување).
+    match /solution_uploads/{token} {
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && request.resource.data.keys().hasAll(['questionKey', 'expiresAt', 'imageUrl', 'createdAt']);
+      allow update: if isAuthenticated()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['imageUrl'])
+                    && request.resource.data.imageUrl is string
+                    && resource.data.expiresAt > request.time.toMillis();
       allow delete: if isAdmin();
     }
 

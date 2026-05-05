@@ -55,6 +55,25 @@ export async function gradePart2(q: MaturaQuestion, answer: string): Promise<AIG
   return grade;
 }
 
+export async function explainWrongAnswer(q: MaturaQuestion, wrongChoice: string, wrongText: string): Promise<string> {
+  const prompt = `Ти си матурантски математички тутор. Одговарај на македонски јазик, концизно (2-4 реченици).
+
+Прашање Q${q.questionNumber}: ${q.questionText}
+Ученикот одбра: ${wrongChoice}. ${wrongText}
+Точен одговор: ${q.correctAnswer}
+
+Објасни ЗОШТО изборот на ученикот е погрешен и КОЈ концепт или чекор го пропуштил.
+Не ги повторувај прашањето или опциите.
+Биди охрабрувачки.`;
+
+  const resp = await callGeminiProxy({
+    model: DEFAULT_MODEL,
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.3, maxOutputTokens: 300 },
+  });
+  return resp.text?.trim() ?? 'Не можев да генерирам објаснување.';
+}
+
 export async function gradePart3(q: MaturaQuestion, desc: string): Promise<AIGrade> {
   const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, desc);
 

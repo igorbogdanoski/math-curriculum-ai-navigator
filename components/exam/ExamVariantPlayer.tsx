@@ -1,11 +1,71 @@
 import React from 'react';
+import { Sigma } from 'lucide-react';
 import type { ExamQuestion } from '../../services/firestoreService.types';
+import { MathInput } from '../common/MathInput';
+import { QRSolutionUpload } from '../common/QRSolutionUpload';
 
 interface ExamVariantPlayerProps {
   questions: ExamQuestion[];
   answers: Record<string, string>;
   onAnswer: (questionIndex: number, value: string) => void;
   readonly?: boolean;
+  solutionImages?: Record<string, string>;
+  onSolutionImage?: (questionIndex: number, url: string) => void;
+}
+
+// Per-question math editor toggle (local state isolated per question card)
+function OpenAnswerInput({ idx, type, value, onChange, disabled, solutionImageUrl, onSolutionImage }: {
+  idx: number;
+  type: 'short_answer' | 'calculation' | 'essay';
+  value: string;
+  onChange: (v: string) => void;
+  disabled: boolean;
+  solutionImageUrl?: string;
+  onSolutionImage?: (url: string) => void;
+}) {
+  const [useMath, setUseMath] = React.useState(false);
+  const rows = type === 'essay' ? 6 : type === 'calculation' ? 4 : 2;
+  const placeholder = type === 'calculation'
+    ? 'Покажи ја работата чекор по чекор…'
+    : type === 'essay' ? 'Напиши го твојот одговор…' : 'Твојот одговор…';
+  const showQR = type !== 'short_answer';
+
+  return (
+    <div className="space-y-2">
+      {!disabled && type !== 'short_answer' && (
+        <button
+          type="button"
+          onClick={() => setUseMath(v => !v)}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${useMath ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'}`}
+        >
+          <Sigma className="w-3.5 h-3.5" />
+          {useMath ? 'Мат. уредник вклучен' : 'Вклучи мат. уредник'}
+        </button>
+      )}
+
+      {useMath && !disabled ? (
+        <MathInput value={value} onChange={onChange} placeholder={placeholder} className="w-full" />
+      ) : (
+        <textarea
+          rows={rows}
+          disabled={disabled}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-400 focus:outline-none resize-none text-sm text-gray-800 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-default"
+        />
+      )}
+
+      {showQR && onSolutionImage && (
+        <QRSolutionUpload
+          questionKey={`exam_q${idx}`}
+          onImageUrl={onSolutionImage}
+          disabled={disabled}
+          existingUrl={solutionImageUrl}
+        />
+      )}
+    </div>
+  );
 }
 
 export const ExamVariantPlayer: React.FC<ExamVariantPlayerProps> = ({
@@ -13,6 +73,8 @@ export const ExamVariantPlayer: React.FC<ExamVariantPlayerProps> = ({
   answers,
   onAnswer,
   readonly = false,
+  solutionImages = {},
+  onSolutionImage,
 }) => {
   return (
     <div className="space-y-8">
@@ -65,28 +127,16 @@ export const ExamVariantPlayer: React.FC<ExamVariantPlayerProps> = ({
             </div>
           )}
 
-          {(q.type === 'short_answer' || q.type === 'calculation') && (
+          {(q.type === 'short_answer' || q.type === 'calculation' || q.type === 'essay') && (
             <div className="ml-11">
-              <textarea
-                rows={q.type === 'calculation' ? 4 : 2}
-                disabled={readonly}
+              <OpenAnswerInput
+                idx={idx}
+                type={q.type}
                 value={answers[`q${idx}`] ?? ''}
-                onChange={e => onAnswer(idx, e.target.value)}
-                placeholder={q.type === 'calculation' ? 'Покажи ја работата чекор по чекор…' : 'Твојот одговор…'}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-400 focus:outline-none resize-none text-sm text-gray-800 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-default"
-              />
-            </div>
-          )}
-
-          {q.type === 'essay' && (
-            <div className="ml-11">
-              <textarea
-                rows={6}
+                onChange={v => onAnswer(idx, v)}
                 disabled={readonly}
-                value={answers[`q${idx}`] ?? ''}
-                onChange={e => onAnswer(idx, e.target.value)}
-                placeholder="Напиши го твојот одговор…"
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-400 focus:outline-none resize-y text-sm text-gray-800 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-default"
+                solutionImageUrl={solutionImages[`q${idx}`]}
+                onSolutionImage={onSolutionImage ? url => onSolutionImage(idx, url) : undefined}
               />
             </div>
           )}

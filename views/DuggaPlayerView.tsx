@@ -2,10 +2,11 @@ import React, { useState, useCallback } from 'react';
 import {
   Search, CheckCircle2, XCircle, Loader2, Award,
   ArrowUp, ArrowDown, Clock, User, BookOpen, Shuffle,
-  RotateCcw, ChevronRight, Trophy,
+  RotateCcw, ChevronRight, Trophy, Sigma,
 } from 'lucide-react';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { MathInput } from '../components/common/MathInput';
+import { QRSolutionUpload } from '../components/common/QRSolutionUpload';
 import { getDuggaTestByCode, submitDuggaTest } from '../services/firestoreService.dugga';
 import type { DuggaTest, DuggaQuestion } from '../services/firestoreService.dugga';
 import { duggaAPI } from '../services/gemini/dugga';
@@ -20,8 +21,9 @@ type Phase = 'code' | 'name' | 'test' | 'submitting' | 'results';
 
 // ─── Answer Input Components ──────────────────────────────────────────────────
 
-function AnswerInput({ q, answer, onChange, disabled }: {
+function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSolutionImage }: {
   q: DuggaQuestion; answer: string; onChange: (v: string) => void; disabled: boolean;
+  solutionImageUrl?: string; onSolutionImage?: (url: string) => void;
 }) {
   switch (q.type) {
     case 'multiple_choice': {
@@ -102,10 +104,36 @@ function AnswerInput({ q, answer, onChange, disabled }: {
       );
     }
     case 'essay': {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const [useMathEditor, setUseMathEditor] = React.useState(false);
       return (
-        <textarea rows={5} disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
-          placeholder="Напиши го твоето решение / доказ..."
-          className="w-full mt-3 rounded-xl border-2 border-gray-200 px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50" />
+        <div className="mt-3 space-y-2">
+          {!disabled && (
+            <button
+              type="button"
+              onClick={() => setUseMathEditor(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${useMathEditor ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'}`}
+            >
+              <Sigma className="w-3.5 h-3.5" />
+              {useMathEditor ? 'Мат. уредник вклучен' : 'Вклучи мат. уредник'}
+            </button>
+          )}
+          {useMathEditor && !disabled ? (
+            <MathInput value={answer} onChange={onChange} placeholder="Внеси математичко решение..." className="w-full" />
+          ) : (
+            <textarea rows={5} disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
+              placeholder="Напиши го твоето решение / доказ..."
+              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50" />
+          )}
+          {onSolutionImage && (
+            <QRSolutionUpload
+              questionKey={q.id}
+              onImageUrl={onSolutionImage}
+              disabled={disabled}
+              existingUrl={solutionImageUrl}
+            />
+          )}
+        </div>
       );
     }
     case 'ordering': {
@@ -323,10 +351,11 @@ const DOK_COLORS: Record<number, string> = {
   4: 'bg-red-100 text-red-700',
 };
 
-function QuestionCard({ q, idx, answer, onChange, result, showResults }: {
+function QuestionCard({ q, idx, answer, onChange, result, showResults, solutionImageUrl, onSolutionImage }: {
   q: DuggaQuestion; idx: number; answer: string;
   onChange: (id: string, v: string) => void;
   result?: QResult; showResults: boolean;
+  solutionImageUrl?: string; onSolutionImage?: (id: string, url: string) => void;
 }) {
   if (q.type === 'section_header') {
     return (
@@ -373,7 +402,11 @@ function QuestionCard({ q, idx, answer, onChange, result, showResults }: {
       </div>
 
       {/* Answer UI */}
-      <AnswerInput q={q} answer={answer} onChange={v => onChange(q.id, v)} disabled={showResults} />
+      <AnswerInput
+        q={q} answer={answer} onChange={v => onChange(q.id, v)} disabled={showResults}
+        solutionImageUrl={solutionImageUrl}
+        onSolutionImage={onSolutionImage ? (url) => onSolutionImage(q.id, url) : undefined}
+      />
 
       {/* Results feedback */}
       {showResults && result && (
@@ -425,6 +458,7 @@ export function DuggaPlayerView() {
     (user as any)?.displayName ?? firebaseUser?.displayName ?? ''
   );
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [solutionImages, setSolutionImages] = useState<Record<string, string>>({});
   const [results, setResults] = useState<Record<string, QResult>>({});
   const [totalScore, setTotalScore] = useState(0);
   const [maxScore, setMaxScore] = useState(0);
@@ -433,6 +467,10 @@ export function DuggaPlayerView() {
 
   const handleAnswer = useCallback((id: string, v: string) => {
     setAnswers(prev => ({ ...prev, [id]: v }));
+  }, []);
+
+  const handleSolutionImage = useCallback((id: string, url: string) => {
+    setSolutionImages(prev => ({ ...prev, [id]: url }));
   }, []);
 
   const fetchTest = async () => {
@@ -513,6 +551,7 @@ export function DuggaPlayerView() {
       await submitDuggaTest({
         testId: test.id,
         testTitle: test.title,
+        teacherUid: test.teacherUid,
         studentUid: firebaseUser?.uid ?? `anon_${Date.now()}`,
         studentName: studentName.trim() || 'Анонимен ученик',
         answers,
@@ -644,7 +683,9 @@ export function DuggaPlayerView() {
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-4 pb-32">
           {test.questions.map((q, idx) => (
             <QuestionCard key={q.id} q={q} idx={idx} answer={answers[q.id] ?? ''}
-              onChange={handleAnswer} result={results[q.id]} showResults={false} />
+              onChange={handleAnswer} result={results[q.id]} showResults={false}
+              solutionImageUrl={solutionImages[q.id]}
+              onSolutionImage={q.type === 'essay' ? handleSolutionImage : undefined} />
           ))}
         </div>
 
@@ -713,7 +754,8 @@ export function DuggaPlayerView() {
           <h2 className="text-base font-bold text-gray-700">Детален преглед</h2>
           {test.questions.map((q, idx) => (
             <QuestionCard key={q.id} q={q} idx={idx} answer={answers[q.id] ?? ''}
-              onChange={handleAnswer} result={results[q.id]} showResults={true} />
+              onChange={handleAnswer} result={results[q.id]} showResults={true}
+              solutionImageUrl={solutionImages[q.id]} />
           ))}
 
           {/* Retry button */}
