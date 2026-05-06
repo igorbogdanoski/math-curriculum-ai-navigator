@@ -5,7 +5,19 @@ import {
   saveAIGrade,
 } from '../../services/firestoreService.matura';
 import type { MaturaQuestion } from '../../services/firestoreService.matura';
+import { recordMaturaSpacedReview } from '../../services/firestoreService.maturaSpacedRep';
 import { safeParseJSON, type AIGrade } from './maturaPracticeHelpers';
+
+function pushSpacedReview(
+  uid: string | undefined,
+  q: MaturaQuestion,
+  score: number,
+  maxScore: number,
+): void {
+  if (!uid || maxScore <= 0) return;
+  const pct = Math.max(0, Math.min(100, (score / maxScore) * 100));
+  void recordMaturaSpacedReview(uid, q.examId, q.questionNumber, pct);
+}
 
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
@@ -30,12 +42,13 @@ async function urlToBase64(url: string): Promise<{ data: string; mimeType: strin
   }
 }
 
-export async function gradePart2(q: MaturaQuestion, answer: string, imageUrl?: string): Promise<AIGrade> {
+export async function gradePart2(q: MaturaQuestion, answer: string, imageUrl?: string, uid?: string): Promise<AIGrade> {
   const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, answer + (imageUrl ? '_img' : ''));
   const maxScore = q.points ?? 4;
 
   const cached = await getCachedAIGrade(cacheKey);
   if (cached) {
+    pushSpacedReview(uid, q, cached.score, cached.maxPoints);
     return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
   }
 
@@ -83,6 +96,7 @@ ${hasImage
     examId: q.examId, questionNumber: q.questionNumber,
     inputHash: cacheKey, score: grade.score, maxPoints: maxScore, feedback: grade.feedback,
   });
+  pushSpacedReview(uid, q, grade.score, maxScore);
   return grade;
 }
 
@@ -105,11 +119,12 @@ export async function explainWrongAnswer(q: MaturaQuestion, wrongChoice: string,
   return resp.text?.trim() ?? 'Не можев да генерирам објаснување.';
 }
 
-export async function gradePart3(q: MaturaQuestion, desc: string, imageUrl?: string): Promise<AIGrade> {
+export async function gradePart3(q: MaturaQuestion, desc: string, imageUrl?: string, uid?: string): Promise<AIGrade> {
   const cacheKey = buildGradeCacheKey(q.examId, q.questionNumber, desc + (imageUrl ? '_img' : ''));
 
   const cached = await getCachedAIGrade(cacheKey);
   if (cached) {
+    pushSpacedReview(uid, q, cached.score, cached.maxPoints);
     return { score: cached.score, maxScore: cached.maxPoints, feedback: cached.feedback };
   }
 
@@ -149,5 +164,21 @@ ${hasImage
     examId: q.examId, questionNumber: q.questionNumber,
     inputHash: cacheKey, score, maxPoints: q.points, feedback,
   });
+  pushSpacedReview(uid, q, score, q.points);
   return { score, maxScore: q.points, feedback };
+}
+
+/**
+ * Records an MC auto-grade against the spaced-repetition queue (T3.1).
+ * MC questions are graded synchronously in the view, so no AI call is involved.
+ */
+export function recordMcSpacedReview(
+  uid: string | undefined,
+  q: MaturaQuestion,
+  selected: string,
+): void {
+  if (!uid) return;
+  const correct = (selected ?? '').trim().toLowerCase()
+    === (q.correctAnswer ?? '').trim().toLowerCase();
+  pushSpacedReview(uid, q, correct ? (q.points ?? 1) : 0, q.points ?? 1);
 }

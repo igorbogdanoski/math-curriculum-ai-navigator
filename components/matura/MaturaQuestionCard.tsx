@@ -89,6 +89,8 @@ export interface CardProps {
   questionDocId: string;
   currentUid: string | null;
   currentDisplayName: string;
+  /** When true, render a "🔁 Повторно" badge in the header (T3.2). */
+  dueForReview?: boolean;
 }
 
 export function QuestionCard({
@@ -98,6 +100,7 @@ export function QuestionCard({
   selfChecks, onSelfCheck,
   aiDesc, setAiDesc, onGradeP3, gradingP3, aiGradeP3, aiError,
   questionDocId, currentUid, currentDisplayName,
+  dueForReview = false,
 }: CardProps) {
   const open      = isOpen(q);
   const ta        = q.topicArea ?? '';
@@ -114,6 +117,15 @@ export function QuestionCard({
         </span>
         {ta && <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${TOPIC_COLORS[ta] ?? 'bg-gray-100 text-gray-600'}`}>{TOPIC_LABELS[ta] ?? ta}</span>}
         {q.dokLevel != null && <DokBadge level={q.dokLevel as DokLevel} size="compact" showTooltip />}
+        {dueForReview && (
+          <span
+            className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200"
+            title="Оваа задача е во редот за повторување (Spaced Repetition)"
+            data-testid="matura-question-due-badge"
+          >
+            🔁 Повторно
+          </span>
+        )}
         <span className="ml-auto text-xs font-bold text-gray-500">{q.points} {q.points === 1 ? 'поен' : 'поени'}</span>
       </div>
 

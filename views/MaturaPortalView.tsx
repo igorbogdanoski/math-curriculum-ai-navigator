@@ -13,6 +13,7 @@ import { MaturaCountdown } from '../components/matura/MaturaCountdown';
 import { useMaturaStats } from '../hooks/useMaturaStats';
 import { useMaturaReadinessPath } from '../hooks/useMaturaReadinessPath';
 import { MissionPanel } from '../components/matura/MissionPanel';
+import { MaturaSpacedReviewPanel } from '../components/matura/MaturaSpacedReviewPanel';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
 import { MaturaTutorChat } from '../components/matura/MaturaTutorChat';
 import {
@@ -469,6 +470,9 @@ export const MaturaPortalView: React.FC = () => {
               )}
             </Card>
           )}
+
+          {/* Spaced repetition queue (T3.1) */}
+          {fbUser && <MaturaSpacedReviewPanel />}
 
           {/* Mission plan */}
           {mission && (
