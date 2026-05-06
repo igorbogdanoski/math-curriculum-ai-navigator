@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/common/Card';
 import { useMaturaStats } from '../hooks/useMaturaStats';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
+import { useMaturaSessions } from '../hooks/useMaturaSessions';
+import { MaturaSessionsList } from '../components/matura/MaturaSessionsList';
 import { MissionPanel } from '../components/matura/MissionPanel';
 import { ForumCTA } from '../components/common/ForumCTA';
 import { RecoveryWorksheetModal } from '../components/matura/RecoveryWorksheetModal';
@@ -70,6 +72,8 @@ export const MaturaAnalyticsView: React.FC = () => {
   const { firebaseUser } = useAuth();
   const stats = useMaturaStats();
   const missions = useMaturaMissions();
+  const { sessions, loading: sessionsLoading } = useMaturaSessions();
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'sessions'>('overview');
   const readiness = useMaturaReadinessPath(stats.weakConcepts);
   const [copied, setCopied] = React.useState(false);
   const [linkCopied, setLinkCopied] = React.useState(false);
@@ -377,6 +381,52 @@ export const MaturaAnalyticsView: React.FC = () => {
         </div>
       </Card>
 
+      <div
+        className="flex items-center gap-2 border-b border-gray-200"
+        role="tablist"
+        aria-label="Matura analytics tabs"
+        data-testid="matura-analytics-tabs"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'overview'}
+          onClick={() => setActiveTab('overview')}
+          data-testid="matura-tab-overview"
+          className={`px-4 py-2 text-sm font-bold border-b-2 -mb-px transition ${
+            activeTab === 'overview'
+              ? 'border-indigo-600 text-indigo-700'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Преглед
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'sessions'}
+          onClick={() => setActiveTab('sessions')}
+          data-testid="matura-tab-sessions"
+          className={`px-4 py-2 text-sm font-bold border-b-2 -mb-px transition ${
+            activeTab === 'sessions'
+              ? 'border-indigo-600 text-indigo-700'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Сесии
+          {sessions.length > 0 && (
+            <span className="ml-1.5 inline-flex items-center justify-center text-[10px] font-black px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+              {sessions.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'sessions' && (
+        <MaturaSessionsList sessions={sessions} loading={sessionsLoading} />
+      )}
+
+      {activeTab === 'overview' && (<>
       {/* Off-screen export template used by html2canvas/jsPDF */}
       <div className="fixed top-0 -left-[9999px] w-[820px] pointer-events-none opacity-0">
         <div ref={pdfExportRef} className="bg-white text-black p-8">
@@ -701,6 +751,7 @@ export const MaturaAnalyticsView: React.FC = () => {
           onClose={() => setShowWorksheet(false)}
         />
       )}
+      </>)}
     </div>
   );
 };
