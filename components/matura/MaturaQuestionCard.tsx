@@ -1,6 +1,7 @@
 import React from 'react';
 import { MathRenderer } from '../common/MathRenderer';
 import { DokBadge }     from '../common/DokBadge';
+import { QuestionGlossaryStrip } from '../common/QuestionGlossaryStrip';
 import { CommunitySolutionsPanel } from './CommunitySolutionsPanel';
 import type { MaturaQuestion } from '../../services/firestoreService.matura';
 import type { DokLevel } from '../../types';
@@ -143,6 +144,7 @@ export function QuestionCard({
         <div className="text-sm leading-relaxed text-gray-800">
           <MathRenderer text={q.questionText} />
         </div>
+        <QuestionGlossaryStrip text={q.questionText} />
       </div>
 
       {/* MC choices */}
