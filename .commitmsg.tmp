@@ -1,0 +1,7 @@
+feat-s60-probability-simulator T4.2
+
+Coin/Die/Urn experiments with live observed-vs-theoretical histograms:
+- components/math/probabilitySimulatorHelpers.ts (flipCoin, rollDie, drawFromUrn, makeSeededRng, chiSquared)
+- components/math/ProbabilitySimulator.tsx (3-tab UI + sliders + cumulative histogram)
+- 20 vitest tests (14 helpers + 6 component)
+- Integrated into MaturaTutorChat as "Експеримент со веројатност" toggle.

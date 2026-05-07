@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp, Bot, LineChart } from 'lucide-react';
+import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp, Bot, LineChart, Dices } from 'lucide-react';
 import { callGeminiProxy } from '../../services/gemini/core';
 import { FunctionTransformer } from '../math/FunctionTransformer';
+import { ProbabilitySimulator } from '../math/ProbabilitySimulator';
 import type { StudentMaturaProfile } from '../../types';
 
 interface Message {
@@ -56,6 +57,7 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [showTransformer, setShowTransformer] = useState(false);
+  const [showProbSim, setShowProbSim] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const send = useCallback(async (text: string) => {
@@ -141,6 +143,15 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
                 <LineChart className="w-3 h-3" />
                 {showTransformer ? 'Скриј трансформација' : 'Покажи трансформација'}
               </button>
+              <button
+                type="button"
+                onClick={() => setShowProbSim((v) => !v)}
+                className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition inline-flex items-center gap-1"
+                data-testid="matura-tutor-probsim-toggle"
+              >
+                <Dices className="w-3 h-3" />
+                {showProbSim ? 'Скриј експеримент' : 'Експеримент со веројатност'}
+              </button>
             </div>
           )}
 
@@ -148,6 +159,13 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
           {showTransformer && (
             <div className="px-3 pt-3">
               <FunctionTransformer />
+            </div>
+          )}
+
+          {/* Probability simulator (T4.2) */}
+          {showProbSim && (
+            <div className="px-3 pt-3">
+              <ProbabilitySimulator />
             </div>
           )}
 
