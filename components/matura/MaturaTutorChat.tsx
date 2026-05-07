@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp, Bot } from 'lucide-react';
+import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp, Bot, LineChart } from 'lucide-react';
 import { callGeminiProxy } from '../../services/gemini/core';
+import { FunctionTransformer } from '../math/FunctionTransformer';
 import type { StudentMaturaProfile } from '../../types';
 
 interface Message {
@@ -54,6 +55,7 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [showTransformer, setShowTransformer] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const send = useCallback(async (text: string) => {
@@ -130,6 +132,22 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
                   {chip}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setShowTransformer((v) => !v)}
+                className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition inline-flex items-center gap-1"
+                data-testid="matura-tutor-transform-toggle"
+              >
+                <LineChart className="w-3 h-3" />
+                {showTransformer ? 'Скриј трансформација' : 'Покажи трансформација'}
+              </button>
+            </div>
+          )}
+
+          {/* Function transformer (T4.1) */}
+          {showTransformer && (
+            <div className="px-3 pt-3">
+              <FunctionTransformer />
             </div>
           )}
 
