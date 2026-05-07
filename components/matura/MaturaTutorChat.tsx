@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp, Bot, LineChart, Dices } from 'lucide-react';
+import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp, Bot, LineChart, Dices, Triangle, Scale } from 'lucide-react';
 import { callGeminiProxy } from '../../services/gemini/core';
 import { FunctionTransformer } from '../math/FunctionTransformer';
 import { ProbabilitySimulator } from '../math/ProbabilitySimulator';
+import { ConicSectionExplorer } from '../math/ConicSectionExplorer';
+import { InequalitySolver } from '../math/InequalitySolver';
 import type { StudentMaturaProfile } from '../../types';
 
 interface Message {
@@ -58,6 +60,8 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
   const [isOpen, setIsOpen] = useState(false);
   const [showTransformer, setShowTransformer] = useState(false);
   const [showProbSim, setShowProbSim] = useState(false);
+  const [showConic, setShowConic] = useState(false);
+  const [showIneq, setShowIneq] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const send = useCallback(async (text: string) => {
@@ -152,6 +156,24 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
                 <Dices className="w-3 h-3" />
                 {showProbSim ? 'Скриј експеримент' : 'Експеримент со веројатност'}
               </button>
+              <button
+                type="button"
+                onClick={() => setShowConic((v) => !v)}
+                className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition inline-flex items-center gap-1"
+                data-testid="matura-tutor-conic-toggle"
+              >
+                <Triangle className="w-3 h-3" />
+                {showConic ? 'Скриј пресеци' : 'Конусни пресеци'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowIneq((v) => !v)}
+                className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 transition inline-flex items-center gap-1"
+                data-testid="matura-tutor-ineq-toggle"
+              >
+                <Scale className="w-3 h-3" />
+                {showIneq ? 'Скриј неравенки' : 'Неравенки'}
+              </button>
             </div>
           )}
 
@@ -166,6 +188,20 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
           {showProbSim && (
             <div className="px-3 pt-3">
               <ProbabilitySimulator />
+            </div>
+          )}
+
+          {/* Conic section explorer (T4.3) */}
+          {showConic && (
+            <div className="px-3 pt-3">
+              <ConicSectionExplorer />
+            </div>
+          )}
+
+          {/* Inequality solver (T4.4) */}
+          {showIneq && (
+            <div className="px-3 pt-3">
+              <InequalitySolver />
             </div>
           )}
 
