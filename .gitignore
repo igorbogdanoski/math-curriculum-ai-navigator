@@ -33,6 +33,7 @@ build_errors*.txt
 build_logs*.txt
 return_context.txt
 temp.tsx
+.commitmsg.tmp
 
 # Intermediate data processing files
 *.cleaned.json
