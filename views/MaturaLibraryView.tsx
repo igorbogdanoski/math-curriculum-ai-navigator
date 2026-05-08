@@ -31,6 +31,10 @@ export { collectPracticeConceptIds };
 import { TeacherTestBuilder } from '../components/matura/TeacherTestBuilder';
 import { parseMaturaDeepLink } from '../components/matura/maturaDeepLink';
 import type { MaturaExamMeta } from '../services/firestoreService.matura';
+import {
+  saveLibraryAttempt,
+  getLibraryAttemptsForExam,
+} from '../services/firestoreService.matura';
 
 export function MaturaLibraryView() {
   // ── Tab (with S37-C4 deep-link support) ──
@@ -168,15 +172,23 @@ export function MaturaLibraryView() {
     setGradingP2(prev => { const s = new Set(prev); s.add(n); return s; });
     setAiErrors(prev => ({ ...prev, [n]: '' }));
     try {
-      const grade = await gradePart2(q, p2Answers[n] ?? '');
+      const answer = p2Answers[n] ?? '';
+      const grade = await gradePart2(q, answer);
       setAiGrades(prev => ({ ...prev, [n]: grade }));
       setRevealedIds(prev => { const s = new Set(prev); s.add(n); return s; });
+      // S60 — persist per-user attempt so the AI grade survives reloads.
+      if (firebaseUser?.uid) {
+        void saveLibraryAttempt(firebaseUser.uid, {
+          examId: q.examId, questionNumber: n, part: 2,
+          answer, score: grade.score, maxScore: grade.maxScore, feedback: grade.feedback,
+        });
+      }
     } catch {
       setAiErrors(prev => ({ ...prev, [n]: 'AI грешка — обидете се повторно.' }));
     } finally {
       setGradingP2(prev => { const s = new Set(prev); s.delete(n); return s; });
     }
-  }, [p2Answers]);
+  }, [p2Answers, firebaseUser?.uid]);
 
   const handleGradeP3 = useCallback(async (q: Parameters<typeof gradePart3>[0]) => {
     const n   = q.questionNumber;
@@ -187,12 +199,56 @@ export function MaturaLibraryView() {
     try {
       const grade = await gradePart3(q, desc);
       setAiGradesP3(prev => ({ ...prev, [n]: grade }));
+      // S60 — persist Part-3 AI grade.
+      if (firebaseUser?.uid) {
+        void saveLibraryAttempt(firebaseUser.uid, {
+          examId: q.examId, questionNumber: n, part: 3,
+          answer: desc, score: grade.score, maxScore: grade.maxScore, feedback: grade.feedback,
+          selfChecks: selfChecks[n],
+        });
+      }
     } catch {
       setAiErrors(prev => ({ ...prev, [n]: 'AI грешка — обидете се повторно.' }));
     } finally {
       setGradingP3(prev => { const s = new Set(prev); s.delete(n); return s; });
     }
-  }, [aiDescs]);
+  }, [aiDescs, firebaseUser?.uid, selfChecks]);
+
+  // S60 — Restore previously persisted attempts (answers + AI grades) when
+  // the user opens an exam. Runs once per (uid, resolvedId) tuple.
+  useEffect(() => {
+    if (!firebaseUser?.uid || !resolvedId) return;
+    let cancelled = false;
+    (async () => {
+      const attempts = await getLibraryAttemptsForExam(firebaseUser.uid, resolvedId);
+      if (cancelled || attempts.length === 0) return;
+      const ans2: Record<number, string>  = {};
+      const grade2: Record<number, AIGrade> = {};
+      const desc3: Record<number, string> = {};
+      const grade3: Record<number, AIGrade> = {};
+      const sChecks: Record<number, boolean[]> = {};
+      for (const a of attempts) {
+        if (a.part === 2) {
+          ans2[a.questionNumber] = a.answer ?? '';
+          if (a.score != null && a.maxScore != null) {
+            grade2[a.questionNumber] = { score: a.score, maxScore: a.maxScore, feedback: a.feedback ?? '' };
+          }
+        } else if (a.part === 3) {
+          desc3[a.questionNumber] = a.answer ?? '';
+          if (a.selfChecks) sChecks[a.questionNumber] = a.selfChecks;
+          if (a.score != null && a.maxScore != null) {
+            grade3[a.questionNumber] = { score: a.score, maxScore: a.maxScore, feedback: a.feedback ?? '' };
+          }
+        }
+      }
+      setP2Answers(prev => ({ ...ans2, ...prev }));
+      setAiGrades(prev => ({ ...grade2, ...prev }));
+      setAiDescs(prev => ({ ...desc3, ...prev }));
+      setAiGradesP3(prev => ({ ...grade3, ...prev }));
+      setSelfChecks(prev => ({ ...sChecks, ...prev }));
+    })();
+    return () => { cancelled = true; };
+  }, [firebaseUser?.uid, resolvedId]);
 
   const handleSelfCheck = (n: number, maxPts: number, idx: number, val: boolean) => {
     setSelfChecks(prev => {

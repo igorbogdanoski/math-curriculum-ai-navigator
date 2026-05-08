@@ -521,6 +521,71 @@ export async function getUserMaturaResults(uid: string): Promise<MaturaStoredRes
   }
 }
 
+// ─── Library per-question attempts (S60 — AI grade persistence) ─────────────
+
+/**
+ * Single saved per-user attempt for a Matura library question. Captures the
+ * student's answer alongside the AI grade so the user can reload the library
+ * later and see their previous score without re-running AI.
+ */
+export interface MaturaLibraryAttempt {
+  examId: string;
+  questionNumber: number;
+  part: 1 | 2 | 3;
+  /** For MC = chosen letter; for Part 2 = textual answer; for Part 3 = description. */
+  answer: string;
+  score?: number;
+  maxScore?: number;
+  feedback?: string;
+  /** Self-check ticks for Part 3 rubric. */
+  selfChecks?: boolean[];
+  /** Server timestamp set on save. */
+  savedAt?: unknown;
+}
+
+function libraryAttemptDocId(examId: string, questionNumber: number): string {
+  return `${examId}_q${questionNumber}`;
+}
+
+/**
+ * Persist a single library attempt. Fire-and-forget — failures are logged
+ * but never block the UI (local React state remains the source of truth for
+ * the current session).
+ */
+export async function saveLibraryAttempt(
+  uid: string,
+  attempt: MaturaLibraryAttempt,
+): Promise<void> {
+  try {
+    const id = libraryAttemptDocId(attempt.examId, attempt.questionNumber);
+    await setDoc(
+      doc(db, 'users', uid, 'maturaLibraryAttempts', id),
+      { ...attempt, savedAt: serverTimestamp() },
+      { merge: true },
+    );
+  } catch (e) {
+    logger.warn('saveLibraryAttempt failed', e);
+  }
+}
+
+/** Load all stored library attempts for a given exam belonging to the user. */
+export async function getLibraryAttemptsForExam(
+  uid: string,
+  examId: string,
+): Promise<MaturaLibraryAttempt[]> {
+  try {
+    const q = query(
+      collection(db, 'users', uid, 'maturaLibraryAttempts'),
+      where('examId', '==', examId),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => d.data() as MaturaLibraryAttempt);
+  } catch (e) {
+    logger.warn('getLibraryAttemptsForExam failed', e);
+    return [];
+  }
+}
+
 // ─── Recovery Missions (M5.5) ─────────────────────────────────────────────────
 
 export type MissionStatus = 'pending' | 'completed' | 'skipped';

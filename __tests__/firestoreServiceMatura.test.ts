@@ -49,6 +49,8 @@ import {
   buildGradeCacheKey,
   getCachedAIGrade,
   saveAIGrade,
+  saveLibraryAttempt,
+  getLibraryAttemptsForExam,
   saveUserMaturaResult,
   getUserMaturaResults,
   saveMaturaMissionPlan,
@@ -410,6 +412,48 @@ describe('AI grade cache', () => {
     ).not.toThrow();
     // Allow rejected promise to settle
     await Promise.resolve();
+  });
+});
+
+// ─── Library attempts (S60 — AI grade persistence) ─────────────────────────
+
+describe('library attempts persistence', () => {
+  it('saveLibraryAttempt writes per-user doc with serverTimestamp', async () => {
+    mockSetDoc.mockResolvedValueOnce(undefined);
+    await saveLibraryAttempt('uid-1', {
+      examId: 'exam-1', questionNumber: 7, part: 2,
+      answer: '42', score: 3, maxScore: 4, feedback: 'good',
+    });
+    expect(mockSetDoc).toHaveBeenCalled();
+    const [docRef, payload] = mockSetDoc.mock.calls[0] as [
+      { path: string }, { savedAt: unknown },
+    ];
+    expect(docRef.path).toBe('users/uid-1/maturaLibraryAttempts/exam-1_q7');
+    expect(payload.savedAt).toBe('SERVER_TIMESTAMP');
+  });
+
+  it('saveLibraryAttempt swallows errors', async () => {
+    mockSetDoc.mockRejectedValueOnce(new Error('boom'));
+    await expect(
+      saveLibraryAttempt('uid-1', {
+        examId: 'e', questionNumber: 1, part: 3, answer: '',
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('getLibraryAttemptsForExam returns parsed docs', async () => {
+    const a = { examId: 'exam-1', questionNumber: 1, part: 2, answer: 'x' };
+    const b = { examId: 'exam-1', questionNumber: 5, part: 3, answer: 'y' };
+    mockGetDocs.mockResolvedValueOnce(snap([a, b]));
+    const out = await getLibraryAttemptsForExam('uid-1', 'exam-1');
+    expect(out).toHaveLength(2);
+    expect(out[0].questionNumber).toBe(1);
+    expect(out[1].questionNumber).toBe(5);
+  });
+
+  it('getLibraryAttemptsForExam returns [] on Firestore error', async () => {
+    mockGetDocs.mockRejectedValueOnce(new Error('boom'));
+    expect(await getLibraryAttemptsForExam('uid-1', 'exam-1')).toEqual([]);
   });
 });
 

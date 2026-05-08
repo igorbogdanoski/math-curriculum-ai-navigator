@@ -11,7 +11,7 @@ import { tableToChartData } from './DataTable';
 
 export type ChartType =
   | 'bar' | 'bar-horizontal' | 'stacked-bar' | 'stacked-bar-horizontal' | 'divided-bar'
-  | 'line' | 'area'
+  | 'line' | 'area' | 'motion'
   | 'pie' | 'scatter' | 'scatter-trend' | 'histogram' | 'box-whisker' | 'bubble'
   | 'stem-leaf' | 'dot-plot' | 'heatmap'
   | 'frequency-polygon' | 'cumulative-frequency' | 'back-to-back-histogram' | 'pareto' | 'pictogram';
@@ -899,8 +899,44 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
         <LineChart data={chartData}>
           {commonAxis}
           {seriesKeys.map((k, i) => (
-            <Line key={k} type="monotone" dataKey={k} stroke={colors[i % colors.length]}
+            <Line key={k} type="linear" dataKey={k} stroke={colors[i % colors.length]}
               strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (config.type === 'motion') {
+    return (
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart data={chartData}>
+          {config.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
+          <XAxis
+            dataKey="name"
+            type="category"
+            tick={{ fontSize: 10 }}
+            label={config.xLabel ? { value: config.xLabel, position: 'insideBottom', offset: -5, style: { fontSize: 10 } } : { value: 'време (s)', position: 'insideBottom', offset: -5, style: { fontSize: 10 } }}
+          />
+          <YAxis
+            tick={{ fontSize: 10 }}
+            label={config.yLabel ? { value: config.yLabel, angle: -90, position: 'insideLeft', style: { fontSize: 10 } } : { value: 'растојание (m)', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }}
+            tickFormatter={(v) => `${v}${unit}`}
+          />
+          <Tooltip formatter={tooltipFormatter} />
+          {config.showLegend && seriesKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
+          {seriesKeys.map((k, i) => (
+            <Line
+              key={k}
+              type="linear"
+              dataKey={k}
+              stroke={colors[i % colors.length]}
+              strokeWidth={2.5}
+              dot={{ r: 4, fill: colors[i % colors.length], stroke: '#fff', strokeWidth: 2 }}
+              activeDot={{ r: 6 }}
+              isAnimationActive
+              animationDuration={900}
+            />
           ))}
         </LineChart>
       </ResponsiveContainer>
@@ -913,7 +949,7 @@ export const ChartPreview: React.FC<ChartPreviewProps> = ({ data, config }) => {
         <AreaChart data={chartData}>
           {commonAxis}
           {seriesKeys.map((k, i) => (
-            <Area key={k} type="monotone" dataKey={k}
+            <Area key={k} type="linear" dataKey={k}
               stroke={colors[i % colors.length]} fill={colors[i % colors.length]}
               fillOpacity={0.25} strokeWidth={2} />
           ))}

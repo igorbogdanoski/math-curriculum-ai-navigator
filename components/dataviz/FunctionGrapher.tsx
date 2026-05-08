@@ -265,8 +265,12 @@ export const FunctionGrapher: React.FC = () => {
   const addFunction = () => {
     if (functions.length >= 5) return;
     const id = String(Date.now());
+    // Pick a default expression that varies so the user immediately sees a curve.
+    const DEFAULT_EXPRS = ['x', 'x^2', 'x^3', 'sin(x)', 'cos(x)'];
+    const usedExprs = new Set(functions.map(f => f.expr.trim()));
+    const fallback = DEFAULT_EXPRS.find(e => !usedExprs.has(e)) ?? `${functions.length + 1}*x`;
     setFunctions(prev => [...prev, {
-      id, expr: '', color: PALETTE[prev.length % PALETTE.length],
+      id, expr: fallback, color: PALETTE[prev.length % PALETTE.length],
       visible: true, label: `f${prev.length + 1}(x)`,
     }]);
   };
