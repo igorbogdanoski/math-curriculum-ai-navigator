@@ -38,6 +38,38 @@ export interface DuggaMatchPair {
   right: string;
 }
 
+// ─── S61 — Per-question naставнички контроли ──────────────────────────────────
+
+/**
+ * Embedded interactive math tool the teacher can attach to an open-ended
+ * question. `none` (default) hides the embed slot.
+ */
+export type DuggaEmbedTool =
+  | 'none'
+  | 'geogebra-graphing'
+  | 'geogebra-cas'
+  | 'geogebra-geometry'
+  | 'geogebra-3d'
+  | 'desmos-calc'
+  | 'desmos-graph';
+
+export interface DuggaEmbedConfig {
+  /** GeoGebra material slug (e.g. "abc123") or Desmos calculator state hash. */
+  materialId?: string;
+  /** Initial state JSON / GeoGebra XML to seed the embed when student opens. */
+  initialState?: string;
+  /** Render height in px (default 420). */
+  height?: number;
+  /** When true, the student's tool state is captured into the submission. */
+  persistState?: boolean;
+}
+
+/** Editor type for the student answer field on open-ended questions. */
+export type DuggaAnswerInput = 'text' | 'math' | 'mixed';
+
+/** Free-draw modes for student-submitted diagrams (S61-C1). */
+export type DuggaDrawingMode = 'none' | 'bar-chart' | 'line-chart' | 'free-draw';
+
 export interface DuggaQuestion {
   id: string;
   type: DuggaQuestionType;
@@ -53,6 +85,19 @@ export interface DuggaQuestion {
   orderItems?: string[];
   tableHeaders?: string[];
   tableRows?: string[][];
+
+  // S61-A1 — per-question naставнички контроли (сите опционални за бекф-компат).
+  /** Allow the student to attach a photo of their handwritten solution via QR upload. */
+  allowSolutionUpload?: boolean;
+  /** Embedded interactive math tool the student can use while answering. */
+  embedTool?: DuggaEmbedTool;
+  embedConfig?: DuggaEmbedConfig;
+  /** Override the default answer input editor for open-ended questions. */
+  answerInput?: DuggaAnswerInput;
+  /** Curriculum concept IDs this question is linked to (S61-D). */
+  linkedConceptIds?: string[];
+  /** Student-drawing canvas mode for diagram-style answers (S61-C1). */
+  studentDrawingMode?: DuggaDrawingMode;
 }
 
 export interface DuggaTest {
