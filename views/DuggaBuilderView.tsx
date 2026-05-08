@@ -13,6 +13,7 @@ import type {
   DuggaQuestion, DuggaQuestionType, DuggaTestType,
   DuggaOption, DuggaDok,
 } from '../services/firestoreService.dugga';
+import { S61TeacherControls, isOpenEndedType } from '../components/dugga/S61TeacherControls';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -387,6 +388,11 @@ function QuestionEditor({
                 className="w-full px-3 py-2 rounded-xl border border-gray-100 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-violet-200 resize-none" />
             </div>
           </div>
+
+          {/* S61-A2 — Per-question teacher controls (open-ended types only) */}
+          {isOpenEndedType(q.type) && (
+            <S61TeacherControls q={q} onChange={upd} />
+          )}
         </div>
       )}
     </div>
