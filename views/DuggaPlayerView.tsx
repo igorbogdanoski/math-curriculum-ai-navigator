@@ -7,6 +7,7 @@ import {
 import { MathRenderer } from '../components/common/MathRenderer';
 import { MathInput } from '../components/common/MathInput';
 import { QRSolutionUpload } from '../components/common/QRSolutionUpload';
+import { EmbeddedMathTool } from '../components/math/EmbeddedMathTool';
 import { getDuggaTestByCode, submitDuggaTest } from '../services/firestoreService.dugga';
 import type { DuggaTest, DuggaQuestion } from '../services/firestoreService.dugga';
 import { duggaAPI } from '../services/gemini/dugga';
@@ -20,6 +21,78 @@ import { useNotification } from '../contexts/NotificationContext';
 type Phase = 'code' | 'name' | 'test' | 'submitting' | 'results';
 
 // ─── Answer Input Components ──────────────────────────────────────────────────
+
+/**
+ * S61-A3 — Open-ended answer renderer that honours per-question
+ * `answerInput` (text/math/mixed) and `allowSolutionUpload` flags. Used by
+ * essay / short_answer / fill_blanks branches in the AnswerInput switch.
+ */
+function OpenEndedAnswer({
+  q, answer, onChange, disabled,
+  solutionImageUrl, onSolutionImage,
+  defaultEditor, rows, placeholder,
+}: {
+  q: DuggaQuestion;
+  answer: string;
+  onChange: (v: string) => void;
+  disabled: boolean;
+  solutionImageUrl?: string;
+  onSolutionImage?: (url: string) => void;
+  defaultEditor: 'text' | 'math' | 'mixed';
+  rows: number;
+  placeholder: string;
+}) {
+  const editor = q.answerInput ?? defaultEditor;
+  // For 'mixed' editor, render a toggle (legacy essay behaviour).
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const [useMath, setUseMath] = React.useState(editor === 'math');
+
+  const showMath = editor === 'math' || (editor === 'mixed' && useMath);
+  // QR upload: legacy essay had it via onSolutionImage prop; now also enabled
+  // for any open-ended type when q.allowSolutionUpload === true.
+  const showQR = (q.allowSolutionUpload ?? false) || (q.type === 'essay' && Boolean(onSolutionImage));
+
+  return (
+    <div className="mt-3 space-y-2">
+      {editor === 'mixed' && !disabled && (
+        <button
+          type="button"
+          onClick={() => setUseMath(v => !v)}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${useMath ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'}`}
+        >
+          <Sigma className="w-3.5 h-3.5" />
+          {useMath ? 'Мат. уредник вклучен' : 'Вклучи мат. уредник'}
+        </button>
+      )}
+
+      {disabled ? (
+        <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm bg-gray-50 text-gray-600 whitespace-pre-wrap">
+          {answer || '—'}
+        </div>
+      ) : showMath ? (
+        <MathInput value={answer} onChange={onChange} placeholder={placeholder} className="w-full" />
+      ) : (
+        <textarea
+          rows={rows}
+          disabled={disabled}
+          value={answer}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50"
+        />
+      )}
+
+      {showQR && onSolutionImage && (
+        <QRSolutionUpload
+          questionKey={q.id}
+          onImageUrl={onSolutionImage}
+          disabled={disabled}
+          existingUrl={solutionImageUrl}
+        />
+      )}
+    </div>
+  );
+}
 
 function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSolutionImage }: {
   q: DuggaQuestion; answer: string; onChange: (v: string) => void; disabled: boolean;
@@ -94,46 +167,35 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
     }
     case 'fill_blanks':
     case 'short_answer': {
+      // S61-A3: honor q.answerInput (text|math|mixed); default = math (legacy).
       return (
-        <div className="mt-3">
-          {disabled
-            ? <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm bg-gray-50 text-gray-600">{answer || '—'}</div>
-            : <MathInput value={answer} onChange={onChange} placeholder="Внеси го одговорот..." className="w-full" />}
-
-        </div>
+        <OpenEndedAnswer
+          q={q}
+          answer={answer}
+          onChange={onChange}
+          disabled={disabled}
+          solutionImageUrl={solutionImageUrl}
+          onSolutionImage={onSolutionImage}
+          defaultEditor="math"
+          rows={1}
+          placeholder="Внеси го одговорот..."
+        />
       );
     }
     case 'essay': {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const [useMathEditor, setUseMathEditor] = React.useState(false);
+      // S61-A3: honor q.answerInput (text|math|mixed); default = mixed (legacy toggle).
       return (
-        <div className="mt-3 space-y-2">
-          {!disabled && (
-            <button
-              type="button"
-              onClick={() => setUseMathEditor(v => !v)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${useMathEditor ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'}`}
-            >
-              <Sigma className="w-3.5 h-3.5" />
-              {useMathEditor ? 'Мат. уредник вклучен' : 'Вклучи мат. уредник'}
-            </button>
-          )}
-          {useMathEditor && !disabled ? (
-            <MathInput value={answer} onChange={onChange} placeholder="Внеси математичко решение..." className="w-full" />
-          ) : (
-            <textarea rows={5} disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
-              placeholder="Напиши го твоето решение / доказ..."
-              className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50" />
-          )}
-          {onSolutionImage && (
-            <QRSolutionUpload
-              questionKey={q.id}
-              onImageUrl={onSolutionImage}
-              disabled={disabled}
-              existingUrl={solutionImageUrl}
-            />
-          )}
-        </div>
+        <OpenEndedAnswer
+          q={q}
+          answer={answer}
+          onChange={onChange}
+          disabled={disabled}
+          solutionImageUrl={solutionImageUrl}
+          onSolutionImage={onSolutionImage}
+          defaultEditor="mixed"
+          rows={5}
+          placeholder="Напиши го твоето решение / доказ..."
+        />
       );
     }
     case 'ordering': {
@@ -407,6 +469,13 @@ function QuestionCard({ q, idx, answer, onChange, result, showResults, solutionI
         solutionImageUrl={solutionImageUrl}
         onSolutionImage={onSolutionImage ? (url) => onSolutionImage(q.id, url) : undefined}
       />
+
+      {/* S61-A3 — embedded interactive math tool (per-question, teacher-controlled) */}
+      {q.embedTool && q.embedTool !== 'none' && (
+        <div className="mt-3">
+          <EmbeddedMathTool tool={q.embedTool} config={q.embedConfig} />
+        </div>
+      )}
 
       {/* Results feedback */}
       {showResults && result && (
