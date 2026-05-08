@@ -14,6 +14,18 @@
         "rubric": 33,
         "annual_plan": 42
       }
+    },
+    {
+      "runAt": "2026-05-06 23:00:00Z",
+      "casesEvaluated": 8,
+      "avgScore": 84,
+      "perfectCount": 6,
+      "belowThresholdCount": 0,
+      "embeddingDim": 768,
+      "label": "S60 baseline (768-dim re-baseline T5.3)",
+      "byType": {
+        "assessment_question": 8
+      }
     }
   ]
 }

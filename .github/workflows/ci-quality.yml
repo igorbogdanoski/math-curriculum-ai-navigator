@@ -61,13 +61,8 @@ jobs:
           VITE_FIREBASE_APP_ID: "1:000000000000:web:0000000000000000"
           VITE_GEMINI_API_KEY: dummy-gemini-key
 
-      - name: Enforce performance budget
-        run: |
-          if [ -f scripts/enforce-perf-budget.mjs ]; then
-            npm run -s perf:budget
-          else
-            echo "Skip perf:budget (scripts/enforce-perf-budget.mjs not present in this branch)."
-          fi
+      - name: Enforce performance budget (T5.4 — strict gate)
+        run: npm run -s perf:budget
 
       - name: Backup readiness check
         run: |
