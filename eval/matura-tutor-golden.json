@@ -1,0 +1,161 @@
+{
+  "$schema": "./matura-tutor-golden.schema.json",
+  "version": "1.0.0",
+  "createdAt": "2026-05-06",
+  "purpose": "Golden dataset for the Matura AI Tutor chat. Each case is a student question + the pedagogical characteristics the AI's answer must satisfy (must-have keywords, must-not-have phrases, expected step count, etc.). Used by Vitest unit tests and (optionally) by `eval:smoke-gate` to detect regressions in tutor behaviour.",
+  "expectedAnswerCharacteristics": {
+    "language": "mk",
+    "minSteps": 2,
+    "mustEndWithFollowUpQuestion": true,
+    "noDirectAnswerWithoutExplanation": true
+  },
+  "cases": [
+    {
+      "id": "tutor-001",
+      "topic": "algebra",
+      "studentQuestion": "Како се решава квадратна равенка ax² + bx + c = 0?",
+      "expectedKeywords": ["дискриминанта", "формула", "корен"],
+      "expectedSteps": 3,
+      "forbiddenPhrases": ["не знам", "не можам"]
+    },
+    {
+      "id": "tutor-002",
+      "topic": "algebra",
+      "studentQuestion": "Што е дискриминанта и зошто е важна?",
+      "expectedKeywords": ["b²", "4ac", "решенија"],
+      "expectedSteps": 2,
+      "forbiddenPhrases": ["не е важна"]
+    },
+    {
+      "id": "tutor-003",
+      "topic": "algebra",
+      "studentQuestion": "Како да решам систем од две линеарни равенки?",
+      "expectedKeywords": ["елиминација", "замена"],
+      "expectedSteps": 3
+    },
+    {
+      "id": "tutor-004",
+      "topic": "algebra",
+      "studentQuestion": "Реши ми ја x² − 5x + 6 = 0 чекор по чекор.",
+      "expectedKeywords": ["дискриминанта", "x₁", "x₂"],
+      "expectedSteps": 4,
+      "expectedExactAnswers": ["2", "3"]
+    },
+    {
+      "id": "tutor-005",
+      "topic": "analiza",
+      "studentQuestion": "Како се пресметува извод?",
+      "expectedKeywords": ["правило", "степен", "f'"],
+      "expectedSteps": 2
+    },
+    {
+      "id": "tutor-006",
+      "topic": "analiza",
+      "studentQuestion": "Што е дефинитен интеграл?",
+      "expectedKeywords": ["граници", "површина", "Лајбниц"],
+      "expectedSteps": 2
+    },
+    {
+      "id": "tutor-007",
+      "topic": "analiza",
+      "studentQuestion": "Како да најдам асимптоти на функција?",
+      "expectedKeywords": ["хоризонтална", "вертикална", "граница"],
+      "expectedSteps": 3
+    },
+    {
+      "id": "tutor-008",
+      "topic": "analiza",
+      "studentQuestion": "Не разбирам што е граница на функција. Можеш ли поедноставно?",
+      "expectedKeywords": ["приближува", "вредност", "пример"],
+      "expectedSteps": 2,
+      "forbiddenPhrases": ["препушти", "невозможно"]
+    },
+    {
+      "id": "tutor-009",
+      "topic": "geometrija",
+      "studentQuestion": "Која е разликата меѓу елипса и хипербола?",
+      "expectedKeywords": ["елипса", "хипербола", "фокуси"],
+      "expectedSteps": 2
+    },
+    {
+      "id": "tutor-010",
+      "topic": "geometrija",
+      "studentQuestion": "Како се пресметува плоштина на триаголник?",
+      "expectedKeywords": ["основа", "висина", "1/2"],
+      "expectedSteps": 2
+    },
+    {
+      "id": "tutor-011",
+      "topic": "geometrija",
+      "studentQuestion": "Кои теореми треба да ги знам за матура по геометрија?",
+      "expectedKeywords": ["Питагорова", "Талес", "косинусна"],
+      "expectedSteps": 3
+    },
+    {
+      "id": "tutor-012",
+      "topic": "trigonometrija",
+      "studentQuestion": "Помогни ми со основните тригонометриски идентитети.",
+      "expectedKeywords": ["sin²", "cos²", "идентитет"],
+      "expectedSteps": 3
+    },
+    {
+      "id": "tutor-013",
+      "topic": "trigonometrija",
+      "studentQuestion": "Како да решам sin(x) = 1/2?",
+      "expectedKeywords": ["π/6", "5π/6", "периодика"],
+      "expectedSteps": 3
+    },
+    {
+      "id": "tutor-014",
+      "topic": "trigonometrija",
+      "studentQuestion": "Што се радијани и зошто се користат?",
+      "expectedKeywords": ["радијан", "π", "180"],
+      "expectedSteps": 2
+    },
+    {
+      "id": "tutor-015",
+      "topic": "kombinatorika",
+      "studentQuestion": "Кога користам пермутации, а кога комбинации?",
+      "expectedKeywords": ["редослед", "комбинација", "пермутација"],
+      "expectedSteps": 2
+    },
+    {
+      "id": "tutor-016",
+      "topic": "kombinatorika",
+      "studentQuestion": "Колку е веројатноста да добијам 6 со две коцки?",
+      "expectedKeywords": ["простор", "поволни", "веројатност"],
+      "expectedSteps": 3,
+      "expectedExactAnswers": ["5/36"]
+    },
+    {
+      "id": "tutor-017",
+      "topic": "opsto",
+      "studentQuestion": "Дај ми задача за вежбање за матура по математика.",
+      "expectedKeywords": ["задача"],
+      "expectedSteps": 1,
+      "mustContainFollowUpPrompt": true
+    },
+    {
+      "id": "tutor-018",
+      "topic": "opsto",
+      "studentQuestion": "Колкав е минимум поени за да поминам матура?",
+      "expectedKeywords": ["матура", "редирекција"],
+      "expectedSteps": 1
+    },
+    {
+      "id": "tutor-019",
+      "topic": "opsto",
+      "studentQuestion": "Утре имам матура и многу се стресирам. Што да правам?",
+      "expectedKeywords": ["вежба", "одмор", "повторување"],
+      "expectedSteps": 2,
+      "forbiddenPhrases": ["откажи се", "невозможно"]
+    },
+    {
+      "id": "tutor-020",
+      "topic": "opsto",
+      "studentQuestion": "Која е разликата меѓу стручен и гимназиски тест?",
+      "expectedKeywords": ["гимназиски", "стручен", "ниво"],
+      "expectedSteps": 2
+    }
+  ]
+}

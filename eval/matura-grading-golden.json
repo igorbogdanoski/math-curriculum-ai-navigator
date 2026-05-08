@@ -1,0 +1,422 @@
+{
+  "$schema": "./matura-grading-golden.schema.json",
+  "version": "1.0.0",
+  "createdAt": "2026-05-06",
+  "purpose": "Golden dataset for the AI Vision grading flow on Matura free-response answers. Each case contains the question, the rubric, a description of the student's photographed solution, and the expected score band. Used by `eval:smoke-gate` (when extended to consume this file) and by Vitest unit tests to guard rubric/score consistency.",
+  "rubricBands": [
+    { "label": "perfect", "minPct": 1.0,  "maxPct": 1.0  },
+    { "label": "high",    "minPct": 0.75, "maxPct": 0.99 },
+    { "label": "partial", "minPct": 0.4,  "maxPct": 0.74 },
+    { "label": "low",     "minPct": 0.01, "maxPct": 0.39 },
+    { "label": "zero",    "minPct": 0.0,  "maxPct": 0.0  }
+  ],
+  "cases": [
+    {
+      "id": "grade-001",
+      "topic": "algebra",
+      "questionText": "Реши ја квадратната равенка x² − 5x + 6 = 0.",
+      "maxScore": 4,
+      "rubric": [
+        { "criterion": "Идентификација на a, b, c", "points": 1 },
+        { "criterion": "Пресметување на дискриминантата", "points": 1 },
+        { "criterion": "Примена на квадратната формула", "points": 1 },
+        { "criterion": "Точни решенија x₁ = 2, x₂ = 3", "points": 1 }
+      ],
+      "studentSolution": "a=1, b=-5, c=6; D = 25 - 24 = 1; x = (5 ± 1)/2; x₁ = 3, x₂ = 2.",
+      "expectedScore": 4,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-002",
+      "topic": "algebra",
+      "questionText": "Реши ја квадратната равенка x² − 5x + 6 = 0.",
+      "maxScore": 4,
+      "rubric": [
+        { "criterion": "Идентификација на a, b, c", "points": 1 },
+        { "criterion": "Пресметување на дискриминантата", "points": 1 },
+        { "criterion": "Примена на квадратната формула", "points": 1 },
+        { "criterion": "Точни решенија x₁ = 2, x₂ = 3", "points": 1 }
+      ],
+      "studentSolution": "a=1, b=-5, c=6; D = 25 - 24 = 1; x = (5 ± 1)/2; x = 3, x = 1 (грешка во знакот).",
+      "expectedScore": 3,
+      "expectedBand": "high"
+    },
+    {
+      "id": "grade-003",
+      "topic": "algebra",
+      "questionText": "Пресметај log₂(32).",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Препознавање дека треба степен на 2", "points": 1 },
+        { "criterion": "Точен одговор: 5", "points": 1 }
+      ],
+      "studentSolution": "2⁵ = 32, значи log₂(32) = 5.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-004",
+      "topic": "algebra",
+      "questionText": "Реши: |x − 3| < 2.",
+      "maxScore": 3,
+      "rubric": [
+        { "criterion": "Расцеп на двојна неравенка", "points": 1 },
+        { "criterion": "Алгебарска манипулација", "points": 1 },
+        { "criterion": "Точно множество x ∈ (1, 5)", "points": 1 }
+      ],
+      "studentSolution": "−2 < x − 3 < 2; додавам 3: 1 < x < 5; x ∈ (1, 5).",
+      "expectedScore": 3,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-005",
+      "topic": "algebra",
+      "questionText": "Реши: |x − 3| < 2.",
+      "maxScore": 3,
+      "rubric": [
+        { "criterion": "Расцеп на двојна неравенка", "points": 1 },
+        { "criterion": "Алгебарска манипулација", "points": 1 },
+        { "criterion": "Точно множество x ∈ (1, 5)", "points": 1 }
+      ],
+      "studentSolution": "x − 3 < 2 значи x < 5. (Не го разгледал другиот случај.)",
+      "expectedScore": 1,
+      "expectedBand": "low"
+    },
+    {
+      "id": "grade-006",
+      "topic": "analiza",
+      "questionText": "Најди го изводот на f(x) = x³ − 3x² + 2.",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Применил правило за изводи на полином", "points": 1 },
+        { "criterion": "Точен одговор f'(x) = 3x² − 6x", "points": 1 }
+      ],
+      "studentSolution": "f'(x) = 3x² − 6x.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-007",
+      "topic": "analiza",
+      "questionText": "Најди го изводот на f(x) = x³ − 3x² + 2.",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Применил правило за изводи на полином", "points": 1 },
+        { "criterion": "Точен одговор f'(x) = 3x² − 6x", "points": 1 }
+      ],
+      "studentSolution": "f'(x) = 3x² − 6x + 2 (не го изоставил константниот член).",
+      "expectedScore": 1,
+      "expectedBand": "partial"
+    },
+    {
+      "id": "grade-008",
+      "topic": "analiza",
+      "questionText": "Пресметај ∫₀¹ x² dx.",
+      "maxScore": 3,
+      "rubric": [
+        { "criterion": "Препознавање антиизвод x³/3", "points": 1 },
+        { "criterion": "Применил Лајбниц-Њутн формула", "points": 1 },
+        { "criterion": "Точен одговор 1/3", "points": 1 }
+      ],
+      "studentSolution": "F(x) = x³/3; F(1) − F(0) = 1/3 − 0 = 1/3.",
+      "expectedScore": 3,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-009",
+      "topic": "analiza",
+      "questionText": "Пресметај lim (x→0) sin(x)/x.",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Препознавање фундаментална граница", "points": 1 },
+        { "criterion": "Точен одговор 1", "points": 1 }
+      ],
+      "studentSolution": "Фундаментална граница: lim sin(x)/x = 1.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-010",
+      "topic": "geometrija",
+      "questionText": "Во правоаголен триаголник катетите се 3 и 4. Пресметај ја хипотенузата.",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Применил Питагорова теорема", "points": 1 },
+        { "criterion": "Точен одговор c = 5", "points": 1 }
+      ],
+      "studentSolution": "c² = 3² + 4² = 25, c = 5.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-011",
+      "topic": "geometrija",
+      "questionText": "Во правоаголен триаголник катетите се 3 и 4. Пресметај ја хипотенузата.",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Применил Питагорова теорема", "points": 1 },
+        { "criterion": "Точен одговор c = 5", "points": 1 }
+      ],
+      "studentSolution": "c² = 3² + 4² = 25 (заборавил да извлече корен).",
+      "expectedScore": 1,
+      "expectedBand": "partial"
+    },
+    {
+      "id": "grade-012",
+      "topic": "geometrija",
+      "questionText": "Пресметај ја плоштината на круг со радиус 5.",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Применил формула P = πr²", "points": 1 },
+        { "criterion": "Точен одговор 25π", "points": 1 }
+      ],
+      "studentSolution": "P = πr² = π · 25 = 25π.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-013",
+      "topic": "trigonometrija",
+      "questionText": "Пресметај sin(60°) + cos(30°).",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Препознавање стандардни вредности", "points": 1 },
+        { "criterion": "Точен одговор √3", "points": 1 }
+      ],
+      "studentSolution": "sin60° = √3/2, cos30° = √3/2; збир = √3.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-014",
+      "topic": "trigonometrija",
+      "questionText": "Реши tan(x) = 1, x ∈ [0, 2π].",
+      "maxScore": 3,
+      "rubric": [
+        { "criterion": "Прв квадрант x = π/4", "points": 1 },
+        { "criterion": "Трет квадрант x = 5π/4", "points": 1 },
+        { "criterion": "И двата корена наведени", "points": 1 }
+      ],
+      "studentSolution": "tan(x) = 1 ⟹ x = π/4 + kπ; во [0, 2π]: π/4 и 5π/4.",
+      "expectedScore": 3,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-015",
+      "topic": "trigonometrija",
+      "questionText": "Реши tan(x) = 1, x ∈ [0, 2π].",
+      "maxScore": 3,
+      "rubric": [
+        { "criterion": "Прв квадрант x = π/4", "points": 1 },
+        { "criterion": "Трет квадрант x = 5π/4", "points": 1 },
+        { "criterion": "И двата корена наведени", "points": 1 }
+      ],
+      "studentSolution": "x = π/4 (заборавил периодика).",
+      "expectedScore": 1,
+      "expectedBand": "low"
+    },
+    {
+      "id": "grade-016",
+      "topic": "kombinatorika",
+      "questionText": "Колку начини има да се изберат 3 ученика од група од 10?",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Употреба на C(10, 3)", "points": 1 },
+        { "criterion": "Точен одговор 120", "points": 1 }
+      ],
+      "studentSolution": "C(10,3) = 10!/(3!·7!) = 120.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-017",
+      "topic": "kombinatorika",
+      "questionText": "Колку начини има да се изберат 3 ученика од група од 10?",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Употреба на C(10, 3)", "points": 1 },
+        { "criterion": "Точен одговор 120", "points": 1 }
+      ],
+      "studentSolution": "10 · 9 · 8 = 720 (употребил пермутација наместо комбинација).",
+      "expectedScore": 0,
+      "expectedBand": "zero"
+    },
+    {
+      "id": "grade-018",
+      "topic": "kombinatorika",
+      "questionText": "Се фрла фер коцка. Колку е веројатноста за парен број?",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Идентификување поволни исходи 2,4,6", "points": 1 },
+        { "criterion": "Точен одговор 1/2", "points": 1 }
+      ],
+      "studentSolution": "Поволни: 2, 4, 6 → 3 од 6 → 1/2.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-019",
+      "topic": "algebra",
+      "questionText": "Реши систем: x + y = 5, x − y = 1.",
+      "maxScore": 3,
+      "rubric": [
+        { "criterion": "Метод (елиминација или замена)", "points": 1 },
+        { "criterion": "x = 3", "points": 1 },
+        { "criterion": "y = 2", "points": 1 }
+      ],
+      "studentSolution": "Собирам: 2x = 6 ⟹ x = 3; y = 5 − 3 = 2.",
+      "expectedScore": 3,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-020",
+      "topic": "algebra",
+      "questionText": "Решен систем: x + y = 5, x − y = 1.",
+      "maxScore": 3,
+      "rubric": [
+        { "criterion": "Метод", "points": 1 },
+        { "criterion": "x = 3", "points": 1 },
+        { "criterion": "y = 2", "points": 1 }
+      ],
+      "studentSolution": "Решение: x = 3 (без приказ на чекори).",
+      "expectedScore": 1,
+      "expectedBand": "low"
+    },
+    {
+      "id": "grade-021",
+      "topic": "geometrija",
+      "questionText": "Дадена е елипса x²/9 + y²/4 = 1. Најди ги полу-оските.",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "a² = 9 ⟹ a = 3", "points": 1 },
+        { "criterion": "b² = 4 ⟹ b = 2", "points": 1 }
+      ],
+      "studentSolution": "a = 3, b = 2.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-022",
+      "topic": "geometrija",
+      "questionText": "Векторите a = (1, 2) и b = (3, −1). Најди a · b.",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Применил формула за скаларен производ", "points": 1 },
+        { "criterion": "Точен резултат 1", "points": 1 }
+      ],
+      "studentSolution": "a · b = 1·3 + 2·(−1) = 3 − 2 = 1.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-023",
+      "topic": "analiza",
+      "questionText": "Најди ги локалните екстреми на f(x) = x³ − 3x.",
+      "maxScore": 4,
+      "rubric": [
+        { "criterion": "f'(x) = 3x² − 3", "points": 1 },
+        { "criterion": "Критични точки x = ±1", "points": 1 },
+        { "criterion": "Локален максимум во x = −1", "points": 1 },
+        { "criterion": "Локален минимум во x = 1", "points": 1 }
+      ],
+      "studentSolution": "f'(x) = 3x² − 3 = 0 ⟹ x = ±1; f''(x) = 6x; f''(−1) < 0 (max), f''(1) > 0 (min).",
+      "expectedScore": 4,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-024",
+      "topic": "analiza",
+      "questionText": "Најди ги локалните екстреми на f(x) = x³ − 3x.",
+      "maxScore": 4,
+      "rubric": [
+        { "criterion": "f'(x) = 3x² − 3", "points": 1 },
+        { "criterion": "Критични точки x = ±1", "points": 1 },
+        { "criterion": "Локален максимум во x = −1", "points": 1 },
+        { "criterion": "Локален минимум во x = 1", "points": 1 }
+      ],
+      "studentSolution": "f'(x) = 3x² − 3; x = ±1 (без класификација max/min).",
+      "expectedScore": 2,
+      "expectedBand": "partial"
+    },
+    {
+      "id": "grade-025",
+      "topic": "trigonometrija",
+      "questionText": "Покажи дека sin²(x) + cos²(x) = 1.",
+      "maxScore": 2,
+      "rubric": [
+        { "criterion": "Геометриски/единечен круг аргумент", "points": 1 },
+        { "criterion": "Заклучок од Питагорова теорема", "points": 1 }
+      ],
+      "studentSolution": "Во единечен круг (cos x, sin x) лежи на круг x² + y² = 1, оттука sin² + cos² = 1.",
+      "expectedScore": 2,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-026",
+      "topic": "kombinatorika",
+      "questionText": "Се фрлаат 2 коцки. Колку е веројатноста збирот да биде 7?",
+      "maxScore": 3,
+      "rubric": [
+        { "criterion": "Простор на исходи = 36", "points": 1 },
+        { "criterion": "Поволни исходи (1,6),(2,5),(3,4)... = 6", "points": 1 },
+        { "criterion": "Точен одговор 6/36 = 1/6", "points": 1 }
+      ],
+      "studentSolution": "Поволни (1,6),(2,5),(3,4),(4,3),(5,2),(6,1) → 6/36 = 1/6.",
+      "expectedScore": 3,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-027",
+      "topic": "algebra",
+      "questionText": "Реши: 2ˣ = 16.",
+      "maxScore": 1,
+      "rubric": [
+        { "criterion": "Точен одговор x = 4", "points": 1 }
+      ],
+      "studentSolution": "x = 4.",
+      "expectedScore": 1,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-028",
+      "topic": "algebra",
+      "questionText": "Реши: 2ˣ = 16.",
+      "maxScore": 1,
+      "rubric": [
+        { "criterion": "Точен одговор x = 4", "points": 1 }
+      ],
+      "studentSolution": "x = 8 (грешка).",
+      "expectedScore": 0,
+      "expectedBand": "zero"
+    },
+    {
+      "id": "grade-029",
+      "topic": "geometrija",
+      "questionText": "Опиши кои конусни пресеци се добиваат и кога.",
+      "maxScore": 4,
+      "rubric": [
+        { "criterion": "Кружница (план перпендикуларен на оска)", "points": 1 },
+        { "criterion": "Елипса (план под агол > α)", "points": 1 },
+        { "criterion": "Парабола (план паралелен на изводна)", "points": 1 },
+        { "criterion": "Хипербола (план паралелен на оска)", "points": 1 }
+      ],
+      "studentSolution": "Кружница: план нормален на оска. Елипса: коса рамнина што не е паралелна со изводна. Парабола: паралелна со изводна. Хипербола: сече двете страни на конусот.",
+      "expectedScore": 4,
+      "expectedBand": "perfect"
+    },
+    {
+      "id": "grade-030",
+      "topic": "analiza",
+      "questionText": "Дефинирај асимптота на функција и наведи типови.",
+      "maxScore": 3,
+      "rubric": [
+        { "criterion": "Дефиниција на асимптота", "points": 1 },
+        { "criterion": "Хоризонтална асимптота", "points": 1 },
+        { "criterion": "Вертикална асимптота (или коса)", "points": 1 }
+      ],
+      "studentSolution": "Асимптота е права на која графикот се приближува неограничено. Има хоризонтална (lim f(x) = c кога x→∞) и вертикална (кога x → a, |f| → ∞).",
+      "expectedScore": 3,
+      "expectedBand": "perfect"
+    }
+  ]
+}
