@@ -41,6 +41,7 @@ import {
   shuffle,
 } from './maturaPractice/maturaPracticeHelpers';
 import { gradePart2, gradePart3, explainWrongAnswer } from './maturaPractice/maturaPracticeGrading';
+import { addBreadcrumb } from '../services/sentryService';
 import { TopicChip, ProgressBar, ScorePill } from './maturaPractice/MaturaPracticeUI';
 import { resolveMCKey, nextFocusedIdx } from './maturaPractice/maturaKeyboardNav';
 
@@ -1029,6 +1030,11 @@ export function MaturaPracticeView() {
     setStates(q.map(() => ({ submitted: false })));
     setPendingCfg(null);
     setPhase('practice');
+    addBreadcrumb('matura.practice', 'session_started', {
+      questionCount: q.length,
+      topics: pendingCfg?.topics ?? [],
+      dokLevels: pendingCfg?.dokLevels ?? [],
+    });
   }, [firestoreQuestions, qLoading, pendingCfg, activeExamIds, exams, buildQueueFromFirestore]);
 
   const handleRetryWrong = useCallback((wrongItems: PracticeItem[]) => {
@@ -1150,17 +1156,31 @@ export function MaturaPracticeView() {
   }, [recoveryPrefill, queue, states, completeDay]);
 
   const handleNext = useCallback(() => {
-    if (isLast) { saveConceptProgress(); setPhase('results'); return; }
+    if (isLast) {
+      saveConceptProgress();
+      setPhase('results');
+      addBreadcrumb('matura.practice', 'session_finished', {
+        questionCount: queue.length, score: runningScore, maxScore: runningMax,
+      });
+      return;
+    }
     setCurrent(c => c + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [isLast, saveConceptProgress]);
+  }, [isLast, saveConceptProgress, queue.length, runningScore, runningMax]);
 
   const handleSkip = useCallback(() => {
     updateState(current, { skipped: true, submitted: false });
-    if (isLast) { saveConceptProgress(); setPhase('results'); return; }
+    if (isLast) {
+      saveConceptProgress();
+      setPhase('results');
+      addBreadcrumb('matura.practice', 'session_finished', {
+        questionCount: queue.length, score: runningScore, maxScore: runningMax,
+      });
+      return;
+    }
     setCurrent(c => c + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [current, isLast, updateState, saveConceptProgress]);
+  }, [current, isLast, updateState, saveConceptProgress, queue.length, runningScore, runningMax]);
 
   // S37-D3: Keyboard-first nav — →/Enter = next, ← = back to previous
   useEffect(() => {

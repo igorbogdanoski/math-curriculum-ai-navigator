@@ -120,6 +120,21 @@ function classifyError(error: unknown): {
   return { code: ErrorCode.UNKNOWN, retryable: false, errorType: 'untyped_error' };
 }
 
+/**
+ * Record a structured breadcrumb on the Sentry event timeline. No-op when
+ * the DSN is not configured. Used by Matura simulation/practice flows
+ * (T2.3) to attach session lifecycle context to any subsequent error.
+ */
+export function addBreadcrumb(
+  category: string,
+  message: string,
+  data?: Record<string, unknown>,
+  level: 'info' | 'warning' | 'error' = 'info',
+): void {
+  if (!import.meta.env.VITE_SENTRY_DSN) return;
+  Sentry.addBreadcrumb({ category, message, data, level });
+}
+
 /** Manually report a caught error (e.g. in catch blocks). */
 export function captureException(
   error: unknown,

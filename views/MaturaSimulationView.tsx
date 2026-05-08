@@ -27,6 +27,8 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { callGeminiProxy } from '../services/gemini/core';
+import { addBreadcrumb } from '../services/sentryService';
+import { useExamVisibilityPause } from '../hooks/useExamVisibilityPause';
 
 // Gemini 3 Flash Preview: thinking → подобра персонализирана анализа по симулација
 const ANALYSIS_MODEL = 'gemini-3-flash-preview';
@@ -357,9 +359,16 @@ export const MaturaSimulationView: React.FC = () => {
       }));
   }, [exams]);
 
-  // ── Timer ─────────────────────────────────────────────────────────────────
+  // ── Timer (T2.3 — pauses when tab is hidden) ─────────────────────────────
+  const [timerPaused, setTimerPaused] = useState(false);
+  useExamVisibilityPause({
+    enabled: phase === 'exam',
+    onPause: () => setTimerPaused(true),
+    onResume: () => setTimerPaused(false),
+  });
   useEffect(() => {
     if (phase !== 'exam') return;
+    if (timerPaused) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) { clearInterval(timerRef.current!); return 0; }
@@ -367,7 +376,7 @@ export const MaturaSimulationView: React.FC = () => {
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [phase]);
+  }, [phase, timerPaused]);
 
   // Auto-submit on timer expiry
   useEffect(() => {
@@ -412,7 +421,11 @@ export const MaturaSimulationView: React.FC = () => {
     setResult(null);
     setAiAnalysis('');
     examStartRef.current = Date.now();
+    setTimerPaused(false);
     setPhase('exam');
+    addBreadcrumb('matura.simulation', 'session_started', {
+      examId: exam.id, restored: Boolean(restoredAnswers),
+    });
   }, []);
 
   // ── Submit → grade ────────────────────────────────────────────────────────
@@ -477,6 +490,14 @@ export const MaturaSimulationView: React.FC = () => {
 
     setResult(simResult);
     setPhase('results');
+    addBreadcrumb('matura.simulation', 'session_submitted', {
+      examId: simResult.examId,
+      totalScore: simResult.totalScore,
+      maxScore: simResult.maxScore,
+      durationSeconds: simResult.durationSeconds,
+      autoSubmitted: timeLeft === 0,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedExam, phase, questions, answers, firebaseUser]);
 
   // ── AI analysis of results ────────────────────────────────────────────────
@@ -724,6 +745,15 @@ export const MaturaSimulationView: React.FC = () => {
               <span className={`font-mono font-bold text-sm ${timeLeft < 600 ? 'text-red-600' : 'text-gray-700'}`}>
                 {formatTime(timeLeft)}
               </span>
+              {timerPaused && (
+                <span
+                  className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0.5"
+                  data-testid="matura-sim-paused"
+                  title="Тајмерот е паузиран додека табот е скриен"
+                >
+                  ⏸ паузиран
+                </span>
+              )}
             </div>
             <button type="button" title={viewMode === 'single' ? 'Преглед' : 'Едно по едно'}
               onClick={() => setViewMode(v => v === 'single' ? 'grid' : 'single')}
