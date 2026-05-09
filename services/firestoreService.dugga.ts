@@ -23,6 +23,7 @@ export type DuggaQuestionType =
   | 'interactive_table'
   | 'table_completion'
   | 'student_chart'
+  | 'function_match'
   | 'section_header';
 
 export type DuggaTestType = 'topic' | 'midterm' | 'annual' | 'exam' | 'custom';
@@ -71,6 +72,21 @@ export type DuggaAnswerInput = 'text' | 'math' | 'mixed';
 /** Free-draw modes for student-submitted diagrams (S61-C1). */
 export type DuggaDrawingMode = 'none' | 'bar-chart' | 'line-chart' | 'free-draw';
 
+/** Expected slider transform for a `function_match` question (S61-C2). */
+export interface DuggaExpectedTransform {
+  /** Base function key (must align with BASE_FUNCTIONS in functionTransformerHelpers). */
+  fnKey: 'sin' | 'cos' | 'tan' | 'log' | 'sq' | 'sqrt' | 'abs' | 'cube';
+  /** Target transform parameters student must reproduce: y = a·f(b·x + c) + d. */
+  target: { a: number; b: number; c: number; d: number };
+  /** Slider min/max per parameter; defaults to ±5 for a/b/d and ±π for c. */
+  ranges?: {
+    a?: [number, number];
+    b?: [number, number];
+    c?: [number, number];
+    d?: [number, number];
+  };
+}
+
 /** Expected dataset for a `student_chart` question (S61-C1). */
 export interface DuggaExpectedChart {
   /** Diagram kind expected from the student. */
@@ -113,6 +129,10 @@ export interface DuggaQuestion {
   expectedChart?: DuggaExpectedChart;
   /** Tolerance percentage for numeric chart grading (default 5%). */
   chartTolerance?: number;
+  /** Expected slider transform for `function_match` question (S61-C2). */
+  expectedTransform?: DuggaExpectedTransform;
+  /** Absolute tolerance per parameter (default 0.1). */
+  transformTolerance?: number;
 }
 
 export interface DuggaTest {

@@ -1,5 +1,6 @@
 import type { DuggaQuestion } from '../services/firestoreService.dugga';
 import { gradeStudentChart, parseStudentChart } from './duggaChartGrading';
+import { gradeFunctionMatch, parseFunctionMatch } from './duggaFunctionMatchGrading';
 
 export interface QResult {
   earned: number;
@@ -59,6 +60,14 @@ export function autoScore(q: DuggaQuestion, answer: string): QResult | null {
       const correct = hits === q.matchPairs.length;
       const earned = correct ? q.points : Math.floor(q.points * (hits / q.matchPairs.length));
       return { ...base, earned, correct, feedback: correct ? '' : `Точни поврзувања: ${hits}/${q.matchPairs.length}` };
+    }
+    case 'function_match': {
+      if (!q.expectedTransform) return null;
+      const submitted = parseFunctionMatch(answer);
+      const result = gradeFunctionMatch(q.expectedTransform, submitted, q.transformTolerance ?? 0.1);
+      const earned = Math.round(result.score * q.points);
+      const correct = result.details.hits === 4;
+      return { ...base, earned, correct, feedback: result.feedback };
     }
     case 'student_chart': {
       if (!q.expectedChart) return null;
