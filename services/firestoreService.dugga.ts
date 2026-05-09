@@ -204,6 +204,25 @@ export interface DuggaTest {
   estimatedMinutes: number;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
+
+  // S61-E1 — Final exam mode (state-recognised exam) -------------------------
+  /**
+   * When true the test is treated as a high-stakes final exam: the player
+   * locks the session, shuffles questions per student, disables hints,
+   * pauses on visibility loss (S61-E2), and seals the submission with a
+   * SHA-256 hash on submit (S61-E3).
+   */
+  finalExamMode?: boolean;
+  /** Optional ISO datetime when the exam window opens. */
+  finalExamOpensAt?: Timestamp | string;
+  /** Optional ISO datetime when the exam window closes. */
+  finalExamClosesAt?: Timestamp | string;
+  /** Per-student randomisation: shuffle question order. Default true under finalExamMode. */
+  shuffleQuestions?: boolean;
+  /** Per-student randomisation: shuffle answer options. Default true under finalExamMode. */
+  shuffleOptions?: boolean;
+  /** Disable in-question hints during the exam. Default true under finalExamMode. */
+  disableHints?: boolean;
 }
 
 export interface DuggaSubmission {
@@ -219,6 +238,16 @@ export interface DuggaSubmission {
   percentage: number;
   aiGradeNotes?: string;
   submittedAt: Timestamp;
+
+  // S61-E3 — Tamper-evident seal for final-exam submissions ----------------
+  /**
+   * SHA-256 hex of `${testId}|${studentUid}|${stableJSON(answers)}` taken at
+   * submit time. Stored only when the parent test had `finalExamMode=true`.
+   * Used to prove the submission has not been altered after the fact.
+   */
+  submissionSeal?: string;
+  /** ISO datetime the seal was computed (typically equal to submittedAt). */
+  submissionSealedAt?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
