@@ -22,6 +22,7 @@ export type DuggaQuestionType =
   | 'statement_eval'
   | 'interactive_table'
   | 'table_completion'
+  | 'student_chart'
   | 'section_header';
 
 export type DuggaTestType = 'topic' | 'midterm' | 'annual' | 'exam' | 'custom';
@@ -70,6 +71,16 @@ export type DuggaAnswerInput = 'text' | 'math' | 'mixed';
 /** Free-draw modes for student-submitted diagrams (S61-C1). */
 export type DuggaDrawingMode = 'none' | 'bar-chart' | 'line-chart' | 'free-draw';
 
+/** Expected dataset for a `student_chart` question (S61-C1). */
+export interface DuggaExpectedChart {
+  /** Diagram kind expected from the student. */
+  kind: 'bar' | 'line' | 'scatter' | 'pie';
+  xLabel?: string;
+  yLabel?: string;
+  /** Ordered (x, y) pairs the student must reproduce. */
+  data: Array<{ x: string | number; y: number }>;
+}
+
 export interface DuggaQuestion {
   id: string;
   type: DuggaQuestionType;
@@ -98,6 +109,10 @@ export interface DuggaQuestion {
   linkedConceptIds?: string[];
   /** Student-drawing canvas mode for diagram-style answers (S61-C1). */
   studentDrawingMode?: DuggaDrawingMode;
+  /** Expected chart for `student_chart` question (S61-C1). */
+  expectedChart?: DuggaExpectedChart;
+  /** Tolerance percentage for numeric chart grading (default 5%). */
+  chartTolerance?: number;
 }
 
 export interface DuggaTest {
