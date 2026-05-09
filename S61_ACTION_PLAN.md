@@ -197,13 +197,13 @@
 
 | Task | Статус | Commit | Дата |
 |------|--------|--------|------|
-| A1 | ⏳ | — | — |
-| A2 | ⏳ | — | — |
-| A3 | ⏳ | — | — |
-| B1 | ⏳ | — | — |
-| B2 | ⏳ | — | — |
-| B3 | ⏳ | — | — |
-| C1 | ⏳ | — | — |
+| A1 | ✅ | `aaedb30` | 08.05.2026 |
+| A2 | ✅ | `3b2a2d0` | 08.05.2026 |
+| A3 | ✅ | `34e5a37` | 08.05.2026 |
+| B1 | ✅ | `ae57fc9` | 08.05.2026 |
+| B2 | ✅ | `ae57fc9` | 08.05.2026 |
+| B3 | ✅ | `ae57fc9` | 08.05.2026 |
+| C1 | ✅ | `05d9a06` | 09.05.2026 |
 | C2 | ⏳ | — | — |
 | C3 | ⏳ | — | — |
 | C4 | ⏳ | — | — |
@@ -217,3 +217,17 @@
 | E4 | 🔵 P2 | — | — |
 | F1 | ⏳ | — | — |
 | F2 | ⏳ | — | — |
+
+### Дополнителни задачи (надвор од планот)
+
+| Task | Опис | Статус | Commit | Дата |
+|------|------|--------|--------|------|
+| OPS-1 | Vercel cost cut: `git.deploymentEnabled.main`, `ignoreCommand` | ✅ | `137ed8b` | 09.05.2026 |
+| OPS-2 | `firestore-backup.yml`: bucket auto-create, secret validation, Node 24 opt-in | ✅ | `137ed8b` | 09.05.2026 |
+
+### Тековен статус (resumption point)
+
+- **Завршено:** A1, A2, A3, B1, B2, B3, C1, OPS-1, OPS-2
+- **Тековно во работа:** C2 — `function_match` question type
+- **Следен ред:** C3 → C4 → D1 → D3 → E1 → E2 → E3 → F1 → F2
+- **Production:** ai.mismath.net auto-deploy на секој push на `main` (со ignoreCommand за docs/tests)
