@@ -25,6 +25,7 @@ export type DuggaQuestionType =
   | 'student_chart'
   | 'function_match'
   | 'unit_circle_pick'
+  | 'proof_steps'
   | 'section_header';
 
 export type DuggaTestType = 'topic' | 'midterm' | 'annual' | 'exam' | 'custom';
@@ -86,6 +87,27 @@ export interface DuggaExpectedTransform {
     c?: [number, number];
     d?: [number, number];
   };
+}
+
+/** A single labelled step in a `proof_steps` question (S61-C4). */
+export interface DuggaProofStep {
+  id: string;
+  text: string;
+  /** Optional justification (theorem / axiom / definition reference). */
+  justification?: string;
+}
+
+/** Expected proof structure for a `proof_steps` question (S61-C4). */
+export interface DuggaExpectedProof {
+  /** The correct ordered sequence of steps the student must reproduce. */
+  steps: DuggaProofStep[];
+  /** Optional distractor steps mixed into the picker; choosing them costs points. */
+  distractors?: DuggaProofStep[];
+  /**
+   * Penalty per distractor selected, in the same units as the per-step
+   * weight (1.0 ≙ a fully correctly placed expected step). Default 0.5.
+   */
+  distractorPenalty?: number;
 }
 
 /** Expected unit-circle target for a `unit_circle_pick` question (S61-C3). */
@@ -154,6 +176,8 @@ export interface DuggaQuestion {
   expectedTransform?: DuggaExpectedTransform;
   /** Absolute tolerance per parameter (default 0.1). */
   transformTolerance?: number;
+  /** Expected proof for `proof_steps` question (S61-C4). */
+  expectedProof?: DuggaExpectedProof;
   /** Expected unit-circle target for `unit_circle_pick` question (S61-C3). */
   expectedUnitCircle?: DuggaExpectedUnitCirclePick;
   /**
