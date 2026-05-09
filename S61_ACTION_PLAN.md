@@ -204,7 +204,7 @@
 | B2 | ✅ | `ae57fc9` | 08.05.2026 |
 | B3 | ✅ | `ae57fc9` | 08.05.2026 |
 | C1 | ✅ | `05d9a06` | 09.05.2026 |
-| C2 | ⏳ | — | — |
+| C2 | ✅ | `597ef2b` | 09.05.2026 |
 | C3 | ⏳ | — | — |
 | C4 | ⏳ | — | — |
 | C5 | 🔵 P2 | — | — |
@@ -227,7 +227,7 @@
 
 ### Тековен статус (resumption point)
 
-- **Завршено:** A1, A2, A3, B1, B2, B3, C1, OPS-1, OPS-2
-- **Тековно во работа:** C2 — `function_match` question type
+- **Завршено:** A1, A2, A3, B1, B2, B3, C1, C2, OPS-1, OPS-2
+- **Тековно во работа:** C3 — `unit_circle_pick` question type
 - **Следен ред:** C3 → C4 → D1 → D3 → E1 → E2 → E3 → F1 → F2
 - **Production:** ai.mismath.net auto-deploy на секој push на `main` (со ignoreCommand за docs/tests)
