@@ -245,6 +245,9 @@ export function DuggaLibraryView() {
   const [publicTests, setPublicTests] = useState<DuggaTest[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGrade, setFilterGrade] = useState<number | 'all'>('all');
+  const [filterTrack, setFilterTrack] = useState<string>('all');
+  const [filterTestType, setFilterTestType] = useState<string>('all');
+  const [onlyFinalExam, setOnlyFinalExam] = useState(false);
   const [selectedTest, setSelectedTest] = useState<DuggaTest | null>(null);
   const [loadingMy, setLoadingMy] = useState(true);
   const [loadingPublic, setLoadingPublic] = useState(false);
@@ -288,11 +291,21 @@ export function DuggaLibraryView() {
     });
   }, [addNotification]);
 
-  const activeTests = (tab === 'my' ? myTests : publicTests).filter(t => {
+  const sourceTests = tab === 'my' ? myTests : publicTests;
+
+  // Build the dynamic track list from the visible source.
+  const availableTracks = Array.from(
+    new Set(sourceTests.map(t => (t.track ?? '').trim()).filter(Boolean)),
+  ).sort((a, b) => a.localeCompare(b, 'mk'));
+
+  const activeTests = sourceTests.filter(t => {
     const q = searchQuery.toLowerCase();
     const matchSearch = !q || t.title.toLowerCase().includes(q) || t.topics.some(tp => tp.toLowerCase().includes(q)) || t.shareCode.toLowerCase().includes(q);
     const matchGrade = filterGrade === 'all' || t.grade === filterGrade;
-    return matchSearch && matchGrade;
+    const matchTrack = filterTrack === 'all' || (t.track ?? '') === filterTrack;
+    const matchType = filterTestType === 'all' || t.testType === filterTestType;
+    const matchExam = !onlyFinalExam || t.finalExamMode === true;
+    return matchSearch && matchGrade && matchTrack && matchType && matchExam;
   });
 
   return (
@@ -342,12 +355,39 @@ export function DuggaLibraryView() {
         </div>
         <select value={filterGrade === 'all' ? 'all' : String(filterGrade)}
           onChange={e => setFilterGrade(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+          aria-label="Филтер по разред"
           className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
           <option value="all">Сите разреди</option>
           {Array.from({ length: 12 }, (_, i) => i + 1).map(g => (
             <option key={g} value={g}>{g}. разред</option>
           ))}
         </select>
+        <select value={filterTrack}
+          onChange={e => setFilterTrack(e.target.value)}
+          aria-label="Филтер по насока"
+          className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+          <option value="all">Сите насоки</option>
+          {availableTracks.map(tr => (
+            <option key={tr} value={tr}>{tr}</option>
+          ))}
+        </select>
+        <select value={filterTestType}
+          onChange={e => setFilterTestType(e.target.value)}
+          aria-label="Филтер по тип на тест"
+          className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+          <option value="all">Сите типови</option>
+          <option value="topic">Тематски</option>
+          <option value="midterm">Полугодишен</option>
+          <option value="annual">Годишен</option>
+          <option value="exam">Завршен испит</option>
+          <option value="custom">Прилагоден</option>
+        </select>
+        <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 bg-white cursor-pointer">
+          <input type="checkbox" checked={onlyFinalExam}
+            onChange={e => setOnlyFinalExam(e.target.checked)}
+            className="accent-indigo-600" />
+          Само завршни испити
+        </label>
       </div>
 
       {/* Content */}
