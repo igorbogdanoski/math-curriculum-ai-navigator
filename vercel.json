@@ -1,4 +1,10 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  },
+  "ignoreCommand": "node scripts/vercel-ignore-build.mjs",
   "rewrites": [
     { "source": "/service-worker.js", "destination": "/service-worker.js" },
     { "source": "/manifest.json", "destination": "/manifest.json" },

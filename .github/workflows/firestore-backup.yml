@@ -6,6 +6,10 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch: # allow manual trigger from GitHub UI
 
+# Opt-in to Node 24 runner so the deprecated-Node-20 warning goes away.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   backup:
     name: Export Firestore → Cloud Storage
@@ -15,6 +19,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate required secrets
+        run: |
+          missing=0
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+            echo "::error::Missing secret FIREBASE_SERVICE_ACCOUNT"
+            missing=1
+          fi
+          if [ -z "${{ secrets.VITE_FIREBASE_PROJECT_ID }}" ]; then
+            echo "::error::Missing secret VITE_FIREBASE_PROJECT_ID"
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+          echo "All required secrets are present."
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -23,8 +41,20 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Ensure backup bucket exists
+        run: |
+          PROJECT="${{ secrets.VITE_FIREBASE_PROJECT_ID }}"
+          BUCKET="gs://${PROJECT}-backups"
+          if gsutil ls -b "${BUCKET}" >/dev/null 2>&1; then
+            echo "Bucket ${BUCKET} already exists."
+          else
+            echo "Creating bucket ${BUCKET} (multi-region EU, Standard)..."
+            gsutil mb -p "${PROJECT}" -c STANDARD -l EU -b on "${BUCKET}"
+          fi
+
       - name: Run Firestore Export
         run: |
+          set -euo pipefail
           DATE=$(date +%Y-%m-%d)
           PROJECT="${{ secrets.VITE_FIREBASE_PROJECT_ID }}"
           BUCKET="gs://${PROJECT}-backups/firestore/${DATE}"
