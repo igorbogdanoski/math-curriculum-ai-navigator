@@ -24,6 +24,7 @@ export type DuggaQuestionType =
   | 'table_completion'
   | 'student_chart'
   | 'function_match'
+  | 'unit_circle_pick'
   | 'section_header';
 
 export type DuggaTestType = 'topic' | 'midterm' | 'annual' | 'exam' | 'custom';
@@ -87,6 +88,26 @@ export interface DuggaExpectedTransform {
   };
 }
 
+/** Expected unit-circle target for a `unit_circle_pick` question (S61-C3). */
+export interface DuggaExpectedUnitCirclePick {
+  /** Target angle. */
+  angle: number;
+  /** Angle unit; degrees or radians. */
+  unit: 'deg' | 'rad';
+  /**
+   * Optional explicit (x, y) coordinates on the unit circle. When omitted
+   * the grader uses (cos θ, sin θ) derived from `angle`.
+   */
+  point?: { x: number; y: number };
+  /**
+   * What the student must submit:
+   *   • 'angle' — only the angle value matters,
+   *   • 'point' — only (x, y) match against the unit circle,
+   *   • 'either' (default) — accept whichever the student provided.
+   */
+  match?: 'angle' | 'point' | 'either';
+}
+
 /** Expected dataset for a `student_chart` question (S61-C1). */
 export interface DuggaExpectedChart {
   /** Diagram kind expected from the student. */
@@ -133,6 +154,13 @@ export interface DuggaQuestion {
   expectedTransform?: DuggaExpectedTransform;
   /** Absolute tolerance per parameter (default 0.1). */
   transformTolerance?: number;
+  /** Expected unit-circle target for `unit_circle_pick` question (S61-C3). */
+  expectedUnitCircle?: DuggaExpectedUnitCirclePick;
+  /**
+   * Absolute tolerance for the angle (in the unit specified by
+   * `expectedUnitCircle.unit`) and for each (x, y) coordinate. Default 0.05.
+   */
+  unitCircleTolerance?: number;
 }
 
 export interface DuggaTest {

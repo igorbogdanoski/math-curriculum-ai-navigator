@@ -1,6 +1,7 @@
 import type { DuggaQuestion } from '../services/firestoreService.dugga';
 import { gradeStudentChart, parseStudentChart } from './duggaChartGrading';
 import { gradeFunctionMatch, parseFunctionMatch } from './duggaFunctionMatchGrading';
+import { gradeUnitCirclePick, parseUnitCirclePick } from './duggaUnitCirclePickGrading';
 
 export interface QResult {
   earned: number;
@@ -67,6 +68,14 @@ export function autoScore(q: DuggaQuestion, answer: string): QResult | null {
       const result = gradeFunctionMatch(q.expectedTransform, submitted, q.transformTolerance ?? 0.1);
       const earned = Math.round(result.score * q.points);
       const correct = result.details.hits === 4;
+      return { ...base, earned, correct, feedback: result.feedback };
+    }
+    case 'unit_circle_pick': {
+      if (!q.expectedUnitCircle) return null;
+      const submitted = parseUnitCirclePick(answer);
+      const result = gradeUnitCirclePick(q.expectedUnitCircle, submitted, q.unitCircleTolerance ?? 0.05);
+      const earned = Math.round(result.score * q.points);
+      const correct = result.score >= 0.999;
       return { ...base, earned, correct, feedback: result.feedback };
     }
     case 'student_chart': {
