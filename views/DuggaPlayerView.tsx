@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Search, CheckCircle2, XCircle, Loader2, Award,
   ArrowUp, ArrowDown, Clock, User, BookOpen, Shuffle,
@@ -15,6 +15,9 @@ import { autoScore, needsAIGrade, parseAIEarnedPoints, percentageToMkGrade } fro
 import type { QResult } from '../utils/duggaScoring';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useExamVisibilityPause } from '../hooks/useExamVisibilityPause';
+import { resolveExamMode } from '../utils/duggaFinalExamMode';
+import { computeSubmissionSeal } from '../utils/duggaSubmissionSeal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -534,6 +537,20 @@ export function DuggaPlayerView() {
   const [submitting, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('Оценување...');
 
+  // S61-E1/E2 — Final exam mode + visibility pause ----------------------------
+  const examMode = useMemo(() => (test ? resolveExamMode(test) : null), [test]);
+  const [paused, setPaused] = useState(false);
+  const [pauseEvents, setPauseEvents] = useState(0);
+
+  useExamVisibilityPause({
+    enabled: phase === 'test' && examMode?.pauseOnHidden === true,
+    onPause: () => {
+      setPaused(true);
+      setPauseEvents(n => n + 1);
+    },
+    onResume: () => setPaused(false),
+  });
+
   const handleAnswer = useCallback((id: string, v: string) => {
     setAnswers(prev => ({ ...prev, [id]: v }));
   }, []);
@@ -614,20 +631,36 @@ export function DuggaPlayerView() {
       }
     }
 
-    // 3) Save to Firestore
+    // 3) Save to Firestore (with optional tamper-evident seal in finalExamMode)
     setSubmitStatus('Зачувување...');
+    const studentUid = firebaseUser?.uid ?? `anon_${Date.now()}`;
+    let submissionSeal: string | undefined;
+    let submissionSealedAt: string | undefined;
+    if (examMode?.sealSubmission) {
+      try {
+        submissionSeal = await computeSubmissionSeal({
+          testId: test.id,
+          studentUid,
+          answers,
+        });
+        submissionSealedAt = new Date().toISOString();
+      } catch {
+        // Sealing failure is non-fatal; the answer payload is still saved.
+      }
+    }
     try {
       await submitDuggaTest({
         testId: test.id,
         testTitle: test.title,
         teacherUid: test.teacherUid,
-        studentUid: firebaseUser?.uid ?? `anon_${Date.now()}`,
+        studentUid,
         studentName: studentName.trim() || 'Анонимен ученик',
         answers,
         score: earned,
         totalPoints: maxPts,
         percentage: maxPts > 0 ? Math.round((earned / maxPts) * 100) : 0,
         aiGradeNotes: Object.values(qResults).filter(r => r.aiGrade).map(r => r.aiGrade).join('\n---\n'),
+        ...(submissionSeal ? { submissionSeal, submissionSealedAt } : {}),
       });
     } catch {
       // Non-critical
@@ -726,6 +759,34 @@ export function DuggaPlayerView() {
   if (phase === 'test' && test) {
     return (
       <div className="min-h-screen bg-gray-50">
+        {/* S61-E2 — Visibility pause overlay (final-exam mode only) */}
+        {paused && examMode?.pauseOnHidden && (
+          <div data-testid="exam-pause-overlay"
+            className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-6">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100 flex items-center justify-center">
+                <Clock className="w-8 h-8 text-amber-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Тестот е паузиран</h2>
+              <p className="text-sm text-gray-600">
+                Излегувањето од прозорецот не е дозволено за време на завршниот испит.
+                Врати се за да продолжиш.
+              </p>
+              {pauseEvents > 1 && (
+                <p className="text-xs text-red-600 font-semibold">
+                  Забележани се {pauseEvents} обиди за излез — ова ќе биде пријавено на наставникот.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+        {examMode?.finalExam && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center">
+            <p className="text-xs font-semibold text-amber-800">
+              🔒 Завршен испит: излегувањето од прозорецот ја паузира сесијата.
+            </p>
+          </div>
+        )}
         {/* Sticky header */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
