@@ -3,6 +3,9 @@ import {
   checkDailyQuotaGuard, getResolvedTextSystemInstruction, getAILanguageRule,
   generateAndParseJSON, Type,
 } from './core';
+import type {
+  DuggaQuestion, DuggaQuestionType, DuggaDok, DuggaOption,
+} from '../firestoreService.dugga';
 
 // ─── Math Editor AI ──────────────────────────────────────────────────────────
 
@@ -156,6 +159,79 @@ $${latex}$
     return r.text.trim();
   },
 
+  // ─── S61-D1 — Курикулум-aware генерација од концепт ──────────────────────
+
+  async generateFromConcept(params: {
+    conceptId: string;
+    conceptLabel: string;
+    gradeLevel: number;
+    track?: string;
+    topics?: string[];
+    count: number;
+    dokDistribution?: { 1?: number; 2?: number; 3?: number; 4?: number };
+    allowedTypes?: DuggaQuestionType[];
+    language?: string;
+  }): Promise<DuggaQuestion[]> {
+    checkDailyQuotaGuard();
+
+    const dok = {
+      1: params.dokDistribution?.[1] ?? Math.ceil(params.count * 0.25),
+      2: params.dokDistribution?.[2] ?? Math.ceil(params.count * 0.45),
+      3: params.dokDistribution?.[3] ?? Math.floor(params.count * 0.2),
+      4: params.dokDistribution?.[4] ?? Math.max(0, params.count - (
+        Math.ceil(params.count * 0.25) +
+        Math.ceil(params.count * 0.45) +
+        Math.floor(params.count * 0.2)
+      )),
+    };
+
+    const allowed = params.allowedTypes ?? [
+      'multiple_choice', 'true_false', 'fill_blanks',
+      'short_answer', 'essay', 'ordering', 'multi_match',
+    ];
+
+    const trackLine = params.track ? `\n- **Насока:** ${params.track}` : '';
+    const topicLine = params.topics?.length ? `\n- **Поврзани теми:** ${params.topics.join(', ')}` : '';
+
+    const prompt = `Ти си стручњак за оценување по математика во македонскиот образовен систем.
+Генерирај ${params.count} прашања строго поврзани со конкретниот концепт од курикулумот.
+
+- **Концепт ID:** ${params.conceptId}
+- **Концепт:** ${params.conceptLabel}
+- **Разред:** ${params.gradeLevel}${trackLine}${topicLine}
+- **DoK распределба:** DoK1=${dok[1]} · DoK2=${dok[2]} · DoK3=${dok[3]} · DoK4=${dok[4]}
+- **Дозволени типови:** ${allowed.join(', ')}
+
+Секое прашање мора:
+1. Да го испитува точно овој концепт (не сродни концепти).
+2. Да биде на разредно ниво ${params.gradeLevel}.
+3. Да содржи кратко решение и совет (hint) за ученикот.
+
+Врати САМО валиден JSON array со објекти од видот:
+{
+  "type": <еден од: ${allowed.join(' | ')}>,
+  "dok": 1 | 2 | 3 | 4,
+  "points": number,
+  "text": "...",
+  "options": [{"id":"a","text":"...","isCorrect":true|false}],   // само за multiple_choice/checklist
+  "correctAnswer": "...",
+  "solution": "...",
+  "hint": "..."
+}
+
+Без markdown. ЈАЗИК: ${params.language ?? getAILanguageRule()}`;
+
+    const r = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: getResolvedTextSystemInstruction(),
+      safetySettings: SAFETY_SETTINGS,
+    });
+
+    const raw = parseGeneratedQuestionsJson(r.text);
+    return raw.map((q, i) => normaliseGeneratedQuestion(q, params.conceptId, i));
+  },
+
   async gradeEssayAnswer(params: {
     question: string;
     studentAnswer: string;
@@ -187,3 +263,99 @@ $${latex}$
     return r.text.trim();
   },
 };
+
+// ─── S61-D1 — Helpers for parsing AI output into DuggaQuestion[] ──────────────
+
+const VALID_TYPES: ReadonlySet<DuggaQuestionType> = new Set<DuggaQuestionType>([
+  'multiple_choice', 'checklist', 'true_false', 'inline_select', 'multi_match',
+  'fill_blanks', 'short_answer', 'list_items', 'essay', 'multi_part',
+  'ordering', 'diagram_annotate', 'statement_eval', 'interactive_table',
+  'table_completion', 'student_chart', 'function_match', 'unit_circle_pick',
+  'proof_steps', 'section_header',
+]);
+
+interface RawGeneratedQuestion {
+  type?: string;
+  dok?: number;
+  points?: number;
+  text?: string;
+  options?: unknown;
+  correctAnswer?: unknown;
+  solution?: unknown;
+  hint?: unknown;
+}
+
+export function parseGeneratedQuestionsJson(raw: string): RawGeneratedQuestion[] {
+  if (!raw) return [];
+  let cleaned = raw.trim();
+  // strip surrounding ```json fences if the model added them anyway
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  // try direct parse, else extract first array
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) return parsed as RawGeneratedQuestion[];
+  } catch { /* fallthrough */ }
+  const start = cleaned.indexOf('[');
+  const end = cleaned.lastIndexOf(']');
+  if (start >= 0 && end > start) {
+    try {
+      const parsed = JSON.parse(cleaned.slice(start, end + 1));
+      if (Array.isArray(parsed)) return parsed as RawGeneratedQuestion[];
+    } catch { /* fallthrough */ }
+  }
+  return [];
+}
+
+export function normaliseGeneratedQuestion(
+  raw: RawGeneratedQuestion,
+  conceptId: string,
+  index: number,
+): DuggaQuestion {
+  const type: DuggaQuestionType = VALID_TYPES.has(raw.type as DuggaQuestionType)
+    ? (raw.type as DuggaQuestionType)
+    : 'short_answer';
+
+  const dok: DuggaDok = ([1, 2, 3, 4] as DuggaDok[]).includes(raw.dok as DuggaDok)
+    ? (raw.dok as DuggaDok)
+    : 2;
+
+  const points = typeof raw.points === 'number' && Number.isFinite(raw.points) && raw.points > 0
+    ? Math.round(raw.points)
+    : (dok === 1 ? 1 : dok === 2 ? 2 : dok === 3 ? 4 : 6);
+
+  const options = normaliseOptions(raw.options);
+
+  const q: DuggaQuestion = {
+    id: `gen_${conceptId}_${index}_${Math.random().toString(36).slice(2, 8)}`,
+    type,
+    text: typeof raw.text === 'string' ? raw.text.trim() : '',
+    dok,
+    points,
+    linkedConceptIds: [conceptId],
+  };
+  if (options) q.options = options;
+  if (typeof raw.correctAnswer === 'string') q.correctAnswer = raw.correctAnswer;
+  if (typeof raw.solution === 'string') q.solution = raw.solution;
+  if (typeof raw.hint === 'string') q.hint = raw.hint;
+  return q;
+}
+
+function normaliseOptions(raw: unknown): DuggaOption[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const out: DuggaOption[] = [];
+  raw.forEach((o, i) => {
+    if (typeof o === 'string') {
+      out.push({ id: String.fromCharCode(97 + i), text: o });
+    } else if (o && typeof o === 'object') {
+      const obj = o as { id?: unknown; text?: unknown; isCorrect?: unknown };
+      const text = typeof obj.text === 'string' ? obj.text : '';
+      if (!text) return;
+      out.push({
+        id: typeof obj.id === 'string' && obj.id ? obj.id : String.fromCharCode(97 + i),
+        text,
+        ...(obj.isCorrect === true ? { isCorrect: true } : {}),
+      });
+    }
+  });
+  return out.length ? out : undefined;
+}
