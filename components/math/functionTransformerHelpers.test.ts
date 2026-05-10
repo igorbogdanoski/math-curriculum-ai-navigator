@@ -30,7 +30,7 @@ describe('functionTransformerHelpers', () => {
     });
 
     it('returns null when result is non-finite', () => {
-      const fakeFn = { ...BASE_FUNCTIONS.sq, fn: () => Infinity };
+      const fakeFn = { ...BASE_FUNCTIONS.sq, build: () => () => Infinity };
       expect(applyTransform(fakeFn, 1, IDENTITY_PARAMS)).toBeNull();
     });
   });
@@ -112,6 +112,156 @@ describe('functionTransformerHelpers', () => {
 
     it('handles negative b as −x', () => {
       expect(formatFormula(BASE_FUNCTIONS.sin, { a: 1, b: -1, c: 0, d: 0 })).toBe('sin(−x)');
+    });
+  });
+});
+
+// ─── S62-A1/A2 — Universal base functions ────────────────────────────────────
+import { defaultExtraParams } from './functionTransformerHelpers';
+
+describe('S62 universal BASE_FUNCTIONS', () => {
+  describe('logBase (log_b x)', () => {
+    const fn = BASE_FUNCTIONS.logBase;
+
+    it('computes log_10(100) = 2', () => {
+      const y = applyTransform(fn, 100, IDENTITY_PARAMS, { base: 10 });
+      expect(y).toBeCloseTo(2, 6);
+    });
+
+    it('computes log_2(8) = 3', () => {
+      const y = applyTransform(fn, 8, IDENTITY_PARAMS, { base: 2 });
+      expect(y).toBeCloseTo(3, 6);
+    });
+
+    it('returns null for x ≤ 0', () => {
+      expect(applyTransform(fn, 0, IDENTITY_PARAMS, { base: 10 })).toBeNull();
+      expect(applyTransform(fn, -1, IDENTITY_PARAMS, { base: 10 })).toBeNull();
+    });
+
+    it('returns null for base = 1 (degenerate)', () => {
+      expect(applyTransform(fn, 5, IDENTITY_PARAMS, { base: 1 })).toBeNull();
+    });
+
+    it('has extraParams with key=base, default=10', () => {
+      expect(fn.extraParams).toHaveLength(1);
+      expect(fn.extraParams![0].key).toBe('base');
+      expect(fn.extraParams![0].default).toBe(10);
+    });
+
+    it('formatFormula substitutes base', () => {
+      expect(formatFormula(fn, IDENTITY_PARAMS, { base: 2 })).toContain('2');
+    });
+  });
+
+  describe('expBase (b^x)', () => {
+    const fn = BASE_FUNCTIONS.expBase;
+
+    it('computes 2^3 = 8', () => {
+      const y = applyTransform(fn, 3, IDENTITY_PARAMS, { base: 2 });
+      expect(y).toBeCloseTo(8, 6);
+    });
+
+    it('computes e^1 ≈ 2.718', () => {
+      const y = applyTransform(fn, 1, IDENTITY_PARAMS, { base: Math.E });
+      expect(y).toBeCloseTo(Math.E, 5);
+    });
+
+    it('has extraParams with key=base', () => {
+      expect(fn.extraParams).toHaveLength(1);
+      expect(fn.extraParams![0].key).toBe('base');
+    });
+  });
+
+  describe('recip (1/x)', () => {
+    const fn = BASE_FUNCTIONS.recip;
+
+    it('computes 1/4 = 0.25', () => {
+      expect(applyTransform(fn, 4, IDENTITY_PARAMS)).toBeCloseTo(0.25, 6);
+    });
+
+    it('returns null at x = 0', () => {
+      expect(applyTransform(fn, 0, IDENTITY_PARAMS)).toBeNull();
+    });
+
+    it('has no extraParams', () => {
+      expect(fn.extraParams).toBeUndefined();
+    });
+  });
+
+  describe('polyN (x^n)', () => {
+    const fn = BASE_FUNCTIONS.polyN;
+
+    it('computes 3^2 = 9 for n=2', () => {
+      const y = applyTransform(fn, 3, IDENTITY_PARAMS, { n: 2 });
+      expect(y).toBeCloseTo(9, 6);
+    });
+
+    it('computes 2^4 = 16 for n=4', () => {
+      const y = applyTransform(fn, 2, IDENTITY_PARAMS, { n: 4 });
+      expect(y).toBeCloseTo(16, 6);
+    });
+
+    it('computes 2^6 = 64 for n=6', () => {
+      const y = applyTransform(fn, 2, IDENTITY_PARAMS, { n: 6 });
+      expect(y).toBeCloseTo(64, 6);
+    });
+
+    it('has extraParams with key=n, integer=true, default=2', () => {
+      expect(fn.extraParams).toHaveLength(1);
+      expect(fn.extraParams![0].key).toBe('n');
+      expect(fn.extraParams![0].integer).toBe(true);
+      expect(fn.extraParams![0].default).toBe(2);
+    });
+
+    it('formatFormula substitutes n', () => {
+      expect(formatFormula(fn, IDENTITY_PARAMS, { n: 5 })).toContain('5');
+    });
+  });
+
+  describe('linear (x)', () => {
+    const fn = BASE_FUNCTIONS.linear;
+
+    it('computes y = x', () => {
+      expect(applyTransform(fn, 7, IDENTITY_PARAMS)).toBeCloseTo(7, 6);
+    });
+
+    it('has no extraParams', () => {
+      expect(fn.extraParams).toBeUndefined();
+    });
+  });
+
+  describe('defaultExtraParams', () => {
+    it('returns empty object for functions with no extraParams', () => {
+      expect(defaultExtraParams(BASE_FUNCTIONS.sin)).toEqual({});
+      expect(defaultExtraParams(BASE_FUNCTIONS.recip)).toEqual({});
+    });
+
+    it('seeds base=10 for logBase', () => {
+      const extra = defaultExtraParams(BASE_FUNCTIONS.logBase);
+      expect(extra.base).toBe(10);
+    });
+
+    it('seeds base=e for expBase', () => {
+      const extra = defaultExtraParams(BASE_FUNCTIONS.expBase);
+      expect(extra.base).toBeCloseTo(Math.E, 5);
+    });
+
+    it('seeds n=2 for polyN', () => {
+      const extra = defaultExtraParams(BASE_FUNCTIONS.polyN);
+      expect(extra.n).toBe(2);
+    });
+  });
+
+  describe('sampleCurve with extra', () => {
+    it('samples logBase correctly over positive x', () => {
+      const pts = sampleCurve(
+        BASE_FUNCTIONS.logBase,
+        IDENTITY_PARAMS,
+        { xMin: 1, xMax: 100, samples: 3 },
+        { base: 10 },
+      );
+      expect(pts[0].y).toBeCloseTo(0, 5);   // log_10(1) = 0
+      expect(pts[2].y).toBeCloseTo(2, 5);   // log_10(100) = 2
     });
   });
 });

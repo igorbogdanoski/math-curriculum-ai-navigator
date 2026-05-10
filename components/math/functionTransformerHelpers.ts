@@ -6,29 +6,106 @@
  * without spinning up React.
  */
 
-export type BaseFunctionKey = 'sin' | 'cos' | 'tan' | 'log' | 'sq' | 'sqrt' | 'abs' | 'cube';
+export type BaseFunctionKey =
+  | 'sin' | 'cos' | 'tan' | 'log' | 'sq' | 'sqrt' | 'abs' | 'cube'
+  | 'logBase' | 'expBase' | 'recip' | 'polyN' | 'linear';
+
+export interface ExtraParamDef {
+  key: 'n' | 'base';
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  default: number;
+  /** When true the slider snaps to integer values. */
+  integer?: boolean;
+}
 
 export interface BaseFunctionDef {
   key: BaseFunctionKey;
   label: string;          // student-facing
-  formula: string;        // f(x) = …
-  fn: (x: number) => number;
-  /** Optional domain check; returns null when undefined at x. */
-  defined?: (x: number) => boolean;
+  formula: string;        // f(x) = … (may contain {n} or {base} placeholders)
+  /** Builds the actual numeric function given current extra-params (n, base). */
+  build: (extra: ExtraParams) => (x: number) => number;
+  /** Optional domain check given x and extra-params. */
+  defined?: (x: number, extra: ExtraParams) => boolean;
+  /** Optional extra parameters this function exposes (slider-driven). */
+  extraParams?: ExtraParamDef[];
+}
+
+export interface ExtraParams {
+  n?: number;
+  base?: number;
 }
 
 export const BASE_FUNCTIONS: Record<BaseFunctionKey, BaseFunctionDef> = {
-  sin:   { key: 'sin',   label: 'sin x',   formula: 'sin(x)',   fn: Math.sin },
-  cos:   { key: 'cos',   label: 'cos x',   formula: 'cos(x)',   fn: Math.cos },
-  tan:   { key: 'tan',   label: 'tan x',   formula: 'tan(x)',   fn: Math.tan,
+  sin:   { key: 'sin',   label: 'sin x',   formula: 'sin(x)',
+           build: () => Math.sin },
+  cos:   { key: 'cos',   label: 'cos x',   formula: 'cos(x)',
+           build: () => Math.cos },
+  tan:   { key: 'tan',   label: 'tan x',   formula: 'tan(x)',
+           build: () => Math.tan,
            defined: (x) => Math.abs(Math.cos(x)) > 1e-3 },
-  log:   { key: 'log',   label: 'ln x',    formula: 'ln(x)',    fn: Math.log,
+  log:   { key: 'log',   label: 'ln x',    formula: 'ln(x)',
+           build: () => Math.log,
            defined: (x) => x > 0 },
-  sq:    { key: 'sq',    label: 'x²',       formula: 'x²',       fn: (x) => x * x },
-  sqrt:  { key: 'sqrt',  label: '√x',       formula: '√x',       fn: Math.sqrt,
+  sq:    { key: 'sq',    label: 'x²',       formula: 'x²',
+           build: () => (x) => x * x },
+  sqrt:  { key: 'sqrt',  label: '√x',       formula: '√x',
+           build: () => Math.sqrt,
            defined: (x) => x >= 0 },
-  abs:   { key: 'abs',   label: '|x|',      formula: '|x|',      fn: Math.abs },
-  cube:  { key: 'cube',  label: 'x³',       formula: 'x³',       fn: (x) => x * x * x },
+  abs:   { key: 'abs',   label: '|x|',      formula: '|x|',
+           build: () => Math.abs },
+  cube:  { key: 'cube',  label: 'x³',       formula: 'x³',
+           build: () => (x) => x * x * x },
+  linear:{ key: 'linear',label: 'x',        formula: 'x',
+           build: () => (x) => x },
+
+  // ─── S62-A1 — Universal extensions ─────────────────────────────────────
+  logBase: {
+    key: 'logBase',
+    label: 'log_b x',
+    formula: 'log_{base}(x)',
+    build: (extra) => {
+      const b = extra.base ?? 10;
+      const lnB = Math.log(b);
+      return (x) => Math.log(x) / lnB;
+    },
+    defined: (x, extra) => x > 0 && (extra.base ?? 10) > 0 && (extra.base ?? 10) !== 1,
+    extraParams: [{ key: 'base', label: 'основа b', min: 2, max: 10, step: 0.1, default: 10 }],
+  },
+  expBase: {
+    key: 'expBase',
+    label: 'b^x',
+    formula: '{base}^x',
+    build: (extra) => {
+      const b = extra.base ?? Math.E;
+      return (x) => Math.pow(b, x);
+    },
+    defined: (_x, extra) => (extra.base ?? Math.E) > 0,
+    extraParams: [{ key: 'base', label: 'основа b', min: 0.2, max: 5, step: 0.1, default: Math.E }],
+  },
+  recip: {
+    key: 'recip',
+    label: '1/x',
+    formula: '1/x',
+    build: () => (x) => 1 / x,
+    defined: (x) => Math.abs(x) > 1e-6,
+  },
+  polyN: {
+    key: 'polyN',
+    label: 'x^n',
+    formula: 'x^{n}',
+    build: (extra) => {
+      const n = Math.round(extra.n ?? 2);
+      return (x) => Math.pow(x, n);
+    },
+    defined: (x, extra) => {
+      const n = Math.round(extra.n ?? 2);
+      return n >= 0 || x !== 0;
+    },
+    extraParams: [{ key: 'n', label: 'степен n', min: 2, max: 6, step: 1, default: 2, integer: true }],
+  },
 };
 
 export interface TransformParams {
@@ -44,10 +121,12 @@ export function applyTransform(
   fn: BaseFunctionDef,
   x: number,
   p: TransformParams,
+  extra: ExtraParams = {},
 ): number | null {
   const inner = p.b * x + p.c;
-  if (fn.defined && !fn.defined(inner)) return null;
-  const y = p.a * fn.fn(inner) + p.d;
+  if (fn.defined && !fn.defined(inner, extra)) return null;
+  const f = fn.build(extra);
+  const y = p.a * f(inner) + p.d;
   if (!Number.isFinite(y)) return null;
   return y;
 }
@@ -61,6 +140,7 @@ export function sampleCurve(
   fn: BaseFunctionDef,
   p: TransformParams,
   args: { xMin: number; xMax: number; samples: number },
+  extra: ExtraParams = {},
 ): SamplePoint[] {
   const { xMin, xMax, samples } = args;
   if (samples < 2) return [];
@@ -68,8 +148,15 @@ export function sampleCurve(
   const out: SamplePoint[] = new Array(samples);
   for (let i = 0; i < samples; i += 1) {
     const x = xMin + dx * i;
-    out[i] = { x, y: applyTransform(fn, x, p) };
+    out[i] = { x, y: applyTransform(fn, x, p, extra) };
   }
+  return out;
+}
+
+/** Default extra-params seeded from a function's `extraParams` declaration. */
+export function defaultExtraParams(fn: BaseFunctionDef): ExtraParams {
+  const out: ExtraParams = {};
+  fn.extraParams?.forEach(ep => { out[ep.key] = ep.default; });
   return out;
 }
 
@@ -105,12 +192,20 @@ export function buildPathD(
 }
 
 /** Human-readable formatted formula like `2·sin(3x + 1) − 4`. */
-export function formatFormula(fn: BaseFunctionDef, p: TransformParams): string {
+export function formatFormula(
+  fn: BaseFunctionDef,
+  p: TransformParams,
+  extra: ExtraParams = {},
+): string {
   const aStr = p.a === 1 ? '' : p.a === -1 ? '−' : `${formatNum(p.a)}·`;
   const innerB = p.b === 1 ? 'x' : p.b === -1 ? '−x' : `${formatNum(p.b)}x`;
   const innerC = p.c === 0 ? '' : p.c > 0 ? ` + ${formatNum(p.c)}` : ` − ${formatNum(-p.c)}`;
   const inner = `${innerB}${innerC}`;
-  const body = `${fn.formula.replace('x', inner)}`;
+  // First substitute extra placeholders ({base}, {n}), then `x` → inner.
+  let template = fn.formula;
+  if (extra.base != null) template = template.replace(/\{base\}/g, formatNum(extra.base));
+  if (extra.n != null) template = template.replace(/\{n\}/g, formatNum(Math.round(extra.n)));
+  const body = template.replace('x', inner);
   const dStr = p.d === 0 ? '' : p.d > 0 ? ` + ${formatNum(p.d)}` : ` − ${formatNum(-p.d)}`;
   return `${aStr}${body}${dStr}`;
 }
