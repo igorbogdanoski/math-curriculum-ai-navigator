@@ -26,6 +26,7 @@ export type DuggaQuestionType =
   | 'function_match'
   | 'unit_circle_pick'
   | 'proof_steps'
+  | 'geometry_construct'
   | 'section_header';
 
 export type DuggaTestType = 'topic' | 'midterm' | 'annual' | 'exam' | 'custom';
@@ -110,6 +111,20 @@ export interface DuggaExpectedProof {
   distractorPenalty?: number;
 }
 
+/** Expected GeoGebra construction for a `geometry_construct` question (S61-C5). */
+export interface DuggaExpectedConstruction {
+  /** Plain-language description of what the student must construct. */
+  description: string;
+  /** Optional teacher rubric the AI grader should follow (line-separated). */
+  rubric?: string;
+  /** Optional GeoGebra material id to seed the embed. */
+  materialId?: string;
+  /** Optional initial GeoGebra XML/JSON state. */
+  initialState?: string;
+  /** Maximum AI score weight (default 1.0 = full points). */
+  maxScoreWeight?: number;
+}
+
 /** Expected unit-circle target for a `unit_circle_pick` question (S61-C3). */
 export interface DuggaExpectedUnitCirclePick {
   /** Target angle. */
@@ -185,6 +200,8 @@ export interface DuggaQuestion {
    * `expectedUnitCircle.unit`) and for each (x, y) coordinate. Default 0.05.
    */
   unitCircleTolerance?: number;
+  /** Expected construction for `geometry_construct` question (S61-C5). */
+  expectedConstruction?: DuggaExpectedConstruction;
 }
 
 export interface DuggaTest {

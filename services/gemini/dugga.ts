@@ -232,6 +232,45 @@ $${latex}$
     return raw.map((q, i) => normaliseGeneratedQuestion(q, params.conceptId, i));
   },
 
+  // ─── S61-C5 — AI grading for `geometry_construct` questions ─────────────
+
+  async gradeGeometryConstruction(params: {
+    question: string;
+    expectedDescription: string;
+    studentNotes: string;
+    constructionState?: string;
+    rubric?: string;
+    maxPoints: number;
+  }): Promise<string> {
+    checkDailyQuotaGuard();
+    const rubricSection = params.rubric ? `\nРубрика: ${params.rubric}` : '';
+    const stateSection = params.constructionState
+      ? `\nGeoGebra состојба (XML/JSON): ${params.constructionState.slice(0, 4000)}`
+      : '\nGeoGebra состојба: (не е достапна — оцени врз база на белешки)';
+    const prompt = `Ти си македонски наставник по математика. Оцени дали ученикот ја извел правилно бараната геометриска конструкција.
+
+Прашање: ${params.question}
+Барана конструкција: ${params.expectedDescription}
+Белешки на ученик: ${params.studentNotes || '(нема)'}${stateSection}${rubricSection}
+Максимум поени: ${params.maxPoints}
+
+Оцени строго но праведно (рубрика: точност на чекорите, употреба на алатки, прецизност):
+1. **Поени:** X/${params.maxPoints}
+2. **Точно изведени чекори** — наброј
+3. **Грешки/недостатоци** — наброј
+4. **Коментар** — 1-2 реченици совет
+
+ЈАЗИК: ${getAILanguageRule()}`;
+
+    const r = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: getResolvedTextSystemInstruction(),
+      safetySettings: SAFETY_SETTINGS,
+    });
+    return r.text.trim();
+  },
+
   async gradeEssayAnswer(params: {
     question: string;
     studentAnswer: string;
@@ -271,7 +310,7 @@ const VALID_TYPES: ReadonlySet<DuggaQuestionType> = new Set<DuggaQuestionType>([
   'fill_blanks', 'short_answer', 'list_items', 'essay', 'multi_part',
   'ordering', 'diagram_annotate', 'statement_eval', 'interactive_table',
   'table_completion', 'student_chart', 'function_match', 'unit_circle_pick',
-  'proof_steps', 'section_header',
+  'proof_steps', 'geometry_construct', 'section_header',
 ]);
 
 interface RawGeneratedQuestion {

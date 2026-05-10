@@ -103,7 +103,9 @@ export function autoScore(q: DuggaQuestion, answer: string): QResult | null {
 }
 
 export function needsAIGrade(q: DuggaQuestion): boolean {
-  return q.type === 'essay' || (q.type === 'short_answer' && !q.correctAnswer);
+  return q.type === 'essay'
+    || q.type === 'geometry_construct'
+    || (q.type === 'short_answer' && !q.correctAnswer);
 }
 
 // Parses AI grade response text to extract earned points (e.g. "3/5" → 3)
