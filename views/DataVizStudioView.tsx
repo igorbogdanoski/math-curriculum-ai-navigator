@@ -18,6 +18,7 @@ import { LinearAlgebraLab } from '../components/dataviz/LinearAlgebraLab';
 import { Geometry3DLab } from '../components/dataviz/Geometry3DLab';
 import { Geometry2DLab } from '../components/dataviz/Geometry2DLab';
 import { FunctionGrapher } from '../components/dataviz/FunctionGrapher';
+import { FunctionTransformer } from '../components/math/FunctionTransformer';
 import { GeoGebraViewer } from '../components/dataviz/GeoGebraViewer';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
@@ -58,6 +59,44 @@ const CHART_TYPES: ChartTypeDef[] = [
 ];
 
 type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d';
+
+// ─── S62-A4: Function tab with sub-tabs ──────────────────────────────────────
+type FnSubTab = 'grapher' | 'sliders';
+
+const FnTabPanel: React.FC = () => {
+  const [sub, setSub] = useState<FnSubTab>('grapher');
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-cyan-500" /> Граф на функции
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Исцртај функции · истражувај трансформации · МОН V–XIII одд.
+          </p>
+        </div>
+        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setSub('grapher')}
+            className={`px-3 py-1.5 transition-colors ${sub === 'grapher' ? 'bg-cyan-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            Граф функции
+          </button>
+          <button
+            type="button"
+            onClick={() => setSub('sliders')}
+            className={`px-3 py-1.5 transition-colors border-l border-gray-200 ${sub === 'sliders' ? 'bg-cyan-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            Слајдери за функции
+          </button>
+        </div>
+      </div>
+      {sub === 'grapher' ? <FunctionGrapher /> : <FunctionTransformer width={560} height={340} />}
+    </div>
+  );
+};
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 export const DataVizStudioView: React.FC = () => {
@@ -438,17 +477,7 @@ export const DataVizStudioView: React.FC = () => {
 
         {/* ══ TAB: FUNCTION GRAPHER ════════════════════════════════════════ */}
         {activeTab === 'fn' && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <div className="mb-5">
-              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-cyan-500" /> Граф на функции
-              </h2>
-              <p className="text-sm text-gray-500 mt-0.5">
-                Исцртај до 5 математички функции · влечи за поместување · скролај за зум · МОН V–XIII одд.
-              </p>
-            </div>
-            <FunctionGrapher />
-          </div>
+          <FnTabPanel />
         )}
 
         {/* ══ TAB 2: MATH PAPER ════════════════════════════════════════════ */}
