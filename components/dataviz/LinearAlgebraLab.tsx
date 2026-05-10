@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   gaussElim, cramer, determinantCofactor, inverseAdjugate, luDecompose,
   choleskyDecompose, svdDecompose, matrixExp, jordanDecompose,
@@ -1098,6 +1098,8 @@ const E3_PRESETS: { label: string; mat: Mat3 }[] = [
   { label: 'Горна триаголна', mat: [[2,1,0],[0,3,1],[0,0,4]] },
 ];
 
+const MORPH_PERIOD = 2800;
+
 function EigenLab() {
   const [sz, setSz] = useState<2|3>(2);
   const [m2, setM2] = useState<Mat2>([[3,1],[1,3]]);
@@ -1105,15 +1107,44 @@ function EigenLab() {
   const [p2, setP2] = useState(1);
   const [p3, setP3] = useState(1);
 
-  const imgPts = useMemo(() => {
-    const pts: {tx:number;ty:number}[] = [];
+  // Animation state: t ∈ [0,1] morphs unit circle → A·circle
+  const [playing, setPlaying] = useState(false);
+  const [animT, setAnimT] = useState(1);
+  const rafRef = useRef<number | null>(null);
+  const t0Ref = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!playing) {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      return;
+    }
+    const step = (ts: number) => {
+      if (t0Ref.current === null) t0Ref.current = ts - animT * MORPH_PERIOD;
+      const elapsed = (ts - t0Ref.current) % (MORPH_PERIOD * 2);
+      const t = elapsed <= MORPH_PERIOD ? elapsed / MORPH_PERIOD : 2 - elapsed / MORPH_PERIOD;
+      setAnimT(t);
+      rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
+  }, [playing]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Morphed image points: M(t) = (1-t)·I + t·A  applied to unit circle
+  const morphPts = useMemo(() => {
+    const pts: {sx: number; sy: number}[] = [];
     for (let k = 0; k <= 64; k++) {
-      const th = (k/64)*2*Math.PI;
+      const th = (k / 64) * 2 * Math.PI;
       const cx = Math.cos(th), cy = Math.sin(th);
-      pts.push({ tx: m2[0][0]*cx+m2[0][1]*cy, ty: m2[1][0]*cx+m2[1][1]*cy });
+      const ax = m2[0][0] * cx + m2[0][1] * cy;
+      const ay = m2[1][0] * cx + m2[1][1] * cy;
+      const px = (1 - animT) * cx + animT * ax;
+      const py = (1 - animT) * cy + animT * ay;
+      const { sx, sy } = elVec(px, py);
+      pts.push({ sx, sy });
     }
     return pts;
-  }, [m2]);
+  }, [m2, animT]);
 
   const e2 = useMemo(() => computeEigen2(m2), [m2]);
   const tr2 = m2[0][0]+m2[1][1], dt2 = det2(m2);
@@ -1177,6 +1208,24 @@ function EigenLab() {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            {/* Animation toolbar */}
+            <div className="flex items-center gap-3 px-3 pt-2.5 pb-1">
+              <button
+                type="button"
+                onClick={() => { setPlaying(p => !p); t0Ref.current = null; }}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border-2 transition ${playing ? 'border-fuchsia-500 bg-fuchsia-50 text-fuchsia-700' : 'border-gray-200 text-gray-500 hover:border-fuchsia-300'}`}
+              >
+                {playing ? '⏸ Паузирај' : '▶ Анимирај трансформација'}
+              </button>
+              <input
+                type="range" min={0} max={1} step={0.01}
+                value={animT}
+                aria-label="Морф параметар t (0 = единична кружница, 1 = трансформирана)"
+                onChange={e => { setPlaying(false); setAnimT(parseFloat(e.target.value)); }}
+                className="flex-1 accent-fuchsia-500"
+              />
+              <span className="text-[10px] font-mono text-gray-400 w-10 text-right">t={animT.toFixed(2)}</span>
+            </div>
             <svg viewBox={`0 0 ${ELW} ${ELH}`} className="w-full max-h-[270px]">
               {[-3,-2,-1,0,1,2,3].map(g => {
                 const { sx } = elVec(g,0); const { sy } = elVec(0,g);
@@ -1189,22 +1238,30 @@ function EigenLab() {
                   </g>
                 );
               })}
-              <circle cx={ELCX} cy={ELCY} r={ELSC} fill="none" stroke="#e2e8f0" strokeWidth={1} strokeDasharray="4 2"/>
-              {imgPts.length > 1 && (
+              {/* Ghost unit circle */}
+              <circle cx={ELCX} cy={ELCY} r={ELSC} fill="none" stroke="#e2e8f0" strokeWidth={animT > 0.05 ? 1 : 1.5} strokeDasharray="4 2"/>
+              {/* Morphed circle/ellipse */}
+              {morphPts.length > 1 && (
                 <path
-                  d={imgPts.map((p,i) => {
-                    const { sx, sy } = elVec(p.tx, p.ty);
-                    return `${i===0?'M':'L'} ${sx.toFixed(1)} ${sy.toFixed(1)}`;
-                  }).join(' ') + ' Z'}
+                  d={morphPts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.sx.toFixed(1)} ${p.sy.toFixed(1)}`).join(' ') + ' Z'}
                   fill="#14b8a6" fillOpacity={0.12} stroke="#14b8a6" strokeWidth={2}
                 />
               )}
+              {/* Eigenvectors: solid = unit vᵢ, dashed = interpolated to λᵢvᵢ */}
               {e2.kind === 'real' && (
                 <>
                   <EigenArrow vx={e2.v[0][0]} vy={e2.v[0][1]} color="#6366f1" label="v₁"/>
                   <EigenArrow vx={e2.v[1][0]} vy={e2.v[1][1]} color="#f43f5e" label="v₂"/>
-                  <EigenArrow vx={e2.l[0]*e2.v[0][0]} vy={e2.l[0]*e2.v[0][1]} color="#6366f1" label="λ₁v₁" dashed/>
-                  <EigenArrow vx={e2.l[1]*e2.v[1][0]} vy={e2.l[1]*e2.v[1][1]} color="#f43f5e" label="λ₂v₂" dashed/>
+                  <EigenArrow
+                    vx={((1 - animT) + animT * e2.l[0]) * e2.v[0][0]}
+                    vy={((1 - animT) + animT * e2.l[0]) * e2.v[0][1]}
+                    color="#6366f1" label="λ₁v₁" dashed
+                  />
+                  <EigenArrow
+                    vx={((1 - animT) + animT * e2.l[1]) * e2.v[1][0]}
+                    vy={((1 - animT) + animT * e2.l[1]) * e2.v[1][1]}
+                    color="#f43f5e" label="λ₂v₂" dashed
+                  />
                 </>
               )}
               <circle cx={ELCX} cy={ELCY} r={3} fill="#374151"/>
@@ -1212,16 +1269,16 @@ function EigenLab() {
           </div>
           <div className="flex flex-wrap gap-3 text-[11px]">
             <span className="flex items-center gap-1 text-gray-400">
-              <span className="inline-block w-5 border-b border-dashed border-gray-300"/>единична кружница
+              <span className="inline-block w-5 border-b border-dashed border-gray-300"/>единична кружница (t=0)
             </span>
             <span className="flex items-center gap-1 text-teal-600">
-              <span className="inline-block w-5 border-b-2 border-teal-500"/>A·(кружница)
+              <span className="inline-block w-5 border-b-2 border-teal-500"/>M(t)·кружница → A·кружница (t=1)
             </span>
             <span className="flex items-center gap-1 text-indigo-600">
-              <span className="inline-block w-5 border-b-2 border-indigo-500"/>v₁, λ₁v₁ (испрекинато)
+              <span className="inline-block w-5 border-b-2 border-indigo-500"/>v₁ → λ₁v₁
             </span>
             <span className="flex items-center gap-1 text-rose-600">
-              <span className="inline-block w-5 border-b-2 border-rose-500"/>v₂, λ₂v₂ (испрекинато)
+              <span className="inline-block w-5 border-b-2 border-rose-500"/>v₂ → λ₂v₂
             </span>
           </div>
         </div>

@@ -26,11 +26,11 @@ export const GradeTab: React.FC<GradeTabProps> = ({ gradeStats }) => (
         <Card>
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">По одделение — споредба на перформанси</h2>
-                <span className="text-xs font-semibold text-gray-400">{gradeStats.length} одделени{gradeStats.length === 1 ? 'е' : 'ја'}</span>
+                <span className="text-xs font-semibold text-gray-500">{gradeStats.length} одделени{gradeStats.length === 1 ? 'е' : 'ја'}</span>
             </div>
 
             {gradeStats.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">
+                <p className="text-sm text-gray-500 text-center py-8">
                     Нема квизови поврзани со одделение. Квизовите треба да имаат доделено одделение за да се прикажат тука.
                 </p>
             ) : (
@@ -60,7 +60,7 @@ export const GradeTab: React.FC<GradeTabProps> = ({ gradeStats }) => (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="text-xs text-gray-400 uppercase tracking-widest text-left border-b border-gray-100">
+                                <tr className="text-xs text-gray-500 uppercase tracking-widest text-left border-b border-gray-100">
                                     <th className="py-2 px-3 font-semibold">Одделение</th>
                                     <th className="py-2 px-3 text-center font-semibold">Обиди</th>
                                     <th className="py-2 px-3 text-center font-semibold">Просек</th>
@@ -104,7 +104,7 @@ export const GradeTab: React.FC<GradeTabProps> = ({ gradeStats }) => (
                                 })}
                             </tbody>
                         </table>
-                        <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 mt-4 pt-3 border-t border-gray-100">
                             Одделенијата се сортирани по број на одделение. Бојата на редот: <span className="text-red-400 font-semibold">Под 50%</span> · <span className="text-yellow-600 font-semibold">50–69%</span> · <span className="text-green-600 font-semibold">≥70%</span>.
                         </p>
                     </div>

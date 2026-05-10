@@ -56,7 +56,7 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
             <Card className="p-8 text-center">
                 <ClipboardList className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500 font-medium">{t('analytics.assignments.empty')}</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                     {t('analytics.assignments.emptyHint')}
                 </p>
             </Card>
@@ -141,7 +141,7 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
                                         <CheckCircle className="w-3.5 h-3.5" />{t('analytics.assignments.completed')} ({completed.length})
                                     </p>
                                     {completed.length === 0 ? (
-                                        <p className="text-xs text-gray-400">—</p>
+                                        <p className="text-xs text-gray-500">—</p>
                                     ) : (
                                         <ul className="space-y-0.5">
                                             {completed.map(s => (
@@ -155,7 +155,7 @@ export const AssignmentsTab: React.FC<Props> = ({ teacherUid }) => {
                                         <Clock className="w-3.5 h-3.5" />{t('analytics.assignments.notCompleted')} ({notCompleted.length})
                                     </p>
                                     {notCompleted.length === 0 ? (
-                                        <p className="text-xs text-gray-400">{t('analytics.assignments.allDone')}</p>
+                                        <p className="text-xs text-gray-500">{t('analytics.assignments.allDone')}</p>
                                     ) : (
                                         <ul className="space-y-0.5">
                                             {notCompleted.map(s => (

@@ -354,7 +354,7 @@ export const AcademyView: React.FC = () => {
                   <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
                     <div className={`h-2 rounded-full transition-all duration-500 ${spec.badgeColor}`} style={{ width: `${pct}%` }} />
                   </div>
-                  <p className="text-xs text-gray-400">Прогрес: {applied + quizzed}/{total * 2} цели остварени</p>
+                  <p className="text-xs text-gray-500">Прогрес: {applied + quizzed}/{total * 2} цели остварени</p>
                   <ul className="mt-4 space-y-1.5">
                     {spec.lessonIds.map(id => {
                       const lesson = ACADEMY_CONTENT[id];
@@ -454,7 +454,7 @@ export const AcademyView: React.FC = () => {
               </p>
               
               <div className="space-y-2 mt-4">
-                <p className="text-xs font-bold text-gray-400 uppercase">Стручни теми:</p>
+                <p className="text-xs font-bold text-gray-500 uppercase">Стручни теми:</p>
                 <ul className="flex flex-col gap-2">
                   {module.topics.map((topic, i) => {
                     const isRead = readLessons.includes(topic.id);

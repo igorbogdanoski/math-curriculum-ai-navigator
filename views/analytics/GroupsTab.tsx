@@ -158,7 +158,7 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
                         )}
 
                         {unassigned.length === 0 ? (
-                            <p className="text-xs text-gray-400 text-center py-4">Сите ученици се во групи.</p>
+                            <p className="text-xs text-gray-500 text-center py-4">Сите ученици се во групи.</p>
                         ) : (
                             <div className="space-y-1">
                                 {unassigned.map(s => (
@@ -177,7 +177,7 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
                                             : <Square className="w-4 h-4 text-gray-300 flex-shrink-0" />
                                         }
                                         <span className="font-semibold text-slate-700 truncate">{s.name}</span>
-                                        <span className="ml-auto text-xs text-gray-400 flex-shrink-0">{s.avg}%</span>
+                                        <span className="ml-auto text-xs text-gray-500 flex-shrink-0">{s.avg}%</span>
                                     </button>
                                 ))}
                             </div>
@@ -246,7 +246,7 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
                     {groups.length === 0 && !showForm && (
                         <Card className="text-center py-10">
                             <Users className="w-10 h-10 text-gray-200 mx-auto mb-2" />
-                            <p className="text-sm font-semibold text-gray-400">Нема создадени групи.</p>
+                            <p className="text-sm font-semibold text-gray-500">Нема создадени групи.</p>
                             <p className="text-xs text-gray-300 mt-1">Кликни „Нова група" за да организираш ученици.</p>
                         </Card>
                     )}
@@ -300,7 +300,7 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ perStudentStats, teacherUi
 
                                 {/* Members */}
                                 {group.studentNames.length === 0 ? (
-                                    <p className="text-xs text-gray-400 italic">
+                                    <p className="text-xs text-gray-500 italic">
                                         Нема ученици — избери ги од левата листа и кликни „Додај"
                                     </p>
                                 ) : (

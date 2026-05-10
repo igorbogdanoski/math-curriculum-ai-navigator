@@ -140,10 +140,10 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
                             <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
                                 Покриеност на Национални стандарди — врз основа на реални квизови
                             </h2>
-                            <span className="text-xs font-semibold text-gray-400">{standardsCoverage.tested.length} тестирани</span>
+                            <span className="text-xs font-semibold text-gray-500">{standardsCoverage.tested.length} тестирани</span>
                         </div>
                         {standardsCoverage.tested.length === 0 ? (
-                            <p className="text-sm text-gray-400 text-center py-8">
+                            <p className="text-sm text-gray-500 text-center py-8">
                                 Нема концепти со nationalStandardIds во резултатите. Потребни се квизови поврзани со концепти.
                             </p>
                         ) : (
@@ -164,7 +164,7 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
                                             </div>
                                             <div className="flex-shrink-0 text-right w-20">
                                                 <p className={`text-lg font-black ${textColor}`}>{avgScore}%</p>
-                                                <p className="text-xs text-gray-400">{conceptCount} концепт{conceptCount === 1 ? '' : 'и'}</p>
+                                                <p className="text-xs text-gray-500">{conceptCount} концепт{conceptCount === 1 ? '' : 'и'}</p>
                                             </div>
                                         </div>
                                     );
@@ -258,14 +258,14 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
                     </div>
 
                     {/* Count badge */}
-                    <p className="text-xs text-gray-400 mb-3">
+                    <p className="text-xs text-gray-500 mb-3">
                         Прикажани <span className="font-bold text-gray-600">{filtered.length}</span> од {allStandards.length} стандарди
                     </p>
 
                     {/* Standards list */}
                     <div className="space-y-1.5">
                         {filtered.length === 0 && (
-                            <p className="text-sm text-gray-400 text-center py-10">Нема стандарди за избраниот филтер.</p>
+                            <p className="text-sm text-gray-500 text-center py-10">Нема стандарди за избраниот филтер.</p>
                         )}
                         {filtered.map(({ standard, isCovered, isTested, avgScore, masteredCount: mCount, coveringConcepts }) => {
                             const isExpanded = expandedId === standard.id;
@@ -333,7 +333,7 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
                                         <div className="px-4 pb-3 pt-2 border-t border-slate-100 bg-white/70">
                                             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Концепти кои го покриваат овој стандард:</p>
                                             {coveringConcepts.length === 0 ? (
-                                                <p className="text-xs text-gray-400">Нема поврзани концепти во тековната наставна програма.</p>
+                                                <p className="text-xs text-gray-500">Нема поврзани концепти во тековната наставна програма.</p>
                                             ) : (
                                                 <div className="space-y-1.5">
                                                     {coveringConcepts.map(c => (
@@ -345,7 +345,7 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
                                                                     <span className={`text-xs font-bold w-8 text-right ${c.avgPct >= 70 ? 'text-green-600' : 'text-amber-600'}`}>{c.avgPct}%</span>
                                                                 </div>
                                                             ) : (
-                                                                <span className="text-xs text-gray-400 italic">Не тестирано</span>
+                                                                <span className="text-xs text-gray-500 italic">Не тестирано</span>
                                                             )}
                                                         </div>
                                                     ))}
@@ -363,7 +363,7 @@ export const StandardsTab: React.FC<StandardsTabProps> = ({ standardsCoverage })
                         })}
                     </div>
 
-                    <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500 mt-4 pt-3 border-t border-gray-100">
                         Извор: МОН Национални стандарди за постигање на учениците на крај на основното образование (6–9 одделение).
                         Три нивоа — <span className="text-blue-600 font-semibold">Во програма</span> / <span className="text-amber-600 font-semibold">Тестирано</span> / <span className="text-green-600 font-semibold">Совладано</span>.
                     </p>

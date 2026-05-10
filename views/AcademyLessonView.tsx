@@ -204,7 +204,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-10">
         {/* Title Section */}
         <div className="mb-12 text-center">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{getCategoryName()}</span>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{getCategoryName()}</span>
             <h1 className="text-4xl sm:text-5xl font-black text-gray-900 mt-4 mb-6 leading-tight">
                {lesson.title}
             </h1>

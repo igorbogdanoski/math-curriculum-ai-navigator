@@ -226,7 +226,7 @@ const QuestionBankTabInner: React.FC<QuestionBankTabProps> = ({ teacherUid }) =>
         <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-black text-indigo-700 uppercase tracking-widest">Webb's DoK — Покриеност на банката</p>
-            <span className="text-xs text-gray-400">{dokStats.tagged}/{dokStats.total} прашања со DoK ознака</span>
+            <span className="text-xs text-gray-500">{dokStats.tagged}/{dokStats.total} прашања со DoK ознака</span>
           </div>
           {/* Stacked bar */}
           <div className="flex h-4 rounded-full overflow-hidden gap-0.5 mb-3">

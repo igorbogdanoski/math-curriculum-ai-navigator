@@ -198,6 +198,10 @@ export const CommandPalette: React.FC = () => {
       setSelectedIdx(i => nextCursor(i, -1, filtered.length));
     } else if (e.key === 'Enter' && filtered[selectedIdx]) {
       filtered[selectedIdx].action();
+    } else if (e.key === 'Tab') {
+      // Keep focus inside the palette — Tab cycles selection, Shift+Tab goes backward
+      e.preventDefault();
+      setSelectedIdx(i => nextCursor(i, e.shiftKey ? -1 : 1, filtered.length));
     }
   };
 
@@ -258,49 +262,57 @@ export const CommandPalette: React.FC = () => {
         </div>
 
         {/* Results */}
+        {filtered.length === 0 && query.trim() && (
+          <div aria-live="polite" className="py-12 text-center text-gray-500 text-sm">
+            Нема резултати за „{query}"
+          </div>
+        )}
         <div ref={listRef} className="max-h-[60vh] overflow-y-auto py-2">
-          {filtered.length === 0 && (
-            <div className="py-12 text-center text-gray-400 text-sm">
-              Нема резултати за „{query}"
+          {filtered.length === 0 && !query.trim() && (
+            <div className="py-12 text-center text-gray-500 text-sm">
+              Почнете да пишувате за да пребарате...
             </div>
           )}
           {filtered.map((item, idx) => {
             const showGroupHeader = item.group !== lastGroup;
             if (showGroupHeader) lastGroup = item.group;
             const Icon = item.icon;
+            const isSelected = idx === selectedIdx;
             return (
               <React.Fragment key={item.id}>
                 {showGroupHeader && (
-                  <div className="px-4 pt-3 pb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                  <div className="px-4 pt-3 pb-1" aria-hidden="true">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
                       {groupLabel[item.group]}
                     </span>
                   </div>
                 )}
                 <button
                   type="button"
+                  id={`cp-item-${idx}`}
+                  aria-label={item.description ? `${item.label} — ${item.description}` : item.label}
                   data-idx={idx}
                   onClick={item.action}
                   onMouseEnter={() => setSelectedIdx(idx)}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${
-                    idx === selectedIdx
+                    isSelected
                       ? 'bg-brand-primary/8 text-gray-900'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
-                    idx === selectedIdx ? 'bg-brand-primary/10' : 'bg-gray-100'
+                    isSelected ? 'bg-brand-primary/10' : 'bg-gray-100'
                   }`}>
-                    <Icon className={`w-4 h-4 ${item.color}`} />
+                    <Icon className={`w-4 h-4 ${item.color}`} aria-hidden="true" />
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className="block font-medium text-sm truncate">{item.label}</span>
                     {item.description && (
-                      <span className="block text-xs text-gray-400 truncate">{item.description}</span>
+                      <span className="block text-xs text-gray-500 truncate">{item.description}</span>
                     )}
                   </span>
-                  {idx === selectedIdx && (
-                    <kbd className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-100 rounded border border-gray-200">
+                  {isSelected && (
+                    <kbd className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded border border-gray-200" aria-hidden="true">
                       <CornerDownLeft className="w-3 h-3" />
                     </kbd>
                   )}
@@ -312,12 +324,12 @@ export const CommandPalette: React.FC = () => {
 
         {/* Footer hint */}
         <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100 bg-gray-50">
-          <div className="flex items-center gap-3 text-[11px] text-gray-400">
+          <div className="flex items-center gap-3 text-[11px] text-gray-500">
             <span className="flex items-center gap-1"><ArrowUp className="w-3 h-3" /><ArrowDown className="w-3 h-3" /> Навигација</span>
             <span className="flex items-center gap-1"><CornerDownLeft className="w-3 h-3" /> Избор</span>
             <span>ESC Затвори</span>
           </div>
-          <div className="flex items-center gap-3 text-[11px] text-gray-400">
+          <div className="flex items-center gap-3 text-[11px] text-gray-500">
             <span className="flex items-center gap-1" title="Отвори AI Генератор">
               <Command className="w-3 h-3" /><span>G AI</span>
             </span>

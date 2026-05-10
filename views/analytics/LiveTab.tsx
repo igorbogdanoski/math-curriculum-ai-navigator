@@ -166,7 +166,7 @@ const LiveTabInner: React.FC = () => {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="text-xs text-gray-400 uppercase tracking-widest text-left border-b border-red-100">
+                                        <tr className="text-xs text-gray-500 uppercase tracking-widest text-left border-b border-red-100">
                                             <th className="py-2 px-3 font-semibold">Ученик</th>
                                             <th className="py-2 px-3 text-center font-semibold">Статус</th>
                                             <th className="py-2 px-3 text-center font-semibold">Резултат</th>
@@ -199,8 +199,8 @@ const LiveTabInner: React.FC = () => {
                 {session && session.status === 'ended' && (
                     <Card className="border-gray-200 bg-gray-50">
                         <p className="text-sm font-bold text-gray-500 mb-2">Сесијата е завршена</p>
-                        <p className="text-xs text-gray-400">Квиз: {session.quizTitle} · Учествувале: {studentEntries.length}</p>
-                        {avgScore !== null && <p className="text-xs text-gray-400">Просечен резултат: {avgScore}%</p>}
+                        <p className="text-xs text-gray-500">Квиз: {session.quizTitle} · Учествувале: {studentEntries.length}</p>
+                        {avgScore !== null && <p className="text-xs text-gray-500">Просечен резултат: {avgScore}%</p>}
                         <button type="button" onClick={() => setSession(null)}
                             className="mt-3 text-xs font-bold text-indigo-600 hover:underline">Нова сесија →</button>
                     </Card>
@@ -235,7 +235,7 @@ const LiveTabInner: React.FC = () => {
                                         <span className="text-sm">Вчитување квизови...</span>
                                     </div>
                                 ) : quizzes.length === 0 ? (
-                                    <p className="text-sm text-gray-400">Нема генерирани квизови. Прво генерирај квиз во Генератор.</p>
+                                    <p className="text-sm text-gray-500">Нема генерирани квизови. Прво генерирај квиз во Генератор.</p>
                                 ) : (
                                     <select
                                         value={selectedQuizId}

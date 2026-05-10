@@ -114,7 +114,7 @@ export const DoKHeatmapTab: React.FC<Props> = ({ results }) => {
             </div>
           );
         })}
-        <span className="ml-auto text-xs text-gray-400">{taggedCount}/{results.length} квизови со DoK</span>
+        <span className="ml-auto text-xs text-gray-500">{taggedCount}/{results.length} квизови со DoK</span>
       </div>
 
       {/* Heatmap table */}

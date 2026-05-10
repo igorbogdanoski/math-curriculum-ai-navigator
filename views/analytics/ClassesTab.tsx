@@ -336,7 +336,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                 {classes.length === 0 && !showForm && (
                     <Card className="text-center py-12">
                         <School className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                        <p className="text-sm font-semibold text-gray-400">Нема создадени одделенија.</p>
+                        <p className="text-sm font-semibold text-gray-500">Нема создадени одделенија.</p>
                         <p className="text-xs text-gray-300 mt-1">Кликни „Ново одделение" за да создадеш свое прво одделение.</p>
                     </Card>
                 )}
@@ -382,7 +382,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
                                 ) : (
                                     <h3 className="font-bold text-slate-800 truncate">{cls.name}</h3>
                                 )}
-                                <span className="text-xs font-semibold text-gray-400 flex-shrink-0">
+                                <span className="text-xs font-semibold text-gray-500 flex-shrink-0">
                                     {cls.gradeLevel}. одд.
                                 </span>
                                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 flex-shrink-0">
@@ -463,7 +463,7 @@ export const ClassesTab: React.FC<ClassesTabProps> = ({ teacherUid }) => {
 
                         {/* Student list */}
                         {cls.studentNames.length === 0 ? (
-                            <p className="text-xs text-gray-400 italic">
+                            <p className="text-xs text-gray-500 italic">
                                 Нема ученици — кликни <UserPlus className="w-3 h-3 inline" /> за да додадеш.
                             </p>
                         ) : (

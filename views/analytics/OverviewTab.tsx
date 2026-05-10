@@ -256,13 +256,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                             <div key={`result-${r.quizId}-${i}`} className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 last:border-0">
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-gray-700 truncate">{r.quizTitle}</p>
-                                    <p className="text-xs text-gray-400">{formatDate(r.playedAt)}</p>
+                                    <p className="text-xs text-gray-500">{formatDate(r.playedAt)}</p>
                                 </div>
                                 <div className="text-right flex-shrink-0">
                                     <span className={`text-sm font-bold ${r.percentage >= 70 ? 'text-green-600' : r.percentage >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>
                                         {r.correctCount}/{r.totalQuestions}
                                     </span>
-                                    <p className="text-xs text-gray-400">{fmt(r.percentage, 0)}%</p>
+                                    <p className="text-xs text-gray-500">{fmt(r.percentage, 0)}%</p>
                                 </div>
                             </div>
                         ))}
@@ -282,7 +282,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                             <div key={c.conceptId} className="flex items-center justify-between gap-4 p-3 bg-white rounded-lg border border-orange-100">
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-gray-700 truncate">{c.title}</p>
-                                    <p className="text-xs text-gray-400">{c.attempts} обид{c.attempts === 1 ? '' : 'и'}</p>
+                                    <p className="text-xs text-gray-500">{c.attempts} обид{c.attempts === 1 ? '' : 'и'}</p>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                     <span className={`text-lg font-bold ${c.avgPct < 50 ? 'text-red-500' : 'text-orange-500'}`}>{c.avgPct}%</span>
@@ -362,7 +362,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="text-xs text-gray-400 uppercase tracking-widest text-left">
+                            <tr className="text-xs text-gray-500 uppercase tracking-widest text-left">
                                 <th className="py-2 px-4 font-semibold">Квиз / Поим</th>
                                 <th className="py-2 px-4 text-center font-semibold">Обиди</th>
                                 <th className="py-2 px-4 text-center font-semibold">Просек</th>

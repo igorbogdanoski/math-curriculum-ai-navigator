@@ -58,16 +58,16 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats, onAss
                     )}
                 </div>
                 {perStudentStats.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-8">
+                    <p className="text-sm text-gray-500 text-center py-8">
                         Нема ученици со внесено ime. Учениците треба да го внесат своето ime при играње квиз.
                     </p>
                 ) : filtered.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-8">Нема ученик со тоа ime.</p>
+                    <p className="text-sm text-gray-500 text-center py-8">Нема ученик со тоа ime.</p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="text-xs text-gray-400 uppercase tracking-widest text-left border-b border-gray-100">
+                                <tr className="text-xs text-gray-500 uppercase tracking-widest text-left border-b border-gray-100">
                                     <th className="py-2 px-3 font-semibold">Ученик</th>
                                     <th className="py-2 px-3 text-center font-semibold">Обиди</th>
                                     <th className="py-2 px-3 text-center font-semibold">Просек</th>
@@ -185,7 +185,7 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ perStudentStats, onAss
                         <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                             <QRCodeSVG value={qrUrl} size={200} />
                         </div>
-                        <p className="text-xs text-gray-400 text-center break-all">{qrUrl}</p>
+                        <p className="text-xs text-gray-500 text-center break-all">{qrUrl}</p>
                         <div className="flex gap-2 w-full">
                             <button
                                 type="button"

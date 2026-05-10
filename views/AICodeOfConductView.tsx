@@ -183,7 +183,7 @@ export function AICodeOfConductView() {
       </div>
 
       {/* Footer note */}
-      <p className="text-center text-xs text-gray-400">
+      <p className="text-center text-xs text-gray-500">
         Овој кодекс се темели на принципите на AI писменост за K-12 образование. Наменет е за ученици и наставници кои сакаат да ја користат AI ефикасно и одговорно.
       </p>
     </div>

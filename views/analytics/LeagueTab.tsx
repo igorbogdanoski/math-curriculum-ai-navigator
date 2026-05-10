@@ -161,7 +161,7 @@ export const LeagueTab: React.FC<Props> = ({ teacherUid }) => {
           <div key={tier} className={`border ${meta.border} rounded-2xl overflow-hidden`}>
             <div className={`${meta.bg} px-4 py-2.5 border-b ${meta.border}`}>
               <span className={`text-sm font-black ${meta.color}`}>{meta.label}</span>
-              <span className="text-xs text-gray-400 ml-2">Лв. {meta.minLevel}{tier === 'gold' ? '+' : `–${tier === 'silver' ? 5 : 2}`}</span>
+              <span className="text-xs text-gray-500 ml-2">Лв. {meta.minLevel}{tier === 'gold' ? '+' : `–${tier === 'silver' ? 5 : 2}`}</span>
             </div>
             <div className="divide-y divide-gray-100">
               {tierRows.map((row, i) => {

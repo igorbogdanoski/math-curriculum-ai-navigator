@@ -248,7 +248,7 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="text-xs text-gray-400 uppercase tracking-widest text-left border-b border-gray-100">
+                                    <tr className="text-xs text-gray-500 uppercase tracking-widest text-left border-b border-gray-100">
                                         <th className="py-2 px-3 font-semibold">Ученик</th>
                                         <th className="py-2 px-3 text-center font-semibold">Просек</th>
                                         <th className="py-2 px-3 text-center font-semibold">Положиле</th>
@@ -328,7 +328,7 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="text-xs text-gray-400 uppercase tracking-widest text-left border-b border-gray-100">
+                                    <tr className="text-xs text-gray-500 uppercase tracking-widest text-left border-b border-gray-100">
                                         <th className="py-2 px-3 font-semibold">Концепт</th>
                                         <th className="py-2 px-3 text-center font-semibold">Просек</th>
                                         <th className="py-2 px-3 text-center font-semibold">Ученици</th>
@@ -387,7 +387,7 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="text-xs text-gray-400 uppercase tracking-widest text-left border-b border-gray-100">
+                                    <tr className="text-xs text-gray-500 uppercase tracking-widest text-left border-b border-gray-100">
                                         <th className="py-2 px-3 font-semibold">Ученик</th>
                                         <th className="py-2 px-3 text-center font-semibold">Просек</th>
                                         <th className="py-2 px-3 text-center font-semibold">Доверба</th>
@@ -450,7 +450,7 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({ perStudentStats, weakConce
                         <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                             <QRCodeSVG value={qrUrl} size={200} />
                         </div>
-                        <p className="text-xs text-gray-400 text-center break-all">{qrUrl}</p>
+                        <p className="text-xs text-gray-500 text-center break-all">{qrUrl}</p>
                         <div className="flex gap-2 w-full">
                             <button
                                 type="button"

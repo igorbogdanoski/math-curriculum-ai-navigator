@@ -179,7 +179,7 @@ export const CohortTab: React.FC<Props> = ({ results, teacherUid, gradeLevel }) 
                         <PercentBar pct={distribution.risk}    color="bg-amber-400"   label="⚠️ Ризик (50–69%)"       value={`${distribution.risk}%`} />
                         <PercentBar pct={distribution.fail}    color="bg-red-400"     label="❌ Слаб (<50%)"          value={`${distribution.fail}%`} />
                     </div>
-                    <p className="text-xs text-gray-400 mt-3">Вкупно {distribution.total} обиди</p>
+                    <p className="text-xs text-gray-500 mt-3">Вкупно {distribution.total} обиди</p>
                 </Card>
 
                 {/* ── Student segments ──────────────────────────────────── */}
@@ -214,7 +214,7 @@ export const CohortTab: React.FC<Props> = ({ results, teacherUid, gradeLevel }) 
                             value={`${Math.round((studentSegments.critical / studentSegments.total) * 100)}%`}
                         />
                     </div>
-                    <p className="text-xs text-gray-400 mt-3">Вкупно {studentSegments.total} ученика</p>
+                    <p className="text-xs text-gray-500 mt-3">Вкупно {studentSegments.total} ученика</p>
                 </Card>
 
                 {/* ── Top strongest concepts ───────────────────────────── */}
@@ -224,7 +224,7 @@ export const CohortTab: React.FC<Props> = ({ results, teacherUid, gradeLevel }) 
                         Најјаки концепти на класот
                     </h3>
                     {strongest.length === 0 ? (
-                        <p className="text-sm text-gray-400">Нема доволно податоци</p>
+                        <p className="text-sm text-gray-500">Нема доволно податоци</p>
                     ) : (
                         <div className="space-y-3">
                             {strongest.map(c => (
@@ -247,7 +247,7 @@ export const CohortTab: React.FC<Props> = ({ results, teacherUid, gradeLevel }) 
                         Систематски слаби концепти
                     </h3>
                     {weakest.length === 0 ? (
-                        <p className="text-sm text-gray-400">Нема доволно податоци</p>
+                        <p className="text-sm text-gray-500">Нема доволно податоци</p>
                     ) : (
                         <div className="space-y-3">
                             {weakest.map(c => (
@@ -302,12 +302,12 @@ export const CohortTab: React.FC<Props> = ({ results, teacherUid, gradeLevel }) 
                                         />
                                     </div>
                                     <span className="text-xs text-gray-500">{m.label}</span>
-                                    <span className="text-xs text-gray-400">({m.count})</span>
+                                    <span className="text-xs text-gray-500">({m.count})</span>
                                 </div>
                             );
                         })}
                     </div>
-                    <p className="text-xs text-gray-400 mt-2">Бројот во заграда = квиз обиди тој месец</p>
+                    <p className="text-xs text-gray-500 mt-2">Бројот во заграда = квиз обиди тој месец</p>
                 </Card>
             )}
 

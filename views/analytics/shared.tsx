@@ -95,7 +95,7 @@ export const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: s
         <div>
             <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold">{label}</p>
             <p className="text-2xl font-bold text-brand-primary leading-tight">{value}</p>
-            {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+            {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
         </div>
     </Card>
 );
@@ -121,7 +121,7 @@ export const QuizRow: React.FC<{ agg: QuizAggregate }> = ({ agg }) => {
         <tr className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
             <td className="py-3 px-4">
                 <p className="font-semibold text-sm text-brand-primary line-clamp-2">{agg.quizTitle}</p>
-                <p className="text-xs text-gray-400">{agg.quizId}</p>
+                <p className="text-xs text-gray-500">{agg.quizId}</p>
             </td>
             <td className="py-3 px-4 text-center">
                 <span className="font-bold text-gray-700">{agg.attempts}</span>
