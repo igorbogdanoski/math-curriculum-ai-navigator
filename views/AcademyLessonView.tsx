@@ -18,6 +18,15 @@ const AlgebraTilesCanvas = React.lazy(() =>
 const Shape3DViewer = React.lazy(() =>
   import('../components/math/Shape3DViewer').then(m => ({ default: m.Shape3DViewer }))
 );
+const FunctionTransformer = React.lazy(() =>
+  import('../components/math/FunctionTransformer').then(m => ({ default: m.FunctionTransformer }))
+);
+const LogExpLab = React.lazy(() =>
+  import('../components/dataviz/LogExpLab').then(m => ({ default: m.LogExpLab }))
+);
+const LinearAlgebraLab = React.lazy(() =>
+  import('../components/dataviz/LinearAlgebraLab').then(m => ({ default: m.LinearAlgebraLab }))
+);
 
 /** DoK classification exercise — teacher picks DoK level for each item */
 const DokClassifier: React.FC<{ items: DokClassifyItem[] }> = ({ items }) => {
@@ -232,7 +241,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                </div>
             </div>
             
-            {/* Interactive Demo (algebra-tiles or shape-3d) */}
+            {/* Interactive Demo */}
             {lesson.interactiveDemo && (
               <div className="bg-slate-900 rounded-2xl p-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -240,14 +249,25 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                     <Target className="w-4 h-4 text-cyan-400" />
                   </div>
                   <h2 className="text-lg font-black text-cyan-300 uppercase tracking-widest">
-                    {lesson.interactiveDemo === 'algebra-tiles' ? 'Интерактивна демо: Алгебарски плочки' : 'Интерактивна демо: 3D Геометрија'}
+                    {{
+                      'algebra-tiles':        'Интерактивна демо: Алгебарски плочки',
+                      'shape-3d':             'Интерактивна демо: 3D Геометрија',
+                      'function-transformer': 'Интерактивна демо: Слајдери за функции',
+                      'log-exp-lab':          'Интерактивна демо: Лог / Exp лаб',
+                      'linear-algebra-lab':   'Интерактивна демо: Линеарна алгебра',
+                    }[lesson.interactiveDemo]}
                   </h2>
                 </div>
                 <React.Suspense fallback={<div className="h-48 flex items-center justify-center text-slate-400">Се вчитува...</div>}>
-                  {lesson.interactiveDemo === 'algebra-tiles'
-                    ? <AlgebraTilesCanvas presetExpression={lesson.algebraTilesPreset} />
-                    : <Shape3DViewer compact={false} />
-                  }
+                  {lesson.interactiveDemo === 'algebra-tiles' && (
+                    <AlgebraTilesCanvas presetExpression={lesson.algebraTilesPreset} />
+                  )}
+                  {lesson.interactiveDemo === 'shape-3d' && <Shape3DViewer compact={false} />}
+                  {lesson.interactiveDemo === 'function-transformer' && (
+                    <FunctionTransformer width={520} height={320} />
+                  )}
+                  {lesson.interactiveDemo === 'log-exp-lab' && <LogExpLab />}
+                  {lesson.interactiveDemo === 'linear-algebra-lab' && <LinearAlgebraLab />}
                 </React.Suspense>
               </div>
             )}
