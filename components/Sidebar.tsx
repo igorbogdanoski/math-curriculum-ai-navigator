@@ -231,10 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
             </div>
           ) : (
             <div className="w-full flex items-center justify-between bg-white text-gray-700 text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:border-brand-primary hover:bg-gray-50 transition-colors"
-                 onClick={() => {
-                   // This could dispatch an event or use a Context to open the Upgrade Modal globally
-                   window.dispatchEvent(new CustomEvent('openUpgradeModal', { detail: { reason: 'Овој преглед ви ги прикажува тековните кредити. Надградете за неограничено!' }}));
-                 }}
+                 onClick={() => { navigate('/usage'); onClose(); }}
             >
               <span className="flex items-center gap-1.5"><ICONS.coins className="w-3.5 h-3.5 text-brand-primary" /> Кредити</span>
               <span className={user?.aiCreditsBalance && user.aiCreditsBalance > 10 ? "text-emerald-600" : "text-red-500"}>

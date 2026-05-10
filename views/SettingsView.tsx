@@ -1096,6 +1096,10 @@ export const SettingsView: React.FC = () => {
                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-purple-200 hover:border-purple-400 rounded-xl text-sm font-medium text-purple-700 transition-colors shadow-sm">
                         ⚡🧠 Споредба на AI модели
                     </a>
+                    <a href="#/usage"
+                       className="flex items-center gap-2 px-4 py-2.5 bg-white border border-emerald-200 hover:border-emerald-400 rounded-xl text-sm font-medium text-emerald-700 transition-colors shadow-sm">
+                        📊 AI Употреба и кредити
+                    </a>
                 </div>
             </Card>
 

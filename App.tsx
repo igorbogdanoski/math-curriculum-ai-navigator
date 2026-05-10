@@ -153,6 +153,7 @@ const DuggaPlayerView = safeLazy(() => import('./views/DuggaPlayerView').then(mo
 const DuggaLibraryView = safeLazy(() => import('./views/DuggaLibraryView').then(module => ({ default: module.DuggaLibraryView })));
 const AIModelCompareView = safeLazy(() => import('./views/AIModelCompareView').then(module => ({ default: module.AIModelCompareView })));
 const AICodeOfConductView = safeLazy(() => import('./views/AICodeOfConductView').then(module => ({ default: module.AICodeOfConductView })));
+const UsageDashboardView = safeLazy(() => import('./views/UsageDashboardView').then(module => ({ default: module.UsageDashboardView })));
 const TeacherForumView = safeLazy(() => import('./views/TeacherForumView').then(module => ({ default: module.TeacherForumView })));
 const CurriculumGraphView = safeLazy(() => import('./views/CurriculumGraphView').then(module => ({ default: module.CurriculumGraphView })));
 const DataVizStudioView = safeLazy(() => import('./views/DataVizStudioView').then(module => ({ default: module.DataVizStudioView })));
@@ -269,6 +270,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/dugga', component: DuggaLibraryView },
     { path: '/ai/compare', component: AIModelCompareView },
     { path: '/ai/conduct', component: AICodeOfConductView },
+    { path: '/usage', component: UsageDashboardView },
     { path: '/data-viz', component: DataVizStudioView },
     { path: '/forum', component: TeacherForumView },
     { path: '/reports/coverage', component: CoverageAnalyzerView },
