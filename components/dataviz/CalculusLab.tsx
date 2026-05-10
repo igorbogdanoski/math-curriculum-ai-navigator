@@ -398,7 +398,9 @@ function LimitsLab() {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
-type CalcTab = 'deriv' | 'riemann' | 'limits';
+import { LogExpLab } from './LogExpLab';
+
+type CalcTab = 'deriv' | 'riemann' | 'limits' | 'logexp';
 
 export function CalculusLab() {
   const [tab, setTab] = useState<CalcTab>('deriv');
@@ -407,6 +409,7 @@ export function CalculusLab() {
     { id: 'deriv',   label: '∂ Изводи',             color: 'indigo' },
     { id: 'riemann', label: '∫ Риманови суми',       color: 'emerald' },
     { id: 'limits',  label: 'lim Граници',           color: 'violet' },
+    { id: 'logexp',  label: 'log / exp',             color: 'amber'  },
   ];
 
   return (
@@ -423,6 +426,7 @@ export function CalculusLab() {
       {tab === 'deriv'   && <DerivativeLab />}
       {tab === 'riemann' && <RiemannLab />}
       {tab === 'limits'  && <LimitsLab />}
+      {tab === 'logexp'  && <LogExpLab />}
     </div>
   );
 }
