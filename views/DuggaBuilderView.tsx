@@ -538,15 +538,46 @@ function AIGenerateModal({
 }
 
 // ─── Main view ────────────────────────────────────────────────────────────────
+// S61-D2 — Read seed params from the URL hash query (e.g.
+// `#/dugga/build?conceptId=...&conceptLabel=...&grade=8&topic=...`).
+function readBuilderSeed(): {
+  conceptId?: string;
+  conceptLabel?: string;
+  grade?: number;
+  topic?: string;
+} {
+  if (typeof window === 'undefined') return {};
+  const hash = window.location.hash || '';
+  const qIdx = hash.indexOf('?');
+  if (qIdx < 0) return {};
+  const params = new URLSearchParams(hash.slice(qIdx + 1));
+  const gradeRaw = params.get('grade');
+  const grade = gradeRaw && /^\d+$/.test(gradeRaw) ? Number(gradeRaw) : undefined;
+  return {
+    conceptId: params.get('conceptId') ?? undefined,
+    conceptLabel: params.get('conceptLabel') ?? undefined,
+    grade,
+    topic: params.get('topic') ?? undefined,
+  };
+}
+
 export function DuggaBuilderView() {
   const { user, firebaseUser } = useAuth();
   const { addNotification } = useNotification();
 
-  const [title, setTitle] = useState('');
+  const seed = readBuilderSeed();
+
+  const [title, setTitle] = useState(
+    seed.conceptLabel ? `Дига тест: ${seed.conceptLabel}` : '',
+  );
   const [description, setDescription] = useState('');
-  const [grade, setGrade] = useState(8);
+  const [grade, setGrade] = useState(seed.grade ?? 8);
   const [testType, setTestType] = useState<DuggaTestType>('topic');
-  const [questions, setQuestions] = useState<DuggaQuestion[]>([makeBlankQuestion()]);
+  const [questions, setQuestions] = useState<DuggaQuestion[]>(() => {
+    const blank = makeBlankQuestion();
+    if (seed.conceptId) blank.linkedConceptIds = [seed.conceptId];
+    return [blank];
+  });
   const [isPublic, setIsPublic] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);

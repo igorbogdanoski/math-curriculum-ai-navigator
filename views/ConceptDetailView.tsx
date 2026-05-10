@@ -21,7 +21,7 @@ import { ForumCTA } from '../components/common/ForumCTA';
 import { StepByStepSolver } from '../components/StepByStepSolver';
 import { GeometryExplorer } from '../components/GeometryExplorer';
 import { useReactToPrint } from 'react-to-print';
-import { Printer, Share2, Brain, GraduationCap, Sparkles, Lightbulb, Zap, MonitorPlay, Loader2 } from 'lucide-react';
+import { Printer, Share2, Brain, GraduationCap, Sparkles, Lightbulb, Zap, MonitorPlay, Loader2, ClipboardList } from 'lucide-react';
 import { QuickToolsPanel } from '../components/common/QuickToolsPanel';
 import { DokBadge, DokDistributionBar } from '../components/common/DokBadge';
 import { firestoreService } from '../services/firestoreService';
@@ -469,6 +469,24 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Генерирам слајдови...</>
                       : <><MonitorPlay className="w-4 h-4" /> Gamma Презентација</>
                     }
+                  </button>
+                  {/* S61-D2 — CTA: Создади дига тест за овој концепт */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const params = new URLSearchParams({
+                        conceptId: concept.id,
+                        conceptLabel: concept.title,
+                        grade: String(grade?.level ?? 8),
+                        topic: topic.title,
+                      });
+                      navigate(`/dugga/build?${params.toString()}`);
+                    }}
+                    title="Создади дига тест поврзан со овој концепт"
+                    className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-md hover:bg-emerald-700 transition active:scale-95"
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                    Создади Дига Тест
                   </button>
                 </div>
               </div>
