@@ -1,19 +1,16 @@
 /**
- * FunctionTransformer (T4.1)
+ * FunctionTransformer (S62-A3)
  *
- * Interactive visualisation of `y = a · f(b·x + c) + d` for a small dictionary
- * of base functions (sin/cos/tan/ln/x²/√x/|x|/x³). Live sliders + SVG plot.
- *
- * Used by:
- *   - MaturaTutorChat ("Покажи трансформација" canned action)
- *   - AcademyLessonView for "Трансформации на функции"
+ * Interactive visualisation of `y = a · f(b·x + c) + d` for all universal
+ * base functions (sin/cos/tan/ln/x²/√x/|x|/x³/log_b/b^x/1/x/x^n/x).
+ * Dynamically renders extra-param sliders (n, base) per function.
  */
 import React, { useMemo, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import {
-  BASE_FUNCTIONS, IDENTITY_PARAMS,
+  BASE_FUNCTIONS, IDENTITY_PARAMS, defaultExtraParams,
   buildPathD, formatFormula, sampleCurve,
-  type BaseFunctionKey, type TransformParams,
+  type BaseFunctionKey, type ExtraParams, type TransformParams,
 } from './functionTransformerHelpers';
 
 export interface FunctionTransformerProps {
@@ -21,12 +18,10 @@ export interface FunctionTransformerProps {
   initialParams?: Partial<TransformParams>;
   width?: number;
   height?: number;
-  /** Plot view-box in math coordinates. */
   xMin?: number;
   xMax?: number;
   yMin?: number;
   yMax?: number;
-  /** Optional callback fired on every parameter change (for analytics). */
   onParamsChange?: (params: TransformParams, fn: BaseFunctionKey) => void;
 }
 
@@ -53,6 +48,9 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
     ...IDENTITY_PARAMS,
     ...initialParams,
   });
+  const [extra, setExtra] = useState<ExtraParams>(() =>
+    defaultExtraParams(BASE_FUNCTIONS[initialFunction]),
+  );
 
   const fn = BASE_FUNCTIONS[fnKey];
 
@@ -62,24 +60,32 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
     onParamsChange?.(next, fnKey);
   };
 
+  const updateExtra = (k: keyof ExtraParams, epDef: { integer?: boolean }) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = Number(e.target.value);
+      setExtra(prev => ({ ...prev, [k]: epDef.integer ? Math.round(raw) : raw }));
+    };
+
   const onFnChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const next = e.target.value as BaseFunctionKey;
     setFnKey(next);
+    setExtra(defaultExtraParams(BASE_FUNCTIONS[next]));
     onParamsChange?.(params, next);
   };
 
   const reset = () => {
     setParams(IDENTITY_PARAMS);
+    setExtra(defaultExtraParams(fn));
     onParamsChange?.(IDENTITY_PARAMS, fnKey);
   };
 
   const samples = useMemo(
-    () => sampleCurve(fn, params, { xMin, xMax, samples: 400 }),
-    [fn, params, xMin, xMax],
+    () => sampleCurve(fn, params, { xMin, xMax, samples: 400 }, extra),
+    [fn, params, xMin, xMax, extra],
   );
   const baseSamples = useMemo(
-    () => sampleCurve(fn, IDENTITY_PARAMS, { xMin, xMax, samples: 400 }),
-    [fn, xMin, xMax],
+    () => sampleCurve(fn, IDENTITY_PARAMS, { xMin, xMax, samples: 400 }, extra),
+    [fn, xMin, xMax, extra],
   );
 
   const pad = 24;
@@ -91,7 +97,7 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
   });
 
   const dCurve = buildPathD(samples, toScreen, { yMin, yMax });
-  const dBase = buildPathD(baseSamples, toScreen, { yMin, yMax });
+  const dBase  = buildPathD(baseSamples, toScreen, { yMin, yMax });
   const x0 = toScreen(0, 0);
 
   return (
@@ -100,9 +106,7 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
       data-testid="function-transformer"
     >
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-black text-gray-800">
-          Трансформација на функција
-        </h3>
+        <h3 className="text-sm font-black text-gray-800">Трансформација на функција</h3>
         <button
           type="button"
           onClick={reset}
@@ -131,7 +135,7 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
           className="px-2 py-1 text-xs font-mono bg-indigo-50 text-indigo-800 rounded-md border border-indigo-100"
           data-testid="function-transformer-formula"
         >
-          y = {formatFormula(fn, params)}
+          y = {formatFormula(fn, params, extra)}
         </code>
       </div>
 
@@ -139,10 +143,9 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
         viewBox={`0 0 ${width} ${height}`}
         className="w-full h-auto bg-gray-50 rounded-xl border border-gray-100"
         role="img"
-        aria-label={`График на y = ${formatFormula(fn, params)}`}
+        aria-label={`График на y = ${formatFormula(fn, params, extra)}`}
         data-testid="function-transformer-plot"
       >
-        {/* Grid */}
         {Array.from({ length: 9 }, (_, i) => i - 4).map((g) => {
           const { sx } = toScreen(g, 0);
           return (
@@ -157,14 +160,12 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
               stroke={g === 0 ? '#9ca3af' : '#e5e7eb'} strokeWidth={g === 0 ? 1.5 : 1} />
           );
         })}
-        {/* Original (faint) */}
-        <path d={dBase} fill="none" stroke="#cbd5e1" strokeWidth={1.5} strokeDasharray="4 3" />
-        {/* Transformed */}
+        <path d={dBase}  fill="none" stroke="#cbd5e1" strokeWidth={1.5} strokeDasharray="4 3" />
         <path d={dCurve} fill="none" stroke="#4f46e5" strokeWidth={2} />
-        {/* Origin marker */}
         <circle cx={x0.sx} cy={x0.sy} r={2.5} fill="#6b7280" />
       </svg>
 
+      {/* a, b, c, d sliders */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {(['a', 'b', 'c', 'd'] as const).map((k) => (
           <label key={k} className="text-xs font-semibold text-gray-700 space-y-1">
@@ -185,6 +186,34 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
           </label>
         ))}
       </div>
+
+      {/* Dynamic extra-param sliders (n, base) */}
+      {fn.extraParams && fn.extraParams.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 border-t border-gray-100">
+          {fn.extraParams.map((ep) => {
+            const val = extra[ep.key] ?? ep.default;
+            const display = ep.integer ? Math.round(val).toString() : val.toFixed(2);
+            return (
+              <label key={ep.key} className="text-xs font-semibold text-gray-700 space-y-1">
+                <span className="flex items-center justify-between">
+                  <span>{ep.label} = <span className="font-mono font-bold text-emerald-700">{display}</span></span>
+                </span>
+                <input
+                  type="range"
+                  value={val}
+                  min={ep.min}
+                  max={ep.max}
+                  step={ep.step}
+                  onChange={updateExtra(ep.key, ep)}
+                  className="w-full accent-emerald-600"
+                  data-testid={`function-transformer-extra-${ep.key}`}
+                  aria-label={ep.label}
+                />
+              </label>
+            );
+          })}
+        </div>
+      )}
 
       <p className="text-[11px] text-gray-500">
         Префрли ги слајдерите за да видиш како a, b, c и d ја менуваат основната крива
