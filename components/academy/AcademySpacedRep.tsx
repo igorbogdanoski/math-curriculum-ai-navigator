@@ -1,7 +1,8 @@
 import { logger } from '../../utils/logger';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Calendar, CheckCircle2, ChevronRight, RotateCcw, Clock, Lightbulb, Loader2, Send } from 'lucide-react';
 import { useNavigation } from '../../contexts/NavigationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   SM2Card,
   Quality,
@@ -15,6 +16,11 @@ import {
   upsertCard,
 } from '../../utils/sm2';
 import { gradeFeynmanAnswer } from '../../utils/duggaFeynmanGrading';
+import {
+  loadAcademySM2Cards,
+  saveAcademySM2Cards,
+  mergeAcademySM2Cards,
+} from '../../services/firestoreService.spacedRep';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -53,8 +59,10 @@ function pluralDays(n: number): string {
 
 export default function AcademySpacedRep({ allLessonIds, lessonTitles, completedQuizzes }: Props) {
   const { navigate } = useNavigation();
+  const { firebaseUser } = useAuth();
+  const userId = firebaseUser?.uid ?? null;
 
-  // All SM-2 cards kept in state; synced to localStorage
+  // All SM-2 cards kept in state; synced to localStorage + Firestore
   const [cards, setCards] = useState<SM2Card[]>([]);
 
   // Which due card is currently being rated (lessonId | null)
@@ -63,21 +71,41 @@ export default function AcademySpacedRep({ allLessonIds, lessonTitles, completed
   // Set of lessonIds reviewed in this session (so we don't re-show after rating)
   const [reviewedThisSession, setReviewedThisSession] = useState<Set<string>>(new Set());
 
-  // Load cards from localStorage on mount; ensure every completedQuiz has a card
+  // Track whether initial Firestore load is complete (prevent double-writes on init)
+  const firestoreLoadedRef = useRef(false);
+
+  // Load cards: localStorage first (instant), then merge with Firestore
   useEffect(() => {
-    let loaded = loadCards();
+    let localCards = loadCards();
 
     // Ensure every completed lesson has an SM-2 card (idempotent)
     let changed = false;
     completedQuizzes.forEach((id) => {
-      if (!loaded.find((c) => c.lessonId === id)) {
-        loaded = upsertCard(loaded, getOrCreateCard(id, loaded));
+      if (!localCards.find((c) => c.lessonId === id)) {
+        localCards = upsertCard(localCards, getOrCreateCard(id, localCards));
         changed = true;
       }
     });
-    if (changed) saveCards(loaded);
+    if (changed) saveCards(localCards);
 
-    setCards(loaded);
+    setCards(localCards);
+
+    // Async: merge with Firestore data
+    if (userId) {
+      loadAcademySM2Cards(userId).then((remoteCards) => {
+        firestoreLoadedRef.current = true;
+        if (remoteCards.length === 0) return;
+        setCards((prev) => {
+          const merged = mergeAcademySM2Cards(prev, remoteCards);
+          saveCards(merged);
+          return merged;
+        });
+      }).catch(() => {
+        firestoreLoadedRef.current = true;
+      });
+    } else {
+      firestoreLoadedRef.current = true;
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Derived: lessons eligible for review = completed + have a card
@@ -112,11 +140,12 @@ export default function AcademySpacedRep({ allLessonIds, lessonTitles, completed
       const updated = sm2Update(card, quality);
       const next = upsertCard(prev, updated);
       saveCards(next);
+      if (userId) saveAcademySM2Cards(userId, next);
       return next;
     });
     setReviewedThisSession((prev) => new Set(prev).add(lessonId));
     setRatingCard(null);
-  }, []);
+  }, [userId]);
 
   const handleDismissRating = useCallback(() => {
     setRatingCard(null);

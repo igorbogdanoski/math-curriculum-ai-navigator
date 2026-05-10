@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('../../services/gemini/core', () => ({
   callGeminiProxy: vi.fn(),
+  DEFAULT_MODEL: 'gemini-test-model',
 }));
 
 vi.mock('../../services/firestoreService.matura', async () => {

@@ -51,8 +51,8 @@ describe('intentRouter', () => {
   });
 
   describe('isIntentRouterEnabled / setIntentRouterEnabled', () => {
-    it('is disabled by default (no localStorage key)', () => {
-      expect(isIntentRouterEnabled()).toBe(false);
+    it('is enabled by default (no localStorage key)', () => {
+      expect(isIntentRouterEnabled()).toBe(true);
     });
 
     it('returns true after setIntentRouterEnabled(true)', () => {

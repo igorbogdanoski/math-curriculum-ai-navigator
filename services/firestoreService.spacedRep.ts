@@ -8,6 +8,11 @@
  * Called from:
  *  - StudentPlayView (after quiz completion) → updateSpacedRepRecord
  *  - StudentProgressView (on mount) → fetchSpacedRepRecords
+ *
+ * Academy SM-2 teacher cards:
+ * Collection: `academy_sm2`
+ * Document ID: `{userId}`
+ * Field: `cards: SM2Card[]`
  */
 
 import {
@@ -25,6 +30,7 @@ import {
   createInitialRecord,
   updateRecordAfterReview,
 } from '../utils/spacedRepetition';
+import type { SM2Card } from '../utils/sm2';
 
 const COLLECTION = 'spaced_rep';
 
@@ -116,3 +122,67 @@ export const spacedRepService = {
   fetchSpacedRepRecords,
   fetchSpacedRepRecord,
 };
+
+// ── Academy SM-2 teacher cards ────────────────────────────────────────────────
+
+const ACADEMY_SM2_COLLECTION = 'academy_sm2';
+
+/**
+ * Loads all SM-2 cards for a teacher from Firestore.
+ * Returns [] on error or when no data exists.
+ */
+export async function loadAcademySM2Cards(userId: string): Promise<SM2Card[]> {
+  if (!userId) return [];
+  try {
+    const snap = await getDoc(doc(db, ACADEMY_SM2_COLLECTION, userId));
+    if (!snap.exists()) return [];
+    const data = snap.data();
+    const cards = data?.cards;
+    if (!Array.isArray(cards)) return [];
+    return cards.filter(
+      (item): item is SM2Card =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof item.lessonId === 'string' &&
+        typeof item.ef === 'number' &&
+        typeof item.interval === 'number' &&
+        typeof item.repetitions === 'number' &&
+        typeof item.nextReview === 'string',
+    );
+  } catch (e) {
+    logger.warn('[academySM2] Failed to load cards:', e);
+    return [];
+  }
+}
+
+/**
+ * Persists all academy SM-2 cards for a teacher (fire-and-forget).
+ */
+export function saveAcademySM2Cards(userId: string, cards: SM2Card[]): void {
+  if (!userId) return;
+  setDoc(doc(db, ACADEMY_SM2_COLLECTION, userId), { cards }).catch((e) =>
+    logger.warn('[academySM2] Failed to save cards:', e),
+  );
+}
+
+/**
+ * Merges two SM-2 card arrays. For each lessonId, keeps the card with the
+ * more recent lastReview (or higher repetitions if lastReview is absent).
+ */
+export function mergeAcademySM2Cards(local: SM2Card[], remote: SM2Card[]): SM2Card[] {
+  const map = new Map<string, SM2Card>();
+  for (const card of local) map.set(card.lessonId, card);
+  for (const card of remote) {
+    const existing = map.get(card.lessonId);
+    if (!existing) {
+      map.set(card.lessonId, card);
+      continue;
+    }
+    const existingDate = existing.lastReview ?? '1970-01-01';
+    const cardDate = card.lastReview ?? '1970-01-01';
+    if (cardDate > existingDate || (cardDate === existingDate && card.repetitions > existing.repetitions)) {
+      map.set(card.lessonId, card);
+    }
+  }
+  return Array.from(map.values());
+}
