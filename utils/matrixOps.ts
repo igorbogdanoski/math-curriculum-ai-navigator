@@ -262,7 +262,7 @@ export function choleskyDecompose(A: Mat): CholeskyResult {
 }
 
 // ─── S64-A: SVD decomposition ─────────────────────────────────────────────────
-// A = U · Σ · Vᵀ  (thin SVD, works for 2×2 and 3×3)
+// A = U · Σ · Vᵀ  (thin SVD, n×n via Jacobi iteration on AᵀA)
 
 export interface SVDResult {
   U: Mat;             // left singular vectors (columns)
@@ -320,49 +320,85 @@ function symEigen3x3(M: Mat): { vals: [number, number, number]; vecs: [[number,n
   return { vals: lams, vecs: [evec3(lams[0]), evec3(lams[1]), evec3(lams[2])] };
 }
 
+// Jacobi eigenvalue algorithm for symmetric n×n matrices.
+// Returns eigenvalues and eigenvector matrix V (columns = eigenvectors).
+function symEigenNxN(M: Mat): { vals: number[]; V: Mat } {
+  const n = M.length;
+  const A = M.map(row => [...row]);
+  let V = identity(n);
+  const maxIter = n * n * 20;
+  for (let iter = 0; iter < maxIter; iter++) {
+    let p = 0, q = 1, maxOff = 0;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const v = Math.abs(A[i][j]);
+      if (v > maxOff) { maxOff = v; p = i; q = j; }
+    }
+    if (maxOff < 1e-13) break;
+    const theta = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+    const t = (theta >= 0 ? 1 : -1) / (Math.abs(theta) + Math.sqrt(1 + theta * theta));
+    const c = 1 / Math.sqrt(1 + t * t);
+    const s = t * c;
+    // Update symmetric A (only the p-th and q-th rows/cols change)
+    for (let r = 0; r < n; r++) {
+      if (r === p || r === q) continue;
+      const Apr = A[p][r], Aqr = A[q][r];
+      A[p][r] = A[r][p] = c * Apr - s * Aqr;
+      A[q][r] = A[r][q] = s * Apr + c * Aqr;
+    }
+    const App = A[p][p], Aqq = A[q][q], Apq = A[p][q];
+    A[p][p] = c * c * App - 2 * s * c * Apq + s * s * Aqq;
+    A[q][q] = s * s * App + 2 * s * c * Apq + c * c * Aqq;
+    A[p][q] = A[q][p] = 0;
+    // Accumulate eigenvectors
+    for (let r = 0; r < n; r++) {
+      const Vrp = V[r][p], Vrq = V[r][q];
+      V[r][p] = c * Vrp - s * Vrq;
+      V[r][q] = s * Vrp + c * Vrq;
+    }
+  }
+  return { vals: A.map((row, i) => row[i]), V };
+}
+
 export function svdDecompose(A: Mat): SVDResult {
   const n = A.length;
-  if (n < 2 || n > 3) throw new Error('SVD реализирана само за 2×2 и 3×3');
+  if (n < 2) throw new Error('SVD барa матрица со n ≥ 2');
   const At = transpose(A);
   const AtA = matMul(At, A);
 
+  // Use specialised closed-form solvers for 2×2 and 3×3 (faster, more accurate)
+  // and the general Jacobi solver for n ≥ 4
+  let vals: number[];
+  let V: Mat;
   if (n === 2) {
-    const { vals, vecs } = symEigen2x2(AtA);
-    // Sort by descending singular value
-    const order = [0, 1].sort((a, b) => vals[b] - vals[a]);
-    const S = order.map(i => Math.sqrt(Math.max(0, vals[i])));
-    const Vt: Mat = order.map(i => vecs[i]);
-    const V: Mat = transpose(Vt);
-    // U columns: u_i = A·v_i / σ_i  (exact SVD formula)
-    const U: Mat = zeros(2, 2);
-    for (let i = 0; i < 2; i++) {
-      const v = V.map(row => row[i]);
-      const sigma = S[i];
-      if (sigma > 1e-12) {
-        const Av = A.map(row => row.reduce((s, a, j) => s + a * v[j], 0));
-        for (let r = 0; r < 2; r++) U[r][i] = Av[r] / sigma;
-      } else {
-        U[i][i] = 1;
-      }
-    }
-    return { U, S, Vt };
+    const r = symEigen2x2(AtA);
+    vals = [...r.vals];
+    V = transpose(r.vecs as Mat);  // vecs rows → V columns
+  } else if (n === 3) {
+    const r = symEigen3x3(AtA);
+    vals = [...r.vals];
+    V = transpose(r.vecs as Mat);
+  } else {
+    const r = symEigenNxN(AtA);
+    vals = r.vals;
+    V = r.V;
   }
 
-  // n === 3
-  const { vals, vecs } = symEigen3x3(AtA);
-  const order = [0, 1, 2].sort((a, b) => vals[b] - vals[a]);
+  const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => vals[b] - vals[a]);
   const S = order.map(i => Math.sqrt(Math.max(0, vals[i])));
-  const Vt: Mat = order.map(i => [...vecs[i]]);
-  const V: Mat = transpose(Vt);
-  const U: Mat = zeros(3, 3);
-  for (let i = 0; i < 3; i++) {
-    const v = V.map(row => row[i]);
+  // Vt rows = V columns reordered
+  const Vt: Mat = order.map(i => Array.from({ length: n }, (_, r) => V[r][i]));
+  const Vmat = transpose(Vt);
+
+  // U columns: u_i = A·v_i / σ_i
+  const U: Mat = zeros(n, n);
+  for (let i = 0; i < n; i++) {
+    const v = Vmat.map(row => row[i]);
     const sigma = S[i];
     if (sigma > 1e-12) {
-      const Av = A.map(row => row.reduce((s, a, j) => s + a * v[j], 0));
-      for (let r = 0; r < 3; r++) U[r][i] = Av[r] / sigma;
+      const Av = A.map(row => row.reduce((acc, a, j) => acc + a * v[j], 0));
+      for (let r = 0; r < n; r++) U[r][i] = Av[r] / sigma;
     } else {
-      U[i][i] = 1;
+      if (i < n) U[i][i] = 1;
     }
   }
   return { U, S, Vt };

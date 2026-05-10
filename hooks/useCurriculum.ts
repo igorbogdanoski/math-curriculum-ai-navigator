@@ -352,7 +352,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return undefined;
     }, [curriculum, allConcepts]);
     
-    const value = {
+    const value = useMemo(() => ({
         curriculum,
         verticalProgression,
         allNationalStandards,
@@ -364,8 +364,13 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         getStandardsByIds,
         findConceptAcrossGrades,
         getConceptChain,
-        allConcepts
-    };
+        allConcepts,
+    }), [
+        curriculum, verticalProgression, allNationalStandards,
+        isLoading, error,
+        getGrade, getTopic, getConceptDetails, getStandardsByIds,
+        findConceptAcrossGrades, getConceptChain, allConcepts,
+    ]);
 
     return React.createElement(CurriculumContext.Provider, { value: value }, children);
 };

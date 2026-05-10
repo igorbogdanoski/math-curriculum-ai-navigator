@@ -731,8 +731,8 @@ function NxNSolverLab() {
     setN(newN);
     setFlatA(makeFlat(newN));
     setBVec(new Array(newN).fill(0));
-    // SVD and Jordan are only implemented for 2×2 and 3×3
-    if (newN > 3 && (method === 'svd' || method === 'jordan')) setMethod('gauss');
+    // Jordan is only implemented for 2×2 and 3×3; SVD now works for all n
+    if (newN > 3 && method === 'jordan') setMethod('gauss');
   };
 
   const changeMode = (newMode: NxNMode) => {
@@ -754,7 +754,7 @@ function NxNSolverLab() {
   ];
 
   const availMethods = MATRIX_METHODS.filter(m =>
-    m.mode.includes(mode) && ((['svd', 'jordan'].includes(m.id)) ? n <= 3 : true)
+    m.mode.includes(mode) && (m.id === 'jordan' ? n <= 3 : true)
   );
 
   const result = useMemo(() => {
