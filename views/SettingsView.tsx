@@ -1082,6 +1082,22 @@ export const SettingsView: React.FC = () => {
             </Card>
 
             {/* Н1 — GDPR / Приватност */}
+            <Card className="max-w-2xl border-indigo-100 bg-indigo-50/30">
+                <h2 className="text-xl font-semibold text-indigo-800 mb-3 flex items-center gap-2">
+                    🤖 Одговорна употреба на AI
+                </h2>
+                <div className="flex flex-wrap gap-3">
+                    <a href="#/ai/conduct"
+                       className="flex items-center gap-2 px-4 py-2.5 bg-white border border-indigo-200 hover:border-indigo-400 rounded-xl text-sm font-medium text-indigo-700 transition-colors shadow-sm">
+                        <Shield className="w-4 h-4" /> Кодекс за употреба на AI
+                    </a>
+                    <a href="#/ai/compare"
+                       className="flex items-center gap-2 px-4 py-2.5 bg-white border border-purple-200 hover:border-purple-400 rounded-xl text-sm font-medium text-purple-700 transition-colors shadow-sm">
+                        ⚡🧠 Споредба на AI модели
+                    </a>
+                </div>
+            </Card>
+
             <Card className="max-w-2xl border-slate-200">
                 <h2 className="text-2xl font-semibold text-slate-800 mb-1 flex items-center gap-2">
                     <Shield className="w-6 h-6 text-slate-600" />

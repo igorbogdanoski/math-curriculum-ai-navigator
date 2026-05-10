@@ -108,6 +108,8 @@ export interface ForumReply {
   forumImageUrl?: string | null;
   /** Server-side edit timestamp */
   editedAt?: Timestamp | null;
+  /** S63 — marked as an excellent Feynman-style explanation by admin/thread-author */
+  feynmanBadge?: boolean;
 }
 
 export interface ForumStats {
@@ -458,6 +460,11 @@ export const updateForumReply = async (
     body: data.body,
     editedAt: serverTimestamp(),
   });
+};
+
+/** Toggle "Поучи ги другите" Feynman badge on a reply. */
+export const toggleFeynmanBadge = async (replyId: string, current: boolean): Promise<void> => {
+  await updateDoc(doc(db, 'forum_replies', replyId), { feynmanBadge: !current });
 };
 
 export const markBestAnswer = async (replyId: string, threadId: string): Promise<void> => {

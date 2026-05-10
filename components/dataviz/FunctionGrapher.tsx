@@ -11,8 +11,12 @@
  */
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Plus, Trash2, Download, RotateCcw, ZoomIn, ZoomOut, Info } from 'lucide-react';
+import { Plus, Trash2, Download, RotateCcw, ZoomIn, ZoomOut, Info, Hash } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import {
+  durandKerner, polyHorner, sortRoots, isRealRoot, cxFmt,
+  type Cx,
+} from '../../utils/polynomialRoots';
 
 // ── Math expression evaluator (safe — no eval) ──────────────────────────────
 
@@ -63,12 +67,15 @@ function safeEval(expr: string, x: number): number {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export type IneqOp = 'none' | '<' | '<=' | '>' | '>=';
+
 export interface FunctionEntry {
   id: string;
   expr: string;
   color: string;
   visible: boolean;
   label: string;
+  ineqOp?: IneqOp;
 }
 
 interface ViewBox {
@@ -78,8 +85,24 @@ interface ViewBox {
 
 const PALETTE = ['#6366f1', '#ef4444', '#22c55e', '#f59e0b', '#ec4899'];
 
+const PALETTE_BG: Record<string, string> = {
+  '#6366f1': 'bg-[#6366f1]',
+  '#ef4444': 'bg-[#ef4444]',
+  '#22c55e': 'bg-[#22c55e]',
+  '#f59e0b': 'bg-[#f59e0b]',
+  '#ec4899': 'bg-[#ec4899]',
+};
+
+const INEQ_OPS: { key: IneqOp; sym: string }[] = [
+  { key: 'none', sym: '—' },
+  { key: '<',  sym: '<' },
+  { key: '<=', sym: '≤' },
+  { key: '>',  sym: '>' },
+  { key: '>=', sym: '≥' },
+];
+
 const DEFAULT_FUNCTIONS: FunctionEntry[] = [
-  { id: '1', expr: 'x^2',       color: PALETTE[0], visible: true, label: 'f(x) = x²' },
+  { id: '1', expr: 'x^2', color: PALETTE[0], visible: true, label: 'f(x) = x²', ineqOp: 'none' },
 ];
 
 const DEFAULT_VIEW: ViewBox = { xMin: -6, xMax: 6, yMin: -4, yMax: 10 };
@@ -134,6 +157,11 @@ export const FunctionGrapher: React.FC = () => {
   const [dragStart, setDragStart] = useState<{ x: number; y: number; view: ViewBox } | null>(null);
   const [inputErrors, setInputErrors] = useState<Record<string, boolean>>({});
   const [exporting, setExporting] = useState(false);
+
+  // H3: Polynomial root finder state
+  const [showRoots, setShowRoots] = useState(false);
+  const [polyDeg, setPolyDeg] = useState(2);
+  const [polyCoeffs, setPolyCoeffs] = useState<number[]>([1, 0, -4]); // x²-4
   const [showPresets, setShowPresets] = useState(false);
   const svgContainerRef = useRef<HTMLDivElement>(null);
 
@@ -156,35 +184,92 @@ export const FunctionGrapher: React.FC = () => {
   const xTicks = useMemo(() => niceTicks(view.xMin, view.xMax), [view.xMin, view.xMax]);
   const yTicks = useMemo(() => niceTicks(view.yMin, view.yMax), [view.yMin, view.yMax]);
 
-  // Path data for each function
+  // Path data for each function (curve + optional inequality fill polygons)
   const paths = useMemo(() => {
+    const topY  = PAD.top;
+    const botY  = PAD.top + plotH;
+
     return functions.map(fn => {
-      if (!fn.visible || !fn.expr.trim()) return { id: fn.id, d: '' };
+      if (!fn.visible || !fn.expr.trim()) return { id: fn.id, d: '', fills: [] };
       const steps = plotW * 2;
-      const segments: string[] = [];
-      let pen = false;
+
+      // Collect continuous point segments (each a {px,py}[] array)
+      const allSeg: Array<Array<{px: number; py: number}>> = [];
+      let cur: Array<{px: number; py: number}> = [];
       let prevY: number | null = null;
 
       for (let i = 0; i <= steps; i++) {
         const wx = view.xMin + (i / steps) * (view.xMax - view.xMin);
         const wy = safeEval(fn.expr, wx);
-        if (isNaN(wy) || !isFinite(wy)) { pen = false; prevY = null; continue; }
-        // Discontinuity detection: large jumps suggest asymptote
+        if (isNaN(wy) || !isFinite(wy)) {
+          if (cur.length) { allSeg.push(cur); cur = []; }
+          prevY = null;
+          continue;
+        }
         if (prevY !== null && Math.abs(wy - prevY) > (view.yMax - view.yMin) * 3) {
-          pen = false;
+          if (cur.length) { allSeg.push(cur); cur = []; }
         }
         prevY = wy;
-        const px = toPixelX(wx), py = toPixelY(wy);
-        if (!pen) {
-          segments.push(`M ${px.toFixed(1)} ${py.toFixed(1)}`);
-          pen = true;
-        } else {
-          segments.push(`L ${px.toFixed(1)} ${py.toFixed(1)}`);
+        cur.push({ px: toPixelX(wx), py: toPixelY(wy) });
+      }
+      if (cur.length) allSeg.push(cur);
+
+      // Build curve path string
+      const curveParts: string[] = [];
+      for (const seg of allSeg) {
+        curveParts.push(`M ${seg[0].px.toFixed(1)} ${seg[0].py.toFixed(1)}`);
+        for (let k = 1; k < seg.length; k++) {
+          curveParts.push(`L ${seg[k].px.toFixed(1)} ${seg[k].py.toFixed(1)}`);
         }
       }
-      return { id: fn.id, d: segments.join(' ') };
+
+      // Build inequality fill polygons (one per continuous segment)
+      const fills: string[] = [];
+      const op = fn.ineqOp ?? 'none';
+      if (op !== 'none') {
+        const edgeY = (op === '<' || op === '<=') ? botY : topY;
+        for (const seg of allSeg) {
+          if (seg.length < 2) continue;
+          const first = seg[0], last = seg[seg.length - 1];
+          const curveCmds = seg
+            .map((p, k) => `${k === 0 ? 'M' : 'L'} ${p.px.toFixed(1)} ${p.py.toFixed(1)}`)
+            .join(' ');
+          fills.push(
+            `${curveCmds} ` +
+            `L ${last.px.toFixed(1)} ${edgeY.toFixed(1)} ` +
+            `L ${first.px.toFixed(1)} ${edgeY.toFixed(1)} Z`
+          );
+        }
+      }
+
+      return { id: fn.id, d: curveParts.join(' '), fills };
     });
-  }, [functions, view, plotW, toPixelX, toPixelY]);
+  }, [functions, view, plotW, plotH, toPixelX, toPixelY]);
+
+  // H3: polynomial roots + SVG poly path
+  const polyRoots = useMemo<Cx[]>(() => {
+    if (!showRoots || polyCoeffs.length < 2 || polyCoeffs[0] === 0) return [];
+    try { return sortRoots(durandKerner(polyCoeffs)); } catch { return []; }
+  }, [showRoots, polyCoeffs]);
+
+  const polyPath = useMemo<string>(() => {
+    if (!showRoots || polyCoeffs.length < 2 || polyCoeffs[0] === 0) return '';
+    const steps = plotW * 2;
+    const parts: string[] = [];
+    let pen = false;
+    let prevY: number | null = null;
+    for (let i = 0; i <= steps; i++) {
+      const wx = view.xMin + (i / steps) * (view.xMax - view.xMin);
+      const wy = polyHorner(polyCoeffs, wx);
+      if (!isFinite(wy)) { pen = false; prevY = null; continue; }
+      if (prevY !== null && Math.abs(wy - prevY) > (view.yMax - view.yMin) * 3) pen = false;
+      prevY = wy;
+      const px = toPixelX(wx), py = toPixelY(wy);
+      parts.push(pen ? `L ${px.toFixed(1)} ${py.toFixed(1)}` : `M ${px.toFixed(1)} ${py.toFixed(1)}`);
+      pen = true;
+    }
+    return parts.join(' ');
+  }, [showRoots, polyCoeffs, view, plotW, toPixelX, toPixelY]);
 
   // Axis pixel positions (clamped to viewport)
   const axisX = Math.max(PAD.left, Math.min(PAD.left + plotW, toPixelX(0)));
@@ -271,7 +356,7 @@ export const FunctionGrapher: React.FC = () => {
     const fallback = DEFAULT_EXPRS.find(e => !usedExprs.has(e)) ?? `${functions.length + 1}*x`;
     setFunctions(prev => [...prev, {
       id, expr: fallback, color: PALETTE[prev.length % PALETTE.length],
-      visible: true, label: `f${prev.length + 1}(x)`,
+      visible: true, label: `f${prev.length + 1}(x)`, ineqOp: 'none',
     }]);
   };
 
@@ -285,7 +370,7 @@ export const FunctionGrapher: React.FC = () => {
   };
 
   const applyPreset = (preset: typeof PRESETS[0]) => {
-    setFunctions([{ id: '1', expr: preset.expr, color: PALETTE[0], visible: true, label: `f(x) = ${preset.expr}` }]);
+    setFunctions([{ id: '1', expr: preset.expr, color: PALETTE[0], visible: true, label: `f(x) = ${preset.expr}`, ineqOp: 'none' }]);
     setView(preset.view);
     setShowPresets(false);
   };
@@ -327,9 +412,9 @@ export const FunctionGrapher: React.FC = () => {
                 {/* Color swatch / visibility toggle */}
                 <button type="button"
                   onClick={() => updateFunction(fn.id, { visible: !fn.visible })}
-                  className="w-4 h-4 rounded-sm flex-shrink-0 border-2 border-white shadow transition-opacity"
-                  style={{ backgroundColor: fn.color, opacity: fn.visible ? 1 : 0.35 }}
+                  className={`w-4 h-4 rounded-sm flex-shrink-0 border-2 border-white shadow transition-opacity ${PALETTE_BG[fn.color] ?? 'bg-gray-400'} ${fn.visible ? 'opacity-100' : 'opacity-[0.35]'}`}
                   title={fn.visible ? 'Сокриј' : 'Прикажи'}
+                  aria-label={fn.visible ? `Сокриј функција ${idx + 1}` : `Прикажи функција ${idx + 1}`}
                 />
                 <span className="text-xs font-bold text-gray-500 w-6">f{idx + 1}</span>
                 {/* Expression input */}
@@ -350,10 +435,32 @@ export const FunctionGrapher: React.FC = () => {
                 </div>
                 {functions.length > 1 && (
                   <button type="button" onClick={() => removeFunction(fn.id)}
+                    title={`Отстрани функција ${idx + 1}`}
+                    aria-label={`Отстрани функција ${idx + 1}`}
                     className="text-gray-300 hover:text-red-400 transition flex-shrink-0">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
+              </div>
+              {/* Inequality operator selector */}
+              <div className="flex items-center gap-1 pl-10">
+                <span className="text-[9px] text-gray-400 font-semibold mr-0.5">y</span>
+                {INEQ_OPS.map(({ key, sym }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => updateFunction(fn.id, { ineqOp: key })}
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition ${
+                      (fn.ineqOp ?? 'none') === key
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                    title={key === 'none' ? 'Без неравенка' : `y ${sym} f(x)`}
+                  >
+                    {sym}
+                  </button>
+                ))}
+                <span className="text-[9px] text-gray-400 ml-0.5">f(x)</span>
               </div>
             </div>
           ))}
@@ -392,6 +499,61 @@ export const FunctionGrapher: React.FC = () => {
             <li><strong>PI</strong> = π ≈ 3.14159</li>
             <li>Пример: sin(2*x)+x/3</li>
           </ul>
+        </div>
+
+        {/* H3: Polynomial roots panel */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <button type="button"
+            onClick={() => setShowRoots(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50 transition">
+            <span className="flex items-center gap-1.5"><Hash className="w-3.5 h-3.5 text-purple-500"/> Нули на полином</span>
+            <span className="text-gray-300">{showRoots ? '▲' : '▼'}</span>
+          </button>
+          {showRoots && (
+            <div className="border-t border-gray-100 px-3 py-3 space-y-2">
+              {/* Degree picker */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-gray-400 font-semibold w-12">Степен</span>
+                <div className="flex gap-1">
+                  {[2,3,4,5,6,7,8].map(d => (
+                    <button key={d} type="button"
+                      onClick={() => {
+                        setPolyDeg(d);
+                        setPolyCoeffs(Array.from({ length: d + 1 }, (_, i) => i === 0 ? 1 : 0));
+                      }}
+                      className={`w-6 h-6 text-[10px] font-bold rounded border-2 transition ${polyDeg === d ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-purple-300'}`}>
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Coefficient inputs */}
+              <div className="space-y-1">
+                {polyCoeffs.map((c, i) => {
+                  const power = polyDeg - i;
+                  const lbl = power === 0 ? 'a₀' : power === 1 ? 'a₁' : `a${power}`;
+                  const expr = power === 0 ? '' : power === 1 ? 'x' : `x${power}`;
+                  return (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-gray-400 w-7 text-right font-mono">{lbl}</span>
+                      <input
+                        type="number"
+                        value={c}
+                        onChange={e => {
+                          const next = [...polyCoeffs];
+                          next[i] = parseFloat(e.target.value) || 0;
+                          setPolyCoeffs(next);
+                        }}
+                        className="w-16 border border-purple-200 rounded-md px-1.5 py-0.5 text-xs font-mono text-center focus:outline-none focus:ring-1 focus:ring-purple-400 bg-purple-50"
+                        aria-label={`коефициент ${lbl}`}
+                      />
+                      {expr && <span className="text-[10px] text-gray-400 font-mono">{expr}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Controls */}
@@ -436,7 +598,7 @@ export const FunctionGrapher: React.FC = () => {
             <svg
               width="100%"
               viewBox={`0 0 ${W} ${H}`}
-              className={`w-full ${dragging ? 'cursor-grabbing' : 'cursor-crosshair'}`}
+              className={`w-full touch-none ${dragging ? 'cursor-grabbing' : 'cursor-crosshair'}`}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
               onMouseUp={onMouseUp}
@@ -445,7 +607,6 @@ export const FunctionGrapher: React.FC = () => {
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
-              style={{ touchAction: 'none' }}
             >
               <defs>
                 <clipPath id={clipId}>
@@ -513,20 +674,59 @@ export const FunctionGrapher: React.FC = () => {
                 <text x={axisX - 7} y={axisY + 14} fill="#94a3b8" fontSize={9} textAnchor="middle" fontFamily="monospace">0</text>
               )}
 
+              {/* Inequality fill regions (rendered behind curves) */}
+              <g clipPath={`url(#${clipId})`}>
+                {paths.map(p => {
+                  const fn = functions.find(f => f.id === p.id);
+                  if (!fn || !fn.visible || !p.fills.length) return null;
+                  return p.fills.map((fillD, fi) => (
+                    <path key={`${p.id}-fill-${fi}`} d={fillD}
+                      fill={fn.color} fillOpacity={0.12}
+                      stroke="none"
+                    />
+                  ));
+                })}
+              </g>
+
               {/* Function curves */}
               <g clipPath={`url(#${clipId})`}>
-                {paths.map((p, i) => {
+                {paths.map(p => {
                   const fn = functions.find(f => f.id === p.id);
                   if (!fn || !fn.visible || !p.d) return null;
+                  const isStrict = fn.ineqOp === '<' || fn.ineqOp === '>';
                   return (
                     <path key={p.id} d={p.d} fill="none"
                       stroke={fn.color} strokeWidth="2.5"
                       strokeLinejoin="round" strokeLinecap="round"
+                      strokeDasharray={isStrict ? '6 3' : undefined}
                       opacity={0.9}
                     />
                   );
                 })}
+                {/* H3: polynomial curve */}
+                {showRoots && polyPath && (
+                  <path d={polyPath} fill="none" stroke="#9333ea" strokeWidth="2"
+                    strokeDasharray="8 3" strokeLinejoin="round" strokeLinecap="round" opacity={0.85} />
+                )}
               </g>
+
+              {/* H3: real root markers on x-axis */}
+              {showRoots && (
+                <g clipPath={`url(#${clipId})`}>
+                  {polyRoots.filter(r => isRealRoot(r)).map((r, i) => {
+                    const px = toPixelX(r.re);
+                    if (px < PAD.left || px > PAD.left + plotW) return null;
+                    return (
+                      <g key={`root-${i}`}>
+                        <circle cx={px} cy={axisY} r={5} fill="#9333ea" stroke="white" strokeWidth={1.5} />
+                        <text x={px} y={axisY - 9} fontSize={9} textAnchor="middle" fill="#9333ea" fontWeight="bold" fontFamily="monospace">
+                          {fmt(r.re)}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
 
               {/* Border */}
               <rect x={PAD.left} y={PAD.top} width={plotW} height={plotH}
@@ -539,13 +739,56 @@ export const FunctionGrapher: React.FC = () => {
             <div className="flex flex-wrap gap-3 px-4 py-2.5 border-t border-gray-100">
               {functions.filter(f => f.expr.trim()).map((fn, i) => (
                 <span key={fn.id} className="flex items-center gap-1.5 text-xs font-mono text-gray-600">
-                  <span className="inline-block w-6 h-0.5 rounded" style={{ backgroundColor: fn.color, opacity: fn.visible ? 1 : 0.35 }} />
+                  <span className={`inline-block w-6 h-0.5 rounded ${PALETTE_BG[fn.color] ?? 'bg-gray-400'} ${fn.visible ? 'opacity-100' : 'opacity-[0.35]'}`} />
                   f{i + 1}(x) = {fn.expr}
                 </span>
               ))}
             </div>
           )}
         </div>
+
+        {/* H3: Root results + Argand diagram */}
+        {showRoots && polyRoots.length > 0 && (
+          <div className="bg-white rounded-2xl border border-purple-200 p-4 space-y-3">
+            <p className="text-xs font-bold text-purple-600 flex items-center gap-1.5">
+              <Hash className="w-3.5 h-3.5" /> Нули на полином (степен {polyDeg})
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {polyRoots.map((r, i) => (
+                <div key={i} className={`rounded-lg border px-2.5 py-1.5 text-xs font-mono text-center ${isRealRoot(r) ? 'bg-purple-50 border-purple-200 text-purple-800' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
+                  z{i+1} = {cxFmt(r, 3)}
+                  {isRealRoot(r) && <span className="ml-1 text-[9px] text-purple-400">● реална</span>}
+                </div>
+              ))}
+            </div>
+            {/* Mini Argand diagram */}
+            {(() => {
+              const AW = 260, AH = 180, ACX = 130, ACY = 90;
+              const maxAbs = Math.max(1, ...polyRoots.map(r => Math.sqrt(r.re*r.re + r.im*r.im)));
+              const sc = Math.min(ACX - 16, ACY - 16) / maxAbs;
+              const ax = (re: number) => ACX + re * sc;
+              const ay = (im: number) => ACY - im * sc;
+              return (
+                <svg viewBox={`0 0 ${AW} ${AH}`} className="w-full max-h-[180px] border border-gray-100 rounded-xl bg-gray-50">
+                  <line x1={0} y1={ACY} x2={AW} y2={ACY} stroke="#9ca3af" strokeWidth={1}/>
+                  <line x1={ACX} y1={0} x2={ACX} y2={AH} stroke="#9ca3af" strokeWidth={1}/>
+                  <text x={AW - 6} y={ACY - 4} fontSize={9} fill="#9ca3af" textAnchor="end">Re</text>
+                  <text x={ACX + 4} y={12} fontSize={9} fill="#9ca3af">Im</text>
+                  {polyRoots.map((r, i) => (
+                    <g key={i}>
+                      <circle cx={ax(r.re)} cy={ay(r.im)}
+                        r={4} fill={isRealRoot(r) ? '#9333ea' : 'none'}
+                        stroke="#9333ea" strokeWidth={isRealRoot(r) ? 0 : 2} />
+                      <text x={ax(r.re)+6} y={ay(r.im)+3} fontSize={8} fill="#9333ea" fontFamily="monospace">
+                        {i+1}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+              );
+            })()}
+          </div>
+        )}
       </div>
     </div>
   );

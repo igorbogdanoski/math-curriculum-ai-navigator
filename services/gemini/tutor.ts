@@ -35,6 +35,32 @@ async generateAnalogy(concept: Concept, gradeLevel: number, profile?: TeachingPr
     return text;
   },
 
+async generateMetaphors(concept: Concept, gradeLevel: number, profile?: TeachingProfile): Promise<Array<{emoji: string; title: string; body: string}>> {
+    const cacheKey = `metaphors_${concept.id}_g${gradeLevel}`;
+    try {
+        const cachedDoc = await getDoc(doc(db, CACHE_COLLECTION, cacheKey));
+        if (cachedDoc.exists()) return cachedDoc.data().content;
+    } catch (e) { logger.warn('Cache read error', e); }
+
+    const prompt = `Создај точно 4 различни метафори/аналогии за математичкиот поим "${concept.title}" за ${gradeLevel} одделение.
+Секоја треба да користи РАЗЛИЧЕН контекст: секојдневен живот, природа, спорт/игра, технологија/град.
+Пишувај со едноставен јазик разбирлив за ученик, 2-3 реченици по аналогија.
+Врати САМО JSON масив, без markdown ограда:
+[{"emoji":"🍕","title":"Кратко мото (5 зборови)","body":"Аналогијата со 2-3 реченици."},...]`;
+
+    const response = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ parts: [{ text: prompt }] }],
+        systemInstruction: getResolvedTextSystemInstruction(),
+        safetySettings: SAFETY_SETTINGS,
+        generationConfig: { responseMimeType: 'application/json' },
+        userTier: profile?.tier,
+    });
+    const metaphors: Array<{emoji: string; title: string; body: string}> = JSON.parse(response.text || '[]');
+    await setDoc(doc(db, CACHE_COLLECTION, cacheKey), { content: metaphors, type: 'metaphors', conceptId: concept.id, gradeLevel, createdAt: serverTimestamp() }).catch(console.error);
+    return metaphors;
+  },
+
 async generateStepByStepSolution(conceptTitle: string, gradeLevel: number, customInstruction?: string): Promise<{ problem: string; strategy?: string; steps: Array<{ explanation: string; expression: string }> }> {
     const safeConceptTitle = sanitizePromptInput(conceptTitle, 120);
     const safeCustomInstruction = sanitizePromptInput(customInstruction, 800);

@@ -34,7 +34,9 @@ const Q_TYPES: { id: DuggaQuestionType; label: string; icon: React.ReactNode; de
   { id: 'inline_select',    label: 'Вграден избор',             icon: <ChevronDown className="w-4 h-4"/>, desc: 'Dropdown во реченица',                       aiSupported: false },
   { id: 'interactive_table',label: 'Интерактивна табела',       icon: <Table2 className="w-4 h-4"/>,        desc: 'Cell checkboxes (таблица на вистина)',       aiSupported: false },
   { id: 'diagram_annotate', label: 'Означи дијаграм',           icon: <Hash className="w-4 h-4"/>,          desc: 'Слика + label-и',                           aiSupported: false },
-  { id: 'section_header',   label: 'Дел / Секција',             icon: <Layers className="w-4 h-4"/>,        desc: 'Структурален (Дел А, Дел Б)',               aiSupported: false },
+  { id: 'feynman_explain',  label: 'Феинман Предизвик',          icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Објасни концепт едноставно, AI рубрика',    aiSupported: false },
+  { id: 'proof_critique',  label: 'Критика на доказ',           icon: <AlignLeft className="w-4 h-4"/>,    desc: 'Намерно погрешен доказ — ученикот го наоѓа грешката', aiSupported: false },
+  { id: 'section_header',  label: 'Дел / Секција',              icon: <Layers className="w-4 h-4"/>,        desc: 'Структурален (Дел А, Дел Б)',               aiSupported: false },
 ];
 
 const TEST_TYPES: { id: DuggaTestType; label: string; emoji: string }[] = [
@@ -81,6 +83,10 @@ function makeBlankQuestion(type: DuggaQuestionType = 'multiple_choice'): DuggaQu
   if (type === 'table_completion') {
     base.tableHeaders = ['x', 'f(x)'];
     base.tableRows = [['', ''], ['', ''], ['', '']];
+  }
+  if (type === 'proof_critique') {
+    base.proofCritiqueSteps = [];
+    base.proofCritiqueErrorStep = 0;
   }
   return base;
 }
@@ -373,6 +379,55 @@ function QuestionEditor({
             <p className="text-xs text-gray-400">Есеј одговорот ќе го гради AI автоматски по Rubric (дефинирај ја во решение).</p>
           )}
 
+          {q.type === 'feynman_explain' && (
+            <div>
+              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Концепт за Феинман объаснување</label>
+              <input
+                type="text"
+                value={q.feynmanConcept ?? ''}
+                onChange={e => upd({ feynmanConcept: e.target.value })}
+                placeholder="пр. дефинитен интеграл, Питагорова теорема..."
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-yellow-400"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">Ученикот ќе го објасни концептот на дете, AI ќе оцени по 4 Феинман критериуми (точност · едноставност · комплетност · без жаргон).</p>
+            </div>
+          )}
+
+          {q.type === 'proof_critique' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Чекори на доказот (еден чекор по ред)</label>
+                <textarea
+                  rows={5}
+                  value={(q.proofCritiqueSteps ?? []).join('\n')}
+                  onChange={e => upd({ proofCritiqueSteps: e.target.value.split('\n').map((s: string) => s.trim()).filter(Boolean) })}
+                  placeholder={"Чекор 1: ...\nЧекор 2: ...\nЧекор 3: (ВО ОВОЈ ИМА ГРЕШКА)\nЧекор 4: ..."}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-rose-400 resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">
+                  Индекс на погрешниот чекор (0-базиран, пр. 2 = трет чекор)
+                </label>
+                <input
+                  type="number" min={0}
+                  max={Math.max(0, (q.proofCritiqueSteps?.length ?? 1) - 1)}
+                  title="Индекс на погрешниот чекор"
+                  value={q.proofCritiqueErrorStep ?? 0}
+                  onChange={e => {
+                    const max = Math.max(0, (q.proofCritiqueSteps?.length ?? 1) - 1);
+                    upd({ proofCritiqueErrorStep: Math.min(parseInt(e.target.value) || 0, max) });
+                  }}
+                  className="w-24 px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-rose-400"
+                />
+                <span className="text-[10px] text-gray-400 ml-2">
+                  (вкупно чекори: {q.proofCritiqueSteps?.length ?? 0})
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-400">Ученикот кликнува на погрешниот чекор и пишува образложение. 50% поени за точен чекор + 50% AI оценка на образложението.</p>
+            </div>
+          )}
+
           {/* Solution / Hint */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-50">
             <div>
@@ -414,6 +469,9 @@ function AIGenerateModal({
   const [dokDist, setDokDist] = useState({ 1: 3, 2: 4, 3: 2, 4: 1 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [temperature, setTemperature] = useState(1.0);
+  const [depth, setDepth] = useState<'brief' | 'standard' | 'deep'>('standard');
 
   const handleGenerate = async () => {
     if (!topics.trim()) { setError('Внеси тема(и).'); return; }
@@ -424,6 +482,7 @@ function AIGenerateModal({
         topics: topics.split(',').map(t => t.trim()).filter(Boolean),
         testType, totalQuestions: count,
         dokDistribution: { 1: dokDist[1], 2: dokDist[2], 3: dokDist[3], 4: dokDist[4] },
+        temperature, depth,
       });
       const cleanJSON = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
       const parsed: Array<{
@@ -519,6 +578,60 @@ function AIGenerateModal({
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Advanced AI params (collapsed by default) */}
+        <div className="rounded-xl border border-gray-100 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+          >
+            <span className="text-xs font-semibold text-gray-500">⚙️ Напредни AI параметри</span>
+            <span className="text-gray-400 text-xs">{showAdvanced ? '▲' : '▼'}</span>
+          </button>
+          {showAdvanced && (
+            <div className="px-4 pb-4 pt-3 space-y-4 bg-white">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">
+                  Температура (креативност): <span className="text-violet-600 font-bold">{temperature.toFixed(1)}</span>
+                </label>
+                <input
+                  type="range" min={0} max={2} step={0.1}
+                  value={temperature}
+                  onChange={e => setTemperature(parseFloat(e.target.value))}
+                  className="w-full accent-violet-500"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                  <span>0.0 — точно/строго</span>
+                  <span>1.0 — балансирано</span>
+                  <span>2.0 — креативно</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1.5 block">Длабочина на прашањата</label>
+                <div className="flex gap-2">
+                  {(['brief', 'standard', 'deep'] as const).map(d => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDepth(d)}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+                        depth === d
+                          ? 'bg-violet-600 text-white border-violet-600'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-violet-300'
+                      }`}
+                    >
+                      {d === 'brief' ? '📋 Кратко' : d === 'standard' ? '📝 Стандард' : '📚 Длабоко'}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  {depth === 'brief' ? 'Кратки прашања, минимални решенија.' : depth === 'deep' ? 'Детални прашања со педагошки коментари и повеќе методи.' : 'Стандарден баланс на длабочина и јасност.'}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {error && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">{error}</p>}

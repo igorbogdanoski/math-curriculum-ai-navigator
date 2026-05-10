@@ -15,7 +15,7 @@ import {
   MessageSquare, Plus, ThumbsUp, Award, ChevronLeft,
   Send, Loader2, Search, Tag, X, CheckCircle2, Pin,
   TrendingUp, Clock, Sparkles, Users, Box, Link, Shield,
-  Pencil, Camera, Check,
+  Pencil, Camera, Check, Lightbulb,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -47,6 +47,7 @@ import {
   toggleReplyUpvote,
   toggleForumReaction,
   markBestAnswer,
+  toggleFeynmanBadge,
   softDeleteThread,
   pinThread,
   hotScore,
@@ -675,6 +676,12 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
     await markBestAnswer(reply.id, thread.id);
   };
 
+  const handleToggleFeynman = async (reply: ForumReply) => {
+    if (thread.authorUid !== myUid) return;
+    setReplies(prev => prev.map(r => r.id === reply.id ? { ...r, feynmanBadge: !r.feynmanBadge } : r));
+    await toggleFeynmanBadge(reply.id, reply.feynmanBadge ?? false);
+  };
+
   const hasUpvotedThread = thread.upvotedBy.includes(myUid);
   const catCfg = CATEGORY_CONFIG[thread.category ?? 'question'];
 
@@ -840,21 +847,40 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
                       </button>
                       <span className="text-xs font-bold text-gray-500">{reply.upvotedBy.length}</span>
                       {thread.authorUid === myUid && (
-                        <button
-                          type="button"
-                          title={reply.isBestAnswer ? 'Отстрани како најдобар одговор' : 'Означи како најдобар одговор'}
-                          onClick={() => handleMarkBest(reply)}
-                          className={`p-1 rounded transition-colors mt-1 ${reply.isBestAnswer ? 'text-emerald-600' : 'text-gray-300 hover:text-emerald-500'}`}
-                        >
-                          <Award className="w-3.5 h-3.5" />
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            title={reply.isBestAnswer ? 'Отстрани kako најдобар одговор' : 'Означи kako најдобар одговор'}
+                            onClick={() => handleMarkBest(reply)}
+                            className={`p-1 rounded transition-colors mt-1 ${reply.isBestAnswer ? 'text-emerald-600' : 'text-gray-300 hover:text-emerald-500'}`}
+                          >
+                            <Award className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title={reply.feynmanBadge ? 'Отстрани Феинман значка' : 'Означи: Поучи ги другите (Феинман)'}
+                            onClick={() => handleToggleFeynman(reply)}
+                            className={`p-1 rounded transition-colors mt-1 ${reply.feynmanBadge ? 'text-yellow-600' : 'text-gray-300 hover:text-yellow-500'}`}
+                          >
+                            <Lightbulb className="w-3.5 h-3.5" />
+                          </button>
+                        </>
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      {reply.isBestAnswer && (
-                        <div className="flex items-center gap-1 text-xs font-black text-emerald-700 mb-1.5">
-                          <Award className="w-3.5 h-3.5" /> Најдобар одговор
+                      {(reply.isBestAnswer || reply.feynmanBadge) && (
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          {reply.isBestAnswer && (
+                            <span className="flex items-center gap-1 text-xs font-black text-emerald-700">
+                              <Award className="w-3.5 h-3.5" /> Најдобар одговор
+                            </span>
+                          )}
+                          {reply.feynmanBadge && (
+                            <span className="flex items-center gap-1 text-xs font-black text-yellow-700">
+                              <Lightbulb className="w-3.5 h-3.5" /> Поучи ги другите
+                            </span>
+                          )}
                         </div>
                       )}
                       {editingReplyId === reply.id ? (

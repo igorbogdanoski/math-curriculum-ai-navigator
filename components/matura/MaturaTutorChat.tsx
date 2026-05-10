@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp, Bot, LineChart, Dices, Triangle, Scale } from 'lucide-react';
+import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp, Bot, LineChart, Dices, Triangle, Scale, Lightbulb } from 'lucide-react';
 import { callGeminiProxy } from '../../services/gemini/core';
 import { FunctionTransformer } from '../math/FunctionTransformer';
 import { ProbabilitySimulator } from '../math/ProbabilitySimulator';
@@ -64,6 +64,19 @@ ${trackLine} ${weakLine}
 Ако прашањето е надвор од математика — насочи го кон матурска подготовка.`;
 }
 
+function buildFeynmanPrompt(topic: string): string {
+  return `Ти играш улога на збунет ученик на 14 години кој ги учи: "${topic}".
+
+Правила:
+- Одговарај САМО на македонски
+- Постави искрени прашања кои вистински збунет ученик би ги поставил — "Не разбирам зошто...", "Дали тоа значи дека...", "Може ли со пример..."
+- Никогаш не давај одговори — само прашај
+- Биди конкретен (не генерален) — прашувај за конкретни чекори или поими
+- По 4 размени (кога ученикот напишал доволно), ЗАПРИ со прашување и дај Феинман фидбек:
+  напиши "🎯 ФЕИНМАН ОЦЕНКА:" па оцени го нивното објаснување по: точност, едноставност, комплетност (1-10 секое)
+  и дај конкретен совет за подобрување.`;
+}
+
 export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -74,7 +87,22 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
   const [showProbSim, setShowProbSim] = useState(false);
   const [showConic, setShowConic] = useState(false);
   const [showIneq, setShowIneq] = useState(false);
+  const [feynmanTopic, setFeynmanTopic] = useState('');
+  const [feynmanMode, setFeynmanMode] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const activateFeynman = (topic: string) => {
+    setFeynmanTopic(topic);
+    setFeynmanMode(true);
+    setMessages([]);
+    setIsOpen(true);
+  };
+
+  const exitFeynman = () => {
+    setFeynmanMode(false);
+    setFeynmanTopic('');
+    setMessages([]);
+  };
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -89,9 +117,12 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
         role: m.role === 'user' ? 'user' : 'model' as const,
         parts: [{ text: m.text }],
       }));
+      const sysPrompt = feynmanMode
+        ? buildFeynmanPrompt(feynmanTopic)
+        : buildSystemPrompt(profile, weakTopics);
       const result = await callGeminiProxy({
         model: 'gemini-2.5-flash',
-        systemInstruction: buildSystemPrompt(profile, weakTopics),
+        systemInstruction: sysPrompt,
         contents: [
           ...history,
           { role: 'user' as const, parts: [{ text: trimmed }] },
@@ -106,31 +137,47 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, messages, profile, weakTopics]);
+  }, [isLoading, messages, profile, weakTopics, feynmanMode, feynmanTopic]);
 
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); }
   };
 
+  const [feynmanInput, setFeynmanInput] = useState('');
+
   return (
-    <div className="rounded-2xl border border-indigo-200 bg-white shadow-sm overflow-hidden">
+    <div className={`rounded-2xl border shadow-sm overflow-hidden ${feynmanMode ? 'border-yellow-300 bg-yellow-50' : 'border-indigo-200 bg-white'}`}>
       {/* Header */}
       <button
         type="button"
         onClick={() => setIsOpen(v => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-indigo-50/60 transition text-left"
+        className={`w-full flex items-center justify-between px-4 py-3 transition text-left ${feynmanMode ? 'hover:bg-yellow-100/60' : 'hover:bg-indigo-50/60'}`}
       >
         <div className="flex items-center gap-2">
-          <Bot className="w-4 h-4 text-indigo-500" />
-          <span className="text-xs font-black text-gray-700 uppercase tracking-wide">AI Матурски Тутор</span>
+          {feynmanMode
+            ? <Lightbulb className="w-4 h-4 text-yellow-600" />
+            : <Bot className="w-4 h-4 text-indigo-500" />
+          }
+          <span className={`text-xs font-black uppercase tracking-wide ${feynmanMode ? 'text-yellow-800' : 'text-gray-700'}`}>
+            {feynmanMode ? `Феинман режим — "${feynmanTopic}"` : 'AI Матурски Тутор'}
+          </span>
           {messages.length > 0 && (
-            <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-600 text-[10px] font-bold rounded-full">
+            <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${feynmanMode ? 'bg-yellow-200 text-yellow-800' : 'bg-indigo-100 text-indigo-600'}`}>
               {messages.filter(m => m.role === 'assistant').length}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-indigo-400 font-semibold hidden sm:inline">Прашај нешто…</span>
+          {feynmanMode && (
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); exitFeynman(); }}
+              className="text-[10px] text-yellow-700 hover:text-yellow-900 font-semibold px-2 py-0.5 rounded border border-yellow-300 bg-yellow-100"
+            >
+              Излези
+            </button>
+          )}
+          {!feynmanMode && <span className="text-[10px] text-indigo-400 font-semibold hidden sm:inline">Прашај нешто…</span>}
           {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />}
         </div>
       </button>
@@ -138,8 +185,25 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
       {isOpen && (
         <div className="border-t border-indigo-100">
           {/* Quick chips — shown when no messages */}
-          {messages.length === 0 && (
+          {messages.length === 0 && !feynmanMode && (
             <div className="px-3 pt-3 pb-1 flex flex-wrap gap-1.5">
+              {/* Feynman mode launcher */}
+              <div className="w-full flex gap-1.5 mb-1">
+                <input
+                  value={feynmanInput}
+                  onChange={e => setFeynmanInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && feynmanInput.trim()) activateFeynman(feynmanInput.trim()); }}
+                  placeholder="Тема за Феинман (пр. дефинитен интеграл)…"
+                  className="flex-1 text-[10px] border border-yellow-300 bg-yellow-50 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-yellow-400 text-gray-700 placeholder:text-gray-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => feynmanInput.trim() && activateFeynman(feynmanInput.trim())}
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg border border-yellow-300 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition inline-flex items-center gap-1"
+                >
+                  <Lightbulb className="w-3 h-3" /> Поучи ме
+                </button>
+              </div>
               {QUICK_CHIPS.map(chip => (
                 <button
                   key={chip}
@@ -231,11 +295,25 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
             </div>
           )}
 
+          {/* Feynman mode banner */}
+          {feynmanMode && messages.length === 0 && (
+            <div className="px-3 pt-3 pb-1">
+              <div className="bg-yellow-100 border border-yellow-300 rounded-xl px-3 py-2 text-xs text-yellow-800">
+                <strong>Феинман режим активен!</strong> Објасни ми „{feynmanTopic}" со свои зборови — јас играм улога на збунет ученик и ќе ти поставувам прашања. После 3-4 размени ќе добиеш оценка.
+              </div>
+            </div>
+          )}
+
           {/* Chat history */}
           <div className="max-h-72 overflow-y-auto px-3 py-2 space-y-2">
-            {messages.length === 0 && (
+            {messages.length === 0 && !feynmanMode && (
               <p className="text-[11px] text-gray-400 text-center py-3 italic">
                 Постави прашање или избери тема погоре
+              </p>
+            )}
+            {messages.length === 0 && feynmanMode && (
+              <p className="text-[11px] text-yellow-600 text-center py-3 italic">
+                Почни со своето објаснување…
               </p>
             )}
             {messages.map((m, i) => (

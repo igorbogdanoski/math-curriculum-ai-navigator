@@ -7,6 +7,7 @@ import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { GeneratorState } from '../hooks/useGeneratorState';
 import { AcademyMentor } from '../components/academy/AcademyMentor';
 import { AcademyQuiz } from '../components/academy/AcademyQuiz';
+import { FeynmanChallenge } from '../components/academy/FeynmanChallenge';
 import { useAcademyProgress } from '../contexts/AcademyProgressContext';
 import { DokBadge } from '../components/common/DokBadge';
 import { DOK_META } from '../types';
@@ -279,7 +280,10 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
 
             {/* Mastery Quiz */}
             <AcademyQuiz lesson={lesson} />
-            
+
+            {/* Feynman Challenge */}
+            <FeynmanChallenge lesson={lesson} />
+
             {/* Final CTA */}
             <div className="mt-8 mb-12 flex flex-col items-center p-12 bg-gray-50 border border-gray-200 rounded-3xl text-center">
                 <div className="w-16 h-16 bg-brand-primary/10 rounded-full flex items-center justify-center mb-6">

@@ -220,7 +220,8 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   // 2. State
   const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'analogy' | 'quiz'>('overview');
   const [aiSuggestions, setAiSuggestions] = useState<AIGeneratedIdeas | null>(null);
-  const [analogy, setAnalogy] = useState<string | null>(null);
+  const [analogy, setAnalogy] = useState<Array<{emoji: string; title: string; body: string}> | null>(null);
+  const [votedIdx, setVotedIdx] = useState<number | null>(null);
   const [practiceMaterial, setPracticeMaterial] = useState<AIGeneratedPracticeMaterial | null>(null);
   const [solverData, setSolverData] = useState<any>(null);
   const [isPlayingQuiz, setIsPlayingQuiz] = useState(false);
@@ -310,12 +311,13 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
   const handleGenerateAnalogy = async () => {
     if (!concept || !grade || checkThrottle()) return;
     setLoadingState(p => ({ ...p, analogy: true }));
+    setVotedIdx(null);
     try {
-      const res = await geminiService.generateAnalogy(concept, grade.level);
+      const res = await geminiService.generateMetaphors(concept, grade.level);
       setAnalogy(res);
     } catch(e) {
       logger.error("[AI Analogy]", e);
-      addNotification(aiErrMsg(e, "Грешка при генерирање аналогија."), 'error');
+      addNotification(aiErrMsg(e, "Грешка при генерирање аналогии."), 'error');
     }
     finally { setLoadingState(p => ({ ...p, analogy: false })); }
   };
@@ -574,23 +576,54 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                 {/* ТАБ: АНАЛОГИЈА */}
                 {activeTab === 'analogy' && (
                   <Card className="animate-in fade-in duration-500">
-                    <div className="flex justify-between items-center mb-8">
-                        <h2 className="text-2xl font-black text-purple-700 flex items-center gap-3">
-                           <Sparkles className="w-7 h-7" /> Едноставно објаснување
-                        </h2>
-                        <button
-                            type="button"
-                            onClick={() => { setAnalogy(null); handleGenerateAnalogy(); }}
-                            disabled={loadingState.analogy}
-                            className="bg-purple-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-60"
-                        >
-                            {loadingState.analogy ? 'Размислувам...' : analogy ? 'Регенерирај' : 'Направи аналогија'}
-                        </button>
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-black text-purple-700 flex items-center gap-3">
+                        <Sparkles className="w-7 h-7" /> Метафори &amp; Аналогии
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => { setAnalogy(null); handleGenerateAnalogy(); }}
+                        disabled={loadingState.analogy}
+                        className="bg-purple-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-60"
+                      >
+                        {loadingState.analogy ? 'Размислувам...' : analogy ? 'Регенерирај' : 'Направи аналогии'}
+                      </button>
                     </div>
-                    {analogy && (
-                      <div className="bg-purple-50 p-8 rounded-3xl text-purple-900 font-medium text-lg italic leading-relaxed shadow-inner">
-                        <MathRenderer text={analogy} />
-                      </div>
+                    {analogy && analogy.length > 0 && (
+                      <>
+                        <p className="text-sm text-purple-500 mb-4">Избери ја аналогијата со која најдобро се поврзуваш:</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {analogy.map((m, i) => {
+                            const isVoted = votedIdx === i;
+                            return (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => setVotedIdx(isVoted ? null : i)}
+                                className={`text-left rounded-2xl border-2 p-5 transition-all duration-200 focus:outline-none ${
+                                  isVoted
+                                    ? 'border-purple-500 bg-purple-50 shadow-md ring-2 ring-purple-300'
+                                    : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/40'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-2xl leading-none">{m.emoji}</span>
+                                  <span className="font-bold text-purple-800 text-sm">{m.title}</span>
+                                  {isVoted && (
+                                    <span className="ml-auto text-xs bg-purple-600 text-white rounded-full px-2 py-0.5 font-semibold">⭐ Моја</span>
+                                  )}
+                                </div>
+                                <p className="text-gray-700 text-sm leading-relaxed">{m.body}</p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {votedIdx !== null && (
+                          <div className="mt-4 rounded-xl bg-purple-100 border border-purple-300 px-4 py-3 text-sm text-purple-800 font-medium">
+                            Одлично! Ја запомни оваа аналогија — таа ти помага да го разбереш поимот на твој начин.
+                          </div>
+                        )}
+                      </>
                     )}
                   </Card>
                 )}
@@ -703,7 +736,7 @@ export const ConceptDetailView: React.FC<ConceptDetailViewProps> = ({ id }) => {
                         conceptId={concept.id} 
                         onSelect={(content) => {
                             if (typeof content === 'string') {
-                                if (activeTab === 'analogy') setAnalogy(content);
+                                if (activeTab === 'analogy') { try { setAnalogy(JSON.parse(content)); } catch { /* stale cache */ } }
                                 else if (activeTab === 'activities') setAiSuggestions(JSON.parse(content));
                             } else {
                                 if (content.items || content.questions) setPracticeMaterial(content);

@@ -27,6 +27,8 @@ export type DuggaQuestionType =
   | 'unit_circle_pick'
   | 'proof_steps'
   | 'geometry_construct'
+  | 'feynman_explain'
+  | 'proof_critique'
   | 'section_header';
 
 export type DuggaTestType = 'topic' | 'midterm' | 'annual' | 'exam' | 'custom';
@@ -207,6 +209,12 @@ export interface DuggaQuestion {
   unitCircleTolerance?: number;
   /** Expected construction for `geometry_construct` question (S61-C5). */
   expectedConstruction?: DuggaExpectedConstruction;
+  /** Concept name the student must explain Feynman-style (S63-C). */
+  feynmanConcept?: string;
+  /** Steps of a deliberately flawed proof for `proof_critique` questions. */
+  proofCritiqueSteps?: string[];
+  /** 0-based index of the step that contains the deliberate error. */
+  proofCritiqueErrorStep?: number;
 }
 
 export interface DuggaTest {

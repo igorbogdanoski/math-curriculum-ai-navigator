@@ -77,11 +77,27 @@
 | **E1** | `MaturaTutorChat` canned action „Покажи слајдер за <fn>“ — отвора FunctionTransformer со пресет | `components/ai/MaturaTutorChat.tsx` | smoke |
 | **E2** | Дига `function_match` — поддржи `extraParams.base` за логаритамска функција | `services/firestoreService.dugga.ts`, `utils/duggaScoring.ts` | tests update |
 
+### G. Конусни пресеци и анимации
+
+| ID | Опис | Фајлови | Тестови |
+|----|------|---------|---------|
+| **G1** | `<ConicSectionsLab>` — елипса `(x-h)²/a² + (y-k)²/b² = 1`, хипербола `(x-h)²/a² - (y-k)²/b² = 1`, парабола `y = a(x-h)² + k` со слајдери `a, b, h, k`; прикажи фокуси, директриса, асимптоти во реално време | нова `components/dataviz/ConicSectionsLab.tsx` | `__tests__/conicSectionsLab.test.tsx` |
+| **G2** | Ротација со агол θ — трансформирана форма `Ax²+Bxy+Cy²+…=0`; слајдер за θ∈[0°,360°] со `requestAnimationFrame` анимација (Play/Pause) за translation и rotation | `components/dataviz/ConicSectionsLab.tsx` | покриено во G1 |
+| **G3** | Интегрирај `ConicSectionsLab` во `DataVizStudioView` (нов tab „Конусни") + нова Academy лекција `conic-sections` со SRS картички | `views/DataVizStudioView.tsx`, `data/academy/content.ts` | smoke |
+
+### H. Напредни математички алатки
+
+| ID | Опис | Фајлови | Тестови |
+|----|------|---------|---------|
+| **H1** | Inequality resolver — внеси неравенка `f(x) < g(x)` или `f(x,y) < c`; shaded region рендерирана преку Canvas fillRect со полупроѕирен fill; прикажи гранична линија (пуна/испрекината) спрема строгост | `components/dataviz/FunctionGrapher.tsx`, нова `utils/inequalitySolver.ts` | `__tests__/inequalitySolver.test.ts` |
+| **H2** | Eigenvalue/eigenvector визуелизатор — внеси 2×2 или 3×3 матрица; пресметај eigenvalues (карактеристичен полином, QR iteration за 3×3), прикажи eigenvectors со стрелки на 2D/3D график; автоматски детектирај реални vs. комплексни | `components/dataviz/LinearAlgebraLab.tsx`, `utils/matrixOps.ts` | `__tests__/eigenvalue.test.ts` |
+| **H3** | Polynomial root finder — внеси полином до степен 8; Durand-Kerner итерација со конвергенција trace; прикажи реални корени на x-оска + комплексни корени на Argand дијаграм | `components/dataviz/FunctionGrapher.tsx`, нова `utils/polynomialRoots.ts` | `__tests__/polynomialRoots.test.ts` |
+
 ### F. Quality gates
 
 | ID | Опис | Фајлови | Тестови |
 |----|------|---------|---------|
-| **F1** | `npm run test` зелено за сите нови тестови (~+45 cases) | — | — |
+| **F1** | `npm run test` зелено за сите нови тестови (~+75 cases) | — | — |
 | **F2** | `npx tsc --noEmit` без грешки | — | — |
 | **F3** | `npm run eval:smoke-gate` ≥ 70 | — | — |
 
@@ -91,32 +107,30 @@
 
 | Task | Статус | Commit | Дата |
 |------|--------|--------|------|
-| A1 | ⏳ | — | — |
-| A2 | ⏳ | — | — |
-| A3 | ⏳ | — | — |
-| A4 | ⏳ | — | — |
-| B1 | ⏳ | — | — |
-| B2 | ⏳ | — | — |
-| B3 | ⏳ | — | — |
-| C1 | ⏳ | — | — |
-| C2 | ⏳ | — | — |
-| C3 | ⏳ | — | — |
-| C4 | ⏳ | — | — |
-| C5 | ⏳ | — | — |
-| C6 | ⏳ | — | — |
+| A1 | ✅ | `2954956` | 10.05.2026 |
+| A2 | ✅ | `2954956` | 10.05.2026 |
+| A3 | ✅ | `321adef` | 10.05.2026 |
+| A4 | ✅ | `cfef49b` | 10.05.2026 |
+| B1 | ✅ | `2953ff1` | 10.05.2026 |
+| B2 | ✅ | `2953ff1` | 10.05.2026 |
+| B3 | ✅ | `2953ff1` | 10.05.2026 |
+| C1 | ✅ | `2822f72` | 10.05.2026 |
+| C2 | ✅ | `2822f72` | 10.05.2026 |
+| C3 | ✅ | `2822f72` | 10.05.2026 |
+| C4 | ✅ | `2822f72` | 10.05.2026 |
+| C5 | ✅ | `e006a43` | 10.05.2026 |
+| C6 | ✅ | `e006a43` | 10.05.2026 |
 | D1 | ⏳ | — | — |
 | D2 | ⏳ | — | — |
 | D3 | ⏳ | — | — |
 | E1 | ⏳ | — | — |
 | E2 | ⏳ | — | — |
+| G1 | ⏳ | — | — |
+| G2 | ⏳ | — | — |
+| G3 | ⏳ | — | — |
+| H1 | ⏳ | — | — |
+| H2 | ⏳ | — | — |
+| H3 | ⏳ | — | — |
 | F1 | ⏳ | — | — |
 | F2 | ⏳ | — | — |
 | F3 | ⏳ | — | — |
-
-### Резерва (ако дозволи време)
-
-- Конусни пресеци (елипса, хипербола, парабола) со слајдери `a, b, c, h, k, θ`
-- Анимирано поместување (translation/rotation) на графици преку `requestAnimationFrame`
-- Resolver за неравенки со shaded region на 2D-graph
-- Eigenvalue/eigenvector визуелизатор за 2×2/3×3 матрици
-- Polynomial root finder (Durand-Kerner) интегриран во FunctionGrapher

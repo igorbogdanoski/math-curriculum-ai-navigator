@@ -13,6 +13,8 @@ import type { DuggaTest, DuggaQuestion } from '../services/firestoreService.dugg
 import { duggaAPI } from '../services/gemini/dugga';
 import { autoScore, needsAIGrade, parseAIEarnedPoints, percentageToMkGrade } from '../utils/duggaScoring';
 import type { QResult } from '../utils/duggaScoring';
+import { gradeFeynmanAnswer, feynmanScoreToPoints } from '../utils/duggaFeynmanGrading';
+import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useExamVisibilityPause } from '../hooks/useExamVisibilityPause';
@@ -398,6 +400,75 @@ function AnswerInput({ q, answer, onChange, disabled, solutionImageUrl, onSoluti
           className="w-full mt-3 rounded-xl border-2 border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent disabled:bg-gray-50" />
       );
     }
+    case 'feynman_explain': {
+      return (
+        <div className="mt-3 space-y-2">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2 text-xs text-yellow-800">
+            Замисли дека му/и го објаснуваш концептот <strong>„{q.feynmanConcept || q.text}"</strong> на дете од 10 години. Пиши со свои зборови — без учебнички дефиниции.
+          </div>
+          <textarea
+            rows={5}
+            disabled={disabled}
+            value={answer}
+            onChange={e => onChange(e.target.value)}
+            placeholder="Пример: Па значи, замисли дека имаш кутии со топки..."
+            className="w-full rounded-xl border-2 border-yellow-300 bg-white px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-50"
+          />
+          <p className="text-[10px] text-gray-400">Твоето објаснување ќе биде оценето од AI по Феинман рубрика (точност · едноставност · комплетност · без жаргон).</p>
+        </div>
+      );
+    }
+    case 'proof_critique': {
+      const steps = q.proofCritiqueSteps ?? [];
+      let parsed: { step?: number; reason?: string } = {};
+      try { parsed = JSON.parse(answer || '{}'); } catch { /* ignore */ }
+      const selectedStep = parsed.step ?? -1;
+      const reason = parsed.reason ?? '';
+      const update = (patch: { step?: number; reason?: string }) => {
+        onChange(JSON.stringify({ step: selectedStep, reason, ...patch }));
+      };
+      return (
+        <div className="mt-3 space-y-3">
+          <div className="bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 text-xs text-rose-800 font-medium">
+            Во следниот доказ постои намерна грешка. Кликни на чекорот кој е погрешен, потоа објасни зошто.
+          </div>
+          <ol className="space-y-2">
+            {steps.map((step, i) => {
+              const isSelected = selectedStep === i;
+              return (
+                <li key={i}>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => update({ step: i })}
+                    className={`w-full text-left rounded-xl border-2 px-4 py-2.5 text-sm transition-all ${
+                      isSelected
+                        ? 'border-rose-500 bg-rose-50 font-semibold text-rose-900 ring-2 ring-rose-300'
+                        : 'border-gray-200 bg-white hover:border-rose-300 hover:bg-rose-50/40 text-gray-800'
+                    } disabled:cursor-default`}
+                  >
+                    <span className="font-bold mr-2 text-gray-400">{i + 1}.</span>
+                    <MathRenderer text={step} />
+                    {isSelected && <span className="ml-2 text-xs bg-rose-600 text-white rounded-full px-2 py-0.5">❌ Избрано</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+          {selectedStep >= 0 && (
+            <textarea
+              rows={3}
+              disabled={disabled}
+              value={reason}
+              onChange={e => update({ reason: e.target.value })}
+              placeholder="Зошто е овој чекор погрешен? Опиши ја грешката..."
+              className="w-full rounded-xl border-2 border-rose-300 bg-white px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-rose-400 disabled:bg-gray-50"
+            />
+          )}
+          <p className="text-[10px] text-gray-400">50% поени за точниот чекор + 50% AI оценка на образложението.</p>
+        </div>
+      );
+    }
     default:
       return (
         <input type="text" disabled={disabled} value={answer} onChange={e => onChange(e.target.value)}
@@ -610,8 +681,8 @@ export function DuggaPlayerView() {
       maxPts += q.points;
     }
 
-    // 2) AI-grade essay/open questions
-    const aiQs = gradeable.filter(needsAIGrade);
+    // 2a) AI-grade essay/open questions
+    const aiQs = gradeable.filter(q => needsAIGrade(q) && q.type !== 'feynman_explain' && q.type !== 'proof_critique');
     if (aiQs.length > 0) {
       setSubmitStatus(`AI оценување (${aiQs.length} есеј одговори)...`);
       for (const q of aiQs) {
@@ -627,6 +698,74 @@ export function DuggaPlayerView() {
           earned += aiEarned;
         } catch {
           qResults[q.id] = { ...qResults[q.id], feedback: 'AI оценувањето не успеа. Потребна рачна оценка.' };
+        }
+      }
+    }
+
+    // 2b) Feynman-rubric grading
+    const feynmanQs = gradeable.filter(q => q.type === 'feynman_explain');
+    if (feynmanQs.length > 0) {
+      setSubmitStatus(`Феинман оценување (${feynmanQs.length} одговори)...`);
+      for (const q of feynmanQs) {
+        try {
+          const fg = await gradeFeynmanAnswer(
+            q.feynmanConcept || q.text,
+            answers[q.id] ?? '',
+            q.points,
+          );
+          const pts = feynmanScoreToPoints(fg, q.points);
+          qResults[q.id] = {
+            earned: pts,
+            maxPoints: q.points,
+            correct: fg.total >= 70,
+            feedback: fg.feedback,
+            aiGrade: `Феинман оценка: ${fg.total}/100 (точност ${fg.accuracy}/40 · едноставност ${fg.simplicity}/25 · комплетност ${fg.completeness}/25 · без жаргон ${fg.noJargon}/10)`,
+          };
+          earned += pts;
+        } catch {
+          qResults[q.id] = { ...qResults[q.id], feedback: 'Феинман оценувањето не успеа. Потребна рачна оценка.' };
+        }
+      }
+    }
+
+    // 2c) proof_critique grading — deterministic step check + AI reason evaluation
+    const critiqueQs = gradeable.filter(q => q.type === 'proof_critique');
+    if (critiqueQs.length > 0) {
+      setSubmitStatus(`Оценување анализа на доказ (${critiqueQs.length} одговори)...`);
+      for (const q of critiqueQs) {
+        let parsed: { step?: number; reason?: string } = {};
+        try { parsed = JSON.parse(answers[q.id] ?? '{}'); } catch { /* ignore */ }
+        const stepPts = parsed.step === q.proofCritiqueErrorStep ? Math.round(q.points * 0.5) : 0;
+        let reasonPts = 0;
+        const reason = parsed.reason?.trim() ?? '';
+        if (reason.length >= 10 && parsed.step !== undefined) {
+          try {
+            const proofPrompt = `Ученик анализира математички доказ. Погрешниот чекор е: "${(q.proofCritiqueSteps ?? [])[q.proofCritiqueErrorStep ?? -1] ?? '?'}"
+Образложение на ученикот: "${reason}"
+Оцени го образложението по точност и длабочина. Врати JSON: {"score": 0-50, "feedback": "..."} (50 = совршено, 0 = нема образложение).`;
+            const resp = await callGeminiProxy({
+              model: DEFAULT_MODEL,
+              contents: [{ parts: [{ text: proofPrompt }] }],
+              generationConfig: { responseMimeType: 'application/json' },
+            });
+            const g = JSON.parse(resp.text ?? '{"score":0}');
+            reasonPts = Math.round((g.score / 50) * q.points * 0.5);
+            const total = stepPts + reasonPts;
+            qResults[q.id] = {
+              earned: total, maxPoints: q.points,
+              correct: total >= q.points * 0.7,
+              feedback: g.feedback ?? '',
+              aiGrade: `Чекор: ${stepPts}/${Math.round(q.points * 0.5)} · Образложение: ${reasonPts}/${Math.round(q.points * 0.5)} · Вкупно: ${total}/${q.points}`,
+            };
+            earned += total;
+          } catch {
+            const total = stepPts;
+            qResults[q.id] = { earned: total, maxPoints: q.points, correct: null, feedback: 'AI оценувањето не успеа. Потребна рачна оценка.' };
+            earned += total;
+          }
+        } else {
+          qResults[q.id] = { earned: stepPts, maxPoints: q.points, correct: stepPts > 0, feedback: stepPts > 0 ? 'Точен чекор!' : 'Погрешен чекор.' };
+          earned += stepPts;
         }
       }
     }

@@ -116,6 +116,8 @@ $${latex}$
     totalQuestions: number;
     dokDistribution: { 1: number; 2: number; 3: number; 4: number };
     language?: string;
+    temperature?: number;
+    depth?: 'brief' | 'standard' | 'deep';
   }): Promise<string> {
     checkDailyQuotaGuard();
 
@@ -126,13 +128,19 @@ $${latex}$
       exam: 'завршен испит / матура',
     };
 
+    const depthNote = params.depth === 'brief'
+      ? '\n**Стил:** Кратки прашања, минимални решенија (1-2 чекори).'
+      : params.depth === 'deep'
+      ? '\n**Стил:** Детални прашања, повеќе решенија со педагошки коментари и повеќе методи каде е можно.'
+      : '';
+
     const prompt = `Ти си стручњак за математичко оценување и дизајн на тестови за македонскиот образовен систем.
 
 Генерирај ${params.totalQuestions} прашања за:
 - **Тип тест:** ${testTypeLabel[params.testType]}
 - **Разред:** ${params.grade}
 - **Тема(и):** ${params.topics.join(', ')}
-- **DoK распределба:** DoK1=${params.dokDistribution[1]} · DoK2=${params.dokDistribution[2]} · DoK3=${params.dokDistribution[3]} · DoK4=${params.dokDistribution[4]}
+- **DoK распределба:** DoK1=${params.dokDistribution[1]} · DoK2=${params.dokDistribution[2]} · DoK3=${params.dokDistribution[3]} · DoK4=${params.dokDistribution[4]}${depthNote}
 
 **Типови прашања** — искористи разновидност (MC, Точно/Неточно, пополни, краток одговор, есеј):
 
@@ -155,6 +163,7 @@ $${latex}$
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       systemInstruction: getResolvedTextSystemInstruction(),
       safetySettings: SAFETY_SETTINGS,
+      generationConfig: params.temperature !== undefined ? { temperature: params.temperature } : undefined,
     });
     return r.text.trim();
   },

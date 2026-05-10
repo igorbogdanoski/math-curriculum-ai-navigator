@@ -105,6 +105,8 @@ export function autoScore(q: DuggaQuestion, answer: string): QResult | null {
 export function needsAIGrade(q: DuggaQuestion): boolean {
   return q.type === 'essay'
     || q.type === 'geometry_construct'
+    || q.type === 'feynman_explain'
+    || q.type === 'proof_critique'
     || (q.type === 'short_answer' && !q.correctAnswer);
 }
 
