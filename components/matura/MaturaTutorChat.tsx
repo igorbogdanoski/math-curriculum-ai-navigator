@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp, Bot, LineChart, Dices, Triangle, Scale, Lightbulb } from 'lucide-react';
-import { callGeminiProxy } from '../../services/gemini/core';
+import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
 import { FunctionTransformer } from '../math/FunctionTransformer';
 import { ProbabilitySimulator } from '../math/ProbabilitySimulator';
 import { ConicSectionExplorer } from '../math/ConicSectionExplorer';
@@ -121,7 +121,7 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
         ? buildFeynmanPrompt(feynmanTopic)
         : buildSystemPrompt(profile, weakTopics);
       const result = await callGeminiProxy({
-        model: 'gemini-2.5-flash',
+        model: DEFAULT_MODEL,
         systemInstruction: sysPrompt,
         contents: [
           ...history,

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, XCircle, Brain, HelpCircle, ArrowRight, Loader2, Award } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
-import { callGeminiProxy, sanitizePromptInput } from '../../services/gemini/core';
+import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
 import { useAcademyProgress } from '../../contexts/AcademyProgressContext';
 import confetti from 'canvas-confetti';
 
@@ -45,7 +45,7 @@ export const AcademyQuiz: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => 
 Одговорите да бидат на македонски јазик.`;
 
       const response = await callGeminiProxy({
-        model: 'gemini-2.5-pro',
+        model: DEFAULT_MODEL,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { responseMimeType: "application/json" }
       });

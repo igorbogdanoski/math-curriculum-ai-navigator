@@ -1,4 +1,4 @@
-import { callGeminiProxy } from '../../services/gemini/core';
+import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
 import {
   buildGradeCacheKey,
   getCachedAIGrade,
@@ -19,7 +19,6 @@ function pushSpacedReview(
   void recordMaturaSpacedReview(uid, q.examId, q.questionNumber, pct);
 }
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 async function urlToBase64(url: string): Promise<{ data: string; mimeType: string } | null> {
   try {

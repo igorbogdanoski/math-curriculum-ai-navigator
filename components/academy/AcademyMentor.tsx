@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, X, Bot, Loader2, Sparkles } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
-import { callGeminiProxy, sanitizePromptInput } from '../../services/gemini/core';
+import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
 import { useAcademyProgress } from '../../contexts/AcademyProgressContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -64,7 +64,7 @@ export const AcademyMentor: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) =
       }));
 
       const response = await callGeminiProxy({
-        model: 'gemini-2.5-pro',
+        model: DEFAULT_MODEL,
         contents,
         systemInstruction: systemPrompt,
         userTier: user?.tier

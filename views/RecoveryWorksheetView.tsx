@@ -10,7 +10,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Printer, Loader2, X, BookOpen } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
-import { callGeminiProxy } from '../services/gemini/core';
+import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import type { ConceptMastery } from '../services/firestoreService';
@@ -97,7 +97,7 @@ export function RecoveryWorksheetView({
       ].slice(0, MAX_WEAK_CONCEPTS);
 
       const { text } = await callGeminiProxy({
-        model: 'gemini-2.5-flash',
+        model: DEFAULT_MODEL,
         contents: [{ role: 'user', parts: [{ text: buildPrompt(weak) }] }],
       });
 

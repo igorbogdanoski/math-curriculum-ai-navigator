@@ -15,6 +15,7 @@ import { requestNotificationPermission } from '../services/pushService';
 import { isFeedbackTaxonomyRolloutEnabled, setFeedbackTaxonomyRolloutEnabled } from '../services/feedbackTaxonomyRollout';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, isIntentRouterEnabled, setIntentRouterEnabled, isVertexShadowEnabled, setVertexShadowEnabled, getShadowCompareReport, clearShadowLog } from '../services/geminiService';
+import { DEFAULT_MODEL } from '../services/gemini/core';
 import type { ShadowCompareReport } from '../services/geminiService';
 import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle, Crown, CreditCard, ExternalLink } from 'lucide-react';
 import { AppError, ErrorCode } from '../utils/errors';
@@ -287,7 +288,7 @@ export const SettingsView: React.FC = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
-                    model: 'gemini-2.5-flash',
+                    model: DEFAULT_MODEL,
                     contents: [{ role: 'user', parts: [{ text: 'Кажи „тест".' }] }],
                     config: { maxOutputTokens: 10 },
                 }),

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Sparkles, Loader2, Send, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { callGeminiProxy } from '../../services/gemini/core';
+import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
 
 interface AssistantMessage {
   role: 'user' | 'assistant';
@@ -42,7 +42,7 @@ export const AILessonAssistant: React.FC<Props> = ({ onApply }) => {
       }));
 
       const result = await callGeminiProxy({
-        model: 'gemini-2.5-flash',
+        model: DEFAULT_MODEL,
         systemInstruction: SYSTEM_PROMPT,
         contents: [
           ...history,

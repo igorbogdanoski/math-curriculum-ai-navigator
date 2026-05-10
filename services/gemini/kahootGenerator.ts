@@ -1,7 +1,7 @@
 import { logger } from '../../utils/logger';
 import {
   DEFAULT_MODEL, SAFETY_SETTINGS,
-  callGeminiProxy, checkDailyQuotaGuard,
+  callGeminiProxy, checkDailyQuotaGuard, sanitizePromptInput,
 } from './core';
 import { getAILanguageRule } from './core.instructions';
 import type { EnrichedWebTask } from './visionContracts';
@@ -123,11 +123,12 @@ export async function generateKahootFromPrompt(
   count: number,
 ): Promise<KahootQuestion[]> {
   checkDailyQuotaGuard();
+  const safePrompt = sanitizePromptInput(teacherPrompt, 600);
 
   const prompt = `You are an expert math teacher creating a Kahoot-style multiple-choice quiz.
 
 Generate exactly ${count} multiple-choice math questions based on this teacher request:
-"${teacherPrompt}"
+"${safePrompt}"
 
 Requirements:
 - Each question must have exactly 4 answer options

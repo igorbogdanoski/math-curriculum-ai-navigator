@@ -1,7 +1,7 @@
 ﻿import { logger } from '../../utils/logger';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Flame, Zap, Brain, ArrowRight, Loader2, Sparkles, Trophy, Target, RefreshCw } from 'lucide-react';
-import { callGeminiProxy, sanitizePromptInput } from '../../services/gemini/core';
+import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
 import { useNavigation } from '../../contexts/NavigationContext';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ export const AcademyDailyHub: React.FC<Props> = ({ modules, readLessons, applied
 Одговори на македонски јазик. Биди инспиративен и конкретен.`;
 
       const response = await callGeminiProxy({
-        model: 'gemini-2.5-flash',
+        model: DEFAULT_MODEL,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
       });
 

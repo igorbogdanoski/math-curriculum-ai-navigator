@@ -5,9 +5,7 @@ import {
   getCachedAIGrade,
   saveAIGrade,
 } from '../../services/firestoreService.matura';
-import { callGeminiProxy } from '../../services/gemini/core';
-
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 export const CHOICES: MaturaChoice[] = ['А', 'Б', 'В', 'Г'];

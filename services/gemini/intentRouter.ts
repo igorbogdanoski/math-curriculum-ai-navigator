@@ -69,7 +69,10 @@ export const INTENT_ROUTER_KEY = 'intent_router_enabled';
 const INTENT_ROUTER_STATS_KEY = 'intent_router_stats';
 
 export function isIntentRouterEnabled(): boolean {
-  try { return localStorage.getItem(INTENT_ROUTER_KEY) === 'true'; } catch { return false; }
+  try {
+    const val = localStorage.getItem(INTENT_ROUTER_KEY);
+    return val === null ? true : val === 'true'; // enabled by default
+  } catch { return true; }
 }
 
 export function setIntentRouterEnabled(enabled: boolean): void {

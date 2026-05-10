@@ -20,7 +20,7 @@ import { DokBadge }        from '../components/common/DokBadge';
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
 import { ForumCTA } from '../components/common/ForumCTA';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
-import { callGeminiProxy } from '../services/gemini/core';
+import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
 import { maturaService } from '../services/firestoreService.matura';
 import type { MaturaQuestion, MaturaExamMeta } from '../services/firestoreService.matura';
 import type { DokLevel } from '../types';
@@ -45,7 +45,6 @@ import { addBreadcrumb } from '../services/sentryService';
 import { TopicChip, ProgressBar, ScorePill } from './maturaPractice/MaturaPracticeUI';
 import { resolveMCKey, nextFocusedIdx } from './maturaPractice/maturaKeyboardNav';
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 
 

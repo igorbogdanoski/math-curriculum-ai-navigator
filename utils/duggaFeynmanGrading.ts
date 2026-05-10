@@ -1,4 +1,4 @@
-import { callGeminiProxy, sanitizePromptInput } from '../services/gemini/core';
+import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../services/gemini/core';
 
 export interface FeynmanGrade {
   accuracy: number;      // 0-40
@@ -41,7 +41,7 @@ ${safeText}
 }`;
 
   const response = await callGeminiProxy({
-    model: 'gemini-2.5-flash',
+    model: DEFAULT_MODEL,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { responseMimeType: 'application/json' },
   });

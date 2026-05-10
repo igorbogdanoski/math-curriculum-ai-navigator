@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAICache, saveAICache } from '../indexedDBService';
 import { RateLimitError } from '../apiErrors';
 import { OfflineError, AIServiceError, AppError, ErrorCode } from '../../utils/errors';
-import { SafetySetting, Part, DEFAULT_MODEL, MAX_RETRIES, GENERATION_TIMEOUT_MS, CACHE_COLLECTION } from './core.constants';
+import { SafetySetting, Part, DEFAULT_MODEL, ULTIMATE_MODEL, MAX_RETRIES, GENERATION_TIMEOUT_MS, CACHE_COLLECTION } from './core.constants';
 import { markDailyQuotaExhausted } from './core.quota';
 import { callGeminiProxy } from './core.proxy';
 import { cleanJsonString, handleGeminiError } from './core.utils';
@@ -53,7 +53,7 @@ export async function generateAndParseJSON<T>(
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
         throw new OfflineError('AI generation requires network connection');
     }
-    const activeModel = useThinking ? 'gemini-2.5-pro' : model;
+    const activeModel = useThinking ? ULTIMATE_MODEL : model;
     const _controller = new AbortController();
     const _timeoutId = setTimeout(() => _controller.abort(), GENERATION_TIMEOUT_MS);
     try {

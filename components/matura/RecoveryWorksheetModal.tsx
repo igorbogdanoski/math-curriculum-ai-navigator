@@ -8,13 +8,11 @@
  */
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { X, Sparkles, Printer, Loader2, AlertTriangle, BookOpen, RefreshCcw, Send, ChevronDown, ChevronUp, CheckSquare } from 'lucide-react';
-import { callGeminiProxy } from '../../services/gemini/core';
+import { callGeminiProxy, DEFAULT_MODEL } from '../../services/gemini/core';
 import { sanitizeWorksheetHtml } from '../../utils/sanitizeHtml';
 import { fetchClasses } from '../../services/firestoreService.classroom';
 import { saveAssignment } from '../../services/firestoreService.materials';
 import type { SchoolClass } from '../../services/firestoreService.types';
-
-const MODEL = 'gemini-2.5-flash';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -230,7 +228,7 @@ export const RecoveryWorksheetModal: React.FC<Props> = ({ weakConcepts, studentN
       );
       const resp = await Promise.race([
         callGeminiProxy({
-          model: MODEL,
+          model: DEFAULT_MODEL,
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           generationConfig: { temperature: 0.4, maxOutputTokens: 4096 },
         }),

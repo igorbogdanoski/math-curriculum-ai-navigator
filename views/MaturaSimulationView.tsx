@@ -26,12 +26,11 @@ import { DokBadge } from '../components/common/DokBadge';
 import { useNotification } from '../contexts/NotificationContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
-import { callGeminiProxy } from '../services/gemini/core';
+import { callGeminiProxy, DEFAULT_MODEL } from '../services/gemini/core';
 import { addBreadcrumb } from '../services/sentryService';
 import { useExamVisibilityPause } from '../hooks/useExamVisibilityPause';
 
-// Gemini 3 Flash Preview: thinking → подобра персонализирана анализа по симулација
-const ANALYSIS_MODEL = 'gemini-3-flash-preview';
+const ANALYSIS_MODEL = DEFAULT_MODEL;
 import { useMaturaExams, useMaturaQuestions } from '../hooks/useMatura';
 import {
   buildGradeCacheKey,
@@ -171,8 +170,6 @@ function progressKey(examId: string): string { return `matura_sim_progress_${exa
 function resultKey(examId: string): string    { return `matura_sim_result_${examId}`; }
 
 // ─── AI grading (with Firestore cache) ───────────────────────────────────────
-
-const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 async function gradePart2(q: MaturaQuestion, answerA: string, answerB: string): Promise<AIGrade> {
   const cacheInput = `${answerA}|||${answerB}`;
