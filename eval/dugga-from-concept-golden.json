@@ -1,0 +1,149 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-05-10",
+  "purpose": "S61-F1 — Golden dataset for duggaAPI.generateFromConcept. 15 concepts × 5 expected output characteristics = 75 expectation rows. Each concept defines the target curriculum context (id, label, grade, track, topics) and the per-question expected characteristics the AI output must satisfy: type within an allowed set, DoK band, must-have keywords, forbidden phrases, presence of solution/hint, and that linkedConceptIds equals exactly the concept id (enforced by the normaliser). Schema-only validation runs in eval/dugga-from-concept-golden.test.ts; the same dataset gates eval:smoke-gate to detect regressions.",
+  "expectedQuestionCount": 5,
+  "expectedDokDistribution": { "1": 2, "2": 2, "3": 1, "4": 0 },
+  "globalForbiddenPhrases": ["не знам", "не можам", "TODO", "lorem ipsum"],
+  "globalAllowedTypes": [
+    "multiple_choice", "true_false", "fill_blanks", "short_answer",
+    "essay", "ordering", "multi_match", "checklist"
+  ],
+  "concepts": [
+    {
+      "conceptId": "alg-linear-eq",
+      "conceptLabel": "Линеарни равенки со една непозната",
+      "gradeLevel": 8,
+      "track": "primary",
+      "topics": ["алгебра", "равенки"],
+      "expectedKeywordsAny": ["равенк", "променлив", "x", "решение"],
+      "minSolutionLengthChars": 8
+    },
+    {
+      "conceptId": "alg-quadratic",
+      "conceptLabel": "Квадратни равенки",
+      "gradeLevel": 9,
+      "track": "primary",
+      "topics": ["алгебра", "квадратни равенки"],
+      "expectedKeywordsAny": ["дискриминант", "корен", "x²", "формула"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "alg-systems",
+      "conceptLabel": "Систем од линеарни равенки",
+      "gradeLevel": 9,
+      "track": "primary",
+      "topics": ["алгебра", "системи"],
+      "expectedKeywordsAny": ["систем", "елиминац", "замена"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "alg-inequalities",
+      "conceptLabel": "Линеарни неравенки",
+      "gradeLevel": 9,
+      "track": "primary",
+      "topics": ["алгебра", "неравенки"],
+      "expectedKeywordsAny": ["неравенк", "интервал", "знак"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "geom-pythagoras",
+      "conceptLabel": "Питагорина теорема",
+      "gradeLevel": 8,
+      "track": "primary",
+      "topics": ["геометрија", "триаголници"],
+      "expectedKeywordsAny": ["хипотенуз", "катет", "квадрат"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "geom-circle-area",
+      "conceptLabel": "Плоштина на круг",
+      "gradeLevel": 8,
+      "track": "primary",
+      "topics": ["геометрија", "круг"],
+      "expectedKeywordsAny": ["π", "радиус", "плоштина"],
+      "minSolutionLengthChars": 8
+    },
+    {
+      "conceptId": "geom-similar-triangles",
+      "conceptLabel": "Слични триаголници",
+      "gradeLevel": 9,
+      "track": "primary",
+      "topics": ["геометрија"],
+      "expectedKeywordsAny": ["сличн", "однос", "пропорц"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "trig-unit-circle",
+      "conceptLabel": "Тригонометриски кругчиња",
+      "gradeLevel": 11,
+      "track": "gymnasium",
+      "topics": ["тригонометрија"],
+      "expectedKeywordsAny": ["sin", "cos", "круг", "агол"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "trig-identities",
+      "conceptLabel": "Тригонометриски идентитети",
+      "gradeLevel": 11,
+      "track": "gymnasium",
+      "topics": ["тригонометрија", "идентитети"],
+      "expectedKeywordsAny": ["sin", "cos", "идентитет"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "calc-derivative",
+      "conceptLabel": "Извод на функција",
+      "gradeLevel": 12,
+      "track": "gymnasium",
+      "topics": ["анализа", "извод"],
+      "expectedKeywordsAny": ["извод", "f'", "тангент"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "calc-integral",
+      "conceptLabel": "Определен интеграл",
+      "gradeLevel": 12,
+      "track": "gymnasium",
+      "topics": ["анализа", "интеграл"],
+      "expectedKeywordsAny": ["интеграл", "плоштин", "примитивна"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "calc-limits",
+      "conceptLabel": "Граница на функција",
+      "gradeLevel": 12,
+      "track": "gymnasium",
+      "topics": ["анализа", "граници"],
+      "expectedKeywordsAny": ["lim", "границ", "приближ"],
+      "minSolutionLengthChars": 10
+    },
+    {
+      "conceptId": "comb-permutations",
+      "conceptLabel": "Пермутации",
+      "gradeLevel": 11,
+      "track": "gymnasium",
+      "topics": ["комбинаторика"],
+      "expectedKeywordsAny": ["пермутац", "n!", "распоред"],
+      "minSolutionLengthChars": 8
+    },
+    {
+      "conceptId": "prob-basic",
+      "conceptLabel": "Основни поими во веројатност",
+      "gradeLevel": 10,
+      "track": "gymnasium",
+      "topics": ["веројатност"],
+      "expectedKeywordsAny": ["веројатн", "настан", "исход"],
+      "minSolutionLengthChars": 8
+    },
+    {
+      "conceptId": "stat-mean-median",
+      "conceptLabel": "Аритметичка средина и медијана",
+      "gradeLevel": 9,
+      "track": "primary",
+      "topics": ["статистика"],
+      "expectedKeywordsAny": ["средина", "медијан", "податоц"],
+      "minSolutionLengthChars": 8
+    }
+  ]
+}
