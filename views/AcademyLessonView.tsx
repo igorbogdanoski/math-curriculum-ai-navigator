@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, BookOpen, BrainCircuit, Rocket, Target, Wand2, CheckCircle2, XCircle } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, BookOpen, BrainCircuit, Rocket, Target, Wand2, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ACADEMY_CONTENT } from '../data/academy/content';
 import type { DokClassifyItem } from '../data/academy/content';
@@ -34,6 +34,8 @@ const DokClassifier: React.FC<{ items: DokClassifyItem[] }> = ({ items }) => {
   const [answers, setAnswers] = useState<Record<number, DokLevel>>({});
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
 
+  const handleReset = () => { setAnswers({}); setRevealed({}); };
+
   const handlePick = (idx: number, lvl: DokLevel) => {
     if (revealed[idx]) return;
     setAnswers(a => ({ ...a, [idx]: lvl }));
@@ -47,11 +49,22 @@ const DokClassifier: React.FC<{ items: DokClassifyItem[] }> = ({ items }) => {
     <div className="bg-indigo-950 rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between mb-2">
         <p className="text-indigo-300 font-black text-sm uppercase tracking-widest">Вежба: Класифицирај по DoK ниво</p>
-        {allDone && (
-          <span className={`px-3 py-1 rounded-full text-sm font-black ${score >= 6 ? 'bg-green-500 text-white' : score >= 4 ? 'bg-amber-400 text-amber-900' : 'bg-red-500 text-white'}`}>
-            {score}/{items.length} точни
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {allDone && (
+            <span className={`px-3 py-1 rounded-full text-sm font-black ${score >= 6 ? 'bg-green-500 text-white' : score >= 4 ? 'bg-amber-400 text-amber-900' : 'bg-red-500 text-white'}`}>
+              {score}/{items.length} точни
+            </span>
+          )}
+          {Object.keys(revealed).length > 0 && (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-800 hover:bg-indigo-700 text-indigo-300 text-xs font-semibold transition-colors"
+            >
+              <RotateCcw className="w-3 h-3" /> Ресетирај
+            </button>
+          )}
+        </div>
       </div>
       <div className="space-y-3">
         {items.map((item, idx) => {
@@ -101,8 +114,14 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
   const { markLessonAsRead } = useAcademyProgress();
+  const topRef = useRef<HTMLDivElement>(null);
 
   const lesson = ACADEMY_CONTENT[id];
+
+  // Scroll to top on lesson change
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: 'instant' });
+  }, [id]);
 
   // Mark as read when viewing
   useEffect(() => {
@@ -157,9 +176,10 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      
+      <div ref={topRef} />
+
       {/* Header Navigation */}
-      <div className="border-b bg-white top-0 z-10">
+      <div className="sticky border-b bg-white top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <button
             type="button"
