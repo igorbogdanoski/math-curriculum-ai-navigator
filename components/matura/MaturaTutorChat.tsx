@@ -5,7 +5,18 @@ import { FunctionTransformer } from '../math/FunctionTransformer';
 import { ProbabilitySimulator } from '../math/ProbabilitySimulator';
 import { ConicSectionExplorer } from '../math/ConicSectionExplorer';
 import { InequalitySolver } from '../math/InequalitySolver';
+import type { BaseFunctionKey } from '../math/functionTransformerHelpers';
 import type { StudentMaturaProfile } from '../../types';
+
+const FN_PRESETS: { key: BaseFunctionKey; label: string }[] = [
+  { key: 'sin',     label: 'sin' },
+  { key: 'cos',     label: 'cos' },
+  { key: 'logBase', label: 'log_b' },
+  { key: 'expBase', label: 'b^x' },
+  { key: 'sq',      label: 'x²' },
+  { key: 'polyN',   label: 'x^n' },
+  { key: 'recip',   label: '1/x' },
+];
 
 interface Message {
   role: 'user' | 'assistant';
@@ -59,6 +70,7 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [showTransformer, setShowTransformer] = useState(false);
+  const [fnPreset, setFnPreset] = useState<BaseFunctionKey>('sin');
   const [showProbSim, setShowProbSim] = useState(false);
   const [showConic, setShowConic] = useState(false);
   const [showIneq, setShowIneq] = useState(false);
@@ -138,15 +150,18 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
                   {chip}
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => setShowTransformer((v) => !v)}
-                className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition inline-flex items-center gap-1"
-                data-testid="matura-tutor-transform-toggle"
-              >
-                <LineChart className="w-3 h-3" />
-                {showTransformer ? 'Скриј трансформација' : 'Покажи трансформација'}
-              </button>
+              {FN_PRESETS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => { setFnPreset(key); setShowTransformer(true); }}
+                  className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition inline-flex items-center gap-1"
+                  data-testid={`matura-tutor-fn-${key}`}
+                >
+                  <LineChart className="w-3 h-3" />
+                  {label}
+                </button>
+              ))}
               <button
                 type="button"
                 onClick={() => setShowProbSim((v) => !v)}
@@ -177,10 +192,21 @@ export const MaturaTutorChat: React.FC<Props> = ({ profile, weakTopics = [] }) =
             </div>
           )}
 
-          {/* Function transformer (T4.1) */}
+          {/* Function transformer (S62-E1) — per-function preset */}
           {showTransformer && (
-            <div className="px-3 pt-3">
-              <FunctionTransformer />
+            <div className="px-3 pt-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-emerald-600">Слајдер за функција</span>
+                <button
+                  type="button"
+                  onClick={() => setShowTransformer(false)}
+                  className="text-[10px] text-gray-400 hover:text-gray-600"
+                  aria-label="Скриј"
+                >
+                  ✕
+                </button>
+              </div>
+              <FunctionTransformer key={fnPreset} initialFunction={fnPreset} />
             </div>
           )}
 

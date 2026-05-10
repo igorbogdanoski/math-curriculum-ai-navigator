@@ -75,18 +75,23 @@ export type DuggaAnswerInput = 'text' | 'math' | 'mixed';
 /** Free-draw modes for student-submitted diagrams (S61-C1). */
 export type DuggaDrawingMode = 'none' | 'bar-chart' | 'line-chart' | 'free-draw';
 
-/** Expected slider transform for a `function_match` question (S61-C2). */
+/** Expected slider transform for a `function_match` question (S61-C2 / S62-E2). */
 export interface DuggaExpectedTransform {
-  /** Base function key (must align with BASE_FUNCTIONS in functionTransformerHelpers). */
-  fnKey: 'sin' | 'cos' | 'tan' | 'log' | 'sq' | 'sqrt' | 'abs' | 'cube';
+  /** Base function key (aligned with BASE_FUNCTIONS in functionTransformerHelpers). */
+  fnKey: 'sin' | 'cos' | 'tan' | 'log' | 'sq' | 'sqrt' | 'abs' | 'cube'
+       | 'logBase' | 'expBase' | 'recip' | 'polyN' | 'linear';
   /** Target transform parameters student must reproduce: y = a·f(b·x + c) + d. */
   target: { a: number; b: number; c: number; d: number };
+  /** Extra function-specific parameters (base for log/exp, n for polyN). */
+  extraParams?: { base?: number; n?: number };
   /** Slider min/max per parameter; defaults to ±5 for a/b/d and ±π for c. */
   ranges?: {
     a?: [number, number];
     b?: [number, number];
     c?: [number, number];
     d?: [number, number];
+    base?: [number, number];
+    n?: [number, number];
   };
 }
 
