@@ -17,6 +17,7 @@ import { CalculusLab } from '../components/dataviz/CalculusLab';
 import { LinearAlgebraLab } from '../components/dataviz/LinearAlgebraLab';
 import { Geometry3DLab } from '../components/dataviz/Geometry3DLab';
 import { Geometry2DLab } from '../components/dataviz/Geometry2DLab';
+import { ConicSectionsLab } from '../components/dataviz/ConicSectionsLab';
 import { FunctionGrapher } from '../components/dataviz/FunctionGrapher';
 import { FunctionTransformer } from '../components/math/FunctionTransformer';
 import { GeoGebraViewer } from '../components/dataviz/GeoGebraViewer';
@@ -58,7 +59,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d';
+type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic';
 
 // ─── S62-A4: Function tab with sub-tabs ──────────────────────────────────────
 type FnSubTab = 'grapher' | 'sliders';
@@ -196,6 +197,7 @@ export const DataVizStudioView: React.FC = () => {
     { id: 'linalg' as StudioTab, label: 'Линеарна Алгебра',     icon: Layers,         color: 'sky'     },
     { id: 'geo2d'  as StudioTab, label: '2D Геометрија',          icon: Shapes,         color: 'pink'    },
     { id: 'solid'  as StudioTab, label: '3D Геометрија',          icon: Box,            color: 'orange'  },
+    { id: 'conic'  as StudioTab, label: 'Конусни пресеци',        icon: Triangle,       color: 'violet'  },
   ];
 
   return (
@@ -601,6 +603,23 @@ export const DataVizStudioView: React.FC = () => {
             </div>
             <SilentErrorBoundary>
               <Geometry3DLab />
+            </SilentErrorBoundary>
+          </div>
+        )}
+
+        {/* ══ TAB: CONIC SECTIONS ══════════════════════════════════════════ */}
+        {activeTab === 'conic' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Triangle className="w-5 h-5 text-violet-500" /> Конусни пресеци
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Елипса · Хипербола · Парабола — слајдери a, b, h, k, θ · фокуси · асимптоти · ротациска анимација
+              </p>
+            </div>
+            <SilentErrorBoundary>
+              <ConicSectionsLab />
             </SilentErrorBoundary>
           </div>
         )}
