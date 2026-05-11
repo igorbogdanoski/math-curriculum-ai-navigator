@@ -48,9 +48,16 @@ export const SettingsView: React.FC = () => {
 
     useEffect(() => {
         if (user?.role === 'admin' && adminSchools.length === 0) {
-            firestoreService.fetchSchools().then((s: any[]) => setAdminSchools(s ?? [])).catch(() => {});
+            firestoreService.fetchSchools().then((s: any[]) => {
+                setAdminSchools(s ?? []);
+                // Auto-select school matching the profile name when schoolId is missing (legacy data fix)
+                if (user?.schoolName && !user?.schoolId) {
+                    const match = (s ?? []).find((sc: any) => sc.name === user.schoolName);
+                    if (match) setAdminSchoolSel(match.id);
+                }
+            }).catch(() => {});
         }
-    }, [user?.role]);
+    }, [user?.role, user?.schoolName, user?.schoolId]);
 
     const handleJoinSchool = async () => {
         if (!firebaseUser || joinCodeInput.trim().length < 4) return;
@@ -1249,7 +1256,7 @@ export const SettingsView: React.FC = () => {
                         : 'Добијте код од директорот/администраторот на вашето училиште и внесете го подолу.'}
                 </p>
 
-                {joinedSchoolName ? (
+                {joinedSchoolName && user?.schoolId ? (
                     <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
                         <div className="flex items-center gap-2 text-green-800">
                             <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
