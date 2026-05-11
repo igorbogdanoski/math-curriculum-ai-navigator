@@ -1,7 +1,7 @@
 ﻿import { logger } from '../../utils/logger';
 import { Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
 import { streamGeminiProxy } from './core.proxy';
-import { Concept, Topic, Grade, TeachingProfile, LessonPlan, LessonScenario, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, AIGeneratedPresentation, GenerationContext } from '../../types';
+import { Concept, Topic, Grade, TeachingProfile, LessonPlan, LessonScenario, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, AIGeneratedPresentation, GenerationContext, PresentationSlide } from '../../types';
 import { AIGeneratedIdeasSchema, AnnualPlanSchema, AIGeneratedThematicPlanSchema } from '../../utils/schemas';
 
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -419,6 +419,60 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
     return generateAndParseJSON<AIGeneratedPresentation>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   }
 };
+
+/**
+ * Regenerate a single slide in a presentation with fresh AI content.
+ * Preserves the slide's type; generates new title, content, and notes.
+ */
+export async function regenerateSlide(
+  topic: string,
+  gradeLevel: number,
+  existing: PresentationSlide,
+  profile?: TeachingProfile,
+): Promise<PresentationSlide> {
+  const prompt = `### УЛОГА
+Ти си светски врвен дизајнер на едукативни математички презентации.
+
+### ЗАДАЧА
+Регенерирај еден слајд за математичка презентација. Создај нова, различна верзија на слајдот — свежи примери, нова формулација, но иста тема и ист тип.
+
+### КОНТЕКСТ
+- Тема на презентацијата: ${topic}
+- Одделение: ${gradeLevel}
+- Тип на слајдот: ${existing.type}
+- Постоечки наслов: ${existing.title}
+- Постоечка содржина: ${existing.content.join(' | ')}
+
+### ПРАВИЛА
+- Задржи ист type='${existing.type}'
+- Создај нов наслов и нова содржина (различни од постоечките, но за истата тема)
+- speakerNotes: педагошки совет за наставникот (1-2 реченици)
+- За task/example: задолжително solution со детални чекори
+- estimatedSeconds: препорачано траење (60-300)
+- dokLevel: 1-4 (Webb DoK)`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      title: { type: Type.STRING },
+      content: { type: Type.ARRAY, items: { type: Type.STRING } },
+      rightContent: { type: Type.ARRAY, items: { type: Type.STRING } },
+      concept: { type: Type.STRING },
+      formulas: { type: Type.ARRAY, items: { type: Type.STRING } },
+      priorFormulas: { type: Type.ARRAY, items: { type: Type.STRING } },
+      solution: { type: Type.ARRAY, items: { type: Type.STRING } },
+      visualPrompt: { type: Type.STRING },
+      speakerNotes: { type: Type.STRING },
+      estimatedSeconds: { type: Type.INTEGER },
+      type: { type: Type.STRING, enum: ['title', 'content', 'example', 'task', 'summary', 'step-by-step', 'formula-centered', 'comparison', 'proof'] },
+      dokLevel: { type: Type.INTEGER },
+    },
+    required: ['title', 'content', 'type'],
+  };
+
+  const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, undefined, undefined, profile?.secondaryTrack);
+  return generateAndParseJSON<PresentationSlide>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, systemInstr, profile?.tier);
+}
 
 /**
  * Streaming variant of plansAPI.generateLessonPlanIdeas.

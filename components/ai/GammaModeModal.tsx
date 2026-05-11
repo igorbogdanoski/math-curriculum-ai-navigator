@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Lightbulb, CheckCircle2, BookOpen, Sparkles, Loader2, MessageSquare, Timer, ArrowLeftRight, Shield, Pencil, Eraser, Crosshair, Maximize, Minimize, Printer, RotateCcw, FileDown, Grid, ZoomIn, ZoomOut, ClipboardList, BookText, MonitorPlay, Radio, RadioTower, Users, Gamepad2, RefreshCw } from 'lucide-react';
 import { DokBadge } from '../common/DokBadge';
 import type { DokLevel } from '../../types';
 import { Shape3DType, SHAPE_ORDER } from '../math/Shape3DViewer';
@@ -21,6 +21,7 @@ import { useGammaAnnotation, type AnnotMode } from './gamma/useGammaAnnotation';
 import { GammaThumbnailGrid } from './gamma/GammaThumbnailGrid';
 import { exportGammaPPTX, printGammaHandout } from './gamma/GammaExportService';
 import { useGammaExitTicket } from './gamma/useGammaExitTicket';
+import { regenerateSlide } from '../../services/gemini/plans';
 import {
   startGammaLive,
   broadcastGammaSlide,
@@ -88,6 +89,10 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
 
   // ── Speaker notes ─────────────────────────────────────────────────────────
   const [notesOpen, setNotesOpen]     = useState(false);
+
+  // ── Slide edit / regenerate ───────────────────────────────────────────────
+  const [editMode, setEditMode]       = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // ── PPTX export ───────────────────────────────────────────────────────────
   const [isExportingPptx, setIsExportingPptx] = useState(false);
@@ -175,8 +180,8 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     return () => media.removeEventListener('change', update);
   }, []);
 
-  // Reset zoom on slide change (canvas clearing handled by useGammaAnnotation)
-  useEffect(() => { setFormulaZoom(1); }, [idx]);
+  // Reset zoom and edit mode on slide change (canvas clearing handled by useGammaAnnotation)
+  useEffect(() => { setFormulaZoom(1); setEditMode(false); }, [idx]);
 
   // ── Presenter Mode ────────────────────────────────────────────────────────
   const presenterChannelRef = useRef<BroadcastChannel | null>(null);
@@ -221,7 +226,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
   const [timerRunning, setTimerRunning] = useState(false);
   const timerIntervalRef              = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const slides = data.slides;
+  const [slides, setSlides] = useState<PresentationSlide[]>(() => [...data.slides]);
   const slide  = slides[idx];
   const total  = slides.length;
   const meta   = SLIDE_META[slide.type];
@@ -389,6 +394,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       if (e.key === 'ArrowLeft')  { e.preventDefault(); goPrev(); }
       if (e.key === 'Escape')     {
         if (showGrid) { setShowGrid(false); return; }
+        if (editMode) { setEditMode(false); return; }
         if (annotMode) { toggleAnnot(annotMode); return; }
         onClose();
       }
@@ -406,7 +412,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goNext, goPrev, onClose, annotMode, showGrid, toggleAnnot, clearCanvas, toggleFullscreen, undoAnnotation]);
+  }, [goNext, goPrev, onClose, annotMode, showGrid, editMode, toggleAnnot, clearCanvas, toggleFullscreen, undoAnnotation]);
 
   // ── Hint for Space/Enter action ───────────────────────────────────────────
   const spaceHint = isStepSlide && stepIdx < slide.content.length - 1
@@ -416,6 +422,20 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       : idx < total - 1
         ? 'Space → следен слајд'
         : '';
+
+  const handleRegenerateSlide = useCallback(async () => {
+    if (isRegenerating) return;
+    setIsRegenerating(true);
+    try {
+      const newSlide = await regenerateSlide(data.topic, data.gradeLevel, slide, user ?? undefined);
+      setSlides(prev => prev.map((s, i) => i === idx ? newSlide : s));
+      addNotification('Слајдот е регенериран!', 'success');
+    } catch {
+      addNotification('Грешка при регенерирање на слајдот', 'error');
+    } finally {
+      setIsRegenerating(false);
+    }
+  }, [isRegenerating, data.topic, data.gradeLevel, slide, idx, user, addNotification]);
 
   const contextualFormulas = useMemo(() => {
     return deriveContextualFormulas(slides, slide, idx);
@@ -882,16 +902,14 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           )}
 
           {/* Speaker notes toggle */}
-          {slide.speakerNotes && (
-            <button
-              type="button"
-              title={notesOpen ? 'Скриј белешки' : 'Прикажи белешки за наставникот'}
-              onClick={() => setNotesOpen(v => !v)}
-              className={`p-1.5 rounded-lg transition ${notesOpen ? 'bg-amber-500/20 text-amber-300' : 'hover:bg-white/10 text-slate-500 hover:text-white'}`}
-            >
-              <MessageSquare className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            title={notesOpen ? 'Скриј белешки' : 'Прикажи/уреди белешки за наставникот'}
+            onClick={() => setNotesOpen(v => !v)}
+            className={`p-1.5 rounded-lg transition ${notesOpen ? 'bg-amber-500/20 text-amber-300' : 'hover:bg-white/10 text-slate-500 hover:text-white'}`}
+          >
+            <MessageSquare className="w-4 h-4" />
+          </button>
 
           {/* Annotation toolbar */}
           <div className="flex items-center gap-0.5 border border-white/10 rounded-xl p-0.5 bg-white/5">
@@ -1029,13 +1047,44 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
         {slide.type !== 'title' && (
           <div className="px-8 md:px-16 pt-8 pb-2 flex-shrink-0">
             <div className="flex items-start justify-between gap-3">
-              <h2 className="text-2xl md:text-4xl font-black text-white leading-tight flex-1">
-                <MathRenderer text={slide.title} />
-              </h2>
-              <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+              {editMode ? (
+                <input
+                  aria-label="Наслов на слајдот"
+                  placeholder="Наслов на слајдот"
+                  className="flex-1 text-2xl md:text-3xl font-black text-white leading-tight bg-white/10 border border-white/20 focus:border-indigo-400/60 rounded-xl px-3 py-1.5 outline-none"
+                  value={slide.title}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setSlides(prev => prev.map((s, i) => i === idx ? { ...s, title: val } : s));
+                  }}
+                  onClick={e => e.stopPropagation()}
+                />
+              ) : (
+                <h2 className="text-2xl md:text-4xl font-black text-white leading-tight flex-1">
+                  <MathRenderer text={slide.title} />
+                </h2>
+              )}
+              <div className="flex items-center gap-1.5 flex-shrink-0 mt-1">
                 {slide.dokLevel && (
                   <DokBadge level={slide.dokLevel as DokLevel} size="compact" showTooltip />
                 )}
+                <button
+                  type="button"
+                  title={editMode ? 'Заврши уредување (Esc)' : 'Уреди слајд'}
+                  onClick={() => setEditMode(v => !v)}
+                  className={`p-1.5 rounded-xl transition ${editMode ? 'bg-indigo-500/30 text-indigo-300' : 'text-slate-500 hover:text-white hover:bg-white/10'}`}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  title="AI Регенерирај слајд"
+                  onClick={handleRegenerateSlide}
+                  disabled={isRegenerating}
+                  className="p-1.5 rounded-xl text-slate-500 hover:text-indigo-300 hover:bg-indigo-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  {isRegenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                </button>
                 {slide.type === 'task' && (
                   <button
                     type="button"
@@ -1056,6 +1105,48 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
                 )}
               </div>
             </div>
+
+            {/* Inline content editor */}
+            {editMode && (
+              <div className="mt-3 flex flex-col gap-1.5" onClick={e => e.stopPropagation()}>
+                {slide.content.map((line, li) => (
+                  <div key={li} className="flex gap-1.5 items-start">
+                    <textarea
+                      aria-label={`Точка ${li + 1}`}
+                      placeholder={`Точка ${li + 1}`}
+                      className="flex-1 text-sm text-slate-200 bg-white/5 border border-white/10 focus:border-indigo-400/50 rounded-lg px-2.5 py-1.5 outline-none resize-none leading-snug"
+                      value={line}
+                      rows={2}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setSlides(prev => prev.map((s, i) => i === idx ? {
+                          ...s, content: s.content.map((c, ci) => ci === li ? val : c),
+                        } : s));
+                      }}
+                    />
+                    <button
+                      type="button"
+                      title={`Отстрани точка ${li + 1}`}
+                      onClick={() => setSlides(prev => prev.map((s, i) => i === idx
+                        ? { ...s, content: s.content.filter((_, ci) => ci !== li) }
+                        : s))}
+                      className="p-1.5 text-red-400/50 hover:text-red-400 transition mt-0.5 flex-shrink-0"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setSlides(prev => prev.map((s, i) => i === idx
+                    ? { ...s, content: [...s.content, ''] }
+                    : s))}
+                  className="text-xs text-indigo-300 hover:text-indigo-200 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition self-start"
+                >
+                  + Додај точка
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1157,15 +1248,31 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
           activeIdx={idx}
           onJump={jumpToSlide}
           onClose={() => setShowGrid(false)}
+          onReorder={(from, to) => setSlides(prev => {
+            const next = [...prev];
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved);
+            return next;
+          })}
         />
       )}
 
       {/* ── Speaker notes panel ────────────────────────────────────────────── */}
-      {notesOpen && slide.speakerNotes && (
+      {notesOpen && (
         <div className="flex-shrink-0 border-t border-amber-500/20 bg-amber-950/30 px-8 py-3 animate-fade-in">
           <div className="flex items-start gap-2 max-w-4xl mx-auto">
             <MessageSquare className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-amber-200/80 leading-relaxed">{slide.speakerNotes}</p>
+            <textarea
+              aria-label="Белешки за наставникот"
+              placeholder="Додај белешки за наставникот…"
+              className="flex-1 text-xs text-amber-200/80 leading-relaxed bg-transparent border-none outline-none resize-none placeholder-amber-500/50"
+              rows={2}
+              value={slide.speakerNotes ?? ''}
+              onChange={e => {
+                const text = e.target.value;
+                setSlides(prev => prev.map((s, i) => i === idx ? { ...s, speakerNotes: text } : s));
+              }}
+            />
           </div>
         </div>
       )}
