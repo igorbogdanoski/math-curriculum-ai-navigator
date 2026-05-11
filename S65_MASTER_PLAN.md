@@ -2,7 +2,7 @@
 
 **Период:** 2026-05-12 → 2026-06-05 (матурски тест)  
 **Фокус:** Performance + Student Portal + GTM-ready  
-**Статус:** 🟢 НЕДЕЛА 1 ЗАВРШЕНА (Performance) → НЕДЕЛА 2 ВО ТЕК (Student Portal)
+**Статус:** 🟢 НЕДЕЛА 1 ЗАВРШЕНА (Performance) → 🟢 НЕДЕЛА 2 ЗАВРШЕНА (Student Portal + P3-B) → 🟡 НЕДЕЛА 3 ВО ТЕК (P3-A Tests)
 
 ---
 
@@ -110,8 +110,28 @@
 - `npx tsc --noEmit` → 0 грешки.
 - `npm run build` → PASS.
 
-### Преостанато за Недела 2 (deferred)
-- Линкување од `HomeView` / Sidebar кон `#/student/login` за откриваемост (UX полирање).
+### Верификација (финална — после P2-E)
+
+- `npx tsc --noEmit` → 0 грешки. `npm run build` → PASS.
+- Sidebar: „Ученички портал" link (badge S65) → `#/student` во secondary nav. ✅
+
+---
+
+## Evidence Log — Недела 3 (P3-A Tests + P3-B Referral) ✅ 2026-05-11
+
+### P3-B — Referral System ✅
+
+- `hooks/useReferral.ts`: `?ref=TEACHERUID` URL парсирање + localStorage persistence.
+- `services/firestoreService.referrals.ts`: `claimReferralIfPresent` (1 claim/signup, self-referral guard).
+- `contexts/AuthContext.tsx`: lazy import + claim при нова регистрација.
+- `views/SettingsView.tsx`: Referral card со copy-link (amber theme, Gift icon).
+- `firestore.rules`: `referrals/{newUid}` — write-once per UID.
+
+### P3-A — Test coverage ✅ (1710 → 1748 тести, +38)
+
+- `__tests__/matrixOps.test.ts` (+17): `choleskyDecompose`, `svdDecompose` (2×2/3×3/4×4 U·Σ·Vᵀ≈A), `matrixExp`, `jordanDecompose` (2×2/3×3/4×4).
+- `utils/duggaFeynmanGrading.test.ts` (11): `feynmanScoreToPoints` + `gradeFeynmanAnswer` (mocked AI, clamp, fallback).
+- `hooks/useReferral.test.ts` (10): `getReferralLink`, localStorage functions, `useReferral` hook.
 
 ---
 
