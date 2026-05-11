@@ -10,7 +10,7 @@
  * - Pedagogical presets for МОН curriculum
  */
 
-import React, { useState, useRef, useCallback, useEffect, useMemo, useId } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Plus, Trash2, Download, RotateCcw, ZoomIn, ZoomOut, Info, Hash } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
@@ -133,19 +133,9 @@ function safeEval(expr: string, x: number): number {
     );
     if (normalised === prev) break;
   }
-
-  try {
-    // Build a tiny function with only allowed names in scope
-    const fn = new Function(
-      'x', ...Object.keys(mathEnv),
-      `"use strict"; return (${normalised});`
-    );
-    const result = fn(x, ...Object.values(mathEnv)) as number;
-    return isFinite(result) ? result : NaN;
-  } catch {
-    // Fallback for environments where new Function() is blocked (strict CSP)
-    return _evalFallback(normalised, x);
-  }
+  // CSP in vercel.json omits 'unsafe-eval', so new Function() is blocked on production.
+  // Always use the recursive-descent fallback parser which is CSP-safe.
+  return _evalFallback(normalised, x);
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -470,9 +460,9 @@ export const FunctionGrapher: React.FC = () => {
     } finally { setExporting(false); }
   };
 
-  // Unique clip-path ID per instance (avoids conflicts if multiple SVGs share the DOM)
-  const _uid = useId();
-  const clipId = `fg${_uid.replace(/:/g, '')}`;
+  // Stable unique clip-path ID per instance — useRef avoids re-generation on re-renders,
+  // and avoids useId() producing colon characters that some SVG parsers reject in url(#id).
+  const clipId = useRef(`fg${Math.random().toString(36).slice(2, 9)}`).current;
 
   return (
     <div className="flex flex-col xl:flex-row gap-5">
