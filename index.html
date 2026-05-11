@@ -176,6 +176,15 @@
   </head>
   <body class="bg-brand-bg">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-blue-700 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium">Прескокни на главната содржина</a>
+    <!-- Inline splash: visible immediately on HTML load, removed by React on first mount -->
+    <div id="app-splash" aria-hidden="true" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#F0F4FF;z-index:9999;font-family:system-ui,sans-serif;">
+      <div style="text-align:center;">
+        <div style="font-size:2.25rem;font-weight:700;color:#0D47A1;letter-spacing:-0.02em;margin-bottom:4px;">MisMath</div>
+        <div style="font-size:0.875rem;color:#4B6CB7;margin-bottom:24px;">AI Математичка Платформа</div>
+        <div style="display:inline-block;width:36px;height:36px;border:3px solid #DBEAFE;border-top-color:#0D47A1;border-radius:50%;animation:mm-spin 0.75s linear infinite;"></div>
+      </div>
+      <style>@keyframes mm-spin{to{transform:rotate(360deg)}}#app-splash{transition:opacity 0.2s ease}</style>
+    </div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

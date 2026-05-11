@@ -453,7 +453,15 @@ const AIGeneratorPanelFallback: React.FC = () => {
 
 const AppCore: React.FC = () => {
     const { isAuthenticated, isLoading } = useAuth();
-    
+
+    useEffect(() => {
+        const splash = document.getElementById('app-splash');
+        if (splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.remove(), 200);
+        }
+    }, []);
+
     if (isLoading) {
         return <AppSkeleton />;
     }
