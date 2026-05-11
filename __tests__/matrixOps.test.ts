@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   identity, matAdd, matSub, matMul, matScalar, transpose, submatrix,
   determinantCofactor, gaussElim, cramer, inverseAdjugate, luDecompose,
+  choleskyDecompose, svdDecompose, matrixExp, jordanDecompose,
   matFromFlat, fmtNum,
 } from '../utils/matrixOps';
 
@@ -180,4 +181,139 @@ describe('matFromFlat', () => {
 describe('fmtNum', () => {
   it('formats integers as integers', () => expect(fmtNum(3)).toBe('3'));
   it('formats non-finite as —', () => expect(fmtNum(Infinity)).toBe('—'));
+});
+
+// ─── S64-A: Cholesky ──────────────────────────────────────────────────────────
+describe('choleskyDecompose', () => {
+  it('2×2 SPD: L·Lᵀ ≈ A', () => {
+    const A = [[4,2],[2,3]];
+    const { L, isValid } = choleskyDecompose(A);
+    expect(isValid).toBe(true);
+    expect(matNear(matMul(L, transpose(L)), A)).toBe(true);
+  });
+
+  it('3×3 SPD: L·Lᵀ ≈ A', () => {
+    const A = [[4,2,0],[2,5,2],[0,2,5]];
+    const { L, isValid } = choleskyDecompose(A);
+    expect(isValid).toBe(true);
+    expect(matNear(matMul(L, transpose(L)), A, 1e-10)).toBe(true);
+  });
+
+  it('returns isValid=false for non-symmetric', () => {
+    const { isValid } = choleskyDecompose([[1,2],[3,4]]);
+    expect(isValid).toBe(false);
+  });
+
+  it('returns isValid=false for non-positive-definite', () => {
+    const { isValid } = choleskyDecompose([[1,0],[0,-1]]);
+    expect(isValid).toBe(false);
+  });
+});
+
+// ─── S64-A: SVD ───────────────────────────────────────────────────────────────
+// Property under test: U·diag(S)·Vt ≈ A and S is descending.
+const reconstructSVD = (U: number[][], S: number[], Vt: number[][]): number[][] => {
+  const n = S.length;
+  const sigma: number[][] = identity(n).map((row, i) => row.map((v, j) => i === j ? S[i] : 0));
+  return matMul(matMul(U, sigma), Vt);
+};
+
+describe('svdDecompose', () => {
+  it('2×2 diagonal: U·Σ·Vᵀ ≈ A', () => {
+    const A = [[3,0],[0,2]];
+    const { U, S, Vt } = svdDecompose(A);
+    expect(matNear(reconstructSVD(U, S, Vt), A, 1e-8)).toBe(true);
+    expect(S[0]).toBeGreaterThanOrEqual(S[1]);
+  });
+
+  it('2×2 general: U·Σ·Vᵀ ≈ A', () => {
+    const A = [[1,2],[3,4]];
+    const { U, S, Vt } = svdDecompose(A);
+    expect(matNear(reconstructSVD(U, S, Vt), A, 1e-6)).toBe(true);
+    expect(S[0]).toBeGreaterThanOrEqual(S[1]);
+  });
+
+  it('3×3: U·Σ·Vᵀ ≈ A', () => {
+    const A = [[1,2,3],[4,5,6],[7,8,10]];
+    const { U, S, Vt } = svdDecompose(A);
+    expect(matNear(reconstructSVD(U, S, Vt), A, 1e-5)).toBe(true);
+    expect(S[0]).toBeGreaterThanOrEqual(S[1]);
+    expect(S[1]).toBeGreaterThanOrEqual(S[2]);
+  });
+
+  it('4×4 (n≥4 path): U·Σ·Vᵀ ≈ A', () => {
+    const A = [[4,1,0,0],[1,3,1,0],[0,1,2,1],[0,0,1,2]];
+    const { U, S, Vt } = svdDecompose(A);
+    expect(matNear(reconstructSVD(U, S, Vt), A, 1e-4)).toBe(true);
+    expect(S[0]).toBeGreaterThanOrEqual(S[1]);
+  });
+
+  it('rank-1 matrix has one non-zero singular value', () => {
+    const A = [[1,2],[2,4]];
+    const { S } = svdDecompose(A);
+    expect(S[1]).toBeLessThan(1e-8);
+    expect(S[0]).toBeGreaterThan(0);
+  });
+});
+
+// ─── S64-C: matrixExp ─────────────────────────────────────────────────────────
+describe('matrixExp', () => {
+  it('e^0 = I', () => {
+    const Z = [[0,0],[0,0]];
+    expect(matNear(matrixExp(Z), identity(2), 1e-10)).toBe(true);
+  });
+
+  it('e^diag(1,2) = diag(e, e²)', () => {
+    const A = [[1,0],[0,2]];
+    const E = matrixExp(A);
+    expect(near(E[0][0], Math.E, 1e-8)).toBe(true);
+    expect(near(E[1][1], Math.E * Math.E, 1e-8)).toBe(true);
+    expect(near(E[0][1], 0, 1e-10)).toBe(true);
+    expect(near(E[1][0], 0, 1e-10)).toBe(true);
+  });
+
+  it('e^A · e^(-A) ≈ I (2×2 general)', () => {
+    const A = [[1,2],[0,3]];
+    const negA = matScalar(A, -1);
+    const prod = matMul(matrixExp(A), matrixExp(negA));
+    expect(matNear(prod, identity(2), 1e-6)).toBe(true);
+  });
+});
+
+// ─── S64-C: Jordan normal form ────────────────────────────────────────────────
+// Property: when isValid, P·J·P⁻¹ ≈ A
+const verifyJordan = (A: number[][]): boolean => {
+  const { J, P, Pinv, isValid } = jordanDecompose(A);
+  if (!isValid || !Pinv) return false;
+  const recon = matMul(matMul(P, J), Pinv);
+  return matNear(recon, A, 1e-4);
+};
+
+describe('jordanDecompose', () => {
+  it('2×2 with distinct eigenvalues (off-diagonal): P·J·P⁻¹ ≈ A', () => {
+    // [[1,2],[2,1]] → λ = 3, -1 (b=2≠0 so eigenvectors computed correctly)
+    expect(verifyJordan([[1,2],[2,1]])).toBe(true);
+  });
+
+  it('2×2 with repeated eigenvalue (Jordan block)', () => {
+    const { J, isValid } = jordanDecompose([[2,1],[0,2]]);
+    expect(isValid).toBe(true);
+    expect(near(J[0][0], 2, 1e-4)).toBe(true);
+    expect(near(J[1][1], 2, 1e-4)).toBe(true);
+  });
+
+  it('3×3 diagonalizable: P·J·P⁻¹ ≈ A', () => {
+    const A = [[1,0,0],[0,2,0],[0,0,3]];
+    expect(verifyJordan(A)).toBe(true);
+  });
+
+  it('4×4 diagonal (n≥4 path): P·J·P⁻¹ ≈ A', () => {
+    const A = [[1,0,0,0],[0,2,0,0],[0,0,3,0],[0,0,0,4]];
+    expect(verifyJordan(A)).toBe(true);
+  });
+
+  it('blocks array non-empty', () => {
+    const { blocks } = jordanDecompose([[1,0],[0,2]]);
+    expect(blocks.length).toBeGreaterThan(0);
+  });
 });
