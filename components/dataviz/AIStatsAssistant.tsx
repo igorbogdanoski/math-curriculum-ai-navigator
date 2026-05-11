@@ -32,6 +32,71 @@ interface StatsSummary {
   min: number; max: number; range: number; stdDev: number; count: number;
 }
 
+type Track = 'elementary' | 'gymnasium' | 'gymnasium_elective' | 'vocational4' | 'vocational3' | 'vocational2';
+
+// ─── Track config ─────────────────────────────────────────────────────────────
+const ROMAN = ['I', 'II', 'III', 'IV'] as const;
+
+const TRACK_CONFIG: Record<Track, { label: string; grades: number[]; gradeLabel: (g: number) => string }> = {
+  elementary:         { label: 'Основно',          grades: [4,5,6,7,8,9], gradeLabel: g => `${g}-то одд.` },
+  gymnasium:          { label: 'Гимназија',         grades: [10,11,12,13], gradeLabel: g => `${ROMAN[g-10]} год.` },
+  gymnasium_elective: { label: 'Гим. изборна',      grades: [10,11,12,13], gradeLabel: g => `${ROMAN[g-10]} год.` },
+  vocational4:        { label: 'Стручно 4-год.',    grades: [10,11,12,13], gradeLabel: g => `${ROMAN[g-10]} год.` },
+  vocational3:        { label: 'Стручно 3-год.',    grades: [10,11,12],    gradeLabel: g => `${ROMAN[g-10]} год.` },
+  vocational2:        { label: 'Стручно 2-год.',    grades: [10,11],       gradeLabel: g => `${ROMAN[g-10]} год.` },
+};
+
+function getEducationContext(track: Track, grade: string): string {
+  const g = parseInt(grade, 10);
+  switch (track) {
+    case 'elementary':         return `${g}-то одделение (основно образование)`;
+    case 'gymnasium':          return `${ROMAN[g-10]} година гимназија`;
+    case 'gymnasium_elective': return `${ROMAN[g-10]} година гимназија (изборна програма)`;
+    case 'vocational4':        return `${ROMAN[g-10]} година стручно 4-годишно образование`;
+    case 'vocational3':        return `${ROMAN[g-10]} година стручно 3-годишно образование`;
+    case 'vocational2':        return `${ROMAN[g-10]} година стручно 2-годишно образование`;
+    default:                   return `${g}-то одделение`;
+  }
+}
+
+const QUICK_PROMPTS_GENERATE: Record<'elementary' | 'secondary', string[]> = {
+  elementary: [
+    'Температура во Скопје 7 дена во јули',
+    'Оценки и часови учење за 15 ученика 7-мо одд.',
+    'Продажба на овошје на пазар — 5 видови',
+    'Резултати од тест за одделение 8А (20 ученика)',
+    'Потрошувачка на вода во домаќинство по месеци',
+    'Брзина и растојание за различни транспорти',
+  ],
+  secondary: [
+    'Scatter plot: часови учење vs. оценки на матура (30 ученика)',
+    'Линеарна регресија: приход vs. трошоци за 12 компании',
+    'Нормална распределба: резултати на тест (μ=70, σ=12, n=50)',
+    'Box-whisker: оценки по предмети во гимназија (4 предмети)',
+    'Стапка на инфлација по земји — Балкан (5 години)',
+    'Scatter: GDP vs. очекувано траење на живот — 20 земји',
+  ],
+};
+
+const QUICK_PROMPTS_GROUNDING: Record<'elementary' | 'secondary', string[]> = {
+  elementary: [
+    'Население на општини во Македонија',
+    'БДП по глава на жител — Балкан',
+    'Просечни температури во Скопје по месеци',
+    'Стапка на невработеност во земји од ЕУ',
+    'Потрошувачка на обновлива енергија по земји',
+    'Население по возрасни групи во Македонија',
+  ],
+  secondary: [
+    'Матурски резултати по математика во Македонија (2019–2024)',
+    'Инфлација во Македонија по месеци (2022–2024)',
+    'Стапка на невработеност по возраст во Македонија',
+    'Извоз и увоз на Македонија по сектори',
+    'Запишување на студенти по факултети во Македонија',
+    'Обновлива енергија vs. фосилна — производство по земји од Балкан',
+  ],
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function computeStats(values: number[]): StatsSummary {
   if (values.length === 0) return { mean: 0, median: 0, mode: [], min: 0, max: 0, range: 0, stdDev: 0, count: 0 };
@@ -50,7 +115,6 @@ function computeStats(values: number[]): StatsSummary {
 /** Safely extract first valid JSON object or array from AI text */
 function extractJson(text: string, type: 'object' | 'array'): unknown | null {
   const pattern = type === 'array' ? /\[[\s\S]*?\](?=\s*$|\s*\n)/s : /\{[\s\S]*?\}(?=\s*$|\s*\n)/s;
-  // Try non-greedy first, then greedy fallback
   let match = text.match(pattern);
   if (!match) match = text.match(type === 'array' ? /\[[\s\S]*\]/ : /\{[\s\S]*\}/);
   if (!match) return null;
@@ -105,12 +169,21 @@ export const AIStatsAssistant: React.FC<Props> = ({
   const [statsSummary, setStatsSummary] = useState<StatsSummary | null>(null);
   const [aiRecommendation, setAiRecommendation] = useState('');
   const [descriptionInput, setDescriptionInput] = useState('');
+  const [trackInput, setTrackInput] = useState<Track>('elementary');
   const [gradeInput, setGradeInput] = useState('7');
   const [taskCount, setTaskCount] = useState(5);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [exportingQuiz, setExportingQuiz] = useState(false);
   const [groundingSources, setGroundingSources] = useState<string[]>([]);
   const resultRef = useRef<HTMLDivElement>(null);
+
+  const isSecondary = trackInput !== 'elementary';
+
+  const handleTrackChange = useCallback((newTrack: Track) => {
+    setTrackInput(newTrack);
+    const cfg = TRACK_CONFIG[newTrack];
+    setGradeInput(String(cfg.grades[Math.floor(cfg.grades.length / 2)]));
+  }, []);
 
   const getSeriesValues = useCallback((): number[] =>
     tableData.rows
@@ -125,16 +198,20 @@ export const AIStatsAssistant: React.FC<Props> = ({
     }
     setLoading(true);
     try {
+      const edCtx = getEducationContext(trackInput, gradeInput);
       const dataStr = tableData.headers.join(' | ') + '\n' +
         tableData.rows.map(r => r.join(' | ')).join('\n');
       const chartLabel = CHART_TYPE_LABELS[chartConfig.type] ?? 'статистички';
+      const advancedHint = isSecondary
+        ? ` Задачите може да вклучуваат: линеарна регресија, корелациски коефициент, стандардна девијација, интерпретација на нормална распределба — соодветно за ${edCtx}.`
+        : '';
       const prompt = `Ти си наставник по математика во Македонија. Имаш ${chartLabel} дијаграм со наслов „${sanitizePromptInput(chartConfig.title, 100)}" и следните податоци:
 
 ${sanitizePromptInput(dataStr, 800)}
 
 Оска X: ${sanitizePromptInput(chartConfig.xLabel || '—', 60)} | Оска Y: ${sanitizePromptInput(chartConfig.yLabel || '—', 60)} | Единица: ${sanitizePromptInput(chartConfig.unit || '—', 20)}
 
-Креирај точно ${taskCount} педагошки прашања на македонски јазик за ${sanitizePromptInput(gradeInput, 10)}-то одделение. Секое прашање мора да е конкретно (со реални вредности од табелата). Типовите: читање вредности, пресметка (просек/медијана/опсег), споредба, анализа на тренд.
+Креирај точно ${taskCount} педагошки прашања на македонски јазик за ${edCtx}.${advancedHint} Секое прашање мора да е конкретно (со реални вредности од табелата). Типовите: читање вредности, пресметка (просек/медијана/опсег${isSecondary ? '/стандардна девијација/регресија' : ''}), споредба, анализа на тренд.
 
 Одговори САМО со валиден JSON array:
 [{"question":"...","type":"read|calculate|compare|analyze","hint":"...","answer":"..."}]`;
@@ -157,7 +234,11 @@ ${sanitizePromptInput(dataStr, 800)}
     }
     setLoading(true);
     try {
-      const prompt = `Ти си наставник по математика во Македонија за ${sanitizePromptInput(gradeInput, 10)}-то одделение.
+      const edCtx = getEducationContext(trackInput, gradeInput);
+      const secondaryNote = isSecondary
+        ? ' Учениците имаат напредно знаење — податоците може да вклучуваат регресија, корелација, нормална распределба или веројатност.'
+        : '';
+      const prompt = `Ти си наставник по математика во Македонија за ${edCtx}.${secondaryNote}
 
 Сценарио: ${sanitizePromptInput(descriptionInput, 400)}
 
@@ -180,11 +261,9 @@ ${sanitizePromptInput(dataStr, 800)}
 
       if (!isValidDataObj(parsed)) throw new Error('Invalid data structure from AI');
 
-      // Apply data
       onTableDataChange({ headers: parsed.headers, rows: parsed.rows });
       if (parsed.suggestedChartType) onChartTypeChange(parsed.suggestedChartType as ChartType);
 
-      // ✨ Auto-label axes, title, unit
       const configUpdates: Partial<ChartConfig> = {};
       if (parsed.title) configUpdates.title = parsed.title;
       if (parsed.xLabel) configUpdates.xLabel = parsed.xLabel;
@@ -208,7 +287,6 @@ ${sanitizePromptInput(dataStr, 800)}
     }
     const stats = computeStats(values);
     setStatsSummary(stats);
-    // AI chart type recommendation
     const n = values.length;
     const colName = tableData.headers[0]?.toLowerCase() ?? '';
     const isTime = ['ден', 'нед', 'мес', 'год', 'час', 'мин'].some(k => colName.includes(k));
@@ -229,9 +307,13 @@ ${sanitizePromptInput(dataStr, 800)}
     setLoading(true);
     setGroundingSources([]);
     try {
+      const edCtx = getEducationContext(trackInput, gradeInput);
+      const secondaryNote = isSecondary
+        ? ` Use real-world datasets suitable for statistical analysis at secondary level (regression, correlation, probability distributions) — context: ${edCtx}.`
+        : '';
       const prompt = `Search the internet for real, up-to-date statistics about: ${sanitizePromptInput(descriptionInput, 300)}
 
-This data is for Macedonian math education (grade ${sanitizePromptInput(gradeInput, 5)}).
+This data is for Macedonian math education (${edCtx}).${secondaryNote}
 
 Using REAL data from your search results, return ONLY valid JSON (no markdown):
 {
@@ -266,7 +348,6 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
       if (parsed.unit)   configUpdates.unit   = parsed.unit;
       if (Object.keys(configUpdates).length > 0) onConfigChange(configUpdates);
 
-      // Extract web source URLs from grounding metadata
       const meta = resp.groundingMetadata as { groundingChunks?: { web?: { uri?: string; title?: string } }[] } | null;
       const sources = meta?.groundingChunks
         ?.map(c => c.web?.title ?? c.web?.uri ?? '')
@@ -288,17 +369,13 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
     }
     setExportingQuiz(true);
     try {
-      // 1. Capture chart as base64
       let chartBase64 = '';
       if (chartRef.current) {
         const canvas = await html2canvas(chartRef.current, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
         chartBase64 = canvas.toDataURL('image/png');
       }
 
-      // 2. Build structured text for quiz question creation
-      const diagramInfo = chartBase64
-        ? `[ДИЈАГРАМ: ${chartConfig.title}]`
-        : '';
+      const diagramInfo = chartBase64 ? `[ДИЈАГРАМ: ${chartConfig.title}]` : '';
       const questionsText = generatedTasks.map((t, i) =>
         `${i + 1}. [${TYPE_LABELS[t.type] ?? t.type}] ${t.question}${t.hint ? `\n   💡 ${t.hint}` : ''}${t.answer ? `\n   ✓ ${t.answer}` : ''}`
       ).join('\n\n');
@@ -306,7 +383,6 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
       const fullText = `${diagramInfo}\n\n${questionsText}`;
       await navigator.clipboard.writeText(fullText);
 
-      // 3. If chart captured, also copy image
       if (chartBase64 && chartRef.current) {
         const canvas = await html2canvas(chartRef.current, { scale: 2, backgroundColor: '#ffffff' });
         canvas.toBlob(async blob => {
@@ -314,7 +390,7 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
           try {
             await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
           } catch {
-            // Fallback: image clipboard not supported, text already copied
+            // text already copied, image clipboard not supported
           }
         });
       }
@@ -346,6 +422,11 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
     });
   };
 
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const trackCfg = TRACK_CONFIG[trackInput];
+  const quickPromptsGenerate = QUICK_PROMPTS_GENERATE[isSecondary ? 'secondary' : 'elementary'];
+  const quickPromptsGrounding = QUICK_PROMPTS_GROUNDING[isSecondary ? 'secondary' : 'elementary'];
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
@@ -366,18 +447,36 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
         })}
       </div>
 
+      {/* Global education level selector */}
+      <div className="flex items-center gap-3 flex-wrap bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+        <span className="text-xs font-bold text-gray-500 shrink-0">Ниво:</span>
+        <select
+          value={trackInput}
+          onChange={e => handleTrackChange(e.target.value as Track)}
+          title="Вид на образование"
+          className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+          {(Object.entries(TRACK_CONFIG) as [Track, typeof TRACK_CONFIG[Track]][]).map(([key, cfg]) => (
+            <option key={key} value={key}>{cfg.label}</option>
+          ))}
+        </select>
+        <select
+          value={gradeInput}
+          onChange={e => setGradeInput(e.target.value)}
+          title="Одделение / Година"
+          className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+          {trackCfg.grades.map(g => (
+            <option key={g} value={g}>{trackCfg.gradeLabel(g)}</option>
+          ))}
+        </select>
+        <span className="text-xs text-indigo-600 font-semibold bg-indigo-50 px-2.5 py-1 rounded-lg">
+          {getEducationContext(trackInput, gradeInput)}
+        </span>
+      </div>
+
       {/* ── Генерирај задачи ── */}
       {mode === 'tasks' && (
         <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <div>
-              <label className="text-xs font-bold text-gray-500 mb-1 block">Одделение</label>
-              <select value={gradeInput} onChange={e => setGradeInput(e.target.value)}
-                title="Изберете одделение"
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                {[4,5,6,7,8,9].map(g => <option key={g} value={g}>{g}-то</option>)}
-              </select>
-            </div>
             <div>
               <label className="text-xs font-bold text-gray-500 mb-1 block">Број задачи: {taskCount}</label>
               <input type="range" min={3} max={10} value={taskCount}
@@ -396,6 +495,13 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
                 {chartConfig.yLabel && <> · Y: {chartConfig.yLabel}</>}
                 {chartConfig.unit && <> · {chartConfig.unit}</>}
               </span>
+            </div>
+          )}
+
+          {isSecondary && (
+            <div className="bg-violet-50 border border-violet-100 rounded-xl px-3 py-2 text-xs text-violet-800 flex items-center gap-2">
+              <TrendingUp className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
+              <span>Задачите ќе ги вклучат: регресија, стандардна девијација, корелација — соодветно за <strong>{getEducationContext(trackInput, gradeInput)}</strong>.</span>
             </div>
           )}
 
@@ -425,30 +531,17 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
               onChange={e => setDescriptionInput(e.target.value)}
               rows={3}
               title="Опис на сценарио"
-              placeholder="Пример: Температура во Скопје 7 дена во јули — scatter plot на оценки и часови учење за 15 ученика — споредба на спортови по популарност..."
+              placeholder={isSecondary
+                ? 'Пример: Scatter plot — часови учење vs. матурски оценки (30 ученика) — Линеарна регресија: приход vs. трошоци — Нормална распределба на резултати...'
+                : 'Пример: Температура во Скопје 7 дена во јули — scatter plot на оценки и часови учење за 15 ученика — споредба на спортови по популарност...'}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
             />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-500 mb-1 block">Одделение</label>
-            <select value={gradeInput} onChange={e => setGradeInput(e.target.value)}
-              title="Изберете одделение"
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
-              {[4,5,6,7,8,9].map(g => <option key={g} value={g}>{g}-то</option>)}
-            </select>
           </div>
           {/* Quick prompts */}
           <div>
             <p className="text-xs font-bold text-gray-400 mb-1.5">Брзи примери:</p>
             <div className="flex flex-wrap gap-1.5">
-              {[
-                'Температура во Скопје 7 дена во јули',
-                'Оценки и часови учење за 15 ученика 7-мо одд.',
-                'Продажба на овошје на пазар — 5 видови',
-                'Резултати од тест за одделение 8А (20 ученика)',
-                'Потрошувачка на вода во домаќинство по месеци',
-                'Брзина и растојание за различни транспорти',
-              ].map(ex => (
+              {quickPromptsGenerate.map(ex => (
                 <button key={ex} type="button" onClick={() => setDescriptionInput(ex)}
                   className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg text-gray-600 transition flex items-center gap-1">
                   <ChevronRight className="w-3 h-3" />{ex}
@@ -483,7 +576,7 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
                 { label: 'Опсег', value: statsSummary.range.toFixed(2) },
                 { label: 'Минимум', value: statsSummary.min.toFixed(2) },
                 { label: 'Максимум', value: statsSummary.max.toFixed(2) },
-                { label: 'Ст. девијација', value: statsSummary.stdDev.toFixed(2) },
+                { label: 'Ст. девијација (σ)', value: statsSummary.stdDev.toFixed(2) },
                 { label: 'Н (елементи)', value: String(statsSummary.count) },
               ].map(s => (
                 <div key={s.label} className="bg-gray-50 rounded-xl p-3 text-center">
@@ -511,30 +604,17 @@ Maximum 12 rows. Use REAL values — do NOT invent data.`;
               value={descriptionInput}
               onChange={e => setDescriptionInput(e.target.value)}
               rows={3}
-              placeholder="Пример: население во Македонија по општини — БДП на земји во Европа — просечни температури во Скопје по месеци — стапка на невработеност по возраст..."
+              placeholder={isSecondary
+                ? 'Пример: матурски резултати по математика — инфлација по месеци — стапка на невработеност по возраст — извоз по сектори...'
+                : 'Пример: население во Македонија по општини — БДП на земји во Европа — просечни температури во Скопје по месеци...'}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
             />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-gray-500 mb-1 block">Одделение</label>
-            <select value={gradeInput} onChange={e => setGradeInput(e.target.value)}
-              title="Изберете одделение"
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300">
-              {[4,5,6,7,8,9,10,11,12].map(g => <option key={g} value={g}>{g}-то</option>)}
-            </select>
           </div>
           {/* Quick prompts */}
           <div>
             <p className="text-xs font-bold text-gray-400 mb-1.5">Брзи примери:</p>
             <div className="flex flex-wrap gap-1.5">
-              {[
-                'Население на општини во Македонија',
-                'БДП по глава на жител — Балкан',
-                'Просечни температури во Скопје по месеци',
-                'Стапка на невработеност во земји од ЕУ',
-                'Потрошувачка на обновлива енергија по земји',
-                'Население по возрасни групи во Македонија',
-              ].map(ex => (
+              {quickPromptsGrounding.map(ex => (
                 <button key={ex} type="button" onClick={() => setDescriptionInput(ex)}
                   className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-gray-600 transition flex items-center gap-1">
                   <ChevronRight className="w-3 h-3" />{ex}

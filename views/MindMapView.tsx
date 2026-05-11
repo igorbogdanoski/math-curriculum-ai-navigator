@@ -81,16 +81,58 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
     let edges: any[] = [];
     
     // 1. Central Topic Node
-    const topicTooltip = `
-      <div style="font-family:sans-serif; max-width:300px; padding:4px;">
-        <div style="font-weight:bold; font-size:1.1em; margin-bottom:6px; color:#0D47A1;">${topic.title}</div>
-        ${topic.description ? `<div style="margin-bottom:8px; font-size:0.9em;">${topic.description}</div>` : ''}
-        ${topic.topicLearningOutcomes && topic.topicLearningOutcomes.length > 0 ? 
-          `<div style="font-weight:bold; border-top:1px solid #ddd; padding-top:6px; margin-top:6px; font-size:0.85em; color:#333;">Резултати од учење:</div>
-           <ul style="padding-left:16px; margin:4px 0; font-size:0.85em; color:#444;">${topic.topicLearningOutcomes.map((o: string) => `<li>${o}</li>`).join('')}</ul>`
-          : ''}
-      </div>
-    `;
+    const topicTooltip = (() => {
+      const container = document.createElement('div');
+      container.style.fontFamily = 'sans-serif';
+      container.style.maxWidth = '300px';
+      container.style.padding = '8px';
+      container.style.backgroundColor = 'white';
+      container.style.borderRadius = '4px';
+      container.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+
+      const titleEl = document.createElement('div');
+      titleEl.style.fontWeight = 'bold';
+      titleEl.style.fontSize = '1.1em';
+      titleEl.style.marginBottom = '6px';
+      titleEl.style.color = '#0D47A1';
+      titleEl.textContent = topic.title;
+      container.appendChild(titleEl);
+
+      if (topic.description) {
+        const descEl = document.createElement('div');
+        descEl.style.marginBottom = '8px';
+        descEl.style.fontSize = '0.9em';
+        descEl.style.color = '#333';
+        descEl.textContent = topic.description;
+        container.appendChild(descEl);
+      }
+
+      if (topic.topicLearningOutcomes && topic.topicLearningOutcomes.length > 0) {
+        const sep = document.createElement('div');
+        sep.style.fontWeight = 'bold';
+        sep.style.borderTop = '1px solid #ddd';
+        sep.style.paddingTop = '6px';
+        sep.style.marginTop = '6px';
+        sep.style.fontSize = '0.85em';
+        sep.style.color = '#333';
+        sep.textContent = 'Резултати од учење:';
+        container.appendChild(sep);
+
+        const ul = document.createElement('ul');
+        ul.style.paddingLeft = '16px';
+        ul.style.margin = '4px 0';
+        ul.style.fontSize = '0.85em';
+        ul.style.color = '#444';
+        topic.topicLearningOutcomes.forEach((o: string) => {
+          const li = document.createElement('li');
+          li.textContent = o;
+          ul.appendChild(li);
+        });
+        container.appendChild(ul);
+      }
+
+      return container;
+    })();
 
     nodes.push({
       id: topic.id,

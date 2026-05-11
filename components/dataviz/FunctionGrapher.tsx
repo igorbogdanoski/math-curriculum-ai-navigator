@@ -10,7 +10,7 @@
  * - Pedagogical presets for МОН curriculum
  */
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Plus, Trash2, Download, RotateCcw, ZoomIn, ZoomOut, Info, Hash } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
@@ -460,10 +460,6 @@ export const FunctionGrapher: React.FC = () => {
     } finally { setExporting(false); }
   };
 
-  // Stable unique clip-path ID per instance — useRef avoids re-generation on re-renders,
-  // and avoids useId() producing colon characters that some SVG parsers reject in url(#id).
-  const clipId = useRef(`fg${Math.random().toString(36).slice(2, 9)}`).current;
-
   return (
     <div className="flex flex-col xl:flex-row gap-5">
 
@@ -682,12 +678,6 @@ export const FunctionGrapher: React.FC = () => {
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              <defs>
-                <clipPath id={clipId}>
-                  <rect x={PAD.left} y={PAD.top} width={plotW} height={plotH} />
-                </clipPath>
-              </defs>
-
               {/* Background */}
               <rect x={PAD.left} y={PAD.top} width={plotW} height={plotH} fill="#f8fafc" />
 
@@ -748,46 +738,39 @@ export const FunctionGrapher: React.FC = () => {
                 <text x={axisX - 7} y={axisY + 14} fill="#94a3b8" fontSize={9} textAnchor="middle" fontFamily="monospace">0</text>
               )}
 
-              {/* Inequality fill regions (rendered behind curves) */}
-              <g clipPath={`url(#${clipId})`}>
-                {paths.map(p => {
-                  const fn = functions.find(f => f.id === p.id);
-                  if (!fn || !fn.visible || !p.fills.length) return null;
-                  return p.fills.map((fillD, fi) => (
-                    <path key={`${p.id}-fill-${fi}`} d={fillD}
-                      fill={fn.color} fillOpacity={0.12}
-                      stroke="none"
-                    />
-                  ));
-                })}
-              </g>
-
-              {/* Function curves */}
-              <g clipPath={`url(#${clipId})`}>
-                {paths.map(p => {
-                  const fn = functions.find(f => f.id === p.id);
-                  if (!fn || !fn.visible || !p.d) return null;
-                  const isStrict = fn.ineqOp === '<' || fn.ineqOp === '>';
-                  return (
-                    <path key={p.id} d={p.d} fill="none"
-                      stroke={fn.color} strokeWidth="2.5"
-                      strokeLinejoin="round" strokeLinecap="round"
-                      strokeDasharray={isStrict ? '6 3' : undefined}
-                      opacity={0.9}
-                    />
-                  );
-                })}
-                {/* H3: polynomial curve */}
-                {showRoots && polyPath && (
-                  <path d={polyPath} fill="none" stroke="#9333ea" strokeWidth="2"
-                    strokeDasharray="8 3" strokeLinejoin="round" strokeLinecap="round" opacity={0.85} />
-                )}
-              </g>
-
-              {/* H3: real root markers on x-axis */}
-              {showRoots && (
-                <g clipPath={`url(#${clipId})`}>
-                  {polyRoots.filter(r => isRealRoot(r)).map((r, i) => {
+              {/* Clipped content — nested <svg> avoids url(#id) hash-routing issues */}
+              <svg x={PAD.left} y={PAD.top} width={plotW} height={plotH} overflow="hidden">
+                <g transform={`translate(${-PAD.left} ${-PAD.top})`}>
+                  {/* Inequality fill regions (behind curves) */}
+                  {paths.map(p => {
+                    const fn = functions.find(f => f.id === p.id);
+                    if (!fn || !fn.visible || !p.fills.length) return null;
+                    return p.fills.map((fillD, fi) => (
+                      <path key={`${p.id}-fill-${fi}`} d={fillD}
+                        fill={fn.color} fillOpacity={0.12} stroke="none" />
+                    ));
+                  })}
+                  {/* Function curves */}
+                  {paths.map(p => {
+                    const fn = functions.find(f => f.id === p.id);
+                    if (!fn || !fn.visible || !p.d) return null;
+                    const isStrict = fn.ineqOp === '<' || fn.ineqOp === '>';
+                    return (
+                      <path key={p.id} d={p.d} fill="none"
+                        stroke={fn.color} strokeWidth="2.5"
+                        strokeLinejoin="round" strokeLinecap="round"
+                        strokeDasharray={isStrict ? '6 3' : undefined}
+                        opacity={0.9}
+                      />
+                    );
+                  })}
+                  {/* H3: polynomial curve */}
+                  {showRoots && polyPath && (
+                    <path d={polyPath} fill="none" stroke="#9333ea" strokeWidth="2"
+                      strokeDasharray="8 3" strokeLinejoin="round" strokeLinecap="round" opacity={0.85} />
+                  )}
+                  {/* H3: real root markers on x-axis */}
+                  {showRoots && polyRoots.filter(r => isRealRoot(r)).map((r, i) => {
                     const px = toPixelX(r.re);
                     if (px < PAD.left || px > PAD.left + plotW) return null;
                     return (
@@ -800,7 +783,7 @@ export const FunctionGrapher: React.FC = () => {
                     );
                   })}
                 </g>
-              )}
+              </svg>
 
               {/* Border */}
               <rect x={PAD.left} y={PAD.top} width={plotW} height={plotH}
