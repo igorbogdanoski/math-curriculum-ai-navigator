@@ -145,6 +145,20 @@ export const schoolService = {
     return newCode;
   },
 
+  /** System admin: directly assign a school to any user without requiring a join code */
+  adminAssignSchool: async (teacherUid: string, schoolId: string, schoolName: string): Promise<void> => {
+    await Promise.all([
+      updateDoc(doc(db, 'schools', schoolId), { teacherUids: arrayUnion(teacherUid) }),
+      updateDoc(doc(db, 'users', teacherUid), { schoolId, schoolName }),
+    ]);
+  },
+
+  /** System admin: delete a user profile document from Firestore */
+  deleteUserProfile: async (uid: string): Promise<void> => {
+    const { deleteDoc } = await import('firebase/firestore');
+    await deleteDoc(doc(db, 'users', uid));
+  },
+
   fetchSchools: async (): Promise<any[]> => {
     try {
       const q = query(collection(db, 'schools'), orderBy('name'));

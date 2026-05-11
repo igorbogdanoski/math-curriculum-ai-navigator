@@ -30,7 +30,7 @@ const initialProfile: TeachingProfile = {
 };
 
 export const SettingsView: React.FC = () => {
-    const { user, updateProfile, firebaseUser } = useAuth();
+    const { user, updateProfile, updateLocalProfile, firebaseUser } = useAuth();
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
     const [profile, setProfile] = useState<TeachingProfile>(user || initialProfile);
     const [studentProfiles, setStudentProfiles] = useState<StudentProfile[]>(user?.studentProfiles || []);
@@ -43,6 +43,14 @@ export const SettingsView: React.FC = () => {
     const [joinLoading, setJoinLoading] = useState(false);
     const [joinedSchoolName, setJoinedSchoolName] = useState<string | null>(user?.schoolName ?? null);
     const [leaveLoading, setLeaveLoading] = useState(false);
+    const [adminSchools, setAdminSchools] = useState<{ id: string; name: string }[]>([]);
+    const [adminSchoolSel, setAdminSchoolSel] = useState('');
+
+    useEffect(() => {
+        if (user?.role === 'admin' && adminSchools.length === 0) {
+            firestoreService.fetchSchools().then((s: any[]) => setAdminSchools(s ?? [])).catch(() => {});
+        }
+    }, [user?.role]);
 
     const handleJoinSchool = async () => {
         if (!firebaseUser || joinCodeInput.trim().length < 4) return;
@@ -58,6 +66,7 @@ export const SettingsView: React.FC = () => {
             } else {
                 setJoinedSchoolName(school.name);
                 setJoinCodeInput('');
+                updateLocalProfile({ schoolId: school.id, schoolName: school.name });
                 addNotification(`Успешно се приклучивте кон ${school.name}! 🎉`, 'success');
             }
         } catch {
@@ -78,6 +87,7 @@ export const SettingsView: React.FC = () => {
                 try {
                     await firestoreService.leaveSchool(user.schoolId!, firebaseUser.uid);
                     setJoinedSchoolName(null);
+                    updateLocalProfile({ schoolId: undefined, schoolName: undefined });
                     addNotification('Успешно го напуштивте училиштето.', 'success');
                 } catch {
                     addNotification('Грешка при напуштање. Обидете се повторно.', 'error');
@@ -1214,7 +1224,9 @@ export const SettingsView: React.FC = () => {
                     Приклучи се кон училиште
                 </h2>
                 <p className="text-sm text-blue-600 mb-4">
-                    Добијте код од директорот/администраторот на вашето училиште и внесете го подолу.
+                    {user?.role === 'admin'
+                        ? 'Системски администратор: директно изберете училиште без код.'
+                        : 'Добијте код од директорот/администраторот на вашето училиште и внесете го подолу.'}
                 </p>
 
                 {joinedSchoolName ? (
@@ -1231,6 +1243,44 @@ export const SettingsView: React.FC = () => {
                         >
                             {leaveLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
                             Напушти
+                        </button>
+                    </div>
+                ) : user?.role === 'admin' ? (
+                    <div className="flex gap-2">
+                        <select
+                            aria-label="Изберете училиште"
+                            value={adminSchoolSel}
+                            onChange={e => setAdminSchoolSel(e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                        >
+                            <option value="">— Изберете училиште —</option>
+                            {adminSchools.map(s => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                        </select>
+                        <button
+                            type="button"
+                            disabled={joinLoading || !adminSchoolSel}
+                            onClick={async () => {
+                                if (!firebaseUser || !adminSchoolSel) return;
+                                const school = adminSchools.find(s => s.id === adminSchoolSel);
+                                if (!school) return;
+                                setJoinLoading(true);
+                                try {
+                                    await firestoreService.adminAssignSchool(firebaseUser.uid, school.id, school.name);
+                                    setJoinedSchoolName(school.name);
+                                    updateLocalProfile({ schoolId: school.id, schoolName: school.name });
+                                    addNotification(`Поврзани со ${school.name}! 🎉`, 'success');
+                                } catch {
+                                    addNotification('Грешка при поврзување.', 'error');
+                                } finally {
+                                    setJoinLoading(false);
+                                }
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                            Постави
                         </button>
                     </div>
                 ) : (

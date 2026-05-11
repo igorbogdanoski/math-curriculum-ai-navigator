@@ -44,7 +44,7 @@ const TIER_OPTIONS: { value: 'Free' | 'Pro' | 'Unlimited'; label: string; color:
     { value: 'Unlimited', label: 'Unlimited',  color: 'bg-purple-100 text-purple-800' },
 ];
 
-const UserAdminRow = ({ u, isMe, schools, updatingUid, handleChangeRole, handleUpdateSubscription }: any) => {
+const UserAdminRow = ({ u, isMe, schools, updatingUid, handleChangeRole, handleUpdateSubscription, handleDeleteUser }: any) => {
     const role = u.role ?? 'teacher';
     const [isEditing, setIsEditing] = useState(false);
     const [editCredits, setEditCredits] = useState(u.aiCreditsBalance || 0);
@@ -116,6 +116,16 @@ const UserAdminRow = ({ u, isMe, schools, updatingUid, handleChangeRole, handleU
                     )}
                     {updatingUid === u.uid && (
                         <span className="text-xs text-gray-400 animate-pulse">Зачувувам...</span>
+                    )}
+                    {!isMe && !u.name && (
+                        <button
+                            type="button"
+                            onClick={() => handleDeleteUser(u.uid)}
+                            title="Избриши непознат корисник"
+                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
                     )}
                 </div>
             </div>
@@ -446,6 +456,19 @@ export const SystemAdminView: React.FC = () => {
         }
     };
 
+    const handleDeleteUser = async (uid: string) => {
+        if (!window.confirm('Избриши го овој корисник од базата? Оваа акција не може да се врати.')) return;
+        setUpdatingUid(uid);
+        try {
+            await firestoreService.deleteUserProfile(uid);
+            setUsers(prev => prev.filter(u => u.uid !== uid));
+        } catch {
+            setUserError('Грешка при бришење на корисникот.');
+        } finally {
+            setUpdatingUid(null);
+        }
+    };
+
     const handleChangeRole = async (uid: string, newRole: 'teacher' | 'school_admin' | 'admin', schoolId?: string) => {
         setUpdatingUid(uid);
         try {
@@ -693,6 +716,7 @@ export const SystemAdminView: React.FC = () => {
                                         updatingUid={updatingUid}
                                         handleChangeRole={handleChangeRole}
                                         handleUpdateSubscription={handleUpdateSubscription}
+                                        handleDeleteUser={handleDeleteUser}
                                     />
                                 ))
                             }
