@@ -10,7 +10,7 @@
  * - Pedagogical presets for МОН curriculum
  */
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo, useId } from 'react';
 import { Plus, Trash2, Download, RotateCcw, ZoomIn, ZoomOut, Info, Hash } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
@@ -31,6 +31,88 @@ const mathEnv = {
   sign: Math.sign,
   PI: Math.PI, E: Math.E,
 };
+
+// CSP-safe recursive descent parser — used as fallback when new Function() is blocked.
+function _evalFallback(expr: string, xVal: number): number {
+  let pos = 0;
+  const s = expr;
+  const ws = () => { while (pos < s.length && (s[pos] === ' ' || s[pos] === '\t')) pos++; };
+
+  const E = (): number => {
+    let v = T();
+    ws();
+    while (pos < s.length) {
+      if (s[pos] === '+') { pos++; v += T(); ws(); }
+      else if (s[pos] === '-') { pos++; v -= T(); ws(); }
+      else break;
+    }
+    return v;
+  };
+  const T = (): number => {
+    let v = U();
+    ws();
+    while (pos < s.length) {
+      if (s[pos] === '*') { pos++; v *= U(); ws(); }
+      else if (s[pos] === '/') { pos++; const d = U(); v = d === 0 ? NaN : v / d; ws(); }
+      else break;
+    }
+    return v;
+  };
+  const U = (): number => { ws(); if (pos < s.length && s[pos] === '-') { pos++; return -U(); } return P(); };
+  const P = (): number => {
+    ws();
+    // Number literal
+    if (pos < s.length && (s[pos] >= '0' && s[pos] <= '9' || s[pos] === '.')) {
+      const start = pos;
+      while (pos < s.length && (s[pos] >= '0' && s[pos] <= '9' || s[pos] === '.')) pos++;
+      if (pos < s.length && (s[pos] === 'e' || s[pos] === 'E')) {
+        pos++;
+        if (pos < s.length && (s[pos] === '+' || s[pos] === '-')) pos++;
+        while (pos < s.length && s[pos] >= '0' && s[pos] <= '9') pos++;
+      }
+      return parseFloat(s.slice(start, pos));
+    }
+    // Identifier: variable, constant or function call
+    if (pos < s.length && (s[pos] >= 'a' && s[pos] <= 'z' || s[pos] >= 'A' && s[pos] <= 'Z' || s[pos] === '_')) {
+      const start = pos;
+      while (pos < s.length && (s[pos] >= 'a' && s[pos] <= 'z' || s[pos] >= 'A' && s[pos] <= 'Z' || s[pos] >= '0' && s[pos] <= '9' || s[pos] === '_')) pos++;
+      const name = s.slice(start, pos);
+      ws();
+      if (pos < s.length && s[pos] === '(' && name in mathEnv && typeof (mathEnv as Record<string, unknown>)[name] === 'function') {
+        pos++;
+        const args = [E()];
+        while (pos < s.length && s[pos] === ',') { pos++; args.push(E()); }
+        if (pos < s.length && s[pos] === ')') pos++;
+        const fn2 = (mathEnv as unknown as Record<string, (...a: number[]) => number>)[name];
+        return fn2(...args);
+      }
+      if (name === 'x') return xVal;
+      if (name === 'PI' || name === 'pi') return Math.PI;
+      if (name === 'E') return Math.E;
+      return NaN;
+    }
+    // Parenthesised sub-expression
+    if (pos < s.length && s[pos] === '(') {
+      pos++;
+      const v = E();
+      if (pos < s.length && s[pos] === ')') pos++;
+      return v;
+    }
+    return NaN;
+  };
+  try { const r = E(); return isFinite(r) ? r : NaN; } catch { return NaN; }
+}
+
+// Converts common raw expressions to a nicer display string for the legend.
+function prettyExpr(expr: string): string {
+  return expr
+    .replace(/pow\(x,\s*2\)/g, 'x²').replace(/pow\(x,\s*3\)/g, 'x³')
+    .replace(/pow\(([^,]+),\s*2\)/g, '($1)²').replace(/pow\(([^,]+),\s*3\)/g, '($1)³')
+    .replace(/\^2\b/g, '²').replace(/\^3\b/g, '³')
+    .replace(/sqrt\(([^)]+)\)/g, '√($1)').replace(/abs\(([^)]+)\)/g, '|$1|')
+    .replace(/\bPI\b/g, 'π').replace(/\bE\b/g, 'e')
+    .replace(/\*/g, '·');
+}
 
 function safeEval(expr: string, x: number): number {
   // Normalise: implicit multiply (2x → 2*x), π → PI, ^ → pow()
@@ -61,7 +143,8 @@ function safeEval(expr: string, x: number): number {
     const result = fn(x, ...Object.values(mathEnv)) as number;
     return isFinite(result) ? result : NaN;
   } catch {
-    return NaN;
+    // Fallback for environments where new Function() is blocked (strict CSP)
+    return _evalFallback(normalised, x);
   }
 }
 
@@ -387,8 +470,9 @@ export const FunctionGrapher: React.FC = () => {
     } finally { setExporting(false); }
   };
 
-  // Clip path id
-  const clipId = 'fg-clip';
+  // Unique clip-path ID per instance (avoids conflicts if multiple SVGs share the DOM)
+  const _uid = useId();
+  const clipId = `fg${_uid.replace(/:/g, '')}`;
 
   return (
     <div className="flex flex-col xl:flex-row gap-5">
@@ -740,7 +824,7 @@ export const FunctionGrapher: React.FC = () => {
               {functions.filter(f => f.expr.trim()).map((fn, i) => (
                 <span key={fn.id} className="flex items-center gap-1.5 text-xs font-mono text-gray-600">
                   <span className={`inline-block w-6 h-0.5 rounded ${PALETTE_BG[fn.color] ?? 'bg-gray-400'} ${fn.visible ? 'opacity-100' : 'opacity-[0.35]'}`} />
-                  f{i + 1}(x) = {fn.expr}
+                  f<sub>{i + 1}</sub>(x) = {prettyExpr(fn.expr)}
                 </span>
               ))}
             </div>

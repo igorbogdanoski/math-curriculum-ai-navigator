@@ -32,6 +32,13 @@ const SLIDER_RANGES = {
   d: { min: -5, max: 5, step: 0.1 },
 } as const;
 
+const PARAM_LABELS: Record<'a' | 'b' | 'c' | 'd', { mk: string; role: string }> = {
+  a: { mk: 'Амплитуда',       role: 'Вертикален скаларен множ. — растегнување / собирање / рефлексија' },
+  b: { mk: 'Фреквенција',     role: 'Хоризонтален скаларен множ. — растегнување / собирање / рефлексија' },
+  c: { mk: 'Фазна измена',    role: 'Хоризонтален помак на функцијата лево/десно' },
+  d: { mk: 'Вертикален помак',role: 'Вертикален помак на функцијата нагоре/надолу' },
+};
+
 export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
   initialFunction = 'sin',
   initialParams,
@@ -170,7 +177,8 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
         {(['a', 'b', 'c', 'd'] as const).map((k) => (
           <label key={k} className="text-xs font-semibold text-gray-700 space-y-1">
             <span className="flex items-center justify-between">
-              <span>{k} = <span className="font-mono font-bold text-indigo-700">{params[k].toFixed(2)}</span></span>
+              <span className="font-black text-indigo-800">{k}</span>
+              <span className="font-mono font-bold text-indigo-700">{params[k].toFixed(2)}</span>
             </span>
             <input
               type="range"
@@ -181,9 +189,18 @@ export const FunctionTransformer: React.FC<FunctionTransformerProps> = ({
               onChange={updateParam(k)}
               className="w-full accent-indigo-600"
               data-testid={`function-transformer-slider-${k}`}
-              aria-label={`Параметар ${k}`}
+              aria-label={`${PARAM_LABELS[k].mk} (${k})`}
             />
+            <span className="block text-[9px] text-gray-500 leading-tight">{PARAM_LABELS[k].mk}</span>
           </label>
+        ))}
+      </div>
+      {/* Parametar legend */}
+      <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
+        {(['a', 'b', 'c', 'd'] as const).map(k => (
+          <p key={k} className="text-[10px] text-indigo-700 leading-snug">
+            <span className="font-black mr-1">{k}</span>— {PARAM_LABELS[k].role}
+          </p>
         ))}
       </div>
 

@@ -28,6 +28,9 @@ const LogExpLab = React.lazy(() =>
 const LinearAlgebraLab = React.lazy(() =>
   import('../components/dataviz/LinearAlgebraLab').then(m => ({ default: m.LinearAlgebraLab }))
 );
+const ConicSectionsLab = React.lazy(() =>
+  import('../components/dataviz/ConicSectionsLab').then(m => ({ default: m.ConicSectionsLab }))
+);
 
 /** DoK classification exercise — teacher picks DoK level for each item */
 const DokClassifier: React.FC<{ items: DokClassifyItem[] }> = ({ items }) => {
@@ -276,6 +279,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                       'function-transformer': 'Интерактивна демо: Слајдери за функции',
                       'log-exp-lab':          'Интерактивна демо: Лог / Exp лаб',
                       'linear-algebra-lab':   'Интерактивна демо: Линеарна алгебра',
+                      'conic-sections-lab':   'Интерактивна демо: Конусни пресеци',
                     }[lesson.interactiveDemo]}
                   </h2>
                 </div>
@@ -289,6 +293,7 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
                   )}
                   {lesson.interactiveDemo === 'log-exp-lab' && <LogExpLab />}
                   {lesson.interactiveDemo === 'linear-algebra-lab' && <LinearAlgebraLab />}
+                  {lesson.interactiveDemo === 'conic-sections-lab' && <ConicSectionsLab />}
                 </React.Suspense>
               </div>
             )}

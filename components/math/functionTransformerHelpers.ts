@@ -201,11 +201,19 @@ export function formatFormula(
   const innerB = p.b === 1 ? 'x' : p.b === -1 ? '−x' : `${formatNum(p.b)}x`;
   const innerC = p.c === 0 ? '' : p.c > 0 ? ` + ${formatNum(p.c)}` : ` − ${formatNum(-p.c)}`;
   const inner = `${innerB}${innerC}`;
-  // First substitute extra placeholders ({base}, {n}), then `x` → inner.
+  // Compound inner (e.g. "0.2x − 0.5") must be wrapped in parens before substitution
+  // so templates like "1/x", "x²", "√x" produce correct grouping.
+  const needsParens = inner.includes(' ');
+  const safeInner = needsParens ? `(${inner})` : inner;
+  // First substitute extra placeholders ({base}, {n}), then `x` → safeInner.
   let template = fn.formula;
   if (extra.base != null) template = template.replace(/\{base\}/g, formatNum(extra.base));
   if (extra.n != null) template = template.replace(/\{n\}/g, formatNum(Math.round(extra.n)));
-  const body = template.replace('x', inner);
+  let body = template.replace('x', safeInner);
+  // Simplify redundant double-parens: sin((expr)) → sin(expr), |(expr)| → |expr|
+  body = body
+    .replace(/\(\(([^()]*)\)\)/g, '($1)')
+    .replace(/\|\(([^()]*)\)\|/g, '|$1|');
   const dStr = p.d === 0 ? '' : p.d > 0 ? ` + ${formatNum(p.d)}` : ` − ${formatNum(-p.d)}`;
   return `${aStr}${body}${dStr}`;
 }
