@@ -7,9 +7,10 @@ import { useNotification } from '../contexts/NotificationContext';
 import {
   Users, School, TrendingUp, BookOpen, AlertCircle, Printer,
   BarChart2, FileText, RefreshCw, Copy, UserMinus, Loader2,
-  CheckCircle2, Zap, Share2, Clock,
+  CheckCircle2, Zap, Share2, Clock, Crown, ShieldOff,
 } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
+import { schoolService } from '../services/firestoreService.school';
 import type { SchoolStatsData, SchoolTeacherStat } from '../services/firestoreService.school';
 import type { School as SchoolType } from '../types';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -46,6 +47,8 @@ export const SchoolAdminView: React.FC = () => {
   const [removingUid, setRemovingUid] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const fetchAll = useCallback(async () => {
     if (!user?.schoolId) { setIsLoading(false); return; }
@@ -116,6 +119,53 @@ export const SchoolAdminView: React.FC = () => {
           setRemovingUid(null);
         }
       }
+    });
+  };
+
+  const allTeacherIds = stats?.teachers.map(t => t.id) ?? [];
+  const allSelected = allTeacherIds.length > 0 && allTeacherIds.every(id => selectedIds.has(id));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allTeacherIds));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkGrant = (grant: boolean) => {
+    const ids = [...selectedIds];
+    const label = grant ? 'додели School Pro' : 'откажи Pro';
+    setConfirmDialog({
+      message: `${grant ? 'Додели' : 'Откажи'} School Pro за ${ids.length} наставник(и)?`,
+      variant: 'warning',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setBulkLoading(true);
+        try {
+          await schoolService.bulkGrantLicenses(ids, grant);
+          setStats(prev => prev ? {
+            ...prev,
+            teachers: prev.teachers.map(t =>
+              ids.includes(t.id) ? { ...t, isPremium: grant, tier: grant ? 'Pro' : 'Free' } : t
+            ),
+          } : prev);
+          setSelectedIds(new Set());
+          addNotification(`${label} за ${ids.length} наставник(и) успешно.`, 'success');
+        } catch {
+          addNotification(`Грешка при ${label}.`, 'error');
+        } finally {
+          setBulkLoading(false);
+        }
+      },
     });
   };
 
@@ -308,13 +358,42 @@ export const SchoolAdminView: React.FC = () => {
 
           {/* ── Teachers table ── */}
           <Card className="overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center gap-4 flex-wrap">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <Users className="w-5 h-5 text-gray-600" />
                 Наставници на училиштето
               </h2>
               <span className="text-xs text-gray-400">{stats.teachers.length} наставници</span>
             </div>
+
+            {/* P3-D — Bulk action toolbar */}
+            {selectedIds.size > 0 && (
+              <div className="px-6 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center gap-3 flex-wrap">
+                <span className="text-sm font-semibold text-indigo-700">
+                  {selectedIds.size} избран{selectedIds.size === 1 ? '' : 'и'}
+                </span>
+                <button type="button"
+                  onClick={() => handleBulkGrant(true)}
+                  disabled={bulkLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50">
+                  {bulkLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Crown className="w-3 h-3" />}
+                  Додели School Pro
+                </button>
+                <button type="button"
+                  onClick={() => handleBulkGrant(false)}
+                  disabled={bulkLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50">
+                  <ShieldOff className="w-3 h-3" />
+                  Откажи Pro
+                </button>
+                <button type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-xs text-indigo-400 hover:text-indigo-600 transition-colors ml-auto">
+                  Откажи избор
+                </button>
+              </div>
+            )}
+
             {stats.teachers.length === 0 ? (
               <div className="p-8 text-center text-gray-400 text-sm">
                 Сè уште нема наставници приклучени на ова училиште.
@@ -324,34 +403,56 @@ export const SchoolAdminView: React.FC = () => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50/50 text-gray-500 text-sm border-b border-gray-100">
-                      <th className="py-3 px-6 font-medium">Наставник</th>
-                      <th className="py-3 px-6 font-medium text-center">Квизови</th>
-                      <th className="py-3 px-6 font-medium text-center">Материјали</th>
-                      <th className="py-3 px-6 font-medium text-center">Просек</th>
-                      <th className="py-3 px-6 font-medium text-center">
+                      <th className="py-3 px-4 font-medium w-10">
+                        <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          aria-label="Избери сите" />
+                      </th>
+                      <th className="py-3 px-4 font-medium">Наставник</th>
+                      <th className="py-3 px-4 font-medium text-center">Квизови</th>
+                      <th className="py-3 px-4 font-medium text-center">Материјали</th>
+                      <th className="py-3 px-4 font-medium text-center">Просек</th>
+                      <th className="py-3 px-4 font-medium text-center">
                         <span className="flex items-center justify-center gap-1"><Zap className="w-3 h-3" />Кредити</span>
                       </th>
-                      <th className="py-3 px-6 font-medium text-center">
+                      <th className="py-3 px-4 font-medium text-center">
                         <span className="flex items-center justify-center gap-1"><Clock className="w-3 h-3" />Активност</span>
                       </th>
-                      <th className="py-3 px-6 font-medium text-center">Акција</th>
+                      <th className="py-3 px-4 font-medium text-center">Акција</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {stats.teachers.map((teacher: SchoolTeacherStat) => (
-                      <tr key={teacher.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-4 px-6">
-                          <div className="font-medium text-gray-900">{teacher.name}</div>
-                          <div className="text-xs text-gray-400">Наставник</div>
+                      <tr key={teacher.id}
+                        className={`hover:bg-gray-50/50 transition-colors ${selectedIds.has(teacher.id) ? 'bg-indigo-50/40' : ''}`}>
+                        <td className="py-4 px-4">
+                          <input type="checkbox"
+                            checked={selectedIds.has(teacher.id)}
+                            onChange={() => toggleSelect(teacher.id)}
+                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            aria-label={`Избери ${teacher.name}`} />
                         </td>
-                        <td className="py-4 px-6 text-center text-gray-700">{teacher.quizzesGiven}</td>
-                        <td className="py-4 px-6 text-center">
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <div className="font-medium text-gray-900 flex items-center gap-1.5">
+                                {teacher.name}
+                                {teacher.isPremium && (
+                                  <Crown className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" title="Pro" />
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-400">{teacher.tier ?? 'Free'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-center text-gray-700">{teacher.quizzesGiven}</td>
+                        <td className="py-4 px-4 text-center">
                           <span className="flex items-center justify-center gap-1 text-gray-700">
                             <FileText className="w-3.5 h-3.5 text-indigo-400" />
                             {teacher.materialsGenerated ?? '—'}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-center">
+                        <td className="py-4 px-4 text-center">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             teacher.avgScore >= 80 ? 'bg-green-100 text-green-700' :
                             teacher.avgScore >= 60 ? 'bg-orange-100 text-orange-700' :
@@ -359,13 +460,13 @@ export const SchoolAdminView: React.FC = () => {
                             {Math.round(teacher.avgScore)}%
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-center">
+                        <td className="py-4 px-4 text-center">
                           <CreditsBadge credits={teacher.aiCreditsBalance} />
                         </td>
-                        <td className="py-4 px-6 text-center">
+                        <td className="py-4 px-4 text-center">
                           <ActivityBadge lastActive={teacher.lastActive} />
                         </td>
-                        <td className="py-4 px-6 text-center">
+                        <td className="py-4 px-4 text-center">
                           <button type="button" title="Отстрани наставник"
                             onClick={() => handleRemoveTeacher(teacher.id, teacher.name)}
                             disabled={removingUid === teacher.id}

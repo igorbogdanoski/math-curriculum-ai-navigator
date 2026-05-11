@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import { doc, getDoc, collection, getDocs, query, where, orderBy, updateDoc, addDoc, getCountFromServer, getAggregateFromServer, average, limit, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, updateDoc, addDoc, getCountFromServer, getAggregateFromServer, average, limit, arrayUnion, arrayRemove, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import type { School } from '../types';
 
@@ -12,6 +12,8 @@ export interface SchoolTeacherStat {
   /** ISO date string or null when unknown */
   lastActive: string | null;
   aiCreditsBalance: number;
+  isPremium?: boolean;
+  tier?: string;
 }
 
 export interface SchoolStatsData {
@@ -193,6 +195,22 @@ export const schoolService = {
     }
   },
 
+  /** P3-D — Bulk grant or revoke School Pro for a list of teacher UIDs (batched Firestore write). */
+  bulkGrantLicenses: async (uids: string[], grant: boolean): Promise<void> => {
+    if (uids.length === 0) return;
+    const BATCH_SIZE = 400; // Firestore limit is 500 ops/batch
+    for (let i = 0; i < uids.length; i += BATCH_SIZE) {
+      const batch = writeBatch(db);
+      for (const uid of uids.slice(i, i + BATCH_SIZE)) {
+        batch.update(doc(db, 'users', uid), {
+          isPremium: grant,
+          tier: grant ? 'Pro' : 'Free',
+        });
+      }
+      await batch.commit();
+    }
+  },
+
   fetchNationalStats: async (): Promise<{
     totalSchools: number;
     totalTeachers: number;
@@ -302,6 +320,8 @@ export const schoolService = {
           materialsGenerated: 0,
           lastActive: tData.lastActive ? new Date(tData.lastActive as string).toISOString() : null,
           aiCreditsBalance: (tData.aiCreditsBalance as number) ?? 0,
+          isPremium: (tData.isPremium as boolean) ?? false,
+          tier: (tData.tier as string) ?? 'Free',
         });
       }
 

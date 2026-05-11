@@ -8,7 +8,11 @@
   "rewrites": [
     { "source": "/service-worker.js", "destination": "/service-worker.js" },
     { "source": "/manifest.json", "destination": "/manifest.json" },
+    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
+    { "source": "/robots.txt", "destination": "/robots.txt" },
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/concepts/(.*)", "destination": "/concepts/$1" },
+    { "source": "/matura/(.*)", "destination": "/matura/$1" },
     { "source": "/api/gemini-embed", "destination": "/api/embed?responseShape=embeddings" },
     { "source": "/api/matura-share-sign", "destination": "/api/matura-share?action=sign" },
     { "source": "/api/matura-share-verify", "destination": "/api/matura-share?action=verify" },

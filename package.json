@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npx tsx scripts/generate-seo-pages.ts",
+    "seo": "npx tsx scripts/generate-seo-pages.ts",
     "ai:verify-models": "node scripts/verify-models.mjs",
     "ai:list-models": "node scripts/list-gemini-models.mjs",
     "perf:budget": "node scripts/enforce-perf-budget.mjs",
