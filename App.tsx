@@ -39,6 +39,7 @@ import { UpgradeModal } from './components/common/UpgradeModal';
 import { CookieConsent } from './components/common/CookieConsent';
 import { DemoBanner } from './components/common/DemoBanner';
 import { ModalManager } from './components/common/ModalManager';
+import { WhatsNewModal } from './components/common/WhatsNewModal';
 
 // --- LOADING SKELETON ---
 const AppSkeleton = () => (
@@ -520,6 +521,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                           <OnboardingGate />
                           <CookieConsent />
                           <DemoBanner />
+                          <WhatsNewModal />
                           <Suspense fallback={null}>
                             <CommandPalette />
                           </Suspense>

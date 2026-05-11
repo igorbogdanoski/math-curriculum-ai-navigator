@@ -1,7 +1,7 @@
 ﻿import { LANGUAGES } from '../i18n';
 import { useLanguage } from '../i18n/LanguageContext';
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Gift } from 'lucide-react';
 import { trackEvent } from '../services/telemetryService';
 import { APP_NAME, ICONS } from '../constants';
 import { LanguageSelector } from './common/LanguageSelector';
@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useForumUnreadCount } from '../hooks/useForumUnreadCount';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
+import { getReferralLink } from '../hooks/useReferral';
 
 interface SidebarProps {
   currentPath: string;
@@ -209,6 +210,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         </div>
       </nav>
       <div className="p-2 border-t bg-gray-50/50 space-y-2">
+        {/* Referral CTA — shown only to authenticated teachers/admins */}
+        {firebaseUser?.uid && (
+          <button
+            type="button"
+            onClick={async () => {
+              const link = getReferralLink(firebaseUser.uid);
+              try {
+                await navigator.clipboard.writeText(link);
+                trackEvent('feature_open_referral', { source: 'sidebar' });
+              } catch { /* blocked */ }
+              navigate('/settings');
+              onClose();
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors text-left"
+          >
+            <Gift className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-amber-800 truncate">Покани колега — +10 кредити</p>
+              <p className="text-[10px] text-amber-600 truncate">Сподели го твојот линк</p>
+            </div>
+          </button>
+        )}
         <div className="px-2">
             <select
               value={language}
