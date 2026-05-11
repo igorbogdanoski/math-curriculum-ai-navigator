@@ -118,13 +118,27 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
   const { openGeneratorPanel } = useGeneratorPanel();
   const { markLessonAsRead } = useAcademyProgress();
   const topRef = useRef<HTMLDivElement>(null);
+  const [scrollPct, setScrollPct] = useState(0);
 
   const lesson = ACADEMY_CONTENT[id];
 
   // Scroll to top on lesson change
   useEffect(() => {
-    topRef.current?.scrollIntoView({ behavior: 'instant' });
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    setScrollPct(0);
   }, [id]);
+
+  // Track scroll progress
+  useEffect(() => {
+    const onScroll = () => {
+      const el = document.documentElement;
+      const scrolled = el.scrollTop || document.body.scrollTop;
+      const total = el.scrollHeight - el.clientHeight;
+      setScrollPct(total > 0 ? Math.min(100, (scrolled / total) * 100) : 0);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Mark as read when viewing
   useEffect(() => {
@@ -132,6 +146,18 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
       markLessonAsRead(lesson.id);
     }
   }, [lesson, markLessonAsRead]);
+
+  // Build ordered step list based on lesson sections
+  const steps = lesson ? [
+    'Теорија',
+    'Пример',
+    'Зошто работи',
+    ...(lesson.interactiveDemo ? ['Демо'] : []),
+    ...(lesson.dokClassifyItems?.length ? ['DoK вежба'] : []),
+    'Квиз',
+    'Феинман',
+  ] : [];
+  const currentStep = Math.min(steps.length, Math.ceil((scrollPct / 100) * steps.length) + 1);
 
   if (!lesson) {
     return (
@@ -193,6 +219,13 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
             <span className="font-medium">Назад во Едукативен Центар</span>
           </button>
 
+          {/* Step indicator */}
+          <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 font-semibold">
+            <span>Чекор {currentStep} од {steps.length}</span>
+            <span className="text-gray-300">·</span>
+            <span className="text-indigo-600">{steps[currentStep - 1] ?? steps[steps.length - 1]}</span>
+          </div>
+
           <button
             type="button"
             onClick={handleTryItOut}
@@ -201,6 +234,11 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
             <Wand2 className="w-4 h-4" />
             Генерирај час со овој пристап
           </button>
+        </div>
+        {/* Scroll progress bar — purely decorative, no ARIA role needed */}
+        <div className="h-0.5 bg-gray-100" aria-hidden="true">
+          {/* eslint-disable-next-line react/forbid-component-props */}
+          <div className="h-full bg-indigo-500 transition-all duration-100" style={{ width: `${scrollPct}%` }} />
         </div>
       </div>
 

@@ -731,8 +731,7 @@ function NxNSolverLab() {
     setN(newN);
     setFlatA(makeFlat(newN));
     setBVec(new Array(newN).fill(0));
-    // Jordan is only implemented for 2×2 and 3×3; SVD now works for all n
-    if (newN > 3 && method === 'jordan') setMethod('gauss');
+    // SVD and Jordan now work for all n (S64-F1/F2)
   };
 
   const changeMode = (newMode: NxNMode) => {

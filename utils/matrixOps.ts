@@ -448,6 +448,121 @@ export interface JordanResult {
   reason?: string;
 }
 
+// ─── S64-F2 helpers: QR + null-space for general Jordan (n≥4) ────────────────
+
+/** Gram-Schmidt QR decomposition — used only by jordanDecompose. */
+function _qrGS(A: Mat): { Q: Mat; R: Mat } {
+  const n = A.length;
+  const qs: number[][] = [];
+  const R: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (let j = 0; j < n; j++) {
+    let v = A.map(row => row[j]);
+    for (let i = 0; i < j; i++) {
+      const rij = qs[i].reduce((s, q, k) => s + q * v[k], 0);
+      R[i][j] = rij;
+      v = v.map((x, k) => x - rij * qs[i][k]);
+    }
+    const nrm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
+    R[j][j] = nrm;
+    qs.push(nrm > 1e-14 ? v.map(x => x / nrm) : Array.from({ length: n }, (_, k) => (k === j ? 1 : 0)));
+  }
+  return { Q: Array.from({ length: n }, (_, i) => qs.map(q => q[i])) as Mat, R: R as Mat };
+}
+
+/**
+ * QR iteration (Rayleigh-shift) to compute real eigenvalues of an n×n matrix.
+ * Returns sorted eigenvalues or null when complex eigenvalues are detected
+ * (off-diagonal sub-diagonal entry remains large after iteration).
+ */
+function _qrEigenNxN(A: Mat, maxIter = 500): number[] | null {
+  const n = A.length;
+  let Ak = cloneMat(A);
+  for (let iter = 0; iter < maxIter; iter++) {
+    const mu = Ak[n - 1][n - 1];
+    const As = Ak.map((row, i) => row.map((v, j) => v - (i === j ? mu : 0)));
+    const { Q, R } = _qrGS(As);
+    const RQ = matMul(R, Q);
+    Ak = RQ.map((row, i) => row.map((v, j) => v + (i === j ? mu : 0)));
+  }
+  for (let i = 1; i < n; i++) {
+    if (Math.abs(Ak[i][i - 1]) > 1e-4) return null;
+  }
+  return Array.from({ length: n }, (_, i) => Ak[i][i]);
+}
+
+/**
+ * Compute a basis for null(M) via Gauss-Jordan with partial pivoting.
+ * Returns an array of column vectors (each length = M[0].length).
+ */
+function _nullBasis(M: Mat, tol = 1e-8): number[][] {
+  const nR = M.length, nC = M[0].length;
+  const G = M.map(r => [...r]);
+  const pivotCols: number[] = [];
+  let pr = 0;
+  for (let col = 0; col < nC && pr < nR; col++) {
+    let maxV = tol, maxR = -1;
+    for (let r = pr; r < nR; r++) {
+      if (Math.abs(G[r][col]) > maxV) { maxV = Math.abs(G[r][col]); maxR = r; }
+    }
+    if (maxR === -1) continue;
+    [G[pr], G[maxR]] = [G[maxR], G[pr]];
+    const sc = G[pr][col];
+    G[pr] = G[pr].map(x => x / sc);
+    for (let r = 0; r < nR; r++) {
+      if (r !== pr && Math.abs(G[r][col]) > tol) {
+        const f = G[r][col];
+        G[r] = G[r].map((x, j) => x - f * G[pr][j]);
+      }
+    }
+    pivotCols.push(col);
+    pr++;
+  }
+  const freeCols = Array.from({ length: nC }, (_, j) => j).filter(j => !pivotCols.includes(j));
+  return freeCols.map(fj => {
+    const v = new Array(nC).fill(0);
+    v[fj] = 1;
+    pivotCols.forEach((pc, pi) => { v[pc] = -(G[pi]?.[fj] ?? 0); });
+    const nrm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
+    return nrm > 1e-14 ? v.map(x => x / nrm) : v;
+  });
+}
+
+/**
+ * Solve (A − λI)x = b via Gauss-Jordan on the augmented matrix.
+ * Returns a particular solution or null if the system is inconsistent.
+ * Free variables are set to 0.
+ */
+function _solveShifted(A: Mat, lam: number, b: number[]): number[] | null {
+  const n = A.length;
+  const G = A.map((row, i) => [...row.map((v, j) => v - (i === j ? lam : 0)), b[i]]);
+  const pivotCols: number[] = [];
+  let pr = 0;
+  for (let col = 0; col < n && pr < n; col++) {
+    let maxV = 1e-10, maxR = -1;
+    for (let r = pr; r < n; r++) {
+      if (Math.abs(G[r][col]) > maxV) { maxV = Math.abs(G[r][col]); maxR = r; }
+    }
+    if (maxR === -1) continue;
+    [G[pr], G[maxR]] = [G[maxR], G[pr]];
+    const sc = G[pr][col];
+    G[pr] = G[pr].map(x => x / sc);
+    for (let r = 0; r < n; r++) {
+      if (r !== pr && Math.abs(G[r][col]) > 1e-10) {
+        const f = G[r][col];
+        G[r] = G[r].map((x, j) => x - f * G[pr][j]);
+      }
+    }
+    pivotCols.push(col);
+    pr++;
+  }
+  for (let r = pivotCols.length; r < n; r++) {
+    if (Math.abs(G[r][n]) > 1e-6) return null;
+  }
+  const x = new Array(n).fill(0);
+  pivotCols.forEach((pc, pi) => { x[pc] = G[pi][n]; });
+  return x;
+}
+
 export function jordanDecompose(A: Mat): JordanResult {
   const n = A.length;
   const invalid = (reason: string): JordanResult =>
@@ -561,7 +676,70 @@ export function jordanDecompose(A: Mat): JordanResult {
     };
   }
 
-  return invalid('Jordanova декомпозиција е достапна само за 2×2 и 3×3 матрици');
+  // ─── n ≥ 4: general real eigenvalue case (S64-F2) ────────────────────────
+  const rawLams = _qrEigenNxN(A);
+  if (!rawLams) return invalid('Комплексни сопствени вредности — Jordanova форма достапна само за реални λ');
+
+  // Group eigenvalues by proximity (tol = 1e-4)
+  const groups: Array<{ lam: number; algMult: number }> = [];
+  for (const lam of rawLams) {
+    const g = groups.find(gr => Math.abs(gr.lam - lam) < 1e-4);
+    if (g) g.algMult++;
+    else groups.push({ lam: Math.round(lam * 1e8) / 1e8, algMult: 1 });
+  }
+
+  // For each eigenvalue group, build Jordan chains
+  const Pcols: number[][] = [];
+  const blocks: JordanBlock[] = [];
+
+  for (const { lam, algMult } of groups) {
+    const AlamI = A.map((row, i) => row.map((v, j) => v - (i === j ? lam : 0)));
+    const evecs = _nullBasis(AlamI);
+    const geomMult = evecs.length;
+    if (geomMult === 0) return invalid(`Числена грешка за λ=${lam.toFixed(4)}: null space е празен`);
+
+    // Start one Jordan chain per eigenvector
+    const chains: number[][] = evecs.map(v => [v].flat());
+    // chains[k] = tip of k-th chain (current last generalized eigenvector)
+
+    const chainFull: Array<number[][]> = evecs.map(v => [v]);
+
+    let filled = geomMult;
+    while (filled < algMult) {
+      let extended = false;
+      for (let k = 0; k < chainFull.length && filled < algMult; k++) {
+        const tip = chainFull[k][chainFull[k].length - 1];
+        const next = _solveShifted(A, lam, tip);
+        if (next) {
+          chainFull[k].push(next);
+          filled++;
+          extended = true;
+        }
+      }
+      if (!extended) break;
+    }
+
+    for (const chain of chainFull) {
+      for (const v of chain) Pcols.push(v);
+      blocks.push({ eigenvalue: lam, size: chain.length });
+    }
+  }
+
+  if (Pcols.length !== n) return invalid('Неповолна Jordan структура — матрицата може да има комплексни блокови');
+
+  // Build J and P
+  const J: Mat = zeros(n, n);
+  const P: Mat = Array.from({ length: n }, (_, i) => Pcols.map(col => col[i]));
+  let col = 0;
+  for (const block of blocks) {
+    for (let k = 0; k < block.size; k++) {
+      J[col + k][col + k] = block.eigenvalue;
+      if (k < block.size - 1) J[col + k][col + k + 1] = 1;
+    }
+    col += block.size;
+  }
+
+  return { J, P, Pinv: inverseAdjugate(P), blocks, isValid: true };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
