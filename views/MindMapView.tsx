@@ -1,4 +1,5 @@
 ﻿import { logger } from '../utils/logger';
+import { loadScript } from '../utils/loadScript';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
@@ -214,14 +215,15 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
   }, [topic, getConceptDetails, getStandardsByIds, showActivities, showStandards, showPriorKnowledge]);
 
   useEffect(() => {
-    if (graphRef.current && window.vis && !isLoading && nodes.length > 0) {
+    if (!graphRef.current || isLoading || nodes.length === 0) return;
+    let network: any;
+    loadScript('https://unpkg.com/vis-network/standalone/umd/vis-network.min.js').then(() => {
+      if (!graphRef.current) return;
       const data = { nodes, edges };
       const options = {
         nodes: {
             borderWidth: 2,
-            font: {
-                multi: 'html'
-            }
+            font: { multi: 'html' }
         },
         edges: {
           color: { inherit: 'from' },
@@ -246,23 +248,16 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
         },
       };
 
-      const network = new window.vis.Network(graphRef.current, data, options);
+      network = new window.vis.Network(graphRef.current, data, options);
       networkRef.current = network;
 
       network.on('doubleClick', (params: any) => {
         const nodeId = params.nodes[0];
         if (!nodeId) return;
-        
-        // Find the node object to check properties
         const nodeObj = nodes.find((n: any) => n.id === nodeId);
-        
-        // Navigate if it's a concept node.
-        // Resolve target ID (handling Prior Knowledge nodes which have _realId)
         const targetId = nodeObj?._realId || nodeId;
-        
         if (targetId) {
             const safeId = String(targetId).trim();
-            // Basic validation: ensure ID looks like a concept ID (starts with 'g' or is known format)
             if (safeId.startsWith('g')) {
                 navigate(`/concept/${encodeURIComponent(safeId)}`);
             } else {
@@ -270,14 +265,14 @@ export const MindMapView: React.FC<MindMapViewProps> = ({ topicId }) => {
             }
         }
       });
+    }).catch(() => {/* vis-network load failed */});
 
-      return () => {
-        if (network) {
-          network.destroy();
-          networkRef.current = null;
-        }
-      };
-    }
+    return () => {
+      if (network) {
+        network.destroy();
+        networkRef.current = null;
+      }
+    };
   }, [nodes, edges, navigate, isLoading]);
 
   const handleExport = () => {

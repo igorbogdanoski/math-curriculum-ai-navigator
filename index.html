@@ -168,17 +168,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous" />
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
 
-    <!-- ── Vis.js for Network Graph ─────────────────────────────── -->
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- ── Pako.js for URL compression (share links) ────────────── -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 
-    <!-- ── Pako.js for compression ──────────────────────────────── -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-
-    <!-- ── Chart.js for Dashboard ───────────────────────────────── -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- vis-network and Chart.js are loaded on-demand by their components -->
 
   </head>
   <body class="bg-brand-bg">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-blue-700 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium">Прескокни на главната содржина</a>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

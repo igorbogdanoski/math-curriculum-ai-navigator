@@ -348,7 +348,7 @@ const AppContent: React.FC = () => {
                         aria-hidden="true"
                     />
                 )}
-                <main className="flex-1 flex flex-col md:pl-64 overflow-hidden relative">
+                <main id="main-content" className="flex-1 flex flex-col md:pl-64 overflow-hidden relative">
                     <header className="sticky top-0 bg-brand-bg/80 backdrop-blur-sm z-10 px-4 md:px-8 pt-4 pb-2 border-b no-print flex items-center gap-2">
                         <button
                             type="button"

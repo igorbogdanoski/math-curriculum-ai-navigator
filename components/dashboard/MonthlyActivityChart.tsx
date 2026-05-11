@@ -1,4 +1,5 @@
 import { useLanguage } from '../../i18n/LanguageContext';
+import { loadScript } from '../../utils/loadScript';
 import React, { useEffect, useRef } from 'react';
 
 declare var Chart: any;
@@ -16,6 +17,8 @@ interface MonthlyActivityChartProps {
   data: ChartData;
 }
 
+const CHART_JS_CDN = 'https://cdn.jsdelivr.net/npm/chart.js';
+
 export const MonthlyActivityChart: React.FC<MonthlyActivityChartProps> = ({ data }) => {
   const { t } = useLanguage();
 
@@ -23,14 +26,14 @@ export const MonthlyActivityChart: React.FC<MonthlyActivityChartProps> = ({ data
   const chartInstanceRef = useRef<any>(null);
 
   useEffect(() => {
-    // Check if the Chart library is loaded and the canvas ref is available
-    if (chartRef.current && typeof Chart !== 'undefined') {
+    if (!chartRef.current) return;
+    loadScript(CHART_JS_CDN).then(() => {
+      if (!chartRef.current || typeof Chart === 'undefined') return;
       if (chartInstanceRef.current) {
         chartInstanceRef.current.destroy();
       }
-
       const ctx = chartRef.current.getContext('2d');
-      if (ctx) { // Ensure context is not null
+      if (ctx) {
         chartInstanceRef.current = new Chart(ctx, {
           type: 'bar',
           data: data,
@@ -42,21 +45,14 @@ export const MonthlyActivityChart: React.FC<MonthlyActivityChartProps> = ({ data
               y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
             },
             plugins: {
-              legend: {
-                  position: 'bottom',
-              },
-              title: {
-                  display: false,
-              },
-              tooltip: {
-                  mode: 'index',
-                  intersect: false,
-              }
+              legend: { position: 'bottom' },
+              title: { display: false },
+              tooltip: { mode: 'index', intersect: false },
             },
           },
         });
       }
-    }
+    }).catch(() => {/* chart.js load failed */});
 
     return () => {
       if (chartInstanceRef.current) {

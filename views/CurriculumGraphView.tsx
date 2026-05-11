@@ -1,4 +1,5 @@
 ﻿import { logger } from '../utils/logger';
+import { loadScript } from '../utils/loadScript';
 
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -578,10 +579,10 @@ export const CurriculumGraphView: React.FC = () => {
 
 
   useEffect(() => {
-    if (graphRef.current && window.vis && !isLoading) {
-      // Initial Setup is done only once
-      if (networkRef.current) return;
-      
+    if (!graphRef.current || isLoading) return;
+    loadScript('https://unpkg.com/vis-network/standalone/umd/vis-network.min.js').then(() => {
+      if (!graphRef.current || networkRef.current) return;
+
       const data = { nodes, edges };
       const options = {
         nodes: {
@@ -596,19 +597,19 @@ export const CurriculumGraphView: React.FC = () => {
         layout: {
           hierarchical: {
             enabled: true,
-            direction: 'LR', // Left-Right for horizontal progression
+            direction: 'LR',
             sortMethod: 'directed',
             levelSeparation: 250,
             nodeSpacing: 200,
-            treeSpacing: 250,       
-            blockShifting: true,   
-            edgeMinimization: true, 
+            treeSpacing: 250,
+            blockShifting: true,
+            edgeMinimization: true,
             parentCentralization: true,
-            shakeTowards: 'leaves', 
+            shakeTowards: 'leaves',
           }
         },
         physics: {
-          enabled: false, 
+          enabled: false,
           hierarchicalRepulsion: {
             centralGravity: 0.0,
             springLength: 100,
@@ -639,26 +640,21 @@ export const CurriculumGraphView: React.FC = () => {
       }
       networkRef.current = network;
 
-      // Click handler for menu and focus
       network.on('click', (params: any) => {
         if (params.nodes.length > 0) {
           const nodeId = params.nodes[0];
-          
-          // Check if it's a cluster
+
           if (network.isCluster(nodeId)) {
               network.openCluster(nodeId);
               return;
           }
 
-          // Toggle focus
           setFocusNodeId(nodeId);
             setIsClustered(false);
-          
-          // Find node data using REF to avoid stale closure
+
           const nodeData = nodesRef.current.find((n: any) => n.id === nodeId);
-          
+
           if (nodeData) {
-              // Calculate center of the graph container for fallback
               const x = params.pointer.DOM.x;
               const y = params.pointer.DOM.y;
 
@@ -677,7 +673,7 @@ export const CurriculumGraphView: React.FC = () => {
           setMenuState((prev: MenuState) => ({ ...prev, visible: false }));
         }
       });
-      
+
       network.on('dragStart', () => setMenuState((prev: MenuState) => ({ ...prev, visible: false })));
 
       network.on("hoverNode", function () {
@@ -692,13 +688,13 @@ export const CurriculumGraphView: React.FC = () => {
           const nodeId = params.nodes[0];
           if (network.isCluster(nodeId)) {
               network.openCluster(nodeId);
-          } else if (String(nodeId).startsWith('g')) { 
+          } else if (String(nodeId).startsWith('g')) {
             navigate(`/concept/${nodeId}`);
           }
         }
       });
-    }
-  }, [isLoading, navigate]); 
+    }).catch(() => {/* vis-network load failed */});
+  }, [isLoading, navigate]);
 
   useEffect(() => {
     return () => {
@@ -884,6 +880,7 @@ export const CurriculumGraphView: React.FC = () => {
                         value={selectedStrand || ''}
                         onChange={(e) => setSelectedStrand(e.target.value || null)}
                         disabled={!!focusNodeId}
+                        aria-label="Филтер по подрачје"
                         className={`bg-white border border-gray-300 text-gray-700 text-sm rounded-md focus:ring-brand-primary focus:border-brand-primary block w-32 md:w-40 p-1.5 ${focusNodeId ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         <option value="">Сите Подрачја</option>
@@ -1073,7 +1070,7 @@ export const CurriculumGraphView: React.FC = () => {
                         <p className="text-[10px] font-bold text-brand-primary uppercase tracking-wider">Опции за поим</p>
                         <p className="text-sm font-bold text-gray-800 line-clamp-2 leading-tight">{menuState.label}</p>
                      </div>
-                     <button onClick={() => setMenuState((prev: MenuState) => ({...prev, visible: false}))} className="text-gray-400 hover:text-red-500 transition-colors">
+                     <button type="button" aria-label="Затвори мени" onClick={() => setMenuState((prev: MenuState) => ({...prev, visible: false}))} className="text-gray-400 hover:text-red-500 transition-colors">
                         <ICONS.close className="w-4 h-4" />
                      </button>
                  </div>
@@ -1104,7 +1101,7 @@ export const CurriculumGraphView: React.FC = () => {
                             <p className="text-green-100 text-xs opacity-90">{aiAnalysisConcept.title}</p>
                         </div>
                     </div>
-                    <button onClick={() => { setAiAnalysisConcept(null); setAiAnalysisResult(null); setAiAnalysisError(null); }} className="text-white hover:text-green-200 transition-colors bg-white/10 hover:bg-white/20 p-1.5 rounded-full">
+                    <button type="button" aria-label="Затвори AI анализатор" onClick={() => { setAiAnalysisConcept(null); setAiAnalysisResult(null); setAiAnalysisError(null); }} className="text-white hover:text-green-200 transition-colors bg-white/10 hover:bg-white/20 p-1.5 rounded-full">
                         <ICONS.close className="w-5 h-5"/>
                     </button>
                 </div>
