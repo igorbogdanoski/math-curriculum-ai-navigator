@@ -169,6 +169,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         logger.error("Failed to create fallback profile in Firestore:", e);
                         // Still use the in-memory profile so the user can access the app.
                     }
+
+                    // S65 P3-B — claim pending referral (?ref=TEACHERUID).
+                    try {
+                        const { getPendingReferralCode, clearPendingReferralCode } = await import('../hooks/useReferral');
+                        const { claimReferralIfPresent } = await import('../services/firestoreService.referrals');
+                        const refCode = getPendingReferralCode();
+                        if (refCode) {
+                            const ok = await claimReferralIfPresent(user.uid, refCode);
+                            if (ok) clearPendingReferralCode();
+                        }
+                    } catch { /* non-fatal */ }
                 }
 
                 logger.info("Auth state resolved. IsAuthenticated: true");

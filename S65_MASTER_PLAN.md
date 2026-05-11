@@ -2,7 +2,116 @@
 
 **Период:** 2026-05-12 → 2026-06-05 (матурски тест)  
 **Фокус:** Performance + Student Portal + GTM-ready  
-**Статус:** 🔵 ПЛАНИРАНО
+**Статус:** 🟢 НЕДЕЛА 1 ЗАВРШЕНА (Performance) → НЕДЕЛА 2 ВО ТЕК (Student Portal)
+
+---
+
+## Evidence Log — Недела 1 (Performance Sprint) ✅ 2026-05-11
+
+### P1-A — Vendor bundle split: ВЕЌЕ АДЕКВАТНО (no-op)
+`vite.config.ts` `manualChunks` веќе сплитува: firebase, charts, mathlive, mathjs, konva, xlsx, sentry, capture (jspdf+html2canvas), mammoth, react-pdf, d3, icons, query, react-ui, sanitize, zod, storage, qr, effects, files, gemini-client, svg, katex, markdown, dates.
+- `vendor-three` / `vendor-mathjax` — не во `package.json` (нема за split).
+- React core НЕ се сплита (експлицитен коментар: "proven TDZ runtime errors with cyclic vendor imports"). Sentry исто така останува по таа причина — но веќе е во `vendor-sentry` chunk (135 KB / 46 KB gzip).
+
+### P1-B — Lazy load на тешки лабови ✅
+Промена во `views/DataVizStudioView.tsx`:
+- `Geometry3DLab`, `LinearAlgebraLab`, `ConicSectionsLab` → `React.lazy(...)` со `<Suspense fallback={<LabLoading />}>`.
+- Сите 3 ги имаат сопствените chunks по build:
+  - `ConicSectionsLab-*.js` — 12.36 kB (3.72 kB gzip)
+  - `Geometry3DLab-*.js` — 47.02 kB (12.89 kB gzip)
+  - `LinearAlgebraLab-*.js` — 57.86 kB (16.52 kB gzip)
+- `DataVizStudioView` chunk намален на 214 kB (55.67 kB gzip).
+
+### P1-C — Lazy Matura data: ВЕЌЕ ЛЕНИВО (no-op)
+- `services/firestoreService.matura.ts:204` — `import.meta.glob('../data/matura/raw/*.json')` без `eager:true` → chunk се вчитува on-demand.
+- Сите Matura views во `App.tsx` се `safeLazy(() => import(...))`.
+- `data-matura-*.js` (416 kB gzip) НЕ се вчитува при boot — само кога корисник оди на Matura tab.
+
+### P1-D — Верификација ✅
+- `tsc --noEmit` → **0 грешки**.
+- `npm run build` → **PASS** (26.91s).
+- `vitest run` → **1708/1710** минати. 2 fails (`utils/irt3pl.test.ts`, `utils/srsScheduler.test.ts`) се **пред-постоечки flaky** тестови (probabilistic + дата-time зависни) — неповрзани со промените.
+
+### Преостанати акции за Недела 1 (одложени)
+- Вистински Lighthouse audit на production preview — да се изврши кога ќе се deploy-не build на Vercel.
+- `vendor-iFk2hhB5.js` (705 KB gzip) останува голем — но содржи React + критични runtime деленици кои не смеат да се сплитат поради TDZ ризик. Понатамошно намалување бара refactor на статички imports → dynamic.
+
+---
+
+## Evidence Log — Недела 2 (Student Portal) 🟡 во тек 2026-05-11
+
+### Постоечка инфраструктура (наоди пред имплементација)
+- `services/firestoreService.studentAccount.ts` веќе постои: `createOrUpdateStudentAccount`, `fetchStudentAccount`, `linkDeviceToStudentAccount`, `fetchLinkedDeviceIds`.
+- `firestore.rules:312` веќе ги покрива `student_accounts/{uid}` со per-uid read/write.
+- `components/student/SaveProgressModal.tsx` веќе ја има логиката за Google sign-in + linkWithPopup за анонимни → Google upgrade.
+- `hooks/useStudentIdentity.ts` управува со анонимна идентитет, deviceId, classId, IEP.
+- Routing е hash-based (`#/path`) преку `hooks/useRouter.ts` — нема React Router.
+
+### P2-A — Student Login ✅
+- Нов `views/StudentLoginView.tsx` на route `#/student/login`:
+  - Google Sign-In со popup; ако корисникот е веќе анонимен → `linkWithPopup` (UID останува, постоечките Firestore документи остануваат валидни).
+  - Брза анонимна најава со име + опционален код на одделение (`joinClassByCode`).
+  - Persists `studentName`, `student_google_uid`, `student_class_id` во localStorage.
+  - Auto-redirect на `#/student` ако веќе е најавен.
+
+### P2-B — Student Dashboard ✅
+- Нов `views/StudentDashboardView.tsx` на route `#/student`:
+  - Поздрав + XP/Streak/Ниво (од `useStudentProgress` → `StudentGamification.totalXP / currentStreak`).
+  - Real-time активни задачи (`useStudentRealtime`), филтрирани по `!completedBy.includes(studentName)`, deep-link до `#/play/:cacheId`.
+  - Известувања од наставникот (real-time преку `onSnapshot`).
+  - 4 брзи кратенки: Мој напредок, Матура портал, AI Тутор, Портфолио.
+  - Refresh + Logout (signOut + clear localStorage → redirect на login).
+
+### Регистрирани routes во `App.tsx`
+- `safeLazy` imports за `StudentLoginView` и `StudentDashboardView`.
+- Routes: `{ path: '/student/login', component: StudentLoginView }`, `{ path: '/student', component: StudentDashboardView }`.
+- `PUBLIC_HASH_ROUTE_PREFIXES` додаден `#/student` (jednochno покрива и login и dashboard, без auth).
+
+### Верификација
+- `npx tsc --noEmit` → **0 грешки**.
+- `npm run build` → **PASS** (30.70s).
+- Нови chunks: `useStudentRealtime-*.js` (0.80 kB / 0.43 kB gzip), `useStudentProgress-*.js` (1.35 kB / 0.74 kB gzip). StudentLoginView/Dashboard се појавуваат како lazy chunks.
+- Главниот vendor chunk непроменет (705 kB gzip — student портал не додаде нови vendor зависности).
+
+### P2-C — Student Dugga Player ✅
+- `views/DuggaPlayerView.tsx` проширен со deep-link поддршка:
+  - Чита `?code=XXX` од URL хеш query (`useMemo` од `window.location.hash.split('?')[1]`).
+  - `initialStudentName` се пополнува од `auth.currentUser.displayName` или `localStorage.getItem('studentName')`.
+  - `fetchTest(codeToUse?)` рефакториран во `useCallback` за да прифати опционен код.
+  - `useEffect` со `autoLoadedRef` — auto-load на тестот кога има валиден `?code=` (≥ 4 знаци).
+  - `onClick={() => fetchTest()}` wrapper за да не се проследи DOM event како код.
+- Public route додаден: `#/dugga/play` во `PUBLIC_HASH_ROUTE_PREFIXES`.
+- Quick link "Внеси код за тест (Дуга)" додаден во dashboard за откриваемост.
+- Submission workflow веќе постои: `submitDuggaTest` запишува во `dugga_submissions` (`services/firestoreService.dugga.ts:358`); поддржува анонимни UID-и (`anon_${Date.now()}` fallback) и `submissionSeal` за final-exam mode (S61-E3).
+
+### P2-D — Ученички SRS ✅
+- Нов `views/StudentSRSView.tsx` на route `#/student/srs`:
+  - Чита `fetchSpacedRepRecords(deviceId)` од постоечкиот `services/firestoreService.spacedRep.ts`.
+  - Користи SM-2 хелпери: `isDueForReview`, `getNextReviewLabel`, `sortByReviewUrgency` од `utils/spacedRepetition.ts`.
+  - `useCurriculum().getConceptDetails` мапира `conceptId → human title` (fallback на raw ID).
+  - Две секции: "Денес за повторување" (deep-link до `#/concept/:id`) + "Во план" (top 20 upcoming).
+  - Auth guard: ако нема `studentName` во localStorage → редирект на `#/student/login`.
+- `firestore.rules:346-353` веќе ја покрива `spaced_rep` колекцијата за анонимни ученици (read/create/update).
+- Quick link "Мои повторувања (SM-2)" додаден во dashboard.
+
+### P2-E — Родителски портал ✅
+- Постоечки `views/ParentPortalView.tsx` веќе ја има целосната функционалност:
+  - Public route `#/parent` (без auth — анонимна Firebase сесија).
+  - `?name=...` query param → директно ја рендерира `StudentProgressView` во read-only режим.
+  - Без query param → форма со неделен дигест (XP, streak, weak concepts, recent quizzes, copy/print).
+- Додадено: **"Сподели со родител"** секција во `StudentDashboardView` — генерира `${origin}/#/parent?name=ENC_NAME` URL и copy-to-clipboard со feedback.
+
+### Регистрирани routes во `App.tsx` (финално)
+- `safeLazy` за `StudentLoginView`, `StudentDashboardView`, `StudentSRSView`.
+- Routes: `/student/login`, `/student/srs`, `/student`.
+- Public hash prefixes додадени: `#/student`, `#/dugga/play`.
+
+### Верификација (после P2-C/D/E)
+- `npx tsc --noEmit` → 0 грешки.
+- `npm run build` → PASS.
+
+### Преостанато за Недела 2 (deferred)
+- Линкување од `HomeView` / Sidebar кон `#/student/login` за откриваемост (UX полирање).
 
 ---
 

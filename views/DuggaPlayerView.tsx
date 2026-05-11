@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   Search, CheckCircle2, XCircle, Loader2, Award,
   ArrowUp, ArrowDown, Clock, User, BookOpen, Shuffle,
@@ -593,13 +593,30 @@ export function DuggaPlayerView() {
   const { user, firebaseUser } = useAuth();
   const { addNotification } = useNotification();
 
+  // S65 P2-C — read `?code=XXX` from URL hash so student dashboards / share
+  // links can deep-link straight into a test without manual code entry.
+  const initialCode = useMemo(() => {
+    try {
+      const hash = typeof window !== 'undefined' ? window.location.hash : '';
+      const qs = hash.split('?')[1];
+      if (!qs) return '';
+      const params = new URLSearchParams(qs);
+      return (params.get('code') ?? '').toUpperCase().trim();
+    } catch { return ''; }
+  }, []);
+
+  // Pre-fill student name from prior login if available (S65 P2-A).
+  const initialStudentName = useMemo(() => {
+    const fromAuth = (user as any)?.displayName ?? firebaseUser?.displayName ?? '';
+    if (fromAuth) return fromAuth;
+    try { return localStorage.getItem('studentName') || ''; } catch { return ''; }
+  }, [user, firebaseUser]);
+
   const [phase, setPhase] = useState<Phase>('code');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(initialCode);
   const [loadingTest, setLoadingTest] = useState(false);
   const [test, setTest] = useState<DuggaTest | null>(null);
-  const [studentName, setStudentName] = useState(
-    (user as any)?.displayName ?? firebaseUser?.displayName ?? ''
-  );
+  const [studentName, setStudentName] = useState(initialStudentName);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [solutionImages, setSolutionImages] = useState<Record<string, string>>({});
   const [results, setResults] = useState<Record<string, QResult>>({});
@@ -630,11 +647,12 @@ export function DuggaPlayerView() {
     setSolutionImages(prev => ({ ...prev, [id]: url }));
   }, []);
 
-  const fetchTest = async () => {
-    if (!code.trim()) return;
+  const fetchTest = useCallback(async (codeToUse?: string) => {
+    const c = (codeToUse ?? code).trim();
+    if (!c) return;
     setLoadingTest(true);
     try {
-      const t = await getDuggaTestByCode(code.trim());
+      const t = await getDuggaTestByCode(c);
       if (!t) {
         addNotification('Тестот не е пронајден. Провери го кодот.', 'error');
         return;
@@ -655,7 +673,17 @@ export function DuggaPlayerView() {
     } finally {
       setLoadingTest(false);
     }
-  };
+  }, [code, addNotification]);
+
+  // S65 P2-C — auto-load test when ?code=XXX is supplied via deep-link.
+  const autoLoadedRef = useRef(false);
+  useEffect(() => {
+    if (autoLoadedRef.current) return;
+    if (initialCode && initialCode.length >= 4) {
+      autoLoadedRef.current = true;
+      fetchTest(initialCode);
+    }
+  }, [initialCode, fetchTest]);
 
   const handleSubmit = async () => {
     if (!test) return;
@@ -837,14 +865,14 @@ export function DuggaPlayerView() {
                 type="text"
                 value={code}
                 onChange={e => setCode(e.target.value.toUpperCase())}
-                onKeyDown={e => e.key === 'Enter' && fetchTest()}
+                onKeyDown={e => { if (e.key === 'Enter') fetchTest(); }}
                 maxLength={6}
                 placeholder="пр. AB3K7Z"
                 className="w-full text-center text-3xl font-mono font-bold tracking-[0.4em] uppercase rounded-2xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none py-4 px-4 transition-all"
               />
             </div>
             <button type="button"
-              onClick={fetchTest}
+              onClick={() => fetchTest()}
               disabled={loadingTest || code.length < 4}
               className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold text-lg hover:bg-indigo-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-3">
               {loadingTest ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}

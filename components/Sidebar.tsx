@@ -92,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
         '/planner', '/annual-planner', '/annual-gallery',
         '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
         '/matura-portal', '/matura', '/matura-library', '/matura-practice', '/matura-assignments', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot',
-        '/academy', '/my-profile', '/my-progress', '/portfolio',
+        '/academy', '/my-profile', '/my-progress', '/portfolio', '/student',
         '/national-library', '/gallery', '/favorites', '/reports/coverage',
       ];
       return secondaryPaths.some(p => currentPath === p || currentPath.startsWith(p));
@@ -194,6 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               <NavItem path="/my-profile" currentPath={currentPath} icon={ICONS.profile} label="Мој Профил (CPD)" onClick={onClose} badge="НОВО" />
               <NavItem path="/my-progress" currentPath={currentPath} icon={ICONS.analytics} label="Мој Напредок" onClick={onClose} />
               <NavItem path="/portfolio" currentPath={currentPath} icon={ICONS.star} label="Портфолио" onClick={onClose} badge="NEW" />
+              <NavItem path="/student" currentPath={currentPath} icon={ICONS.education} label="Ученички портал" onClick={onClose} badge="S65" />
 
               {/* Ресурси */}
               <hr className="my-2 border-gray-100" />

@@ -520,6 +520,21 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Referrals (referrals) — S65 P3-B ──
+    // Document ID = newUserUid. Created once by the new user during signup.
+    // bonusGranted is flipped by a Cloud Function trigger (server-side credit
+    // bump on `users/{refCode}.aiCreditsBalance`); clients cannot mutate it.
+    match /referrals/{newUid} {
+      allow read:   if isOwner(newUid) || isAdmin();
+      allow create: if isOwner(newUid)
+                    && request.resource.data.newUserUid == newUid
+                    && request.resource.data.refCode is string
+                    && request.resource.data.refCode != newUid
+                    && request.resource.data.bonusGranted == false;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // Сè друго: одбиено
     match /{document=**} {
       allow read, write: if false;

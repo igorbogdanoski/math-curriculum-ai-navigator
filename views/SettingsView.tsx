@@ -17,7 +17,8 @@ import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag, scheduleQuotaNotification, getQuotaDiagnostics, isMacedonianContextEnabled, setMacedonianContextEnabled, isRecoveryWorksheetEnabled, setRecoveryWorksheetEnabled, isIntentRouterEnabled, setIntentRouterEnabled, isVertexShadowEnabled, setVertexShadowEnabled, getShadowCompareReport, clearShadowLog } from '../services/geminiService';
 import { DEFAULT_MODEL } from '../services/gemini/core';
 import type { ShadowCompareReport } from '../services/geminiService';
-import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle, Crown, CreditCard, ExternalLink } from 'lucide-react';
+import { School, LogOut, CheckCircle2, Loader2, Shield, Download, Trash2, AlertTriangle, Crown, CreditCard, ExternalLink, Gift, Copy as CopyIcon } from 'lucide-react';
+import { getReferralLink } from '../hooks/useReferral';
 import { AppError, ErrorCode } from '../utils/errors';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
@@ -1081,6 +1082,42 @@ export const SettingsView: React.FC = () => {
                     </a>
                 </div>
             </Card>
+
+            {/* S65 P3-B — Препорачај пријател (Referral) */}
+            {firebaseUser?.uid && (
+              <Card className="max-w-2xl border-amber-200 bg-amber-50/40">
+                <h2 className="text-xl font-semibold text-amber-800 mb-2 flex items-center gap-2">
+                  <Gift className="w-5 h-5" /> Препорачај колега — добиј +10 AI кредити
+                </h2>
+                <p className="text-sm text-amber-900/80 mb-3">
+                  Сподели го твојот личен линк. За секој наставник кој ќе се регистрира преку него,
+                  добиваш 10 бесплатни AI генерации.
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={getReferralLink(firebaseUser.uid)}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                    className="flex-1 min-w-0 px-3 py-2 text-xs border border-amber-200 rounded-lg bg-white text-gray-700 truncate"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(getReferralLink(firebaseUser.uid));
+                        addNotification('Линкот е копиран!', 'success');
+                      } catch {
+                        addNotification('Не успеа копирањето.', 'error');
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition-all flex-shrink-0"
+                  >
+                    <CopyIcon className="w-3.5 h-3.5" /> Копирај
+                  </button>
+                </div>
+              </Card>
+            )}
 
             {/* Н1 — GDPR / Приватност */}
             <Card className="max-w-2xl border-indigo-100 bg-indigo-50/30">

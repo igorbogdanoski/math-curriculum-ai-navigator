@@ -116,6 +116,9 @@ const EmbedConceptView = safeLazy(() => import('./views/EmbedConceptView').then(
 const EmbedQuizView = safeLazy(() => import('./views/EmbedQuizView').then(module => ({ default: module.EmbedQuizView })));
 
 const LoginView = safeLazy(() => import('./views/LoginView').then(module => ({ default: module.LoginView })));
+const StudentLoginView = safeLazy(() => import('./views/StudentLoginView').then(module => ({ default: module.StudentLoginView })));
+const StudentDashboardView = safeLazy(() => import('./views/StudentDashboardView').then(module => ({ default: module.StudentDashboardView })));
+const StudentSRSView = safeLazy(() => import('./views/StudentSRSView').then(module => ({ default: module.StudentSRSView })));
 const AcademyLessonView = safeLazy(() => import('./views/AcademyLessonView').then(module => ({ default: module.AcademyLessonView })));
 const AcademyView = safeLazy(() => import('./views/AcademyView').then(module => ({ default: module.AcademyView })));
 const HomeView = safeLazy(() => import('./views/HomeView').then(module => ({ default: module.HomeView })));
@@ -219,6 +222,8 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     '#/embed/',
     '#/exam/play',
     '#/upload/',
+    '#/student',
+    '#/dugga/play',
   ];
 
   const isPublicHashRoute = (hash: string): boolean =>
@@ -306,6 +311,9 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/gamma/student/:pin', component: GammaStudentView },
     { path: '/embed/concept/:id', component: EmbedConceptView },
     { path: '/embed/quiz/:data', component: EmbedQuizView },
+    { path: '/student/login', component: StudentLoginView }, // S65 P2-A — Student login
+    { path: '/student/srs', component: StudentSRSView },     // S65 P2-D — Student SRS
+    { path: '/student', component: StudentDashboardView },   // S65 P2-B — Student dashboard
 ];
 
 const AppContent: React.FC = () => {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, Suspense, lazy } from 'react';
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
   Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp, Triangle,
@@ -14,16 +14,29 @@ import { AIStatsAssistant } from '../components/dataviz/AIStatsAssistant';
 import { ProbabilityLab } from '../components/dataviz/ProbabilityLab';
 import { SecondaryStatsLab } from '../components/dataviz/SecondaryStatsLab';
 import { CalculusLab } from '../components/dataviz/CalculusLab';
-import { LinearAlgebraLab } from '../components/dataviz/LinearAlgebraLab';
-import { Geometry3DLab } from '../components/dataviz/Geometry3DLab';
 import { Geometry2DLab } from '../components/dataviz/Geometry2DLab';
-import { ConicSectionsLab } from '../components/dataviz/ConicSectionsLab';
 import { FunctionGrapher } from '../components/dataviz/FunctionGrapher';
 import { FunctionTransformer } from '../components/math/FunctionTransformer';
 import { GeoGebraViewer } from '../components/dataviz/GeoGebraViewer';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import { useNotification } from '../contexts/NotificationContext';
+
+const LinearAlgebraLab = lazy(() =>
+  import('../components/dataviz/LinearAlgebraLab').then(m => ({ default: m.LinearAlgebraLab }))
+);
+const Geometry3DLab = lazy(() =>
+  import('../components/dataviz/Geometry3DLab').then(m => ({ default: m.Geometry3DLab }))
+);
+const ConicSectionsLab = lazy(() =>
+  import('../components/dataviz/ConicSectionsLab').then(m => ({ default: m.ConicSectionsLab }))
+);
+
+const LabLoading: React.FC = () => (
+  <div className="flex items-center justify-center py-16 text-sm text-gray-500">
+    <div className="animate-pulse">Се вчитува лаб...</div>
+  </div>
+);
 
 // ─── Chart type definitions ──────────────────────────────────────────────────
 interface ChartTypeDef {
@@ -602,7 +615,9 @@ export const DataVizStudioView: React.FC = () => {
               </p>
             </div>
             <SilentErrorBoundary>
-              <Geometry3DLab />
+              <Suspense fallback={<LabLoading />}>
+                <Geometry3DLab />
+              </Suspense>
             </SilentErrorBoundary>
           </div>
         )}
@@ -619,7 +634,9 @@ export const DataVizStudioView: React.FC = () => {
               </p>
             </div>
             <SilentErrorBoundary>
-              <ConicSectionsLab />
+              <Suspense fallback={<LabLoading />}>
+                <ConicSectionsLab />
+              </Suspense>
             </SilentErrorBoundary>
           </div>
         )}
@@ -636,7 +653,9 @@ export const DataVizStudioView: React.FC = () => {
               </p>
             </div>
             <SilentErrorBoundary>
-              <LinearAlgebraLab />
+              <Suspense fallback={<LabLoading />}>
+                <LinearAlgebraLab />
+              </Suspense>
             </SilentErrorBoundary>
           </div>
         )}
