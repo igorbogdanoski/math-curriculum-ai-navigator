@@ -868,7 +868,12 @@ export function DuggaPlayerView() {
                 onKeyDown={e => { if (e.key === 'Enter') fetchTest(); }}
                 maxLength={6}
                 placeholder="пр. AB3K7Z"
-                className="w-full text-center text-3xl font-mono font-bold tracking-[0.4em] uppercase rounded-2xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none py-4 px-4 transition-all"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck={false}
+                inputMode="text"
+                className="w-full text-center text-2xl sm:text-3xl font-mono font-bold tracking-widest uppercase rounded-2xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none py-4 px-4 transition-all"
               />
             </div>
             <button type="button"
@@ -987,7 +992,7 @@ export function DuggaPlayerView() {
         </div>
 
         {/* Sticky submit bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-20">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg px-4 pt-4 pb-[max(1rem,_env(safe-area-inset-bottom))] z-20">
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <p className="text-sm text-gray-600">
               {totalAnswerable - answeredCount > 0

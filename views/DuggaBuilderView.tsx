@@ -3,12 +3,12 @@ import {
   ClipboardList, Plus, Trash2, ChevronDown, ChevronUp, Sparkles,
   Eye, EyeOff, Copy, Share2, Loader2, Check, GripVertical,
   CheckSquare, AlignLeft, List, ToggleLeft, Table2, Shuffle,
-  ArrowUpDown, Layers, Hash, Save, BookOpen, Zap, Settings,
+  ArrowUpDown, Layers, Hash, Save, BookOpen, Zap, GitFork,
 } from 'lucide-react';
 import { MathInput } from '../components/common/MathInput';
 import { MathRenderer } from '../components/common/MathRenderer';
-import { duggaAPI } from '../services/gemini/dugga';
-import { createDuggaTest, updateDuggaTest } from '../services/firestoreService.dugga';
+import { duggaAPI, parseGeneratedQuestionsJson } from '../services/gemini/dugga';
+import { createDuggaTest, updateDuggaTest, getDuggaTest } from '../services/firestoreService.dugga';
 import type {
   DuggaQuestion, DuggaQuestionType, DuggaTestType,
   DuggaOption, DuggaDok,
@@ -484,27 +484,26 @@ function AIGenerateModal({
         dokDistribution: { 1: dokDist[1], 2: dokDist[2], 3: dokDist[3], 4: dokDist[4] },
         temperature, depth,
       });
-      const cleanJSON = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-      const parsed: Array<{
-        type?: string; dok?: number; points?: number; text?: string;
-        options?: string[]; correctAnswer?: string; solution?: string; hint?: string;
-      }> = JSON.parse(cleanJSON);
+      const parsed = parseGeneratedQuestionsJson(raw);
+      if (!parsed.length) throw new Error('empty response');
 
       const questions: DuggaQuestion[] = parsed.map(p => {
         const q = makeBlankQuestion((p.type as DuggaQuestionType) ?? 'multiple_choice');
-        q.text = p.text ?? '';
+        q.text = typeof p.text === 'string' ? p.text : '';
         q.dok = (p.dok as DuggaDok) ?? 2;
-        q.points = p.points ?? 1;
-        q.solution = p.solution ?? '';
-        q.hint = p.hint ?? '';
-        q.correctAnswer = p.correctAnswer ?? '';
-        if ((q.type === 'multiple_choice' || q.type === 'checklist') && p.options?.length) {
-          q.options = p.options.map((opt, i) => ({
-            id: newOptId(),
-            text: opt.replace(/^[A-D]\)\s*/, ''),
-            isCorrect: i === 0 && !!p.correctAnswer && (opt.startsWith(p.correctAnswer[0]) || p.correctAnswer.toLowerCase().includes(opt.toLowerCase().slice(0, 4))),
-          }));
-          const correctLetter = (p.correctAnswer ?? 'A')[0].toUpperCase();
+        q.points = typeof p.points === 'number' ? p.points : 1;
+        q.solution = typeof p.solution === 'string' ? p.solution : '';
+        q.hint = typeof p.hint === 'string' ? p.hint : '';
+        q.correctAnswer = typeof p.correctAnswer === 'string' ? p.correctAnswer : '';
+        const rawOpts = Array.isArray(p.options) ? p.options as unknown[] : [];
+        if ((q.type === 'multiple_choice' || q.type === 'checklist') && rawOpts.length) {
+          q.options = rawOpts.map((opt, i) => {
+            const text = typeof opt === 'string' ? opt.replace(/^[A-D]\)\s*/, '') :
+              (opt && typeof (opt as { text?: string }).text === 'string' ? (opt as { text: string }).text : '');
+            return { id: newOptId(), text, isCorrect: false };
+          });
+          const ca = typeof p.correctAnswer === 'string' ? p.correctAnswer : '';
+          const correctLetter = (ca || 'A')[0].toUpperCase();
           q.options = q.options!.map((o, i) => ({
             ...o,
             isCorrect: String.fromCharCode(65 + i) === correctLetter,
@@ -653,11 +652,15 @@ function AIGenerateModal({
 // ─── Main view ────────────────────────────────────────────────────────────────
 // S61-D2 — Read seed params from the URL hash query (e.g.
 // `#/dugga/build?conceptId=...&conceptLabel=...&grade=8&topic=...`).
+// edit=<id>  → load existing test for in-place editing (owner only)
+// adapt=<id> → clone an existing test as a new one, tracking provenance
 function readBuilderSeed(): {
   conceptId?: string;
   conceptLabel?: string;
   grade?: number;
   topic?: string;
+  editId?: string;
+  adaptId?: string;
 } {
   if (typeof window === 'undefined') return {};
   const hash = window.location.hash || '';
@@ -671,6 +674,8 @@ function readBuilderSeed(): {
     conceptLabel: params.get('conceptLabel') ?? undefined,
     grade,
     topic: params.get('topic') ?? undefined,
+    editId: params.get('edit') ?? undefined,
+    adaptId: params.get('adapt') ?? undefined,
   };
 }
 
@@ -680,6 +685,7 @@ export function DuggaBuilderView() {
 
   const seed = readBuilderSeed();
 
+  const [loadingInit, setLoadingInit] = useState(!!(seed.editId || seed.adaptId));
   const [title, setTitle] = useState(
     seed.conceptLabel ? `Дига тест: ${seed.conceptLabel}` : '',
   );
@@ -698,6 +704,39 @@ export function DuggaBuilderView() {
   const [savedId, setSavedId] = useState('');
   const [savedCode, setSavedCode] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
+  const [adaptProvenance, setAdaptProvenance] = useState<{
+    fromId: string; fromTitle: string; authorName: string; authorUid: string;
+  } | null>(null);
+
+  // Load existing test when ?edit=<id> or ?adapt=<id> is in the URL
+  React.useEffect(() => {
+    const targetId = seed.editId || seed.adaptId;
+    if (!targetId) return;
+    getDuggaTest(targetId).then(existing => {
+      if (!existing) { setLoadingInit(false); return; }
+      setTitle(seed.editId ? existing.title : `Адаптирано: ${existing.title}`);
+      setDescription(existing.description ?? '');
+      setGrade(existing.grade);
+      setTestType(existing.testType);
+      setIsPublic(seed.editId ? existing.isPublic : false);
+      setQuestions(existing.questions.map(q => ({
+        ...q,
+        id: seed.editId ? q.id : newQId(),
+      })));
+      if (seed.editId) {
+        setSavedId(seed.editId);
+        setSavedCode(existing.shareCode);
+      } else {
+        setAdaptProvenance({
+          fromId: targetId,
+          fromTitle: existing.title,
+          authorName: existing.teacherName,
+          authorUid: existing.teacherUid,
+        });
+      }
+      setLoadingInit(false);
+    }).catch(() => setLoadingInit(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalPoints = questions.reduce((s, q) => s + q.points, 0);
   const estimatedMinutes = Math.max(5, Math.round(totalPoints * 1.5));
@@ -743,6 +782,16 @@ export function DuggaBuilderView() {
         topics: [], testType, questions,
         isPublic, totalPoints,
         estimatedMinutes,
+        ...(adaptProvenance ? {
+          adaptedFromId: adaptProvenance.fromId,
+          adaptedFromTitle: adaptProvenance.fromTitle,
+          originalAuthorName: adaptProvenance.authorName,
+          originalAuthorUid: adaptProvenance.authorUid,
+        } : {}),
+        ...(savedId ? {
+          lastEditedByUid: firebaseUser.uid,
+          lastEditedByName: user?.name ?? 'Наставник',
+        } : {}),
       };
       if (savedId) {
         await updateDuggaTest(savedId, testData);
@@ -750,7 +799,6 @@ export function DuggaBuilderView() {
       } else {
         const id = await createDuggaTest(testData);
         setSavedId(id);
-        const { getDuggaTest } = await import('../services/firestoreService.dugga');
         const saved = await getDuggaTest(id);
         if (saved) setSavedCode(saved.shareCode);
         addNotification('Тестот е зачуван!', 'success');
@@ -768,6 +816,17 @@ export function DuggaBuilderView() {
       setTimeout(() => setCodeCopied(false), 2000);
     });
   };
+
+  if (loadingInit) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 to-purple-50">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-10 h-10 animate-spin text-violet-500 mx-auto" />
+          <p className="text-sm text-gray-500">{seed.editId ? 'Вчитување на тестот за уредување...' : 'Вчитување на тестот за адаптација...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50">
@@ -797,6 +856,21 @@ export function DuggaBuilderView() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
+        {/* Provenance banner (adapt mode) */}
+        {adaptProvenance && !savedId && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 flex items-center gap-3">
+            <GitFork className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-800">Адаптација на туѓ тест</p>
+              <p className="text-xs text-amber-600 truncate">
+                Оригинал: <span className="font-medium">„{adaptProvenance.fromTitle}"</span>
+                {' '}од <span className="font-medium">{adaptProvenance.authorName}</span>
+              </p>
+            </div>
+            <span className="text-xs text-amber-500">Ова ќе се зачува како твој нов тест</span>
+          </div>
+        )}
+
         {/* Share code banner */}
         {savedCode && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-4">

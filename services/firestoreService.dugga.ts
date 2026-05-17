@@ -235,6 +235,20 @@ export interface DuggaTest {
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 
+  // Provenance tracking (edit / adapt from library) -------------------------
+  /** ID of the test this was cloned/adapted from, if any. */
+  adaptedFromId?: string;
+  /** Title of the original test at the time of adaptation. */
+  adaptedFromTitle?: string;
+  /** Display name of the original author. */
+  originalAuthorName?: string;
+  /** UID of the original author. */
+  originalAuthorUid?: string;
+  /** UID of the last user who edited this test. */
+  lastEditedByUid?: string;
+  /** Display name of the last editor. */
+  lastEditedByName?: string;
+
   // S61-E1 — Final exam mode (state-recognised exam) -------------------------
   /**
    * When true the test is treated as a high-stakes final exam: the player

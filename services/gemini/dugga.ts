@@ -126,6 +126,7 @@ $${latex}$
       midterm: 'полугодишен тест',
       annual: 'годишен тест',
       exam: 'завршен испит / матура',
+      custom: 'прилагоден тест',
     };
 
     const depthNote = params.depth === 'brief'
@@ -163,7 +164,10 @@ $${latex}$
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       systemInstruction: getResolvedTextSystemInstruction(),
       safetySettings: SAFETY_SETTINGS,
-      generationConfig: params.temperature !== undefined ? { temperature: params.temperature } : undefined,
+      generationConfig: {
+        ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
+        responseMimeType: 'application/json',
+      },
     });
     return r.text.trim();
   },

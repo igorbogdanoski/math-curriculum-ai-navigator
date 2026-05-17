@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Plus, Search, Globe, Lock, Copy, Trash2, BarChart2,
-  Users, CheckCircle2, Clock, BookOpen, Award, Filter,
-  Share2, Eye, ChevronDown, ChevronUp, Loader2, Download,
-  ClipboardList, X,
+  Users, Clock, BookOpen, Award,
+  ChevronDown, ChevronUp, Loader2,
+  ClipboardList, X, Pencil, GitFork,
 } from 'lucide-react';
 import { MathRenderer } from '../components/common/MathRenderer';
 import {
@@ -41,7 +41,7 @@ function StatPill({ icon, label, value }: { icon: React.ReactNode; label: string
 // ─── Test Card ────────────────────────────────────────────────────────────────
 
 function TestCard({
-  test, isOwner, onDelete, onTogglePublic, onViewResults, onCopyCode, onPlay,
+  test, isOwner, onDelete, onTogglePublic, onViewResults, onCopyCode, onPlay, onEdit, onAdapt,
 }: {
   test: DuggaTest;
   isOwner: boolean;
@@ -50,6 +50,8 @@ function TestCard({
   onViewResults: (test: DuggaTest) => void;
   onCopyCode: (code: string) => void;
   onPlay: () => void;
+  onEdit: (id: string) => void;
+  onAdapt: (id: string) => void;
 }) {
   const dokDist = test.questions.reduce<Record<number, number>>((acc, q) => {
     if (q.type !== 'section_header') acc[q.dok] = (acc[q.dok] ?? 0) + 1;
@@ -77,6 +79,13 @@ function TestCard({
           <h3 className="font-bold text-gray-900 text-base leading-snug">{test.title}</h3>
           {test.description && (
             <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{test.description}</p>
+          )}
+          {test.adaptedFromId && (
+            <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+              <GitFork className="w-2.5 h-2.5" />
+              Адаптирано од: <span className="font-medium">{test.originalAuthorName ?? 'непознат'}</span>
+              {test.adaptedFromTitle && ` — „${test.adaptedFromTitle}"`}
+            </p>
           )}
         </div>
         {/* Share code */}
@@ -119,7 +128,7 @@ function TestCard({
       {/* Action buttons */}
       <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-gray-100">
         <button type="button" onClick={onPlay}
-          className="flex-1 min-w-[100px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors">
+          className="flex-1 min-w-[80px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors">
           <BookOpen className="w-3.5 h-3.5" />
           Играј
         </button>
@@ -128,8 +137,14 @@ function TestCard({
           <BarChart2 className="w-3.5 h-3.5" />
           Резултати
         </button>
-        {isOwner && (
+        {isOwner ? (
           <>
+            <button type="button" onClick={() => onEdit(test.id)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-50 text-violet-700 text-xs font-semibold hover:bg-violet-100 transition-colors"
+              title="Уреди тест">
+              <Pencil className="w-3.5 h-3.5" />
+              Уреди
+            </button>
             <button type="button" onClick={() => onTogglePublic(test.id, !test.isPublic)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
               title={test.isPublic ? 'Направи приватен' : 'Сподели јавно'}>
@@ -140,6 +155,13 @@ function TestCard({
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </>
+        ) : (
+          <button type="button" onClick={() => onAdapt(test.id)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 text-amber-700 text-xs font-semibold hover:bg-amber-100 transition-colors"
+            title="Клонирај и адаптирај за твоите ученици">
+            <GitFork className="w-3.5 h-3.5" />
+            Адаптирај
+          </button>
         )}
       </div>
     </div>
@@ -273,6 +295,14 @@ export function DuggaLibraryView() {
     });
     return unsub;
   }, [tab]);
+
+  const handleEdit = useCallback((id: string) => {
+    navigate(`/dugga/build?edit=${id}`);
+  }, [navigate]);
+
+  const handleAdapt = useCallback((id: string) => {
+    navigate(`/dugga/build?adapt=${id}`);
+  }, [navigate]);
 
   const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Избриши го тестот? Ова не може да се врати.')) return;
@@ -424,6 +454,8 @@ export function DuggaLibraryView() {
               onTogglePublic={handleTogglePublic}
               onViewResults={setSelectedTest}
               onCopyCode={handleCopyCode}
+              onEdit={handleEdit}
+              onAdapt={handleAdapt}
               onPlay={() => {
                 handleCopyCode(t.shareCode);
                 navigate('/dugga/play');
