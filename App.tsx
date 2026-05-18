@@ -488,6 +488,15 @@ const AppCore: React.FC = () => {
         );
     }
 
+    // Dugga student player — fullscreen standalone, no teacher sidebar/nav
+    if (window.location.hash.startsWith('#/dugga/play')) {
+        return (
+            <Suspense fallback={<AppSkeleton />}>
+                <DuggaPlayerView />
+            </Suspense>
+        );
+    }
+
     if (!isAuthenticated && !isPublicRoute) {
         return (
             <Suspense fallback={<AppSkeleton />}>
