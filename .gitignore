@@ -92,6 +92,7 @@ tsconfig.tsbuildinfo
 # Local diagnostics and credential artifacts
 /.lighthouseci/
 /lhci-pricing-debug.png
+lh-*.json
 /firebase-adminsdk-key.json
 /firebase-restore-adminsdk-key.json
 /firestore-restore-key.json
