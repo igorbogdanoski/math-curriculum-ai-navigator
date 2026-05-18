@@ -4,28 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Својства и комплетност на множеството реални броеви — Математика 13 одделение | MisMath AI</title>
-<meta name="description" content="Објаснува што значи густо множество и докажува дека множеството рационални броеви е густо. Ги искажува трите можности за пресек на класите A и B со кои се ">
+<meta name="description" content="Густина на Q; Дедекиндов пресек во операциите со реални броеви; Принцип на вложени сегменти; Мајоранти. Супремум; Архимедова аксиома. Подреденост. Комплетн">
 <link rel="canonical" href="https://ai.mismath.net/concepts/gym-ma13-c3-1.html">
 <link rel="alternate" hreflang="mk" href="https://ai.mismath.net/concepts/gym-ma13-c3-1.html">
 <link rel="alternate" hreflang="x-default" href="https://ai.mismath.net/concepts/gym-ma13-c3-1.html">
 <meta property="og:title" content="Својства и комплетност на множеството реални броеви | MisMath AI">
-<meta property="og:description" content="Објаснува што значи густо множество и докажува дека множеството рационални броеви е густо. Ги искажува трите можности за пресек на класите A и B со кои се ">
+<meta property="og:description" content="Густина на Q; Дедекиндов пресек во операциите со реални броеви; Принцип на вложени сегменти; Мајоранти. Супремум; Архимедова аксиома. Подреденост. Комплетн">
 <meta property="og:url" content="https://ai.mismath.net/concepts/gym-ma13-c3-1.html">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="MisMath AI">
 <meta name="robots" content="index,follow">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Course","name":"Својства и комплетност на множеството реални броеви","description":"Објаснува што значи густо множество и докажува дека множеството рационални броеви е густо. Ги искажува трите можности за пресек на класите A и B со кои се ","provider":{"@type":"Organization","name":"MisMath AI","url":"https://ai.mismath.net"},"educationalLevel":"Одделение 13","about":"РЕАЛНИ БРОЕВИ","url":"https://ai.mismath.net/concepts/gym-ma13-c3-1.html"}</script>
-<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:1.5rem 1rem;color:#1a1a2e}h1{color:#1d4ed8}h2{color:#374151;margin-top:1.5rem}ul{line-height:1.8}a{color:#2563eb}.badge{display:inline-block;background:#eff6ff;color:#1d4ed8;padding:.2rem .6rem;border-radius:.4rem;font-size:.85rem;margin-bottom:.5rem}.cta{margin-top:2rem;padding:1rem 1.5rem;background:#eff6ff;border-radius:.75rem;border:1px solid #bfdbfe}</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Course","name":"Својства и комплетност на множеството реални броеви","description":"Густина на Q; Дедекиндов пресек во операциите со реални броеви; Принцип на вложени сегменти; Мајоранти. Супремум; Архимедова аксиома. Подреденост. Комплетн","provider":{"@type":"Organization","name":"MisMath AI","url":"https://ai.mismath.net"},"educationalLevel":"Grade 13","about":"РЕАЛНИ БРОЕВИ","url":"https://ai.mismath.net/concepts/gym-ma13-c3-1.html"}</script>
+<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:1.5rem 1rem;color:#1a1a2e}h1{color:#1d4ed8}h2{color:#374151;margin-top:1.5rem}ul{line-height:1.8}a{color:#2563eb}.badge{display:inline-block;background:#eff6ff;color:#1d4ed8;padding:.2rem .6rem;border-radius:.4rem;font-size:.85rem;margin-bottom:.5rem}.cta{margin-top:2rem;padding:1rem 1.5rem;background:#eff6ff;border-radius:.75rem;border:1px solid #bfdbfe}.related-links{line-height:2;font-size:.9rem}</style>
 </head>
 <body>
-<nav><a href="https://ai.mismath.net/">MisMath AI</a> › <a href="https://ai.mismath.net/#/explore">Наставна програма</a></nav>
+<nav><a href="https://ai.mismath.net/">MisMath AI</a> › <a href="https://ai.mismath.net/concepts/">Наставна програма</a></nav>
 <p class="badge">IV — Математичка анализа (изборен) › РЕАЛНИ БРОЕВИ</p>
 <h1>Својства и комплетност на множеството реални броеви</h1>
 <p>Густина на Q; Дедекиндов пресек во операциите со реални броеви; Принцип на вложени сегменти; Мајоранти. Супремум; Архимедова аксиома. Подреденост. Комплетност; Постоење на ⁿ√a за a&gt;0.</p>
 <h2>Стандарди за оценување</h2><ul><li>Објаснува што значи густо множество и докажува дека множеството рационални броеви е густо.</li><li>Ги искажува трите можности за пресек на класите A и B со кои се поделени рационалните броеви и го објаснува Дедекиндовиот пресек.</li><li>Ја објаснува низата на вложени интервали и дефинира ирационален број со точка од низа на вложени интервали.</li><li>Дефинира горна меѓа на S⊂R, мајорант и супремум (низ примери).</li><li>Ја искажува и користи Архимедовата аксиома за објаснување на некои својства на реалните броеви.</li><li>Објаснува што значи подреденост, комплетност и воочува дека R е комплетно подредено поле.</li><li>Дискутира за постоењето на ⁿ√a за a&gt;0 и објаснува со примери кога некои корени не постојат.</li></ul>
 <h2>Активности и методи</h2><ul><li>Наведување примери на множества што не се густи, па дефинирање на густо множество и давање примери на густи множества.</li><li>Фронтална работа за Дедекиндовиот пресек и низата на вложени интервали.</li><li>Групна работа за својствата на реалните броеви и согледување дека R е комплетно подредено поле.</li><li>Наведување примери зошто Q не е комплетно (заедно со наставникот).</li></ul>
+
 <div class="cta">
-  <strong>🤖 Интерактивно учење</strong> — Вештачката интелигенција генерира квизови, објаснувања и вежби за овој концепт.<br>
+  <strong>Интерактивно учење</strong> — Вештачката интелигенција генерира квизови, објаснувања и вежби за овој концепт.<br>
   <a href="https://ai.mismath.net/#/concept/gym-ma13-c3-1">Отвори во MisMath AI →</a>
 </div>
 </body>

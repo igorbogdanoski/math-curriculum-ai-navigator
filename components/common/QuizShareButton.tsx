@@ -28,7 +28,7 @@ export const QuizShareButton: React.FC<Props> = ({ material, materialType, conce
   const [showQR, setShowQR] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
-  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'Unlimited';
+  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited';
 
   const makeShareUrl = (id: string) =>
     `${window.location.origin}${window.location.pathname}#/play/${id}`;

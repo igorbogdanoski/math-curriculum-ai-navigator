@@ -72,7 +72,7 @@ export function useGeneratorSave({
   const [savedToLibrary, setSavedToLibrary] = useState<Set<string>>(new Set());
   const [assignTarget, setAssignTarget] = useState<AIGeneratedAssessment | null>(null);
   // PRO privacy: default public; PRO users may switch to private before saving
-  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'Unlimited';
+  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited';
   const [saveIsPublic, setSaveIsPublic] = useState(true);
 
   const handleSaveToLibrary = async (material: GeneratedMaterial, keyHint: string) => {

@@ -35,6 +35,7 @@ function getTierInfo(user: { tier?: string; isPremium?: boolean; hasUnlimitedCre
   if (!user) return { label: 'Бесплатно', color: 'text-slate-600', bg: 'bg-slate-100', isUnlimited: false };
   if (user.hasUnlimitedCredits || user.tier === 'Unlimited') return { label: 'Unlimited', color: 'text-emerald-700', bg: 'bg-emerald-100', isUnlimited: true };
   if (user.isPremium || user.tier === 'Pro') return { label: 'Pro', color: 'text-indigo-700', bg: 'bg-indigo-100', isUnlimited: true };
+  if (user.tier === 'School') return { label: 'School', color: 'text-indigo-700', bg: 'bg-indigo-100', isUnlimited: true };
   return { label: 'Бесплатно', color: 'text-slate-600', bg: 'bg-slate-100', isUnlimited: false };
 }
 

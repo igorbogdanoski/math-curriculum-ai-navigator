@@ -200,7 +200,7 @@ export const schoolService = {
     await updateDoc(doc(db, 'users', uid), { isMentor });
   },
 
-  updateUserSubscription: async (uid: string, updateData: { aiCreditsBalance?: number, isPremium?: boolean, hasUnlimitedCredits?: boolean, tier?: 'Free' | 'Pro' | 'Unlimited' }): Promise<void> => {
+  updateUserSubscription: async (uid: string, updateData: { aiCreditsBalance?: number, isPremium?: boolean, hasUnlimitedCredits?: boolean, tier?: 'Free' | 'Pro' | 'School' | 'Unlimited' }): Promise<void> => {
     try {
       await updateDoc(doc(db, 'users', uid), updateData);
     } catch (error) {
@@ -218,7 +218,7 @@ export const schoolService = {
       for (const uid of uids.slice(i, i + BATCH_SIZE)) {
         batch.update(doc(db, 'users', uid), {
           isPremium: grant,
-          tier: grant ? 'Pro' : 'Free',
+          tier: grant ? 'School' : 'Free',
         });
       }
       await batch.commit();

@@ -44,6 +44,10 @@ interface ConceptMeta {
   topicTitle: string;
   gradeTitle: string;
   gradeNum: string;
+  /** Other concept IDs in the same topic (for internal linking). */
+  siblingIds: string[];
+  /** Other concept titles in the same topic (parallel array with siblingIds). */
+  siblingTitles: string[];
 }
 
 interface MaturaExamMeta {
@@ -62,6 +66,12 @@ interface MaturaExamMeta {
   }>;
 }
 
+// ── Strip "Цели за: " prefix that appears in some curriculum descriptions ──
+
+function cleanDescription(raw: string): string {
+  return raw.replace(/^Цели за:\s*/i, '').trim();
+}
+
 // ── Collect all concepts from primary + secondary curricula ────────────────
 
 function collectConcepts(): ConceptMeta[] {
@@ -74,16 +84,21 @@ function collectConcepts(): ConceptMeta[] {
 
   for (const grade of primaryGrades) {
     for (const topic of (grade.topics as Topic[])) {
-      for (const concept of (topic.concepts as Concept[])) {
+      const concepts = topic.concepts as Concept[];
+      const siblingIds = concepts.map(c => c.id);
+      const siblingTitles = concepts.map(c => c.title);
+      for (const concept of concepts) {
         result.push({
           id: concept.id,
           title: concept.title,
-          description: concept.description ?? '',
+          description: cleanDescription(concept.description ?? ''),
           standards: (concept.assessmentStandards ?? []) as string[],
           activities: (concept.activities ?? []) as string[],
           topicTitle: topic.title,
           gradeTitle: grade.title,
           gradeNum: String(grade.level ?? ''),
+          siblingIds: siblingIds.filter(id => id !== concept.id),
+          siblingTitles: siblingTitles.filter((_, i) => siblingIds[i] !== concept.id),
         });
       }
     }
@@ -92,16 +107,21 @@ function collectConcepts(): ConceptMeta[] {
   for (const module of secondaryCurricula) {
     for (const grade of module.curriculum.grades) {
       for (const topic of (grade.topics as Topic[])) {
-        for (const concept of (topic.concepts as Concept[])) {
+        const concepts = topic.concepts as Concept[];
+        const siblingIds = concepts.map(c => c.id);
+        const siblingTitles = concepts.map(c => c.title);
+        for (const concept of concepts) {
           result.push({
             id: concept.id,
             title: concept.title,
-            description: concept.description ?? '',
+            description: cleanDescription(concept.description ?? ''),
             standards: (concept.assessmentStandards ?? []) as string[],
             activities: (concept.activities ?? []) as string[],
             topicTitle: topic.title,
             gradeTitle: grade.title,
             gradeNum: String(grade.level ?? ''),
+            siblingIds: siblingIds.filter(id => id !== concept.id),
+            siblingTitles: siblingTitles.filter((_, i) => siblingIds[i] !== concept.id),
           });
         }
       }
@@ -154,14 +174,19 @@ function esc(s: string): string {
 function conceptHtml(c: ConceptMeta): string {
   const canonicalUrl = `${BASE_URL}/concepts/${c.id}.html`;
   const appUrl = `${BASE_URL}/#/concept/${c.id}`;
-  const metaDesc = esc(c.standards.slice(0, 2).join(' ').slice(0, 155));
+
+  // Build meta description from standards or description; strip "Цели за:" already cleaned
+  const descSource = c.description || c.standards.slice(0, 2).join(' ');
+  const metaDesc = esc(descSource.slice(0, 155));
+
+  // Schema.org — educationalLevel uses English "Grade N" for international compatibility
   const schemaOrg = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Course',
     name: c.title,
     description: metaDesc,
     provider: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
-    educationalLevel: `Одделение ${c.gradeNum}`,
+    educationalLevel: `Grade ${c.gradeNum}`,
     about: c.topicTitle,
     url: canonicalUrl,
   });
@@ -171,6 +196,14 @@ function conceptHtml(c: ConceptMeta): string {
     : '';
   const activitiesHtml = c.activities.length
     ? `<ul>${c.activities.slice(0, 5).map(a => `<li>${esc(a)}</li>`).join('')}</ul>`
+    : '';
+
+  // Internal links to sibling concepts in the same topic (up to 6)
+  const siblingLinks = c.siblingIds.slice(0, 6).map((id, i) =>
+    `<a href="${BASE_URL}/concepts/${id}.html">${esc(c.siblingTitles[i])}</a>`
+  ).join(' · ');
+  const relatedHtml = siblingLinks
+    ? `<h2>Поврзани концепти</h2><p class="related-links">${siblingLinks}</p>`
     : '';
 
   return `<!DOCTYPE html>
@@ -190,17 +223,18 @@ function conceptHtml(c: ConceptMeta): string {
 <meta property="og:site_name" content="${SITE_NAME}">
 <meta name="robots" content="index,follow">
 <script type="application/ld+json">${schemaOrg}</script>
-<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:1.5rem 1rem;color:#1a1a2e}h1{color:#1d4ed8}h2{color:#374151;margin-top:1.5rem}ul{line-height:1.8}a{color:#2563eb}.badge{display:inline-block;background:#eff6ff;color:#1d4ed8;padding:.2rem .6rem;border-radius:.4rem;font-size:.85rem;margin-bottom:.5rem}.cta{margin-top:2rem;padding:1rem 1.5rem;background:#eff6ff;border-radius:.75rem;border:1px solid #bfdbfe}</style>
+<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:1.5rem 1rem;color:#1a1a2e}h1{color:#1d4ed8}h2{color:#374151;margin-top:1.5rem}ul{line-height:1.8}a{color:#2563eb}.badge{display:inline-block;background:#eff6ff;color:#1d4ed8;padding:.2rem .6rem;border-radius:.4rem;font-size:.85rem;margin-bottom:.5rem}.cta{margin-top:2rem;padding:1rem 1.5rem;background:#eff6ff;border-radius:.75rem;border:1px solid #bfdbfe}.related-links{line-height:2;font-size:.9rem}</style>
 </head>
 <body>
-<nav><a href="${BASE_URL}/">${SITE_NAME}</a> › <a href="${BASE_URL}/#/explore">Наставна програма</a></nav>
+<nav><a href="${BASE_URL}/">${SITE_NAME}</a> › <a href="${BASE_URL}/concepts/">Наставна програма</a></nav>
 <p class="badge">${esc(c.gradeTitle)} › ${esc(c.topicTitle)}</p>
 <h1>${esc(c.title)}</h1>
 ${c.description ? `<p>${esc(c.description)}</p>` : ''}
 ${standardsHtml ? `<h2>Стандарди за оценување</h2>${standardsHtml}` : ''}
 ${activitiesHtml ? `<h2>Активности и методи</h2>${activitiesHtml}` : ''}
+${relatedHtml}
 <div class="cta">
-  <strong>🤖 Интерактивно учење</strong> — Вештачката интелигенција генерира квизови, објаснувања и вежби за овој концепт.<br>
+  <strong>Интерактивно учење</strong> — Вештачката интелигенција генерира квизови, објаснувања и вежби за овој концепт.<br>
   <a href="${appUrl}">Отвори во MisMath AI →</a>
 </div>
 </body>
@@ -217,7 +251,7 @@ function maturaHtml(e: MaturaExamMeta): string {
     '@type': 'Quiz',
     name: e.title,
     description: metaDesc,
-    educationalLevel: 'Гимназиско образование — XII одделение',
+    educationalLevel: 'Grade 12',
     provider: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
     url: canonicalUrl,
     dateCreated: `${e.year}-01-01`,
@@ -247,7 +281,7 @@ function maturaHtml(e: MaturaExamMeta): string {
 <style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:1.5rem 1rem;color:#1a1a2e}h1{color:#1d4ed8}h2{color:#374151;margin-top:1.5rem}ul{line-height:1.8}a{color:#2563eb}.badge{display:inline-block;background:#fef3c7;color:#92400e;padding:.2rem .6rem;border-radius:.4rem;font-size:.85rem;margin-bottom:.5rem}.meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin:1rem 0}.meta-card{background:#f8fafc;padding:.75rem;border-radius:.5rem;border:1px solid #e2e8f0}.cta{margin-top:2rem;padding:1rem 1.5rem;background:#fef3c7;border-radius:.75rem;border:1px solid #fde68a}</style>
 </head>
 <body>
-<nav><a href="${BASE_URL}/">${SITE_NAME}</a> › <a href="${BASE_URL}/#/matura">Матурски испити</a></nav>
+<nav><a href="${BASE_URL}/">${SITE_NAME}</a> › <a href="${BASE_URL}/matura/">Матурски испити</a></nav>
 <p class="badge">ДИМ — Државен испит по математика</p>
 <h1>${esc(e.title)}</h1>
 <div class="meta-grid">
@@ -259,9 +293,70 @@ function maturaHtml(e: MaturaExamMeta): string {
 <h2>Прашања (преглед)</h2>
 <ul>${questionsHtml}</ul>
 <div class="cta">
-  <strong>🤖 Вежбај со AI</strong> — MisMath AI генерира персонализирани совети, објаснувања и симулирани испити.<br>
+  <strong>Вежбај со AI</strong> — MisMath AI генерира персонализирани совети, објаснувања и симулирани испити.<br>
   <a href="${appUrl}">Вежбај матура со MisMath AI →</a>
 </div>
+</body>
+</html>`;
+}
+
+// ── Directory index pages ──────────────────────────────────────────────────
+
+function conceptsIndexHtml(concepts: ConceptMeta[]): string {
+  // Group by grade
+  const byGrade: Record<string, ConceptMeta[]> = {};
+  for (const c of concepts) {
+    const key = c.gradeTitle;
+    (byGrade[key] ??= []).push(c);
+  }
+  const gradeBlocks = Object.entries(byGrade).map(([grade, cs]) => {
+    const links = cs.slice(0, 20).map(c =>
+      `<li><a href="${BASE_URL}/concepts/${c.id}.html">${esc(c.title)}</a></li>`
+    ).join('');
+    const more = cs.length > 20 ? `<li><em>… уште ${cs.length - 20} концепти</em></li>` : '';
+    return `<h2>${esc(grade)}</h2><ul>${links}${more}</ul>`;
+  }).join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Наставна програма по математика — сите концепти | ${SITE_NAME}</title>
+<meta name="description" content="Целосна наставна програма по математика за одделенија 1–12. Концепти, стандарди и активности за македонски наставници.">
+<link rel="canonical" href="${BASE_URL}/concepts/">
+<meta name="robots" content="index,follow">
+<style>body{font-family:system-ui,sans-serif;max-width:900px;margin:0 auto;padding:1.5rem 1rem;color:#1a1a2e}h1,h2{color:#1d4ed8}ul{columns:2;line-height:1.9}a{color:#2563eb}nav{margin-bottom:1.5rem}</style>
+</head>
+<body>
+<nav><a href="${BASE_URL}/">${SITE_NAME}</a></nav>
+<h1>Наставна програма по математика</h1>
+<p>${concepts.length} концепти низ сите одделенија и насоки.</p>
+${gradeBlocks}
+</body>
+</html>`;
+}
+
+function maturaIndexHtml(exams: MaturaExamMeta[]): string {
+  const links = exams.map(e =>
+    `<li><a href="${BASE_URL}/matura/${e.key}.html">${esc(e.title)}</a> — ${e.questionCount} пр., ${e.totalPoints} поени</li>`
+  ).join('');
+  return `<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Матурски испити по математика (ДИМ) — сите испити | ${SITE_NAME}</title>
+<meta name="description" content="Државен испит по математика (ДИМ) — архива на сите испити. Вежбај со MisMath AI.">
+<link rel="canonical" href="${BASE_URL}/matura/">
+<meta name="robots" content="index,follow">
+<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:1.5rem 1rem;color:#1a1a2e}h1{color:#1d4ed8}ul{line-height:2}a{color:#2563eb}nav{margin-bottom:1.5rem}</style>
+</head>
+<body>
+<nav><a href="${BASE_URL}/">${SITE_NAME}</a></nav>
+<h1>Матурски испити по математика (ДИМ)</h1>
+<p>${exams.length} испити — Гимназиско и Стручно 4-год.</p>
+<ul>${links}</ul>
 </body>
 </html>`;
 }
@@ -271,17 +366,11 @@ function maturaHtml(e: MaturaExamMeta): string {
 function generateSitemap(concepts: ConceptMeta[], exams: MaturaExamMeta[]): string {
   const today = new Date().toISOString().slice(0, 10);
 
+  // Only include crawlable (non-hash) URLs — Google ignores fragment-only URLs
   const staticUrls = [
     { loc: `${BASE_URL}/`, priority: '1.0', changefreq: 'weekly' },
-    { loc: `${BASE_URL}/#/generator`, priority: '0.9', changefreq: 'monthly' },
-    { loc: `${BASE_URL}/#/matura-portal`, priority: '0.9', changefreq: 'monthly' },
-    { loc: `${BASE_URL}/#/explore`, priority: '0.8', changefreq: 'monthly' },
-    { loc: `${BASE_URL}/#/assistant`, priority: '0.8', changefreq: 'monthly' },
-    { loc: `${BASE_URL}/#/matura-practice`, priority: '0.8', changefreq: 'monthly' },
-    { loc: `${BASE_URL}/#/matura`, priority: '0.8', changefreq: 'monthly' },
-    { loc: `${BASE_URL}/#/national-library`, priority: '0.7', changefreq: 'weekly' },
-    { loc: `${BASE_URL}/#/data-viz`, priority: '0.7', changefreq: 'monthly' },
-    { loc: `${BASE_URL}/#/academy`, priority: '0.7', changefreq: 'monthly' },
+    { loc: `${BASE_URL}/concepts/`, priority: '0.8', changefreq: 'monthly' },
+    { loc: `${BASE_URL}/matura/`, priority: '0.8', changefreq: 'monthly' },
   ];
 
   const conceptUrls = concepts.map(c => ({
@@ -333,7 +422,8 @@ async function main(): Promise<void> {
     fs.writeFileSync(path.join(conceptsDir, `${c.id}.html`), conceptHtml(c), 'utf8');
     conceptCount++;
   }
-  console.log(`   → ${conceptCount} concept pages written to public/concepts/`);
+  fs.writeFileSync(path.join(conceptsDir, 'index.html'), conceptsIndexHtml(concepts), 'utf8');
+  console.log(`   → ${conceptCount} concept pages + index written to public/concepts/`);
 
   console.log('📖 Loading matura exam data…');
   const exams = loadMaturaExams();
@@ -343,12 +433,14 @@ async function main(): Promise<void> {
   for (const e of exams) {
     fs.writeFileSync(path.join(maturaDir, `${e.key}.html`), maturaHtml(e), 'utf8');
   }
-  console.log(`   → ${exams.length} matura pages written to public/matura/`);
+  fs.writeFileSync(path.join(maturaDir, 'index.html'), maturaIndexHtml(exams), 'utf8');
+  console.log(`   → ${exams.length} matura pages + index written to public/matura/`);
 
   console.log('🗺️ Generating sitemap.xml…');
   const sitemapXml = generateSitemap(concepts, exams);
   fs.writeFileSync(path.join(ROOT, 'public', 'sitemap.xml'), sitemapXml, 'utf8');
-  console.log(`   → sitemap.xml: ${concepts.length + exams.length + 10} URLs total`);
+  const totalUrls = 3 + concepts.length + exams.length;
+  console.log(`   → sitemap.xml: ${totalUrls} URLs total (${3} static + ${concepts.length} concepts + ${exams.length} matura)`);
 
   console.log('✅ SEO pages generated successfully.');
 }

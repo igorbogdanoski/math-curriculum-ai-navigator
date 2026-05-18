@@ -114,7 +114,7 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 export const PricingView: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
   const { startCheckout, loading, error } = useStripeCheckout();
-  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'Unlimited';
+  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited';
 
   // Success/cancel URL params
   const params = new URLSearchParams(window.location.hash.split('?')[1] ?? '');

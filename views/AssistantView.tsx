@@ -496,7 +496,7 @@ export const AssistantView: React.FC = () => {
                             )}
                         </button>
                         {/* Thinking mode toggle (Pro/Unlimited) */}
-                        {(user?.tier === 'Pro' || user?.tier === 'Unlimited') && (
+                        {(user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited') && (
                             <button type="button" onClick={() => setThinkingMode(v => !v)}
                                 title="Прикажи размислување на AI (thinking tokens)"
                                 className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold border transition-all ${

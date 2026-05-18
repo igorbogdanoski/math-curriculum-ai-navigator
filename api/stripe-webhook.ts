@@ -2,7 +2,7 @@
  * POST /api/stripe-webhook
  * Handles Stripe webhook events.
  * Must be configured in Stripe Dashboard → Webhooks:
- *   Endpoint URL: https://math-curriculum-ai-navigator.vercel.app/api/stripe-webhook
+ *   Endpoint URL: https://ai.mismath.net/api/stripe-webhook
  *   Events: checkout.session.completed
  *
  * Required env vars (Vercel dashboard):

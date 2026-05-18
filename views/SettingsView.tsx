@@ -147,7 +147,7 @@ export const SettingsView: React.FC = () => {
   // Billing state
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'Unlimited';
+  const isPro = user?.isPremium || user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited';
 
   const handleStripeCheckout = async () => {
     if (!firebaseUser) return;

@@ -273,7 +273,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                 )}
 
                 <div className="flex justify-end items-center pt-4 gap-3 border-t mt-6 flex-wrap">
-                  {(user?.tier === 'Pro' || user?.tier === 'Unlimited') && plan?.title && (
+                  {(user?.tier === 'Pro' || user?.tier === 'School' || user?.tier === 'Unlimited') && plan?.title && (
                     <button
                       type="button"
                       onClick={ai.handleGenerateInfographic}

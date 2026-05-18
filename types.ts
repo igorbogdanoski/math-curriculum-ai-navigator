@@ -442,7 +442,7 @@ export interface TeachingProfile {
   aiCreditsBalance?: number;
   isPremium?: boolean;
   hasUnlimitedCredits?: boolean;
-  tier?: 'Free' | 'Pro' | 'Unlimited';
+  tier?: 'Free' | 'Pro' | 'School' | 'Unlimited';
 
   schoolLogoUrl?: string; // Pro: uploaded school logo, shown as watermark in Gamma + PPTX footer
   isMentor?: boolean; // П-Д: voluntary mentor flag — shown as badge on shared materials
