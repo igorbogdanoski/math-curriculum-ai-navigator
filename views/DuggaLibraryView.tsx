@@ -456,10 +456,7 @@ export function DuggaLibraryView() {
               onCopyCode={handleCopyCode}
               onEdit={handleEdit}
               onAdapt={handleAdapt}
-              onPlay={() => {
-                handleCopyCode(t.shareCode);
-                navigate('/dugga/play');
-              }}
+              onPlay={() => navigate(`/dugga/play?code=${t.shareCode}`)}
             />
           ))}
         </div>

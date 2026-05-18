@@ -801,6 +801,11 @@ export function DuggaPlayerView() {
     // 3) Save to Firestore (with optional tamper-evident seal in finalExamMode)
     setSubmitStatus('Зачувување...');
     const studentUid = firebaseUser?.uid ?? `anon_${Date.now()}`;
+    // Merge QR solution-photo URLs into answers as `{qId}__photo` keys
+    const mergedAnswers: Record<string, string> = { ...answers };
+    Object.entries(solutionImages).forEach(([qId, url]) => {
+      if (url) mergedAnswers[`${qId}__photo`] = url;
+    });
     let submissionSeal: string | undefined;
     let submissionSealedAt: string | undefined;
     if (examMode?.sealSubmission) {
@@ -822,7 +827,7 @@ export function DuggaPlayerView() {
         teacherUid: test.teacherUid,
         studentUid,
         studentName: studentName.trim() || 'Анонимен ученик',
-        answers,
+        answers: mergedAnswers,
         score: earned,
         totalPoints: maxPts,
         percentage: maxPts > 0 ? Math.round((earned / maxPts) * 100) : 0,

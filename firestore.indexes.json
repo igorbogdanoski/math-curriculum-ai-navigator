@@ -1,6 +1,30 @@
 {
     "indexes":  [
                     {
+                        "collectionGroup":  "dugga_tests",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "teacherUid", "order": "ASCENDING" },
+                                       { "fieldPath": "createdAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "dugga_tests",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "isPublic",  "order": "ASCENDING" },
+                                       { "fieldPath": "createdAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "dugga_submissions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "testId",      "order": "ASCENDING" },
+                                       { "fieldPath": "submittedAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
                         "collectionGroup":  "matura_questions",
                         "queryScope":  "COLLECTION",
                         "fields":  [
