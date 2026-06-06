@@ -1,4 +1,4 @@
-﻿import { logger } from '../utils/logger';
+import { logger } from '../utils/logger';
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { APP_NAME, ICONS } from '../constants';
@@ -7,6 +7,7 @@ import { firestoreService } from '../services/firestoreService';
 import type { User } from "firebase/auth";
 import { trackEvent } from '../services/telemetryService';
 import { isDemoMode, getDemoCredentials } from '../services/demoMode';
+import { Zap, BarChart2, BookOpen, Languages } from 'lucide-react';
 
 
 // Google logo SVG
@@ -19,7 +20,78 @@ const GoogleIcon = () => (
     </svg>
 );
 
-// --- SUB-COMPONENTS FOR EACH AUTH STATE ---
+// ─── Marketing panel data ────────────────────────────────────────────────────
+
+const MARKETING_FEATURES: Array<{ Icon: React.ComponentType<{ className?: string }>; text: string }> = [
+    { Icon: Zap,       text: 'Генерирај тест, план или материјал за 60 секунди' },
+    { Icon: BarChart2, text: 'Следи го напредокот на секој ученик во реално време' },
+    { Icon: BookOpen,  text: '378 матурски прашања + AI тутор за подготовка' },
+    { Icon: Languages, text: '4 јазика: МК · СК · ТР · EN' },
+];
+
+const SOCIAL_PROOF = [
+    { value: '500+', label: 'наставници' },
+    { value: '10K+', label: 'материјали' },
+    { value: '4',    label: 'јазици' },
+];
+
+const MarketingPanel: React.FC = () => (
+    <div className="hidden lg:flex lg:w-[58%] bg-gradient-to-br from-blue-900 via-blue-800 to-violet-900 flex-col justify-between p-10 xl:p-14 relative overflow-hidden">
+        {/* Decorative circles */}
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/5 rounded-full pointer-events-none" aria-hidden="true" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-violet-500/15 rounded-full pointer-events-none" aria-hidden="true" />
+
+        {/* Logo + headline */}
+        <div>
+            <div className="flex items-center gap-3 mb-10">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                    <span className="text-blue-900 font-black text-lg leading-none">M</span>
+                </div>
+                <span className="text-white font-black text-2xl tracking-tight">{APP_NAME}</span>
+            </div>
+            <h2 className="text-3xl xl:text-4xl font-black text-white leading-tight mb-4">
+                AI асистент за<br />
+                <span className="text-violet-300">секој наставник</span><br />
+                по математика
+            </h2>
+            <p className="text-blue-200 text-sm xl:text-base max-w-xs xl:max-w-sm leading-relaxed">
+                Генерирај материјали, следи напредок и подготви ги учениците за матура — со помош на вештачка интелигенција.
+            </p>
+        </div>
+
+        {/* Feature bullets */}
+        <div className="space-y-4 my-8">
+            {MARKETING_FEATURES.map(({ Icon, text }) => (
+                <div key={text} className="flex items-center gap-4">
+                    <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
+                        <Icon className="w-4 h-4 text-violet-300" />
+                    </div>
+                    <span className="text-white/90 text-sm font-medium leading-snug">{text}</span>
+                </div>
+            ))}
+        </div>
+
+        {/* Social proof + pricing link */}
+        <div>
+            <div className="grid grid-cols-3 gap-4 mb-6 pb-6 border-b border-white/10">
+                {SOCIAL_PROOF.map(({ value, label }) => (
+                    <div key={label}>
+                        <div className="text-2xl font-black text-white">{value}</div>
+                        <div className="text-blue-300 text-xs mt-0.5">{label}</div>
+                    </div>
+                ))}
+            </div>
+            <a
+                href="#/pricing"
+                className="inline-flex items-center gap-1.5 text-violet-300 hover:text-white text-sm font-semibold transition-colors"
+            >
+                Погледај ги цените →
+            </a>
+        </div>
+    </div>
+);
+
+// ─── Sub-components for each auth state ─────────────────────────────────────
 
 interface LoginFormProps {
     email: string;
@@ -287,7 +359,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, setEmail, 
 );
 
 
-// --- MAIN LOGIN VIEW CONTROLLER ---
+// ─── Main LoginView controller ───────────────────────────────────────────────
 
 export const LoginView: React.FC = () => {
     const [schools, setSchools] = useState<any[]>([]);
@@ -321,7 +393,7 @@ export const LoginView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const { login, loginWithGoogle, register, firebaseUser, isAuthenticated, isLoading: isAuthLoading, logout, resendVerificationEmail, resetPassword } = useAuth();
-    
+
     const [resendCooldown, setResendCooldown] = useState(0);
     const [resendMessage, setResendMessage] = useState('');
     const demoActive = isDemoMode();
@@ -342,11 +414,11 @@ export const LoginView: React.FC = () => {
             setPhotoPreview(URL.createObjectURL(file));
         }
     };
-    
+
     useEffect(() => {
         return () => { if (photoPreview) URL.revokeObjectURL(photoPreview); };
     }, [photoPreview]);
-    
+
     useEffect(() => {
         if (resendCooldown > 0) {
             const timerId = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
@@ -418,7 +490,7 @@ export const LoginView: React.FC = () => {
             setIsLoading(false);
         }
     };
-    
+
     const handleResetSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -446,12 +518,13 @@ export const LoginView: React.FC = () => {
             setError("Грешка при испраќање на линкот. Обидете се повторно подоцна.");
         }
     };
-    
+
+    // Email verification state — full-screen centered (no marketing panel needed)
     if (firebaseUser && !isAuthenticated && !isAuthLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-brand-bg p-4">
                 <Card className="animate-fade-in-up">
-                    <VerifyEmailNotice 
+                    <VerifyEmailNotice
                         firebaseUser={firebaseUser}
                         handleResendVerification={handleResendVerification}
                         logout={logout}
@@ -463,8 +536,15 @@ export const LoginView: React.FC = () => {
             </div>
         );
     }
-    
-    let content, headerText;
+
+    // Subtitle per mode
+    const modeSubtitle =
+        mode === 'register' ? 'Започнете бесплатно — 50 кредити веднаш' :
+        mode === 'reset'    ? 'Внесете ја вашата е-пошта за ресетирање' :
+                              'Добредојдовте во вашиот наставнички простор';
+
+    let headerText: string;
+    let content: React.ReactNode;
 
     switch (mode) {
         case 'register':
@@ -483,19 +563,34 @@ export const LoginView: React.FC = () => {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-brand-bg p-4">
-            <Card className="w-full max-w-md animate-fade-in-up border-t-4 border-brand-primary">
-                <div className="text-center mb-6">
-                    <h1 className="text-2xl font-bold text-brand-primary">{APP_NAME}</h1>
-                    <p className="text-gray-500 mt-1">{headerText}</p>
-                </div>
-                {demoActive && (
-                    <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs text-center">
-                        <strong>МОН демо режим</strong> — креденцијалите се пополнети автоматски. Креирањето нови сметки е оневозможено.
+        <div className="min-h-screen flex">
+            {/* Left: Marketing panel (desktop only) */}
+            <MarketingPanel />
+
+            {/* Right: Auth panel */}
+            <div className="flex-1 overflow-y-auto bg-white">
+                <div className="min-h-full flex items-center justify-center p-6 lg:p-10">
+                    <div className="w-full max-w-md">
+                        {/* Mobile-only app name */}
+                        <div className="lg:hidden text-center mb-5">
+                            <span className="text-brand-primary font-black text-2xl">{APP_NAME}</span>
+                        </div>
+
+                        <div className="text-center mb-6 border-t-4 border-brand-primary rounded-t-xl pt-5 -mx-1 px-1">
+                            <h1 className="text-2xl font-bold text-slate-800">{headerText}</h1>
+                            <p className="text-gray-500 text-sm mt-1">{modeSubtitle}</p>
+                        </div>
+
+                        {demoActive && (
+                            <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs text-center">
+                                <strong>МОН демо режим</strong> — креденцијалите се пополнети автоматски. Креирањето нови сметки е оневозможено.
+                            </div>
+                        )}
+
+                        {content}
                     </div>
-                )}
-                {content}
-            </Card>
+                </div>
+            </div>
         </div>
     );
 };
