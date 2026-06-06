@@ -1,7 +1,8 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore, Star, Loader2, Eye, Zap } from 'lucide-react';
+import { BookOpen, Globe, Lock, Trash2, Edit3, Check, X, RefreshCw, Search, Users, Sparkles, Archive, ArchiveRestore, Star, Loader2, Eye, Zap, Link } from 'lucide-react';
 import { firestoreService, type CachedMaterial, fetchLibraryPage } from '../services/firestoreService';
+import { shareService } from '../services/shareService';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -334,6 +335,24 @@ const handleUnpublish = async (m: CachedMaterial) => {
         } catch { addNotification('Грешка.', 'error'); }
     };
 
+    const handleShareLink = async (m: CachedMaterial) => {
+        try {
+            let url: string | null = null;
+            if (m.type === 'quiz') {
+                const data = shareService.generateQuizShareData(m.content);
+                if (data) url = `${window.location.origin}/#/quiz/${data}`;
+            } else if (m.type === 'outline' || m.type === 'thematicplan') {
+                const data = shareService.generateShareData(m.content as any);
+                if (data) url = `${window.location.origin}/#/share/${data}`;
+            }
+            if (!url) { addNotification('Споделување не е поддржано за овој тип.', 'info'); return; }
+            await navigator.clipboard.writeText(url);
+            addNotification('Линкот е копиран! Испрати го на учениците. 🔗', 'success');
+        } catch {
+            addNotification('Грешка при генерирање на линк.', 'error');
+        }
+    };
+
     const formatDate = (ts: any) => {
         if (!ts) return '—';
         const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -394,6 +413,19 @@ const handleUnpublish = async (m: CachedMaterial) => {
                 <Sparkles className="w-3.5 h-3.5" />
                 Tutor
             </button>
+            {/* Share link — quiz, outline, thematicplan */}
+            {(['quiz', 'outline', 'thematicplan'] as CachedMaterial['type'][]).includes(m.type) && (
+                <button
+                    type="button"
+                    title="Копирај јавен линк за споделување"
+                    onClick={() => handleShareLink(m)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-cyan-50 text-cyan-700 border border-cyan-200 hover:bg-cyan-100 transition"
+                >
+                    <Link className="w-3.5 h-3.5" />
+                    Сподели
+                </button>
+            )}
+
             {/* Generate with AI — opens generator panel pre-filled with material context */}
             {viewMode === 'my' && (
                 <button

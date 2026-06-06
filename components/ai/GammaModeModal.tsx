@@ -192,8 +192,9 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
       presenterChannelRef.current = new BroadcastChannel('gamma-sync');
     }
     if (!presenterWindowRef.current || presenterWindowRef.current.closed) {
+      const pinParam = gammaLivePin ? `?pin=${gammaLivePin}` : '';
       presenterWindowRef.current = window.open(
-        `${window.location.origin}${window.location.pathname}#/gamma/presenter`,
+        `${window.location.origin}${window.location.pathname}#/gamma/presenter${pinParam}`,
         'gamma-presenter',
         'width=960,height=640,menubar=no,toolbar=no,location=no',
       );

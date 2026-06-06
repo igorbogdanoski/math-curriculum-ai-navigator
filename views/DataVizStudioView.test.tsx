@@ -12,6 +12,24 @@ vi.mock('../contexts/NotificationContext', () => ({
   useNotification: () => ({ addNotification }),
 }));
 
+const MK_TAB_LABELS: Record<string, string> = {
+  'dataviz.tab.chart': 'Градител на графици',
+  'dataviz.tab.fn': 'Граф функции',
+  'dataviz.tab.geo': 'GeoGebra',
+  'dataviz.tab.paper': 'Математичка хартија',
+  'dataviz.tab.ai': 'AI Асистент',
+  'dataviz.tab.prob': 'Лаб. Веројатност',
+  'dataviz.tab.stats': 'Напредна Статистика',
+  'dataviz.tab.calc': 'Анализа (Калкулус)',
+  'dataviz.tab.linalg': 'Линеарна Алгебра',
+  'dataviz.tab.geo2d': '2D Геометрија',
+  'dataviz.tab.solid': '3D Геометрија',
+  'dataviz.tab.conic': 'Конусни пресеци',
+};
+vi.mock('../i18n/LanguageContext', () => ({
+  useLanguage: () => ({ t: (key: string) => MK_TAB_LABELS[key] ?? key, language: 'mk' }),
+}));
+
 vi.mock('html2canvas', () => ({
   default: vi.fn(),
 }));

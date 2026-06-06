@@ -8,6 +8,7 @@ import type { PresentationSlide } from '../types';
 import { MathRenderer } from '../components/common/MathRenderer';
 import { DokBadge } from '../components/common/DokBadge';
 import type { DokLevel } from '../types';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface SyncMessage {
   type: 'slide-change';
@@ -71,8 +72,13 @@ function SlideCard({ slide, label, large }: { slide: PresentationSlide; label: s
 export const GammaPresenterView: React.FC = () => {
   const [state, setState] = useState<SyncMessage | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [showQR, setShowQR] = useState(false);
   const startRef = useRef<number>(Date.now());
   const channelRef = useRef<BroadcastChannel | null>(null);
+
+  // Read pin from URL: #/gamma/presenter?pin=XXXXXX
+  const pin = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('pin') ?? null;
+  const joinUrl = pin ? `${window.location.origin}/#/gamma/join?pin=${pin}` : null;
 
   useEffect(() => {
     const bc = new BroadcastChannel('gamma-sync');
@@ -108,7 +114,7 @@ export const GammaPresenterView: React.FC = () => {
     : 'text-slate-500';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col p-5 gap-4 font-sans">
+    <div className="relative min-h-screen bg-slate-950 text-white flex flex-col p-5 gap-4 font-sans">
       {/* Header */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div>
@@ -119,12 +125,32 @@ export const GammaPresenterView: React.FC = () => {
           {taskTimer !== null && (
             <div className={`text-2xl font-black tabular-nums ${timerColor}`}>{fmt(taskTimer)}</div>
           )}
+          {joinUrl && (
+            <button
+              type="button"
+              onClick={() => setShowQR(p => !p)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-800 hover:bg-indigo-700 text-white transition"
+              title="QR код за приклучување"
+            >
+              📱 QR
+            </button>
+          )}
           <div className="text-right">
             <div className="text-2xl font-black tabular-nums text-slate-300">{idx + 1}<span className="text-slate-600 text-base">/{total}</span></div>
             <div className="text-xs text-slate-600">⏱ {fmt(elapsed)}</div>
           </div>
         </div>
       </div>
+
+      {/* QR Code overlay */}
+      {showQR && joinUrl && (
+        <div className="absolute top-16 right-5 z-50 bg-white rounded-2xl p-4 shadow-2xl border border-white/10 flex flex-col items-center gap-2">
+          <QRCodeSVG value={joinUrl} size={160} />
+          <p className="text-slate-800 text-xs font-bold">Скенирај за да се приклучиш</p>
+          {pin && <p className="text-slate-500 text-lg font-black tracking-[0.3em]">{pin}</p>}
+          <button type="button" onClick={() => setShowQR(false)} className="text-xs text-slate-400 hover:text-slate-600 transition mt-1">Затвори</button>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden flex-shrink-0">

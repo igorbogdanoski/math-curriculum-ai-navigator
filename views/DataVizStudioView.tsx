@@ -21,6 +21,7 @@ import { GeoGebraViewer } from '../components/dataviz/GeoGebraViewer';
 import { GammaModeModal } from '../components/ai/GammaModeModal';
 import { SilentErrorBoundary } from '../components/common/SilentErrorBoundary';
 import { useNotification } from '../contexts/NotificationContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const LinearAlgebraLab = lazy(() =>
   import('../components/dataviz/LinearAlgebraLab').then(m => ({ default: m.LinearAlgebraLab }))
@@ -115,6 +116,7 @@ const FnTabPanel: React.FC = () => {
 // ─── Main View ───────────────────────────────────────────────────────────────
 export const DataVizStudioView: React.FC = () => {
   const { addNotification } = useNotification();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<StudioTab>('chart');
 
   // Chart builder state
@@ -199,18 +201,18 @@ export const DataVizStudioView: React.FC = () => {
 
   // ── Tabs ───────────────────────────────────────────────────────────────────
   const TABS = [
-    { id: 'chart'  as StudioTab, label: 'Градител на графици',  icon: BarChart2,      color: 'indigo'  },
-    { id: 'fn'     as StudioTab, label: 'Граф функции',         icon: TrendingUp,     color: 'cyan'    },
-    { id: 'geo'    as StudioTab, label: 'GeoGebra',             icon: Triangle,       color: 'teal'    },
-    { id: 'paper'  as StudioTab, label: 'Математичка хартија',  icon: Grid3X3,        color: 'emerald' },
-    { id: 'ai'     as StudioTab, label: 'AI Асистент',          icon: Sparkles,       color: 'violet'  },
-    { id: 'prob'   as StudioTab, label: 'Лаб. Веројатност',     icon: Sigma,          color: 'rose'    },
-    { id: 'stats'  as StudioTab, label: 'Напредна Статистика',  icon: FlaskConical,   color: 'fuchsia' },
-    { id: 'calc'   as StudioTab, label: 'Анализа (Калкулус)',   icon: FunctionSquare, color: 'amber'   },
-    { id: 'linalg' as StudioTab, label: 'Линеарна Алгебра',     icon: Layers,         color: 'sky'     },
-    { id: 'geo2d'  as StudioTab, label: '2D Геометрија',          icon: Shapes,         color: 'pink'    },
-    { id: 'solid'  as StudioTab, label: '3D Геометрија',          icon: Box,            color: 'orange'  },
-    { id: 'conic'  as StudioTab, label: 'Конусни пресеци',        icon: Triangle,       color: 'violet'  },
+    { id: 'chart'  as StudioTab, label: t('dataviz.tab.chart'),  icon: BarChart2,      color: 'indigo'  },
+    { id: 'fn'     as StudioTab, label: t('dataviz.tab.fn'),     icon: TrendingUp,     color: 'cyan'    },
+    { id: 'geo'    as StudioTab, label: t('dataviz.tab.geo'),    icon: Triangle,       color: 'teal'    },
+    { id: 'paper'  as StudioTab, label: t('dataviz.tab.paper'),  icon: Grid3X3,        color: 'emerald' },
+    { id: 'ai'     as StudioTab, label: t('dataviz.tab.ai'),     icon: Sparkles,       color: 'violet'  },
+    { id: 'prob'   as StudioTab, label: t('dataviz.tab.prob'),   icon: Sigma,          color: 'rose'    },
+    { id: 'stats'  as StudioTab, label: t('dataviz.tab.stats'),  icon: FlaskConical,   color: 'fuchsia' },
+    { id: 'calc'   as StudioTab, label: t('dataviz.tab.calc'),   icon: FunctionSquare, color: 'amber'   },
+    { id: 'linalg' as StudioTab, label: t('dataviz.tab.linalg'), icon: Layers,         color: 'sky'     },
+    { id: 'geo2d'  as StudioTab, label: t('dataviz.tab.geo2d'),  icon: Shapes,         color: 'pink'    },
+    { id: 'solid'  as StudioTab, label: t('dataviz.tab.solid'),  icon: Box,            color: 'orange'  },
+    { id: 'conic'  as StudioTab, label: t('dataviz.tab.conic'),  icon: Triangle,       color: 'violet'  },
   ];
 
   return (

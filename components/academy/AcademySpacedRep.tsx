@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Calendar, CheckCircle2, ChevronRight, RotateCcw, Clock, Lightbulb, Loader2, Send } from 'lucide-react';
+import { Calendar, CheckCircle2, ChevronRight, RotateCcw, Clock, Lightbulb, Loader2, Send, Bell } from 'lucide-react';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -21,6 +21,7 @@ import {
   saveAcademySM2Cards,
   mergeAcademySM2Cards,
 } from '../../services/firestoreService.spacedRep';
+import { sendLocalNotification, requestNotificationPermission } from '../../services/pushService';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -127,6 +128,19 @@ export default function AcademySpacedRep({ allLessonIds, lessonTitles, completed
   const [feynmanLoading, setFeynmanLoading] = useState(false);
   const [feynmanScore, setFeynmanScore] = useState<number | null>(null);
 
+  // ── SRS reminder notification (once per session) ──────────────────────────
+  const srsNotifFiredRef = useRef(false);
+  useEffect(() => {
+    if (srsNotifFiredRef.current || dueCards.length === 0) return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    srsNotifFiredRef.current = true;
+    sendLocalNotification(
+      'MisMath Academy — повторување',
+      `${dueCards.length} концепт${dueCards.length === 1 ? '' : 'и'} чека${dueCards.length === 1 ? '' : 'ат'} повторување денес`,
+      { tag: 'srs-due', url: `${window.location.origin}/#/academy` },
+    );
+  }, [dueCards.length]);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
 
   const handleStartReview = useCallback((lessonId: string) => {
@@ -194,9 +208,22 @@ export default function AcademySpacedRep({ allLessonIds, lessonTitles, completed
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1 text-xs text-indigo-500">
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>SM-2</span>
+        <div className="flex items-center gap-2">
+          {typeof Notification !== 'undefined' && Notification.permission === 'default' && (
+            <button
+              type="button"
+              title="Овозможи дневни потсетници за повторување"
+              onClick={() => requestNotificationPermission(userId ?? undefined)}
+              className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition"
+            >
+              <Bell className="w-3 h-3" />
+              Потсетник
+            </button>
+          )}
+          <div className="flex items-center gap-1 text-xs text-indigo-500">
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>SM-2</span>
+          </div>
         </div>
       </div>
 
