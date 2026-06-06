@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { shareService } from '../services/shareService';
 import { useNavigation } from '../contexts/NavigationContext';
+import { SharedViewCTA } from '../components/common/SharedViewCTA';
 
 const InteractiveQuizPlayer = React.lazy(() => import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer })));
 
@@ -10,7 +11,7 @@ interface SharedQuizViewProps {
 
 export const SharedQuizView: React.FC<SharedQuizViewProps> = ({ data }) => {
   const { navigate } = useNavigation();
-  
+
   const quiz = useMemo(() => shareService.decodeQuizShareData(data), [data]);
 
   if (!quiz) {
@@ -26,14 +27,17 @@ export const SharedQuizView: React.FC<SharedQuizViewProps> = ({ data }) => {
   }
 
   return (
-    <div className="h-screen bg-brand-bg">
-      <React.Suspense fallback={<div className="p-8 text-center h-full flex flex-col items-center justify-center"><div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div><p className="mt-4 text-brand-text">Се вчитува квизот...</p></div>}>
-        <InteractiveQuizPlayer
-          title={quiz.title}
-          questions={quiz.questions}
-          onClose={() => navigate('/')}
-        />
-      </React.Suspense>
-    </div>
+    <>
+      <div className="h-screen bg-brand-bg pb-16">
+        <React.Suspense fallback={<div className="p-8 text-center h-full flex flex-col items-center justify-center"><div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div><p className="mt-4 text-brand-text">Се вчитува квизот...</p></div>}>
+          <InteractiveQuizPlayer
+            title={quiz.title}
+            questions={quiz.questions}
+            onClose={() => navigate('/')}
+          />
+        </React.Suspense>
+      </div>
+      <SharedViewCTA />
+    </>
   );
 };
