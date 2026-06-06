@@ -108,17 +108,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
   }, [user?.aiCreditsBalance, user?.isPremium, user?.hasUnlimitedCredits, user?.role]);
 
   // Progressive disclosure — secondary nav collapsed by default, auto-opens when on a secondary path
-  const [showMore, setShowMore] = useState(() => {
-    const secondaryPaths = [
-      '/explore', '/graph', '/roadmap',
-      '/planner', '/annual-planner', '/annual-gallery',
-      '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
-      '/matura-portal', '/matura', '/matura-library', '/matura-practice', '/matura-assignments', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot',
-      '/academy', '/pro-dev', '/my-profile', '/my-progress', '/portfolio', '/student',
-      '/national-library', '/gallery', '/favorites', '/reports/coverage',
-    ];
-    return secondaryPaths.some(p => currentPath === p || currentPath.startsWith(p));
-  });
+  const SECONDARY_PATHS = [
+    '/explore', '/graph', '/roadmap',
+    '/planner', '/annual-planner', '/annual-gallery',
+    '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
+    '/matura-portal', '/matura', '/matura-library', '/matura-practice', '/matura-assignments', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot',
+    '/exam', '/dugga',
+    '/academy', '/pro-dev', '/my-profile', '/my-progress', '/portfolio', '/student',
+    '/national-library', '/olympiad', '/gallery', '/favorites', '/reports/coverage',
+  ];
+  const isSecondaryPath = (p: string) => SECONDARY_PATHS.some(sp => p === sp || p.startsWith(sp));
+
+  const [showMore, setShowMore] = useState(() => isSecondaryPath(currentPath));
+
+  // Auto-expand when navigating to any secondary path (handles post-mount navigation)
+  useEffect(() => {
+    if (isSecondaryPath(currentPath)) setShowMore(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPath]);
 
   return (
     <aside className={`w-64 bg-white text-gray-800 flex flex-col h-screen fixed shadow-2xl z-30 no-print transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 border-r border-gray-100`}>

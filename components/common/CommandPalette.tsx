@@ -12,7 +12,8 @@ import {
   Home, BookOpen, Calendar, BarChart3, BookMarked, GraduationCap,
   Library, Settings, UserCircle2, Radio, FileText, ClipboardList,
   Sparkles, Wand2, PenTool, HelpCircle, Network, Search, Cpu,
-  Command, CornerDownLeft, ArrowUp, ArrowDown,
+  Command, CornerDownLeft, ArrowUp, ArrowDown, FlaskConical,
+  Hexagon, Presentation, PencilRuler, DatabaseZap,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -106,6 +107,15 @@ export const CommandPalette: React.FC = () => {
     { id: 'settings', label: 'Поставки', description: 'Јазик, профил, претплата', icon: Settings, group: 'nav', color: 'text-gray-500', keywords: 'settings language profile subscription', action: () => go('/settings', 'Поставки', 'settings') },
     { id: 'mind-map', label: 'Ум Карта', description: 'Визуелна мрежа на концепти', icon: Network, group: 'nav', color: 'text-purple-500', keywords: 'mind map visual concepts', action: () => go('/mind-map', 'Ум Карта', 'mindmap') },
     { id: 'assistant', label: 'AI Асистент', description: 'Разговор со AI педагошки асистент', icon: HelpCircle, group: 'nav', color: 'text-cyan-500', keywords: 'AI assistant chat help', action: () => go('/assistant', 'Асистент', 'assistant') },
+    // Gap A — previously missing nav items
+    { id: 'matura-portal', label: 'Матура Портал', description: 'Архива, туторство и симулации за матура', icon: GraduationCap, group: 'nav', color: 'text-indigo-500', keywords: 'matura portal archive exam simulation tutor', action: () => go('/matura-portal', 'Матура Портал', 'education') },
+    { id: 'matura-library', label: 'Матура Библиотека', description: 'Архива на матурски испити 2016–2025', icon: Library, group: 'nav', color: 'text-indigo-400', keywords: 'matura library archive questions history', action: () => go('/matura-library', 'Матура Библиотека', 'education') },
+    { id: 'matura-practice', label: 'Матура Вежбање', description: 'Вежби и тренинг за матурски испити', icon: BookMarked, group: 'nav', color: 'text-indigo-500', keywords: 'matura practice exercises training exam', action: () => go('/matura-practice', 'Матура Вежбање', 'assessment') },
+    { id: 'data-viz', label: 'DataViz Studio', description: '12 математички лаборатории: геометрија, алгебра, статистика, калкулус', icon: FlaskConical, group: 'nav', color: 'text-teal-500', keywords: 'data visualization studio lab geometry algebra statistics calculus 3D SVD', action: () => go('/data-viz', 'DataViz Studio', 'chart') },
+    { id: 'dugga-build', label: 'Dugga Builder', description: 'Создади дигитален испит (16 типа прашања)', icon: PencilRuler, group: 'nav', color: 'text-orange-500', keywords: 'dugga builder digital exam create questions assessment national', action: () => go('/dugga/build', 'Dugga Builder', 'assessment') },
+    { id: 'dugga-library', label: 'Dugga Библиотека', description: 'Моите дигитални испити и задачи', icon: DatabaseZap, group: 'nav', color: 'text-orange-400', keywords: 'dugga library digital exams my assignments', action: () => go('/dugga', 'Dugga Библиотека', 'analytics') },
+    { id: 'exam-build', label: 'Дигитален испит', description: 'Изгради, задај и следи дигитален испит', icon: ClipboardList, group: 'nav', color: 'text-rose-500', keywords: 'digital exam build create assessment class', action: () => go('/exam/build', 'Дигитален испит', 'assessment') },
+    { id: 'kahoot-make', label: 'КаХоот Maker', description: 'Создади live квиз со AI за класата', icon: Hexagon, group: 'nav', color: 'text-red-500', keywords: 'kahoot maker live quiz create AI game', action: () => go('/kahoot/make', 'КаХоот Maker', 'live') },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [navigate]);
 
@@ -125,6 +135,18 @@ export const CommandPalette: React.FC = () => {
       id: 'gen-materials', label: 'Генерирај материјали', description: 'Работни листови, тестови, задачи',
       icon: Sparkles, group: 'ai', color: 'text-violet-600', keywords: 'generate materials worksheets tests',
       action: () => { openGeneratorPanel({}); close(); },
+    },
+    // Gap B — SPECTRA lesson plan
+    {
+      id: 'gen-spectra', label: 'SPECTRA подготовка за час', description: 'AI план по SPECTRA рамка (6 фази, БРО/МОН усогласено)',
+      icon: Hexagon, group: 'ai', color: 'text-indigo-600', keywords: 'SPECTRA lesson plan BRO MON framework pedagogy 6 phases search perceive examine consider transform reflect',
+      action: () => { openGeneratorPanel({ materialType: 'SCENARIO' }); close(); },
+    },
+    // Gap C — Math Gamma presentation
+    {
+      id: 'gen-presentation', label: 'Генерирај Gamma презентација', description: 'AI Math Gamma слајдови со live QR за ученици',
+      icon: Presentation, group: 'ai', color: 'text-violet-600', keywords: 'generate presentation gamma slides AI QR live',
+      action: () => { openGeneratorPanel({ materialType: 'PRESENTATION' }); close(); },
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [navigate, openGeneratorPanel]);
@@ -153,7 +175,7 @@ export const CommandPalette: React.FC = () => {
       keys: [{ name: 'label', weight: 0.7 }, { name: 'keywords', weight: 0.3 }],
       threshold: 0.4,
     });
-    return fuse.search(query).map(r => r.item).slice(0, 5);
+    return fuse.search(query).map(r => r.item).slice(0, 8);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, curriculum]);
 
@@ -173,9 +195,18 @@ export const CommandPalette: React.FC = () => {
   }, [query]);
 
   // ── Fuse.js search across nav + ai items ────────────────────────────────
+  // Top suggestions shown when there's no query — prioritised by usefulness
+  const TOP_NAV_IDS = ['home', 'planner', 'academy', 'profdev', 'data-viz', 'live', 'matura-portal', 'gradebook'];
+
   const filtered = useMemo<CommandItem[]>(() => {
     if (!query.trim()) {
-      return [...recentItems, ...navItems.slice(0, 8), ...aiItems];
+      const hasRecent = recentItems.length > 0;
+      if (hasRecent) {
+        return [...recentItems, ...navItems.slice(0, 6), ...aiItems.slice(0, 3)];
+      }
+      // Gap E — no recent history: show curated top suggestions + all AI actions
+      const topNav = TOP_NAV_IDS.map(id => navItems.find(n => n.id === id)).filter(Boolean) as CommandItem[];
+      return [...topNav, ...aiItems];
     }
     const fuse = new Fuse([...navItems, ...aiItems], {
       keys: [
@@ -187,6 +218,7 @@ export const CommandPalette: React.FC = () => {
       includeScore: true,
     });
     return [...conceptItems, ...fuse.search(query).map(r => r.item)];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, navItems, aiItems, conceptItems, recentItems]);
 
   // ── Keyboard navigation ──────────────────────────────────────────────────
@@ -270,8 +302,9 @@ export const CommandPalette: React.FC = () => {
         )}
         <div ref={listRef} className="max-h-[60vh] overflow-y-auto py-2">
           {filtered.length === 0 && !query.trim() && (
-            <div className="py-12 text-center text-gray-500 text-sm">
-              Почнете да пишувате за да пребарате...
+            <div className="py-8 text-center text-gray-400 text-sm">
+              <p className="font-medium">Почнете да пишувате за да пребарате</p>
+              <p className="text-xs mt-1 text-gray-300">концепти, страници, AI акции...</p>
             </div>
           )}
           {filtered.map((item, idx) => {
