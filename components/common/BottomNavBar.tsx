@@ -9,6 +9,7 @@ import { useNavigation } from '../../contexts/NavigationContext';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 import { useForumUnreadCount } from '../../hooks/useForumUnreadCount';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface BottomNavBarProps {
     currentPath: string;
@@ -54,6 +55,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentPath }) => {
     const { navigate } = useNavigation();
     const { openGeneratorPanel } = useGeneratorPanel();
     const { firebaseUser } = useAuth();
+    const { t } = useLanguage();
     const forumUnread = useForumUnreadCount(firebaseUser?.uid ?? null);
 
     const isActive = (path: string) => {
@@ -64,34 +66,34 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentPath }) => {
     return (
         <nav
             className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-stretch z-30 no-print shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
-            aria-label="Мобилна навигација"
+            aria-label={t('nav.tab.home')}
         >
             <NavTab
-                label="Дома"
+                label={t('nav.tab.home')}
                 icon={ICONS.home}
                 isActive={isActive('/')}
                 onClick={() => navigate('/')}
             />
             <NavTab
-                label="AI"
+                label={t('nav.tab.ai')}
                 icon={ICONS.generator}
                 isActive={false}
                 onClick={() => openGeneratorPanel({})}
             />
             <NavTab
-                label="Часови"
+                label={t('nav.tab.lessons')}
                 icon={ICONS.myLessons}
                 isActive={isActive('/my-lessons')}
                 onClick={() => navigate('/my-lessons')}
             />
             <NavTab
-                label="Анализа"
+                label={t('nav.tab.analytics')}
                 icon={ICONS.analytics}
                 isActive={isActive('/analytics')}
                 onClick={() => navigate('/analytics')}
             />
             <NavTab
-                label="Форум"
+                label={t('nav.tab.forum')}
                 icon={ICONS.chatBubble}
                 isActive={isActive('/forum')}
                 onClick={() => navigate('/forum')}
