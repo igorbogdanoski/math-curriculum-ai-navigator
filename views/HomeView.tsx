@@ -286,6 +286,71 @@ export const HomeView: React.FC = () => {
         </div>
       </div>
 
+      {/* ── ПРИОРИТЕТНИ АКЦИИ — Quick Actions + Teacher Toolbox ─────── */}
+      <section className="space-y-3" aria-label={t('home.section.priorityActions')}>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold px-2.5 py-1">{t('home.section.priorityActions')}</span>
+          <p className="text-xs text-slate-500">{t('home.section.priorityActionsDesc')}</p>
+        </div>
+
+        {/* Quick Actions strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {quickActions.map(({ label, desc, icon: Icon, color, action }) => (
+            <button
+              key={action}
+              type="button"
+              onClick={() => {
+                if (action === 'generator') openGeneratorPanel({});
+                else if (action === 'live') navigate('/live/host');
+                else navigate(`/${action}`);
+              }}
+              className={`${color} text-white rounded-xl p-4 text-left transition-all duration-300 ease-out shadow-sm hover:shadow-lg hover:-translate-y-1 active:scale-[0.97] group`}
+            >
+              <Icon className="w-5 h-5 mb-2 opacity-90 group-hover:scale-110 group-hover:opacity-100 transition-all duration-300" />
+              <p className="font-bold text-sm leading-tight">{label}</p>
+              <p className="text-white/70 text-xs mt-0.5">{desc}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Teacher Toolbox */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm md:text-base font-extrabold text-slate-800 tracking-tight">{t('home.section.teacherToolbox')}</h2>
+          </div>
+          <p className="text-xs text-slate-500 mb-3">Избери алатка според педагошка цел: формативна проверка, повторување или диференцирана поддршка.</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+            {teacherToolboxCards.map((tool, index) => {
+              const ToolIcon = tool.icon;
+              const isRecommended = hasWeakSignals && index < 2;
+              return (
+                <button
+                  key={tool.title}
+                  type="button"
+                  onClick={tool.action}
+                  className={`group text-left rounded-xl border p-3.5 bg-white hover:shadow-md transition-all min-h-[128px] ${isRecommended ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200 hover:border-brand-primary/30'}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className={`inline-flex w-9 h-9 items-center justify-center rounded-lg border ${tool.accent}`}>
+                      <ToolIcon className="w-4 h-4" />
+                    </span>
+                    {isRecommended && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Препорачано денес</span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm font-bold text-slate-800 group-hover:text-brand-primary transition-colors">{tool.title}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500 leading-relaxed">{tool.subtitle}</p>
+                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500">
+                    <span className="px-1.5 py-0.5 rounded bg-slate-100 font-semibold">{tool.pedagogy}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-slate-100 font-semibold">{tool.impact}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ── МИСЛА НА ДЕНОТ + FEATURED TOOLS ────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
 
@@ -347,16 +412,14 @@ export const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── SMART DASHBOARD — Command Center ─────────────────────────── */}
-      <SmartHomeDashboard weakConcepts={weakConcepts} />
-
-      <section className="space-y-3" aria-label="Today Focus">
+      {/* ── ДЕНЕС — Daily signals ────────────────────────────────────── */}
+      <section className="space-y-3" aria-label={t('home.section.todayFocus')}>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2.5 py-1">Today Focus</span>
-          <p className="text-xs text-slate-500">Најважните сигнали и обврски за денес.</p>
+          <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2.5 py-1">{t('home.section.todayFocus')}</span>
+          <p className="text-xs text-slate-500">{t('home.section.todayFocusDesc')}</p>
         </div>
 
-        {/* ── AI QUOTA BANNER ──────────────────────────────────────────── */}
+        {/* AI Quota Banner */}
         {isQuotaExhausted && (
           <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-800 text-sm">
             <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
@@ -364,191 +427,116 @@ export const HomeView: React.FC = () => {
           </div>
         )}
 
-        {/* ── П2: TEACHER DAILY BRIEF ──────────────────────────────────── */}
         {(isBriefLoading || brief) && (
           <DailyBriefCard brief={brief} isLoading={isBriefLoading} onRefresh={refreshBrief} />
         )}
-
-        {/* ── П-А: FORMATIVE NEXT STEP ─────────────────────────────────── */}
         <FormativeNextStepCard weakConcepts={weakConcepts} />
-
-        {/* ── П-Д: SPACED REP DUE ──────────────────────────────────────── */}
         <SpacedRepDueCard due={spacedRepDue} />
-
-        {/* ── B2-3: MATURA NEXT STEP ───────────────────────────────────── */}
         <MaturaNextStepWidget />
       </section>
 
-      <section className="space-y-3" aria-label="Priority Actions">
+      {/* ── SMART DASHBOARD — Command Center ─────────────────────────── */}
+      <SmartHomeDashboard weakConcepts={weakConcepts} />
+
+      {/* Proactive AI Suggestion + Weak Concepts */}
+      {!isSuggestionLoading && suggestion && (
+        <div className="animate-slide-in-from-right">
+          <ProactiveSuggestionCard
+            suggestionText={suggestion.text}
+            onDismiss={dismissSuggestion}
+            onGenerate={handleSuggestionGenerate}
+          />
+        </div>
+      )}
+      <div className="animate-fade-in">
+        <WeakConceptsWidget />
+      </div>
+
+      {/* ── АНАЛИЗА И ПРОГРЕС — Deep analytics ──────────────────────── */}
+      <section className="space-y-3" aria-label={t('home.section.deepWork')}>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold px-2.5 py-1">Priority Actions</span>
-          <p className="text-xs text-slate-500">Најбрзи патеки до генерација, assignment и акција.</p>
+          <span className="inline-flex items-center rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold px-2.5 py-1">{t('home.section.deepWork')}</span>
+          <p className="text-xs text-slate-500">{t('home.section.deepWorkDesc')}</p>
         </div>
 
-        {/* ── QUICK ACTIONS STRIP ──────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {quickActions.map(({ label, desc, icon: Icon, color, action }) => (
-            <button
-              key={action}
-              type="button"
-              onClick={() => {
-                if (action === 'generator') openGeneratorPanel({});
-                else if (action === 'live') navigate('/live/host');
-                else navigate(`/${action}`);
-              }}
-              className={`${color} text-white rounded-xl p-4 text-left transition-all duration-300 ease-out shadow-sm hover:shadow-lg hover:-translate-y-1 active:scale-[0.97] group`}
-            >
-              <Icon className="w-5 h-5 mb-2 opacity-90 group-hover:scale-110 group-hover:opacity-100 transition-all duration-300" />
-              <p className="font-bold text-sm leading-tight">{label}</p>
-              <p className="text-white/70 text-xs mt-0.5">{desc}</p>
-            </button>
-          ))}
-        </div>
-
-        <section className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm md:text-base font-extrabold text-slate-800 tracking-tight">Teacher Toolbox</h2>
-            <span className="text-xs font-semibold text-slate-500">Wave A</span>
-          </div>
-          <p className="text-xs text-slate-500 mb-3">Избери алатка според педагошка цел: формативна проверка, повторување или диференцирана поддршка.</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-            {teacherToolboxCards.map((tool, index) => {
-              const ToolIcon = tool.icon;
-              const isRecommended = hasWeakSignals && index < 2;
-              return (
-                <button
-                  key={tool.title}
-                  type="button"
-                  onClick={tool.action}
-                  className={`group text-left rounded-xl border p-3.5 bg-white hover:shadow-md transition-all min-h-[128px] ${isRecommended ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-slate-200 hover:border-brand-primary/30'}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className={`inline-flex w-9 h-9 items-center justify-center rounded-lg border ${tool.accent}`}>
-                      <ToolIcon className="w-4 h-4" />
-                    </span>
-                    {isRecommended && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Препорачано денес</span>
-                    )}
-                  </div>
-                  <p className="mt-2 text-sm font-bold text-slate-800 group-hover:text-brand-primary transition-colors">{tool.title}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-500 leading-relaxed">{tool.subtitle}</p>
-                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500">
-                    <span className="px-1.5 py-0.5 rounded bg-slate-100 font-semibold">{tool.pedagogy}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-slate-100 font-semibold">{tool.impact}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Proactive AI Suggestion */}
-        {!isSuggestionLoading && suggestion && (
-          <div className="animate-slide-in-from-right">
-              <ProactiveSuggestionCard
-                  suggestionText={suggestion.text}
-                  onDismiss={dismissSuggestion}
-                  onGenerate={handleSuggestionGenerate}
-              />
-          </div>
-        )}
-
-        <div className="animate-fade-in">
-          <WeakConceptsWidget />
-        </div>
-      </section>
-
-      <section className="space-y-3" aria-label="Deep Work">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold px-2.5 py-1">Deep Work</span>
-          <p className="text-xs text-slate-500">Детална анализа, планирање и препораки.</p>
-        </div>
-
-        {/* ── BENTO GRID ───────────────────────────────────────────── */}
+        {/* Bento grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
 
-        {/* CELL 1: Quick AI Start */}
-        <div className="md:col-span-1 lg:col-span-1 row-span-2 h-full" data-tour="dashboard-quick-start">
+          <div className="md:col-span-1 lg:col-span-1 row-span-2 h-full" data-tour="dashboard-quick-start">
             <QuickAIStart todaysLesson={todaysLesson} tomorrowsLesson={tomorrowsLesson} getLessonPlan={getLessonPlan} />
-        </div>
+          </div>
 
-        {/* CELL 2: Stats Overview */}
-        <div className="md:col-span-2 lg:col-span-2 h-full" data-tour="dashboard-progress">
+          <div className="md:col-span-2 lg:col-span-2 h-full" data-tour="dashboard-progress">
             {isStatsLoading ? (
-                <Card><SkeletonLoader type="paragraph" /></Card>
+              <Card><SkeletonLoader type="paragraph" /></Card>
             ) : (
-                <OverallProgress stats={overallStats} />
+              <OverallProgress stats={overallStats} />
             )}
-        </div>
+          </div>
 
-        {/* CELL 3: Weekly Schedule */}
-        <div className="md:col-span-3 lg:col-span-1 md:row-span-2 h-full min-h-[300px]" data-tour="dashboard-schedule">
+          <div className="md:col-span-3 lg:col-span-1 md:row-span-2 h-full min-h-[300px]" data-tour="dashboard-schedule">
             <WeeklySchedule />
-        </div>
+          </div>
 
-        {/* CELL 4: Charts */}
-        <div className="md:col-span-2 lg:col-span-2 min-h-[360px]">
+          <div className="md:col-span-2 lg:col-span-2 min-h-[360px]">
             <ChartTabs monthlyActivity={monthlyActivity} topicCoverage={topicCoverage} isLoading={isStatsLoading} />
-        </div>
+          </div>
 
-        {/* CELL 5: Standards Coverage */}
-        <div className="md:col-span-1" data-tour="dashboard-standards">
+          <div className="md:col-span-1" data-tour="dashboard-standards">
             {isStatsLoading ? (
-                <Card><SkeletonLoader type="paragraph" /></Card>
+              <Card><SkeletonLoader type="paragraph" /></Card>
             ) : (
-                <StandardsCoverageCard data={overallStats.gradePercentages} />
+              <StandardsCoverageCard data={overallStats.gradePercentages} />
             )}
-        </div>
+          </div>
 
-        {/* CELL 6: Continue Browsing */}
-        <div className="md:col-span-1">
+          <div className="md:col-span-1">
             <ContinueBrowsing lastVisited={lastVisited} />
-        </div>
+          </div>
 
-        {/* CELL 7: AI Recommendations */}
-        <div className="md:col-span-2 lg:col-span-3" data-tour="dashboard-recommendations">
+          <div className="md:col-span-2 lg:col-span-3" data-tour="dashboard-recommendations">
             <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold text-brand-primary flex items-center gap-2">
-                    <ICONS.sparkles className="w-5 h-5 text-brand-accent" />
-                    AI Препораки
-                </h2>
-                <button
-                    type="button"
-                    onClick={() => window.location.hash = '#/explore'}
-                    className="text-xs font-bold text-brand-secondary hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors"
-                >
-                    Истражи сè &rarr;
-                </button>
+              <h2 className="text-lg font-bold text-brand-primary flex items-center gap-2">
+                <ICONS.sparkles className="w-5 h-5 text-brand-accent" />
+                AI Препораки
+              </h2>
+              <button
+                type="button"
+                onClick={() => window.location.hash = '#/explore'}
+                className="text-xs font-bold text-brand-secondary hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors"
+              >
+                Истражи сè &rarr;
+              </button>
             </div>
             {isRecsLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card><SkeletonLoader type="paragraph"/></Card>
-                    <Card><SkeletonLoader type="paragraph"/></Card>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card><SkeletonLoader type="paragraph"/></Card>
+                <Card><SkeletonLoader type="paragraph"/></Card>
+              </div>
             ) : recsError ? (
-                <Card className="flex items-center justify-center bg-red-50 border-dashed border-2 border-red-200 py-8">
-                    <div className="text-center">
-                        <ICONS.alertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
-                        <p className="text-red-600 font-medium">Препораките не може да се вчитаат</p>
-                        <p className="text-red-400 text-sm mt-1">Проверете ја врската и обновете ја страницата.</p>
-                    </div>
-                </Card>
-            ) : recommendations.length === 0 ? (
-                <Card className="flex items-center justify-center bg-gray-50 border-dashed border-2 border-gray-200 py-8">
-                    <div className="text-center">
-                        <ICONS.sparkles className="w-8 h-8 text-brand-accent mx-auto mb-2 opacity-50" />
-                        <p className="text-gray-500 font-medium">{t('dashboard_no_recommendations')}</p>
-                        <p className="text-gray-400 text-sm mt-1">{t('dashboard_add_lessons_for_suggestions')}</p>
-                    </div>
-                </Card>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {recommendations.slice(0, 3).map((rec: AIRecommendation, index: number) => (
-                        <RecommendationCard key={`${rec.category}-${rec.title}-${index}`} recommendation={rec} />
-                    ))}
+              <Card className="flex items-center justify-center bg-red-50 border-dashed border-2 border-red-200 py-8">
+                <div className="text-center">
+                  <ICONS.alertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                  <p className="text-red-600 font-medium">Препораките не може да се вчитаат</p>
+                  <p className="text-red-400 text-sm mt-1">Проверете ја врската и обновете ја страницата.</p>
                 </div>
+              </Card>
+            ) : recommendations.length === 0 ? (
+              <Card className="flex items-center justify-center bg-gray-50 border-dashed border-2 border-gray-200 py-8">
+                <div className="text-center">
+                  <ICONS.sparkles className="w-8 h-8 text-brand-accent mx-auto mb-2 opacity-50" />
+                  <p className="text-gray-500 font-medium">{t('dashboard_no_recommendations')}</p>
+                  <p className="text-gray-400 text-sm mt-1">{t('dashboard_add_lessons_for_suggestions')}</p>
+                </div>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recommendations.slice(0, 3).map((rec: AIRecommendation, index: number) => (
+                  <RecommendationCard key={`${rec.category}-${rec.title}-${index}`} recommendation={rec} />
+                ))}
+              </div>
             )}
-        </div>
+          </div>
 
         </div>
       </section>
