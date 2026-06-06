@@ -235,6 +235,31 @@ export const createAssignment = async (
   return ref.id;
 };
 
+export const createDuggaAssignment = async (
+  teacherUid: string,
+  classId: string,
+  classStudentNames: string[],
+  examId: string,
+  examTitle: string,
+  dueDate: string,
+  instructions?: string,
+): Promise<string> => {
+  const ref = await addDoc(collection(db, 'assignments'), {
+    title: examTitle,
+    materialType: 'DUGGA',
+    cacheId: '',
+    duggaExamId: examId,
+    teacherUid,
+    classId,
+    classStudentNames,
+    dueDate,
+    instructions: instructions ?? '',
+    completedBy: [],
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
 export const fetchMaturaAssignmentsByClass = async (classId: string): Promise<MaturaAssignment[]> => {
   const q = query(
     collection(db, 'matura_assignments'),

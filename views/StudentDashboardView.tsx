@@ -252,9 +252,11 @@ export const StudentDashboardView: React.FC = () => {
         ) : (
           <div className="space-y-2">
             {pendingAssignments.map((a) => {
-              const href = a.cacheId
-                ? (a.materialType === 'ASSESSMENT' ? `#/play/${a.cacheId}` : `#/play/${a.cacheId}`)
-                : '#/my-progress';
+              const href = a.materialType === 'DUGGA' && a.duggaExamId
+                ? `#/dugga/play?examId=${a.duggaExamId}&assignmentId=${a.id}`
+                : a.cacheId
+                  ? `#/play/${a.cacheId}`
+                  : '#/my-progress';
               return (
                 <a
                   key={a.id}
@@ -262,7 +264,12 @@ export const StudentDashboardView: React.FC = () => {
                   className="flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl p-3 hover:border-indigo-300 hover:bg-indigo-50/40 transition-colors"
                 >
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{a.title || 'Задача'}</p>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="font-semibold text-gray-900 truncate">{a.title || 'Задача'}</p>
+                      {a.materialType === 'DUGGA' && (
+                        <span className="flex-shrink-0 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">Dugga</span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500">
                       Доделена: {formatDate(a.createdAt)}
                       {a.dueDate ? ` · Рок: ${formatDate(a.dueDate)}` : ''}

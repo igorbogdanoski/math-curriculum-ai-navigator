@@ -81,8 +81,8 @@ export interface ClassMembership {
 export interface Assignment {
   id: string;
   title: string;
-  materialType: 'QUIZ' | 'ASSESSMENT' | 'RECOVERY_WORKSHEET';
-  /** Required for QUIZ/ASSESSMENT; empty string for RECOVERY_WORKSHEET */
+  materialType: 'QUIZ' | 'ASSESSMENT' | 'RECOVERY_WORKSHEET' | 'DUGGA';
+  /** Required for QUIZ/ASSESSMENT; empty string for RECOVERY_WORKSHEET/DUGGA */
   cacheId: string;
   teacherUid: string;
   classId: string;
@@ -92,6 +92,10 @@ export interface Assignment {
   completedBy: string[];
   /** Populated only for RECOVERY_WORKSHEET — concept IDs to practice */
   recoveryConceptIds?: string[];
+  /** Populated only for DUGGA assignments */
+  duggaExamId?: string;
+  /** Optional teacher instructions */
+  instructions?: string;
 }
 
 export interface StudentGamification {
