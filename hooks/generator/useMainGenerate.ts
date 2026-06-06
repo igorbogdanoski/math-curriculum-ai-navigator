@@ -468,6 +468,14 @@ export function useMainGenerate({
 
       if (result && firebaseUser?.uid) {
         const mt = materialType;
+        const isFirstMaterial = trackFirstTimeEvent(firebaseUser.uid, 'first_material_generated', { materialType: mt });
+        if (isFirstMaterial) {
+          addNotification('🎉 Го генерираше твојот прв AI материјал! Добредојде во MisMath Pro.', 'success');
+          // Launch confetti burst
+          import('canvas-confetti').then(({ default: confetti }) => {
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#0D47A1', '#7C3AED', '#059669'] });
+          }).catch(() => { /* confetti is optional */ });
+        }
         if (mt === 'QUIZ' || mt === 'ASSESSMENT') {
           trackFirstTimeEvent(firebaseUser.uid, 'first_quiz_generated', { materialType: mt });
         }

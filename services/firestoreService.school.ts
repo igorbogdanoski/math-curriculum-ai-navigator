@@ -406,4 +406,19 @@ export const schoolService = {
       return null;
     }
   },
+
+  submitSchoolInquiry: async (inquiry: {
+    contactName: string;
+    contactEmail: string;
+    schoolName: string;
+    city: string;
+    teacherCount: number;
+    message?: string;
+  }): Promise<void> => {
+    await addDoc(collection(db, 'school_inquiries'), {
+      ...inquiry,
+      submittedAt: serverTimestamp(),
+      status: 'new',
+    });
+  },
 };

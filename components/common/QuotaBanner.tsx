@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, X, RefreshCw } from 'lucide-react';
+import { AlertCircle, X, RefreshCw, Crown } from 'lucide-react';
 import { isDailyQuotaKnownExhausted, clearDailyQuotaFlag } from '../../services/geminiService';
 
 /** Returns true if US Pacific Daylight Time is currently active (Mar 2nd Sun – Nov 1st Sun) */
@@ -68,8 +68,14 @@ export const QuotaBanner: React.FC = () => {
                 AI квотата е исцрпена. Обновување за <strong>{countdown}</strong> — во <strong>{resetAt}</strong>.
             </span>
             <a
+                href="#/pricing"
+                className="ml-2 flex-shrink-0 text-xs font-bold bg-yellow-400 hover:bg-yellow-300 text-yellow-900 px-2.5 py-1 rounded-lg transition flex items-center gap-1"
+            >
+                <Crown className="w-3 h-3" /> Pro — Неограничено
+            </a>
+            <a
                 href="#/my-lessons"
-                className="ml-2 flex-shrink-0 text-xs font-bold bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg transition"
+                className="flex-shrink-0 text-xs font-bold bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg transition"
             >
                 📁 Мои Подготовки
             </a>

@@ -20,6 +20,7 @@ export type TelemetryUserRole = 'teacher' | 'student' | 'school_admin' | 'unknow
 export type TelemetryEventName =
   | 'signup_completed'
   | 'login_completed'
+  | 'first_material_generated'
   | 'first_quiz_generated'
   | 'first_lesson_saved'
   | 'first_extraction_run'

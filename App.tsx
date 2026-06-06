@@ -111,6 +111,7 @@ const StudentTutorView = safeLazy(() => import('./views/StudentTutorView').then(
 const ParentPortalView = safeLazy(() => import('./views/ParentPortalView').then(module => ({ default: module.ParentPortalView })));
 const StudentPortfolioView = safeLazy(() => import('./views/StudentPortfolioView').then(module => ({ default: module.StudentPortfolioView })));
 const PricingView = safeLazy(() => import('./views/PricingView').then(module => ({ default: module.PricingView })));
+const SchoolPricingView = safeLazy(() => import('./views/SchoolPricingView').then(module => ({ default: module.SchoolPricingView })));
 const GammaJoinView = safeLazy(() => import('./views/GammaJoinView').then(module => ({ default: module.GammaJoinView })));
 const GammaStudentView = safeLazy(() => import('./views/GammaStudentView').then(module => ({ default: module.GammaStudentView })));
 const EmbedConceptView = safeLazy(() => import('./views/EmbedConceptView').then(module => ({ default: module.EmbedConceptView })));
@@ -213,6 +214,7 @@ const GeneratorRouteHandler: React.FC<any> = (props: any) => {
     '#/portfolio',
     '#/parent',
     '#/pricing',
+    '#/school-pricing',
     '#/privacy',
     '#/terms',
     '#/share/',
@@ -240,6 +242,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/parent', component: ParentPortalView }, // Parent Portal — public
     { path: '/portfolio', component: StudentPortfolioView }, // Ж7.5 Student Portfolio
     { path: '/pricing', component: PricingView }, // Н2 Pricing page — public
+    { path: '/school-pricing', component: SchoolPricingView }, // School B2B inquiry — public
     { path: '/school/register', component: SchoolOnboardingView }, // Н3 School self-registration — public
     { path: '/academy/lesson/:id', component: AcademyLessonView },
     { path: '/academy', component: AcademyView },
