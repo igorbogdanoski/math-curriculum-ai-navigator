@@ -37,15 +37,19 @@ if (typeof window !== 'undefined' && !import.meta.env.DEV && !isLocalHost) {
 // Firestore Initialization
 const isE2E = typeof window !== 'undefined' && (window.__E2E_TEACHER_MODE__ || window.__E2E_MODE__);
 
-const firestoreSettings = {
-  ignoreUndefinedProperties: true,
-  // forceLongPolling only in E2E to avoid slowing real-time listeners for real users
-  experimentalForceLongPolling: isE2E,
-  useFetchStreams: !isE2E,
-};
-
-// Ensure we only initialize once and with the correct settings
-export const db = initializeFirestore(app, firestoreSettings);
+// E2E: long-polling + no persistence (emulator compatibility)
+// Production: persistent IndexedDB cache for offline-first reads (multi-tab safe)
+export const db = isE2E
+  ? initializeFirestore(app, {
+      ignoreUndefinedProperties: true,
+      experimentalForceLongPolling: true,
+    })
+  : initializeFirestore(app, {
+      ignoreUndefinedProperties: true,
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
 
 export const auth = getAuth(app);
 export const storage = getStorage(app);
