@@ -50,6 +50,7 @@ export const en: Record<string, string> = {
   dash_start_searching_topics: 'Start searching for topics and concepts.',
   dash_grade_label: 'th grade',
   'nav.academy': 'Academy',
+  'nav.profDev': 'AI Literacy',
   'nav.home': 'Home',
   'nav.tab.home': 'Home',
   'nav.tab.ai': 'AI',

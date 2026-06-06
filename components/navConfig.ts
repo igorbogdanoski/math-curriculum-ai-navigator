@@ -62,6 +62,7 @@ export const SECONDARY_NAV_GROUPS: NavGroupConfig[] = [
     sectionI18nKey: 'sidebar.sec.development',
     items: [
       { i18nKey: 'nav.academy',       path: '/academy',     iconKey: 'education', badge: 'new' },
+      { i18nKey: 'nav.profDev',       path: '/pro-dev',     iconKey: 'sparkles',  badge: 'new' },
       { i18nKey: 'nav.myProfile',     path: '/my-profile',  iconKey: 'profile',   badge: 'new' },
       { i18nKey: 'nav.myProgress',    path: '/my-progress', iconKey: 'analytics' },
       { i18nKey: 'nav.portfolio',     path: '/portfolio',   iconKey: 'star',      badge: 'new' },

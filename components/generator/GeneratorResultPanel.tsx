@@ -7,6 +7,7 @@ import { StreamingTextPreview } from './StreamingTextPreview';
 import { DokDistributionBar } from '../common/DokBadge';
 import { GeneratedIllustration } from '../ai/GeneratedIllustration';
 import { GeneratedIdeas } from '../ai/GeneratedIdeas';
+import { SpectraPlanDisplay } from '../ai/SpectraPlanDisplay';
 import { GeneratedAssessment } from '../ai/GeneratedAssessment';
 import { GeneratedRubric } from '../ai/GeneratedRubric';
 import { GeneratedPresentation } from '../ai/GeneratedPresentation';
@@ -302,7 +303,10 @@ export const GeneratorResultPanel: React.FC<GeneratorResultPanelProps> = ({
           {'imageUrl' in generatedMaterial && <GeneratedIllustration material={generatedMaterial} />}
           {'openingActivity' in generatedMaterial && (
             <>
-              <GeneratedIdeas material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />
+              {state.learningDesignModel === 'SPECTRA'
+                ? <SpectraPlanDisplay material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />
+                : <GeneratedIdeas material={generatedMaterial} onSaveAsNote={handleSaveAsNote} />
+              }
               <div className="flex justify-end gap-2">
                 <button
                   type="button"

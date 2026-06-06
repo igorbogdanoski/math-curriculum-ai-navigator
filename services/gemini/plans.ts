@@ -493,7 +493,55 @@ export async function* streamLessonPlan(
   const topicTitle = topic?.title || 'Општа математичка тема';
   const conceptId = concepts?.[0]?.id || 'no_concept';
 
-  let prompt = `
+  const isSPECTRA = options?.learningDesign === 'SPECTRA';
+  const gradeBand = gradeLevel <= 5 ? 'primary' : gradeLevel <= 9 ? 'lower_secondary' : 'upper_secondary';
+  const gradeBandLabel = gradeBand === 'primary'
+    ? 'основно (1–5 одд.) — поедноставени, визуелни активности'
+    : gradeBand === 'lower_secondary'
+    ? 'основно (6–9 одд.) — целосна SPECTRA секвенца'
+    : 'средно (10–12 / матура) — истражувачки и аналитички пристап';
+
+  const spectraPrompt = `
+### УЛОГА
+Ти си врвен методичар по математика со сертификат за SPECTRA Educational Framework, целосно усогласен со БРО/МОН наставни програми за сите одделенија K–12. Твојата задача е да создадеш подготовка за час СТРОГО по SPECTRA рамката.
+
+### SPECTRA РАМКА (Mona Sawan, M.Ed.)
+6 фази во циклус — секоја развива различна компетенција:
+- S — Search for Knowledge (Барање знаење, 7 мин): собирање факти, поими, докази
+- P — Perceive Perspectives (Перцепција на перспективи, 7 мин): гледишта, емоции, искуства
+- E — Examine Challenges (Испитување предизвици, 7 мин): мисконцепции, ризици, бариери
+- C — Consider Possibilities (Разгледување можности, 5 мин): силни страни, опции, исходи
+- T — Transform Ideas (Трансформирање идеи, 8 мин): создавање, иновирање, дизајнирање
+- RA — Reflect and Act (Рефлектирај и дејствувај, 6 мин): примена, рефлексија, план
+
+### КОНТЕКСТ
+- Одделение: ${gradeLevel} (${gradeBandLabel})
+- Тема: ${topicTitle}
+- Клучни поими: ${conceptList}
+${options?.focus ? `- Примарен фокус: ${options.focus}` : ''}
+
+### БРО/МОН КОМПЕТЕНЦИИ (задолжително за assessmentStandards)
+Наведи ги релевантните компетенции од: Математичко размислување и аргументирање | Решавање математички проблеми | Математичка комуникација | Критичко мислење | Дигитална компетентност | Социјална и граѓанска компетентност | Иницијативност и самооценување
+
+### ФОРМАТ — Врати САМО валиден JSON:
+{
+  "title": "SPECTRA: [Наслов на часот]",
+  "openingActivity": "S-фаза (7 мин): [детален чекор-по-чекор опис со македонски контекст]",
+  "mainActivity": [
+    { "text": "P-фаза (7 мин): [опис — истражување на различни перспективи]", "bloomsLevel": "P — Перцепција на перспективи" },
+    { "text": "E-фаза (7 мин): [опис — идентификување мисконцепции и предизвици]", "bloomsLevel": "E — Испитување предизвици" },
+    { "text": "C-фаза (5 мин): [опис — разгледување можности и силни страни]", "bloomsLevel": "C — Разгледување можности" },
+    { "text": "T-фаза (8 мин): [опис — создавање, дизајнирање, решение]", "bloomsLevel": "T — Трансформирање идеи" },
+    { "text": "RA-фаза (6 мин): [опис — рефлексија, самооценување, план]", "bloomsLevel": "RA — Рефлектирај и дејствувај" }
+  ],
+  "differentiation": "[диференцијација по нивоа: Поддршка / Стандард / Предизвик за секоја SPECTRA фаза]",
+  "assessmentIdea": "[формативна + сумативна евалуација усогласена со БРО/МОН критериуми]",
+  "assessmentStandards": ["БРО/МОН компетенција 1", "БРО/МОН компетенција 2", "национален стандард"],
+  "concepts": ["поим 1", "поим 2"]
+}
+`;
+
+  let prompt = isSPECTRA ? spectraPrompt : `
 ### УЛОГА
 Ти си врвен експерт за методика на наставата по математика со 20-годишно искуство во креирање иновативни сценарија за часови според најновите Кембриџ и национални стандарди.
 
@@ -543,7 +591,7 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
     {
       model: DEFAULT_MODEL,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, responseMimeType: 'application/json' },
+      generationConfig: { temperature: isSPECTRA ? 0.75 : 0.7, responseMimeType: 'application/json' },
       systemInstruction: systemInstr,
       userTier: profile?.tier,
     },

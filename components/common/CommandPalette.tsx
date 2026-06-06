@@ -11,7 +11,7 @@ import {
 import {
   Home, BookOpen, Calendar, BarChart3, BookMarked, GraduationCap,
   Library, Settings, UserCircle2, Radio, FileText, ClipboardList,
-  Sparkles, Wand2, PenTool, HelpCircle, Network, Search,
+  Sparkles, Wand2, PenTool, HelpCircle, Network, Search, Cpu,
   Command, CornerDownLeft, ArrowUp, ArrowDown,
 } from 'lucide-react';
 
@@ -98,6 +98,7 @@ export const CommandPalette: React.FC = () => {
     { id: 'gradebook', label: 'Дневник', description: 'Оценки и евиденција', icon: BookMarked, group: 'nav', color: 'text-amber-500', keywords: 'grades book record students', action: () => go('/grade-book', 'Дневник', 'gradeBook') },
     { id: 'analytics', label: 'Аналитика', description: '15 таба со напредни извештаи', icon: BarChart3, group: 'nav', color: 'text-rose-500', keywords: 'analytics reports statistics data', action: () => go('/analytics', 'Аналитика', 'analytics') },
     { id: 'academy', label: 'Академија', description: 'Личен CPD и педагошки модули', icon: GraduationCap, group: 'nav', color: 'text-indigo-500', keywords: 'academy CPD training pedagogy', action: () => go('/academy', 'Академија', 'education') },
+    { id: 'profdev', label: 'AI Писменост', description: 'Водич, алатки, речник и промптови за AI во настава', icon: Cpu, group: 'nav', color: 'text-violet-500', keywords: 'AI literacy prompts tools glossary AINOW professional development', action: () => go('/pro-dev', 'AI Писменост', 'sparkles') },
     { id: 'library', label: 'Национална библиотека', description: 'Заеднички ресурси на наставниците', icon: Library, group: 'nav', color: 'text-teal-500', keywords: 'national library resources shared quiz', action: () => go('/library', 'Библиотека', 'database') },
     { id: 'test-review', label: 'AI Прегледувач', description: 'Прегледај рачно напишани тестови', icon: FileText, group: 'nav', color: 'text-orange-500', keywords: 'test review AI vision grade', action: () => go('/test-review', 'Прегледувач', 'assessment') },
     { id: 'live', label: 'Час во живо', description: 'Поврзи ученици за реал-тајм квиз', icon: Radio, group: 'nav', color: 'text-red-500', keywords: 'live session class quiz real time', action: () => go('/live/host', 'Час во живо', 'live') },

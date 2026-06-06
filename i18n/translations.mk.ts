@@ -50,6 +50,7 @@ export const mk: Record<string, string> = {
   dash_start_searching_topics: 'Започнете со пребарување на теми и поими.',
   dash_grade_label: '-то одделение',
   'nav.academy': 'Едукативен Центар',
+  'nav.profDev': 'AI Писменост',
   'nav.home': 'Почетна',
   'nav.tab.home': 'Дома',
   'nav.tab.ai': 'AI',

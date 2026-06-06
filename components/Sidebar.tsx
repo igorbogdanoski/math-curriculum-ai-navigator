@@ -114,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
       '/planner', '/annual-planner', '/annual-gallery',
       '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
       '/matura-portal', '/matura', '/matura-library', '/matura-practice', '/matura-assignments', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot',
-      '/academy', '/my-profile', '/my-progress', '/portfolio', '/student',
+      '/academy', '/pro-dev', '/my-profile', '/my-progress', '/portfolio', '/student',
       '/national-library', '/gallery', '/favorites', '/reports/coverage',
     ];
     return secondaryPaths.some(p => currentPath === p || currentPath.startsWith(p));

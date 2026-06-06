@@ -50,6 +50,7 @@ export const tr: Record<string, string> = {
   dash_start_searching_topics: 'Konuları arayarak başlayın.',
   dash_grade_label: '. Sınıf',
   'nav.academy': 'Eğitim Merkezi',
+  'nav.profDev': 'YZ Okuryazarlığı',
   'nav.home': 'Ana Sayfa',
   'nav.tab.home': 'Anasayfa',
   'nav.tab.ai': 'AI',

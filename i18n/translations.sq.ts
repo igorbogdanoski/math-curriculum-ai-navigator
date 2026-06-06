@@ -50,6 +50,7 @@ export const sq: Record<string, string> = {
   dash_start_searching_topics: 'Filloni duke kërkuar.',
   dash_grade_label: '. Klasa',
   'nav.academy': 'Qendra Edukative',
+  'nav.profDev': 'Alfabetizimi IA',
   'nav.home': 'Kreu',
   'nav.tab.home': 'Kreu',
   'nav.tab.ai': 'AI',

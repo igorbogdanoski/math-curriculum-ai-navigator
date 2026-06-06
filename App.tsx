@@ -160,6 +160,7 @@ const AIModelCompareView = safeLazy(() => import('./views/AIModelCompareView').t
 const AICodeOfConductView = safeLazy(() => import('./views/AICodeOfConductView').then(module => ({ default: module.AICodeOfConductView })));
 const UsageDashboardView = safeLazy(() => import('./views/UsageDashboardView').then(module => ({ default: module.UsageDashboardView })));
 const TeacherForumView = safeLazy(() => import('./views/TeacherForumView').then(module => ({ default: module.TeacherForumView })));
+const ProfDevView = safeLazy(() => import('./views/ProfDevView').then(module => ({ default: module.ProfDevView })));
 const CurriculumGraphView = safeLazy(() => import('./views/CurriculumGraphView').then(module => ({ default: module.CurriculumGraphView })));
 const DataVizStudioView = safeLazy(() => import('./views/DataVizStudioView').then(module => ({ default: module.DataVizStudioView })));
 const CoverageAnalyzerView = safeLazy(() => import('./views/CoverageAnalyzerView').then(module => ({ default: module.CoverageAnalyzerView })));
@@ -282,6 +283,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/usage', component: UsageDashboardView },
     { path: '/data-viz', component: DataVizStudioView },
     { path: '/forum', component: TeacherForumView },
+    { path: '/pro-dev', component: ProfDevView },
     { path: '/reports/coverage', component: CoverageAnalyzerView },
     { path: '/analytics', component: TeacherAnalyticsView },
     { path: '/test-generator', component: TestGeneratorView },

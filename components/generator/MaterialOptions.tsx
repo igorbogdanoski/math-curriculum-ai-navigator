@@ -136,6 +136,7 @@ const ScenarioOptions: React.FC<Pick<MaterialOptionsProps, 'state' | 'dispatch'>
                     <option value="PBL">Учење базирано на проблеми (УБП)</option>
                     <option value="Flipped Classroom">Превртена училница</option>
                     <option value="SAMR">SAMR модел (технолошка интеграција)</option>
+                    <option value="SPECTRA">⬡ SPECTRA рамка — БРО/МОН (препорачано)</option>
                 </select>
             </div>
         </div>
