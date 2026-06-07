@@ -76,13 +76,13 @@ async function renderMathToPng(
     if (!katex) return src.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return src
       .replace(/\$\$([\s\S]+?)\$\$/g, (_, f) =>
-        katex.renderToString(f, { throwOnError: false, displayMode: true }))
+        katex.renderToString(f, { throwOnError: false, displayMode: true,  output: 'html' as const }))
       .replace(/\$([^$\n]+?)\$/g, (_, f) =>
-        katex.renderToString(f, { throwOnError: false, displayMode: false }))
+        katex.renderToString(f, { throwOnError: false, displayMode: false, output: 'html' as const }))
       .replace(/\\\(([\s\S]+?)\\\)/g, (_, f) =>
-        katex.renderToString(f, { throwOnError: false, displayMode: false }))
+        katex.renderToString(f, { throwOnError: false, displayMode: false, output: 'html' as const }))
       .replace(/\\\[([\s\S]+?)\\\]/g, (_, f) =>
-        katex.renderToString(f, { throwOnError: false, displayMode: true }));
+        katex.renderToString(f, { throwOnError: false, displayMode: true,  output: 'html' as const }));
   };
 
   container.innerHTML = toHtml(text);

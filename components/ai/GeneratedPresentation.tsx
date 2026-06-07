@@ -84,9 +84,9 @@ const renderBulletToImg = async (
     if (!katex) return src;
     return src
       .replace(/\$\$([\s\S]+?)\$\$/g, (_, f) =>
-        katex.renderToString(f, { throwOnError: false, displayMode: true }))
+        katex.renderToString(f, { throwOnError: false, displayMode: true, output: 'html' as const }))
       .replace(/\$([^$\n]+?)\$/g, (_, f) =>
-        katex.renderToString(f, { throwOnError: false, displayMode: false }));
+        katex.renderToString(f, { throwOnError: false, displayMode: false, output: 'html' as const }));
   };
   container.innerHTML = toHtml(text);
   document.body.appendChild(container);
