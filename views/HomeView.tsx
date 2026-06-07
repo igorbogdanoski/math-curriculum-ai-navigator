@@ -286,6 +286,29 @@ export const HomeView: React.FC = () => {
         </div>
       </div>
 
+      {/* ── ДЕНЕС — Daily signals (elevated above toolbox) ──────────── */}
+      <section className="space-y-3" aria-label={t('home.section.todayFocus')}>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2.5 py-1">{t('home.section.todayFocus')}</span>
+          <p className="text-xs text-slate-500">{t('home.section.todayFocusDesc')}</p>
+        </div>
+
+        {/* AI Quota Banner */}
+        {isQuotaExhausted && (
+          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-800 text-sm">
+            <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <span><strong>Дневниот AI лимит е достигнат.</strong> Генерирањето ќе се обнови во <strong>09:00 часот</strong> (МКВ). Во меѓувреме можеш да ги прегледуваш зачуваните материјали.</span>
+          </div>
+        )}
+
+        {(isBriefLoading || brief) && (
+          <DailyBriefCard brief={brief} isLoading={isBriefLoading} onRefresh={refreshBrief} />
+        )}
+        <FormativeNextStepCard weakConcepts={weakConcepts} />
+        <SpacedRepDueCard due={spacedRepDue} />
+        <MaturaNextStepWidget />
+      </section>
+
       {/* ── ПРИОРИТЕТНИ АКЦИИ — Quick Actions + Teacher Toolbox ─────── */}
       <section className="space-y-3" aria-label={t('home.section.priorityActions')}>
         <div className="flex items-center gap-2">
@@ -411,29 +434,6 @@ export const HomeView: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* ── ДЕНЕС — Daily signals ────────────────────────────────────── */}
-      <section className="space-y-3" aria-label={t('home.section.todayFocus')}>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2.5 py-1">{t('home.section.todayFocus')}</span>
-          <p className="text-xs text-slate-500">{t('home.section.todayFocusDesc')}</p>
-        </div>
-
-        {/* AI Quota Banner */}
-        {isQuotaExhausted && (
-          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-800 text-sm">
-            <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
-            <span><strong>Дневниот AI лимит е достигнат.</strong> Генерирањето ќе се обнови во <strong>09:00 часот</strong> (МКВ). Во меѓувреме можеш да ги прегледуваш зачуваните материјали.</span>
-          </div>
-        )}
-
-        {(isBriefLoading || brief) && (
-          <DailyBriefCard brief={brief} isLoading={isBriefLoading} onRefresh={refreshBrief} />
-        )}
-        <FormativeNextStepCard weakConcepts={weakConcepts} />
-        <SpacedRepDueCard due={spacedRepDue} />
-        <MaturaNextStepWidget />
-      </section>
 
       {/* ── SMART DASHBOARD — Command Center ─────────────────────────── */}
       <SmartHomeDashboard weakConcepts={weakConcepts} />

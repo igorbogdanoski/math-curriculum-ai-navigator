@@ -28,6 +28,7 @@
     "matura:enrich": "node scripts/enrich-matura.mjs",
     "mon:seed": "node scripts/seed-mon-demo.mjs",
     "mon:seed:dry": "node scripts/seed-mon-demo.mjs --dry-run",
+    "admin:make": "GOOGLE_APPLICATION_CREDENTIALS=./firebase-adminsdk-key.json node scripts/make-admin.mjs",
     "eval:ocr-recall": "node scripts/eval-ocr-cyrillic.mjs",
     "preview": "vite preview",
     "test": "vitest run --reporter=verbose",
