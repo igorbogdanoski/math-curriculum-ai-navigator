@@ -11,8 +11,8 @@ import { useGeneratorPanel } from '../contexts/GeneratorPanelContext';
 import { useForumUnreadCount } from '../hooks/useForumUnreadCount';
 import { useMaturaMissions } from '../hooks/useMaturaMissions';
 import { getReferralLink } from '../hooks/useReferral';
-import { SECONDARY_NAV_GROUPS } from './navConfig';
-import type { BadgeVariant } from './navConfig';
+import { SECONDARY_NAV_GROUPS, isHub } from './navConfig';
+import type { BadgeVariant, NavHubConfig } from './navConfig';
 
 // ── Badge colours ────────────────────────────────────────────────────────────
 const BADGE_CLASSES: Record<BadgeVariant, string> = {
@@ -88,6 +88,65 @@ const NavItem: React.FC<{
   );
 };
 
+// ── NavHubItem — collapsible sub-group for Matura / Live / Dugga ─────────────
+const NavHubItem: React.FC<{
+  hub: NavHubConfig;
+  currentPath: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  onNavigate: () => void;
+  streakCount?: number;
+}> = ({ hub, currentPath, isOpen, onToggle, onNavigate, streakCount }) => {
+  const { t } = useLanguage();
+  const Icon = ICONS[hub.iconKey];
+  const isAnyActive = hub.paths.some(p => currentPath === p || currentPath.startsWith(p));
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`w-full flex items-center px-4 py-2.5 my-0.5 rounded-lg transition-all duration-200 ${
+          isAnyActive
+            ? 'bg-blue-50 text-brand-primary font-semibold'
+            : 'text-gray-600 hover:bg-blue-50 hover:text-brand-primary'
+        }`}
+      >
+        <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
+        <span className="font-medium truncate flex-1 text-left">{t(hub.i18nKey)}</span>
+        {hub.badge && (
+          <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${BADGE_CLASSES[hub.badge]}`}>
+            {BADGE_LABELS[hub.badge]}
+          </span>
+        )}
+        <ChevronDown className={`w-3.5 h-3.5 ml-1 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="ml-3 border-l-2 border-gray-100 pl-1 animate-fade-in">
+          {hub.items.map((subItem) => {
+            const subIcon = ICONS[subItem.iconKey];
+            const dynamicBadgeLabel = subItem.dynamicBadge === 'maturaStreak' && streakCount
+              ? `🔥${streakCount}`
+              : undefined;
+            return (
+              <NavItem
+                key={subItem.path}
+                path={subItem.path}
+                currentPath={currentPath}
+                icon={subIcon}
+                label={t(subItem.i18nKey)}
+                onClick={onNavigate}
+                badge={subItem.badge}
+                badgeLabel={dynamicBadgeLabel}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }) => {
   const { t, language, setLanguage } = useLanguage();
   const { user, logout, firebaseUser } = useAuth();
@@ -126,6 +185,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     if (isSecondaryPath(currentPath)) setShowMore(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPath]);
+
+  // Hub open/close state — auto-opens hub when current path is within it
+  const [openHubs, setOpenHubs] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    for (const group of SECONDARY_NAV_GROUPS) {
+      for (const item of group.items) {
+        if (isHub(item) && item.paths.some(p => currentPath === p || currentPath.startsWith(p))) {
+          initial.add(item.hubId);
+        }
+      }
+    }
+    return initial;
+  });
+
+  useEffect(() => {
+    for (const group of SECONDARY_NAV_GROUPS) {
+      for (const item of group.items) {
+        if (isHub(item) && item.paths.some(p => currentPath === p || currentPath.startsWith(p))) {
+          setOpenHubs(prev => prev.has(item.hubId) ? prev : new Set([...prev, item.hubId]));
+        }
+      }
+    }
+  }, [currentPath]);
+
+  const toggleHub = (hubId: string) =>
+    setOpenHubs(prev => { const n = new Set(prev); n.has(hubId) ? n.delete(hubId) : n.add(hubId); return n; });
 
   return (
     <aside className={`w-64 bg-white text-gray-800 flex flex-col h-screen fixed shadow-2xl z-30 no-print transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 border-r border-gray-100`}>
@@ -186,12 +271,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
                     {t(group.sectionI18nKey)}
                   </p>
                   {group.items.map((item) => {
-                    const icon = ICONS[item.iconKey];
-                    // Resolve dynamic badges at render time
-                    let dynamicBadgeLabel: string | undefined;
-                    if (item.dynamicBadge === 'maturaStreak' && mission?.streakCount) {
-                      dynamicBadgeLabel = `🔥${mission.streakCount}`;
+                    if (isHub(item)) {
+                      return (
+                        <NavHubItem
+                          key={item.hubId}
+                          hub={item}
+                          currentPath={currentPath}
+                          isOpen={openHubs.has(item.hubId)}
+                          onToggle={() => toggleHub(item.hubId)}
+                          onNavigate={onClose}
+                          streakCount={mission?.streakCount}
+                        />
+                      );
                     }
+                    const icon = ICONS[item.iconKey];
+                    const dynamicBadgeLabel = item.dynamicBadge === 'maturaStreak' && mission?.streakCount
+                      ? `🔥${mission.streakCount}`
+                      : undefined;
                     return (
                       <NavItem
                         key={item.path}
