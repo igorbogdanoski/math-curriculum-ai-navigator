@@ -267,7 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
               {SECONDARY_NAV_GROUPS.map((group) => (
                 <div key={group.sectionI18nKey}>
                   <hr className="my-2 border-gray-100" />
-                  <p className="px-4 pb-1 text-[10px] font-bold text-gray-300 uppercase tracking-widest">
+                  <p className="px-4 pb-1 text-[11px] font-bold text-gray-400 tracking-wide">
                     {t(group.sectionI18nKey)}
                   </p>
                   {group.items.map((item) => {
