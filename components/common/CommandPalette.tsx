@@ -116,6 +116,10 @@ export const CommandPalette: React.FC = () => {
     { id: 'dugga-library', label: 'Dugga Библиотека', description: 'Моите дигитални испити и задачи', icon: DatabaseZap, group: 'nav', color: 'text-orange-400', keywords: 'dugga library digital exams my assignments', action: () => go('/dugga', 'Dugga Библиотека', 'analytics') },
     { id: 'exam-build', label: 'Дигитален испит', description: 'Изгради, задај и следи дигитален испит', icon: ClipboardList, group: 'nav', color: 'text-rose-500', keywords: 'digital exam build create assessment class', action: () => go('/exam/build', 'Дигитален испит', 'assessment') },
     { id: 'kahoot-make', label: 'КаХоот Maker', description: 'Создади live квиз со AI за класата', icon: Hexagon, group: 'nav', color: 'text-red-500', keywords: 'kahoot maker live quiz create AI game', action: () => go('/kahoot/make', 'КаХоот Maker', 'live') },
+    // Hub entries — broad keywords cover all sub-items so any sub-term finds the hub
+    { id: 'matura-hub', label: 'Матура Центар', description: 'Портал · Библиотека · Вежбање · Симулација · Статистики', icon: GraduationCap, group: 'nav', color: 'text-indigo-500', keywords: 'matura hub center portal library practice simulation statistics tutor archive exam gymnasium vocational 2016 2025 dim испит матура центар', action: () => go('/matura-portal', 'Матура Центар', 'education') },
+    { id: 'live-hub', label: 'Живо и Игри', description: 'Час во живо + КаХоот Maker — реалтајм квизови', icon: Radio, group: 'nav', color: 'text-red-500', keywords: 'live games hub kahoot session real time quiz class join gamification play instant живо игри', action: () => go('/live/host', 'Живо и Игри', 'live') },
+    { id: 'dugga-hub', label: 'Дига Платформа', description: 'Builder · Библиотека · Игра — 16 типа прашања', icon: ClipboardList, group: 'nav', color: 'text-orange-500', keywords: 'dugga platform hub builder library play digital exam assignment 16 question types national summative assessment дига платформа', action: () => go('/dugga', 'Дига Платформа', 'assessment') },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [navigate]);
 
@@ -196,7 +200,7 @@ export const CommandPalette: React.FC = () => {
 
   // ── Fuse.js search across nav + ai items ────────────────────────────────
   // Top suggestions shown when there's no query — prioritised by usefulness
-  const TOP_NAV_IDS = ['home', 'planner', 'academy', 'profdev', 'data-viz', 'live', 'matura-portal', 'gradebook'];
+  const TOP_NAV_IDS = ['home', 'planner', 'matura-hub', 'live-hub', 'dugga-hub', 'data-viz', 'academy', 'profdev'];
 
   const filtered = useMemo<CommandItem[]>(() => {
     if (!query.trim()) {
