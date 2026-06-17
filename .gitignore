@@ -101,6 +101,9 @@ lh-*.json
 
 .vercel
 
+# Dogfood / browser automation output (screenshots, traces)
+/dogfood-output/
+
 # Local dev scratch artifacts
 /keys-check.txt
 /list-env.ps1
