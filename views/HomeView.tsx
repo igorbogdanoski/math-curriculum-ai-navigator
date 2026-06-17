@@ -1,6 +1,6 @@
 import { useTour } from '../hooks/useTour';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library, Camera, Zap } from 'lucide-react';
+import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library, Camera, Zap, X, Rocket, Users, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import type { AIRecommendation } from '../types';
@@ -69,6 +69,82 @@ const DAILY_QUOTES = [
 ];
 
 
+
+const NEW_YEAR_BANNER_KEY = 'new-year-setup-banner-dismissed-v1';
+
+const NewYearSetupBanner: React.FC<{
+  onNavigate: (path: string) => void;
+  onOpenGenerator: () => void;
+}> = ({ onNavigate, onOpenGenerator }) => {
+  const [dismissed, setDismissed] = useState(() => !!localStorage.getItem(NEW_YEAR_BANNER_KEY));
+  if (dismissed) return null;
+
+  const dismiss = () => {
+    localStorage.setItem(NEW_YEAR_BANNER_KEY, '1');
+    setDismissed(true);
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-blue-50 to-violet-50 px-5 py-4 shadow-sm">
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Затвори"
+        className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 transition-colors"
+      >
+        <X className="w-4 h-4" />
+      </button>
+
+      <div className="flex items-start gap-3 mb-3">
+        <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-100 flex-shrink-0">
+          <Rocket className="w-5 h-5 text-indigo-600" />
+        </span>
+        <div>
+          <p className="font-bold text-slate-800 text-sm">Добредојде! Подготви ја учебната година за 3 минути</p>
+          <p className="text-xs text-slate-500 mt-0.5">Следни чекори за да почнеш со наставата:</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <button
+          type="button"
+          onClick={() => { onNavigate('/annual-plan'); dismiss(); }}
+          className="flex items-center gap-2.5 rounded-xl border border-indigo-200 bg-white px-3 py-2.5 text-left hover:border-indigo-400 hover:shadow-sm transition-all group"
+        >
+          <FileText className="w-4 h-4 text-indigo-500 flex-shrink-0 group-hover:text-indigo-700 transition-colors" />
+          <div>
+            <p className="text-xs font-bold text-slate-800">Годишна програма</p>
+            <p className="text-[10px] text-slate-500">Генерирај со AI</p>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { onNavigate('/settings'); dismiss(); }}
+          className="flex items-center gap-2.5 rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-left hover:border-blue-400 hover:shadow-sm transition-all group"
+        >
+          <Users className="w-4 h-4 text-blue-500 flex-shrink-0 group-hover:text-blue-700 transition-colors" />
+          <div>
+            <p className="text-xs font-bold text-slate-800">Додај класа</p>
+            <p className="text-[10px] text-slate-500">Ученици + профил</p>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { onOpenGenerator(); dismiss(); }}
+          className="flex items-center gap-2.5 rounded-xl border border-violet-200 bg-white px-3 py-2.5 text-left hover:border-violet-400 hover:shadow-sm transition-all group"
+        >
+          <Sparkles className="w-4 h-4 text-violet-500 flex-shrink-0 group-hover:text-violet-700 transition-colors" />
+          <div>
+            <p className="text-xs font-bold text-slate-800">Прва AI генерација</p>
+            <p className="text-[10px] text-slate-500">Лекција или тест</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const ChartTabs: React.FC<{
     monthlyActivity: any;
@@ -375,6 +451,14 @@ export const HomeView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* ── NEW YEAR SETUP — shown only to brand-new teachers with 0 plans ── */}
+      {!isStatsLoading && (overallStats?.totalPlans ?? 0) === 0 && (
+        <NewYearSetupBanner
+          onNavigate={navigate}
+          onOpenGenerator={() => openGeneratorPanel({})}
+        />
+      )}
 
       {/* ── ДЕНЕС — Daily signals (elevated above toolbox) ──────────── */}
       <section className="space-y-3" aria-label={t('home.section.todayFocus')}>

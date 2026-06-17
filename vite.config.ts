@@ -247,9 +247,15 @@ export default defineConfig(({ mode }) => {
               'assets/data-matura-*.js',
               'assets/data-secondary-curriculum-*.js',
               'assets/data-curriculum-*.js',
-              'assets/vendor-mammoth-*.js',
-              'assets/vendor-pdf-*.js',
-              'assets/vendor-mathlive-*.js',
+              // Export-only libraries — loaded on-demand, not needed on first visit
+              'assets/vendor-mammoth-*.js',   // DOCX import (mammoth)
+              'assets/vendor-pdf-*.js',        // @react-pdf
+              'assets/vendor-mathlive-*.js',   // MathLive editor
+              'assets/vendor-capture-*.js',    // html2canvas + jspdf
+              'assets/vendor-pptx-*.js',       // pptxgenjs — PPTX export only
+              'assets/vendor-xlsx-*.js',       // xlsx — Excel export only
+              'assets/vendor-docx-*.js',       // docx — Word export only
+              'assets/vendor-konva-*.js',      // konva/react-konva — DrawingCanvas only
             ],
             // Show offline page when navigation request fails
             navigateFallback: '/offline.html',
@@ -259,7 +265,7 @@ export default defineConfig(({ mode }) => {
                 // Large on-demand chunks (matura data, mammoth, mathlive, pdf)
                 // are excluded from precache. Cache them at runtime on first use
                 // so subsequent offline visits still work.
-                urlPattern: /\/assets\/(data-matura|data-curriculum|data-secondary-curriculum|vendor-mammoth|vendor-pdf|vendor-mathlive)-[^/]+\.js$/,
+                urlPattern: /\/assets\/(data-matura|data-curriculum|data-secondary-curriculum|vendor-mammoth|vendor-pdf|vendor-mathlive|vendor-capture|vendor-pptx|vendor-xlsx|vendor-docx|vendor-konva)-[^/]+\.js$/,
                 handler: 'NetworkFirst',
                 options: {
                   cacheName: 'large-chunks-cache',

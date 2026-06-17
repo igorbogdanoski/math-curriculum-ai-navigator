@@ -6,7 +6,7 @@ import { GradeModel, GradeEntry } from '../types';
 import {
   BookMarked, BarChart3, Target, GraduationCap, Plus, Trash2, Save,
   Loader2, Brain, TrendingUp, AlertTriangle, CheckCircle2,
-  Users, FileDown, Sparkles, Zap, X, ChevronDown, ChevronUp,
+  Users, FileDown, Sparkles, Zap, X, ChevronDown, ChevronUp, Share2, Copy,
 } from 'lucide-react';
 
 // ── Model metadata ────────────────────────────────────────────────────────────
@@ -84,6 +84,7 @@ export const GradeBookView: React.FC = () => {
   const [warningIntervention, setWarningIntervention] = useState<Record<string, string>>({});
   const [loadingIntervention, setLoadingIntervention] = useState<string | null>(null);
   const [expandedWarning, setExpandedWarning] = useState<string | null>(null);
+  const [copiedParent, setCopiedParent] = useState<string | null>(null);
 
   const isMounted = useRef(true);
   useEffect(() => { return () => { isMounted.current = false; }; }, []);
@@ -196,6 +197,15 @@ export const GradeBookView: React.FC = () => {
       tests: se.map(e => `${e.testTitle}: ${e.percentage}%`),
     }))
     .filter(s => !dismissedWarnings.includes(s.name));
+
+  const handleShareParent = (studentName: string) => {
+    const url = `${window.location.origin}/#/parent?name=${encodeURIComponent(studentName)}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedParent(studentName);
+      addNotification(`Линк за родител на ${studentName} е копиран!`, 'success');
+      setTimeout(() => setCopiedParent(null), 2500);
+    }).catch(() => addNotification('Не можевме да го копираме линкот.', 'error'));
+  };
 
   const handleIntervention = async (studentName: string, tests: string[]) => {
     setLoadingIntervention(studentName);
@@ -341,6 +351,15 @@ export const GradeBookView: React.FC = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleShareParent(student.name)}
+                        title="Копирај линк за родителски портал"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg hover:bg-indigo-100 transition-all"
+                      >
+                        {copiedParent === student.name ? <Copy className="w-3 h-3 text-green-600" /> : <Share2 className="w-3 h-3" />}
+                        {copiedParent === student.name ? 'Копирано!' : 'Родител'}
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleIntervention(student.name, student.tests)}
@@ -522,10 +541,21 @@ export const GradeBookView: React.FC = () => {
                         </td>
                       )}
                       <td className="px-2 py-3">
-                        <button type="button" onClick={() => removeEntry(e.studentId)} title="Избриши" aria-label="Избриши запис"
-                          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleShareParent(e.studentName)}
+                            title="Копирај линк за родителски портал"
+                            aria-label="Сподели со родител"
+                            className="p-1.5 text-gray-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
+                          >
+                            {copiedParent === e.studentName ? <Copy className="w-3.5 h-3.5 text-green-500" /> : <Share2 className="w-3.5 h-3.5" />}
+                          </button>
+                          <button type="button" onClick={() => removeEntry(e.studentId)} title="Избриши" aria-label="Избриши запис"
+                            className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

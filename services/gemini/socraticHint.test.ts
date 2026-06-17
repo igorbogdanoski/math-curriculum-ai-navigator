@@ -33,7 +33,7 @@ vi.mock('./core', () => ({
   streamGeminiProxy: vi.fn(),
   streamGeminiProxyRich: vi.fn(),
   generateAndParseJSON: vi.fn(),
-  IMAGEN_MODEL: 'imagen-3.0-fast-generate-001',
+  IMAGEN_MODEL: 'gemini-3.1-flash-image',
 }));
 
 vi.mock('../../firebaseConfig', () => ({

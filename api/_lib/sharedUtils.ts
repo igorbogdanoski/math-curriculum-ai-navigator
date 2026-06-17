@@ -40,11 +40,9 @@ export const ALLOWED_MODELS = new Set([
   'gemini-embedding-001',
   'gemini-embedding-2-preview',
   'gemini-embedding-2',
-  // Imagen 4 family
-  'imagen-4.0-generate-001',
-  'imagen-4.0-ultra-generate-001',
-  'imagen-4.0-fast-generate-001',
-  // Imagen 3 (legacy fallback)
+  // Gemini image generation (replaces Imagen 4 endpoints discontinued 2026-08-17)
+  'gemini-3.1-flash-image',
+  // Imagen 3 (legacy fallback — not yet discontinued)
   'imagen-3.0-generate-001',
   'imagen-3',
   'imagen-3-fast',
