@@ -321,8 +321,10 @@ export const SystemAdminView: React.FC = () => {
 
         setRagIndexLog(prev => [...prev, `Пронајдени ${subtopics.length} подтеми за индексирање.`]);
 
+        const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
         let done = 0;
         for (const sub of subtopics) {
+          if (done > 0) await sleep(600);
           const vector = await callEmbeddingProxy(sub.text, undefined, 'RETRIEVAL_DOCUMENT', 768);
           await setDoc(doc(db, 'concept_embeddings', sub.id), {
             vector,
