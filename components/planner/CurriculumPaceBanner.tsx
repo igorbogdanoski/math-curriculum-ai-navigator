@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { BookOpen, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
-import { getSchoolWeekNumber, getWeekMilestone } from '../../data/official/grade8Official';
+import { getSchoolWeekNumber, GRADE8_WEEK_MILESTONES } from '../../data/official/grade8Official';
+import { GRADE6_WEEK_MILESTONES } from '../../data/official/grade6Official';
+import { GRADE7_WEEK_MILESTONES } from '../../data/official/grade7Official';
+import type { WeekMilestone } from '../../data/official/grade8Official';
 
 interface Props {
   currentDate: Date;
@@ -8,9 +11,20 @@ interface Props {
 }
 
 const GRADE_OPTIONS = [
-  { value: 8, label: 'VIII одделение' },
-  // grades 6, 7 will be added once their official data is available
+  { value: 6, label: 'VI одделение', hours: '180ч · 5ч/нед' },
+  { value: 7, label: 'VII одделение', hours: '144ч · 4ч/нед' },
+  { value: 8, label: 'VIII одделение', hours: '144ч · 4ч/нед' },
 ];
+
+const ALL_MILESTONES: Record<number, Record<number, WeekMilestone>> = {
+  6: GRADE6_WEEK_MILESTONES,
+  7: GRADE7_WEEK_MILESTONES,
+  8: GRADE8_WEEK_MILESTONES,
+};
+
+function getMilestone(grade: number, weekNum: number): WeekMilestone | null {
+  return ALL_MILESTONES[grade]?.[weekNum] ?? null;
+}
 
 const PREF_KEY = 'curriculum_pace_grade';
 
@@ -23,12 +37,11 @@ export const CurriculumPaceBanner: React.FC<Props> = ({ currentDate, grade: grad
   });
 
   const weekNum = useMemo(() => getSchoolWeekNumber(currentDate), [currentDate]);
-  const milestone = useMemo(() => weekNum ? getWeekMilestone(weekNum, selectedGrade) : null, [weekNum, selectedGrade]);
+  const milestone = useMemo(() => weekNum ? getMilestone(selectedGrade, weekNum) : null, [weekNum, selectedGrade]);
 
   // Progress: weeks done out of 36
   const progressPct = weekNum ? Math.min(100, Math.round((weekNum / 36) * 100)) : 0;
 
-  // Color based on whether there's a written exam this week
   const isExamWeek = milestone?.isWrittenExam ?? false;
 
   const handleGradeChange = (g: number) => {
@@ -94,7 +107,7 @@ export const CurriculumPaceBanner: React.FC<Props> = ({ currentDate, grade: grad
       {isExpanded && (
         <div className="px-3 pb-3 border-t border-white/60 pt-2 space-y-3">
           {/* Grade selector */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[11px] font-semibold text-gray-600">Одделение:</span>
             {GRADE_OPTIONS.map(opt => (
               <button
@@ -110,7 +123,6 @@ export const CurriculumPaceBanner: React.FC<Props> = ({ currentDate, grade: grad
                 {opt.label}
               </button>
             ))}
-            <span className="text-[10px] text-gray-400 ml-1">(наскоро: VI, VII)</span>
           </div>
 
           {/* Surrounding weeks context */}
@@ -118,7 +130,7 @@ export const CurriculumPaceBanner: React.FC<Props> = ({ currentDate, grade: grad
             {[-1, 0, 1].map(offset => {
               const wk = weekNum + offset;
               if (wk < 1 || wk > 36) return null;
-              const ms = getWeekMilestone(wk, selectedGrade);
+              const ms = getMilestone(selectedGrade, wk);
               if (!ms) return null;
               const isCurrent = offset === 0;
               return (
@@ -153,7 +165,8 @@ export const CurriculumPaceBanner: React.FC<Props> = ({ currentDate, grade: grad
           </div>
 
           <p className="text-[10px] text-gray-400">
-            Извор: Наставна програма МОН 2025 — важечка од учебна 2026/2027 · {selectedGrade === 8 ? '144ч · 4ч/нед' : ''}
+            Извор: Наставна програма МОН 2025 · важечка од учебна 2026/2027
+            {' · '}{GRADE_OPTIONS.find(o => o.value === selectedGrade)?.hours ?? ''}
           </p>
         </div>
       )}

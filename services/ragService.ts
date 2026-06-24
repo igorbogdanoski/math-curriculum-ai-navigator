@@ -274,6 +274,14 @@ class RagService {
       const { getOfficialTopicEnrichment } = await import('../data/official/grade8Official');
       const enrichment = getOfficialTopicEnrichment(topicId);
       if (enrichment) context += enrichment;
+    } else if (gradeLevel === 6) {
+      const { getOfficialTopicEnrichment } = await import('../data/official/grade6Official');
+      const enrichment = getOfficialTopicEnrichment(topicId);
+      if (enrichment) context += enrichment;
+    } else if (gradeLevel === 7) {
+      const { getOfficialTopicEnrichment } = await import('../data/official/grade7Official');
+      const enrichment = getOfficialTopicEnrichment(topicId);
+      if (enrichment) context += enrichment;
     }
 
     return context;

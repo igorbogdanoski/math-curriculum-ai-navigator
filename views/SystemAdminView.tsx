@@ -292,21 +292,33 @@ export const SystemAdminView: React.FC = () => {
     const [cohortClock, setCohortClock] = useState<number>(() => Date.now());
 
     // ── RAG Indexing: Official Curriculum ──
-    const [ragIndexStatus, setRagIndexStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+    const [ragIndexStatus, setRagIndexStatus] = useState<Record<number, 'idle' | 'running' | 'done' | 'error'>>({ 6: 'idle', 7: 'idle', 8: 'idle' });
     const [ragIndexLog, setRagIndexLog] = useState<string[]>([]);
 
-    const handleIndexOfficialCurriculum = useCallback(async () => {
-      setRagIndexStatus('running');
-      setRagIndexLog(['Започнувам индексирање на официјалната програма...']);
+    const handleIndexGrade = useCallback(async (grade: number) => {
+      const gradeLabel = grade === 6 ? 'VI' : grade === 7 ? 'VII' : 'VIII';
+      setRagIndexStatus(prev => ({ ...prev, [grade]: 'running' }));
+      setRagIndexLog([`Започнувам индексирање на официјалната програма за ${gradeLabel} одделение...`]);
       try {
-        const [{ getOfficialSubtopicDocs }, { callEmbeddingProxy }, { doc, setDoc }] = await Promise.all([
-          import('../data/official/grade8Official'),
+        const [{ callEmbeddingProxy }, { doc, setDoc }] = await Promise.all([
           import('../services/gemini/core'),
           import('firebase/firestore'),
         ]);
         const { db } = await import('../firebaseConfig');
 
-        const subtopics = getOfficialSubtopicDocs(8);
+        type SubDoc = { id: string; grade: number; text: string; topicId: string; topicTitle: string; subtopicTitle: string };
+        let subtopics: SubDoc[];
+        if (grade === 6) {
+          const m = await import('../data/official/grade6Official');
+          subtopics = m.getOfficialSubtopicDocs();
+        } else if (grade === 7) {
+          const m = await import('../data/official/grade7Official');
+          subtopics = m.getOfficialSubtopicDocs();
+        } else {
+          const m = await import('../data/official/grade8Official');
+          subtopics = m.getOfficialSubtopicDocs(8);
+        }
+
         setRagIndexLog(prev => [...prev, `Пронајдени ${subtopics.length} подтеми за индексирање.`]);
 
         let done = 0;
@@ -326,10 +338,10 @@ export const SystemAdminView: React.FC = () => {
           setRagIndexLog(prev => [...prev, `[${done}/${subtopics.length}] ${sub.subtopicTitle}`]);
         }
         setRagIndexLog(prev => [...prev, `✅ Завршено! ${done} подтеми индексирани во concept_embeddings.`]);
-        setRagIndexStatus('done');
+        setRagIndexStatus(prev => ({ ...prev, [grade]: 'done' }));
       } catch (err) {
         setRagIndexLog(prev => [...prev, `❌ Грешка: ${err instanceof Error ? err.message : String(err)}`]);
-        setRagIndexStatus('error');
+        setRagIndexStatus(prev => ({ ...prev, [grade]: 'error' }));
       }
     }, []);
 
@@ -947,23 +959,30 @@ export const SystemAdminView: React.FC = () => {
                         Vector RAG — Индексирај официјална програма МОН 2025
                       </h2>
                       <p className="text-xs text-emerald-700 mb-3">
-                        Ги претвора сите подтеми на VIII одделение во 768-dim вектори и ги зачувува во <code className="bg-emerald-100 px-1 rounded">concept_embeddings</code> Firestore. По индексирање, <strong>сите AI функции</strong> (часови, тестови, тутор) автоматски ги пронаоѓаат официјалните активности и стандарди семантички.
+                        Ги претвора сите подтеми во 768-dim вектори и ги зачувува во <code className="bg-emerald-100 px-1 rounded">concept_embeddings</code> Firestore. По индексирање, <strong>сите AI функции</strong> автоматски ги пронаоѓаат официјалните активности и стандарди семантички.
                       </p>
-                      <button
-                        type="button"
-                        disabled={ragIndexStatus === 'running'}
-                        onClick={handleIndexOfficialCurriculum}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition ${
-                          ragIndexStatus === 'running'
-                            ? 'bg-emerald-200 text-emerald-500 cursor-not-allowed'
-                            : ragIndexStatus === 'done'
-                            ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                            : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                        }`}
-                      >
-                        <DatabaseZap className={`w-4 h-4 ${ragIndexStatus === 'running' ? 'animate-pulse' : ''}`} />
-                        {ragIndexStatus === 'running' ? 'Индексирање...' : ragIndexStatus === 'done' ? '✅ Повторно индексирај' : 'Индексирај VIII одделение'}
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        {([6, 7, 8] as const).map(grade => {
+                          const status = ragIndexStatus[grade];
+                          const label = grade === 6 ? 'VI' : grade === 7 ? 'VII' : 'VIII';
+                          return (
+                            <button
+                              key={grade}
+                              type="button"
+                              disabled={status === 'running'}
+                              onClick={() => handleIndexGrade(grade)}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                                status === 'running'
+                                  ? 'bg-emerald-200 text-emerald-500 cursor-not-allowed'
+                                  : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                              }`}
+                            >
+                              <DatabaseZap className={`w-3.5 h-3.5 ${status === 'running' ? 'animate-pulse' : ''}`} />
+                              {status === 'running' ? 'Индексирање...' : status === 'done' ? `✅ ${label} одд.` : `Индексирај ${label} одд.`}
+                            </button>
+                          );
+                        })}
+                      </div>
                       {ragIndexLog.length > 0 && (
                         <div className="mt-3 bg-white/70 rounded-lg border border-emerald-200 p-3 max-h-40 overflow-y-auto">
                           {ragIndexLog.map((line, i) => (
