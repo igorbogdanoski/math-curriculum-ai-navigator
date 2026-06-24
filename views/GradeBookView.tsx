@@ -3,10 +3,11 @@ import { Card } from '../components/common/Card';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { GradeModel, GradeEntry } from '../types';
+import { MobileGradeEntryModal } from '../components/gradebook/MobileGradeEntryModal';
 import {
   BookMarked, BarChart3, Target, GraduationCap, Plus, Trash2, Save,
   Loader2, Brain, TrendingUp, AlertTriangle, CheckCircle2,
-  Users, FileDown, Sparkles, Zap, X, ChevronDown, ChevronUp, Share2, Copy,
+  Users, FileDown, Sparkles, Zap, X, ChevronDown, ChevronUp, Share2, Copy, MessageCircle, Smartphone,
 } from 'lucide-react';
 
 // ── Model metadata ────────────────────────────────────────────────────────────
@@ -85,6 +86,8 @@ export const GradeBookView: React.FC = () => {
   const [loadingIntervention, setLoadingIntervention] = useState<string | null>(null);
   const [expandedWarning, setExpandedWarning] = useState<string | null>(null);
   const [copiedParent, setCopiedParent] = useState<string | null>(null);
+  const [shareMenuStudent, setShareMenuStudent] = useState<string | null>(null);
+  const [showMobileEntry, setShowMobileEntry] = useState(false);
 
   const isMounted = useRef(true);
   useEffect(() => { return () => { isMounted.current = false; }; }, []);
@@ -198,13 +201,51 @@ export const GradeBookView: React.FC = () => {
     }))
     .filter(s => !dismissedWarnings.includes(s.name));
 
-  const handleShareParent = (studentName: string) => {
-    const url = `${window.location.origin}/#/parent?name=${encodeURIComponent(studentName)}`;
-    navigator.clipboard.writeText(url).then(() => {
+  const getParentUrl = (studentName: string) =>
+    `${window.location.origin}/#/parent?name=${encodeURIComponent(studentName)}`;
+
+  const handleCopyParentLink = (studentName: string) => {
+    navigator.clipboard.writeText(getParentUrl(studentName)).then(() => {
       setCopiedParent(studentName);
+      setShareMenuStudent(null);
       addNotification(`Линк за родител на ${studentName} е копиран!`, 'success');
       setTimeout(() => setCopiedParent(null), 2500);
     }).catch(() => addNotification('Не можевме да го копираме линкот.', 'error'));
+  };
+
+  const handleShareWhatsApp = (studentName: string, avgPct?: number, tests?: string[]) => {
+    const url = getParentUrl(studentName);
+    const lines = [
+      `📚 *MisMath — Извештај за ученик*`,
+      `Ученик: *${studentName}*`,
+      avgPct !== undefined ? `Просечен успех: *${avgPct}%*` : '',
+      tests && tests.length > 0
+        ? `Последни резултати:\n${tests.slice(0, 3).map(t => `  • ${t}`).join('\n')}`
+        : '',
+      `\n🔗 Прегледај го целосниот извештај:\n${url}`,
+    ].filter(Boolean).join('\n');
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines)}`, '_blank', 'noopener');
+    setShareMenuStudent(null);
+  };
+
+  const handleShareViber = (studentName: string, avgPct?: number, tests?: string[]) => {
+    const url = getParentUrl(studentName);
+    const lines = [
+      `📚 MisMath — Извештај за ученик`,
+      `Ученик: ${studentName}`,
+      avgPct !== undefined ? `Просечен успех: ${avgPct}%` : '',
+      tests && tests.length > 0
+        ? `Последни резултати: ${tests.slice(0, 2).join(', ')}`
+        : '',
+      `Прегледај го извештајот: ${url}`,
+    ].filter(Boolean).join('\n');
+    window.open(`viber://forward?text=${encodeURIComponent(lines)}`, '_blank', 'noopener');
+    setShareMenuStudent(null);
+  };
+
+  // legacy alias kept for table-row icon
+  const handleShareParent = (studentName: string) => {
+    setShareMenuStudent(prev => prev === studentName ? null : studentName);
   };
 
   const handleIntervention = async (studentName: string, tests: string[]) => {
@@ -350,15 +391,33 @@ export const GradeBookView: React.FC = () => {
                         {student.lowCount} резултати под 50% · Просек: <span className="font-bold text-red-600">{student.avgPct}%</span>
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                       <button
                         type="button"
-                        onClick={() => handleShareParent(student.name)}
-                        title="Копирај линк за родителски портал"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg hover:bg-indigo-100 transition-all"
+                        onClick={() => handleShareWhatsApp(student.name, student.avgPct, student.tests)}
+                        title="Сподели на WhatsApp"
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-lg hover:bg-green-100 transition-all"
+                      >
+                        <MessageCircle className="w-3 h-3" />
+                        WA
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleShareViber(student.name, student.avgPct, student.tests)}
+                        title="Сподели на Viber"
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-50 border border-violet-200 text-violet-700 text-xs font-bold rounded-lg hover:bg-violet-100 transition-all"
+                      >
+                        <Smartphone className="w-3 h-3" />
+                        Viber
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyParentLink(student.name)}
+                        title="Копирај линк"
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg hover:bg-indigo-100 transition-all"
                       >
                         {copiedParent === student.name ? <Copy className="w-3 h-3 text-green-600" /> : <Share2 className="w-3 h-3" />}
-                        {copiedParent === student.name ? 'Копирано!' : 'Родител'}
+                        {copiedParent === student.name ? '✓' : 'Линк'}
                       </button>
                       <button
                         type="button"
@@ -541,16 +600,37 @@ export const GradeBookView: React.FC = () => {
                         </td>
                       )}
                       <td className="px-2 py-3">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 relative">
                           <button
                             type="button"
-                            onClick={() => handleShareParent(e.studentName)}
-                            title="Копирај линк за родителски портал"
+                            onClick={() => setShareMenuStudent(prev => prev === e.studentName ? null : e.studentName)}
+                            title="Сподели со родител"
                             aria-label="Сподели со родител"
                             className="p-1.5 text-gray-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
                           >
-                            {copiedParent === e.studentName ? <Copy className="w-3.5 h-3.5 text-green-500" /> : <Share2 className="w-3.5 h-3.5" />}
+                            <Share2 className="w-3.5 h-3.5" />
                           </button>
+                          {shareMenuStudent === e.studentName && (
+                            <div className="absolute right-6 top-0 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-1 flex flex-col gap-0.5 min-w-[130px]"
+                              onMouseLeave={() => setShareMenuStudent(null)}>
+                              <button type="button"
+                                onClick={() => handleShareWhatsApp(e.studentName)}
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs text-green-700 hover:bg-green-50 rounded-lg font-semibold transition-colors">
+                                <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                              </button>
+                              <button type="button"
+                                onClick={() => handleShareViber(e.studentName)}
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs text-violet-700 hover:bg-violet-50 rounded-lg font-semibold transition-colors">
+                                <Smartphone className="w-3.5 h-3.5" /> Viber
+                              </button>
+                              <button type="button"
+                                onClick={() => handleCopyParentLink(e.studentName)}
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg font-semibold transition-colors">
+                                <Copy className="w-3.5 h-3.5" />
+                                {copiedParent === e.studentName ? 'Копирано!' : 'Копирај линк'}
+                              </button>
+                            </div>
+                          )}
                           <button type="button" onClick={() => removeEntry(e.studentId)} title="Избриши" aria-label="Избриши запис"
                             className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
@@ -618,6 +698,41 @@ export const GradeBookView: React.FC = () => {
           <h3 className="font-black text-gray-500">Нема внесени резултати</h3>
           <p className="text-sm text-gray-400 max-w-xs">Додај ги резултатите на учениците горе за да го активираш моделот на оценување.</p>
         </Card>
+      )}
+
+      {/* Mobile floating quick-entry button */}
+      <button
+        type="button"
+        onClick={() => setShowMobileEntry(true)}
+        className="md:hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-3.5 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl hover:bg-indigo-700 active:scale-95 transition-all"
+      >
+        <Plus className="w-5 h-5" />
+        Внеси оценка
+      </button>
+
+      {/* Mobile grade entry modal */}
+      {showMobileEntry && (
+        <MobileGradeEntryModal
+          existingEntries={entries}
+          defaultTestTitle={newTestTitle}
+          onAdd={(name, testTitle, raw, max) => {
+            const pct = Math.round((raw / max) * 100);
+            const entry: GradeEntry = {
+              studentId: crypto.randomUUID(),
+              studentName: name,
+              testId: crypto.randomUUID(),
+              testTitle,
+              rawScore: raw,
+              maxScore: max,
+              percentage: pct,
+              masteryStatus: percentToMastery(pct),
+              gradedAt: new Date().toISOString(),
+            };
+            setEntries(prev => [...prev, entry]);
+            addNotification(`✓ ${name} — ${pct}% внесено!`, 'success');
+          }}
+          onClose={() => setShowMobileEntry(false)}
+        />
       )}
     </div>
   );

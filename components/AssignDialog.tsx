@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ClipboardList, CheckSquare, Square, Loader2, Copy, Check, Link } from 'lucide-react';
+import { X, ClipboardList, CheckSquare, Square, Loader2, Copy, Check, Link, MessageCircle, Smartphone } from 'lucide-react';
 import { firestoreService, type SchoolClass } from '../services/firestoreService';
 import { precacheQuizContent } from '../services/indexedDBService';
 import { useAuth } from '../contexts/AuthContext';
@@ -156,9 +156,20 @@ export const AssignDialog: React.FC<Props> = ({ material, materialType, conceptI
                     : <><Copy className="w-3.5 h-3.5" />Копирај</>}
                 </button>
               </div>
-              <p className="text-xs text-indigo-500 mt-1.5">
-                Пратете го преку Viber, Teams или е-пошта.
-              </p>
+              <div className="flex gap-2 mt-2">
+                <button type="button"
+                  onClick={() => shareUrl && window.open(`https://wa.me/?text=${encodeURIComponent(`📚 Нова задача: ${material.title}\n${shareUrl}`)}`, '_blank', 'noopener')}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold border border-green-200 text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                </button>
+                <button type="button"
+                  onClick={() => shareUrl && window.open(`viber://forward?text=${encodeURIComponent(`📚 Нова задача: ${material.title}\n${shareUrl}`)}`, '_blank', 'noopener')}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold border border-violet-200 text-violet-700 bg-violet-50 rounded-lg hover:bg-violet-100 transition-colors"
+                >
+                  <Smartphone className="w-3.5 h-3.5" /> Viber
+                </button>
+              </div>
             </div>
           </div>
 

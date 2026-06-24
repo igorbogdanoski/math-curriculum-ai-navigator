@@ -41,8 +41,7 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
         }
         
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const generatedItems = await plansAPI.generateAnnualPlan(selectedGrade, startDate, endDate, holidays, {start: winterBreakStart, end: winterBreakEnd});
+            const generatedItems = await plansAPI.generateCalendarPlan(selectedGrade, startDate, endDate, holidays, {start: winterBreakStart, end: winterBreakEnd});
             
             setIsLoading(false);
 
@@ -54,7 +53,7 @@ export const AIAnnualPlanGeneratorModal: React.FC = () => {
                 onConfirm: async () => {
                     hideModal();
                     try {
-                        await Promise.all(generatedItems.map(item =>
+                        await Promise.all(generatedItems.map((item: (typeof generatedItems)[number]) =>
                             addItem({
                                 ...item,
                                 type: PlannerItemType.LESSON,

@@ -193,7 +193,7 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
       return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   },
 
-async generateAnnualPlan(grade: Grade, startDate: string, endDate: string, holidays: string, winterBreak: {start: string, end: string}, profile?: TeachingProfile): Promise<Omit<PlannerItem, 'id'>[]> {
+async generateCalendarPlan(grade: Grade, startDate: string, endDate: string, holidays: string, winterBreak: {start: string, end: string}, profile?: TeachingProfile): Promise<Omit<PlannerItem, 'id'>[]> {
       // @prompt-start: annual_plan
       const prompt = `
 ### УЛОГА

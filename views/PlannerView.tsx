@@ -18,6 +18,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { shareService } from '../services/shareService';
 import { useNotification } from '../contexts/NotificationContext';
 import { PlannerAgendaView } from '../components/planner/PlannerAgendaView';
+import { PlannerWeekView } from '../components/planner/PlannerWeekView';
 import { PlannerMetaAnalysis } from '../components/planner/PlannerMetaAnalysis';
 import { getWeekRange } from '../utils/date';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -42,7 +43,7 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; children: Reac
 export const PlannerView: React.FC = () => {
   const { t } = useLanguage();
     const { navigate } = useNavigation();
-    const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
+    const [viewMode, setViewMode] = useState<'month' | 'week' | 'agenda'>('week');
     const [currentDate, setCurrentDate] = useState(new Date()); // Default to today
     const { items, updateItem, addItem, deleteItem, getLessonPlan, isLoading, lessonPlans } = usePlanner();
     const { showModal } = useModal();
@@ -183,7 +184,7 @@ export const PlannerView: React.FC = () => {
             const newDate = new Date(prev);
             if (viewMode === 'month') {
                 newDate.setMonth(prev.getMonth() + offset, 1);
-            } else { // agenda view
+            } else {
                 newDate.setDate(prev.getDate() + (offset * 7));
             }
             return newDate;
@@ -268,7 +269,7 @@ export const PlannerView: React.FC = () => {
             return currentDate.toLocaleString('mk-MK', { month: 'long', year: 'numeric' });
         }
         const { start, end } = getWeekRange(currentDate);
-        return `${t('planner.week')}: ${start.toLocaleDateString('mk-MK')} - ${end.toLocaleDateString('mk-MK')}`;
+        return `${t('planner.week')}: ${start.toLocaleDateString('mk-MK')} – ${end.toLocaleDateString('mk-MK')}`;
     };
 
     const firstItemForTourId = useMemo(() => {
@@ -342,6 +343,7 @@ export const PlannerView: React.FC = () => {
                          <h1 className="text-4xl font-bold text-brand-primary">{t('planner.title')}</h1>
                          <div className="flex flex-wrap items-center gap-4 mt-4">
                             <div className="flex space-x-2">
+                                <TabButton active={viewMode === 'week'} onClick={() => setViewMode('week')}>Недела</TabButton>
                                 <TabButton active={viewMode === 'month'} onClick={() => setViewMode('month')}>{t('planner.view.month')}</TabButton>
                                 <TabButton active={viewMode === 'agenda'} onClick={() => setViewMode('agenda')}>{t('planner.view.agenda')}</TabButton>
                             </div>
@@ -511,7 +513,15 @@ export const PlannerView: React.FC = () => {
                             <PlannerMetaAnalysis items={visibleItems} lessonPlans={lessonPlans} />
                         </div>
 
-                        {viewMode === 'month' ? renderCalendarGrid() : (
+                        {viewMode === 'month' ? renderCalendarGrid()
+                        : viewMode === 'week' ? (
+                            <PlannerWeekView
+                                currentDate={currentDate}
+                                items={visibleItems}
+                                onItemClick={handleItemClick}
+                                onOpenModal={handleOpenModal}
+                            />
+                        ) : (
                             <PlannerAgendaView
                                 currentDate={currentDate}
                                 items={items}

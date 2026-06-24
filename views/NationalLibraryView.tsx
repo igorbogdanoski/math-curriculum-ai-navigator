@@ -2,12 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import { firestoreService } from '../services/firestoreService';
 import type { NationalLibraryEntry } from '../services/firestoreService.materials';
-import { getAvgRating, getUserRating, rateNationalLibraryEntry } from '../services/firestoreService.materials';
+import { getAvgRating, getUserRating, rateNationalLibraryEntry, toggleSaveNationalLibraryEntry } from '../services/firestoreService.materials';
 import { geminiService } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
-import { Library, Search, Download, Globe, Filter, Loader2, BookOpen, ChevronDown, Wand2, X, Save, Star, Languages, RotateCcw } from 'lucide-react';
+import { Library, Search, Download, Globe, Filter, Loader2, BookOpen, ChevronDown, Wand2, X, Save, Star, Languages, RotateCcw, Bookmark } from 'lucide-react';
 import { DokBadge } from '../components/common/DokBadge';
 import { DOK_META } from '../types';
 import type { DokLevel } from '../types';
@@ -81,6 +81,27 @@ export const NationalLibraryView: React.FC = () => {
 
   // Rating state — optimistic updates per entry
   const [pendingRatings, setPendingRatings] = useState<Record<string, number>>({});
+
+  // Save/bookmark state — optimistic updates
+  const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
+  const handleToggleSave = async (entry: NationalLibraryEntry) => {
+    if (!firebaseUser?.uid) return;
+    const uid = firebaseUser.uid;
+    const isSaved = (entry.savedByUids ?? []).includes(uid);
+    setSavingIds(prev => new Set(prev).add(entry.id));
+    setEntries(prev => prev.map(e => e.id === entry.id
+      ? { ...e, savedByUids: isSaved ? (e.savedByUids ?? []).filter(u => u !== uid) : [...(e.savedByUids ?? []), uid] }
+      : e,
+    ));
+    try {
+      await toggleSaveNationalLibraryEntry(entry.id, uid, !isSaved);
+      addNotification(isSaved ? 'Отстрането од зачуваните.' : '📌 Зачувано во омилени!', 'success');
+    } catch {
+      addNotification('Не можевме да го зачуваме.', 'error');
+    } finally {
+      setSavingIds(prev => { const n = new Set(prev); n.delete(entry.id); return n; });
+    }
+  };
 
   const handleRate = async (entry: NationalLibraryEntry, stars: number) => {
     if (!firebaseUser?.uid) return;
@@ -331,6 +352,8 @@ export const NationalLibraryView: React.FC = () => {
             const myRating = firebaseUser?.uid ? getUserRating(entry, firebaseUser.uid) : null;
             const isPendingRating = pendingRatings[entry.id] !== undefined;
             const ratingCount = entry.ratingsByUid ? Object.keys(entry.ratingsByUid).length : 0;
+            const isSavedByMe = firebaseUser?.uid ? (entry.savedByUids ?? []).includes(firebaseUser.uid) : false;
+            const isSaving = savingIds.has(entry.id);
             return (
               <Card key={entry.id} className="flex flex-col gap-3 hover:shadow-md transition-shadow">
                 {/* Meta row */}
@@ -524,6 +547,23 @@ export const NationalLibraryView: React.FC = () => {
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-violet-300 text-violet-600 hover:bg-violet-50 transition"
                       >
                         <Wand2 className="w-3 h-3" /> Ремикс
+                      </button>
+                    )}
+                    {firebaseUser?.uid && (
+                      <button
+                        type="button"
+                        disabled={isSaving}
+                        onClick={() => handleToggleSave(entry)}
+                        title={isSavedByMe ? 'Отстрани од зачуваните' : 'Зачувај во омилени'}
+                        className={`p-1.5 rounded-lg border transition ${
+                          isSavedByMe
+                            ? 'border-amber-300 text-amber-600 bg-amber-50 hover:bg-amber-100'
+                            : 'border-gray-200 text-gray-400 hover:border-amber-300 hover:text-amber-500 hover:bg-amber-50'
+                        } disabled:opacity-50`}
+                      >
+                        {isSaving
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Bookmark className={`w-3.5 h-3.5 ${isSavedByMe ? 'fill-amber-400' : ''}`} />}
                       </button>
                     )}
                     <button

@@ -250,53 +250,27 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                 curriculumContext = "Нема специфични теми во системот за ова одделение. Генерирајте општи теми по математика.";
             }
 
-            if (geminiService.generateAnnualPlan) {
-                const generated = await geminiService.generateAnnualPlan(gradeName, subject, weeks, curriculumContext, user || undefined);
-                setPlan(generated);
-                
-                // Deduct credits
-                if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
-                    const previousBalance = user.aiCreditsBalance || 0;
-                    const newBalance = Math.max(0, previousBalance - cost);
-                    try {
-                        const { getFunctions, httpsCallable } = await import('firebase/functions');
-                        const { app } = await import('../firebaseConfig');
-                        const functions = getFunctions(app);
-                        const deductFn = httpsCallable(functions, 'deductCredits');
-                        await deductFn({ amount: cost });
-                        // Update local state
-                        updateLocalProfile({ aiCreditsBalance: newBalance });
-                        // S39-F2: telemetry
-                        trackCreditConsumed({
-                            uid: firebaseUser?.uid, amount: cost, previousBalance, newBalance,
-                            reason: 'annual_plan_generator',
-                        });
-                    } catch (err) {
-                        logger.error("Error deducting credits:", err);
-                    }
+            const generated = await geminiService.generateAnnualPlan(gradeName, subject, weeks, curriculumContext, user || undefined);
+            setPlan(generated);
+
+            // Deduct credits
+            if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+                const previousBalance = user.aiCreditsBalance || 0;
+                const newBalance = Math.max(0, previousBalance - cost);
+                try {
+                    const { getFunctions, httpsCallable } = await import('firebase/functions');
+                    const { app } = await import('../firebaseConfig');
+                    const functions = getFunctions(app);
+                    const deductFn = httpsCallable(functions, 'deductCredits');
+                    await deductFn({ amount: cost });
+                    updateLocalProfile({ aiCreditsBalance: newBalance });
+                    trackCreditConsumed({
+                        uid: firebaseUser?.uid, amount: cost, previousBalance, newBalance,
+                        reason: 'annual_plan_generator',
+                    });
+                } catch (err) {
+                    logger.error("Error deducting credits:", err);
                 }
-            } else {
-                logger.warn("geminiService.generateAnnualPlan is not implemented yet!");
-                // Mock for now so UI works
-                setPlan({
-                    grade: selectedGradeId,
-                    subject,
-                    totalWeeks: weeks,
-                    topics: [
-                        {
-                            title: 'Броеви и операции',
-                            durationWeeks: 6,
-                            objectives: ['Читање и пишување броеви до 1000', 'Соберување и одземање'],
-                            suggestedActivities: ['Игри со карти со броеви', 'Решавање текстуални задачи']
-                        },
-                        {
-                            title: 'Геометрија',
-                            durationWeeks: 4,
-                            objectives: ['Препознавање 2Д и 3Д форми', 'Мерење агли'],
-                            suggestedActivities: ['Цртање форми', 'Работа со гео-табла']
-                        }
-                    ]
-                });
             }
         } catch (error) {
             logger.error('Failed to generate plan:', error);

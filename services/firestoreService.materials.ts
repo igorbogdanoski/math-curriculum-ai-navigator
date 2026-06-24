@@ -1,5 +1,5 @@
 ﻿import { logger } from '../utils/logger';
-import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type QueryDocumentSnapshot, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, limit, orderBy, updateDoc, increment, where, setDoc, addDoc, deleteDoc, onSnapshot, serverTimestamp, startAfter, arrayUnion, arrayRemove, documentId, getCountFromServer, getAggregateFromServer, average, type DocumentSnapshot, type QueryDocumentSnapshot, type Timestamp } from "firebase/firestore";
 import { db } from '../firebaseConfig';
 import { type CurriculumModule } from '../data/curriculum';
 import { type DifferentiationLevel, type SavedQuestion, type ScanArtifactRecord } from '../types';
@@ -772,6 +772,8 @@ export interface NationalLibraryEntry {
   dokLevel?: 1 | 2 | 3 | 4 | null;
   /** Soft-deleted by admin */
   deleted?: boolean;
+  /** UIDs who bookmarked/saved this entry */
+  savedByUids?: string[];
 }
 
 /** Returns average star rating (1–5) or null if no ratings */
@@ -794,6 +796,13 @@ export const rateNationalLibraryEntry = async (
 ): Promise<void> => {
   await updateDoc(doc(db, 'national_library', entryId), {
     [`ratingsByUid.${teacherUid}`]: stars,
+  });
+};
+
+/** Toggle bookmark/save for a national library entry */
+export const toggleSaveNationalLibraryEntry = async (entryId: string, teacherUid: string, saved: boolean): Promise<void> => {
+  await updateDoc(doc(db, 'national_library', entryId), {
+    savedByUids: saved ? arrayUnion(teacherUid) : arrayRemove(teacherUid),
   });
 };
 

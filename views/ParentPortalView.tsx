@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StudentProgressView } from './StudentProgressView';
-import { BookOpen, Loader2, BarChart2, CheckCircle2, Flame, Star, ExternalLink, AlertTriangle, Home, Copy, Printer } from 'lucide-react';
+import { BookOpen, Loader2, BarChart2, CheckCircle2, Flame, Star, ExternalLink, AlertTriangle, Home, Copy, Printer, MessageCircle, Smartphone } from 'lucide-react';
 import { firestoreService, type QuizResult } from '../services/firestoreService';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
@@ -48,29 +48,43 @@ export const ParentPortalView: React.FC = () => {
     return <StudentProgressView name={decodeURIComponent(nameFromUrl)} />;
   }
 
-  const handleCopyReport = () => {
-    if (!summary) return;
+  const buildReportText = (emoji = true) => {
+    if (!summary) return '';
     const date = new Date().toLocaleDateString('mk-MK', { day: 'numeric', month: 'long', year: 'numeric' });
     const weakLine = summary.weakConcepts.length > 0
-      ? `⚠️ Теми за внимание: ${summary.weakConcepts.map(c => `${c.title} (${c.avgPct}%)`).join(', ')}.`
-      : '✅ Нема слаби теми оваа недела.';
-    const text = [
-      `📊 Неделен извештај — ${summary.studentName}`,
+      ? `${emoji ? '⚠️ ' : ''}Теми за внимание: ${summary.weakConcepts.map(c => `${c.title} (${c.avgPct}%)`).join(', ')}.`
+      : `${emoji ? '✅ ' : ''}Нема слаби теми оваа недела.`;
+    return [
+      `${emoji ? '📊 ' : ''}Неделен извештај — ${summary.studentName}`,
       `Датум: ${date}`,
       ``,
-      `📝 Квизови оваа недела: ${summary.quizzesThisWeek}`,
-      `📈 Просечен резултат: ${summary.avgPct}%`,
-      `🏆 Совладани концепти: ${summary.masteredThisWeek}`,
-      `🔥 Серија: ${summary.currentStreak} ${summary.currentStreak === 1 ? 'ден' : 'дена'} по ред`,
+      `${emoji ? '📝 ' : ''}Квизови оваа недела: ${summary.quizzesThisWeek}`,
+      `${emoji ? '📈 ' : ''}Просечен резултат: ${summary.avgPct}%`,
+      `${emoji ? '🏆 ' : ''}Совладани концепти: ${summary.masteredThisWeek}`,
+      `${emoji ? '🔥 ' : ''}Серија: ${summary.currentStreak} ${summary.currentStreak === 1 ? 'ден' : 'дена'} по ред`,
       ``,
       weakLine,
       ``,
-      `— Генерирано од Math Curriculum AI Navigator`,
+      `— Math Curriculum AI Navigator`,
     ].join('\n');
-    navigator.clipboard.writeText(text).then(() => {
+  };
+
+  const handleCopyReport = () => {
+    if (!summary) return;
+    navigator.clipboard.writeText(buildReportText()).then(() => {
       setReportCopied(true);
       setTimeout(() => setReportCopied(false), 2500);
     });
+  };
+
+  const handleShareWhatsApp = () => {
+    if (!summary) return;
+    window.open(`https://wa.me/?text=${encodeURIComponent(buildReportText())}`, '_blank', 'noopener');
+  };
+
+  const handleShareViber = () => {
+    if (!summary) return;
+    window.open(`viber://forward?text=${encodeURIComponent(buildReportText())}`, '_blank', 'noopener');
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -325,6 +339,22 @@ export const ParentPortalView: React.FC = () => {
                 <ExternalLink className="w-4 h-4" />
                 Целосен извештај →
               </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleShareWhatsApp}
+                  className="py-2 border border-green-200 text-green-700 bg-green-50 rounded-xl font-semibold text-xs hover:bg-green-100 transition flex items-center justify-center gap-1.5"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                </button>
+                <button
+                  type="button"
+                  onClick={handleShareViber}
+                  className="py-2 border border-violet-200 text-violet-700 bg-violet-50 rounded-xl font-semibold text-xs hover:bg-violet-100 transition flex items-center justify-center gap-1.5"
+                >
+                  <Smartphone className="w-3.5 h-3.5" /> Viber
+                </button>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"

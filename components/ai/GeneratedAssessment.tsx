@@ -55,10 +55,12 @@ const QuestionList: React.FC<{
     onVisualize?: (idx: number, questionText: string) => Promise<void>;
     onDeleteImage?: (idx: number) => void;
     onRegenerateImage?: (idx: number, customPrompt: string) => Promise<void>;
+    onRegenerateQuestion?: (idx: number) => Promise<void>;
+    regeneratingQuestionIdx?: number | null;
     visualizingIdx?: number | null;
     onChartChange?: (idx: number, chartData: AssessmentQuestion['chartData'], chartConfig: AssessmentQuestion['chartConfig']) => void;
     onUploadImage?: (idx: number, file: File) => Promise<void>;
-}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion, onVisualize, onDeleteImage, onRegenerateImage, visualizingIdx, onChartChange, onUploadImage }) => {
+}> = ({ questions, isEditing, handleQuestionFieldChange, handleOptionChange, onSaveQuestion, onVisualize, onDeleteImage, onRegenerateImage, onRegenerateQuestion, regeneratingQuestionIdx, visualizingIdx, onChartChange, onUploadImage }) => {
     const [openPromptIdx, setOpenPromptIdx] = useState<number | null>(null);
     const [promptMap, setPromptMap] = useState<Record<number, string>>({});
     const [chartBuilderIdx, setChartBuilderIdx] = useState<number | null>(null);
@@ -99,6 +101,19 @@ const QuestionList: React.FC<{
                                 )}
                             </div>
                             <div className="flex items-center gap-1 flex-shrink-0 no-print">
+                                {!isEditing && onRegenerateQuestion && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onRegenerateQuestion(index)}
+                                        disabled={regeneratingQuestionIdx === index}
+                                        title="Замени прашање со AI"
+                                        className="p-1.5 text-gray-300 hover:text-indigo-500 transition opacity-0 group-hover:opacity-100"
+                                    >
+                                        {regeneratingQuestionIdx === index
+                                            ? <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                                            : <RefreshCw className="w-4 h-4" />}
+                                    </button>
+                                )}
                                 {!isEditing && !q.imageUrl && onVisualize && (
                                     <button
                                         onClick={() => onVisualize(index, q.question)}
@@ -372,6 +387,7 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
     const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
     const [visualizingIdx, setVisualizingIdx] = useState<number | null>(null);
     const [isBatchVisualizing, setIsBatchVisualizing] = useState(false);
+    const [regeneratingQuestionIdx, setRegeneratingQuestionIdx] = useState<number | null>(null);
     const actionsMenuRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const [isPdfLoading, setIsPdfLoading] = useState(false);
@@ -629,6 +645,42 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
         setEditableMaterial(material);
         setIsEditing(false);
         trackFeedback('reject_edit');
+    };
+
+    const handleRegenerateQuestion = async (idx: number) => {
+        setRegeneratingQuestionIdx(idx);
+        try {
+            const { geminiService } = await import('../../services/geminiService');
+            const questions = activeTab === 'standard'
+                ? editableMaterial.questions
+                : (editableMaterial.differentiatedVersions?.find(v => v.profileName === activeTab)?.questions ?? editableMaterial.questions);
+            const existing = questions[idx];
+            const newQ = await geminiService.regenerateSingleQuestion(
+                { subject: 'Математика', topic: editableMaterial.title },
+                existing,
+            );
+            setEditableMaterial(prev => {
+                if (activeTab === 'standard') {
+                    const next = [...prev.questions];
+                    next[idx] = newQ;
+                    return { ...prev, questions: next };
+                }
+                return {
+                    ...prev,
+                    differentiatedVersions: prev.differentiatedVersions?.map(v =>
+                        v.profileName === activeTab
+                            ? { ...v, questions: v.questions.map((q, i) => i === idx ? newQ : q) }
+                            : v
+                    ) ?? [],
+                };
+            });
+            addNotification('Прашањето е заменето!', 'success');
+            trackFeedback('edit_regenerated', `question_index:${idx}`);
+        } catch {
+            addNotification('Грешка при замена на прашањето.', 'error');
+        } finally {
+            setRegeneratingQuestionIdx(null);
+        }
     };
 
     const handleExport = async (format: 'md' | 'tex' | 'pdf' | 'doc' | 'download-doc' | 'clipboard') => {
@@ -958,6 +1010,8 @@ export const GeneratedAssessment: React.FC<GeneratedAssessmentProps> = ({ materi
                     onVisualize={handleVisualize}
                     onDeleteImage={handleDeleteImage}
                     onRegenerateImage={handleRegenerateImage}
+                    onRegenerateQuestion={handleRegenerateQuestion}
+                    regeneratingQuestionIdx={regeneratingQuestionIdx}
                     visualizingIdx={visualizingIdx}
                     onChartChange={(qIndex, chartData, chartConfig) => handleChartChangeForVersion(activeTab, qIndex, chartData, chartConfig)}
                     onUploadImage={handleUploadImage}

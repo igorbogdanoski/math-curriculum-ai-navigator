@@ -277,4 +277,40 @@ ${JSON.stringify(pairs, null, 2)}`;
     return questions.map(q => ({ questionId: q.id, correct: false, points: 0, feedback: 'Не може да се оцени автоматски.' }));
   }
 },
+
+async regenerateSingleQuestion(
+  context: { subject: string; gradeLevel?: number; topic?: string },
+  existing: import('../../types').AssessmentQuestion,
+  profile?: TeachingProfile,
+): Promise<import('../../types').AssessmentQuestion> {
+  const prompt = `Ти си наставник по математика. Замени ја следнава прашање со НОВО прашање на иста тема и тежина, но со различни броеви/формулации.
+
+ОРИГИНАЛНА ПРАШАЊЕ (НЕ ЈА КОРИСТИ):
+${JSON.stringify(existing, null, 2)}
+
+КОНТЕКСТ:
+- Предмет: ${context.subject}
+- Тема: ${context.topic ?? 'Општа математика'}
+${context.gradeLevel ? `- Одделение: ${context.gradeLevel}` : ''}
+
+Врати само валиден JSON за едно прашање, без дополнителен текст.`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      type: { type: Type.STRING },
+      question: { type: Type.STRING },
+      options: { type: Type.ARRAY, items: { type: Type.STRING } },
+      answer: { type: Type.STRING },
+      cognitiveLevel: { type: Type.STRING },
+      difficulty_level: { type: Type.STRING },
+    },
+    required: ['type', 'question', 'answer', 'cognitiveLevel'],
+  };
+
+  const result = await generateAndParseJSON<import('../../types').AssessmentQuestion>(
+    [{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier,
+  );
+  return { ...existing, ...result, id: existing.id };
+},
 };
