@@ -17,6 +17,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { generatePlanICS, downloadICS } from '../utils/icalExport';
 import { useCollabPlan } from '../hooks/useCollabPlan';
+import { buildOfficialCurriculumContext } from '../data/official/grade8Official';
 
 
 interface SortableTopicProps {
@@ -237,7 +238,13 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
             const gradeName = gradeData?.title || gradeData?.id || selectedGradeId;
             let curriculumContext = '';
             
-            if (gradeData && gradeData.topics && gradeData.topics.length > 0) {
+            // Use official Ministry curriculum when available (grade 8 = 2025 program)
+            const gradeNum = gradeData?.level ?? 0;
+            const officialContext = gradeNum === 8 ? buildOfficialCurriculumContext(8) : '';
+
+            if (officialContext) {
+                curriculumContext = officialContext;
+            } else if (gradeData && gradeData.topics && gradeData.topics.length > 0) {
                 curriculumContext = gradeData.topics.map((t, idx) => {
                     let desc = `- Тема ${idx + 1}: ${t.title}`;
                     if (t.suggestedHours) desc += ` (Препорачани часови: ${t.suggestedHours} часа)`;
