@@ -434,10 +434,10 @@ service cloud.firestore {
     }
 
     // ── Вектор ембединзи на концепти (concept_embeddings) — AI1 ──
-    // Read-only за автентицирани корисници; пишување само преку admin script.
+    // Read: сите автентицирани; Write: само admin (индексирање преку Admin Portal).
     match /concept_embeddings/{conceptId} {
       allow read:  if isAuthenticated();
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
     // ── Решенија на заедницата за матура (matura_community_solutions) — М3 ──
