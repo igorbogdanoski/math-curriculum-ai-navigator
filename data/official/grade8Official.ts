@@ -518,3 +518,178 @@ export function getOfficialHoursMap(grade: number): Record<string, number> {
   if (!curriculum) return {};
   return Object.fromEntries(curriculum.topics.map(t => [t.title, t.totalHours]));
 }
+
+/**
+ * Maps grade 8 curriculum.ts topic IDs (g8-topic-X) to official topic IDs (g8-off-X).
+ * Used by ragService to enrich getTopicContext() with official data.
+ */
+const TOPIC_ID_TO_OFFICIAL: Record<string, string> = {
+  'g8-topic-1': 'g8-off-1', // Броеви
+  'g8-topic-2': 'g8-off-2', // Геометрија
+  'g8-topic-3': 'g8-off-3', // Алгебра
+  'g8-topic-4': 'g8-off-4', // Мерење
+  'g8-topic-5': 'g8-off-5', // Работа со податоци
+};
+
+/**
+ * Returns a formatted RAG enrichment string for a given topic ID.
+ * Injected by ragService into getTopicContext() for grade 8.
+ * Returns empty string if topic has no official data.
+ */
+export function getOfficialTopicEnrichment(topicId: string): string {
+  const officialId = TOPIC_ID_TO_OFFICIAL[topicId];
+  if (!officialId) return '';
+
+  const topic = grade8OfficialCurriculum.topics.find(t => t.id === officialId);
+  if (!topic) return '';
+
+  const dist = topic.distributedThroughoutYear ? ' (реализира се низ целата година)' : '';
+  const lines: string[] = [
+    '',
+    `--- ОФИЦИЈАЛНА ПРОГРАМА МОН 2025 — ${topic.title} (${topic.totalHours}ч${dist}) ---`,
+  ];
+
+  for (const sub of topic.subtopics) {
+    if (sub.concepts.length === 0) continue; // skip written exams
+    lines.push(`• ${sub.title} [${sub.hours}ч]`);
+    if (sub.assessmentStandards.length > 0) {
+      lines.push(`  Стандарди: ${sub.assessmentStandards.slice(0, 3).join(' | ')}`);
+    }
+    if (sub.activities.length > 0) {
+      lines.push(`  Активности: ${sub.activities.slice(0, 2).map(a => a.substring(0, 100)).join(' / ')}`);
+    }
+  }
+  lines.push('--- КРАЈ НА ОФИЦИЈАЛНА ПРОГРАМА ---');
+  return lines.join('\n');
+}
+
+/**
+ * Builds a list of all official subtopics as indexable documents for vector RAG.
+ * Each item has id, text (for embedding), and metadata.
+ * Admin can call this to store embeddings in concept_embeddings Firestore collection.
+ */
+export interface OfficialSubtopicDoc {
+  id: string;
+  grade: number;
+  topicId: string;
+  topicTitle: string;
+  subtopicTitle: string;
+  text: string;
+}
+
+export function getOfficialSubtopicDocs(grade: number): OfficialSubtopicDoc[] {
+  const curriculum = grade === 8 ? grade8OfficialCurriculum : null;
+  if (!curriculum) return [];
+
+  const docs: OfficialSubtopicDoc[] = [];
+  for (const topic of curriculum.topics) {
+    for (const sub of topic.subtopics) {
+      if (sub.concepts.length === 0) continue;
+      const id = `g${grade}-official-${topic.id}-${sub.title.toLowerCase().replace(/[^а-шa-z0-9]+/gi, '-').slice(0, 40)}`;
+      const text = [
+        `${curriculum.gradeTitle} — ${topic.title}: ${sub.title}`,
+        sub.concepts.length > 0 ? `Поими: ${sub.concepts.join(', ')}` : '',
+        sub.assessmentStandards.length > 0 ? `Стандарди: ${sub.assessmentStandards.join('. ')}` : '',
+        sub.activities.length > 0 ? `Активности: ${sub.activities.join('. ')}` : '',
+      ].filter(Boolean).join('\n');
+
+      docs.push({
+        id,
+        grade,
+        topicId: topic.id,
+        topicTitle: topic.title,
+        subtopicTitle: sub.title,
+        text,
+      });
+    }
+  }
+  return docs;
+}
+
+/**
+ * 36-week official pace for grade 8 math (4h/week × 36 weeks = 144h).
+ * Themes distributed throughout year (Геометрија, Мерење, Статистика) are interleaved.
+ */
+export interface WeekMilestone {
+  theme: string;
+  subtopic: string;
+  themeId: string;
+  isWrittenExam?: boolean;
+}
+
+export const GRADE8_WEEK_MILESTONES: Record<number, WeekMilestone> = {
+  1:  { theme: 'Броеви', subtopic: 'Дијагностика + Вовед: Релации меѓу множества', themeId: 'g8-off-1' },
+  2:  { theme: 'Броеви', subtopic: 'Релации меѓу множества — рефлексивна, симетрична, еквивалентност', themeId: 'g8-off-1' },
+  3:  { theme: 'Броеви', subtopic: 'Рационални броеви — дефиниција, запишување, споредување', themeId: 'g8-off-1' },
+  4:  { theme: 'Броеви + Геометрија', subtopic: 'Рационални броеви — пресметки; Агол со паралелни краци (вовед)', themeId: 'g8-off-1' },
+  5:  { theme: 'Броеви', subtopic: 'Размер, пропорција и проценти', themeId: 'g8-off-1' },
+  6:  { theme: 'Броеви', subtopic: 'Операции со рационални броеви — собирање и одземање', themeId: 'g8-off-1' },
+  7:  { theme: 'Броеви', subtopic: 'Операции со рационални броеви — множење и делење', themeId: 'g8-off-1' },
+  8:  { theme: 'Броеви', subtopic: 'Степенување и корени — позитивни и негативни степени', themeId: 'g8-off-1' },
+  9:  { theme: 'Броеви + Геометрија', subtopic: 'Степенување — примена; Периферен и централен агол (вовед)', themeId: 'g8-off-1' },
+  10: { theme: 'Броеви', subtopic: 'Писмена работа 1 + Систематизација Броеви', themeId: 'g8-off-1', isWrittenExam: true },
+  11: { theme: 'Геометрија', subtopic: 'Периферен и централен агол — теорема, задачи', themeId: 'g8-off-2' },
+  12: { theme: 'Геометрија', subtopic: 'Агол — вежби; Складност на триаголник (вовед)', themeId: 'g8-off-2' },
+  13: { theme: 'Геометрија', subtopic: 'Складност на триаголник — случаи, задачи', themeId: 'g8-off-2' },
+  14: { theme: 'Геометрија + Мерење', subtopic: 'Питагорова теорема; Мерење — Единици за должина и периметар', themeId: 'g8-off-2' },
+  15: { theme: 'Алгебра', subtopic: 'Мономи и полиноми — дефиниции, нормален вид, степен', themeId: 'g8-off-3' },
+  16: { theme: 'Алгебра', subtopic: 'Мономи — слични и спротивни; собирање и одземање мономи', themeId: 'g8-off-3' },
+  17: { theme: 'Алгебра + Геометрија', subtopic: 'Полиноми — операции; Четириаголник (вовед)', themeId: 'g8-off-3' },
+  18: { theme: 'Геометрија', subtopic: 'Четириаголник — видови, плоштини, задачи', themeId: 'g8-off-2' },
+  19: { theme: 'Алгебра + Мерење', subtopic: 'Линеарни равенки; Писмена работа 2 + Плоштина на рамни фигури (вовед)', themeId: 'g8-off-3', isWrittenExam: true },
+  20: { theme: 'Алгебра', subtopic: 'Низи и функции — општ член, правило за следен член', themeId: 'g8-off-3' },
+  21: { theme: 'Алгебра + Статистика', subtopic: 'Линеарна функција y=mx+n; Популација и примерок (вовед)', themeId: 'g8-off-3' },
+  22: { theme: 'Алгебра', subtopic: 'Линеарна функција — графикон, нагиб, нули', themeId: 'g8-off-3' },
+  23: { theme: 'Алгебра', subtopic: 'Систематизација Алгебра; Писмена работа 3', themeId: 'g8-off-3', isWrittenExam: true },
+  24: { theme: 'Геометрија', subtopic: 'Тродимензионална геометрија — полиедри, Ојлерова формула', themeId: 'g8-off-2' },
+  25: { theme: 'Геометрија', subtopic: 'Трансформации — транслација, осна симетрија, ротација', themeId: 'g8-off-2' },
+  26: { theme: 'Геометрија + Мерење', subtopic: 'Комбинирани трансформации; Писмена работа 2 (Геом.); Плоштина 3Д', themeId: 'g8-off-2', isWrittenExam: true },
+  27: { theme: 'Мерење', subtopic: 'Мерење — Плоштина на 3Д фигури (призми, пирамиди)', themeId: 'g8-off-4' },
+  28: { theme: 'Мерење + Статистика', subtopic: 'Волумен; Планирање и собирање статистички податоци', themeId: 'g8-off-4' },
+  29: { theme: 'Мерење', subtopic: 'Волумен на призма и пирамида — задачи', themeId: 'g8-off-4' },
+  30: { theme: 'Статистика', subtopic: 'Обработка на податоци — табели на фреквенција, дијаграми', themeId: 'g8-off-5' },
+  31: { theme: 'Статистика', subtopic: 'Аритметичка средина, медијана, мода; секторски дијаграм', themeId: 'g8-off-5' },
+  32: { theme: 'Мерење + Статистика', subtopic: 'Писмена работа 4 (Мерење); Excel анализа на податоци', themeId: 'g8-off-4', isWrittenExam: true },
+  33: { theme: 'Статистика', subtopic: 'Веројатност — основни поими, p и 1−p', themeId: 'g8-off-5' },
+  34: { theme: 'Статистика', subtopic: 'Независни и зависни настани; заемно исклучување', themeId: 'g8-off-5' },
+  35: { theme: 'Систематизација', subtopic: 'Финално повторување на целата програма', themeId: 'all' },
+  36: { theme: 'Систематизација', subtopic: 'Финална оценка и затворање на учебната година', themeId: 'all' },
+};
+
+/**
+ * Returns the official curriculum milestone for a given school week number (1–36).
+ * Week 1 = first week of September. Returns null for weeks outside 1–36.
+ */
+export function getWeekMilestone(weekNum: number, grade: number): WeekMilestone | null {
+  if (grade !== 8) return null;
+  return GRADE8_WEEK_MILESTONES[weekNum] ?? null;
+}
+
+/**
+ * Computes the current school week number from a date.
+ * School year starts September 1 (week 1). Returns null outside school year.
+ */
+export function getSchoolWeekNumber(date: Date): number | null {
+  const month = date.getMonth(); // 0-indexed
+  const year = date.getFullYear();
+
+  // School year Sept 1 → mid-June (week 36 ≈ June 15)
+  let schoolYearStart: Date;
+  if (month >= 8) {
+    // September–December: current calendar year
+    schoolYearStart = new Date(year, 8, 1); // Sept 1
+  } else if (month <= 5) {
+    // January–June: school year started previous calendar year
+    schoolYearStart = new Date(year - 1, 8, 1);
+  } else {
+    return null; // July–August: summer break
+  }
+
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weekNum = Math.floor((date.getTime() - schoolYearStart.getTime()) / msPerWeek) + 1;
+
+  // Weeks 19-20: winter break (roughly late December / early January)
+  // Clamp to valid school weeks
+  if (weekNum < 1 || weekNum > 36) return null;
+  return weekNum;
+}

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { PlannerItem } from '../../types';
 import { PlannerItemType } from '../../types';
 import { Plus, BookOpen, Star, CalendarDays, FileText } from 'lucide-react';
+import { CurriculumPaceBanner } from './CurriculumPaceBanner';
 
 interface Props {
   currentDate: Date;
@@ -61,6 +62,9 @@ export const PlannerWeekView: React.FC<Props> = ({ currentDate, items, onItemCli
 
   return (
     <div className="space-y-4">
+      {/* Official curriculum pace banner */}
+      <CurriculumPaceBanner currentDate={currentDate} />
+
       {/* Week summary bar */}
       <div className="flex items-center gap-4 px-1 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
         <CalendarDays className="w-4 h-4 text-indigo-500 ml-2 flex-shrink-0" />

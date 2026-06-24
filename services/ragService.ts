@@ -247,6 +247,7 @@ class RagService {
 
   /**
    * Retrieves the official requirements for an entire topic.
+   * For grade 8, enriches with official MoE 2025 subtopic data from grade8Official.ts.
    */
   public async getTopicContext(gradeLevel: number, topicId: string): Promise<string> {
     const fullCurriculumData = await this.getCurriculumData();
@@ -266,7 +267,16 @@ class RagService {
     const topic = gradeData.topics.find((t) => t.id === topicId);
     if (!topic) return '';
 
-    return this.formatTopicRAG(gradeData.title, topic);
+    let context = this.formatTopicRAG(gradeData.title, topic);
+
+    // Enrich with official MoE 2025 curriculum data when available
+    if (gradeLevel === 8) {
+      const { getOfficialTopicEnrichment } = await import('../data/official/grade8Official');
+      const enrichment = getOfficialTopicEnrichment(topicId);
+      if (enrichment) context += enrichment;
+    }
+
+    return context;
   }
 
   private formatConceptRAG(gradeTitle: string, topicTitle: string, concept: Concept): string {

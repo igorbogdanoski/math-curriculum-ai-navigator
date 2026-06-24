@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { Card } from '../components/common/Card';
-import { Building, Plus, ShieldAlert, Users, Copy, Check, BarChart2, TrendingDown, Globe, MessageSquare, BookOpen, Trash2, Star, RefreshCw, Activity } from 'lucide-react';
+import { Building, Plus, ShieldAlert, Users, Copy, Check, BarChart2, TrendingDown, Globe, MessageSquare, BookOpen, Trash2, Star, RefreshCw, Activity, DatabaseZap } from 'lucide-react';
 import { firestoreService } from '../services/firestoreService';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { fetchAllForumThreadsAdmin, softDeleteThread, restoreThread } from '../services/firestoreService.forum';
@@ -290,6 +290,48 @@ export const SystemAdminView: React.FC = () => {
     const [cohortBurn, setCohortBurn] = useState<{ aiCreditsBalance?: number }[]>([]);
     const [isLoadingCohort, setIsLoadingCohort] = useState(false);
     const [cohortClock, setCohortClock] = useState<number>(() => Date.now());
+
+    // ── RAG Indexing: Official Curriculum ──
+    const [ragIndexStatus, setRagIndexStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+    const [ragIndexLog, setRagIndexLog] = useState<string[]>([]);
+
+    const handleIndexOfficialCurriculum = useCallback(async () => {
+      setRagIndexStatus('running');
+      setRagIndexLog(['Започнувам индексирање на официјалната програма...']);
+      try {
+        const [{ getOfficialSubtopicDocs }, { callEmbeddingProxy }, { doc, setDoc }] = await Promise.all([
+          import('../data/official/grade8Official'),
+          import('../services/gemini/core'),
+          import('firebase/firestore'),
+        ]);
+        const { db } = await import('../firebaseConfig');
+
+        const subtopics = getOfficialSubtopicDocs(8);
+        setRagIndexLog(prev => [...prev, `Пронајдени ${subtopics.length} подтеми за индексирање.`]);
+
+        let done = 0;
+        for (const sub of subtopics) {
+          const vector = await callEmbeddingProxy(sub.text, undefined, 'RETRIEVAL_DOCUMENT', 768);
+          await setDoc(doc(db, 'concept_embeddings', sub.id), {
+            vector,
+            text: sub.text,
+            grade: sub.grade,
+            topicId: sub.topicId,
+            topicTitle: sub.topicTitle,
+            subtopicTitle: sub.subtopicTitle,
+            source: 'official_mon_2025',
+            indexedAt: new Date().toISOString(),
+          });
+          done += 1;
+          setRagIndexLog(prev => [...prev, `[${done}/${subtopics.length}] ${sub.subtopicTitle}`]);
+        }
+        setRagIndexLog(prev => [...prev, `✅ Завршено! ${done} подтеми индексирани во concept_embeddings.`]);
+        setRagIndexStatus('done');
+      } catch (err) {
+        setRagIndexLog(prev => [...prev, `❌ Грешка: ${err instanceof Error ? err.message : String(err)}`]);
+        setRagIndexStatus('error');
+      }
+    }, []);
 
     useEffect(() => {
         if (!user || user.role !== 'admin') {
@@ -895,6 +937,44 @@ export const SystemAdminView: React.FC = () => {
 
             {/* ── TAB: Content Moderation ── */}
             {activeTab === 'content' && (
+              <div className="space-y-4">
+                {/* RAG Indexing Panel */}
+                <Card className="p-5 border-2 border-dashed border-emerald-200 bg-emerald-50">
+                  <div className="flex items-start gap-3">
+                    <DatabaseZap className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-sm font-bold text-emerald-800 mb-0.5">
+                        Vector RAG — Индексирај официјална програма МОН 2025
+                      </h2>
+                      <p className="text-xs text-emerald-700 mb-3">
+                        Ги претвора сите подтеми на VIII одделение во 768-dim вектори и ги зачувува во <code className="bg-emerald-100 px-1 rounded">concept_embeddings</code> Firestore. По индексирање, <strong>сите AI функции</strong> (часови, тестови, тутор) автоматски ги пронаоѓаат официјалните активности и стандарди семантички.
+                      </p>
+                      <button
+                        type="button"
+                        disabled={ragIndexStatus === 'running'}
+                        onClick={handleIndexOfficialCurriculum}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition ${
+                          ragIndexStatus === 'running'
+                            ? 'bg-emerald-200 text-emerald-500 cursor-not-allowed'
+                            : ragIndexStatus === 'done'
+                            ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                            : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        }`}
+                      >
+                        <DatabaseZap className={`w-4 h-4 ${ragIndexStatus === 'running' ? 'animate-pulse' : ''}`} />
+                        {ragIndexStatus === 'running' ? 'Индексирање...' : ragIndexStatus === 'done' ? '✅ Повторно индексирај' : 'Индексирај VIII одделение'}
+                      </button>
+                      {ragIndexLog.length > 0 && (
+                        <div className="mt-3 bg-white/70 rounded-lg border border-emerald-200 p-3 max-h-40 overflow-y-auto">
+                          {ragIndexLog.map((line, i) => (
+                            <p key={i} className="text-[11px] font-mono text-gray-700 leading-relaxed">{line}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+
                 <Card className="p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-bold flex items-center gap-2">
@@ -969,6 +1049,7 @@ export const SystemAdminView: React.FC = () => {
                         </div>
                     )}
                 </Card>
+              </div>
             )}
 
             {/* ── TAB: Cohort / Activity (S39-F5) ── */}
