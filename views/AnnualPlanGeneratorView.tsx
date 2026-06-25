@@ -21,6 +21,7 @@ import { buildOfficialCurriculumContext } from '../data/official/grade8Official'
 import { PlanGanttChart } from '../components/planner/PlanGanttChart';
 import { AIThematicPlanGeneratorModal } from '../components/planner/AIThematicPlanGeneratorModal';
 import { AnnualPlanOfficialForm } from '../components/planner/AnnualPlanOfficialForm';
+import { PlanAnalyticsDashboard } from '../components/planner/PlanAnalyticsDashboard';
 import { usePlanning } from '../contexts/PlanningContext';
 
 
@@ -135,7 +136,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const [isGenerating, setIsGenerating] = useState(false);
     const [plan, setPlan] = useState<AIGeneratedAnnualPlan | null>(null);
     const [isLoadingExisting, setIsLoadingExisting] = useState(false);
-    const [viewMode, setViewMode] = useState<'list' | 'gantt'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'gantt' | 'analytics'>('list');
     const [thematicTopic, setThematicTopic] = useState<AIGeneratedAnnualPlanTopic | null>(null);
 
     // Official MoN form state
@@ -498,7 +499,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
-                                        {/* List / Gantt toggle */}
+                                        {/* List / Gantt / Analytics toggle */}
                                         <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-bold">
                                             <button
                                                 type="button"
@@ -513,6 +514,13 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                 className={`px-3 py-1.5 transition-colors border-l border-gray-200 ${viewMode === 'gantt' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                                             >
                                                 📅 Gantt
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setViewMode('analytics')}
+                                                className={`px-3 py-1.5 transition-colors border-l border-gray-200 ${viewMode === 'analytics' ? 'bg-violet-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                                            >
+                                                📊 Аналитика
                                             </button>
                                         </div>
                                         <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
@@ -575,7 +583,11 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                     </div>
                                 </div>
 
-                                {viewMode === 'gantt' ? (
+                                {viewMode === 'analytics' ? (
+                                    <div className="mb-6">
+                                        <PlanAnalyticsDashboard plan={plan} weeklyHours={4} />
+                                    </div>
+                                ) : viewMode === 'gantt' ? (
                                     <div className="mb-6">
                                         <PlanGanttChart
                                             topics={plan.topics}
