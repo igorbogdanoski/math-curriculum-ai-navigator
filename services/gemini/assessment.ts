@@ -124,7 +124,7 @@ async generateAssessment(type: 'ASSESSMENT' | 'QUIZ' | 'FLASHCARDS', questionTyp
     // RAG INJECTION + Vector RAG semantic enrichment + secondary track context
     const vectorRagQuery = context.concepts?.length
         ? `${context.topic?.title ?? ''} ${context.concepts.map(c => `${c.title} ${c.description ?? ''}`).join(' ')}`.trim()
-        : undefined;
+        : context.topic?.title || undefined;
 
     const systemInstr = await buildDynamicSystemInstruction(
         JSON_SYSTEM_INSTRUCTION,
