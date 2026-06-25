@@ -8,6 +8,52 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { CACHE_COLLECTION } from './core';
 
+// ── Official MoN 2025 curriculum helpers for annual plan generation ────────────
+
+function formatFlatSubtopics(subtopics: Array<{ themeName: string; subtopicName: string; hours: number; concepts: string[] }>): string {
+  const themes = new Map<string, typeof subtopics>();
+  for (const s of subtopics) {
+    if (!themes.has(s.themeName)) themes.set(s.themeName, []);
+    themes.get(s.themeName)!.push(s);
+  }
+  let out = '';
+  for (const [theme, subs] of themes) {
+    const total = subs.reduce((acc, x) => acc + x.hours, 0);
+    out += `\n▪ ${theme} (вкупно ${total}ч)\n`;
+    for (const s of subs) {
+      out += `  – ${s.subtopicName} (${s.hours}ч): ${s.concepts.slice(0, 2).join('; ')}\n`;
+    }
+  }
+  return out;
+}
+
+async function buildOfficialCurriculumSummary(level: number): Promise<string> {
+  try {
+    if (level === 6) {
+      const { GRADE6_OFFICIAL_SUBTOPICS } = await import('../../data/official/grade6Official');
+      return formatFlatSubtopics(GRADE6_OFFICIAL_SUBTOPICS);
+    }
+    if (level === 7) {
+      const { GRADE7_OFFICIAL_SUBTOPICS } = await import('../../data/official/grade7Official');
+      return formatFlatSubtopics(GRADE7_OFFICIAL_SUBTOPICS);
+    }
+    if (level === 8) {
+      const { grade8OfficialCurriculum } = await import('../../data/official/grade8Official');
+      let out = '';
+      for (const topic of grade8OfficialCurriculum.topics) {
+        out += `\n▪ ${topic.title} (вкупно ${topic.totalHours}ч)\n`;
+        for (const sub of topic.subtopics) {
+          out += `  – ${sub.title} (${sub.hours}ч): ${sub.concepts.slice(0, 2).join('; ')}\n`;
+        }
+      }
+      return out;
+    }
+  } catch { /* non-official grades silently return empty */ }
+  return '';
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+
 export const plansAPI = {
 async generateLessonPlanIdeas(concepts: Concept[], topic: Topic, gradeLevel: number, profile?: TeachingProfile, options?: { focus: string; tone: string; learningDesign?: string; }, customInstruction?: string): Promise<AIGeneratedIdeas> {
     const conceptId = concepts?.[0]?.id || 'no_concept';
@@ -205,6 +251,9 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
   },
 
 async generateCalendarPlan(grade: Grade, startDate: string, endDate: string, holidays: string, winterBreak: {start: string, end: string}, profile?: TeachingProfile): Promise<Omit<PlannerItem, 'id'>[]> {
+      // Load official MoN 2025 curriculum for VI/VII/VIII — enriches AI with exact subtopics & hours
+      const officialCurriculum = await buildOfficialCurriculumSummary(grade.level);
+
       // @prompt-start: annual_plan
       const prompt = `
 ### УЛОГА
@@ -218,11 +267,15 @@ async generateCalendarPlan(grade: Grade, startDate: string, endDate: string, hol
 
 ### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА (Chain-of-Thought)
 1. КАЛЕНДАР: Прво идентификувај ги сите работни денови во периодот, исклучувајќи ги празниците и распустот.
-2. ТЕМИ: Распредели ги главните теми (Броеви, Алгебра, Геометрија, Мерење, Работа со податоци) логично низ месеците.
-3. БАЛАНС: Осигурај се дека има доволно часови за вежбање, повторување и формативно оценување по секоја тема.
+2. ТЕМИ: Распредели ги темите според ОФИЦИЈАЛНАТА ПРОГРАМА подолу — почитувај го редоследот и бројот на часови.
+3. БАЛАНС: По секоја тема планирај часови за вежбање, повторување и формативно оценување.
+4. ПОКРИЕНОСТ: Осигурај се дека СИТЕ подтеми од официјалната програма се застапени во планот.
+${officialCurriculum ? `
+### ОФИЦИЈАЛНА НАСТАВНА ПРОГРАМА (МОН 2025) — ЗАДОЛЖИТЕЛНО СЛЕДИ
+${officialCurriculum}` : ''}
 
 ### ИНСТРУКЦИИ ЗА СОДРЖИНА
-- Секоја единица мора да има датум и јасен наслов.
+- Секоја единица мора да има датум и јасен наслов кој одговара на некоја подтема од официјалната програма.
 - Внимавај на вертикалната прогресија — потешките теми не треба да дојдат одеднаш.
 - Исходот треба да биде низа од настани кои формираат кохерентна целина за целата учебна година.
 `;
@@ -239,8 +292,9 @@ async generateCalendarPlan(grade: Grade, startDate: string, endDate: string, hol
               required: ["date", "title"]
           }
       };
-      // Use Thinking model for complex calendar and curriculum alignment
-      return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{ text: prompt }, { text: `Датуми: ${startDate} до ${endDate}` }], schema, DEFAULT_MODEL, AnnualPlanSchema, MAX_RETRIES, true, undefined, profile?.tier);
+      const ragQuery = `${grade.title} математика официјална наставна програма теми содржина`;
+      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, grade.level, undefined, undefined, profile?.secondaryTrack, ragQuery);
+      return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{ text: prompt }, { text: `Датуми: ${startDate} до ${endDate}` }], schema, DEFAULT_MODEL, AnnualPlanSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
   },
 
 async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile): Promise<AIGeneratedThematicPlan> {
