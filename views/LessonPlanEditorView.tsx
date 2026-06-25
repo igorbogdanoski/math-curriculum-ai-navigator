@@ -28,6 +28,8 @@ import { LessonPlanExportMenu } from '../components/lesson-plan-editor/LessonPla
 import { LessonPlanDifferentiationPanel } from '../components/lesson-plan-editor/LessonPlanDifferentiationPanel';
 import { LessonPlanOfficialForm } from '../components/planner/LessonPlanOfficialForm';
 import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
+import { PriorKnowledgeConnector } from '../components/lesson-plan-editor/PriorKnowledgeConnector';
+import { PedagogicalModelsPanel } from '../components/lesson-plan-editor/PedagogicalModelsPanel';
 
 
 interface LessonPlanEditorViewProps {
@@ -273,6 +275,8 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                 {ai.generatedIllustration && (
                   <div className="mt-6 relative">
                     <button
+                      type="button"
+                      title="Отстрани илустрација"
                       onClick={() => ai.setGeneratedIllustration(null)}
                       className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors z-10"
                     >
@@ -337,6 +341,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           </div>
 
           <aside className="w-full lg:w-80 space-y-4">
+            <PriorKnowledgeConnector
+              conceptIds={plan.conceptIds ?? []}
+              currentGrade={plan.grade ?? 6}
+            />
+
             <PedagogicalDashboard activities={plan.scenario?.main || []} />
 
             <AILessonAssistant
@@ -356,6 +365,8 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               canGenerate={!!(plan.title || plan.theme)}
               onGenerate={ai.handleGenerateDifferentiation}
             />
+
+            <PedagogicalModelsPanel />
           </aside>
         </div>
       </div>
