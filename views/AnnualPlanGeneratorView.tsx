@@ -148,6 +148,11 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const [isPublic, setIsPublic] = useState(false);
     const [isTogglingPublic, setIsTogglingPublic] = useState(false);
 
+    // S78-B: Parallel thematic generation
+    interface ParallelProgress { done: number; total: number; results: { topic: string; status: 'ok' | 'error' }[] }
+    const [parallelProgress, setParallelProgress] = useState<ParallelProgress | null>(null);
+    const [isGeneratingParallel, setIsGeneratingParallel] = useState(false);
+
     const { setPlanningState } = usePlanning();
 
     const { user, firebaseUser, updateLocalProfile } = useAuth();
@@ -249,6 +254,43 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
         } finally {
             setIsTogglingPublic(false);
         }
+    };
+
+    const handleGenerateAllThematic = async () => {
+        if (!plan || !curriculum) return;
+        const gradeMatch = curriculum.grades.find(g =>
+            plan.grade.includes(String(g.level)) || g.title === plan.grade
+        ) ?? curriculum.grades[0];
+        if (!gradeMatch) { addNotification('Не е пронајдено одделение во curriculum.', 'error'); return; }
+
+        const total = plan.topics.length;
+        setParallelProgress({ done: 0, total, results: [] });
+        setIsGeneratingParallel(true);
+
+        const promises = plan.topics.map(annualTopic => {
+            const topicMatch = gradeMatch.topics.find(t =>
+                t.title.toLowerCase().includes(annualTopic.title.toLowerCase().slice(0, 5)) ||
+                annualTopic.title.toLowerCase().includes(t.title.toLowerCase().slice(0, 5))
+            ) ?? gradeMatch.topics[0];
+
+            return geminiService.generateThematicPlan(gradeMatch, topicMatch, user ?? undefined)
+                .then(() => {
+                    setParallelProgress(prev => prev ? {
+                        ...prev, done: prev.done + 1,
+                        results: [...prev.results, { topic: annualTopic.title, status: 'ok' as const }],
+                    } : null);
+                })
+                .catch(() => {
+                    setParallelProgress(prev => prev ? {
+                        ...prev, done: prev.done + 1,
+                        results: [...prev.results, { topic: annualTopic.title, status: 'error' as const }],
+                    } : null);
+                });
+        });
+
+        await Promise.allSettled(promises);
+        setIsGeneratingParallel(false);
+        addNotification(`⚡ ${total} тематски планови загреани — отвори Gantt за брз пристап!`, 'success');
     };
 
     // Keep ref in sync so the Cmd+S effect always calls the latest version
@@ -590,6 +632,17 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                             📅
                                         </button>
                                         <button
+                                            type="button"
+                                            onClick={handleGenerateAllThematic}
+                                            disabled={isGeneratingParallel}
+                                            title="Загреј ги сите тематски планови паралелно (кешираат за брз пристап)"
+                                            className="flex items-center gap-1 px-2.5 py-1.5 border-2 border-indigo-100 rounded-xl hover:bg-indigo-50 transition text-indigo-700 text-xs font-bold disabled:opacity-50"
+                                        >
+                                            {isGeneratingParallel
+                                                ? <><svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Загревам...</>
+                                                : '⚡ Загреј сите'}
+                                        </button>
+                                        <button
                                             onClick={handlePrint}
                                             className="p-2 border-2 border-gray-100 rounded-xl hover:bg-gray-50 transition text-gray-600"
                                             title="Печати"
@@ -622,6 +675,33 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                         </button>
                                     </div>
                                 </div>
+
+                                {/* ── S78-B: Parallel thematic generation progress ── */}
+                                {parallelProgress && (
+                                    <div className="mb-4 bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <span className="text-xs font-bold text-indigo-700">
+                                                ⚡ Загревање на тематски планови: {parallelProgress.done}/{parallelProgress.total}
+                                            </span>
+                                            {!isGeneratingParallel && (
+                                                <button type="button" onClick={() => setParallelProgress(null)} className="text-xs text-indigo-400 hover:text-indigo-600">✕</button>
+                                            )}
+                                        </div>
+                                        <div className="w-full bg-indigo-100 rounded-full h-1.5 overflow-hidden">
+                                            <div
+                                                className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500"
+                                                style={{ width: `${Math.round((parallelProgress.done / parallelProgress.total) * 100)}%` }}
+                                            />
+                                        </div>
+                                        {!isGeneratingParallel && parallelProgress.done === parallelProgress.total && (
+                                            <p className="text-[10px] text-indigo-600 mt-1">
+                                                ✅ Завршено! Кликни на тема во Gantt за моментален пристап.
+                                                {parallelProgress.results.filter(r => r.status === 'error').length > 0 &&
+                                                    ` (${parallelProgress.results.filter(r => r.status === 'error').length} теми со грешка)`}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
 
                                 {viewMode === 'analytics' ? (
                                     <div className="mb-6">

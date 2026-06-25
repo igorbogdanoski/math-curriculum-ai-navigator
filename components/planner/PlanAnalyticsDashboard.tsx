@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../../types';
 import { grade8OfficialCurriculum } from '../../data/official/grade8Official';
 import { GRADE6_OFFICIAL_SUBTOPICS } from '../../data/official/grade6Official';
 import { GRADE7_OFFICIAL_SUBTOPICS } from '../../data/official/grade7Official';
+import { analyzePlanQuality, PlanQualityReport } from '../../services/gemini/planAnalysis';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -177,10 +178,98 @@ const BloomRadarChart: React.FC<{ scores: number[]; targets: number[] }> = ({ sc
   );
 };
 
+// ── Quality Score Card ────────────────────────────────────────────────────────
+
+const QualityScoreCard: React.FC<{ report: PlanQualityReport }> = ({ report }) => {
+  const scoreColor = (s: number) =>
+    s >= 80 ? 'text-emerald-600' : s >= 60 ? 'text-amber-600' : 'text-red-600';
+  const scoreBg = (s: number) =>
+    s >= 80 ? 'bg-emerald-50 border-emerald-100' : s >= 60 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100';
+
+  const dims = [
+    { label: 'Блум баланс',      key: 'bloomBalance',          icon: '🧠' },
+    { label: 'Покриеност',        key: 'curriculumCoverage',    icon: '📚' },
+    { label: 'Оценување',         key: 'assessmentDistribution', icon: '📋' },
+    { label: 'Прогресија',        key: 'verticalProgression',   icon: '📈' },
+  ] as const;
+
+  return (
+    <div className="space-y-4">
+      {/* Overall score */}
+      <div className={`rounded-xl p-4 border text-center ${scoreBg(report.overallScore)}`}>
+        <div className={`text-5xl font-black ${scoreColor(report.overallScore)}`}>
+          {report.overallScore}
+        </div>
+        <div className="text-sm text-gray-500 mt-1 font-medium">Вкупна оценка / 100</div>
+      </div>
+
+      {/* 4 dimension scores */}
+      <div className="grid grid-cols-2 gap-3">
+        {dims.map(({ label, key, icon }) => {
+          const dim = report[key];
+          return (
+            <div key={key} className={`rounded-lg p-3 border ${scoreBg(dim.score)}`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-gray-600">{icon} {label}</span>
+                <span className={`text-lg font-black ${scoreColor(dim.score)}`}>{dim.score}</span>
+              </div>
+              <p className="text-[10px] text-gray-500 leading-tight">{dim.comment}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Strengths */}
+      {report.strengths.length > 0 && (
+        <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+          <h4 className="text-xs font-bold text-emerald-700 mb-1.5">✅ Силни страни</h4>
+          <ul className="space-y-1">
+            {report.strengths.map((s, i) => (
+              <li key={i} className="text-xs text-emerald-800 flex gap-1.5">
+                <span className="text-emerald-400 shrink-0">•</span>{s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Suggestions */}
+      {report.suggestions.length > 0 && (
+        <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
+          <h4 className="text-xs font-bold text-amber-700 mb-1.5">💡 Препораки за подобрување</h4>
+          <ul className="space-y-1">
+            {report.suggestions.map((s, i) => (
+              <li key={i} className="text-xs text-amber-800 flex gap-1.5">
+                <span className="text-amber-400 shrink-0">{i + 1}.</span>{s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 }) => {
   const gradeNum = detectGrade(plan.grade ?? '');
+  const [qualityReport, setQualityReport] = useState<PlanQualityReport | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState('');
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    setAnalysisError('');
+    try {
+      const report = await analyzePlanQuality(plan);
+      setQualityReport(report);
+    } catch {
+      setAnalysisError('Грешка при AI анализа. Обидете се повторно.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // ── A: Bloom ──────────────────────────────────────────────────────────────
   const bloomCounts = useMemo(() => extractBloomScores(plan.topics ?? []), [plan.topics]);
@@ -250,6 +339,30 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 p-1">
+
+      {/* ── S78-A: AI Quality Analysis ── */}
+      <div className="bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl p-4 border border-violet-100 flex items-center justify-between gap-4">
+        <div>
+          <h3 className="font-bold text-violet-800 text-sm">🤖 AI Педагошка Анализа</h3>
+          <p className="text-xs text-violet-600 mt-0.5">
+            Длабока оцена на Блум баланс, покриеност на curriculum, вертикална прогресија и препораки за подобрување.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleAnalyze}
+          disabled={isAnalyzing}
+          className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 disabled:opacity-60 transition shadow-sm"
+        >
+          {isAnalyzing ? (
+            <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Анализирам...</>
+          ) : qualityReport ? '🔄 Повторна анализа' : '🔍 Анализирај'}
+        </button>
+      </div>
+      {analysisError && (
+        <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-100">{analysisError}</p>
+      )}
+      {qualityReport && <QualityScoreCard report={qualityReport} />}
 
       {/* ── Top summary strip ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
