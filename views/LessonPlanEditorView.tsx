@@ -53,6 +53,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const [isSaving, setIsSaving] = useState(false);
   const [showOfficialLessonForm, setShowOfficialLessonForm] = useState(false);
   const [officialLessonEditing, setOfficialLessonEditing] = useState(false);
+  const [officialLessonOrientation, setOfficialLessonOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
   const isMounted = useRef(true);
@@ -426,7 +427,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           aria-label="Официјален образец за Подготовка за час"
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[95vh]"
+            className={`bg-white rounded-lg shadow-xl w-full overflow-hidden flex flex-col max-h-[95vh] ${officialLessonOrientation === 'landscape' ? 'max-w-5xl' : 'max-w-4xl'}`}
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
@@ -436,6 +437,25 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                 Подготовка за наставен час — МОН образец
               </h2>
               <div className="flex items-center gap-2">
+                {/* Orientation toggle */}
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setOfficialLessonOrientation('portrait')}
+                    title="A4 Portrait (вертикален)"
+                    className={`px-2.5 py-1.5 transition-colors ${officialLessonOrientation === 'portrait' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    ▯ Portrait
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOfficialLessonOrientation('landscape')}
+                    title="A4 Landscape (хоризонтален) — препорачано"
+                    className={`px-2.5 py-1.5 border-l border-gray-200 transition-colors ${officialLessonOrientation === 'landscape' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    ▭ Landscape
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => setOfficialLessonEditing(v => !v)}
@@ -476,9 +496,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
             {/* Scrollable form */}
             <div className="overflow-auto flex-1 p-4 bg-gray-100">
-              <div className="bg-white shadow-sm mx-auto max-w-3xl">
+              <div className={`bg-white shadow-sm mx-auto ${officialLessonOrientation === 'landscape' ? 'max-w-4xl' : 'max-w-2xl'}`}>
                 <LessonPlanOfficialForm
                   plan={plan}
+                  orientation={officialLessonOrientation}
                   isEditable={officialLessonEditing}
                 />
               </div>
