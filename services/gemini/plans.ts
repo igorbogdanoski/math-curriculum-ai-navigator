@@ -27,19 +27,34 @@ function formatFlatSubtopics(subtopics: Array<{ themeName: string; subtopicName:
   return out;
 }
 
+/** Hours/week and lesson duration for each grade level. */
+export function getGradeHoursInfo(level: number): { weeklyHours: number; lessonMinutes: number; totalHours: number } {
+  if (level >= 1 && level <= 6)  return { weeklyHours: 5, lessonMinutes: 40, totalHours: 180 };
+  if (level >= 7 && level <= 9)  return { weeklyHours: 4, lessonMinutes: 40, totalHours: 144 };
+  // Secondary: gymnasium=3h/45min, vocational=2h/45min — use 3 as safe default
+  return { weeklyHours: 3, lessonMinutes: 45, totalHours: 108 };
+}
+
 async function buildOfficialCurriculumSummary(level: number): Promise<string> {
+  const { weeklyHours, lessonMinutes, totalHours } = getGradeHoursInfo(level);
+  const header = `\n📋 МОН официјална програма — ${level}. одделение (${weeklyHours}ч/нед × 36 нед = ${totalHours}ч, ${lessonMinutes}мин/час)\n`;
   try {
+    if (level >= 1 && level <= 5) {
+      const { PRIMARY_OFFICIAL_BY_GRADE, buildPrimaryContext } = await import('../../data/official/grade1to5Official');
+      const gradeData = PRIMARY_OFFICIAL_BY_GRADE[level];
+      if (gradeData) return header + buildPrimaryContext(gradeData);
+    }
     if (level === 6) {
       const { GRADE6_OFFICIAL_SUBTOPICS } = await import('../../data/official/grade6Official');
-      return formatFlatSubtopics(GRADE6_OFFICIAL_SUBTOPICS);
+      return header + formatFlatSubtopics(GRADE6_OFFICIAL_SUBTOPICS);
     }
     if (level === 7) {
       const { GRADE7_OFFICIAL_SUBTOPICS } = await import('../../data/official/grade7Official');
-      return formatFlatSubtopics(GRADE7_OFFICIAL_SUBTOPICS);
+      return header + formatFlatSubtopics(GRADE7_OFFICIAL_SUBTOPICS);
     }
     if (level === 8) {
       const { grade8OfficialCurriculum } = await import('../../data/official/grade8Official');
-      let out = '';
+      let out = header;
       for (const topic of grade8OfficialCurriculum.topics) {
         out += `\n▪ ${topic.title} (вкупно ${topic.totalHours}ч)\n`;
         for (const sub of topic.subtopics) {
@@ -48,8 +63,12 @@ async function buildOfficialCurriculumSummary(level: number): Promise<string> {
       }
       return out;
     }
+    if (level === 9) {
+      const { GRADE9_OFFICIAL_SUBTOPICS, buildGrade9Context } = await import('../../data/official/grade9Official');
+      return header + buildGrade9Context(GRADE9_OFFICIAL_SUBTOPICS);
+    }
   } catch { /* non-official grades silently return empty */ }
-  return '';
+  return header;
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -303,6 +322,9 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
           const cached = await getCached<AIGeneratedThematicPlan>(cacheKey);
           if (cached) return cached;
 
+      const { weeklyHours, lessonMinutes, totalHours } = getGradeHoursInfo(grade.level);
+      const officialSummary = await buildOfficialCurriculumSummary(grade.level);
+
       // @prompt-start: thematic_plan
       const prompt = `
 ### УЛОГА
@@ -312,6 +334,8 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
 - Одделение: ${grade.level}
 - Тема: "${topic.title}"
 - Поими во темата: ${topic.concepts.map(c => c.title).join(', ')}
+- Фонд на часови: ${weeklyHours}ч/нед × 36 нед = ${totalHours}ч/год | Траење на час: ${lessonMinutes}мин
+${officialSummary ? `\n### ОФИЦИЈАЛНА НАСТАВНА ПРОГРАМА ЗА ОВАА ТЕМА\n${officialSummary}\n` : ''}
 
 ### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА (Tree of Thoughts)
 1. АНАЛИЗА НА ТЕМА: Кои се клучните стандарди за оценување според националната програма?

@@ -3,6 +3,10 @@ import type { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../../ty
 import { grade8OfficialCurriculum } from '../../data/official/grade8Official';
 import { GRADE6_OFFICIAL_SUBTOPICS } from '../../data/official/grade6Official';
 import { GRADE7_OFFICIAL_SUBTOPICS } from '../../data/official/grade7Official';
+import { GRADE9_OFFICIAL_SUBTOPICS } from '../../data/official/grade9Official';
+import { PRIMARY_OFFICIAL_BY_GRADE } from '../../data/official/grade1to5Official';
+import { getGradeHoursInfo } from '../../services/gemini/plans';
+import { nationalStandards } from '../../data/national-standards';
 import { analyzePlanQuality, PlanQualityReport } from '../../services/gemini/planAnalysis';
 import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
 
@@ -107,13 +111,11 @@ function toPercent(counts: number[]): number[] {
 }
 
 function detectGrade(grade: string): number | null {
-  const m = grade.match(/\b(6|7|8|VI|VII|VIII)\b/i);
+  const m = grade.match(/\b(IX|VIII|VII|VI|V|IV|III|II|I|9|8|7|6|5|4|3|2|1)\b/i);
   if (!m) return null;
   const v = m[1].toUpperCase();
-  if (v === 'VI'  || v === '6') return 6;
-  if (v === 'VII' || v === '7') return 7;
-  if (v === 'VIII'|| v === '8') return 8;
-  return null;
+  const roman: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9 };
+  return roman[v] ?? parseInt(v, 10) ?? null;
 }
 
 function fuzzyMatchTopic(planTitle: string, officialTitle: string): boolean {
@@ -298,10 +300,125 @@ const QualityScoreCard: React.FC<{ report: PlanQualityReport }> = ({ report }) =
   );
 };
 
+// ── МОН Национални Стандарди Panel ───────────────────────────────────────────
+
+interface NationalStandardsPanelProps {
+  planTopics: string[];
+  gradeNum: number | null;
+}
+
+const NationalStandardsPanel: React.FC<NationalStandardsPanelProps> = ({ planTopics, gradeNum }) => {
+  // The 27 national standards (III-А.1–27) are for end of primary (grade 9 level)
+  // Show coverage for grades 6-9 (where they're explicitly linked to concepts)
+  // Deduplicate by code — keep highest gradeLevel entry
+  const byCode = new Map<string, typeof nationalStandards[0]>();
+  for (const s of nationalStandards) {
+    const existing = byCode.get(s.code);
+    if (!existing || (s.gradeLevel ?? 0) > (existing.gradeLevel ?? 0)) byCode.set(s.code, s);
+  }
+  const unique = [...byCode.values()].sort((a, b) => {
+    const numA = parseInt(a.code.replace(/[^\d]/g, ''), 10);
+    const numB = parseInt(b.code.replace(/[^\d]/g, ''), 10);
+    return numA - numB;
+  });
+
+  // A standard is "addressed" if any plan topic fuzzy-matches any of its relatedConceptIds topic parts
+  // Simple heuristic: keyword match between plan topic titles and standard description
+  const isAddressed = (std: typeof nationalStandards[0]) => {
+    const descLower = std.description.toLowerCase();
+    return planTopics.some(pt => {
+      const ptLower = pt.toLowerCase().replace(/[^\p{L}\d\s]/giu, '');
+      const words = ptLower.split(/\s+/).filter(w => w.length > 4);
+      return words.some(w => descLower.includes(w));
+    });
+  };
+
+  const addressed = unique.filter(isAddressed);
+  const pct = unique.length > 0 ? Math.round((addressed.length / unique.length) * 100) : 0;
+
+  if (!gradeNum || gradeNum < 6) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <h3 className="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" />
+          МОН Национални Стандарди — III-А
+        </h3>
+        <p className="text-xs text-gray-400 italic py-2 text-center">
+          Националните стандарди (III-А.1–27) важат за крајот на основното образование (6–9 одд.).
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" />
+          МОН Национални Стандарди — III-А.1–27
+        </h3>
+        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+          pct >= 70 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+          : pct >= 40 ? 'bg-amber-50 text-amber-700 border-amber-200'
+          : 'bg-red-50 text-red-700 border-red-200'
+        }`}>
+          {addressed.length}/{unique.length} ({pct}%)
+        </span>
+      </div>
+      <p className="text-[11px] text-gray-400">
+        Стандардите важат за крајот на основното образование. Покриеноста е проценета врз основа на насловите на темите во планот.
+      </p>
+      {/* Progress bar */}
+      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+        {/* eslint-disable-next-line react/forbid-component-props -- dynamic width requires inline style */}
+        <div className={`h-full rounded-full ${pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-400' : 'bg-red-400'}`} style={{ width: `${pct}%` }} />
+      </div>
+      {/* Standards grid */}
+      <div className="flex flex-wrap gap-1.5">
+        {unique.map(std => {
+          const ok = isAddressed(std);
+          return (
+            <div
+              key={std.code}
+              title={std.description}
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[10px] font-mono font-bold cursor-default select-none transition-colors ${
+                ok
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                  : 'bg-gray-50 border-gray-200 text-gray-400'
+              }`}
+            >
+              {ok ? '✓' : '○'} {std.code}
+            </div>
+          );
+        })}
+      </div>
+      {addressed.length < unique.length && (
+        <details className="text-[11px]">
+          <summary className="cursor-pointer text-indigo-600 hover:text-indigo-800 font-semibold select-none">
+            Непокриени стандарди ({unique.length - addressed.length})
+          </summary>
+          <ul className="mt-1.5 space-y-1 pl-3">
+            {unique.filter(s => !isAddressed(s)).map(s => (
+              <li key={s.code} className="text-gray-600">
+                <span className="font-mono text-indigo-500 font-bold">{s.code}</span>{' '}
+                — {s.description.slice(0, 90)}{s.description.length > 90 ? '…' : ''}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+};
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 }) => {
+export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours: weeklyHoursProp }) => {
   const gradeNum = detectGrade(plan.grade ?? '');
+  // Use accurate МОН hours if grade is detected; fall back to prop or 4
+  const { weeklyHours, lessonMinutes, totalHours: officialTotalHours } = gradeNum
+    ? getGradeHoursInfo(gradeNum)
+    : { weeklyHours: weeklyHoursProp ?? 4, lessonMinutes: 40, totalHours: (weeklyHoursProp ?? 4) * 36 };
   const [qualityReport, setQualityReport] = useState<PlanQualityReport | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
@@ -330,9 +447,16 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 
   // ── B: Hours Tracker ─────────────────────────────────────────────────────
   const officialHoursMap: Record<string, number> = useMemo(() => {
     if (gradeNum === 8) {
-      return Object.fromEntries(
-        grade8OfficialCurriculum.topics.map(t => [t.title, t.totalHours]),
-      );
+      return Object.fromEntries(grade8OfficialCurriculum.topics.map(t => [t.title, t.totalHours]));
+    }
+    const flatMap = (subs: Array<{ themeName: string; hours: number }>) =>
+      subs.reduce<Record<string, number>>((acc, s) => { acc[s.themeName] = (acc[s.themeName] ?? 0) + s.hours; return acc; }, {});
+    if (gradeNum === 6) return flatMap(GRADE6_OFFICIAL_SUBTOPICS);
+    if (gradeNum === 7) return flatMap(GRADE7_OFFICIAL_SUBTOPICS);
+    if (gradeNum === 9) return flatMap(GRADE9_OFFICIAL_SUBTOPICS);
+    if (gradeNum && gradeNum >= 1 && gradeNum <= 5) {
+      const g = PRIMARY_OFFICIAL_BY_GRADE[gradeNum];
+      return g ? flatMap(g.subtopics) : {};
     }
     return {};
   }, [gradeNum]);
@@ -362,17 +486,17 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 
       });
     }
 
-    const subtopics = gradeNum === 6
-      ? GRADE6_OFFICIAL_SUBTOPICS.reduce<Record<string, number>>((acc, s) => {
-          acc[s.themeName] = (acc[s.themeName] ?? 0) + s.hours;
-          return acc;
-        }, {})
-      : gradeNum === 7
-        ? GRADE7_OFFICIAL_SUBTOPICS.reduce<Record<string, number>>((acc, s) => {
-            acc[s.themeName] = (acc[s.themeName] ?? 0) + s.hours;
-            return acc;
-          }, {})
-        : {};
+    const flatSubs = (subs: Array<{ themeName: string; hours: number }>) =>
+      subs.reduce<Record<string, number>>((acc, s) => { acc[s.themeName] = (acc[s.themeName] ?? 0) + s.hours; return acc; }, {});
+
+    let subtopics: Record<string, number> = {};
+    if (gradeNum === 6) subtopics = flatSubs(GRADE6_OFFICIAL_SUBTOPICS);
+    else if (gradeNum === 7) subtopics = flatSubs(GRADE7_OFFICIAL_SUBTOPICS);
+    else if (gradeNum === 9) subtopics = flatSubs(GRADE9_OFFICIAL_SUBTOPICS);
+    else if (gradeNum && gradeNum >= 1 && gradeNum <= 5) {
+      const g = PRIMARY_OFFICIAL_BY_GRADE[gradeNum];
+      if (g) subtopics = flatSubs(g.subtopics);
+    }
 
     return Object.entries(subtopics).map(([title, hours]) => ({
       title,
@@ -537,7 +661,9 @@ ${safeWeak}
             {totalPlanned}
             <span className="text-sm font-normal opacity-60">/{totalAvailableHours}</span>
           </div>
-          <div className={`text-xs mt-0.5 ${totalPlanned > totalAvailableHours ? 'text-red-500' : 'text-emerald-500'}`}>Планирани часови</div>
+          <div className={`text-xs mt-0.5 ${totalPlanned > totalAvailableHours ? 'text-red-500' : 'text-emerald-500'}`}>
+            Часови · {weeklyHours}ч/нед · {lessonMinutes}мин
+          </div>
         </div>
         <div className="bg-purple-50 rounded-xl p-3 text-center border border-purple-100">
           <div className="text-2xl font-bold text-purple-700">{coveragePct}%</div>
@@ -678,7 +804,7 @@ ${safeWeak}
         </h3>
         {coverageItems.length === 0 ? (
           <p className="text-xs text-gray-400 italic py-4 text-center">
-            Нема официјална програма за ова одделение во системот (6–8 одд. поддржани).
+            Нема официјална програма за ова одделение во системот (1–9 одд. поддржани).
           </p>
         ) : (
           <>
@@ -712,6 +838,9 @@ ${safeWeak}
           </>
         )}
       </div>
+
+      {/* ── D: МОН Национални Стандарди ── */}
+      <NationalStandardsPanel planTopics={(plan.topics ?? []).map(t => t.title)} gradeNum={gradeNum} />
     </div>
   );
 };
