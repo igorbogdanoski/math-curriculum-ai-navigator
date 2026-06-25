@@ -165,6 +165,22 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         }
     };
 
+    // ── Standard code extraction ─────────────────────────────────────────────
+
+    const extractStdCodes = (text: string): string[] => {
+      const matches = text.match(/III-[АA]\.(\d+)/g);
+      return matches ? [...new Set(matches)] : [];
+    };
+
+    const allCoveredStandards = useMemo(() => {
+      if (!editablePlan) return [];
+      const all = editablePlan.lessons.flatMap(l => extractStdCodes(l.learningOutcomes));
+      return [...new Set(all)].sort((a, b) => {
+        const na = parseInt(a.split('.')[1]); const nb = parseInt(b.split('.')[1]);
+        return na - nb;
+      });
+    }, [editablePlan]);
+
     // ── Render helpers ───────────────────────────────────────────────────────
 
     const renderContent = () => {
@@ -189,6 +205,18 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                                 <span>Режим на уредување — кликни на полињата за да внесеш промени пред печатење</span>
                             </div>
                         )}
+                        {allCoveredStandards.length > 0 && (
+                            <div className="mb-3 p-2.5 bg-indigo-50 border border-indigo-100 rounded-lg print:hidden">
+                                <p className="text-[11px] font-bold text-indigo-700 mb-1.5">📋 БРО стандарди III-А покриени во темата ({allCoveredStandards.length})</p>
+                                <div className="flex flex-wrap gap-1">
+                                    {allCoveredStandards.map(code => (
+                                        <span key={code} className="px-2 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 text-[11px] font-bold">
+                                            {code}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <OfficialThematicPlanTable
                             data={editablePlan}
                             grade={selectedGradeObj}
@@ -207,28 +235,65 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
             // Preview mode (simplified table)
             return (
                 <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-4 text-brand-primary">{editablePlan.thematicUnit}</h3>
-                    <div className="max-h-[60vh] overflow-y-auto overflow-x-auto border rounded-lg">
+                    <h3 className="text-xl font-semibold mb-3 text-brand-primary">{editablePlan.thematicUnit}</h3>
+
+                    {/* БРО standards summary */}
+                    {allCoveredStandards.length > 0 && (
+                        <div className="mb-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
+                            <p className="text-xs font-bold text-indigo-700 mb-2">
+                                📋 Покриени БРО стандарди III-А ({allCoveredStandards.length})
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {allCoveredStandards.map(code => (
+                                    <span
+                                        key={code}
+                                        className="px-2 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 text-[11px] font-bold"
+                                    >
+                                        {code}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="max-h-[55vh] overflow-y-auto overflow-x-auto border rounded-lg">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50 sticky top-0">
                                 <tr>
                                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Час</th>
                                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Наставна единица</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цели</th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цели / Стандарди</th>
                                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Активности</th>
                                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Оценување</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {editablePlan.lessons.map((lesson: ThematicPlanLesson) => (
-                                    <tr key={lesson.lessonNumber}>
-                                        <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{lesson.lessonNumber}</td>
-                                        <td className="px-4 py-2 whitespace-normal text-sm text-gray-800 font-semibold">{lesson.lessonUnit}</td>
-                                        <td className="px-4 py-2 whitespace-normal text-sm text-gray-600">{lesson.learningOutcomes}</td>
-                                        <td className="px-4 py-2 whitespace-normal text-sm text-gray-600">{lesson.keyActivities}</td>
-                                        <td className="px-4 py-2 whitespace-normal text-sm text-gray-600">{lesson.assessment}</td>
-                                    </tr>
-                                ))}
+                                {editablePlan.lessons.map((lesson: ThematicPlanLesson) => {
+                                    const codes = extractStdCodes(lesson.learningOutcomes);
+                                    return (
+                                        <tr key={lesson.lessonNumber}>
+                                            <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{lesson.lessonNumber}</td>
+                                            <td className="px-4 py-2 whitespace-normal text-sm text-gray-800 font-semibold">{lesson.lessonUnit}</td>
+                                            <td className="px-4 py-2 whitespace-normal text-sm text-gray-600">
+                                                <span>{lesson.learningOutcomes}</span>
+                                                {codes.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                                        {codes.map(code => (
+                                                            <span
+                                                                key={code}
+                                                                className="px-1.5 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 text-[10px] font-bold"
+                                                            >
+                                                                {code}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-2 whitespace-normal text-sm text-gray-600">{lesson.keyActivities}</td>
+                                            <td className="px-4 py-2 whitespace-normal text-sm text-gray-600">{lesson.assessment}</td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

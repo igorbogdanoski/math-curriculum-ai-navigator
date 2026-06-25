@@ -3,6 +3,7 @@ import { useCurriculum } from '../../hooks/useCurriculum';
 import type { LessonPlan, Grade, Topic, Concept, BloomsLevel } from '../../types';
 import { ICONS } from '../../constants';
 import { getGradeHoursInfo } from '../../services/gemini/plans';
+import { NationalStandardsLinker } from './NationalStandardsLinker';
 
 interface LessonPlanFormFieldsProps {
     plan: Partial<LessonPlan>;
@@ -556,8 +557,13 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPlan((p: Partial<LessonPlan>) => ({...p, assessmentStandards: stringToArray(e.target.value)}))}
                     onEnhance={onEnhanceField}
                     isEnhancing={enhancingField === 'assessmentStandards'}
-                    rows={5}
+                    rows={3}
                     placeholder="Внесете секој стандард во нов ред..."
+                />
+                <NationalStandardsLinker
+                    standards={plan.assessmentStandards || []}
+                    onChange={stds => setPlan((p: Partial<LessonPlan>) => ({ ...p, assessmentStandards: stds }))}
+                    gradeNumber={typeof plan.grade === 'number' ? plan.grade : undefined}
                 />
             </div>
 
