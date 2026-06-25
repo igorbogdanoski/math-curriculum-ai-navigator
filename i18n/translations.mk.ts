@@ -82,6 +82,7 @@ export const mk: Record<string, string> = {
   'nav.annualPlanner':     'Годишна Програма',
   'nav.annualGallery':     'Галерија на Планови',
   'nav.weeklyPlan':        'Неделен план',
+  'nav.aiMindMap':         'AI Концептуална карта',
   'nav.gradeBook':         'Тетратка за оценки',
   'nav.maturaHub':         'Матура Центар',
   'nav.liveHub':           'Живо и Игри',

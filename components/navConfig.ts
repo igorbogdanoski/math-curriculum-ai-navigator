@@ -42,6 +42,7 @@ export const SECONDARY_NAV_GROUPS: NavGroupConfig[] = [
       { i18nKey: 'nav.annualPlanner', path: '/annual-planner', iconKey: 'planner',  badge: 'ai' },
       { i18nKey: 'nav.annualGallery', path: '/annual-gallery', iconKey: 'database', badge: 'cop' },
       { i18nKey: 'nav.weeklyPlan',    path: '/weekly-plan',    iconKey: 'calendar' },
+      { i18nKey: 'nav.aiMindMap',     path: '/ai-mindmap',     iconKey: 'mindmap',  badge: 'ai' },
     ],
   },
   {

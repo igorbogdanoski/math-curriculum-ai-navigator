@@ -82,6 +82,7 @@ export const tr: Record<string, string> = {
   'nav.annualPlanner':     'Yıllık Program',
   'nav.annualGallery':     'Plan Galerisi',
   'nav.weeklyPlan':        'Haftalık Plan',
+  'nav.aiMindMap':         'AI Kavram Haritası',
   'nav.gradeBook':         'Not Defteri',
   'nav.maturaHub':         'Matura Merkezi',
   'nav.liveHub':           'Canlı ve Oyunlar',

@@ -169,7 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
   // Progressive disclosure — secondary nav collapsed by default, auto-opens when on a secondary path
   const SECONDARY_PATHS = [
     '/explore', '/graph', '/roadmap',
-    '/planner', '/annual-planner', '/annual-gallery', '/weekly-plan',
+    '/planner', '/annual-planner', '/annual-gallery', '/weekly-plan', '/ai-mindmap',
     '/assistant', '/vision-assessment', '/test-generator', '/grade-book',
     '/matura-portal', '/matura', '/matura-library', '/matura-practice', '/matura-assignments', '/matura-stats', '/test-review', '/live', '/data-viz', '/kahoot',
     '/exam', '/dugga',

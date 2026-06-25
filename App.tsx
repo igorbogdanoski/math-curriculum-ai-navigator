@@ -167,6 +167,7 @@ const CurriculumGraphView = safeLazy(() => import('./views/CurriculumGraphView')
 const DataVizStudioView = safeLazy(() => import('./views/DataVizStudioView').then(module => ({ default: module.DataVizStudioView })));
 const CoverageAnalyzerView = safeLazy(() => import('./views/CoverageAnalyzerView').then(module => ({ default: module.CoverageAnalyzerView })));
 const MindMapView = safeLazy(() => import('./views/MindMapView').then(module => ({ default: module.MindMapView })));
+const AIMindMapView = safeLazy(() => import('./views/AIMindMapView').then(module => ({ default: module.AIMindMapView })));
 const RoadmapView = safeLazy(() => import('./views/RoadmapView').then(module => ({ default: module.RoadmapView })));
 const TeacherAnalyticsView = safeLazy(() => import('./views/TeacherAnalyticsView').then(module => ({ default: module.TeacherAnalyticsView })));
 const SystemAdminView = safeLazy(() => import('./views/SystemAdminView').then(module => ({ default: module.SystemAdminView })));
@@ -315,6 +316,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/share/visual', component: ShareVisualView }, // C2.4/C3.4 — AlgebraTiles + Shape3D shareable URLs
     { path: '/quiz/:data', component: SharedQuizView },
     { path: '/mindmap/:topicId', component: MindMapView },
+    { path: '/ai-mindmap', component: AIMindMapView },
     { path: '/gamma/presenter', component: React.lazy(() => import('./views/GammaPresenterView').then(m => ({ default: m.GammaPresenterView }))) },
     { path: '/gamma/join', component: GammaJoinView },
     { path: '/gamma/student/:pin', component: GammaStudentView },
