@@ -261,6 +261,52 @@ async generateDifferentiationActivities(title: string, grade: number, theme: str
     return { support: result.support?.slice(0, 3) ?? [], standard: result.standard?.slice(0, 3) ?? [], advanced: result.advanced?.slice(0, 3) ?? [] };
   },
 
+async generateRichTask(title: string, grade: number, theme: string, concepts: string[]): Promise<{
+    context: string;
+    task: string;
+    support: string;
+    standard: string;
+    advanced: string;
+    discussionQuestion: string;
+  }> {
+    const { checkDailyQuotaGuard: guard } = await import('./core');
+    guard();
+    const safeTitle = sanitizePromptInput(title, 200);
+    const safeTheme = sanitizePromptInput(theme, 200);
+    const conceptList = concepts.slice(0, 6).map(c => `- ${sanitizePromptInput(c, 100)}`).join('\n') || '- (без поими)';
+    const prompt = `Ти си искусен наставник по математика за ${grade}. одделение.
+Тема: „${safeTheme}" | Лекција: „${safeTitle}"
+Поими: ${conceptList}
+
+Креирај БОГАТА ЗАДАЧА (Rich Task) — реален македонски контекст, отворена, нема единечен точен одговор, поттикнува математичко расудување.
+
+Структура:
+- context: Реален приказ (2-3 реченици) на македонски контекст (пазар, патување, спорт, природа...)
+- task: Главно прашање — отворено, предизвикувачко (1-2 реченици)
+- support: Верзија со скафолдинг за ученици кои треба помош (конкретни чекори)
+- standard: Стандардна верзија — без дополнителна поддршка
+- advanced: Проширување — дополнителен предизвик, генерализација, докажување
+- discussionQuestion: Прашање за класна дискусија за да се поврзат различните решенија
+
+Одговори со ВАЛИДЕН JSON. Само JSON, без ништо друго.`;
+    const schema = {
+      type: Type.OBJECT,
+      properties: {
+        context: { type: Type.STRING },
+        task: { type: Type.STRING },
+        support: { type: Type.STRING },
+        standard: { type: Type.STRING },
+        advanced: { type: Type.STRING },
+        discussionQuestion: { type: Type.STRING },
+      },
+      required: ['context', 'task', 'support', 'standard', 'advanced', 'discussionQuestion'],
+    };
+    return generateAndParseJSON<{
+      context: string; task: string; support: string;
+      standard: string; advanced: string; discussionQuestion: string;
+    }>([{ text: prompt }], schema, DEFAULT_MODEL);
+  },
+
 async suggestNextLessons(recentLessons: Array<{ title: string; date: string; description?: string }>): Promise<Array<{ title: string; description: string; conceptHint: string }>> {
     if (recentLessons.length === 0) return [];
     const lessonsText = recentLessons.map(l => `- ${l.date}: ${l.title}${l.description ? ` (${l.description.slice(0, 80)})` : ''}`).join('\n');

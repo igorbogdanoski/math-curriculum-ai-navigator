@@ -30,6 +30,7 @@ import { LessonPlanOfficialForm } from '../components/planner/LessonPlanOfficial
 import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 import { PriorKnowledgeConnector } from '../components/lesson-plan-editor/PriorKnowledgeConnector';
 import { PedagogicalModelsPanel } from '../components/lesson-plan-editor/PedagogicalModelsPanel';
+import { RichTaskPanel } from '../components/lesson-plan-editor/RichTaskPanel';
 
 
 interface LessonPlanEditorViewProps {
@@ -200,7 +201,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       <PlanningBreadcrumb />
       <header className="mb-6 no-print flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <button onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">
+          <button type="button" onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">
             &larr; Назад кон моите подготовки
           </button>
           <h1 className="text-4xl font-bold text-brand-primary">
@@ -215,6 +216,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               <span>Автоматски зачувано во {new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             <button
+              type="button"
               onClick={() => {
                 setConfirmDialog({
                   message: 'Дали сте сигурни дека сакате да го отфрлите нацртот? Сите промени ќе бидат изгубени.',
@@ -364,6 +366,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               isGenerating={ai.isGeneratingDiff}
               canGenerate={!!(plan.title || plan.theme)}
               onGenerate={ai.handleGenerateDifferentiation}
+            />
+
+            <RichTaskPanel
+              richTask={ai.richTask}
+              isGenerating={ai.isGeneratingRichTask}
+              canGenerate={!!(plan.title || plan.theme)}
+              onGenerate={ai.handleGenerateRichTask}
             />
 
             <PedagogicalModelsPanel />

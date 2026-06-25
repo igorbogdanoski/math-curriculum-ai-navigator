@@ -37,6 +37,8 @@ export function useLessonPlanAIActions({
   const [diffActivities, setDiffActivities] = useState<{ support: string[]; standard: string[]; advanced: string[] } | null>(null);
   const [isGeneratingDiff, setIsGeneratingDiff] = useState(false);
   const [isRegeneratingSection, setIsRegeneratingSection] = useState<'introductory' | 'main' | 'concluding' | null>(null);
+  const [richTask, setRichTask] = useState<{ context: string; task: string; support: string; standard: string; advanced: string; discussionQuestion: string } | null>(null);
+  const [isGeneratingRichTask, setIsGeneratingRichTask] = useState(false);
 
   const handleGenerateWithAI = useCallback(async (context: GenerationContext) => {
     if (!isOnline) { addNotification('Нема интернет конекција. Оваа функција е недостапна.', 'error'); return; }
@@ -91,6 +93,34 @@ export function useLessonPlanAIActions({
       if (isMounted.current) setIsGeneratingDiff(false);
     }
   }, [plan.title, plan.grade, plan.theme, plan.objectives, isMounted]);
+
+  const handleGenerateRichTask = useCallback(async () => {
+    if (!plan.title && !plan.theme) return;
+    setIsGeneratingRichTask(true);
+    setRichTask(null);
+    try {
+      const concepts = (plan.conceptIds ?? []).flatMap(cid => {
+        for (const g of curriculum?.grades ?? []) {
+          for (const t of g.topics) {
+            const c = t.concepts.find(c => c.id === cid);
+            if (c) return [c.title];
+          }
+        }
+        return [];
+      });
+      const result = await geminiService.generateRichTask(
+        plan.title ?? plan.theme ?? '',
+        plan.grade ?? 6,
+        plan.theme ?? '',
+        concepts,
+      );
+      if (isMounted.current) setRichTask(result);
+    } catch {
+      // non-fatal
+    } finally {
+      if (isMounted.current) setIsGeneratingRichTask(false);
+    }
+  }, [plan.title, plan.grade, plan.theme, plan.conceptIds, curriculum, isMounted]);
 
   const handleEnhanceField = useCallback(async (
     fieldName: string,
@@ -244,6 +274,9 @@ export function useLessonPlanAIActions({
     isRegeneratingSection,
     handleGenerateWithAI,
     handleGenerateDifferentiation,
+    richTask,
+    isGeneratingRichTask,
+    handleGenerateRichTask,
     handleEnhanceField,
     handleRegenerateSection,
     handleGenerateIllustration,
