@@ -81,7 +81,8 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
         required: ["title", "openingActivity", "mainActivity", "differentiation", "assessmentIdea", "assessmentStandards", "concepts"]
     };
 
-    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id, profile?.secondaryTrack);
+    const ragQuery84 = [topicTitle, ...concepts.map(c => c.title)].filter(Boolean).join(' ');
+    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id, profile?.secondaryTrack, ragQuery84);
     // Use high-quality model for better pedagogical reasoning
         const result = await generateAndParseJSON<AIGeneratedIdeas>([{ text: prompt }], schema, DEFAULT_MODEL, AIGeneratedIdeasSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
         // Cache write must never block UI completion; generation result is already available.
@@ -196,7 +197,8 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
 
       const contents: Part[] = [{ text: prompt }, { text: `Контекст: ${JSON.stringify(minifyContext(context))}` }];
       if (image) contents.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
-      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, context.concepts?.[0]?.id, context.topic?.id, profile?.secondaryTrack);
+      const ragQuery199 = [context.topic?.title, ...(context.concepts ?? []).map(c => c.title)].filter(Boolean).join(' ');
+      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, context.concepts?.[0]?.id, context.topic?.id, profile?.secondaryTrack, ragQuery199 || undefined);
 
       // Use Thinking model for high-quality pedagogical planning
       return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
@@ -294,7 +296,7 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
           required: ["thematicUnit", "lessons"]
       };
 
-      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, grade.level, undefined, topic.id, profile?.secondaryTrack);
+      const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, grade.level, undefined, topic.id, profile?.secondaryTrack, topic.title);
       // Use Thinking model for structural curriculum mapping
       const result = await generateAndParseJSON<AIGeneratedThematicPlan>([{ text: prompt }, { text: `Тема: ${topic.title}` }], schema, DEFAULT_MODEL, AIGeneratedThematicPlanSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
       await setCached(cacheKey, result, { type: 'thematicplan', gradeLevel: grade.level, topicId: topic.id });
@@ -424,7 +426,8 @@ ${sanitized ? `- Дополнителни барања: ${sanitized}` : ''}
       required: ["title", "topic", "gradeLevel", "slides"]
     };
 
-    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, undefined, undefined, profile?.secondaryTrack);
+    const ragQueryPres = [topic, ...concepts].filter(Boolean).join(' ');
+    const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, undefined, undefined, profile?.secondaryTrack, ragQueryPres || undefined);
     return generateAndParseJSON<AIGeneratedPresentation>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   }
 };
@@ -479,7 +482,7 @@ export async function regenerateSlide(
     required: ['title', 'content', 'type'],
   };
 
-  const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, undefined, undefined, profile?.secondaryTrack);
+  const systemInstr = await buildDynamicSystemInstruction(JSON_SYSTEM_INSTRUCTION, gradeLevel, undefined, undefined, profile?.secondaryTrack, `${topic} ${existing.title}`.trim());
   return generateAndParseJSON<PresentationSlide>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, systemInstr, profile?.tier);
 }
 
@@ -592,8 +595,9 @@ ${options?.learningDesign ? `- Педагошки модел: ${options.learning
   const safeInstruction = sanitizePromptInput(customInstruction, 500);
   if (safeInstruction) prompt += `\nДополнителна инструкција од наставникот: ${safeInstruction}`;
 
+  const ragQueryStream = [topic?.title, ...concepts.map(c => c.title)].filter(Boolean).join(' ');
   const systemInstr = await buildDynamicSystemInstruction(
-    JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id, profile?.secondaryTrack,
+    JSON_SYSTEM_INSTRUCTION, gradeLevel, conceptId, topic?.id, profile?.secondaryTrack, ragQueryStream || undefined,
   );
 
   yield* streamGeminiProxy(
