@@ -4,6 +4,7 @@ import { grade8OfficialCurriculum } from '../../data/official/grade8Official';
 import { GRADE6_OFFICIAL_SUBTOPICS } from '../../data/official/grade6Official';
 import { GRADE7_OFFICIAL_SUBTOPICS } from '../../data/official/grade7Official';
 import { analyzePlanQuality, PlanQualityReport } from '../../services/gemini/planAnalysis';
+import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -304,6 +305,8 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 
   const [qualityReport, setQualityReport] = useState<PlanQualityReport | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
+  const [ubdSuggestions, setUbdSuggestions] = useState<string | null>(null);
+  const [isFillingGaps, setIsFillingGaps] = useState(false);
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -390,6 +393,37 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 
   // ── D: UbD Backward Design ────────────────────────────────────────────────
   const ubdScore = useMemo(() => analyzeUbD(plan.topics ?? []), [plan.topics]);
 
+  const handleFillUbDGaps = async () => {
+    setIsFillingGaps(true);
+    setUbdSuggestions(null);
+    try {
+      const weakList = ubdScore.weakTopics.slice(0, 5)
+        .map(t => `- ${t}`)
+        .join('\n');
+      const safeWeak = sanitizePromptInput(weakList, 600);
+      const safeGrade = sanitizePromptInput(plan.grade ?? '', 30);
+      const prompt = `Ти си педагошки советник за планирање по UbD рамката (Wiggins & McTighe).
+Годишниот план е за ${safeGrade} одделение. Следниве теми имаат нецелосна UbD структура:
+${safeWeak}
+
+За секоја тема предложи конкретно:
+1. Задача за оценување (Фаза 2) — специфичен тест/проект/портфолио
+2. Активност за учење (Фаза 3) — истражувачка или кооперативна активност
+
+Одговори на македонски со структурирана листа, максимум 3 реченици по тема.`;
+
+      const resp = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      });
+      if (resp?.text) setUbdSuggestions(resp.text.trim());
+    } catch {
+      setUbdSuggestions('Грешка при генерирање. Обиди се повторно.');
+    } finally {
+      setIsFillingGaps(false);
+    }
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 p-1">
@@ -438,16 +472,33 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 
           </div>
         </div>
         {ubdScore.weakTopics.length > 0 && (
-          <details className="text-[11px]">
-            <summary className="cursor-pointer text-sky-600 hover:text-sky-800 font-semibold select-none">
-              Прикажи теми со нецелосна UbD структура
-            </summary>
-            <ul className="mt-1.5 space-y-0.5 pl-3">
-              {ubdScore.weakTopics.map(t => (
-                <li key={t} className="text-amber-700">• {t}</li>
-              ))}
-            </ul>
-          </details>
+          <div className="space-y-2">
+            <details className="text-[11px]">
+              <summary className="cursor-pointer text-sky-600 hover:text-sky-800 font-semibold select-none">
+                Прикажи теми со нецелосна UbD структура
+              </summary>
+              <ul className="mt-1.5 space-y-0.5 pl-3">
+                {ubdScore.weakTopics.map(t => (
+                  <li key={t} className="text-amber-700">• {t}</li>
+                ))}
+              </ul>
+            </details>
+            <button
+              type="button"
+              onClick={handleFillUbDGaps}
+              disabled={isFillingGaps}
+              className="flex items-center gap-1.5 text-[11px] font-bold text-sky-700 hover:text-sky-900 disabled:opacity-50 transition-colors"
+            >
+              {isFillingGaps
+                ? <><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> AI генерира предлози...</>
+                : <>🎯 AI: Пополни ги UbD пропустите</>}
+            </button>
+            {ubdSuggestions && (
+              <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-[11px] text-sky-900 leading-relaxed whitespace-pre-wrap">
+                {ubdSuggestions}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

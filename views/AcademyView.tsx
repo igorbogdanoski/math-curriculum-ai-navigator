@@ -1,13 +1,14 @@
 import { educationalHints } from '../data/educationalModelsInfo';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card } from '../components/common/Card';
-import { Target, Shapes, Wand2, Play, GraduationCap, CheckCircle2, Trophy, Star, Cpu, BookOpenCheck, FlaskConical, Brain, Users } from 'lucide-react';
+import { Target, Shapes, Wand2, Play, GraduationCap, CheckCircle2, Trophy, Star, Cpu, BookOpenCheck, FlaskConical, Brain, Users, Layers, ChevronRight } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAcademyProgress, MATERIAL_ACHIEVEMENTS } from '../contexts/AcademyProgressContext';
 import { slugify } from '../utils/slugify';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import { ACADEMY_CONTENT } from '../data/academy/content';
 import { SPECIALIZATIONS } from '../data/academy/specializations';
+import { loadConceptCards, daysUntilDue, conceptCardId } from '../utils/sm2';
 
 const AcademyCertificateButton = React.lazy(() =>
   import('../components/academy/AcademyCertificate').then(m => ({ default: m.AcademyCertificateButton }))
@@ -28,6 +29,23 @@ export const AcademyView: React.FC = () => {
   const { readLessons, appliedLessons, completedQuizzes, xp } = progress;
   const levelInfo = calcFibonacciLevel(xp);
   const avatar = getAvatar(levelInfo.level);
+
+  // Cross-lesson concept cards due today
+  const todayConceptSummary = useMemo(() => {
+    const cards = loadConceptCards();
+    const dueCards = cards.filter(c => daysUntilDue(c) <= 0);
+    // group by lessonId
+    const byLesson: Record<string, number> = {};
+    for (const card of dueCards) {
+      // ID format: "{lessonId}_c{index}"
+      const lessonId = card.lessonId.replace(/_c\d+$/, '');
+      byLesson[lessonId] = (byLesson[lessonId] ?? 0) + 1;
+    }
+    const lessons = Object.entries(byLesson)
+      .filter(([id]) => ACADEMY_CONTENT[id])
+      .map(([id, count]) => ({ id, title: ACADEMY_CONTENT[id].title, count }));
+    return { total: dueCards.length, lessons };
+  }, []);
 
   const MODULES = [
     {
@@ -255,6 +273,40 @@ export const AcademyView: React.FC = () => {
           )}
           completedQuizzes={completedQuizzes}
         />
+      )}
+
+      {/* Concept Flashcards — Today's Session */}
+      {todayConceptSummary.total > 0 && (
+        <div className="mb-8 rounded-2xl border-2 border-indigo-100 bg-indigo-50 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-indigo-100 rounded-xl">
+              <Layers className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-indigo-900">Концептни картички — Денешна сесија</h2>
+              <p className="text-xs text-indigo-500 mt-0.5">
+                {todayConceptSummary.total} картичк{todayConceptSummary.total === 1 ? 'а' : 'и'} достасан{todayConceptSummary.total === 1 ? 'а' : 'и'} за повторување денес
+              </p>
+            </div>
+            <span className="text-2xl font-black text-indigo-700">{todayConceptSummary.total}</span>
+          </div>
+          <div className="space-y-2">
+            {todayConceptSummary.lessons.map(l => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => navigate(`/academy/${l.id}`)}
+                className="w-full flex items-center justify-between bg-white rounded-xl border border-indigo-100 px-4 py-3 hover:border-indigo-300 hover:shadow-sm transition-all group"
+              >
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-gray-800 group-hover:text-indigo-700 transition-colors">{l.title}</p>
+                  <p className="text-xs text-indigo-500 mt-0.5">{l.count} концепт{l.count === 1 ? '' : 'и'} за повторување</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-indigo-300 group-hover:text-indigo-600 transition-colors" />
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Math Concept SRS Review Panel */}

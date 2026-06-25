@@ -118,14 +118,64 @@ const EnhancedTextArea: React.FC<EnhancedTextAreaProps> = ({ fieldName, label, v
 
 // ── Bloom Objective Builder ───────────────────────────────────────────────────
 
-const BLOOM_LEVELS: { level: BloomsLevel; mk: string; num: number; verbs: string[]; color: string }[] = [
-    { num: 1, level: 'Remembering',   mk: 'Помнење',      color: 'bg-gray-100 text-gray-700',    verbs: ['Набројува', 'Именува', 'Препознава', 'Дефинира', 'Посочува', 'Наведува'] },
-    { num: 2, level: 'Understanding', mk: 'Разбирање',    color: 'bg-blue-100 text-blue-700',    verbs: ['Објаснува', 'Споредува', 'Класифицира', 'Интерпретира', 'Сумаризира'] },
-    { num: 3, level: 'Applying',      mk: 'Примена',      color: 'bg-green-100 text-green-700',  verbs: ['Применува', 'Решава', 'Пресметува', 'Демонстрира', 'Конструира'] },
-    { num: 4, level: 'Analyzing',     mk: 'Анализа',      color: 'bg-yellow-100 text-yellow-700', verbs: ['Анализира', 'Разликува', 'Испитува', 'Расчленува', 'Компарира'] },
-    { num: 5, level: 'Evaluating',    mk: 'Евалуација',   color: 'bg-orange-100 text-orange-700', verbs: ['Оценува', 'Проценува', 'Критикува', 'Бранува', 'Препорачува'] },
-    { num: 6, level: 'Creating',      mk: 'Создавање',    color: 'bg-purple-100 text-purple-700', verbs: ['Создава', 'Дизајнира', 'Планира', 'Формулира', 'Генерира'] },
+const BLOOM_LEVELS: { level: BloomsLevel; mk: string; num: number; verbs: string[]; color: string; bar: string; dot: string }[] = [
+    { num: 1, level: 'Remembering',   mk: 'Помнење',      color: 'bg-gray-100 text-gray-700',    bar: 'bg-gray-400',    dot: 'bg-gray-400',   verbs: ['набројува', 'именува', 'препознава', 'дефинира', 'посочува', 'наведува', 'знае', 'recall', 'листа'] },
+    { num: 2, level: 'Understanding', mk: 'Разбирање',    color: 'bg-blue-100 text-blue-700',    bar: 'bg-blue-400',    dot: 'bg-blue-500',   verbs: ['објаснува', 'споредува', 'класифицира', 'интерпретира', 'сумира', 'разбира', 'опишува', 'изразува'] },
+    { num: 3, level: 'Applying',      mk: 'Примена',      color: 'bg-green-100 text-green-700',  bar: 'bg-green-500',   dot: 'bg-green-500',  verbs: ['применува', 'решава', 'пресметува', 'демонстрира', 'конструира', 'користи', 'вежба', 'одредува'] },
+    { num: 4, level: 'Analyzing',     mk: 'Анализа',      color: 'bg-yellow-100 text-yellow-700',bar: 'bg-yellow-400',  dot: 'bg-yellow-500', verbs: ['анализира', 'разликува', 'испитува', 'расчленува', 'компарира', 'истражува', 'разложува'] },
+    { num: 5, level: 'Evaluating',    mk: 'Евалуација',   color: 'bg-orange-100 text-orange-700',bar: 'bg-orange-400',  dot: 'bg-orange-500', verbs: ['оценува', 'проценува', 'критикува', 'бранува', 'препорачува', 'аргументира', 'докажува'] },
+    { num: 6, level: 'Creating',      mk: 'Создавање',    color: 'bg-purple-100 text-purple-700',bar: 'bg-purple-500',  dot: 'bg-purple-500', verbs: ['создава', 'дизајнира', 'планира', 'формулира', 'генерира', 'составува', 'проектира'] },
 ];
+
+// ── Live Bloom Heatmap ────────────────────────────────────────────────────────
+
+function detectBloomLevels(text: string): number[] {
+    const lower = text.toLowerCase();
+    return BLOOM_LEVELS.map(bl => {
+        return bl.verbs.reduce((hits, v) => {
+            const re = new RegExp(`(?<![\\p{L}])${v}(?![\\p{L}])`, 'giu');
+            return hits + (lower.match(re)?.length ?? 0);
+        }, 0);
+    });
+}
+
+const LiveBloomHeatmap: React.FC<{ objectivesText: string }> = ({ objectivesText }) => {
+    const counts = useMemo(() => detectBloomLevels(objectivesText), [objectivesText]);
+    const total  = counts.reduce((a, b) => a + b, 0);
+    if (total === 0 || !objectivesText.trim()) return null;
+
+    const pcts = counts.map(c => Math.round((c / total) * 100));
+    const hotPct = pcts[2] + pcts[3] + pcts[4] + pcts[5]; // levels 3-6
+
+    return (
+        <div className="mt-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
+            <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide">Bloom баланс (live)</span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${hotPct >= 30 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    HOT {hotPct}% {hotPct >= 30 ? '✓' : '⚠ <30%'}
+                </span>
+            </div>
+            <div className="flex gap-1 h-4 rounded-lg overflow-hidden">
+                {BLOOM_LEVELS.map((bl, i) => pcts[i] > 0 && (
+                    // eslint-disable-next-line react/forbid-component-props -- dynamic bloom width requires inline style
+                    <div
+                        key={bl.num}
+                        className={`${bl.bar} transition-all duration-300`}
+                        style={{ width: `${pcts[i]}%` }}
+                        title={`${bl.mk}: ${pcts[i]}%`}
+                    />
+                ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+                {BLOOM_LEVELS.map((bl, i) => pcts[i] > 0 && (
+                    <span key={bl.num} className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${bl.color}`}>
+                        {bl.mk} {pcts[i]}%
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 const BloomObjectiveBuilder: React.FC<{
     onAdd: (objective: { text: string; bloomsLevel: BloomsLevel }) => void;
@@ -479,6 +529,7 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                         rows={5}
                         placeholder="Внесете секоја цел во нов ред..."
                     />
+                    <LiveBloomHeatmap objectivesText={arrayToString(plan.objectives || [])} />
                     <BloomObjectiveBuilder
                         onAdd={obj => setPlan(p => ({
                             ...p,
