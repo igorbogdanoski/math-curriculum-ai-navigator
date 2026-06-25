@@ -1,3 +1,19 @@
+// ─── Domain type re-exports ───────────────────────────────────────────────────
+// Types are defined in types/* domain files; re-exported here for backward
+// compatibility — all existing imports from 'types' continue to work unchanged.
+import type {
+  NationalStandard, Concept, Topic, Grade, Curriculum,
+  SecondaryTrack, SecondaryCurriculumModule, ConceptProgression,
+} from './types/curriculum';
+export type {
+  NationalStandard, Concept, Topic, Grade, Curriculum,
+  SecondaryTrack, SecondaryCurriculumModule, ConceptProgression,
+};
+export { SECONDARY_TRACK_LABELS, SECONDARY_TRACK_TO_MATURA_TRACKS } from './types/curriculum';
+
+export type {
+  School, StudentProfile, StudentAccount, TeachingProfile, ChatMessage,
+} from './types/user';
 
 // ─── Webb's Depth of Knowledge ────────────────────────────────────────────────
 export const DOK_META = {
@@ -8,114 +24,6 @@ export const DOK_META = {
 } as const;
 
 export type DokLevel = 1 | 2 | 3 | 4;
-
-export interface School {
-  id: string;
-  name: string;
-  city: string;
-  municipality?: string;
-  address?: string;
-  teacherUids: string[];
-  /** Legacy single admin; new docs use adminUids[] */
-  adminUid: string;
-  adminUids?: string[];
-  /** 6-char uppercase code teachers use to join (И1) */
-  joinCode?: string;
-  joinCodeGeneratedAt?: any;
-  createdAt?: any;
-}
-
-export interface NationalStandard {
-  id: string;
-  code: string;
-  description: string;
-  category?: string;
-  gradeLevel?: number;
-  levelDescription?: string;
-  relatedConceptIds?: string[];
-}
-
-export interface Concept {
-  id: string;
-  title: string;
-  description: string;
-  content?: string[];
-  priorKnowledgeIds?: string[];
-  assessmentStandards: string[];
-  nationalStandardIds?: string[];
-  activities?: string[];
-  levelDescription?: string;
-  localContextExamples?: string[]; // Macedonian local context (MKD denars, cities, etc.)
-  gradeLevel?: number; // Enriched at runtime from parent Grade.level
-}
-
-export interface Topic {
-  id: string;
-  title: string;
-  description?: string;
-  suggestedHours?: number;
-  concepts: Concept[];
-  topicLearningOutcomes?: string[];
-  levelDescription?: string;
-}
-
-/**
- * Secondary education track (Н4 — Средно образование).
- * - gymnasium:   Гимназиско, grades 10–12
- * - vocational4:         Стручно 4-годишно, grades 10–12
- * - vocational3:         Стручно 3-годишно, grades 10–12
- * - vocational2:         Стручно 2-годишно, grades 10–11
- * - gymnasium_elective:  Гимназиски изборни предмети
- */
-export type SecondaryTrack = 'gymnasium' | 'vocational4' | 'vocational3' | 'vocational2' | 'gymnasium_elective';
-
-export const SECONDARY_TRACK_LABELS: Record<SecondaryTrack, string> = {
-  gymnasium:          'Гимназиско (X–XIII)',
-  vocational4:        'Стручно 4-год (X–XIII)',
-  vocational3:        'Стручно 3-год (X–XII)',
-  vocational2:        'Стручно 2-год (X–XI)',
-  gymnasium_elective: 'Гимназија — Изборни предмети',
-};
-
-/**
- * Maps curriculum SecondaryTrack → relevant exam track keys shown in MaturaLibraryView.
- * Per Концепција 2025 (ДИЦ, Решение 13-12804/3 од 10.10.2025):
- *   - gymnasium:   Државна гимназиска матура + Училишна гимназиска матура
- *   - vocational4: Државна стручна матура (по профил) + Училишна стручна матура
- *   - vocational3: Завршен испит (нема државна матура)
- *   - vocational2: Завршен испит (нема државна матура)
- */
-export const SECONDARY_TRACK_TO_MATURA_TRACKS: Partial<Record<SecondaryTrack, string[]>> = {
-  gymnasium:          ['gymnasium'],
-  gymnasium_elective: ['gymnasium'],
-  vocational4:        ['vocational-it', 'vocational-economics', 'vocational-electro', 'vocational-mechanical', 'vocational-health', 'vocational-civil', 'vocational-art'],
-  vocational3:        ['vocational3-zavrshen', 'vocational-mechanical', 'vocational-civil'],
-  vocational2:        ['vocational2-zavrshen'],
-} as const;
-
-export interface Grade {
-  id: string;
-  level: number;
-  title: string;
-  topics: Topic[];
-  transversalStandards?: NationalStandard[];
-  levelDescription?: string;
-  /** Set on secondary grades — identifies the track they belong to */
-  secondaryTrack?: SecondaryTrack;
-  /** Math hours per week for this grade: 3 (primary 1–3) | 4 (primary 4–9, gymnasium) | 2–3 (vocational) */
-  weeklyHours?: 2 | 3 | 4;
-}
-
-export interface Curriculum {
-  grades: Grade[];
-}
-
-/** Secondary curriculum: one Curriculum per track */
-export interface SecondaryCurriculumModule {
-  track: SecondaryTrack;
-  label: string;
-  curriculum: Curriculum;
-}
 
 // ─── Матура / ДИМ Симулација ─────────────────────────────────────────────────
 
@@ -231,15 +139,6 @@ export interface MaturaSubmission {
   aiComment?: string;                     // per-step feedback
   manualScore?: number;                   // teacher override
   maxPoints: number;
-}
-
-export interface ConceptProgression {
-  conceptId: string;
-  title:string;
-  progression: Array<{
-    grade: number;
-    concept: Concept;
-  }>;
 }
 
 export enum PlannerItemType {
@@ -405,65 +304,6 @@ export interface PlannerItem {
 export interface SharedAnnualPlan {
     items: PlannerItem[];
     lessonPlans: LessonPlan[];
-}
-
-export interface StudentProfile {
-  id: string;
-  name: string;
-  description: string;
-}
-
-/**
- * С1 — Persistent студентски акаунт (Google Sign-In за ученици).
- * Зачуван во `student_accounts/{googleUid}` во Firestore.
- * Линкува повеќе deviceIds за cross-device sync на напредокот.
- */
-export interface StudentAccount {
-  uid: string;           // Google UID (= Firebase Auth UID после Sign-In)
-  name: string;          // Студентско име (од прв quiz или Google профил)
-  email?: string;        // Google email (опционален)
-  photoURL?: string;     // Google аватар
-  grade?: number;        // Одделение (опционално, за подобри препораки)
-  linkedDeviceIds: string[]; // Сите deviceIds на студентот (за cross-device queries)
-  createdAt: any;        // Firestore Timestamp
-  updatedAt?: any;
-}
-
-export interface TeachingProfile {
-  name: string;
-  photoURL?: string;
-  // RBAC and Multi-tenant fields
-  role?: 'teacher' | 'school_admin' | 'admin';
-  schoolId?: string;
-  schoolName?: string;
-  municipality?: string;
-  
-  // Monetization & Quota
-  aiCreditsBalance?: number;
-  isPremium?: boolean;
-  hasUnlimitedCredits?: boolean;
-  tier?: 'Free' | 'Pro' | 'School' | 'Unlimited';
-
-  schoolLogoUrl?: string; // Pro: uploaded school logo, shown as watermark in Gamma + PPTX footer
-  isMentor?: boolean; // П-Д: voluntary mentor flag — shown as badge on shared materials
-
-  /** Н4 — if set, teacher works in secondary education (not primary grades 1–9) */
-  secondaryTrack?: SecondaryTrack;
-
-  style: 'Constructivist' | 'Direct Instruction' | 'Inquiry-Based' | 'Project-Based';
-  experienceLevel: 'Beginner' | 'Intermediate' | 'Expert';
-  levelDescription?: string;
-  studentProfiles?: StudentProfile[];
-  favoriteConceptIds?: string[];
-  favoriteLessonPlanIds?: string[];
-  toursSeen?: Record<string, boolean>;
-}
-
-export interface ChatMessage {
-    role: 'user' | 'model';
-    text: string;
-    levelDescription?: string;
-    attachmentUrl?: string; // NEW: To display the image in chat history
 }
 
 export interface ProgressionByGrade {
