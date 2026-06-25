@@ -2,6 +2,7 @@ import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import { useCurriculum } from '../../hooks/useCurriculum';
 import type { LessonPlan, Grade, Topic, Concept, BloomsLevel } from '../../types';
 import { ICONS } from '../../constants';
+import { getGradeHoursInfo } from '../../services/gemini/plans';
 
 interface LessonPlanFormFieldsProps {
     plan: Partial<LessonPlan>;
@@ -388,6 +389,16 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
     const conceptsForTopic = useMemo(() => {
         return topicsForGrade.find((t: Topic) => t.id === plan.topicId)?.concepts || [];
     }, [topicsForGrade, plan.topicId]);
+
+    // Lesson duration from official МОН hours (40 min for grades 1-9, 45 min for secondary)
+    const { lessonMinutes } = useMemo(() => getGradeHoursInfo(plan.grade ?? 6), [plan.grade]);
+    // Phase durations: Вовед 10мин / Главен дел (rest) / Завршница 5мин
+    const phaseMinutes = useMemo(() => {
+        const intro = 10;
+        const closing = 5;
+        const main = lessonMinutes - intro - closing;
+        return { intro, main, closing, total: lessonMinutes };
+    }, [lessonMinutes]);
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -550,49 +561,112 @@ export const LessonPlanFormFields: React.FC<LessonPlanFormFieldsProps> = ({ plan
                 />
             </div>
 
-            <fieldset className="border p-4 rounded-md bg-gray-50/50">
-                <legend className="text-lg font-medium text-gray-900 px-2 bg-brand-bg rounded">Сценарио за часот</legend>
-                <div className="space-y-4 mt-2">
-                    <EnhancedTextArea
-                        id="introductory"
-                        fieldName="scenario.introductory"
-                        label="Воведна активност"
-                        value={plan.scenario?.introductory?.text || ''}
-                        onChange={handleScenarioChange}
-                        onEnhance={onEnhanceField}
-                        onRegenerate={onRegenerateSection ? () => onRegenerateSection('introductory') : undefined}
-                        onGenerateIllustration={onGenerateIllustration}
-                        isEnhancing={enhancingField === 'scenario.introductory' || isRegenerating === 'introductory'}
-                        name="introductory"
-                        rows={3}
-                    />
-                    <EnhancedTextArea
-                        id="main"
-                        fieldName="scenario.main"
-                        label="Главни активности"
-                        value={arrayToString(plan.scenario?.main || [])}
-                        onChange={handleScenarioChange}
-                        onEnhance={onEnhanceField}
-                        onRegenerate={onRegenerateSection ? () => onRegenerateSection('main') : undefined}
-                        onGenerateIllustration={onGenerateIllustration}
-                        isEnhancing={enhancingField === 'scenario.main' || isRegenerating === 'main'}
-                        name="main"
-                        rows={5}
-                        placeholder="Внесете секоја активност во нов ред..."
-                    />
-                    <EnhancedTextArea
-                        id="concluding"
-                        fieldName="scenario.concluding"
-                        label="Завршна активност"
-                        value={plan.scenario?.concluding?.text || ''}
-                        onChange={handleScenarioChange}
-                        onEnhance={onEnhanceField}
-                        onRegenerate={onRegenerateSection ? () => onRegenerateSection('concluding') : undefined}
-                        onGenerateIllustration={onGenerateIllustration}
-                        isEnhancing={enhancingField === 'scenario.concluding' || isRegenerating === 'concluding'}
-                        name="concluding"
-                        rows={3}
-                    />
+            <fieldset className="border border-indigo-100 rounded-xl bg-gradient-to-br from-indigo-50/40 to-white p-4">
+                <legend className="text-base font-bold text-indigo-700 px-2 bg-white rounded-lg border border-indigo-100 flex items-center gap-2">
+                    Трифазна структура на часот
+                    <span className="text-[11px] font-normal text-gray-400 border border-gray-200 px-2 py-0.5 rounded-full bg-gray-50">
+                        {phaseMinutes.total} мин вкупно
+                    </span>
+                </legend>
+
+                {/* Phase timeline indicator */}
+                <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-gray-200 mb-5 mt-1 text-[11px] font-bold text-white">
+                    {/* eslint-disable-next-line react/forbid-component-props -- proportional phase width requires inline style */}
+                    <div
+                        className="flex items-center justify-center gap-1 bg-blue-500 py-1.5 px-2"
+                        style={{ width: `${(phaseMinutes.intro / phaseMinutes.total) * 100}%` }}
+                        title="Вовед — мотивација, поврзување со претходни знаења"
+                    >
+                        🔵 {phaseMinutes.intro} мин
+                    </div>
+                    <div
+                        className="flex items-center justify-center gap-1 bg-amber-500 py-1.5 px-2 flex-1"
+                        title="Главен дел — нови поими, активности, практика"
+                    >
+                        🟡 {phaseMinutes.main} мин
+                    </div>
+                    {/* eslint-disable-next-line react/forbid-component-props -- proportional phase width requires inline style */}
+                    <div
+                        className="flex items-center justify-center gap-1 bg-emerald-500 py-1.5 px-2"
+                        style={{ width: `${(phaseMinutes.closing / phaseMinutes.total) * 100}%` }}
+                        title="Завршница — синтеза, рефлексија, домашна работа"
+                    >
+                        🟢 {phaseMinutes.closing} мин
+                    </div>
+                </div>
+
+                <div className="space-y-5">
+                    {/* Phase 1: Вовед */}
+                    <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="w-6 h-6 rounded-full bg-blue-500 text-white text-[10px] font-black flex items-center justify-center shrink-0">1</span>
+                            <span className="text-sm font-bold text-blue-700">Вовед</span>
+                            <span className="text-[10px] text-blue-500 border border-blue-200 px-1.5 py-0.5 rounded-full bg-white">≈ {phaseMinutes.intro} мин</span>
+                            <span className="text-[10px] text-gray-400 ml-auto">Мотивација · поврзување · цели</span>
+                        </div>
+                        <EnhancedTextArea
+                            id="introductory"
+                            fieldName="scenario.introductory"
+                            label=""
+                            value={plan.scenario?.introductory?.text || ''}
+                            onChange={handleScenarioChange}
+                            onEnhance={onEnhanceField}
+                            onRegenerate={onRegenerateSection ? () => onRegenerateSection('introductory') : undefined}
+                            onGenerateIllustration={onGenerateIllustration}
+                            isEnhancing={enhancingField === 'scenario.introductory' || isRegenerating === 'introductory'}
+                            name="introductory"
+                            rows={3}
+                            placeholder="Воведна активност — мотивациска игра, поврзување со претходно знаење..."
+                        />
+                    </div>
+
+                    {/* Phase 2: Главен дел */}
+                    <div className="rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="w-6 h-6 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center shrink-0">2</span>
+                            <span className="text-sm font-bold text-amber-700">Главен дел</span>
+                            <span className="text-[10px] text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full bg-white">≈ {phaseMinutes.main} мин</span>
+                            <span className="text-[10px] text-gray-400 ml-auto">Нови поими · активности · практика</span>
+                        </div>
+                        <EnhancedTextArea
+                            id="main"
+                            fieldName="scenario.main"
+                            label=""
+                            value={arrayToString(plan.scenario?.main || [])}
+                            onChange={handleScenarioChange}
+                            onEnhance={onEnhanceField}
+                            onRegenerate={onRegenerateSection ? () => onRegenerateSection('main') : undefined}
+                            onGenerateIllustration={onGenerateIllustration}
+                            isEnhancing={enhancingField === 'scenario.main' || isRegenerating === 'main'}
+                            name="main"
+                            rows={5}
+                            placeholder="Активност 1: Директна настава — ...&#10;Активност 2: Групна работа — ...&#10;Активност 3: Индивидуална практика — ..."
+                        />
+                    </div>
+
+                    {/* Phase 3: Завршница */}
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="w-6 h-6 rounded-full bg-emerald-500 text-white text-[10px] font-black flex items-center justify-center shrink-0">3</span>
+                            <span className="text-sm font-bold text-emerald-700">Завршница</span>
+                            <span className="text-[10px] text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-full bg-white">≈ {phaseMinutes.closing} мин</span>
+                            <span className="text-[10px] text-gray-400 ml-auto">Синтеза · рефлексија · домашна</span>
+                        </div>
+                        <EnhancedTextArea
+                            id="concluding"
+                            fieldName="scenario.concluding"
+                            label=""
+                            value={plan.scenario?.concluding?.text || ''}
+                            onChange={handleScenarioChange}
+                            onEnhance={onEnhanceField}
+                            onRegenerate={onRegenerateSection ? () => onRegenerateSection('concluding') : undefined}
+                            onGenerateIllustration={onGenerateIllustration}
+                            isEnhancing={enhancingField === 'scenario.concluding' || isRegenerating === 'concluding'}
+                            name="concluding"
+                            rows={3}
+                            placeholder="Завршна активност — синтеза, рефлексија (3-2-1, семафор...), домашна работа..."
+                        />
+                    </div>
                 </div>
             </fieldset>
             
