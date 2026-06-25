@@ -1036,9 +1036,9 @@ export const ExtractionHubView: React.FC = () => {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                    accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain,image/png,image/jpeg,image/webp,image/heic,image/heif,image/gif,.png,.jpg,.jpeg,.webp,.heic,.heif,.gif"
                     className="sr-only"
-                    aria-label="Изберете документ (PDF, DOCX, TXT, PNG, JPG, WEBP)"
+                    aria-label="Изберете документ (PDF, DOCX, TXT, PNG, JPG, WEBP, HEIC)"
                     title="Изберете документ"
                     onChange={onFileChange}
                     disabled={isLoading}

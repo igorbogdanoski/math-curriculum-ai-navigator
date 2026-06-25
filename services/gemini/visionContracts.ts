@@ -9,7 +9,15 @@
  *   4. smartOCR          — world-class LaTeX digitization of math images/handwriting
  */
 
-import { callGeminiProxy, DEFAULT_MODEL, ULTIMATE_MODEL, SAFETY_SETTINGS } from './core';
+import { callGeminiProxy, DEFAULT_MODEL, ULTIMATE_MODEL, SAFETY_SETTINGS, getAILanguageRule } from './core';
+
+function fallbackMsg(mk: string, en: string, sq: string, tr: string): string {
+  const lang = getAILanguageRule();
+  if (lang.includes('АНГЛИСКИ') || lang.includes('English')) return en;
+  if (lang.includes('АЛБАНСКИ') || lang.includes('Shqip')) return sq;
+  if (lang.includes('ТУРСКИ') || lang.includes('Türkçe')) return tr;
+  return mk;
+}
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -108,14 +116,21 @@ function isHomeworkFeedbackOutput(o: unknown): o is HomeworkFeedbackOutput {
   );
 }
 
-const HOMEWORK_FEEDBACK_FALLBACK: HomeworkFeedbackOutput = {
-  summary: 'AI не успеа да ја анализира домашната работа. Обидете се повторно.',
-  strengths: ['—'],
-  mistakes: [],
-  nextSteps: [],
-  estimatedMastery: 0,
-  ragMeta: { conceptIds: [], gradeLevel: 0, evidenceSpans: [] },
-};
+function buildHomeworkFallback(): HomeworkFeedbackOutput {
+  return {
+    summary: fallbackMsg(
+      'AI не успеа да ја анализира домашната работа. Обидете се повторно.',
+      'AI could not analyze the homework. Please try again.',
+      'AI nuk mundi ta analizojë detyrën. Ju lutemi provoni përsëri.',
+      'AI ödevi analiz edemedi. Lütfen tekrar deneyin.',
+    ),
+    strengths: ['—'],
+    mistakes: [],
+    nextSteps: [],
+    estimatedMastery: 0,
+    ragMeta: { conceptIds: [], gradeLevel: 0, evidenceSpans: [] },
+  };
+}
 
 export async function homeworkFeedbackContract(
   input: HomeworkFeedbackInput,
@@ -155,7 +170,7 @@ Analyse the image and return ONLY a JSON object matching this schema exactly:
   const result = await callWithRetry<HomeworkFeedbackOutput>(prompt, isHomeworkFeedbackOutput, [mediaPart]);
 
   if (result) return { output: result.data, retried: result.retried, fallback: false };
-  return { output: HOMEWORK_FEEDBACK_FALLBACK, retried: true, fallback: true };
+  return { output: buildHomeworkFallback(), retried: true, fallback: true };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -236,7 +251,12 @@ function buildTestGradingFallback(questions: TestGradingInput['questions']): Tes
       questionId: q.id,
       earnedPoints: 0,
       maxPoints: q.points,
-      feedback: 'AI не успеа да ги оцени одговорите.',
+      feedback: fallbackMsg(
+        'AI не успеа да ги оцени одговорите.',
+        'AI could not grade the answers.',
+        'AI nuk mundi t\'i vlerësojë përgjigjet.',
+        'AI cevapları değerlendiremiedi.',
+      ),
       confidence: 0,
     })),
     total: { earned: 0, max: maxTotal, percentage: 0 },

@@ -6,12 +6,18 @@ import { OCR_SUPPORTED_LANGUAGES, type OcrLanguage } from '../services/gemini/vi
 
 // ─── S42-E2a: Image MIME detection ────────────────────────────────────────────
 
-const SUPPORTED_IMAGE_MIMES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
+const SUPPORTED_IMAGE_MIMES = new Set([
+  'image/png', 'image/jpeg', 'image/jpg', 'image/webp',
+  'image/heic', 'image/heif', 'image/gif',
+]);
 const IMAGE_EXT_TO_MIME: Record<string, string> = {
   '.png':  'image/png',
   '.jpg':  'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
+  '.heic': 'image/heic',
+  '.heif': 'image/heif',
+  '.gif':  'image/gif',
 };
 
 /** Returns a normalized image MIME (image/png, image/jpeg, image/webp) or null. */

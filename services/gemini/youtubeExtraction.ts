@@ -55,6 +55,13 @@ export async function extractMathTasksFromUrl(
     if (caps.available && caps.transcript) {
       rawText = applyTimeRange(caps, timeRange);
       transcriptAvailable = true;
+    } else if (lang !== 'en') {
+      // Fallback: try English captions when requested language unavailable
+      const enCaps = await fetchYouTubeCaptions(videoId, 'en');
+      if (enCaps.available && enCaps.transcript) {
+        rawText = applyTimeRange(enCaps, timeRange);
+        transcriptAvailable = true;
+      }
     }
   }
 
