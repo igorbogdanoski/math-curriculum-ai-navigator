@@ -143,40 +143,70 @@ export const AcademyQuiz: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => 
   }
 
   if (isFinished) {
-    const passed = score >= questions.length - 1;
+    const pct = score / questions.length;
+    const isPerfect = score === questions.length;
+    const passed   = pct >= 0.8;
+    const needsHelp = pct < 0.6;
+
+    const resetQuiz = () => {
+      setQuestions([]);
+      setIsFinished(false);
+      setScore(0);
+      setCurrentQuestionIdx(0);
+      setSelectedOption(null);
+      setIsAnswered(false);
+    };
+
     return (
       <div className="bg-white border border-gray-100 rounded-2xl p-10 text-center shadow-lg animate-in zoom-in-95 duration-300">
-        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${passed ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+          isPerfect ? 'bg-emerald-100 text-emerald-600'
+          : passed  ? 'bg-green-100 text-green-600'
+          : needsHelp ? 'bg-red-50 text-red-500'
+          : 'bg-amber-100 text-amber-600'
+        }`}>
           {passed ? <Award className="w-10 h-10" /> : <Brain className="w-10 h-10" />}
         </div>
         <h3 className="text-3xl font-black text-gray-900 mb-2">
           {score}/{questions.length} Точни одговори
         </h3>
-        <p className="text-gray-500 mb-8 text-lg">
-          {passed 
-            ? 'Одлично! Потврдивте дека ја владеете оваа наставна стратегија.' 
-            : 'Добар обид! Прочитајте ја лекцијата уште еднаш и обидете се повторно.'}
+
+        {/* ZPD adaptive feedback */}
+        <p className="text-gray-600 mb-1 text-lg font-semibold">
+          {isPerfect
+            ? '🏆 Совршено! Ја совладавте оваа тема целосно.'
+            : passed
+              ? '✅ Одлично! Потврдивте дека ја владеете оваа наставна стратегија.'
+              : needsHelp
+                ? '📖 Прочитај ја лекцијата уште еднаш — потоа обиди се повторно.'
+                : '💪 Добар обид! Уште малку вежбање и ќе ти успее.'}
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {isPerfect && (
+          <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-4 py-2 mb-4 inline-block">
+            🎯 Следниот чекор: Феинман предизвик — објасни го концептот со свои зборови!
+          </p>
+        )}
+        {needsHelp && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2 mb-4 inline-block">
+            💡 Совет: Фокусирај се на теоретскиот дел на лекцијата пред да пробаш повторно.
+          </p>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
           <button
-            onClick={() => {
-              setQuestions([]);
-              setIsFinished(false);
-              setScore(0);
-              setCurrentQuestionIdx(0);
-            }}
+            type="button"
+            onClick={resetQuiz}
             className="px-6 py-3 border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition-all"
           >
             Затвори
           </button>
-          {!passed && (
-            <button
-              onClick={generateQuiz}
-              className="px-6 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition-all"
-            >
-              Обиди се повторно
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={generateQuiz}
+            className="px-6 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-secondary transition-all"
+          >
+            {isPerfect ? '🔄 Нов квиз (различни прашања)' : 'Обиди се повторно'}
+          </button>
         </div>
       </div>
     );

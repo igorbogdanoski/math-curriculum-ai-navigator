@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, BookOpen, BrainCircuit, Rocket, Target, Wand2, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { ACADEMY_CONTENT } from '../data/academy/content';
@@ -12,6 +12,8 @@ import { useAcademyProgress } from '../contexts/AcademyProgressContext';
 import { DokBadge } from '../components/common/DokBadge';
 import { DOK_META } from '../types';
 import type { DokLevel } from '../types';
+import { sm2Update, loadCards, saveCards, getOrCreateCard } from '../utils/sm2';
+import type { Quality } from '../utils/sm2';
 
 const AlgebraTilesCanvas = React.lazy(() =>
   import('../components/math/AlgebraTilesCanvas').then(m => ({ default: m.AlgebraTilesCanvas }))
@@ -119,6 +121,17 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
   const { markLessonAsRead } = useAcademyProgress();
   const topRef = useRef<HTMLDivElement>(null);
   const [scrollPct, setScrollPct] = useState(0);
+  const [sm2Updated, setSm2Updated] = useState(false);
+
+  const handleFeynmanGradeComplete = useCallback((quality: Quality) => {
+    const cards = loadCards();
+    const card = getOrCreateCard(id, cards);
+    const updated = sm2Update(card, quality);
+    saveCards(cards.map(c => c.lessonId === id ? updated : c).concat(
+      cards.some(c => c.lessonId === id) ? [] : [updated]
+    ));
+    setSm2Updated(true);
+  }, [id]);
 
   const lesson = ACADEMY_CONTENT[id];
 
@@ -345,7 +358,12 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
             <AcademyQuiz lesson={lesson} />
 
             {/* Feynman Challenge */}
-            <FeynmanChallenge lesson={lesson} />
+            <FeynmanChallenge lesson={lesson} onGradeComplete={handleFeynmanGradeComplete} />
+            {sm2Updated && (
+              <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-1.5 text-center">
+                ✅ SM-2 картата за оваа лекција е ажурирана — ќе се прегледа во оптималното време!
+              </p>
+            )}
 
             {/* Final CTA */}
             <div className="mt-8 mb-12 flex flex-col items-center p-12 bg-gray-50 border border-gray-200 rounded-3xl text-center">

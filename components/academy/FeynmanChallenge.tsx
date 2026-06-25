@@ -3,6 +3,16 @@ import React, { useState } from 'react';
 import { Lightbulb, Loader2, Send, RotateCcw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
 import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
+import type { Quality } from '../../utils/sm2';
+
+function feynmanToSM2Quality(total: number): Quality {
+  if (total >= 85) return 5;
+  if (total >= 70) return 4;
+  if (total >= 55) return 3;
+  if (total >= 40) return 2;
+  if (total >= 20) return 1;
+  return 0;
+}
 
 interface FeynmanFeedback {
   accuracy: number;      // 0-40
@@ -41,7 +51,10 @@ function ScoreBar({ label, score, max, color }: { label: string; score: number; 
   );
 }
 
-export const FeynmanChallenge: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => {
+export const FeynmanChallenge: React.FC<{
+  lesson: AcademyLesson;
+  onGradeComplete?: (quality: Quality) => void;
+}> = ({ lesson, onGradeComplete }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<FeynmanFeedback | null>(null);
@@ -92,6 +105,7 @@ ${safeText}
         const parsed: FeynmanFeedback = JSON.parse(response.text);
         parsed.total = (parsed.accuracy ?? 0) + (parsed.simplicity ?? 0) + (parsed.completeness ?? 0) + (parsed.noJargon ?? 0);
         setFeedback(parsed);
+        onGradeComplete?.(feynmanToSM2Quality(parsed.total));
       }
     } catch (err) {
       logger.error('FeynmanChallenge evaluation failed:', err);

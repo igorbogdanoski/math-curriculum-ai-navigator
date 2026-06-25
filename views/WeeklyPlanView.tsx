@@ -7,8 +7,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { usePlanning } from '../contexts/PlanningContext';
+import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import type { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
+import { loadThematicPlanEdit } from '../services/firestoreService.plans';
 
 // ── Local types ────────────────────────────────────────────────────────────────
 
@@ -115,6 +117,7 @@ export const WeeklyPlanView: React.FC = () => {
   const { navigate } = useNavigation();
   const { addNotification } = useNotification();
   const { annualPlanId, grade, setPlanningState } = usePlanning();
+  const { curriculum } = useCurriculum();
 
   const [plans, setPlans] = useState<SavedPlan[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
@@ -122,6 +125,8 @@ export const WeeklyPlanView: React.FC = () => {
   const [weekNumber, setWeekNumber] = useState(1);
   const [showScheduleConfig, setShowScheduleConfig] = useState(false);
   const [periodsPerDay, setPeriodsPerDay] = useState<[number, number, number, number, number]>([1, 1, 1, 1, 0]);
+  // Lesson titles from saved thematic plan: lessonNumber → title
+  const [thematicLessonMap, setThematicLessonMap] = useState<Record<number, string>>({});
 
   // Load plans from Firestore
   useEffect(() => {
@@ -156,6 +161,38 @@ export const WeeklyPlanView: React.FC = () => {
     () => plans.find(p => p.id === selectedPlanId) ?? null,
     [plans, selectedPlanId],
   );
+
+  // Auto-load thematic lessons for the current week's topic
+  useEffect(() => {
+    setThematicLessonMap({});
+    if (!firebaseUser?.uid || !selectedPlan || !curriculum) return;
+    const topicEntry = buildTopicRanges(selectedPlan.planData).find(
+      r => weekNumber >= r.weekStart && weekNumber <= r.weekEnd,
+    );
+    if (!topicEntry) return;
+
+    // Match grade from plan string to curriculum grade
+    const gradeNum = selectedPlan.planData.grade?.match(/\d+/)?.[0];
+    const gradeObj = gradeNum
+      ? curriculum.grades.find(g => String(g.level) === gradeNum)
+      : null;
+    if (!gradeObj) return;
+
+    const topicTitle = topicEntry.topic.title.toLowerCase();
+    const topicObj = gradeObj.topics.find(t =>
+      t.title.toLowerCase().includes(topicTitle.slice(0, 5)) ||
+      topicTitle.includes(t.title.toLowerCase().slice(0, 5)),
+    );
+    if (!topicObj) return;
+
+    loadThematicPlanEdit(firebaseUser.uid, gradeObj.id, topicObj.id).then(saved => {
+      if (!saved) return;
+      const map: Record<number, string> = {};
+      saved.plan.lessons.forEach((l, i) => { map[i + 1] = l.lessonUnit; });
+      setThematicLessonMap(map);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser?.uid, selectedPlanId, weekNumber, curriculum]);
 
   const topicRanges = useMemo(
     () => (selectedPlan ? buildTopicRanges(selectedPlan.planData) : []),
@@ -432,6 +469,7 @@ export const WeeklyPlanView: React.FC = () => {
                       }
 
                       const colorClass = TOPIC_COLORS[slot.topicIdx % TOPIC_COLORS.length];
+                      const lessonTitle = thematicLessonMap[slot.lessonNumber];
                       return (
                         <td key={dayIdx} className="border border-gray-200 p-2 align-top">
                           <div
@@ -441,8 +479,13 @@ export const WeeklyPlanView: React.FC = () => {
                               Лекција {slot.lessonNumber}
                             </span>
                             <span className="text-sm font-semibold leading-tight flex-1">
-                              {slot.topicTitle}
+                              {lessonTitle ?? slot.topicTitle}
                             </span>
+                            {lessonTitle && (
+                              <span className="text-[9px] opacity-50 italic">
+                                📚 {slot.topicTitle}
+                              </span>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleGenerateLesson(slot)}
