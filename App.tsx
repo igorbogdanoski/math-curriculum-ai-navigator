@@ -186,6 +186,7 @@ const MaturaAnalyticsView  = safeLazy(() => import('./views/MaturaAnalyticsView'
 const MaturaImportView     = safeLazy(() => import('./views/MaturaImportView').then(module => ({ default: module.MaturaImportView })));
 const MaturaPortalView        = safeLazy(() => import('./views/MaturaPortalView').then(module => ({ default: module.MaturaPortalView })));
 const MaturaAssignmentView    = safeLazy(() => import('./views/MaturaAssignmentView').then(module => ({ default: module.MaturaAssignmentView })));
+const StudentHomeworkView     = safeLazy(() => import('./views/StudentHomeworkView').then(module => ({ default: module.StudentHomeworkView })));
 const SolutionUploadPage      = safeLazy(() => import('./views/SolutionUploadPage').then(module => ({ default: module.SolutionUploadPage })));
 const ExamBuilderView      = safeLazy(() => import('./views/ExamBuilderView').then(module => ({ default: module.ExamBuilderView })));
 const ExamPlayerView       = safeLazy(() => import('./views/ExamPlayerView').then(module => ({ default: module.ExamPlayerView })));
@@ -301,6 +302,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/matura-import', component: MaturaImportView },
     { path: '/matura-portal', component: MaturaPortalView },
     { path: '/matura-assignments', component: MaturaAssignmentView },
+    { path: '/homework', component: StudentHomeworkView },
     { path: '/exam/build', component: ExamBuilderView },
     { path: '/exam/play', component: ExamPlayerView },
     { path: '/exam/presenter/:id', component: ExamPresenterView },

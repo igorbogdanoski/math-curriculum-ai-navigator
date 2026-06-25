@@ -260,6 +260,71 @@ export const createDuggaAssignment = async (
   return ref.id;
 };
 
+// ── S72-A4: Generic Homework Assignments ───────────────────────────────────────
+
+export interface HomeworkAssignment {
+  id: string;
+  title: string;
+  materialType: 'MATERIALS' | 'QUIZ' | 'GAMMA' | 'DUGGA' | 'GENERIC';
+  materialLink?: string;
+  teacherUid: string;
+  teacherName?: string;
+  classId: string;
+  classStudentNames: string[];
+  dueDate: string;
+  instructions: string;
+  completedBy: string[];
+  createdAt: Timestamp | null;
+}
+
+export const createHomeworkAssignment = async (
+  teacherUid: string,
+  teacherName: string,
+  classId: string,
+  classStudentNames: string[],
+  title: string,
+  dueDate: string,
+  materialType: HomeworkAssignment['materialType'] = 'GENERIC',
+  instructions = '',
+  materialLink = '',
+): Promise<string> => {
+  const ref = await addDoc(collection(db, 'assignments'), {
+    title,
+    materialType,
+    materialLink,
+    cacheId: '',
+    teacherUid,
+    teacherName,
+    classId,
+    classStudentNames,
+    dueDate,
+    instructions,
+    completedBy: [],
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+export const fetchHomeworkByClass = async (classId: string): Promise<HomeworkAssignment[]> => {
+  try {
+    const q = query(
+      collection(db, 'assignments'),
+      where('classId', '==', classId),
+      orderBy('dueDate', 'asc'),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as HomeworkAssignment));
+  } catch {
+    return [];
+  }
+};
+
+export const markHomeworkComplete = async (assignmentId: string, studentName: string): Promise<void> => {
+  await updateDoc(doc(db, 'assignments', assignmentId), {
+    completedBy: arrayUnion(studentName),
+  });
+};
+
 export const fetchMaturaAssignmentsByClass = async (classId: string): Promise<MaturaAssignment[]> => {
   const q = query(
     collection(db, 'matura_assignments'),

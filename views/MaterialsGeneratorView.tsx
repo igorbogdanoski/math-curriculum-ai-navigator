@@ -20,6 +20,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { usePlanner } from '../contexts/PlannerContext';
 import { AssignDialog } from '../components/AssignDialog';
+import { HomeworkAssignModal } from '../components/HomeworkAssignModal';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { generatorTourSteps } from '../tours/tour-steps';
 import { useModal } from '../contexts/ModalContext';
@@ -139,6 +140,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     // Wizard step state
     const [currentStep, setCurrentStep] = useState(1);
     const [showMathTools, setShowMathTools] = useState(false);
+    const [showHomeworkModal, setShowHomeworkModal] = useState(false);
     const [recentTypes, setRecentTypes] = useState<MaterialType[]>(() => loadRecentTypes());
 
     const handleSelectMaterialType = React.useCallback((type: MaterialType) => {
@@ -411,9 +413,28 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
                     handleMaterialRate={handleMaterialRate}
                     handleGenerateFromExtraction={handleGenerateFromExtraction}
                 />
+                {/* S72-A4: Задај домашна — shown when material is generated */}
+                {generatedMaterial && !isGenerating && (
+                    <div className="mt-3 flex justify-end print:hidden">
+                        <button
+                            type="button"
+                            onClick={() => setShowHomeworkModal(true)}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold hover:bg-emerald-100 transition"
+                        >
+                            📚 Задај домашна
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
 
+        {showHomeworkModal && generatedMaterial && (
+            <HomeworkAssignModal
+                materialTitle={'title' in generatedMaterial ? String(generatedMaterial.title) : ('topic' in generatedMaterial ? String((generatedMaterial as any).topic) : 'Генериран материјал')}
+                materialType={state.materialType === 'QUIZ' ? 'QUIZ' : state.materialType === 'SCENARIO' ? 'MATERIALS' : 'GENERIC'}
+                onClose={() => setShowHomeworkModal(false)}
+            />
+        )}
         {assignTarget && (
             <AssignDialog
                 material={assignTarget}
