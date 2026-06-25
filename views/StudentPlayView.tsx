@@ -20,8 +20,20 @@ import { LearningLoopPanel } from '../components/student/LearningLoopPanel';
 export { quizSessionReducer, QUIZ_SESSION_INITIAL } from '../components/student/quizSessionReducer';
 export type { QuizSessionState, QuizSessionAction } from '../components/student/quizSessionReducer';
 
+const CHUNK_RELOAD_KEY = '__chunk_reload_attempted__';
 const InteractiveQuizPlayer = React.lazy(() =>
-  import('../components/ai/InteractiveQuizPlayer').then(m => ({ default: m.InteractiveQuizPlayer }))
+  import('../components/ai/InteractiveQuizPlayer')
+    .then(m => ({ default: m.InteractiveQuizPlayer }))
+    .catch(err => {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isChunk = msg.includes('Failed to fetch dynamically imported module') ||
+        msg.includes('dynamically imported module') || msg.includes('Loading chunk');
+      if (isChunk && !sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+        sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+        window.location.reload();
+      }
+      throw err;
+    })
 );
 
 export const StudentPlayView: React.FC = () => {
