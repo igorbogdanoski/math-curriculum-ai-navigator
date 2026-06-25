@@ -26,6 +26,7 @@ import { useLessonPlanAIActions } from '../components/lesson-plan-editor/useLess
 import { useLessonPlanExport } from '../components/lesson-plan-editor/useLessonPlanExport';
 import { LessonPlanExportMenu } from '../components/lesson-plan-editor/LessonPlanExportMenu';
 import { LessonPlanDifferentiationPanel } from '../components/lesson-plan-editor/LessonPlanDifferentiationPanel';
+import { LessonPlanOfficialForm } from '../components/planner/LessonPlanOfficialForm';
 
 
 interface LessonPlanEditorViewProps {
@@ -50,6 +51,8 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
   const [showMathTools, setShowMathTools] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showOfficialLessonForm, setShowOfficialLessonForm] = useState(false);
+  const [officialLessonEditing, setOfficialLessonEditing] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
   const isMounted = useRef(true);
@@ -286,6 +289,16 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                         : <>🎨 Инфографик</>}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setShowOfficialLessonForm(true)}
+                    disabled={!plan.title}
+                    className="flex items-center gap-2 bg-white border border-blue-300 text-blue-700 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors font-semibold disabled:opacity-40 text-sm"
+                    title="Официјален МОН образец за Подготовка за час"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    МОН Образец
+                  </button>
                   <LessonPlanExportMenu
                     disabled={!plan.title}
                     isOpen={exporter.isExportMenuOpen}
@@ -401,6 +414,77 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           onConfirm={confirmDialog.onConfirm}
           onCancel={() => setConfirmDialog(null)}
         />
+      )}
+
+      {/* ── Official MoN Lesson Plan Form Modal ──────────────────────────── */}
+      {showOfficialLessonForm && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in no-print"
+          onClick={() => setShowOfficialLessonForm(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Официјален образец за Подготовка за час"
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[95vh]"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-4 border-b flex-shrink-0 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-brand-primary flex items-center gap-2">
+                <ICONS.printer className="w-5 h-5" />
+                Подготовка за наставен час — МОН образец
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOfficialLessonEditing(v => !v)}
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm transition-colors ${
+                    officialLessonEditing
+                      ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <ICONS.edit className="w-4 h-4" />
+                  {officialLessonEditing ? 'Прегледај' : 'Уреди'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-brand-accent text-white rounded-lg flex items-center gap-2 text-sm hover:bg-opacity-90"
+                >
+                  <ICONS.printer className="w-4 h-4" />
+                  Испечати
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowOfficialLessonForm(false)}
+                  className="p-1 rounded-full hover:bg-gray-200"
+                  aria-label="Затвори"
+                >
+                  <ICONS.close className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </div>
+
+            {officialLessonEditing && (
+              <div className="px-4 py-2 bg-blue-50 border-b border-blue-200 flex items-center gap-2 text-sm text-blue-700 flex-shrink-0">
+                <ICONS.edit className="w-4 h-4 flex-shrink-0" />
+                <span>Режим на уредување — кликни на полињата за да внесеш промени пред печатење</span>
+              </div>
+            )}
+
+            {/* Scrollable form */}
+            <div className="overflow-auto flex-1 p-4 bg-gray-100">
+              <div className="bg-white shadow-sm mx-auto max-w-3xl">
+                <LessonPlanOfficialForm
+                  plan={plan}
+                  isEditable={officialLessonEditing}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
