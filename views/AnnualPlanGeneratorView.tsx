@@ -4,7 +4,7 @@ import { useReactToPrint } from 'react-to-print';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useNavigation } from '../contexts/NavigationContext';
-import { fetchAnnualPlanById, updateAnnualPlan, createAnnualPlan } from '../services/firestoreService.materials';
+import { fetchAnnualPlanById, updateAnnualPlan, createAnnualPlan, toggleAnnualPlanPublic } from '../services/firestoreService.materials';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -145,6 +145,8 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const [officialAuthorName, setOfficialAuthorName] = useState('');
     const [officialSchoolName, setOfficialSchoolName] = useState('');
     const [officialAcademicYear, setOfficialAcademicYear] = useState('2026/2027');
+    const [isPublic, setIsPublic] = useState(false);
+    const [isTogglingPublic, setIsTogglingPublic] = useState(false);
 
     const { setPlanningState } = usePlanning();
 
@@ -175,6 +177,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                 setWeeks(doc.planData.totalWeeks);
                 setSavedId(planId); // already saved
                 setCurrentStep(3); // jump straight to preview/edit
+                setIsPublic(doc.isPublic ?? false);
             } else {
                 addNotification('Планот не е пронајден.', 'error');
             }
@@ -227,6 +230,24 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
             addNotification("Грешка при зачувување на програмата.", 'error');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleTogglePublic = async () => {
+        if (!savedId) {
+            addNotification('Прво зачувајте го планот за да го споделите.', 'warning');
+            return;
+        }
+        setIsTogglingPublic(true);
+        try {
+            const next = !isPublic;
+            await toggleAnnualPlanPublic(savedId, next);
+            setIsPublic(next);
+            addNotification(next ? '🌐 Планот е споделен во Библиотеката!' : 'Планот е отстранет од Библиотеката.', 'success');
+        } catch {
+            addNotification('Грешка при промена на статусот.', 'error');
+        } finally {
+            setIsTogglingPublic(false);
         }
     };
 
@@ -527,6 +548,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                             {plan.totalWeeks} недели
                                         </span>
                                         {user && (
+                                            <>
                                             <button
                                                 type="button"
                                                 onClick={handleSave}
@@ -538,6 +560,24 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                     ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Зачувувам...</>
                                                     : savedId && !planId ? '✓ Зачувано' : planId ? 'Ажурирај' : 'Зачувај'}
                                             </button>
+                                            {savedId && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleTogglePublic}
+                                                    disabled={isTogglingPublic}
+                                                    title={isPublic ? 'Откажи споделување' : 'Сподели во Библиотека'}
+                                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-sm transition shadow-sm border ${
+                                                        isPublic
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    {isTogglingPublic
+                                                        ? <ICONS.spinner className="w-4 h-4 animate-spin" />
+                                                        : isPublic ? '🌐 Јавно' : '🔒 Приватно'}
+                                                </button>
+                                            )}
+                                            </>
                                         )}
                                         <button
                                             onClick={() => {

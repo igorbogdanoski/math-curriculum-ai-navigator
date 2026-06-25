@@ -1,6 +1,6 @@
 ﻿import { logger } from '../utils/logger';
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, orderBy, updateDoc, doc, increment } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, updateDoc, doc, increment, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -9,7 +9,9 @@ import { AIGeneratedAnnualPlan } from '../types';
 import { useNotification } from '../contexts/NotificationContext';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { useNavigation } from '../contexts/NavigationContext';
-import { createAnnualPlan } from '../services/firestoreService.materials';
+import { createAnnualPlan, rateAnnualPlan } from '../services/firestoreService.materials';
+
+type FilterMode = 'public' | 'mine';
 
 interface SavedPlan {
     id: string;
@@ -21,6 +23,10 @@ interface SavedPlan {
     planData: AIGeneratedAnnualPlan;
     likes?: number;
     forks?: number;
+    isPublic?: boolean;
+    avgRating?: number;
+    ratingCount?: number;
+    ratingsByUid?: Record<string, number>;
 }
 
 export const AnnualPlanGalleryView: React.FC = () => {
@@ -28,32 +34,72 @@ export const AnnualPlanGalleryView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const { user, firebaseUser } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterMode, setFilterMode] = useState<FilterMode>('public');
     const { addNotification } = useNotification();
     const { navigate } = useNavigation();
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
     const [isForking, setIsForking] = useState(false);
+    const [ratingPending, setRatingPending] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchPlans();
-    }, []);
+        fetchPlans(filterMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filterMode, firebaseUser?.uid]);
 
-    const fetchPlans = async () => {
+    const fetchPlans = async (mode: FilterMode) => {
         setIsLoading(true);
         try {
-            const q = query(
-                collection(db, 'academic_annual_plans'),
-                orderBy('createdAt', 'desc')
-            );
+            let q;
+            if (mode === 'mine' && firebaseUser?.uid) {
+                q = query(
+                    collection(db, 'academic_annual_plans'),
+                    where('userId', '==', firebaseUser.uid),
+                    orderBy('createdAt', 'desc'),
+                );
+            } else {
+                q = query(
+                    collection(db, 'academic_annual_plans'),
+                    where('isPublic', '==', true),
+                    orderBy('createdAt', 'desc'),
+                );
+            }
             const snapshot = await getDocs(q);
-            const loadedPlans = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+            const loadedPlans = snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
             } as SavedPlan));
             setPlans(loadedPlans);
         } catch (error) {
             logger.error("Грешка при вчитување планови:", error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleRate = async (planId: string, rating: number) => {
+        if (!user || !firebaseUser?.uid) {
+            addNotification('Мора да сте најавени за да оцените.', 'warning');
+            return;
+        }
+        setRatingPending(planId);
+        try {
+            await rateAnnualPlan(planId, firebaseUser.uid, rating);
+            setPlans(prev => prev.map(p => {
+                if (p.id !== planId) return p;
+                const existing = p.ratingsByUid ?? {};
+                const updated = { ...existing, [firebaseUser.uid]: rating };
+                const vals = Object.values(updated);
+                return {
+                    ...p,
+                    ratingsByUid: updated,
+                    avgRating: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10,
+                    ratingCount: vals.length,
+                };
+            }));
+        } catch {
+            addNotification('Грешка при оценување.', 'error');
+        } finally {
+            setRatingPending(null);
         }
     };
 
@@ -112,20 +158,47 @@ export const AnnualPlanGalleryView: React.FC = () => {
         p.grade.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // ── Star rating helper ────────────────────────────────────────────────────
+    const StarRating = ({ plan }: { plan: SavedPlan }) => {
+        const myRating = firebaseUser?.uid ? (plan.ratingsByUid?.[firebaseUser.uid] ?? 0) : 0;
+        const avg = plan.avgRating ?? 0;
+        return (
+            <div className="flex items-center gap-1" title={`Просечна оценка: ${avg} (${plan.ratingCount ?? 0} оценки)`}>
+                {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                        key={star}
+                        type="button"
+                        aria-label={`Оцени со ${star} ѕвезди`}
+                        disabled={ratingPending === plan.id}
+                        onClick={() => handleRate(plan.id, star)}
+                        className={`transition-colors ${star <= myRating ? 'text-amber-400' : 'text-gray-200 hover:text-amber-300'}`}
+                    >
+                        ★
+                    </button>
+                ))}
+                {avg > 0 && (
+                    <span className="text-[10px] text-gray-400 ml-0.5 tabular-nums">
+                        {avg.toFixed(1)}
+                    </span>
+                )}
+            </div>
+        );
+    };
+
     return (
         <>
         <div className="p-6 max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <ICONS.database className="w-8 h-8 text-brand-primary" />
                         Галерија на Годишни Планови
                     </h1>
                     <p className="text-gray-500 mt-2">
-                        Инспирирајте се од заедницата на наставници. Откријте, лајкнете и "форкувајте" (копирајте) туѓи планови.
+                        Инспирирајте се од заедницата на наставници. Откријте, оценете и клонирајте планови.
                     </p>
                 </div>
-                
+
                 <div className="relative w-full md:w-72">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <ICONS.search className="h-5 w-5 text-gray-400" />
@@ -139,6 +212,27 @@ export const AnnualPlanGalleryView: React.FC = () => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+            </div>
+
+            {/* ── Filter tabs ── */}
+            <div className="flex items-center gap-1 border-b border-gray-200 pb-0 mb-6">
+                {([
+                    { mode: 'public', label: '🌐 Јавни планови' },
+                    { mode: 'mine',   label: '👤 Мои планови' },
+                ] as { mode: FilterMode; label: string }[]).map(({ mode, label }) => (
+                    <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setFilterMode(mode)}
+                        className={`px-4 py-2 text-sm font-semibold rounded-t-lg border border-b-0 transition-colors -mb-px ${
+                            filterMode === mode
+                                ? 'bg-white border-gray-200 text-brand-primary border-b-white'
+                                : 'bg-gray-50 border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        {label}
+                    </button>
+                ))}
             </div>
 
             {isLoading ? (
@@ -179,28 +273,12 @@ export const AnnualPlanGalleryView: React.FC = () => {
                             </div>
 
                             <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-100">
-                                <div className="flex gap-3">
-                                    <button
-                                        type="button"
-                                        title="Лајк"
-                                        aria-label={`Лајкни го овој план (${plan.likes || 0} лајкови)`}
-                                        onClick={() => handleLike(plan.id)}
-                                        className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition-colors"
-                                    >
-                                        <ICONS.starSolid className="w-4 h-4" />
-                                        {plan.likes || 0}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        title="Fork/Clone овој план"
-                                        aria-label={`Клонирај план (${plan.forks || 0} клонирања)`}
-                                        onClick={() => handleFork(plan)}
-                                        disabled={isForking}
-                                        className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors disabled:opacity-50"
-                                    >
-                                        <ICONS.gitBranch className="w-4 h-4" />
-                                        {plan.forks || 0}
-                                    </button>
+                                <div className="flex flex-col gap-1">
+                                    <StarRating plan={plan} />
+                                    <div className="flex items-center gap-1.5 text-gray-400 text-[10px]">
+                                        <ICONS.gitBranch className="w-3 h-3" />
+                                        {plan.forks || 0} клонирања
+                                    </div>
                                 </div>
                                 
                                 {plan.userId === firebaseUser?.uid ? (

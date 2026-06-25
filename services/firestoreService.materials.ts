@@ -902,7 +902,31 @@ export interface AnnualPlanDoc {
   forks?: number;
   isForked?: boolean;
   originalPlanId?: string;
+  /** S77: shared to the community library */
+  isPublic?: boolean;
+  /** S77: per-user star ratings (1–5) keyed by UID */
+  ratingsByUid?: Record<string, number>;
+  avgRating?: number;
+  ratingCount?: number;
 }
+
+export const toggleAnnualPlanPublic = async (planId: string, isPublic: boolean): Promise<void> => {
+  await updateDoc(doc(db, 'academic_annual_plans', planId), { isPublic });
+};
+
+export const rateAnnualPlan = async (planId: string, uid: string, rating: number): Promise<void> => {
+  const snap = await getDoc(doc(db, 'academic_annual_plans', planId));
+  if (!snap.exists()) return;
+  const existing: Record<string, number> = snap.data().ratingsByUid ?? {};
+  const updated = { ...existing, [uid]: rating };
+  const vals = Object.values(updated);
+  const avgRating = vals.reduce((a, b) => a + b, 0) / vals.length;
+  await updateDoc(doc(db, 'academic_annual_plans', planId), {
+    [`ratingsByUid.${uid}`]: rating,
+    avgRating: Math.round(avgRating * 10) / 10,
+    ratingCount: vals.length,
+  });
+};
 
 export const fetchAnnualPlanById = async (planId: string): Promise<AnnualPlanDoc | null> => {
   const snap = await getDoc(doc(db, 'academic_annual_plans', planId));
