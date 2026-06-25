@@ -191,13 +191,16 @@ async function fetchDirectTimedtext(videoId: string, lang: string, kind: 'asr' |
   } catch { return null; }
 }
 
+// Common math video languages — tried in order after preferred/mk/en
+const MATH_VIDEO_LANGS = ['tr', 'ru', 'sr', 'bg', 'de', 'ar', 'fr', 'es'];
+
 async function tryDirectTimedtext(
   videoId: string,
   preferLang: string,
 ): Promise<{ track: CaptionTrack; payload: TranscriptPayload } | null> {
-  // Priority: manual preferred → auto preferred → manual mk → auto mk → manual en → auto en
+  // Priority: preferred → mk → en → common math video languages (TR, RU, SR, BG, DE…)
   const baseLang = preferLang.split('-')[0].toLowerCase();
-  const langs = [...new Set([baseLang, 'mk', 'en'])];
+  const langs = [...new Set([baseLang, 'mk', 'en', ...MATH_VIDEO_LANGS])];
   const kinds: Array<'asr' | ''> = ['', 'asr'];
 
   for (const lang of langs) {
@@ -281,13 +284,12 @@ function pickTrack(tracks: CaptionTrack[], preferLang: string): CaptionTrack | n
   const pref = norm(preferLang);
   const manual = tracks.filter(t => t.kind !== 'asr');
   const auto   = tracks.filter(t => t.kind === 'asr');
+  const fallbackLangs = ['mk', 'en', ...MATH_VIDEO_LANGS];
   return (
     manual.find(t => norm(t.languageCode) === pref) ??
     auto.find(t => norm(t.languageCode) === pref) ??
-    manual.find(t => norm(t.languageCode) === 'mk') ??
-    manual.find(t => norm(t.languageCode) === 'en') ??
-    auto.find(t => norm(t.languageCode) === 'mk') ??
-    auto.find(t => norm(t.languageCode) === 'en') ??
+    fallbackLangs.map(l => manual.find(t => norm(t.languageCode) === l)).find(Boolean) ??
+    fallbackLangs.map(l => auto.find(t => norm(t.languageCode) === l)).find(Boolean) ??
     manual[0] ??
     auto[0] ??
     null
@@ -381,7 +383,7 @@ async function tryYoutubeTranscriptPkg(
 ): Promise<TranscriptPayload | null> {
   try {
     const baseLang = preferLang.split('-')[0].toLowerCase();
-    const langsToTry = [...new Set([baseLang, 'mk', 'en'])];
+    const langsToTry = [...new Set([baseLang, 'mk', 'en', ...MATH_VIDEO_LANGS])];
 
     for (const lang of langsToTry) {
       try {

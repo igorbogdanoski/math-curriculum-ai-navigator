@@ -51,16 +51,14 @@ export async function extractMathTasksFromUrl(
 
   if (videoId) {
     onProgress?.('Вадење транскрипт...', 20);
+    // Server tries preferred lang → mk → en → tr/ru/sr/bg/de automatically
     const caps = await fetchYouTubeCaptions(videoId, lang);
     if (caps.available && caps.transcript) {
       rawText = applyTimeRange(caps, timeRange);
       transcriptAvailable = true;
-    } else if (lang !== 'en') {
-      // Fallback: try English captions when requested language unavailable
-      const enCaps = await fetchYouTubeCaptions(videoId, 'en');
-      if (enCaps.available && enCaps.transcript) {
-        rawText = applyTimeRange(enCaps, timeRange);
-        transcriptAvailable = true;
+      // Notify caller if a different language was found
+      if (caps.lang && caps.lang !== lang) {
+        onProgress?.(`Транскрипт пронајден на: ${caps.lang.toUpperCase()}`, 30);
       }
     }
   }
