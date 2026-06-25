@@ -20,6 +20,7 @@ import { useCollabPlan } from '../hooks/useCollabPlan';
 import { buildOfficialCurriculumContext } from '../data/official/grade8Official';
 import { PlanGanttChart } from '../components/planner/PlanGanttChart';
 import { AIThematicPlanGeneratorModal } from '../components/planner/AIThematicPlanGeneratorModal';
+import { AnnualPlanOfficialForm } from '../components/planner/AnnualPlanOfficialForm';
 import { usePlanning } from '../contexts/PlanningContext';
 
 
@@ -136,6 +137,13 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const [isLoadingExisting, setIsLoadingExisting] = useState(false);
     const [viewMode, setViewMode] = useState<'list' | 'gantt'>('list');
     const [thematicTopic, setThematicTopic] = useState<AIGeneratedAnnualPlanTopic | null>(null);
+
+    // Official MoN form state
+    const [showOfficialForm, setShowOfficialForm] = useState(false);
+    const [officialIsEditing, setOfficialIsEditing] = useState(false);
+    const [officialAuthorName, setOfficialAuthorName] = useState('');
+    const [officialSchoolName, setOfficialSchoolName] = useState('');
+    const [officialAcademicYear, setOfficialAcademicYear] = useState('2026/2027');
 
     const { setPlanningState } = usePlanning();
 
@@ -541,6 +549,14 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                             🖨️
                                         </button>
                                         <button
+                                            onClick={() => setShowOfficialForm(true)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 border-2 border-blue-100 rounded-xl hover:bg-blue-50 transition text-blue-700 text-xs font-bold"
+                                            title="Официјален МОН образец за Годишна програма"
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                            Официјален образец
+                                        </button>
+                                        <button
                                             onClick={() => {
                                                 sessionStorage.setItem('dataviz_import', JSON.stringify({
                                                     tableData: {
@@ -638,6 +654,85 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                 )}
             </div>
             </>
+            )}
+
+            {/* ── Official MoN Annual Plan Form Modal ──────────────────────────── */}
+            {showOfficialForm && plan && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in"
+                    onClick={() => setShowOfficialForm(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Официјален образец за Годишна програма"
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl max-w-[95vw] w-full overflow-hidden flex flex-col max-h-[95vh]"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="p-4 border-b flex-shrink-0 flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-brand-primary flex items-center gap-2">
+                                <ICONS.printer className="w-5 h-5" />
+                                Официјален образец — Годишна Глобална Програма (МОН)
+                            </h2>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setOfficialIsEditing(v => !v)}
+                                    className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm transition-colors ${
+                                        officialIsEditing
+                                            ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <ICONS.edit className="w-4 h-4" />
+                                    {officialIsEditing ? 'Прегледај' : 'Уреди'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => window.print()}
+                                    className="px-3 py-1.5 bg-brand-accent text-white rounded-lg flex items-center gap-2 text-sm hover:bg-opacity-90"
+                                >
+                                    <ICONS.printer className="w-4 h-4" />
+                                    Испечати
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowOfficialForm(false)}
+                                    className="p-1 rounded-full hover:bg-gray-200"
+                                    aria-label="Затвори"
+                                >
+                                    <ICONS.close className="w-5 h-5 text-gray-600" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {officialIsEditing && (
+                            <div className="px-4 py-2 bg-blue-50 border-b border-blue-200 flex items-center gap-2 text-sm text-blue-700 flex-shrink-0">
+                                <ICONS.edit className="w-4 h-4 flex-shrink-0" />
+                                <span>Режим на уредување — кликни на полињата за да внесеш промени пред печатење</span>
+                            </div>
+                        )}
+
+                        {/* Scrollable form body */}
+                        <div className="overflow-auto flex-1 p-6 bg-gray-100">
+                            <div className="bg-white shadow-sm mx-auto min-w-[900px]">
+                                <AnnualPlanOfficialForm
+                                    data={plan}
+                                    authorName={officialAuthorName}
+                                    schoolName={officialSchoolName}
+                                    academicYear={officialAcademicYear}
+                                    isEditable={officialIsEditing}
+                                    onHeaderChange={(field, value) => {
+                                        if (field === 'authorName') setOfficialAuthorName(value);
+                                        if (field === 'schoolName') setOfficialSchoolName(value);
+                                        if (field === 'academicYear') setOfficialAcademicYear(value);
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
