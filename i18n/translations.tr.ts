@@ -81,6 +81,7 @@ export const tr: Record<string, string> = {
   'nav.maturaAssignments': 'Matura Görevleri',
   'nav.annualPlanner':     'Yıllık Program',
   'nav.annualGallery':     'Plan Galerisi',
+  'nav.weeklyPlan':        'Haftalık Plan',
   'nav.gradeBook':         'Not Defteri',
   'nav.maturaHub':         'Matura Merkezi',
   'nav.liveHub':           'Canlı ve Oyunlar',

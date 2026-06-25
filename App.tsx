@@ -149,6 +149,7 @@ const SharedMaturaRecoveryView = safeLazy(() => import('./views/SharedMaturaReco
 const ShareVisualView = safeLazy(() => import('./views/ShareVisualView').then(module => ({ default: module.ShareVisualView })));
 const AnnualPlanGeneratorView = safeLazy(() => import('./views/AnnualPlanGeneratorView').then(module => ({ default: module.AnnualPlanGeneratorView })));
 const AnnualPlanGalleryView = safeLazy(() => import('./views/AnnualPlanGalleryView').then(module => ({ default: module.AnnualPlanGalleryView })));
+const WeeklyPlanView = safeLazy(() => import('./views/WeeklyPlanView').then(module => ({ default: module.WeeklyPlanView })));
 const SharedQuizView = safeLazy(() => import('./views/SharedQuizView').then(module => ({ default: module.SharedQuizView })));
 const FavoritesView = safeLazy(() => import('./views/FavoritesView').then(module => ({ default: module.FavoritesView })));
 const NationalLibraryView = safeLazy(() => import('./views/NationalLibraryView').then(module => ({ default: module.NationalLibraryView })));
@@ -255,6 +256,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/annual-gallery', component: AnnualPlanGalleryView },
     { path: '/annual-planner/:planId', component: AnnualPlanGeneratorView },
     { path: '/annual-planner', component: AnnualPlanGeneratorView },
+    { path: '/weekly-plan', component: WeeklyPlanView },
     { path: '/planner', component: PlannerView },
     { path: '/planner/lesson/view/:id', component: LessonPlanDetailView },
     { path: '/planner/lesson/:id', component: LessonPlanEditorView },

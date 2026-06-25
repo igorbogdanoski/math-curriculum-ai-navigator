@@ -81,6 +81,7 @@ export const en: Record<string, string> = {
   'nav.maturaAssignments': 'Matura Tasks',
   'nav.annualPlanner':     'Annual Programme',
   'nav.annualGallery':     'Plan Gallery',
+  'nav.weeklyPlan':        'Weekly Plan',
   'nav.gradeBook':         'Grade Book',
   'nav.maturaHub':         'Matura Centre',
   'nav.liveHub':           'Live & Games',

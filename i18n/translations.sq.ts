@@ -81,6 +81,7 @@ export const sq: Record<string, string> = {
   'nav.maturaAssignments': 'Detyra matura',
   'nav.annualPlanner':     'Programi Vjetor',
   'nav.annualGallery':     'Galeria e Planeve',
+  'nav.weeklyPlan':        'Plani Javor',
   'nav.gradeBook':         'Regjistri i notave',
   'nav.maturaHub':         'Qendra e Maturës',
   'nav.liveHub':           'Drejtpërdrejt & Lojëra',
