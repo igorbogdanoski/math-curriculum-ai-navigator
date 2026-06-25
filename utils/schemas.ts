@@ -108,7 +108,14 @@ export const AIGeneratedThematicPlanSchema = z.object({
         keyActivities: z.string(),
         assessment: z.string(),
         hours: FlexibleNumber.optional(),
-        resources: z.string().optional()
+        resources: z.string().optional(),
+        scenario: z.object({
+            intro: z.string(),
+            main: z.array(z.string()),
+            closing: z.string(),
+            reflection: z.string(),
+            homework: z.string().optional(),
+        }).optional(),
     }))
 });
 

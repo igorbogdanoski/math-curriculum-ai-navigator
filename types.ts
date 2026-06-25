@@ -701,6 +701,14 @@ export interface AIGeneratedPracticeMaterial {
     error?: string;
 }
 
+export interface ThematicPlanLessonScenario {
+  intro: string;
+  main: string[];
+  closing: string;
+  reflection: string;
+  homework?: string;
+}
+
 export interface ThematicPlanLesson {
   lessonNumber: number;
   lessonUnit: string;
@@ -710,6 +718,8 @@ export interface ThematicPlanLesson {
   hours?: number;
   resources?: string;
   levelDescription?: string;
+  /** Structured scenario per official MoN format (S74) */
+  scenario?: ThematicPlanLessonScenario;
 }
 
 export interface AIGeneratedThematicPlan {
