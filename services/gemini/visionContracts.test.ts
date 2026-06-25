@@ -22,6 +22,7 @@ vi.mock('./core', () => ({
   DEFAULT_MODEL: 'gemini-2.5-flash',
   ULTIMATE_MODEL: 'gemini-3.1-pro-preview',
   SAFETY_SETTINGS: [],
+  getAILanguageRule: () => 'МАКЕДОНСКИ',
 }));
 
 // Import AFTER mocking
