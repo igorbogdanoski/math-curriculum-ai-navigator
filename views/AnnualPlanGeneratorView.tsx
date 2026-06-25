@@ -18,6 +18,9 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { generatePlanICS, downloadICS } from '../utils/icalExport';
 import { useCollabPlan } from '../hooks/useCollabPlan';
 import { buildOfficialCurriculumContext } from '../data/official/grade8Official';
+import { PlanGanttChart } from '../components/planner/PlanGanttChart';
+import { AIThematicPlanGeneratorModal } from '../components/planner/AIThematicPlanGeneratorModal';
+import { usePlanning } from '../contexts/PlanningContext';
 
 
 interface SortableTopicProps {
@@ -25,9 +28,10 @@ interface SortableTopicProps {
     id: string;
     idx: number;
     onGenerateLesson: () => void;
+    onGenerateThematic: () => void;
 }
 
-const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerateLesson }) => {
+const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerateLesson, onGenerateThematic }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style = {
@@ -51,7 +55,16 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerat
                     </span>
                     {topic.title}
                 </h3>
-                <div className="flex items-center gap-2" onPointerDown={e => e.stopPropagation()}>
+                <div className="flex items-center gap-2 flex-wrap" onPointerDown={e => e.stopPropagation()}>
+                    <button
+                        type="button"
+                        onClick={onGenerateThematic}
+                        title="Генерирај тематски план за оваа тема"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                    >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                        Тематски план
+                    </button>
                     <button
                         type="button"
                         onClick={onGenerateLesson}
@@ -121,6 +134,10 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const [isGenerating, setIsGenerating] = useState(false);
     const [plan, setPlan] = useState<AIGeneratedAnnualPlan | null>(null);
     const [isLoadingExisting, setIsLoadingExisting] = useState(false);
+    const [viewMode, setViewMode] = useState<'list' | 'gantt'>('list');
+    const [thematicTopic, setThematicTopic] = useState<AIGeneratedAnnualPlanTopic | null>(null);
+
+    const { setPlanningState } = usePlanning();
 
     const { user, firebaseUser, updateLocalProfile } = useAuth();
     const { addNotification } = useNotification();
@@ -468,9 +485,28 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                         <h2 className="text-2xl font-bold">
                                             {plan.subject} ({plan.grade})
                                         </h2>
-                                        <p className="text-xs text-gray-400 mt-1">Повлечи ги темите за да го смениш редоследот</p>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            {viewMode === 'list' ? 'Повлечи ги темите за да го смениш редоследот · Кликни Тематски план за детална разработка' : 'Кликни на тема за да генерираш тематски план'}
+                                        </p>
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
+                                        {/* List / Gantt toggle */}
+                                        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-bold">
+                                            <button
+                                                type="button"
+                                                onClick={() => setViewMode('list')}
+                                                className={`px-3 py-1.5 transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                                            >
+                                                📋 Листа
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setViewMode('gantt')}
+                                                className={`px-3 py-1.5 transition-colors border-l border-gray-200 ${viewMode === 'gantt' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                                            >
+                                                📅 Gantt
+                                            </button>
+                                        </div>
                                         <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
                                             {plan.totalWeeks} недели
                                         </span>
@@ -523,6 +559,14 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                     </div>
                                 </div>
 
+                                {viewMode === 'gantt' ? (
+                                    <div className="mb-6">
+                                        <PlanGanttChart
+                                            topics={plan.topics}
+                                            onTopicClick={t => setThematicTopic(t)}
+                                        />
+                                    </div>
+                                ) : (
                                 <div className="print:p-8 print:bg-white" ref={printRef}>
                                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                         <SortableContext
@@ -535,7 +579,22 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                     id={`topic-${idx}`}
                                                     topic={topic}
                                                     idx={idx}
+                                                    onGenerateThematic={() => {
+                                                        setPlanningState({
+                                                            annualPlanId: savedId,
+                                                            themeName: topic.title,
+                                                            hoursAllocated: topic.durationWeeks * (plan.totalWeeks > 0 ? 4 : 4),
+                                                            bloomTargets: [1, 2, 3],
+                                                            objectives: topic.objectives,
+                                                        });
+                                                        setThematicTopic(topic);
+                                                    }}
                                                     onGenerateLesson={() => {
+                                                        setPlanningState({
+                                                            annualPlanId: savedId,
+                                                            themeName: topic.title,
+                                                            objectives: topic.objectives,
+                                                        });
                                                         const params = new URLSearchParams({
                                                             prefillTopic: topic.title,
                                                             prefillGrade: plan.grade,
@@ -548,8 +607,9 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                         </SortableContext>
                                     </DndContext>
                                 </div>
+                                )}
                                 <div className="mt-8 pt-6 border-t flex justify-start">
-                                    <button 
+                                    <button
                                         onClick={() => setCurrentStep(2)}
                                         className="px-6 py-3 text-blue-600 font-bold hover:bg-blue-50 rounded-xl transition-all"
                                     >
@@ -564,6 +624,15 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                 <p className="text-gray-500 mb-6">Настана грешка. Ве молиме обидете се повторно.</p>
                                 <button onClick={() => setCurrentStep(2)} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold">Обиди се повторно</button>
                             </Card>
+                        )}
+
+                        {/* Thematic Plan Modal — triggered from Gantt click or list button */}
+                        {plan && thematicTopic && (
+                            <AIThematicPlanGeneratorModal
+                                hideModal={() => setThematicTopic(null)}
+                                prefillThemeName={thematicTopic.title}
+                                prefillGradeTitle={plan.grade}
+                            />
                         )}
                     </div>
                 )}

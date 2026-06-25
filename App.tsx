@@ -16,6 +16,7 @@ import { CurriculumProvider, useCurriculum } from './hooks/useCurriculum';
 import { UIProvider, useUI } from './contexts/UIContext';
 import { GeneratorPanelProvider, useGeneratorPanel } from './contexts/GeneratorPanelContext';
 import { NetworkStatusProvider } from './contexts/NetworkStatusContext';
+import { PlanningProvider } from './contexts/PlanningContext';
 
 
 // Hooks
@@ -524,6 +525,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           <UserPreferencesProvider>
             <CurriculumProvider>
               <PlannerProvider>
+                <PlanningProvider>
                 <ModalProvider>
                   <ModalManager />
                   <LastVisitedProvider>
@@ -544,6 +546,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                     </AcademyProgressProvider>
                   </LastVisitedProvider>
                 </ModalProvider>
+                </PlanningProvider>
               </PlannerProvider>
             </CurriculumProvider>
           </UserPreferencesProvider>

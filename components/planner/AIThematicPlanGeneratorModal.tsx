@@ -1,5 +1,4 @@
-import React, { useState, useMemo } from 'react';
-import { usePlanner } from '../../contexts/PlannerContext';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { useNotification } from '../../contexts/NotificationContext';
 import { geminiService } from '../../services/geminiService';
@@ -9,27 +8,64 @@ import { OfficialThematicPlanTable } from './OfficialThematicPlanTable';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
+    /** When set (from Annual Plan drill-down), skip selection and auto-generate */
+    prefillThemeName?: string;
+    prefillGradeTitle?: string;
 }
 
-export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModalProps> = ({ hideModal }) => {
+export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModalProps> = ({
+    hideModal,
+    prefillThemeName,
+    prefillGradeTitle,
+}) => {
     const { curriculum } = useCurriculum();
     const { addNotification } = useNotification();
-    
+
+    const isPrefilled = Boolean(prefillThemeName && prefillGradeTitle);
+
     const [selectedGradeId, setSelectedGradeId] = useState<string>(curriculum?.grades[0]?.id || '');
     const [selectedTopicId, setSelectedTopicId] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [generatedPlan, setGeneratedPlan] = useState<AIGeneratedThematicPlan | null>(null);
     const [viewMode, setViewMode] = useState<'preview' | 'official'>('official');
 
-    const selectedGradeObj = useMemo(() => 
-        curriculum?.grades.find(g => g.id === selectedGradeId), 
+    const selectedGradeObj = useMemo(() =>
+        curriculum?.grades.find(g => g.id === selectedGradeId),
     [curriculum, selectedGradeId]);
 
     const topicsForGrade = useMemo(() => selectedGradeObj?.topics || [], [selectedGradeObj]);
 
-    const selectedTopicObj = useMemo(() => 
-        topicsForGrade.find(t => t.id === selectedTopicId), 
+    const selectedTopicObj = useMemo(() =>
+        topicsForGrade.find(t => t.id === selectedTopicId),
     [topicsForGrade, selectedTopicId]);
+
+    // Auto-generate when coming from Annual Plan drill-down
+    useEffect(() => {
+        if (!isPrefilled || !curriculum || generatedPlan || isLoading) return;
+
+        // Find matching grade by title string (plan.grade is a display string like "VI (шесто) Одделение")
+        const gradeMatch = curriculum.grades.find(g =>
+            prefillGradeTitle?.includes(String(g.level)) ||
+            g.title === prefillGradeTitle
+        ) ?? curriculum.grades[0];
+
+        // Find closest topic by name similarity
+        const topicMatch = gradeMatch?.topics.find(t =>
+            t.title.toLowerCase().includes((prefillThemeName ?? '').toLowerCase()) ||
+            (prefillThemeName ?? '').toLowerCase().includes(t.title.toLowerCase())
+        ) ?? gradeMatch?.topics[0];
+
+        if (!gradeMatch || !topicMatch) return;
+
+        setSelectedGradeId(gradeMatch.id);
+        setSelectedTopicId(topicMatch.id);
+        setIsLoading(true);
+        geminiService.generateThematicPlan(gradeMatch, topicMatch)
+            .then(p => setGeneratedPlan(p))
+            .catch(err => addNotification((err as Error).message, 'error'))
+            .finally(() => setIsLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [curriculum]);
 
     const handleGradeChange = (gradeId: string) => {
         setSelectedGradeId(gradeId);
@@ -47,7 +83,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
             addNotification('Ве молиме изберете валидно одделение и тема.', 'error');
             return;
         }
-        
+
         setIsLoading(true);
         try {
             const plan = await geminiService.generateThematicPlan(selectedGradeObj, selectedTopicObj);
@@ -187,7 +223,9 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                     <div className="flex justify-between items-center">
                         <h2 id="ai-thematic-plan-title" className="text-2xl font-bold text-brand-primary flex items-center gap-2">
                             <ICONS.sparkles className="w-6 h-6" />
-                            AI Генератор на Тематски План
+                            {isPrefilled ? (
+                                <span>Тематски план: <span className="text-emerald-600">{prefillThemeName}</span></span>
+                            ) : 'AI Генератор на Тематски План'}
                         </h2>
                         <button type="button" onClick={hideModal} className="p-1 rounded-full hover:bg-gray-200" aria-label="Затвори модал">
                             <ICONS.close className="w-6 h-6 text-gray-600" />
