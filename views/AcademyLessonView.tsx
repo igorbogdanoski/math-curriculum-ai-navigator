@@ -14,6 +14,7 @@ import { DOK_META } from '../types';
 import type { DokLevel } from '../types';
 import { sm2Update, loadCards, saveCards, getOrCreateCard } from '../utils/sm2';
 import type { Quality } from '../utils/sm2';
+import { ConceptFlashcards } from '../components/academy/ConceptFlashcards';
 
 const AlgebraTilesCanvas = React.lazy(() =>
   import('../components/math/AlgebraTilesCanvas').then(m => ({ default: m.AlgebraTilesCanvas }))
@@ -353,6 +354,9 @@ export const AcademyLessonView: React.FC<{ id: string }> = ({ id }) => {
             {lesson.dokClassifyItems && lesson.dokClassifyItems.length > 0 && (
               <DokClassifier items={lesson.dokClassifyItems} />
             )}
+
+            {/* Concept Flashcards (SM-2 at concept level) */}
+            <ConceptFlashcards lesson={lesson} />
 
             {/* Mastery Quiz */}
             <AcademyQuiz lesson={lesson} />

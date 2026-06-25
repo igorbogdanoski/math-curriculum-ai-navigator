@@ -32,6 +32,52 @@ const BLOOM_KEYWORDS: Record<number, string[]> = {
   6: ['создава', 'дизајнира', 'планира', 'формулира', 'составува', 'проектира', 'развива', 'генерира', 'конструира нов'],
 };
 
+// ── UbD Backward Design analysis ──────────────────────────────────────────────
+
+const UBD_ASSESSMENT_KW = ['тест', 'квиз', 'проект', 'портфолио', 'презентација', 'задача', 'провер', 'оцен', 'есеј', 'извештај'];
+const UBD_INQUIRY_KW    = ['истражување', 'дискусија', 'дебата', 'групна', 'кооперативн', 'манипулатив', 'откри', 'проблем', 'ситуација'];
+
+interface UbDScore { stage1: number; stage2: number; stage3: number; weakTopics: string[] }
+
+function analyzeUbD(topics: AIGeneratedAnnualPlanTopic[]): UbDScore {
+  if (!topics.length) return { stage1: 0, stage2: 0, stage3: 0, weakTopics: [] };
+  const weakTopics: string[] = [];
+  let s1 = 0, s2 = 0, s3 = 0;
+  for (const t of topics) {
+    const hasObjectives = t.objectives.length > 0;
+    const actText = t.suggestedActivities.join(' ').toLowerCase();
+    const hasAssessment = UBD_ASSESSMENT_KW.some(kw => actText.includes(kw));
+    const hasInquiry    = UBD_INQUIRY_KW.some(kw => actText.includes(kw));
+    if (hasObjectives) s1++;
+    if (hasAssessment) s2++;
+    if (hasInquiry)    s3++;
+    if (!hasObjectives || !hasAssessment || !hasInquiry) weakTopics.push(t.title);
+  }
+  const n = topics.length;
+  return {
+    stage1: Math.round((s1 / n) * 100),
+    stage2: Math.round((s2 / n) * 100),
+    stage3: Math.round((s3 / n) * 100),
+    weakTopics,
+  };
+}
+
+function UbDBar({ label, pct, color }: { label: string; pct: number; color: string }) {
+  return (
+    <div className="space-y-0.5">
+      <div className="flex justify-between text-[11px] font-semibold">
+        <span className="text-gray-700">{label}</span>
+        <span className={color}>{pct}%</span>
+      </div>
+      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        {/* eslint-disable-next-line react/forbid-component-props -- dynamic width requires inline style */}
+        <div className={`h-full rounded-full transition-all duration-700 ${pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-400' : 'bg-red-400'}`}
+          style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function extractBloomScores(topics: AIGeneratedAnnualPlanTopic[]): number[] {
@@ -341,6 +387,9 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 
   const hotPct = bloomPct[2] + bloomPct[3] + bloomPct[4] + bloomPct[5];
   const showBloomWarning = bloomTotalHits > 0 && hotPct < 30;
 
+  // ── D: UbD Backward Design ────────────────────────────────────────────────
+  const ubdScore = useMemo(() => analyzeUbD(plan.topics ?? []), [plan.topics]);
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 p-1">
@@ -358,6 +407,49 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 
           </div>
         </div>
       )}
+
+      {/* ── UbD Backward Design Check ── */}
+      <div className="bg-sky-50 border border-sky-100 rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-sky-900">📐 UbD Backward Design</h3>
+            <p className="text-[11px] text-sky-600 mt-0.5">
+              Проверка на трите фази: Цели → Докази → Активности (Wiggins &amp; McTighe)
+            </p>
+          </div>
+          {ubdScore.weakTopics.length > 0 && (
+            <span className="text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5">
+              {ubdScore.weakTopics.length} теми со пропусти
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-white rounded-lg border border-sky-100 p-3 space-y-1.5">
+            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">Фаза 1 — Посакувани резултати</p>
+            <UbDBar label="Теми со цели" pct={ubdScore.stage1} color={ubdScore.stage1 >= 70 ? 'text-emerald-600' : 'text-red-500'} />
+          </div>
+          <div className="bg-white rounded-lg border border-sky-100 p-3 space-y-1.5">
+            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">Фаза 2 — Докази за разбирање</p>
+            <UbDBar label="Теми со проверка/тест" pct={ubdScore.stage2} color={ubdScore.stage2 >= 70 ? 'text-emerald-600' : 'text-amber-600'} />
+          </div>
+          <div className="bg-white rounded-lg border border-sky-100 p-3 space-y-1.5">
+            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">Фаза 3 — Наставна програма</p>
+            <UbDBar label="Теми со истраж./соработка" pct={ubdScore.stage3} color={ubdScore.stage3 >= 70 ? 'text-emerald-600' : 'text-amber-600'} />
+          </div>
+        </div>
+        {ubdScore.weakTopics.length > 0 && (
+          <details className="text-[11px]">
+            <summary className="cursor-pointer text-sky-600 hover:text-sky-800 font-semibold select-none">
+              Прикажи теми со нецелосна UbD структура
+            </summary>
+            <ul className="mt-1.5 space-y-0.5 pl-3">
+              {ubdScore.weakTopics.map(t => (
+                <li key={t} className="text-amber-700">• {t}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </div>
 
       {/* ── S78-A: AI Quality Analysis ── */}
       <div className="bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl p-4 border border-violet-100 flex items-center justify-between gap-4">

@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger';
 import React, { useState } from 'react';
-import { Lightbulb, Loader2, Send, RotateCcw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Lightbulb, Loader2, Send, RotateCcw, CheckCircle2, AlertCircle, Target } from 'lucide-react';
 import { AcademyLesson } from '../../data/academy/content';
 import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
 import type { Quality } from '../../utils/sm2';
@@ -59,6 +59,8 @@ export const FeynmanChallenge: React.FC<{
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<FeynmanFeedback | null>(null);
   const [error, setError] = useState('');
+  const [misconceptionTarget, setMisconceptionTarget] = useState<string | null>(null);
+  const [loadingTarget, setLoadingTarget] = useState(false);
 
   const submit = async () => {
     if (text.trim().length < 20) {
@@ -119,6 +121,29 @@ ${safeText}
     setText('');
     setFeedback(null);
     setError('');
+    setMisconceptionTarget(null);
+  };
+
+  const handleTargetMisconception = async () => {
+    if (!feedback?.missing) return;
+    setLoadingTarget(true);
+    setMisconceptionTarget(null);
+    try {
+      const safeMissing = sanitizePromptInput(feedback.missing, 300);
+      const safeTitle   = sanitizePromptInput(lesson.title, 100);
+      const prompt = `Ти си педагог-специјалист. Ученикот не го разбрал следниот концепт: "${safeMissing}" (во лекцијата "${safeTitle}").
+Напиши 3 реченици (на македонски) кои директно го адресираат овој пропуст со конкретен пример или аналогија достапна за ученик.
+Врати САМО 3 реченици без воведни зборови.`;
+      const response = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      });
+      if (response?.text) setMisconceptionTarget(response.text.trim());
+    } catch {
+      setMisconceptionTarget('Неуспешно генерирање. Обиди се повторно.');
+    } finally {
+      setLoadingTarget(false);
+    }
   };
 
   const totalKey = feedback
@@ -212,7 +237,29 @@ ${safeText}
             {feedback.missing && (
               <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
-                <span><strong>Недостасува:</strong> {feedback.missing}</span>
+                <div className="flex-1 space-y-2">
+                  <p><strong>Недостасува:</strong> {feedback.missing}</p>
+                  {feedback.total < 70 && !misconceptionTarget && (
+                    <button
+                      type="button"
+                      onClick={handleTargetMisconception}
+                      disabled={loadingTarget}
+                      className="flex items-center gap-1.5 text-xs font-bold text-amber-700 hover:text-amber-900 disabled:opacity-50 transition-colors"
+                    >
+                      {loadingTarget
+                        ? <><Loader2 className="w-3 h-3 animate-spin" /> AI генерира целна помош...</>
+                        : <><Target className="w-3 h-3" /> 🎯 Адресирај го пропустот со AI</>}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {misconceptionTarget && (
+              <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-3 space-y-1">
+                <p className="text-xs font-bold text-violet-700 flex items-center gap-1.5">
+                  <Target className="w-3 h-3" /> AI Целна Надоградба
+                </p>
+                <p className="text-sm text-violet-900 leading-relaxed">{misconceptionTarget}</p>
               </div>
             )}
             <p className="text-sm text-gray-700 leading-relaxed px-1">{feedback.summary}</p>

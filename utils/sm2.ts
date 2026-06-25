@@ -174,3 +174,36 @@ export function upsertCard(cards: SM2Card[], updated: SM2Card): SM2Card[] {
   next[idx] = updated;
   return next;
 }
+
+// ── Concept-level SRS (theory[] items per lesson) ────────────────────────────
+// Card ID format: "{lessonId}_c{conceptIndex}"
+
+export const CONCEPT_SM2_STORAGE_KEY = 'academy_concept_cards_v1';
+
+export function conceptCardId(lessonId: string, index: number): string {
+  return `${lessonId}_c${index}`;
+}
+
+export function loadConceptCards(): SM2Card[] {
+  try {
+    const raw = localStorage.getItem(CONCEPT_SM2_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is SM2Card =>
+        typeof item === 'object' && item !== null &&
+        typeof item.lessonId === 'string' &&
+        typeof item.ef === 'number' &&
+        typeof item.interval === 'number' &&
+        typeof item.repetitions === 'number' &&
+        typeof item.nextReview === 'string',
+    );
+  } catch { return []; }
+}
+
+export function saveConceptCards(cards: SM2Card[]): void {
+  try {
+    localStorage.setItem(CONCEPT_SM2_STORAGE_KEY, JSON.stringify(cards));
+  } catch { /* quota */ }
+}

@@ -35,9 +35,11 @@ interface LessonPlanEditorViewProps {
   prefillTopic?: string;
   prefillGrade?: string;
   prefillSubject?: string;
+  prefillLessonUnit?: string;
+  prefillLessonNumber?: string;
 }
 
-export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, prefillTopic, prefillGrade, prefillSubject }) => {
+export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, prefillTopic, prefillGrade, prefillSubject, prefillLessonUnit, prefillLessonNumber }) => {
   const { navigate } = useNavigation();
   const { getLessonPlan, addLessonPlan, updateLessonPlan } = usePlanner();
   const { curriculum, isLoading: isCurriculumLoading } = useCurriculum();
@@ -88,13 +90,15 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               t.title.toLowerCase().includes(prefillTopic.toLowerCase()) ||
               prefillTopic.toLowerCase().includes(t.title.toLowerCase())
             ) ?? gradeData?.topics[0];
+            const unitTitle = prefillLessonUnit ?? prefillTopic;
             return {
               ...initialPlanState,
               grade: gradeData?.level || gradeNum,
               topicId: matchedTopic?.id || '',
               theme: prefillTopic,
               subject: prefillSubject || 'Математика',
-              title: `${prefillSubject || 'Математика'} — ${prefillTopic}`,
+              title: unitTitle,
+              ...(prefillLessonNumber ? { lessonNumber: parseInt(prefillLessonNumber, 10) || undefined } : {}),
             };
           }
           const defaultGrade = curriculum.grades[0];

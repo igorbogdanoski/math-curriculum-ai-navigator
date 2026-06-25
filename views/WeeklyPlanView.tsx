@@ -215,6 +215,7 @@ export const WeeklyPlanView: React.FC = () => {
 
   const handleGenerateLesson = (slot: WeeklySlot) => {
     if (!selectedPlan) return;
+    const lessonUnit = thematicLessonMap[slot.lessonNumber];
     setPlanningState({
       annualPlanId: selectedPlan.id,
       grade: grade ?? null,
@@ -225,6 +226,8 @@ export const WeeklyPlanView: React.FC = () => {
       prefillGrade: selectedPlan.grade,
       prefillSubject: selectedPlan.subject,
     });
+    if (lessonUnit) params.set('prefillLessonUnit', lessonUnit);
+    params.set('prefillLessonNumber', String(slot.lessonNumber));
     navigate(`/planner/lesson/new?${params.toString()}`);
   };
 
