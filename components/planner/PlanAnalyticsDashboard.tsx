@@ -44,7 +44,8 @@ function extractBloomScores(topics: AIGeneratedAnnualPlanTopic[]): number[] {
   for (const [levelStr, keywords] of Object.entries(BLOOM_KEYWORDS)) {
     const lvl = parseInt(levelStr, 10);
     for (const kw of keywords) {
-      const re = new RegExp(kw, 'gi');
+      // Unicode-aware word boundary: \p{L} matches any letter (incl. Cyrillic)
+      const re = new RegExp(`(?<![\\p{L}])${kw}(?![\\p{L}])`, 'giu');
       const matches = allText.match(re);
       counts[lvl - 1] += matches?.length ?? 0;
     }
@@ -336,9 +337,27 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours = 4 
     ? Math.round((coveredCount / coverageItems.length) * 100)
     : 0;
 
+  // HOT skills = Apply(3) + Analyze(4) + Evaluate(5) + Create(6) — МОН requires ≥30%
+  const hotPct = bloomPct[2] + bloomPct[3] + bloomPct[4] + bloomPct[5];
+  const showBloomWarning = bloomTotalHits > 0 && hotPct < 30;
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 p-1">
+
+      {/* ── Bloom HOT skills warning ── */}
+      {showBloomWarning && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <span className="text-xl shrink-0 mt-0.5">⚠️</span>
+          <div>
+            <p className="text-xs font-bold text-amber-800">Недоволно Примена/Анализа/Синтеза — само {hotPct}% наспроти препорачаните ≥30%</p>
+            <p className="text-[11px] text-amber-700 mt-0.5">
+              МОН препорачува минимум 30% цели на Блум ниво 3–6 (Примена, Анализа, Евалуација, Создавање).
+              Додај активности со „решава", „анализира", „оценува", „дизајнира" во целите на темите.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── S78-A: AI Quality Analysis ── */}
       <div className="bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl p-4 border border-violet-100 flex items-center justify-between gap-4">

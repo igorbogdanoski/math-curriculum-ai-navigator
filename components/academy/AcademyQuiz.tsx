@@ -82,7 +82,7 @@ export const AcademyQuiz: React.FC<{ lesson: AcademyLesson }> = ({ lesson }) => 
       setIsAnswered(false);
     } else {
       setIsFinished(true);
-      if (score >= questions.length - 1) { // 2/3 or better
+      if (score / questions.length >= 0.8) { // ≥80% correct (pedagogical standard)
         markQuizAsCompleted(lesson.id);
         confetti({
           particleCount: 150,

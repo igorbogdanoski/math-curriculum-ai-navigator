@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { geminiService } from '../../services/geminiService';
 import type { Grade, Topic, ThematicPlanLesson, AIGeneratedThematicPlan } from '../../types';
 import { ICONS } from '../../constants';
 import { OfficialThematicPlanTable } from './OfficialThematicPlanTable';
+import { saveThematicPlanEdit, loadThematicPlanEdit } from '../../services/firestoreService.plans';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
@@ -20,6 +22,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
 }) => {
     const { curriculum } = useCurriculum();
     const { addNotification } = useNotification();
+    const { firebaseUser } = useAuth();
 
     const isPrefilled = Boolean(prefillThemeName && prefillGradeTitle);
 
@@ -35,6 +38,8 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     const [authorName, setAuthorName] = useState('');
     const [schoolName, setSchoolName] = useState('');
     const [period, setPeriod] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [savedAt, setSavedAt] = useState<Date | null>(null);
 
     const selectedGradeObj = useMemo(() =>
         curriculum?.grades.find(g => g.id === selectedGradeId),
@@ -46,12 +51,27 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         topicsForGrade.find(t => t.id === selectedTopicId),
     [topicsForGrade, selectedTopicId]);
 
-    // Sync editablePlan when generatedPlan arrives
+    // Sync editablePlan when generatedPlan arrives + check for saved edits
     useEffect(() => {
-        if (generatedPlan) {
+        if (!generatedPlan) return;
+        if (!firebaseUser?.uid || !selectedGradeId || !selectedTopicId) {
             setEditablePlan(generatedPlan);
             setIsEditing(false);
+            return;
         }
+        loadThematicPlanEdit(firebaseUser.uid, selectedGradeId, selectedTopicId).then(saved => {
+            if (saved) {
+                setEditablePlan(saved.plan);
+                setAuthorName(prev => prev || saved.authorName);
+                setSchoolName(prev => prev || saved.schoolName);
+                setPeriod(prev => prev || saved.period);
+                setSavedAt(new Date());
+            } else {
+                setEditablePlan(generatedPlan);
+            }
+            setIsEditing(false);
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [generatedPlan]);
 
     // Auto-generate when coming from Annual Plan drill-down
@@ -129,6 +149,20 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
 
     const handlePrint = () => {
         window.print();
+    };
+
+    const handleSaveEdits = async () => {
+        if (!editablePlan || !firebaseUser?.uid || !selectedGradeId || !selectedTopicId) return;
+        setIsSaving(true);
+        try {
+            await saveThematicPlanEdit(firebaseUser.uid, selectedGradeId, selectedTopicId, editablePlan, { authorName, schoolName, period });
+            setSavedAt(new Date());
+            addNotification('✅ Тематскиот план е зачуван!', 'success');
+        } catch {
+            addNotification('Грешка при зачувување. Обидете се повторно.', 'error');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     // ── Render helpers ───────────────────────────────────────────────────────
@@ -287,6 +321,20 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                     </button>
                 </div>
                 <div className="flex gap-2">
+                    {firebaseUser && (
+                        <button
+                            type="button"
+                            onClick={handleSaveEdits}
+                            disabled={isSaving}
+                            className="px-3 py-2 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 flex items-center gap-1.5 text-sm disabled:opacity-60 transition"
+                            title={savedAt ? `Последно зачувано: ${savedAt.toLocaleTimeString('mk')}` : 'Зачувај ги промените во Firestore'}
+                        >
+                            {isSaving
+                                ? <><ICONS.spinner className="w-4 h-4 animate-spin" /> Зачувувам...</>
+                                : <>{savedAt ? '✅' : <ICONS.bookmark className="w-4 h-4" />} Зачувај</>
+                            }
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={handlePrint}

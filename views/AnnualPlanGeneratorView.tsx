@@ -22,6 +22,7 @@ import { PlanGanttChart } from '../components/planner/PlanGanttChart';
 import { AIThematicPlanGeneratorModal } from '../components/planner/AIThematicPlanGeneratorModal';
 import { AnnualPlanOfficialForm } from '../components/planner/AnnualPlanOfficialForm';
 import { PlanAnalyticsDashboard } from '../components/planner/PlanAnalyticsDashboard';
+import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 import { usePlanning } from '../contexts/PlanningContext';
 
 
@@ -377,6 +378,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
 
     return (
         <div className="p-6 max-w-6xl mx-auto space-y-6">
+            <PlanningBreadcrumb />
             {isLoadingExisting && (
                 <div className="flex items-center justify-center py-20">
                     <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mr-4" />
@@ -693,13 +695,50 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                 style={{ width: `${Math.round((parallelProgress.done / parallelProgress.total) * 100)}%` }}
                                             />
                                         </div>
-                                        {!isGeneratingParallel && parallelProgress.done === parallelProgress.total && (
-                                            <p className="text-[10px] text-indigo-600 mt-1">
-                                                ✅ Завршено! Кликни на тема во Gantt за моментален пристап.
-                                                {parallelProgress.results.filter(r => r.status === 'error').length > 0 &&
-                                                    ` (${parallelProgress.results.filter(r => r.status === 'error').length} теми со грешка)`}
-                                            </p>
-                                        )}
+                                        {!isGeneratingParallel && parallelProgress.done === parallelProgress.total && (() => {
+                                            const failed = parallelProgress.results.filter(r => r.status === 'error');
+                                            return (
+                                                <div className="mt-1.5">
+                                                    <p className="text-[10px] text-indigo-600">
+                                                        ✅ Завршено! {failed.length === 0 ? 'Кликни на тема во Gantt за моментален пристап.' : ''}
+                                                    </p>
+                                                    {failed.length > 0 && (
+                                                        <div className="mt-1.5 space-y-1">
+                                                            <p className="text-[10px] font-bold text-red-600">⚠️ {failed.length} теми со грешка — обиди се повторно:</p>
+                                                            {failed.map(f => (
+                                                                <div key={f.topic} className="flex items-center gap-1.5">
+                                                                    <span className="text-[10px] text-red-700 flex-1 truncate">✗ {f.topic}</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition font-bold shrink-0"
+                                                                        onClick={() => {
+                                                                            if (!plan || !curriculum) return;
+                                                                            const gradeMatch = curriculum.grades.find(g => plan.grade.includes(String(g.level)) || g.title === plan.grade) ?? curriculum.grades[0];
+                                                                            const topicMatch = gradeMatch?.topics.find(t =>
+                                                                                t.title.toLowerCase().includes(f.topic.toLowerCase().slice(0, 5)) ||
+                                                                                f.topic.toLowerCase().includes(t.title.toLowerCase().slice(0, 5))
+                                                                            ) ?? gradeMatch?.topics[0];
+                                                                            if (!gradeMatch || !topicMatch) return;
+                                                                            setParallelProgress(prev => prev ? {
+                                                                                ...prev,
+                                                                                results: prev.results.map(r => r.topic === f.topic ? { ...r, status: 'ok' } : r),
+                                                                            } : null);
+                                                                            geminiService.generateThematicPlan(gradeMatch, topicMatch, user ?? undefined)
+                                                                                .catch(() => setParallelProgress(prev => prev ? {
+                                                                                    ...prev,
+                                                                                    results: prev.results.map(r => r.topic === f.topic ? { ...r, status: 'error' } : r),
+                                                                                } : null));
+                                                                        }}
+                                                                    >
+                                                                        Повтори
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 )}
 

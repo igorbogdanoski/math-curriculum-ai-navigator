@@ -27,6 +27,7 @@ import { useLessonPlanExport } from '../components/lesson-plan-editor/useLessonP
 import { LessonPlanExportMenu } from '../components/lesson-plan-editor/LessonPlanExportMenu';
 import { LessonPlanDifferentiationPanel } from '../components/lesson-plan-editor/LessonPlanDifferentiationPanel';
 import { LessonPlanOfficialForm } from '../components/planner/LessonPlanOfficialForm';
+import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 
 
 interface LessonPlanEditorViewProps {
@@ -190,6 +191,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
   return (
     <div className="p-8 animate-fade-in">
+      <PlanningBreadcrumb />
       <header className="mb-6 no-print flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <button onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">
