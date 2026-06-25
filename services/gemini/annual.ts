@@ -4,6 +4,48 @@ import {
     getSecondaryTrackContext,
 } from './core';
 import { buildPedagogyPromptContext } from '../../data/official/pedagogy';
+import { MATH_STANDARDS, CROSS_CURRICULAR_WITH_MATH, AREA_LABELS } from '../../data/allNationalStandardsComplete';
+
+function buildNationalStandardsContext(gradeNumber: number | null): string {
+  const forPrimary = gradeNumber !== null && gradeNumber >= 6 && gradeNumber <= 9;
+
+  const mathBlock = MATH_STANDARDS
+    .map(s => `  ${s.code}: ${s.description}`)
+    .join('\n');
+
+  // Cross-curricular: group by area, show only entries with mathBridge
+  const crossByArea = new Map<string, string[]>();
+  for (const s of CROSS_CURRICULAR_WITH_MATH) {
+    const key = AREA_LABELS[s.area];
+    if (!crossByArea.has(key)) crossByArea.set(key, []);
+    crossByArea.get(key)!.push(`    ${s.code}: ${(s.mathBridge ?? []).join(' | ')}`);
+  }
+  const crossBlock = [...crossByArea.entries()]
+    .map(([area, lines]) => `  ${area}:\n${lines.join('\n')}`)
+    .join('\n');
+
+  if (forPrimary) {
+    return `
+### НАЦИОНАЛНИ СТАНДАРДИ (БРО) — математика III-А.1–27
+Годишниот план треба да ги адресира сите 27 стандарди кумулативно до крај на 9. одд.
+За СЕКОЈА тема, наведи ги кодовите на стандардите кои ги надградуваме (нпр. III-А.3, III-А.22).
+
+МАТЕМАТИЧКИ СТАНДАРДИ (знаења и вештини):
+${mathBlock}
+
+### МЕЃУПРЕДМЕТНИ ПОВРЗУВАЊА (БРО — сите 8 подрачја)
+Кога е педагошки оправдано, поврзи ги темите со стандардите од другите подрачја:
+${crossBlock}
+`.trim();
+  }
+
+  // For grades 1-5 or secondary: only cross-curricular bridges
+  return `
+### МЕЃУПРЕДМЕТНИ ПОВРЗУВАЊА — национални стандарди (БРО)
+Поврзи ги математичките теми со стандардите од другите подрачја каде е оправдано:
+${crossBlock}
+`.trim();
+}
 
 const MIN_ANNUAL_PLAN_TOPICS = 8;
 const ANNUAL_PLAN_FALLBACK_TOPICS = [
@@ -77,6 +119,15 @@ async generateAnnualPlan(
       ? ({ gymnasium: 4, gymnasium_elective: 3, vocational4: 3, vocational3: 2, vocational2: 2 } as const)[profile.secondaryTrack] ?? 4
       : 4;
     const secondaryContextBlock = getSecondaryTrackContext(profile?.secondaryTrack);
+
+    // Detect grade number for national standards context
+    const gradeMatch = grade.match(/\b(IX|VIII|VII|VI|V|IV|III|II|I|9|8|7|6|5|4|3|2|1)\b/i);
+    const romanMap: Record<string, number> = { I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7, VIII:8, IX:9 };
+    const detectedGrade = gradeMatch
+      ? (romanMap[gradeMatch[1].toUpperCase()] ?? parseInt(gradeMatch[1], 10) ?? null)
+      : null;
+    const nationalStandardsBlock = buildNationalStandardsContext(detectedGrade);
+
     const prompt = `
 Вие сте врвен експерт за планирање на наставата по ${subject} за ${grade} во македонскиот образовен систем.
 Ваша задача е да креирате детална, практична и изводлива предлог-годишна програма.
@@ -100,8 +151,9 @@ ${buildPedagogyPromptContext()}
 6. ТЕМИ КОИ СЕ РЕАЛИЗИРААТ НИЗ ЦЕЛАТА ГОДИНА (Геометрија, Мерење, Работа со податоци): разбивај ги на подтеми кои се вметнуваат меѓу другите теми — не ги ставај само на крај.
 7. КАЛЕНДАРСКИ ИНТЕЛИГЕНТНО ПЛАНИРАЊЕ: Земете ги предвид македонските државни празници (8 Септември, 11 Октомври, 23 Октомври, 8 Декември, 1 Мај, 24 Мај) и зимски распусти.
 8. Вклучи 4 писмени работи рамномерно распоредени низ годината.
-${safeCustomInstruction ? `\nДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НАСТАВНИКОТ: ${safeCustomInstruction}` : ''}
+${nationalStandardsBlock}
 
+${safeCustomInstruction ? `ДОПОЛНИТЕЛНИ ИНСТРУКЦИИ ОД НАСТАВНИКОТ: ${safeCustomInstruction}\n` : ''}
 Вратете ВАЛИДЕН JSON според шемата, без дополнителен текст.
     `.trim();
 

@@ -1,5 +1,6 @@
 ﻿import { logger } from '../../utils/logger';
 import { Type, Part, Content, getCached, setCached, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION, minifyContext, sanitizePromptInput } from './core';
+import { MATH_STANDARDS, CROSS_CURRICULAR_WITH_MATH } from '../../data/allNationalStandardsComplete';
 import { streamGeminiProxy } from './core.proxy';
 import { Concept, Topic, Grade, TeachingProfile, LessonPlan, LessonScenario, PlannerItem, AIGeneratedIdeas, AIGeneratedThematicPlan, AIGeneratedPresentation, GenerationContext, PresentationSlide } from '../../types';
 import { AIGeneratedIdeasSchema, AnnualPlanSchema, AIGeneratedThematicPlanSchema } from '../../utils/schemas';
@@ -7,6 +8,41 @@ import { AIGeneratedIdeasSchema, AnnualPlanSchema, AIGeneratedThematicPlanSchema
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { CACHE_COLLECTION } from './core';
+
+// ── National standards helpers ─────────────────────────────────────────────────
+
+/** Returns the math standards relevant to a topic + cross-curricular bridges, for grades 6-9 */
+function buildTopicStandardsHint(gradeLevel: number, topicTitle: string, conceptTitles: string[]): string {
+  if (gradeLevel < 6 || gradeLevel > 9) return '';
+
+  const topicWords = [...conceptTitles, topicTitle]
+    .flatMap(t => t.toLowerCase().replace(/[^\p{L}\d\s]/giu, '').split(/\s+/))
+    .filter(w => w.length > 4);
+
+  const relevant = MATH_STANDARDS.filter(s => {
+    const d = s.description.toLowerCase();
+    return topicWords.some(w => d.includes(w));
+  });
+
+  const crossRelevant = CROSS_CURRICULAR_WITH_MATH.filter(s =>
+    (s.mathBridge ?? []).some(b => topicWords.some(w => b.toLowerCase().includes(w)))
+  );
+
+  if (relevant.length === 0 && crossRelevant.length === 0) {
+    // Fall back to listing all 27 so AI can pick
+    return `\n### НАЦИОНАЛНИ СТАНДАРДИ ЗА МАТЕМАТИКА (III-А.1–27)\nЗа оваа тема, поврзи ги часовите со соодветните стандарди:\n${MATH_STANDARDS.map(s => `  ${s.code}: ${s.description}`).join('\n')}\n`;
+  }
+
+  const mathLines = relevant.map(s => `  ${s.code}: ${s.description}`).join('\n');
+  const crossLines = crossRelevant.map(s => `  ${s.code} (${s.area}): ${(s.mathBridge ?? []).join(' | ')}`).join('\n');
+
+  return [
+    '\n### НАЦИОНАЛНИ СТАНДАРДИ — поврзани со оваа тема',
+    mathLines ? `Математика (III-А):\n${mathLines}` : '',
+    crossLines ? `Меѓупредметни врски:\n${crossLines}` : '',
+    'Наведи ги кодовите на стандардите во полето learningOutcomes за секоја лекција.',
+  ].filter(Boolean).join('\n');
+}
 
 // ── Official MoN 2025 curriculum helpers for annual plan generation ────────────
 
@@ -324,6 +360,7 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
 
       const { weeklyHours, lessonMinutes, totalHours } = getGradeHoursInfo(grade.level);
       const officialSummary = await buildOfficialCurriculumSummary(grade.level);
+      const standardsHint = buildTopicStandardsHint(grade.level, topic.title, topic.concepts.map(c => c.title));
 
       // @prompt-start: thematic_plan
       const prompt = `
@@ -336,6 +373,7 @@ async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile
 - Поими во темата: ${topic.concepts.map(c => c.title).join(', ')}
 - Фонд на часови: ${weeklyHours}ч/нед × 36 нед = ${totalHours}ч/год | Траење на час: ${lessonMinutes}мин
 ${officialSummary ? `\n### ОФИЦИЈАЛНА НАСТАВНА ПРОГРАМА ЗА ОВАА ТЕМА\n${officialSummary}\n` : ''}
+${standardsHint}
 
 ### ПРЕД-ГЕНЕРИРАЧКА ЛОГИКА (Tree of Thoughts)
 1. АНАЛИЗА НА ТЕМА: Кои се клучните стандарди за оценување според националната програма?
