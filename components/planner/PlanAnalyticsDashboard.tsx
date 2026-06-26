@@ -10,7 +10,7 @@ import { getGradeHoursInfo } from '../../services/gemini/plans';
 import { analyzePlanQuality } from '../../services/gemini/planAnalysis';
 import { callGeminiProxy, sanitizePromptInput, DEFAULT_MODEL } from '../../services/gemini/core';
 import {
-  BLOOM_AXES, analyzeUbD, extractBloomScores, toPercent,
+  BLOOM_AXES, BLOOM_TARGET_PCT, analyzeUbD, extractBloomScores, toPercent,
   detectGrade, fuzzyMatchTopic,
 } from './planAnalyticsHelpers';
 import { BloomRadarChart } from './BloomRadarChart';
@@ -71,7 +71,7 @@ export const PlanAnalyticsDashboard: React.FC<Props> = ({ plan, weeklyHours: wee
   const bloomCounts = useMemo(() => extractBloomScores(plan.topics ?? []), [plan.topics]);
   const bloomPct = useMemo(() => toPercent(bloomCounts), [bloomCounts]);
   const bloomTotalHits = bloomCounts.reduce((a, b) => a + b, 0);
-  const bloomTargetPct = BLOOM_AXES.map(a => a.target);
+  const bloomTargetPct = BLOOM_TARGET_PCT;
 
   // ── B: Hours Tracker ─────────────────────────────────────────────────────
   const officialHoursMap: Record<string, number> = useMemo(() => {

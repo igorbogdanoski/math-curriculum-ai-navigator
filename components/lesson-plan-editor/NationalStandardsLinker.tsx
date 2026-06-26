@@ -8,6 +8,12 @@ interface Props {
 }
 
 const STD_CODE_RE = /^III-[АA]\.\d+/;
+const STD_CODE_EXTRACT = /^(III-[АA]\.\d+)/;
+
+const extractCode = (s: string): string | null => {
+  const m = s.match(STD_CODE_EXTRACT);
+  return m ? m[1] : null;
+};
 
 const formatEntry = (code: string, description: string): string =>
   `${code} — ${description.slice(0, 80)}${description.length > 80 ? '…' : ''}`;
@@ -27,7 +33,7 @@ export const NationalStandardsLinker: React.FC<Props> = ({ standards, onChange, 
   }, [query]);
 
   const selectedCodes = useMemo(
-    () => new Set(standards.filter(s => STD_CODE_RE.test(s)).map(s => s.split(' — ')[0])),
+    () => new Set(standards.flatMap(s => { const c = extractCode(s); return c ? [c] : []; })),
     [standards],
   );
 

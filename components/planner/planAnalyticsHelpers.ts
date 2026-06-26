@@ -11,6 +11,8 @@ export const BLOOM_AXES = [
   { label: 'Создавање',  level: 6, color: '#ef4444', target: 8  },
 ];
 
+export const BLOOM_TARGET_PCT = BLOOM_AXES.map(a => a.target);
+
 export const BLOOM_KEYWORDS: Record<number, string[]> = {
   1: ['знае', 'именува', 'набројува', 'набројат', 'дефинира', 'наведи', 'познава', 'препознава', 'идентификува', 'recall', 'листа'],
   2: ['разбира', 'објаснува', 'опишува', 'интерпретира', 'сумира', 'класифицира', 'изразува', 'споредува', 'разграничи'],
