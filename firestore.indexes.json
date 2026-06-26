@@ -633,6 +633,22 @@
                                    ]
                     },
                     {
+                        "collectionGroup":  "academic_annual_plans",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "userId",    "order": "ASCENDING" },
+                                       { "fieldPath": "createdAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "academic_annual_plans",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "isPublic",  "order": "ASCENDING" },
+                                       { "fieldPath": "createdAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
                         "collectionGroup":  "matura_community_solutions",
                         "queryScope":  "COLLECTION",
                         "fields":  [
