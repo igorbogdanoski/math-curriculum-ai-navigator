@@ -147,7 +147,9 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
     setParallelProgress({ done: 0, total, results: [] });
     setIsGeneratingParallel(true);
 
-    const promises = plan.topics.map((annualTopic: AIGeneratedAnnualPlanTopic) => {
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+    const promises = plan.topics.map((annualTopic: AIGeneratedAnnualPlanTopic, idx: number) => {
       const topicMatch =
         gradeMatch.topics.find(
           t =>
@@ -155,22 +157,24 @@ export function useAnnualPlanGeneration({ planId }: UseAnnualPlanGenerationOptio
             annualTopic.title.toLowerCase().includes(t.title.toLowerCase().slice(0, 5)),
         ) ?? gradeMatch.topics[0];
 
-      return geminiService
-        .generateThematicPlan(gradeMatch, topicMatch, user ?? undefined)
-        .then(() => {
-          setParallelProgress(prev =>
-            prev
-              ? { ...prev, done: prev.done + 1, results: [...prev.results, { topic: annualTopic.title, status: 'ok' as const }] }
-              : null,
-          );
-        })
-        .catch(() => {
-          setParallelProgress(prev =>
-            prev
-              ? { ...prev, done: prev.done + 1, results: [...prev.results, { topic: annualTopic.title, status: 'error' as const }] }
-              : null,
-          );
-        });
+      return delay(idx * 200).then(() =>
+        geminiService
+          .generateThematicPlan(gradeMatch, topicMatch, user ?? undefined)
+          .then(() => {
+            setParallelProgress(prev =>
+              prev
+                ? { ...prev, done: prev.done + 1, results: [...prev.results, { topic: annualTopic.title, status: 'ok' as const }] }
+                : null,
+            );
+          })
+          .catch(() => {
+            setParallelProgress(prev =>
+              prev
+                ? { ...prev, done: prev.done + 1, results: [...prev.results, { topic: annualTopic.title, status: 'error' as const }] }
+                : null,
+            );
+          })
+      );
     });
 
     await Promise.allSettled(promises);
