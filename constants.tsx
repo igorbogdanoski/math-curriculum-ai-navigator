@@ -111,6 +111,7 @@ export const ICONS: Record<string, any> = {
   spinner: Loader2,
   trash: Trash2,
   edit: Edit3,
+  bookmark: BookMarked,
   close: X,
   share: Share2,
   lightbulb: Lightbulb,
