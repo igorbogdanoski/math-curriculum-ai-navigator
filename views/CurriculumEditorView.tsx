@@ -21,9 +21,9 @@ import {
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 export const CurriculumEditorView: React.FC = () => {
-    const { user } = useAuth();
+    const { user, firebaseUser } = useAuth();
     const { navigate } = useNavigation();
-    const { curriculum } = useCurriculum();
+    const { curriculum, refreshPersonalOverrides } = useCurriculum();
     const { addNotification } = useNotification();
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
@@ -46,26 +46,17 @@ export const CurriculumEditorView: React.FC = () => {
         suggestedHours: 4
     });
 
+    // Determine which layer this user can edit
+    const isSchoolAdmin = user?.role === 'admin' || user?.role === 'school_admin';
+    const ownerUid = isSchoolAdmin ? 'school_overrides' : (firebaseUser?.uid ?? null);
+
     useEffect(() => {
-        if (!user || (user.role !== 'school_admin' && user.role !== 'admin')) {
-            navigate('/');
-            return;
-        }
-
-        const loadOverrides = async () => {
-            try {
-                // For now, using 'school_overrides' as well-known key as per hook
-                await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
-            } catch (error) {
-                logger.error('Error loading overrides:', error);
-                addNotification('Грешка при вчитување на промените.', 'error');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadOverrides();
-    }, [user, navigate, addNotification]);
+        if (!user) { navigate('/'); return; }
+        if (!ownerUid) { setIsLoading(false); return; }
+        curriculumOverridesService.fetchCurriculumOverrides(ownerUid)
+            .catch(err => { logger.error('Error loading overrides:', err); addNotification('Грешка при вчитување.', 'error'); })
+            .finally(() => setIsLoading(false));
+    }, [user, ownerUid, navigate, addNotification]);
 
     const toggleGrade = (gradeId: string) => {
         setExpandedGrades(prev => {
@@ -81,7 +72,7 @@ export const CurriculumEditorView: React.FC = () => {
         
         try {
             await curriculumOverridesService.addConceptOverride(
-                'school_overrides',
+                ownerUid!,
                 isAddingConcept.gradeId,
                 isAddingConcept.topicId,
                 {
@@ -92,21 +83,20 @@ export const CurriculumEditorView: React.FC = () => {
                     priorKnowledgeIds: newConcept.priorKnowledgeIds || []
                 }
             );
-            
             setIsAddingConcept(null);
             setNewConcept({ title: '', description: '', assessmentStandards: [], activities: [], priorKnowledgeIds: [] });
+            if (!isSchoolAdmin) refreshPersonalOverrides();
             addNotification('Концептот е успешно додаден.', 'success');
-        } catch (error) {
+        } catch {
             addNotification('Грешка при додавање.', 'error');
         }
     };
 
     const handleAddTopic = async () => {
-        if (!isAddingTopic || !newTopic.title || !user) return;
-        
+        if (!isAddingTopic || !newTopic.title || !user || !ownerUid) return;
         try {
             await curriculumOverridesService.addTopicOverride(
-                'school_overrides',
+                ownerUid,
                 isAddingTopic.gradeId,
                 {
                     title: newTopic.title,
@@ -114,26 +104,27 @@ export const CurriculumEditorView: React.FC = () => {
                     suggestedHours: newTopic.suggestedHours || 4
                 }
             );
-            
             setIsAddingTopic(null);
             setNewTopic({ title: '', description: '', suggestedHours: 4 });
+            if (!isSchoolAdmin) refreshPersonalOverrides();
             addNotification('Темата е успешно додадена.', 'success');
-        } catch (error) {
+        } catch {
             addNotification('Грешка при додавање.', 'error');
         }
     };
 
     const handleDeleteConcept = (conceptId: string) => {
+        if (!ownerUid) return;
         setConfirmDialog({
             message: 'Дали сте сигурни дека сакате да го избришете овој концепт?',
             variant: 'danger',
             onConfirm: async () => {
                 setConfirmDialog(null);
                 try {
-                    await curriculumOverridesService.deleteConceptOverride('school_overrides', conceptId);
-                    await curriculumOverridesService.fetchCurriculumOverrides('school_overrides');
-                        addNotification('Избришано.', 'success');
-                } catch (error) {
+                    await curriculumOverridesService.deleteConceptOverride(ownerUid, conceptId);
+                    if (!isSchoolAdmin) refreshPersonalOverrides();
+                    addNotification('Избришано.', 'success');
+                } catch {
                     addNotification('Грешка при бришење.', 'error');
                 }
             }
@@ -145,21 +136,45 @@ export const CurriculumEditorView: React.FC = () => {
     return (
         <>
         <div className="max-w-5xl mx-auto p-6 space-y-6">
-            <header className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <BookOpen className="w-6 h-6 text-brand-primary" />
-                        Уредувач на Наставна Програма
-                    </h1>
-                    <p className="text-gray-500 mt-1">Додадете ваши теми и концепти специфични за вашето училиште.</p>
+            <header className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                            <BookOpen className="w-6 h-6 text-brand-primary" />
+                            Уредувач на Наставна Програма
+                        </h1>
+                        <p className="text-gray-500 mt-1 text-sm">
+                            {isSchoolAdmin
+                                ? '🏫 Уредувате го Училишниот слој — видливо за сите наставници'
+                                : '👤 Уредувате го вашиот Личен слој — само за ваша употреба'}
+                        </p>
+                    </div>
+                </div>
+                {/* UNESCO 4-layer visual */}
+                <div className="flex items-center gap-1 text-xs font-semibold overflow-x-auto">
+                    {[
+                        { label: '🏛 Национален (БРО)', cls: 'bg-gray-100 text-gray-500', active: false },
+                        { label: '🏫 Училишен', cls: isSchoolAdmin ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-700', active: isSchoolAdmin },
+                        { label: '👤 Личен', cls: !isSchoolAdmin ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-700', active: !isSchoolAdmin },
+                        { label: '📋 Час (Сценарио)', cls: 'bg-gray-100 text-gray-500', active: false },
+                    ].map((l, i, arr) => (
+                        <React.Fragment key={l.label}>
+                            <span className={`px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 ${l.cls} ${l.active ? 'ring-2 ring-offset-1 ring-current' : ''}`}>
+                                {l.label}
+                            </span>
+                            {i < arr.length - 1 && <span className="text-gray-300 shrink-0">→</span>}
+                        </React.Fragment>
+                    ))}
                 </div>
             </header>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 text-sm text-blue-800">
-                <Info className="w-5 h-5 shrink-0" />
+            <div className={`border rounded-xl p-4 flex gap-3 text-sm ${isSchoolAdmin ? 'bg-indigo-50 border-indigo-200 text-indigo-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+                <Info className="w-5 h-5 shrink-0 mt-0.5" />
                 <p>
-                    Сите измени направени тука ќе бидат видливи за **сите наставници** во вашето училиште. 
-                    Статичката национална програма останува недопрена, а вашите додатоци се прикажуваат како дополнителни опции во планерот и генераторот.
+                    {isSchoolAdmin
+                        ? 'Училишниот слој е видлив за СИТЕ наставници. Националната програма (БРО) останува недопрена. Вашите додатоци се прикажуваат на сите наставници во планерот.'
+                        : 'Личниот слој е само за вас. Националната и Училишната програма се наследуваат автоматски. Вашите лични додатоци се видливи само во вашиот план.'
+                    }
                 </p>
             </div>
 
@@ -197,22 +212,31 @@ export const CurriculumEditorView: React.FC = () => {
 
                                         <div className="space-y-2">
                                             {topic.concepts.map(concept => {
+                                                const isSchoolCustom = concept.id.startsWith('custom_') && concept.id.includes('school_overrides'.slice(-6));
+                                                const isPersonalCustom = concept.id.startsWith('custom_') && !isSchoolCustom;
                                                 const isCustom = concept.id.startsWith('custom_');
+                                                // Can delete only your own layer
+                                                const canDelete = isCustom && (isSchoolAdmin ? isSchoolCustom || !isPersonalCustom : isPersonalCustom);
                                                 return (
-                                                    <div key={concept.id} className={`flex items-center justify-between p-3 rounded-lg border ${isCustom ? 'bg-indigo-50/50 border-indigo-100' : 'bg-gray-50 border-gray-100'}`}>
-                                                        <div>
+                                                    <div key={concept.id} className={`flex items-center justify-between p-3 rounded-lg border ${
+                                                        isPersonalCustom ? 'bg-emerald-50/50 border-emerald-100'
+                                                        : isSchoolCustom ? 'bg-indigo-50/50 border-indigo-100'
+                                                        : 'bg-gray-50 border-gray-100'
+                                                    }`}>
+                                                        <div className="min-w-0">
                                                             <span className="text-sm font-medium text-gray-700">{concept.title}</span>
-                                                            {isCustom && <span className="ml-2 text-[10px] font-bold text-indigo-500 uppercase tracking-tighter">Ваш додаток</span>}
+                                                            {isSchoolCustom && <span className="ml-2 text-[10px] font-bold text-indigo-500 uppercase tracking-tighter">🏫 Училишен</span>}
+                                                            {isPersonalCustom && <span className="ml-2 text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">👤 Личен</span>}
                                                         </div>
-                                                        {isCustom && (
-                                                            <div className="flex items-center gap-1">
-                                                                <button 
-                                                                    onClick={() => handleDeleteConcept(concept.id)}
-                                                                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
+                                                        {canDelete && (
+                                                            <button
+                                                                type="button"
+                                                                title="Избриши концепт"
+                                                                onClick={() => handleDeleteConcept(concept.id)}
+                                                                className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
                                                         )}
                                                     </div>
                                                 );

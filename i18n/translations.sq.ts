@@ -73,6 +73,7 @@ export const sq: Record<string, string> = {
   'nav.coverage': 'Mbulimi i Kurrikulës',
   'nav.favorites': 'Të preferuarat',
   'nav.gallery': 'Galeria',
+  'nav.scenarioBank':    '📚 Banka e Skenarëve',
   'nav.nationalLibrary': '🌐 Biblioteka Kombëtare',
   'nav.forum': 'Forum',
   'nav.editCurriculum': 'Redakto Kurrikulën',

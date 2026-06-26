@@ -1,0 +1,365 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Search, Filter, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigation } from '../contexts/NavigationContext';
+import { useNotification } from '../contexts/NotificationContext';
+import { Card } from '../components/common/Card';
+import { ScenarioCard } from '../components/scenario-bank/ScenarioCard';
+import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel } from '../services/firestoreService.scenarioBank';
+import {
+  fetchScenarios, fetchMyScenarios, rateScenario,
+  forkScenario, toggleSaveScenario, recordUsage,
+} from '../services/firestoreService.scenarioBank';
+
+type TabMode = 'all' | 'mine' | 'saved' | 'bro';
+type SortBy = 'date' | 'rating' | 'forks' | 'usage';
+
+const GRADES = [1,2,3,4,5,6,7,8,9];
+const MODELS: TeachingModel[] = ['5E','PBL','ZPD','Cooperative','Traditional'];
+const DOK_LEVELS = [1,2,3,4];
+
+export const ScenarioBankView: React.FC = () => {
+  const { user, firebaseUser } = useAuth();
+  const { navigate } = useNavigation();
+  const { addNotification } = useNotification();
+
+  const [tab, setTab] = useState<TabMode>('all');
+  const [entries, setEntries] = useState<ScenarioBankEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filters
+  const [gradeFilter, setGradeFilter] = useState<number | null>(null);
+  const [dokFilter, setDokFilter] = useState<number | null>(null);
+  const [modelFilter, setModelFilter] = useState<TeachingModel | null>(null);
+  const [sortBy, setSortBy] = useState<SortBy>('date');
+
+  const load = useCallback(async (mode: TabMode) => {
+    setIsLoading(true);
+    try {
+      if (mode === 'mine' && firebaseUser?.uid) {
+        const data = await fetchMyScenarios(firebaseUser.uid);
+        setEntries(data);
+      } else {
+        const filter: ScenarioBankFilter = {
+          grade: gradeFilter,
+          dokLevel: dokFilter,
+          teachingModel: modelFilter,
+          verifiedOnly: mode === 'bro',
+          sortBy,
+        };
+        const data = await fetchScenarios(filter, 48);
+        setEntries(data);
+      }
+    } catch {
+      addNotification('Грешка при вчитување на сценаријата.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, gradeFilter, dokFilter, modelFilter, sortBy, firebaseUser?.uid]);
+
+  useEffect(() => { load(tab); }, [load, tab]);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    let list = entries;
+    if (tab === 'saved' && firebaseUser?.uid) {
+      list = list.filter(e => (e.savedByUids ?? []).includes(firebaseUser.uid!));
+    }
+    if (!q) return list;
+    return list.filter(e =>
+      e.title.toLowerCase().includes(q) ||
+      e.topicTitle.toLowerCase().includes(q) ||
+      e.authorName.toLowerCase().includes(q) ||
+      e.objectives.some(o => o.toLowerCase().includes(q))
+    );
+  }, [entries, search, tab, firebaseUser?.uid]);
+
+  const sorted = useMemo(() => {
+    if (sortBy !== 'rating') return filtered;
+    return [...filtered].sort((a, b) => {
+      const ra = a.ratingsByUid ? Object.values(a.ratingsByUid).reduce((s,v)=>s+v,0)/Object.keys(a.ratingsByUid).length : 0;
+      const rb = b.ratingsByUid ? Object.values(b.ratingsByUid).reduce((s,v)=>s+v,0)/Object.keys(b.ratingsByUid).length : 0;
+      return rb - ra;
+    });
+  }, [filtered, sortBy]);
+
+  const handleRate = async (entryId: string, stars: number) => {
+    if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    await rateScenario(entryId, firebaseUser.uid, stars);
+    setEntries(prev => prev.map(e => e.id !== entryId ? e : {
+      ...e, ratingsByUid: { ...e.ratingsByUid, [firebaseUser.uid!]: stars },
+    }));
+  };
+
+  const handleFork = async (entry: ScenarioBankEntry) => {
+    if (!firebaseUser?.uid || !user) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    try {
+      const newId = await forkScenario(entry, firebaseUser.uid, user.name ?? 'Наставник', user.schoolName);
+      addNotification('✅ Ремиксот е создаден и додаден во Банката!', 'success');
+      setEntries(prev => prev.map(e =>
+        (e.id === (entry.originalId ?? entry.id)) ? { ...e, forkCount: e.forkCount + 1 } : e
+      ));
+      // Open the remix in lesson editor via URL state
+      navigate(`/planner?fromBank=${newId}`);
+    } catch {
+      addNotification('Грешка при ремиксирање.', 'error');
+    }
+  };
+
+  const handleUse = async (entry: ScenarioBankEntry) => {
+    await recordUsage(entry.id).catch(() => {});
+    setEntries(prev => prev.map(e => e.id !== entry.id ? e : { ...e, usageCount: e.usageCount + 1 }));
+    if (entry.fullPlan?.id) {
+      navigate(`/planner?fromBank=${entry.id}`);
+    } else {
+      addNotification('Сценариото е прикачено. Отвори Уредувач за да го примениш.', 'info');
+    }
+  };
+
+  const handleSave = async (entryId: string, saved: boolean) => {
+    if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    await toggleSaveScenario(entryId, firebaseUser.uid, saved);
+    setEntries(prev => prev.map(e => {
+      if (e.id !== entryId) return e;
+      const base = e.savedByUids ?? [];
+      return { ...e, savedByUids: saved ? [...base, firebaseUser.uid!] : base.filter(u => u !== firebaseUser.uid) };
+    }));
+  };
+
+  const TABS: { key: TabMode; label: string; icon: React.ReactNode }[] = [
+    { key: 'all',   label: 'Сите сценарија',   icon: <Search className="w-3.5 h-3.5" /> },
+    { key: 'bro',   label: 'БРО Верификувани', icon: <BadgeCheck className="w-3.5 h-3.5" /> },
+    { key: 'saved', label: 'Зачувани',          icon: <BookMarked className="w-3.5 h-3.5" /> },
+    { key: 'mine',  label: 'Мои сценарија',     icon: <Shuffle className="w-3.5 h-3.5" /> },
+  ];
+
+  return (
+    <div className="max-w-7xl mx-auto p-4 space-y-5">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+            📚 Банка на Сценарија
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Japanese Lesson Study Hub — наоѓај, оценувај и ремиксирај часови
+          </p>
+        </div>
+        {user && (
+          <button
+            type="button"
+            onClick={() => navigate('/planner')}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-xl shadow transition-colors shrink-0"
+          >
+            <Plus className="w-4 h-4" /> Додај сценарио
+          </button>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit flex-wrap">
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+              tab === t.key
+                ? 'bg-white shadow text-indigo-700'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search + filter bar */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Барај по наслов, тема, автор..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowFilters(v => !v)}
+          className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border transition-colors ${
+            showFilters || gradeFilter || dokFilter || modelFilter
+              ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          Филтри
+          {(gradeFilter || dokFilter || modelFilter) && (
+            <span className="w-4 h-4 bg-indigo-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+              {[gradeFilter, dokFilter, modelFilter].filter(Boolean).length}
+            </span>
+          )}
+        </button>
+        <select
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value as SortBy)}
+          aria-label="Сортирај сценарија"
+          title="Сортирај"
+          className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        >
+          <option value="date">Најнови</option>
+          <option value="rating">Највисока оценка</option>
+          <option value="forks">Најмногу ремикси</option>
+          <option value="usage">Најмногу употребено</option>
+        </select>
+      </div>
+
+      {/* Expanded filters */}
+      {showFilters && (
+        <Card>
+          <div className="flex flex-wrap gap-4 p-4">
+            {/* Grade */}
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-gray-500 uppercase">Одделение</p>
+              <div className="flex flex-wrap gap-1">
+                {GRADES.map(g => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setGradeFilter(gradeFilter === g ? null : g)}
+                    className={`w-8 h-8 rounded-lg text-sm font-bold border transition-colors ${
+                      gradeFilter === g
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* DoK */}
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-gray-500 uppercase">Webb's DoK</p>
+              <div className="flex gap-1">
+                {DOK_LEVELS.map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDokFilter(dokFilter === d ? null : d)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                      dokFilter === d
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    DoK {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Teaching model */}
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-gray-500 uppercase">Наставен модел</p>
+              <div className="flex flex-wrap gap-1">
+                {MODELS.map(m => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setModelFilter(modelFilter === m ? null : m)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                      modelFilter === m
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-emerald-300'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Clear */}
+            {(gradeFilter || dokFilter || modelFilter) && (
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => { setGradeFilter(null); setDokFilter(null); setModelFilter(null); }}
+                  className="text-xs text-red-500 hover:text-red-700 font-semibold underline"
+                >
+                  Исчисти филтри
+                </button>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* Results count */}
+      {!isLoading && (
+        <p className="text-xs text-gray-400">
+          {sorted.length === 0 ? 'Нема резултати' : `${sorted.length} сценарија`}
+          {search && ` за „${search}"`}
+        </p>
+      )}
+
+      {/* Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-64 bg-gray-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : sorted.length === 0 ? (
+        <div className="text-center py-16 space-y-3">
+          <p className="text-4xl">📭</p>
+          <p className="text-gray-500 font-semibold">
+            {tab === 'mine' ? 'Немате уште сценарија. Создадете и споделете!' :
+             tab === 'saved' ? 'Немате зачувани сценарија.' :
+             'Нема сценарија за овие филтри.'}
+          </p>
+          {(tab === 'all' || tab === 'mine') && (
+            <button
+              type="button"
+              onClick={() => navigate('/planner')}
+              className="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Создади сценарио
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sorted.map(entry => (
+            <ScenarioCard
+              key={entry.id}
+              entry={entry}
+              currentUid={firebaseUser?.uid}
+              currentName={user?.name ?? 'Наставник'}
+              currentSchool={user?.schoolName ?? ''}
+              onRate={handleRate}
+              onFork={handleFork}
+              onUse={handleUse}
+              onSave={handleSave}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Footer hint */}
+      {sorted.length > 0 && (
+        <p className="text-center text-xs text-gray-400 pb-4">
+          🎓 Секое сценарио може да се ремиксира — создај своја верзија и автоматски влегува во Банката
+        </p>
+      )}
+    </div>
+  );
+};

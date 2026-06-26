@@ -73,6 +73,7 @@ export const tr: Record<string, string> = {
   'nav.coverage': 'Müfredat Kapsamı',
   'nav.favorites': 'Favoriler',
   'nav.gallery': 'Galeri',
+  'nav.scenarioBank':    '📚 Senaryo Bankası',
   'nav.nationalLibrary': '🌐 Ulusal Kütüphane',
   'nav.forum': 'Forum',
   'nav.editCurriculum': 'Müfredatı Düzenle',

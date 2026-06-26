@@ -11,6 +11,9 @@ import { ICONS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
 import { useNavigation } from '../contexts/NavigationContext';
+import { publishScenario } from '../services/firestoreService.scenarioBank';
+import { PublishScenarioDialog } from '../components/scenario-bank/PublishScenarioDialog';
+import type { PublishScenarioOptions } from '../components/scenario-bank/PublishScenarioDialog';
 import { AIContextSelector } from '../components/lesson-plan-editor/AIContextSelector';
 import { AIPedagogicalAnalysisDisplay } from '../components/lesson-plan-editor/AIPedagogicalAnalysisDisplay';
 import { MathToolsPanel } from '../components/common/MathToolsPanel';
@@ -47,7 +50,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const { getLessonPlan, addLessonPlan, updateLessonPlan } = usePlanner();
   const { curriculum, isLoading: isCurriculumLoading } = useCurriculum();
   const { addNotification } = useNotification();
-  const { user } = useAuth();
+  const { user, firebaseUser } = useAuth();
   const { isOnline } = useNetworkStatus();
 
   const [plan, setPlan, clearDraft, lastSaved] = usePersistentState<Partial<LessonPlan>>(
@@ -58,6 +61,9 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const [showMathTools, setShowMathTools] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showOfficialLessonForm, setShowOfficialLessonForm] = useState(false);
+  const [isPublishingToBank, setIsPublishingToBank] = useState(false);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [autoShareToBank, setAutoShareToBank] = useState(false);
   const [officialLessonEditing, setOfficialLessonEditing] = useState(false);
   const [officialLessonOrientation, setOfficialLessonOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
@@ -144,6 +150,17 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         clearDraft();
         if (isMounted.current) {
           addNotification('Подготовката е успешно креирана!', 'success');
+          // Auto-share to Scenario Bank if opted in
+          if (autoShareToBank && firebaseUser?.uid && user) {
+            publishScenario({
+              plan: { ...(plan as LessonPlan), id: newPlanId },
+              authorUid: firebaseUser.uid,
+              authorName: user.name ?? 'Наставник',
+              schoolName: user.schoolName,
+              isPublic: true,
+            }).then(() => addNotification('✅ Автоматски споделено во Банката!', 'success'))
+              .catch(() => {});
+          }
           navigate(`/planner/lesson/${newPlanId}`);
         }
       }
@@ -171,6 +188,36 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await handleSave();
+  };
+
+  const handlePublishToBank = () => {
+    if (!plan.title) { addNotification('Треба наслов за да споделите.', 'error'); return; }
+    if (!firebaseUser?.uid || !user) { addNotification('Мора да сте најавени.', 'error'); return; }
+    setShowPublishDialog(true);
+  };
+
+  const handleConfirmPublish = async (opts: PublishScenarioOptions) => {
+    if (!firebaseUser?.uid || !user) return;
+    setIsPublishingToBank(true);
+    try {
+      await publishScenario({
+        plan: plan as import('../types').LessonPlan,
+        authorUid: firebaseUser.uid,
+        authorName: user.name ?? 'Наставник',
+        schoolName: user.schoolName,
+        teachingModel: opts.teachingModel ?? undefined,
+        dokLevel: opts.dokLevel ?? undefined,
+        isPublic: opts.isPublic,
+        authorNotes: opts.authorNotes,
+      });
+      setShowPublishDialog(false);
+      addNotification(opts.isPublic ? '✅ Сценариото е јавно споделено во Банката!' : '🔒 Сценариото е зачувано приватно.', 'success');
+      navigate('/scenario-bank');
+    } catch {
+      addNotification('Грешка при споделување.', 'error');
+    } finally {
+      setIsPublishingToBank(false);
+    }
   };
 
   if (isCurriculumLoading) {
@@ -320,6 +367,31 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                     onExport={exporter.handleExport}
                   />
                   <button
+                    type="button"
+                    disabled={isPublishingToBank || !plan.title}
+                    onClick={handlePublishToBank}
+                    title="Сподели во Банката на Сценарија"
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg shadow transition-colors font-semibold disabled:bg-gray-400"
+                  >
+                    {isPublishingToBank ? (
+                      <ICONS.spinner className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ICONS.share className="w-4 h-4" />
+                    )}
+                    <span className="hidden sm:inline">Во Банката</span>
+                  </button>
+                  {!isEditing && (
+                    <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={autoShareToBank}
+                        onChange={e => setAutoShareToBank(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded accent-emerald-600"
+                      />
+                      <span>Сподели во Банката</span>
+                    </label>
+                  )}
+                  <button
                     type="submit"
                     disabled={isSaving}
                     title="Зачувај (Ctrl+S)"
@@ -440,6 +512,17 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           variant={confirmDialog.variant ?? 'warning'}
           onConfirm={confirmDialog.onConfirm}
           onCancel={() => setConfirmDialog(null)}
+        />
+      )}
+
+      {/* ── Publish to Scenario Bank Dialog ─────────────────────────────── */}
+      {showPublishDialog && (
+        <PublishScenarioDialog
+          plan={plan}
+          isPro={user?.role === 'admin'}
+          onPublish={handleConfirmPublish}
+          onCancel={() => setShowPublishDialog(false)}
+          isLoading={isPublishingToBank}
         />
       )}
 

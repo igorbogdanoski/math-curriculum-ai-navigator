@@ -11,6 +11,7 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import type { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
 import { loadThematicPlanEdit } from '../services/firestoreService.plans';
+import { saveWeeklyPlan, loadWeeklyPlan } from '../services/firestoreService.weeklyPlans';
 
 // ── Local types ────────────────────────────────────────────────────────────────
 
@@ -125,8 +126,9 @@ export const WeeklyPlanView: React.FC = () => {
   const [weekNumber, setWeekNumber] = useState(1);
   const [showScheduleConfig, setShowScheduleConfig] = useState(false);
   const [periodsPerDay, setPeriodsPerDay] = useState<[number, number, number, number, number]>([1, 1, 1, 1, 0]);
-  // Lesson titles from saved thematic plan: lessonNumber → title
   const [thematicLessonMap, setThematicLessonMap] = useState<Record<number, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedWeek, setLastSavedWeek] = useState<number | null>(null);
 
   // Load plans from Firestore
   useEffect(() => {
@@ -241,6 +243,46 @@ export const WeeklyPlanView: React.FC = () => {
 
   const handlePrint = () => window.print();
 
+  const handleSave = async () => {
+    if (!firebaseUser?.uid || !selectedPlan || slots.length === 0) return;
+    const gradeNum = selectedPlan.planData.grade?.match(/\d+/)?.[0];
+    const gradeObj = gradeNum ? curriculum?.grades.find(g => String(g.level) === gradeNum) : null;
+    if (!gradeObj) { addNotification('Не е пронајдено одделение.', 'error'); return; }
+    setIsSaving(true);
+    try {
+      await saveWeeklyPlan(
+        firebaseUser.uid,
+        gradeObj.id,
+        gradeObj.level,
+        weekNumber,
+        selectedPlan.id,
+        periodsPerDay,
+        slots,
+      );
+      setLastSavedWeek(weekNumber);
+      addNotification(`✅ Неделен план (Нед. ${weekNumber}) е зачуван!`, 'success');
+    } catch {
+      addNotification('Грешка при зачувување.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Restore saved periodsPerDay when plan + week change
+  useEffect(() => {
+    if (!firebaseUser?.uid || !selectedPlan) return;
+    const gradeNum = selectedPlan.planData.grade?.match(/\d+/)?.[0];
+    const gradeObj = gradeNum ? curriculum?.grades.find(g => String(g.level) === gradeNum) : null;
+    if (!gradeObj) return;
+    loadWeeklyPlan(firebaseUser.uid, gradeObj.id, weekNumber).then(saved => {
+      if (saved) {
+        setPeriodsPerDay(saved.periodsPerDay);
+        setLastSavedWeek(weekNumber);
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser?.uid, selectedPlanId, weekNumber]);
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -317,6 +359,22 @@ export const WeeklyPlanView: React.FC = () => {
 
           <button
             type="button"
+            onClick={handleSave}
+            disabled={isSaving || !selectedPlan || slots.length === 0}
+            title="Зачувај неделен план"
+            className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm disabled:bg-gray-300 transition-colors"
+          >
+            {isSaving
+              ? <ICONS.spinner className="w-4 h-4 animate-spin" />
+              : lastSavedWeek === weekNumber
+                ? <ICONS.check className="w-4 h-4" />
+                : <ICONS.bookmark className="w-4 h-4" />
+            }
+            {lastSavedWeek === weekNumber ? 'Зачувано' : 'Зачувај'}
+          </button>
+
+          <button
+            type="button"
             onClick={handlePrint}
             className="flex items-center gap-2 px-3 py-2 bg-brand-primary text-white rounded-lg text-sm hover:bg-brand-secondary"
           >
@@ -327,14 +385,23 @@ export const WeeklyPlanView: React.FC = () => {
       </div>
 
       {/* ── Period info bar ── */}
-      <div className="no-print flex items-center gap-3 mb-4 text-sm text-gray-600">
-        <ICONS.calendar className="w-4 h-4 text-gray-400" />
+      <div className="no-print flex flex-wrap items-center gap-3 mb-4 text-sm text-gray-600">
+        <ICONS.calendar className="w-4 h-4 text-gray-400 shrink-0" />
         <span>
           <strong>{WEEK_TO_MONTH[weekNumber] ?? 'Недела'}</strong>
           {' · '}Недела {weekNumber} од 36
           {' · '}
           <strong>{weeklyHours} ч/нед.</strong>
         </span>
+        {(() => {
+          const gradeNum = selectedPlan?.planData.grade?.match(/\d+/)?.[0];
+          const lvl = gradeNum ? parseInt(gradeNum, 10) : null;
+          return lvl && lvl <= 5 ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 border border-amber-300 text-amber-700 px-2 py-0.5 rounded-full shrink-0">
+              ⚖️ Законска обврска 1–5 одд.
+            </span>
+          ) : null;
+        })()}
         {topicForWeek && (
           <span className="flex items-center gap-1">
             <span className="text-gray-400">·</span>

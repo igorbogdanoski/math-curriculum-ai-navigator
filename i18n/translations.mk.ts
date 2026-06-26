@@ -73,6 +73,7 @@ export const mk: Record<string, string> = {
   'nav.coverage': 'Анализа на покриеност',
   'nav.favorites': 'Омилени',
   'nav.gallery': 'Галерија',
+  'nav.scenarioBank':    '📚 Банка на Сценарија',
   'nav.nationalLibrary': '🌐 Национална Библиотека',
   'nav.forum': 'Форум',
   'nav.editCurriculum': 'Уреди Курикулум',

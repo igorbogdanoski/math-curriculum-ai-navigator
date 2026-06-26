@@ -25,6 +25,8 @@ interface CurriculumContextType {
     findConceptAcrossGrades: (conceptId: string) => ConceptProgression | undefined;
     getConceptChain: (conceptId: string) => { priors: ConceptChainEntry[]; futures: ConceptChainEntry[] };
     allConcepts: (Concept & { gradeLevel: number; topicId: string; })[];
+    /** Call after writing personal overrides to sync the merged curriculum */
+    refreshPersonalOverrides: () => void;
 }
 
 const CurriculumContext = createContext<CurriculumContextType | undefined>(undefined);
@@ -45,13 +47,14 @@ export const useCurriculum = () => {
 export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [data, setData] = useState<CurriculumModule | null>(null);
     const [overrides, setOverrides] = useState<CurriculumOverridesDoc | null>(null);
+    const [personalOverrides, setPersonalOverrides] = useState<CurriculumOverridesDoc | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [uiLang, setUiLang] = useState<string>(() => {
         try { return localStorage.getItem('preferred_language') || 'mk'; } catch { return 'mk'; }
     });
     const { addNotification } = useNotification();
-    const { user } = useAuth();
+    const { user, firebaseUser } = useAuth();
     const secondaryTrack = user?.secondaryTrack;
     // Admins see ALL secondary tracks regardless of their profile setting
     const isAdmin = user?.role === 'admin';
@@ -87,21 +90,28 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }
         });
 
-        // 2. Load curriculum overrides added by school admin via CurriculumEditorView
-        // Uses a well-known "school" key — overrides are school-wide, not per-teacher.
-        // Silent failure: local data always works as fallback.
+        // 2. Load school-layer overrides (school_admin / admin writes here).
         fetchCurriculumOverrides('school_overrides').then(doc => {
             if (!cancelled && doc) setOverrides(doc);
-        }).catch(() => { /* silent — overrides are optional */ });
+        }).catch(() => { /* silent */ });
 
         return () => { cancelled = true; };
-    }, []); // Dependency array empty to run only on mount
+    }, []);
 
-    // Merge curriculum overrides (custom concepts/topics added via CurriculumEditorView)
+    // 3. Personal (teacher) overlay — loaded separately so it reacts to auth changes.
+    useEffect(() => {
+        if (!firebaseUser?.uid) { setPersonalOverrides(null); return; }
+        const uid = firebaseUser.uid;
+        fetchCurriculumOverrides(uid).then(doc => {
+            setPersonalOverrides(doc);
+        }).catch(() => { /* silent */ });
+    }, [firebaseUser?.uid]);
+
     const curriculum = useMemo((): Curriculum | undefined => {
         if (!data?.curriculumData) return undefined;
 
         const needsOverrides = overrides && (overrides.addedConcepts.length > 0 || overrides.addedTopics.length > 0);
+        const needsPersonal = personalOverrides && (personalOverrides.addedConcepts.length > 0 || personalOverrides.addedTopics.length > 0);
         const needsLocale = uiLang !== 'mk';
 
         // Admin sees all secondary tracks; regular users see their own secondaryTrack
@@ -115,8 +125,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                         : [];
         const hasSecondary = secondaryModules.length > 0;
 
-        // Fast path: no modifications needed and no secondary curriculum
-        if (!needsOverrides && !needsLocale && !hasSecondary) return data.curriculumData;
+        if (!needsOverrides && !needsPersonal && !needsLocale && !hasSecondary) return data.curriculumData;
 
         // Deep-clone grades to avoid mutating static data
         const grades = data.curriculumData.grades.map(grade => ({
@@ -124,8 +133,8 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             topics: grade.topics.map(topic => ({ ...topic, concepts: [...topic.concepts] })),
         }));
 
+        // Layer 2 (school): inject school-admin overrides
         if (needsOverrides) {
-            // Inject custom concepts into their target topics
             for (const addition of overrides!.addedConcepts) {
                 const grade = grades.find(g => g.id === addition.gradeId);
                 if (!grade) continue;
@@ -135,8 +144,26 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                     topic.concepts.push(addition.concept as unknown as Concept);
                 }
             }
-            // Inject custom topics into their target grades
             for (const topicAdd of overrides!.addedTopics) {
+                const grade = grades.find(g => g.id === topicAdd.gradeId);
+                if (!grade) continue;
+                if (!grade.topics.find(t => t.id === topicAdd.topic.id)) {
+                    grade.topics.push(topicAdd.topic as unknown as Topic);
+                }
+            }
+        }
+        // Layer 3 (personal): inject teacher-personal overrides on top
+        if (needsPersonal) {
+            for (const addition of personalOverrides!.addedConcepts) {
+                const grade = grades.find(g => g.id === addition.gradeId);
+                if (!grade) continue;
+                const topic = grade.topics.find(t => t.id === addition.topicId);
+                if (!topic) continue;
+                if (!topic.concepts.find(c => c.id === addition.concept.id)) {
+                    topic.concepts.push(addition.concept as unknown as Concept);
+                }
+            }
+            for (const topicAdd of personalOverrides!.addedTopics) {
                 const grade = grades.find(g => g.id === topicAdd.gradeId);
                 if (!grade) continue;
                 if (!grade.topics.find(t => t.id === topicAdd.topic.id)) {
@@ -168,7 +195,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         return { grades };
-    }, [data, overrides, uiLang, secondaryTrack, isAdmin, secondaryData]);
+    }, [data, overrides, personalOverrides, uiLang, secondaryTrack, isAdmin, secondaryData]);
     const verticalProgression = useMemo(() => data?.verticalProgressionData, [data]);
     const allNationalStandards = useMemo(() => {
         if (!data) return undefined;
@@ -352,6 +379,13 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return undefined;
     }, [curriculum, allConcepts]);
     
+    const refreshPersonalOverrides = useCallback(() => {
+        if (!firebaseUser?.uid) return;
+        fetchCurriculumOverrides(firebaseUser.uid).then(doc => {
+            setPersonalOverrides(doc);
+        }).catch(() => {});
+    }, [firebaseUser?.uid]);
+
     const value = useMemo(() => ({
         curriculum,
         verticalProgression,
@@ -365,11 +399,12 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         findConceptAcrossGrades,
         getConceptChain,
         allConcepts,
+        refreshPersonalOverrides,
     }), [
         curriculum, verticalProgression, allNationalStandards,
         isLoading, error,
         getGrade, getTopic, getConceptDetails, getStandardsByIds,
-        findConceptAcrossGrades, getConceptChain, allConcepts,
+        findConceptAcrossGrades, getConceptChain, allConcepts, refreshPersonalOverrides,
     ]);
 
     return React.createElement(CurriculumContext.Provider, { value: value }, children);

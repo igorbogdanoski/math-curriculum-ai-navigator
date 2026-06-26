@@ -641,11 +641,112 @@
                                    ]
                     },
                     {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",      "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",        "order": "ASCENDING" },
+                                       { "fieldPath": "grade",          "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt",    "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",        "order": "ASCENDING" },
+                                       { "fieldPath": "verifiedByBRO",  "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt",    "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "deleted",        "order": "ASCENDING" },
+                                       { "fieldPath": "forkCount",      "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_bank",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "authorUid",    "order": "ASCENDING" },
+                                       { "fieldPath": "deleted",      "order": "ASCENDING" },
+                                       { "fieldPath": "publishedAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
                         "collectionGroup":  "academic_annual_plans",
                         "queryScope":  "COLLECTION",
                         "fields":  [
                                        { "fieldPath": "isPublic",  "order": "ASCENDING" },
                                        { "fieldPath": "createdAt", "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "weekly_plans",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "uid",      "order": "ASCENDING" },
+                                       { "fieldPath": "savedAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "weekly_plans",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "uid",          "order": "ASCENDING" },
+                                       { "fieldPath": "gradeId",      "order": "ASCENDING" },
+                                       { "fieldPath": "weekNumber",   "order": "ASCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "collab_plans",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "sharedWithUids", "arrayConfig": "CONTAINS" },
+                                       { "fieldPath": "updatedAt",      "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "collab_plans",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "shareToken", "order": "ASCENDING" },
+                                       { "fieldPath": "publicLink", "order": "ASCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_suggestions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "targetAuthorUid", "order": "ASCENDING" },
+                                       { "fieldPath": "status",          "order": "ASCENDING" },
+                                       { "fieldPath": "createdAt",       "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_suggestions",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "scenarioId", "order": "ASCENDING" },
+                                       { "fieldPath": "createdAt",  "order": "DESCENDING" }
+                                   ]
+                    },
+                    {
+                        "collectionGroup":  "scenario_observations",
+                        "queryScope":  "COLLECTION",
+                        "fields":  [
+                                       { "fieldPath": "scenarioId",  "order": "ASCENDING" },
+                                       { "fieldPath": "observedAt",  "order": "DESCENDING" }
                                    ]
                     },
                     {

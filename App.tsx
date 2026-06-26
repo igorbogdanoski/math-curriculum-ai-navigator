@@ -153,6 +153,7 @@ const WeeklyPlanView = safeLazy(() => import('./views/WeeklyPlanView').then(modu
 const SharedQuizView = safeLazy(() => import('./views/SharedQuizView').then(module => ({ default: module.SharedQuizView })));
 const FavoritesView = safeLazy(() => import('./views/FavoritesView').then(module => ({ default: module.FavoritesView })));
 const NationalLibraryView = safeLazy(() => import('./views/NationalLibraryView').then(module => ({ default: module.NationalLibraryView })));
+const ScenarioBankView = safeLazy(() => import('./views/ScenarioBankView').then(module => ({ default: module.ScenarioBankView })));
 const OlympiadArchiveView = safeLazy(() => import('./views/OlympiadArchiveView').then(module => ({ default: module.OlympiadArchiveView })));
 const MathEditorView = safeLazy(() => import('./views/MathEditorView').then(module => ({ default: module.MathEditorView })));
 const DuggaBuilderView = safeLazy(() => import('./views/DuggaBuilderView').then(module => ({ default: module.DuggaBuilderView })));
@@ -277,6 +278,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/graph', component: CurriculumGraphView },
     { path: '/roadmap', component: RoadmapView },
     { path: '/favorites', component: FavoritesView },
+    { path: '/scenario-bank', component: ScenarioBankView },
     { path: '/national-library', component: NationalLibraryView },
     { path: '/olympiad', component: OlympiadArchiveView },
     { path: '/math-editor', component: MathEditorView },

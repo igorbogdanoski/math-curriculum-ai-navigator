@@ -13,6 +13,7 @@ import { AIThematicPlanGeneratorModal } from '../components/planner/AIThematicPl
 import { AnnualPlanOfficialForm } from '../components/planner/AnnualPlanOfficialForm';
 import { PlanAnalyticsDashboard } from '../components/planner/PlanAnalyticsDashboard';
 import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
+import { CollabShareButton } from '../components/planner/CollabShareButton';
 import { usePlanning } from '../contexts/PlanningContext';
 import { useAnnualPlanGeneration } from '../hooks/useAnnualPlanGeneration';
 
@@ -408,6 +409,15 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                         ? <ICONS.spinner className="w-4 h-4 animate-spin" />
                                                         : isPublic ? '🌐 Јавно' : '🔒 Приватно'}
                                                 </button>
+                                            )}
+                                            {(savedId ?? planId) && firebaseUser && (
+                                                <CollabShareButton
+                                                    planType="annual"
+                                                    planId={savedId ?? planId ?? ''}
+                                                    ownerUid={firebaseUser.uid}
+                                                    ownerName={user?.name ?? 'Наставник'}
+                                                    isOwner
+                                                />
                                             )}
                                             </>
                                         )}

@@ -1,0 +1,260 @@
+/**
+ * Scenario Bank — Firestore Service (S88-C)
+ *
+ * Japanese Lesson Study Hub + OER remixing model.
+ * Collection: `scenario_bank`
+ * Document: ScenarioBankEntry
+ *
+ * Attribution chain: originalId → forkDepth tracks remix lineage.
+ * verifiedByBRO marks official content from д-р Кондинска / МОН advisors.
+ */
+
+import {
+  collection, doc, addDoc, updateDoc, getDoc, getDocs,
+  query, where, orderBy, limit, increment,
+  serverTimestamp, type Timestamp,
+} from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import type { LessonPlan, BloomsLevel } from '../types';
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+export type TeachingModel = '5E' | 'PBL' | 'ZPD' | 'Cooperative' | 'Traditional';
+
+export interface ScenarioBankEntry {
+  id: string;
+  // Core content (denormalised for fast browse without loading fullPlan)
+  title: string;
+  grade: number;
+  subject: string;
+  topicTitle: string;
+  objectives: string[];
+  scenarioIntro: string;
+  scenarioMain: string[];
+  scenarioConcluding: string;
+  materials: string[];
+  assessmentStandards: string[];
+  /** Full plan stored for remix — may be absent for BRO seed entries */
+  fullPlan?: LessonPlan;
+  // Discovery metadata
+  bloomLevels: BloomsLevel[];
+  dokLevel: 1 | 2 | 3 | 4 | null;
+  teachingModel: TeachingModel | null;
+  duration: number;
+  // Attribution
+  authorUid: string;
+  authorName: string;
+  schoolName: string;
+  originalId: string | null;
+  forkDepth: number;
+  // Community
+  publishedAt: Timestamp | null;
+  forkCount: number;
+  usageCount: number;
+  ratingsByUid: Record<string, number>;
+  savedByUids: string[];
+  // Quality
+  verifiedByBRO: boolean;
+  isFeatured: boolean;
+  deleted: boolean;
+  /** false = private (Pro only). true = visible in public bank. Default: true */
+  isPublic: boolean;
+  /** Optional reflection / lesson-study notes added by author */
+  authorNotes: string;
+}
+
+export interface ScenarioBankFilter {
+  grade?: number | null;
+  topicKeyword?: string;
+  dokLevel?: number | null;
+  bloomLevel?: number | null;
+  teachingModel?: TeachingModel | null;
+  verifiedOnly?: boolean;
+  sortBy?: 'rating' | 'date' | 'forks' | 'usage';
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+export function getAvgRating(entry: ScenarioBankEntry): number | null {
+  const vals = entry.ratingsByUid ? Object.values(entry.ratingsByUid) : [];
+  if (vals.length === 0) return null;
+  return Math.round((vals.reduce((s, r) => s + r, 0) / vals.length) * 10) / 10;
+}
+
+export function getUserRating(entry: ScenarioBankEntry, uid: string): number | null {
+  return entry.ratingsByUid?.[uid] ?? null;
+}
+
+/** Extract bloom levels from a LessonPlan */
+export function extractBloomLevels(plan: LessonPlan): BloomsLevel[] {
+  const levels = new Set<BloomsLevel>();
+  plan.objectives.forEach(o => { if (o.bloomsLevel) levels.add(o.bloomsLevel); });
+  plan.scenario?.main?.forEach(m => { if (m.bloomsLevel) levels.add(m.bloomsLevel); });
+  return [...levels];
+}
+
+// ── Read ──────────────────────────────────────────────────────────────────────
+
+export const fetchScenarios = async (
+  filters: ScenarioBankFilter = {},
+  pageLimit = 24,
+): Promise<ScenarioBankEntry[]> => {
+  const constraints: Parameters<typeof query>[1][] = [
+    where('deleted', '==', false),
+    where('isPublic', '==', true),
+  ];
+
+  if (filters.grade != null) constraints.push(where('grade', '==', filters.grade));
+  if (filters.dokLevel != null) constraints.push(where('dokLevel', '==', filters.dokLevel));
+  if (filters.verifiedOnly) constraints.push(where('verifiedByBRO', '==', true));
+  if (filters.teachingModel) constraints.push(where('teachingModel', '==', filters.teachingModel));
+
+  const sortField =
+    filters.sortBy === 'forks' ? 'forkCount' :
+    filters.sortBy === 'usage' ? 'usageCount' :
+    filters.sortBy === 'rating' ? 'publishedAt' : // rating sorted client-side
+    'publishedAt';
+
+  constraints.push(orderBy(sortField, 'desc'));
+  constraints.push(limit(pageLimit));
+
+  const snap = await getDocs(query(collection(db, 'scenario_bank'), ...constraints));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry));
+};
+
+export const fetchScenarioById = async (id: string): Promise<ScenarioBankEntry | null> => {
+  const snap = await getDoc(doc(db, 'scenario_bank', id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as ScenarioBankEntry;
+};
+
+export const fetchMyScenarios = async (uid: string): Promise<ScenarioBankEntry[]> => {
+  const snap = await getDocs(
+    query(collection(db, 'scenario_bank'),
+      where('authorUid', '==', uid),
+      where('deleted', '==', false),
+      orderBy('publishedAt', 'desc'),
+    )
+  );
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry));
+};
+
+// ── Write ─────────────────────────────────────────────────────────────────────
+
+export interface PublishScenarioPayload {
+  plan: LessonPlan;
+  authorUid: string;
+  authorName: string;
+  schoolName?: string;
+  teachingModel?: TeachingModel;
+  dokLevel?: 1 | 2 | 3 | 4 | null;
+  originalId?: string;
+  forkDepth?: number;
+  verifiedByBRO?: boolean;
+  isPublic?: boolean;
+  authorNotes?: string;
+}
+
+export const publishScenario = async (p: PublishScenarioPayload): Promise<string> => {
+  const bloomLevels = extractBloomLevels(p.plan);
+  const ref = await addDoc(collection(db, 'scenario_bank'), {
+    title: p.plan.title,
+    grade: p.plan.grade,
+    subject: p.plan.subject || 'Математика',
+    topicTitle: p.plan.theme || '',
+    objectives: p.plan.objectives.map(o => o.text),
+    scenarioIntro: p.plan.scenario?.introductory?.text ?? '',
+    scenarioMain: p.plan.scenario?.main?.map(m => m.text) ?? [],
+    scenarioConcluding: p.plan.scenario?.concluding?.text ?? '',
+    materials: p.plan.materials ?? [],
+    assessmentStandards: p.plan.assessmentStandards ?? [],
+    fullPlan: p.plan,
+    bloomLevels,
+    dokLevel: p.dokLevel ?? null,
+    teachingModel: p.teachingModel ?? null,
+    duration: 40,
+    authorUid: p.authorUid,
+    authorName: p.authorName,
+    schoolName: p.schoolName ?? '',
+    originalId: p.originalId ?? null,
+    forkDepth: p.forkDepth ?? 0,
+    publishedAt: serverTimestamp(),
+    forkCount: 0,
+    usageCount: 0,
+    ratingsByUid: {},
+    savedByUids: [],
+    verifiedByBRO: p.verifiedByBRO ?? false,
+    isFeatured: false,
+    deleted: false,
+    isPublic: p.isPublic ?? true,
+    authorNotes: p.authorNotes ?? '',
+  });
+  return ref.id;
+};
+
+/** Fork (remix) a scenario — creates a new entry, increments parent forkCount */
+export const forkScenario = async (
+  original: ScenarioBankEntry,
+  authorUid: string,
+  authorName: string,
+  schoolName?: string,
+): Promise<string> => {
+  const newId = await publishScenario({
+    plan: original.fullPlan ?? ({
+      ...original,
+      id: '',
+      conceptIds: [],
+      scenario: {
+        introductory: { text: original.scenarioIntro },
+        main: original.scenarioMain.map(t => ({ text: t })),
+        concluding: { text: original.scenarioConcluding },
+      },
+    } as unknown as LessonPlan),
+    authorUid,
+    authorName,
+    schoolName,
+    teachingModel: original.teachingModel ?? undefined,
+    originalId: original.originalId ?? original.id,
+    forkDepth: (original.forkDepth ?? 0) + 1,
+  });
+  // Increment forkCount on original (or root if this is already a fork)
+  const rootId = original.originalId ?? original.id;
+  await updateDoc(doc(db, 'scenario_bank', rootId), { forkCount: increment(1) });
+  return newId;
+};
+
+export const rateScenario = async (
+  entryId: string,
+  uid: string,
+  stars: number,
+): Promise<void> => {
+  await updateDoc(doc(db, 'scenario_bank', entryId), {
+    [`ratingsByUid.${uid}`]: stars,
+  });
+};
+
+export const toggleSaveScenario = async (
+  entryId: string,
+  uid: string,
+  saved: boolean,
+): Promise<void> => {
+  const snap = await getDoc(doc(db, 'scenario_bank', entryId));
+  if (!snap.exists()) return;
+  const current: string[] = snap.data().savedByUids ?? [];
+  const next = saved
+    ? [...new Set([...current, uid])]
+    : current.filter(u => u !== uid);
+  await updateDoc(doc(db, 'scenario_bank', entryId), { savedByUids: next });
+};
+
+export const recordUsage = async (entryId: string): Promise<void> => {
+  await updateDoc(doc(db, 'scenario_bank', entryId), { usageCount: increment(1) });
+};
+
+export const deleteScenario = async (entryId: string): Promise<void> => {
+  await updateDoc(doc(db, 'scenario_bank', entryId), { deleted: true });
+};
+
+export const featureScenario = async (entryId: string, featured: boolean): Promise<void> => {
+  await updateDoc(doc(db, 'scenario_bank', entryId), { isFeatured: featured });
+};

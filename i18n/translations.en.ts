@@ -73,6 +73,7 @@ export const en: Record<string, string> = {
   'nav.coverage': 'Coverage Analysis',
   'nav.favorites': 'Favorites',
   'nav.gallery': 'Gallery',
+  'nav.scenarioBank':    '📚 Scenario Bank',
   'nav.nationalLibrary': '🌐 National Library',
   'nav.forum': 'Forum',
   'nav.editCurriculum': 'Edit Curriculum',
