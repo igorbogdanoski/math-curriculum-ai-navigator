@@ -520,6 +520,44 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Бanka на сценаријa (scenario_bank) — S88 ──
+    // Јавни сценаријата (isPublic=true) читаат сите автентицирани.
+    // Само авторот или admin може да уредува/брише; заедничките акции (оценка,
+    // зачувување, forkCount, usageCount) се дозволени за сите автентицирани наставници.
+    match /scenario_bank/{docId} {
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated() && !isAnonymousStudent()
+                    && request.resource.data.authorUid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.authorUid == request.auth.uid ||
+        isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+          ['ratingsByUid', 'savedByUids', 'forkCount', 'usageCount', 'deleted', 'isFeatured']
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ── Колаборативни планови (collab_plans) — S88-E ──
+    // Само членовите на планот (ownerUid или collaboratorUids) можат да читаат/уредуваат.
+    match /collab_plans/{planId} {
+      allow read:   if isAuthenticated() && (
+        resource.data.ownerUid == request.auth.uid ||
+        request.auth.uid in resource.data.collaboratorUids ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && !isAnonymousStudent()
+                    && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.ownerUid == request.auth.uid ||
+        request.auth.uid in resource.data.collaboratorUids ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.ownerUid == request.auth.uid || isAdmin()
+      );
+    }
+
     // ── Referrals (referrals) — S65 P3-B ──
     // Document ID = newUserUid. Created once by the new user during signup.
     // bonusGranted is flipped by a Cloud Function trigger (server-side credit
