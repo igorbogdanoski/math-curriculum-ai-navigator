@@ -12,6 +12,7 @@ import { Card } from '../components/common/Card';
 import type { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types';
 import { loadThematicPlanEdit } from '../services/firestoreService.plans';
 import { saveWeeklyPlan, loadWeeklyPlan } from '../services/firestoreService.weeklyPlans';
+import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
 
 // ── Local types ────────────────────────────────────────────────────────────────
 
@@ -598,6 +599,22 @@ export const WeeklyPlanView: React.FC = () => {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* ── Pedagogical enrichment ── */}
+          {selectedPlan && (
+            <div className="no-print mt-6">
+              <PedagogicalEnrichPanel
+                planType="weekly"
+                planSummary={{
+                  grade: selectedPlan.planData.grade ?? '',
+                  title: `Недела ${weekNumber} — ${topicForWeek?.topic?.title ?? selectedPlan.subject}`,
+                  topics: topicRanges.map(r => r.topic.title),
+                  activities: Object.values(thematicLessonMap).filter(Boolean),
+                  weeks: 1,
+                }}
+              />
             </div>
           )}
 
