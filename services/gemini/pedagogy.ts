@@ -345,6 +345,129 @@ async generateSmartQuizTitle(material: Record<string, unknown>): Promise<string>
     }
   },
 
+async enrichPlanPedagogically(
+  planType: 'annual' | 'thematic' | 'weekly' | 'lesson',
+  planSummary: {
+    grade: string;
+    title?: string;
+    objectives?: string[];
+    topics?: string[];
+    activities?: string[];
+    weeks?: number;
+  },
+  profile?: TeachingProfile,
+): Promise<{
+  overallScore: number;
+  strengths: string[];
+  quickWins: string[];
+  suggestions: Array<{
+    framework: string;
+    emoji: string;
+    priority: 'high' | 'medium' | 'low';
+    suggestion: string;
+    rationale: string;
+    example: string;
+  }>;
+  frameworkStatus: Array<{
+    framework: string;
+    emoji: string;
+    status: 'strong' | 'adequate' | 'needs_attention';
+    label: string;
+    insight: string;
+  }>;
+}> {
+  const { checkDailyQuotaGuard: guard } = await import('./core');
+  guard();
+
+  const planTypeLabel: Record<typeof planType, string> = {
+    annual: 'Годишна наставна програма',
+    thematic: 'Тематски план',
+    weekly: 'Неделен план',
+    lesson: 'Подготовка за час (сценарио)',
+  };
+  const topicsText = planSummary.topics?.slice(0, 8).map(t => `  - ${sanitizePromptInput(t, 100)}`).join('\n') ?? '';
+  const objText = planSummary.objectives?.slice(0, 5).map(o => `  - ${sanitizePromptInput(o, 120)}`).join('\n') ?? '';
+  const actText = planSummary.activities?.slice(0, 5).map(a => `  - ${sanitizePromptInput(a, 120)}`).join('\n') ?? '';
+
+  const prompt = `Ти си светски педагошки експерт специјализиран за настава по математика (K-12).
+Анализирај го следниов ${planTypeLabel[planType]} и дај конкретни педагошки препораки базирани на:
+• Bloom-ова таксономија (ревидирана — Anderson & Krathwohl)
+• Разбирање преку дизајн — UbD (Wiggins & McTighe: backward design, essential questions)
+• 5E модел (Engage→Explore→Explain→Elaborate→Evaluate)
+• Зона на блискиот развој — ZPD (Вygotsky: скафолдинг, поддршка)
+• Проектна настава — PBL (задачи со реален контекст, автентичност)
+• Кооперативно учење (Johnson & Johnson: позитивна интердепенденција, индивидуална одговорност)
+• Формативна проценка (Dylan Wiliam: LEAPS, exit tickets, peer assessment)
+• Универзален дизајн за учење — UDL (multiple means of representation/action/engagement)
+• Математички пракси — NCTM (reasoning, problem solving, communication, connections)
+• Lesson Study / Истражување на часот (Japanese model: collaborative reflection)
+
+ТИП НА ПЛАН: ${planTypeLabel[planType]}
+ОДДЕЛЕНИЕ/НИВО: ${planSummary.grade}
+${planSummary.title ? `НАСЛОВ: ${sanitizePromptInput(planSummary.title, 200)}` : ''}
+${planSummary.weeks ? `ТРАЕЊЕ: ${planSummary.weeks} недели` : ''}
+${topicsText ? `ТЕМИ/СОДРЖИНИ:\n${topicsText}` : ''}
+${objText ? `ЦЕЛИ:\n${objText}` : ''}
+${actText ? `АКТИВНОСТИ:\n${actText}` : ''}
+
+БАРАЊА ЗА ОДГОВОРОТ:
+- overallScore: цел број 1-10 (педагошка зрелост на планот)
+- strengths: 2-3 конкретни силни страни (што е добро направено)
+- quickWins: 3 конкретни акции кои ВЕДНАШ можат да се применат
+- suggestions: 4-6 педагошки препораки, секоја со:
+    • framework: точно еден од (Bloom, UbD, 5E, ZPD, PBL, Cooperative, Formative, UDL, NCTM, LessonStudy)
+    • emoji: 1 emoji кој го претставува frameworkот
+    • priority: "high" | "medium" | "low"
+    • suggestion: конкретна препорака (1-2 реченици)
+    • rationale: педагошко образложение (1 реченица, цитирај теоретичарот)
+    • example: конкретен пример за примена во македонски контекст
+- frameworkStatus: за Bloom, UbD, 5E, ZPD, Formative — статус ("strong"|"adequate"|"needs_attention"),
+    label (кратка ознака, макс 3 збора), insight (1 реченица анализа)
+
+Одговори само со валиден JSON.`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      overallScore: { type: Type.INTEGER },
+      strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+      quickWins: { type: Type.ARRAY, items: { type: Type.STRING } },
+      suggestions: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            framework: { type: Type.STRING },
+            emoji: { type: Type.STRING },
+            priority: { type: Type.STRING },
+            suggestion: { type: Type.STRING },
+            rationale: { type: Type.STRING },
+            example: { type: Type.STRING },
+          },
+          required: ['framework', 'emoji', 'priority', 'suggestion', 'rationale', 'example'],
+        },
+      },
+      frameworkStatus: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            framework: { type: Type.STRING },
+            emoji: { type: Type.STRING },
+            status: { type: Type.STRING },
+            label: { type: Type.STRING },
+            insight: { type: Type.STRING },
+          },
+          required: ['framework', 'emoji', 'status', 'label', 'insight'],
+        },
+      },
+    },
+    required: ['overallScore', 'strengths', 'quickWins', 'suggestions', 'frameworkStatus'],
+  };
+
+  return generateAndParseJSON([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier);
+},
+
 async generateEmbedding(text: string): Promise<number[]> {
     const { callEmbeddingProxy } = await import('./core');
     return callEmbeddingProxy(text);

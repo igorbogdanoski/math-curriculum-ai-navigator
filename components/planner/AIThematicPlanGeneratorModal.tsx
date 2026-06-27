@@ -10,6 +10,7 @@ import { ICONS } from '../../constants';
 import { OfficialThematicPlanTable } from './OfficialThematicPlanTable';
 import { saveThematicPlanEdit, loadThematicPlanEdit } from '../../services/firestoreService.plans';
 import { getGradeHoursInfo } from '../../services/gemini/plans';
+import { PedagogicalEnrichPanel } from './PedagogicalEnrichPanel';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
@@ -403,6 +404,22 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pedagogical enrichment — shown in preview mode only */}
+                    {viewMode === 'preview' && (
+                        <div className="px-6 pb-4">
+                            <PedagogicalEnrichPanel
+                                planType="thematic"
+                                planSummary={{
+                                    grade: selectedGradeObj?.title ?? '',
+                                    title: editablePlan.thematicUnit,
+                                    objectives: editablePlan.lessons.slice(0, 5).map(l => l.learningOutcomes),
+                                    activities: editablePlan.lessons.slice(0, 5).map(l => l.keyActivities),
+                                    weeks: prefillWeeks,
+                                }}
+                            />
+                        </div>
+                    )}
                 </div>
             );
         }

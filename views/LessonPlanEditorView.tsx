@@ -35,6 +35,7 @@ import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 import { PriorKnowledgeConnector } from '../components/lesson-plan-editor/PriorKnowledgeConnector';
 import { PedagogicalModelsPanel } from '../components/lesson-plan-editor/PedagogicalModelsPanel';
 import { RichTaskPanel } from '../components/lesson-plan-editor/RichTaskPanel';
+import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
 
 
 interface LessonPlanEditorViewProps {
@@ -459,6 +460,19 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
               isGenerating={ai.isGeneratingRichTask}
               canGenerate={!!(plan.title || plan.theme)}
               onGenerate={ai.handleGenerateRichTask}
+            />
+
+            <PedagogicalEnrichPanel
+              planType="lesson"
+              planSummary={{
+                grade: String(plan.grade ?? ''),
+                title: plan.title,
+                objectives: plan.objectives?.map(o => o.text),
+                activities: [
+                  ...(plan.scenario?.main?.map(m => m.text) ?? []),
+                  plan.scenario?.introductory?.text ?? '',
+                ].filter(Boolean),
+              }}
             />
 
             <PedagogicalModelsPanel />

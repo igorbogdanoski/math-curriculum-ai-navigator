@@ -14,6 +14,7 @@ import { AnnualPlanOfficialForm } from '../components/planner/AnnualPlanOfficial
 import { PlanAnalyticsDashboard } from '../components/planner/PlanAnalyticsDashboard';
 import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 import { CollabShareButton } from '../components/planner/CollabShareButton';
+import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
 import { usePlanning } from '../contexts/PlanningContext';
 import { useAnnualPlanGeneration } from '../hooks/useAnnualPlanGeneration';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -730,6 +731,21 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                     </DndContext>
                                 </div>
                                 )}
+                                {viewMode === 'list' && (
+                                    <div className="mt-6">
+                                        <PedagogicalEnrichPanel
+                                            planType="annual"
+                                            planSummary={{
+                                                grade: plan.grade ?? '',
+                                                title: `${plan.subject} — ${plan.grade}`,
+                                                topics: plan.topics.map(t => t.title),
+                                                objectives: plan.topics.flatMap(t => t.objectives ?? []).slice(0, 8),
+                                                weeks: plan.topics.reduce((s, t) => s + (t.durationWeeks ?? 0), 0),
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
                                 <div className="mt-8 pt-6 border-t flex justify-start">
                                     <button
                                         onClick={() => setCurrentStep(2)}
