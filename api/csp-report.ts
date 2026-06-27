@@ -32,9 +32,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   if (req.method !== 'POST') { res.status(405).end(); return; }
 
   try {
-    const body = (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) as CspReport;
+    // Vercel doesn't auto-parse application/csp-report; read raw buffer if needed
+    let rawBody = req.body;
+    if (!rawBody && req.readable) {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      rawBody = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    } else if (typeof rawBody === 'string') {
+      rawBody = JSON.parse(rawBody);
+    }
+    const body = (rawBody ?? {}) as CspReport;
     const violation = body['csp-report'];
-    if (!violation) { res.status(400).end(); return; }
+    if (!violation) { res.status(204).end(); return; }
 
     const entry = {
       ts: Date.now(),
