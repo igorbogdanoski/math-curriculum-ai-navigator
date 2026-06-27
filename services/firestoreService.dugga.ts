@@ -388,3 +388,27 @@ export const getTestSubmissions = async (testId: string): Promise<DuggaSubmissio
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as DuggaSubmission));
 };
+
+export const fetchStudentDuggaSubmissions = async (studentUid: string): Promise<DuggaSubmission[]> => {
+  const q = query(
+    collection(db, 'dugga_submissions'),
+    where('studentUid', '==', studentUid),
+    orderBy('submittedAt', 'desc'),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as DuggaSubmission));
+};
+
+export const fetchStudentDuggaSubmissionsByName = async (studentName: string): Promise<DuggaSubmission[]> => {
+  const snap = await getDocs(query(
+    collection(db, 'dugga_submissions'),
+    where('studentName', '==', studentName.trim()),
+  ));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as DuggaSubmission))
+    .sort((a, b) => {
+      const ta = a.submittedAt?.toDate?.()?.getTime() ?? 0;
+      const tb = b.submittedAt?.toDate?.()?.getTime() ?? 0;
+      return tb - ta;
+    });
+};

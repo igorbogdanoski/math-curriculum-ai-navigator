@@ -19,12 +19,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Award, BookOpen, BarChart2, Star, Printer,
   TrendingUp, MessageSquare, Loader2, Sparkles, AlertCircle,
-  CheckCircle2, User,
+  CheckCircle2, User, ClipboardList,
 } from 'lucide-react';
 import { useStudentProgress } from '../hooks/useStudentProgress';
 import { geminiService } from '../services/geminiService';
 import { calcFibonacciLevel, getAvatar } from '../utils/gamification';
 import type { QuizResult, ConceptMastery } from '../services/firestoreService';
+import { fetchStudentDuggaSubmissionsByName } from '../services/firestoreService.dugga';
+import type { DuggaSubmission } from '../services/firestoreService.dugga';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -90,6 +92,13 @@ export const StudentPortfolioView: React.FC = () => {
   const results: QuizResult[] = data?.results || [];
   const mastery: ConceptMastery[] = data?.mastery || [];
   const gamification = data?.gamification ?? null;
+
+  // ── Dugga submissions ─────────────────────────────────────────────────────
+  const [duggaSubs, setDuggaSubs] = useState<DuggaSubmission[]>([]);
+  useEffect(() => {
+    if (!studentName.trim()) return;
+    fetchStudentDuggaSubmissionsByName(studentName).then(setDuggaSubs).catch(() => {});
+  }, [studentName]);
 
   // ── AI narrative ──────────────────────────────────────────────────────────
   const [narrative, setNarrative] = useState<string>('');
@@ -400,6 +409,44 @@ export const StudentPortfolioView: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ── Dugga тестови ──────────────────────────────────────────────────── */}
+        {duggaSubs.length > 0 && (
+          <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-6 print:hidden">
+            <div className="flex items-center gap-2 mb-4">
+              <ClipboardList className="w-5 h-5 text-blue-500" />
+              <h2 className="font-bold text-gray-800">Мои тестови</h2>
+              <span className="ml-auto px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                {duggaSubs.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {duggaSubs.slice(0, 8).map(sub => {
+                const pct = sub.percentage;
+                const grade = pct >= 90 ? '5' : pct >= 75 ? '4' : pct >= 60 ? '3' : pct >= 50 ? '2' : '1';
+                const gradeCls = pct >= 90 ? 'bg-green-100 text-green-700' : pct >= 75 ? 'bg-blue-100 text-blue-700' : pct >= 60 ? 'bg-indigo-100 text-indigo-700' : pct >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+                return (
+                  <div key={sub.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-black shrink-0 ${gradeCls}`}>
+                      {grade}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{sub.testTitle}</p>
+                      <p className="text-xs text-gray-400">{sub.submittedAt?.toDate?.()?.toLocaleDateString('mk-MK') ?? '—'}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold text-gray-700">{pct}%</p>
+                      <p className="text-xs text-gray-400">{sub.score}/{sub.totalPoints} бод.</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {duggaSubs.length > 8 && (
+              <p className="text-xs text-center text-gray-400 mt-3">+{duggaSubs.length - 8} постари тестови</p>
+            )}
           </div>
         )}
 
