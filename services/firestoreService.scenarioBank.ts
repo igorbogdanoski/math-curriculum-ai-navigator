@@ -99,9 +99,10 @@ export const fetchScenarios = async (
   filters: ScenarioBankFilter = {},
   pageLimit = 24,
 ): Promise<ScenarioBankEntry[]> => {
+  // Note: isPublic is filtered client-side to avoid needing a composite index
+  // for every combination of equality fields + orderBy field.
   const constraints: Parameters<typeof query>[1][] = [
     where('deleted', '==', false),
-    where('isPublic', '==', true),
   ];
 
   if (filters.grade != null) constraints.push(where('grade', '==', filters.grade));
@@ -112,14 +113,18 @@ export const fetchScenarios = async (
   const sortField =
     filters.sortBy === 'forks' ? 'forkCount' :
     filters.sortBy === 'usage' ? 'usageCount' :
-    filters.sortBy === 'rating' ? 'publishedAt' : // rating sorted client-side
+    filters.sortBy === 'rating' ? 'publishedAt' :
     'publishedAt';
 
   constraints.push(orderBy(sortField, 'desc'));
-  constraints.push(limit(pageLimit));
+  // Fetch extra to account for client-side isPublic filter
+  constraints.push(limit(pageLimit + 20));
 
   const snap = await getDocs(query(collection(db, 'scenario_bank'), ...constraints));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as ScenarioBankEntry))
+    .filter(s => s.isPublic)
+    .slice(0, pageLimit);
 };
 
 export const fetchScenarioById = async (id: string): Promise<ScenarioBankEntry | null> => {

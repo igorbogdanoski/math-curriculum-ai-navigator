@@ -24,10 +24,35 @@ interface SortableTopicProps {
     idx: number;
     onGenerateLesson: () => void;
     onGenerateThematic: () => void;
+    onUpdate: (updated: AIGeneratedAnnualPlanTopic) => void;
 }
 
-const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerateLesson, onGenerateThematic }) => {
+const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerateLesson, onGenerateThematic, onUpdate }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+    const [isEditing, setIsEditing] = useState(false);
+    const [editTitle, setEditTitle] = useState('');
+    const [editWeeks, setEditWeeks] = useState(1);
+    const [editObjectives, setEditObjectives] = useState('');
+    const [editActivities, setEditActivities] = useState('');
+
+    const handleStartEdit = () => {
+        setEditTitle(topic.title);
+        setEditWeeks(topic.durationWeeks);
+        setEditObjectives(topic.objectives.join('\n'));
+        setEditActivities(topic.suggestedActivities.join('\n'));
+        setIsEditing(true);
+    };
+
+    const handleSaveEdit = () => {
+        onUpdate({
+            ...topic,
+            title: editTitle.trim() || topic.title,
+            durationWeeks: Math.max(1, editWeeks),
+            objectives: editObjectives.split('\n').map(s => s.trim()).filter(Boolean),
+            suggestedActivities: editActivities.split('\n').map(s => s.trim()).filter(Boolean),
+        });
+        setIsEditing(false);
+    };
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -40,46 +65,125 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerat
 
     return (
         <div ref={setNodeRef} style={style} className="border border-gray-200 rounded-xl bg-gray-50 mb-6 bg-white overflow-hidden transition-all duration-200">
-            <div className="flex justify-between items-center p-4 bg-gray-100/50 border-b border-gray-200" {...attributes} {...listeners} style={{ cursor: 'grab' }}>
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-3">
-                    <div className="text-gray-400 hover:text-gray-600">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                    </div>
-                    <span className="bg-white border text-gray-600 w-8 h-8 flex items-center justify-center rounded-full shadow-sm text-sm">
+            <div
+                className={`flex justify-between items-center p-4 border-b border-gray-200 ${isEditing ? 'bg-blue-50' : 'bg-gray-100/50'}`}
+                {...(!isEditing ? { ...attributes, ...listeners } : {})}
+                style={!isEditing ? { cursor: 'grab' } : {}}
+            >
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-3 flex-1 min-w-0">
+                    {!isEditing && (
+                        <div className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                        </div>
+                    )}
+                    <span className="bg-white border text-gray-600 w-8 h-8 flex items-center justify-center rounded-full shadow-sm text-sm flex-shrink-0">
                         {idx + 1}
                     </span>
-                    {topic.title}
+                    {isEditing ? (
+                        <input
+                            value={editTitle}
+                            onChange={e => setEditTitle(e.target.value)}
+                            className="flex-1 border border-blue-300 rounded-lg px-3 py-1.5 text-base font-bold focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            autoFocus
+                            title="Наслов на темата"
+                            placeholder="Наслов на темата"
+                            onPointerDown={e => e.stopPropagation()}
+                        />
+                    ) : (
+                        <span className="truncate">{topic.title}</span>
+                    )}
                 </h3>
-                <div className="flex items-center gap-2 flex-wrap" onPointerDown={e => e.stopPropagation()}>
-                    <button
-                        type="button"
-                        onClick={onGenerateThematic}
-                        title="Генерирај тематски план за оваа тема"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-                    >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-                        Тематски план
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onGenerateLesson}
-                        title="Генерирај план за час за оваа тема"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white text-xs font-bold rounded-lg hover:bg-violet-700 transition-colors shadow-sm"
-                    >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 3L2 12h3v8h14v-8h3L12 3z"/></svg>
-                        Генерирај Час
-                    </button>
-                    <span className="text-sm font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full shadow-sm border border-blue-100 flex items-center gap-1">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        {topic.durationWeeks} нед.
-                    </span>
+                <div className="flex items-center gap-2 flex-wrap flex-shrink-0 ml-2" onPointerDown={e => e.stopPropagation()}>
+                    {isEditing ? (
+                        <>
+                            <button type="button" onClick={handleSaveEdit}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 shadow-sm">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Зачувај
+                            </button>
+                            <button type="button" onClick={() => setIsEditing(false)}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-gray-400 text-white text-xs font-bold rounded-lg hover:bg-gray-500 shadow-sm">
+                                Откажи
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                onClick={onGenerateThematic}
+                                title="Генерирај тематски план за оваа тема"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                            >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                                Тематски план
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onGenerateLesson}
+                                title="Генерирај план за час за оваа тема"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white text-xs font-bold rounded-lg hover:bg-violet-700 transition-colors shadow-sm"
+                            >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 3L2 12h3v8h14v-8h3L12 3z"/></svg>
+                                Генерирај Час
+                            </button>
+                            <span className="text-sm font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full shadow-sm border border-blue-100 flex items-center gap-1">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                {topic.durationWeeks} нед.
+                            </span>
+                            <button type="button" onClick={handleStartEdit}
+                                title="Уреди ја темата"
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-300 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50 shadow-sm">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Уреди
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
-            
+
+            {isEditing ? (
+                <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4" onPointerDown={e => e.stopPropagation()}>
+                    <div>
+                        <label htmlFor={`edit-weeks-${id}`} className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Траење (недели)</label>
+                        <input
+                            id={`edit-weeks-${id}`}
+                            type="number"
+                            value={editWeeks}
+                            onChange={e => setEditWeeks(Number(e.target.value))}
+                            min={1} max={36}
+                            title="Траење во недели"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                    </div>
+                    <div className="md:col-span-1">
+                        <label htmlFor={`edit-obj-${id}`} className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Цели / Очекувани резултати <span className="text-gray-400 font-normal">(по една на ред)</span></label>
+                        <textarea
+                            id={`edit-obj-${id}`}
+                            value={editObjectives}
+                            onChange={e => setEditObjectives(e.target.value)}
+                            rows={6}
+                            title="Цели и очекувани резултати"
+                            placeholder="По една цел на секој ред"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y"
+                        />
+                    </div>
+                    <div className="md:col-span-1">
+                        <label htmlFor={`edit-act-${id}`} className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">Предложени активности <span className="text-gray-400 font-normal">(по една на ред)</span></label>
+                        <textarea
+                            id={`edit-act-${id}`}
+                            value={editActivities}
+                            onChange={e => setEditActivities(e.target.value)}
+                            rows={6}
+                            title="Предложени наставни активности"
+                            placeholder="По една активност на секој ред"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y"
+                        />
+                    </div>
+                </div>
+            ) : (
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                     <h4 className="font-semibold text-brand-primary text-sm mb-3 flex items-center gap-2">
-                        {/* Assessment Icon */}
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                         Очекувани резултати / Цели
                     </h4>
@@ -91,7 +195,6 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerat
                 </div>
                 <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                     <h4 className="font-semibold text-brand-accent text-sm mb-3 flex items-center gap-2">
-                        {/* Sparkles Icon */}
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 21v-8a2 2 0 0 1 2-2h8"></path><polygon points="16 7 20 11 16 15"></polygon><line x1="4" y1="11" x2="10" y2="11"></line></svg>
                         Предложени активности
                     </h4>
@@ -102,6 +205,7 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerat
                     </ul>
                 </div>
             </div>
+            )}
         </div>
     );
 };
@@ -601,6 +705,12 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                         });
                                                         navigate(`/planner/lesson/new?${params.toString()}`);
                                                     }}
+                                                    onUpdate={(updated) => {
+                                                        setPlan(prev => prev ? {
+                                                            ...prev,
+                                                            topics: prev.topics.map((t, i) => i === idx ? updated : t),
+                                                        } : null);
+                                                    }}
                                                 />
                                             ))}
                                         </SortableContext>
@@ -631,6 +741,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                 hideModal={() => setThematicTopic(null)}
                                 prefillThemeName={thematicTopic.title}
                                 prefillGradeTitle={plan.grade}
+                                prefillGradeId={selectedGradeId}
                             />
                         )}
                     </div>

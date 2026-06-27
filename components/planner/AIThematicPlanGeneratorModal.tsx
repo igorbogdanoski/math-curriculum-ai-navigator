@@ -13,12 +13,14 @@ interface AIThematicPlanGeneratorModalProps {
     /** When set (from Annual Plan drill-down), skip selection and auto-generate */
     prefillThemeName?: string;
     prefillGradeTitle?: string;
+    prefillGradeId?: string;
 }
 
 export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModalProps> = ({
     hideModal,
     prefillThemeName,
     prefillGradeTitle,
+    prefillGradeId,
 }) => {
     const { curriculum } = useCurriculum();
     const { addNotification } = useNotification();
@@ -78,10 +80,15 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     useEffect(() => {
         if (!isPrefilled || !curriculum || generatedPlan || isLoading) return;
 
-        const gradeMatch = curriculum.grades.find(g =>
-            prefillGradeTitle?.includes(String(g.level)) ||
-            g.title === prefillGradeTitle
-        ) ?? curriculum.grades[0];
+        const gradeMatch = (
+            // Prefer exact ID match (most reliable — avoids Roman numeral issues)
+            curriculum.grades.find(g => g.id === prefillGradeId) ??
+            // Fallback: title exact match
+            curriculum.grades.find(g => g.title === prefillGradeTitle) ??
+            // Fallback: title contains grade level as number
+            curriculum.grades.find(g => prefillGradeTitle?.includes(String(g.level))) ??
+            curriculum.grades[0]
+        );
 
         const topicMatch = gradeMatch?.topics.find(t =>
             t.title.toLowerCase().includes((prefillThemeName ?? '').toLowerCase()) ||
