@@ -141,6 +141,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const [officialAcademicYear, setOfficialAcademicYear] = useState('2026/2027');
 
     const printRef = useRef<HTMLDivElement>(null);
+    const officialFormRef = useRef<HTMLDivElement>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -163,6 +164,19 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     const handlePrint = useReactToPrint({
         contentRef: printRef,
         documentTitle: `Годишна_Програма_${plan?.subject}_${plan?.grade}`,
+    });
+
+    const handleOfficialPrint = useReactToPrint({
+        contentRef: officialFormRef,
+        documentTitle: `Годишна_Глобална_Програма_${plan?.subject}_${plan?.grade}`,
+        pageStyle: `
+          @page { size: A4 landscape; margin: 10mm; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            thead { display: table-header-group; }
+            tbody { display: table-row-group; }
+          }
+        `,
     });
 
     return (
@@ -659,7 +673,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => window.print()}
+                                    onClick={() => handleOfficialPrint()}
                                     className="px-3 py-1.5 bg-brand-accent text-white rounded-lg flex items-center gap-2 text-sm hover:bg-opacity-90"
                                 >
                                     <ICONS.printer className="w-4 h-4" />
@@ -685,7 +699,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
 
                         {/* Scrollable form body */}
                         <div className="overflow-auto flex-1 p-6 bg-gray-100">
-                            <div className="bg-white shadow-sm mx-auto min-w-[900px]">
+                            <div ref={officialFormRef} className="bg-white shadow-sm mx-auto min-w-[900px]">
                                 <AnnualPlanOfficialForm
                                     data={plan}
                                     authorName={officialAuthorName}

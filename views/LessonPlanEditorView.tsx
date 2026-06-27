@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { logger } from '../utils/logger';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -69,12 +70,25 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
 
   const isMounted = useRef(true);
+  const lessonOfficialFormRef = useRef<HTMLDivElement>(null);
   const isEditing = useMemo(() => id !== undefined, [id]);
 
   useEffect(() => {
     isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
+
+  const handleLessonOfficialPrint = useReactToPrint({
+    contentRef: lessonOfficialFormRef,
+    documentTitle: `Сценарио_на_час_${id ?? 'novo'}`,
+    pageStyle: `
+      @page { size: A4 portrait; margin: 10mm; }
+      @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        thead { display: table-header-group; }
+      }
+    `,
+  });
 
   useEffect(() => {
     if (isCurriculumLoading || !curriculum) return;
@@ -579,7 +593,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => handleLessonOfficialPrint()}
                   className="px-3 py-1.5 bg-brand-accent text-white rounded-lg flex items-center gap-2 text-sm hover:bg-opacity-90"
                 >
                   <ICONS.printer className="w-4 h-4" />
@@ -605,7 +619,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
             {/* Scrollable form */}
             <div className="overflow-auto flex-1 p-4 bg-gray-100">
-              <div className={`bg-white shadow-sm mx-auto ${officialLessonOrientation === 'landscape' ? 'max-w-4xl' : 'max-w-2xl'}`}>
+              <div ref={lessonOfficialFormRef} className={`bg-white shadow-sm mx-auto ${officialLessonOrientation === 'landscape' ? 'max-w-4xl' : 'max-w-2xl'}`}>
                 <LessonPlanOfficialForm
                   plan={plan}
                   orientation={officialLessonOrientation}
