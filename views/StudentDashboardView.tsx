@@ -16,12 +16,14 @@ import { signOut } from 'firebase/auth';
 import {
   Loader2, LogOut, Trophy, Flame, Star, BookOpen, Target,
   Sparkles, ClipboardList, ChevronRight, GraduationCap, RefreshCw, ScrollText, Brain,
-  Share2, Copy, CheckCircle2,
+  Share2, Copy, CheckCircle2, FileText, TrendingUp,
 } from 'lucide-react';
 import { auth } from '../firebaseConfig';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useStudentProgress } from '../hooks/useStudentProgress';
 import { useStudentRealtime } from '../hooks/useStudentRealtime';
+import { fetchStudentDuggaSubmissionsByName } from '../services/firestoreService.dugga';
+import type { DuggaSubmission } from '../services/firestoreService.dugga';
 
 interface QuickLink {
   href: string;
@@ -125,15 +127,22 @@ export const StudentDashboardView: React.FC = () => {
     [assignments, studentName],
   );
 
+  // ── Dugga recent results ─────────────────────────────────────────────────
+  const [duggaSubs, setDuggaSubs] = useState<DuggaSubmission[]>([]);
+  useEffect(() => {
+    if (!studentName.trim()) return;
+    fetchStudentDuggaSubmissionsByName(studentName).then(subs => setDuggaSubs(subs.slice(0, 5))).catch(() => {});
+  }, [studentName]);
+
   const [parentLinkCopied, setParentLinkCopied] = useState(false);
 
   const parentShareUrl = useMemo(() => {
     if (!studentName.trim()) return '';
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      return `${origin}/#/parent?name=${encodeURIComponent(studentName.trim())}`;
+      return `${origin}/#/portfolio?name=${encodeURIComponent(studentName.trim())}`;
     } catch {
-      return `#/parent?name=${encodeURIComponent(studentName.trim())}`;
+      return `#/portfolio?name=${encodeURIComponent(studentName.trim())}`;
     }
   }, [studentName]);
 
@@ -282,6 +291,46 @@ export const StudentDashboardView: React.FC = () => {
           </div>
         )}
       </section>
+
+      {/* Recent Dugga results */}
+      {duggaSubs.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-rose-500" />
+              Последни Дуга тестови
+            </h2>
+            <a href="#/portfolio" className="text-xs text-brand-primary font-semibold hover:underline flex items-center gap-1">
+              Виж сите <ChevronRight className="w-3.5 h-3.5" />
+            </a>
+          </div>
+          <div className="space-y-2">
+            {duggaSubs.map(sub => {
+              const pct = Math.round(sub.percentage ?? (sub.totalPoints > 0 ? (sub.score / sub.totalPoints) * 100 : 0));
+              const color = pct >= 85 ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                : pct >= 70 ? 'text-blue-600 bg-blue-50 border-blue-200'
+                : pct >= 50 ? 'text-amber-600 bg-amber-50 border-amber-200'
+                : 'text-red-600 bg-red-50 border-red-200';
+              const grade = pct >= 90 ? '5' : pct >= 75 ? '4' : pct >= 60 ? '3' : pct >= 50 ? '2' : '1';
+              return (
+                <div key={sub.id} className="bg-white border border-gray-200 rounded-2xl p-3 flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg border ${color} flex-shrink-0`}>
+                    {grade}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-gray-800 truncate">{sub.testTitle}</p>
+                    <p className="text-xs text-gray-500">
+                      {sub.score}/{sub.totalPoints} бода · {pct}%
+                      {sub.submittedAt && ` · ${formatDate(sub.submittedAt)}`}
+                    </p>
+                  </div>
+                  <TrendingUp className={`w-4 h-4 flex-shrink-0 ${pct >= 60 ? 'text-emerald-400' : 'text-red-400'}`} />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Announcements */}
       {announcements && announcements.length > 0 && (
