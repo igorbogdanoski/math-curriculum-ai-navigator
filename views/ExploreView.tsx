@@ -58,7 +58,7 @@ const TopicCard: React.FC<{ topic: Topic; onSelect: () => void }> = ({ topic, on
   </Card>
 );
 
-export const ExploreView: React.FC = () => {
+export const ExploreView: React.FC<{ gradeId?: string }> = ({ gradeId: initialGradeId }) => {
     const { curriculum, isLoading } = useCurriculum();
     const { showModal } = useModal();
     const { navigate } = useNavigation();
@@ -66,7 +66,7 @@ export const ExploreView: React.FC = () => {
     const { toursSeen, markTourAsSeen } = useUserPreferences();
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
-    const [selectedGradeId, setSelectedGradeId] = useState<string>('');
+    const [selectedGradeId, setSelectedGradeId] = useState<string>(initialGradeId ?? '');
     // Track selector — '' = primary (I–IX), otherwise shows the secondary track grades
     const [selectedTrack, setSelectedTrack] = useState<SecondaryTrack | ''>('');
     const [secondaryData, setSecondaryData] = useState<Record<string, { curriculum: { grades: Grade[] } }> | null>(null);
@@ -94,7 +94,9 @@ export const ExploreView: React.FC = () => {
 
     useEffect(() => {
         if (activeGrades.length > 0) {
-            setSelectedGradeId(activeGrades[0].id);
+            // Prefer URL-supplied gradeId, then first grade
+            const preferred = initialGradeId ? activeGrades.find(g => g.id === initialGradeId) : null;
+            setSelectedGradeId(preferred?.id ?? activeGrades[0].id);
         }
     }, [selectedTrack, curriculum]); // eslint-disable-line react-hooks/exhaustive-deps
     

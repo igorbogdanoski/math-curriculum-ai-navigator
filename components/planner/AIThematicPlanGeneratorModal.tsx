@@ -1,12 +1,15 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { useCurriculum } from '../../hooks/useCurriculum';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '../../contexts/NavigationContext';
 import { geminiService } from '../../services/geminiService';
 import type { Grade, Topic, ThematicPlanLesson, AIGeneratedThematicPlan } from '../../types';
 import { ICONS } from '../../constants';
 import { OfficialThematicPlanTable } from './OfficialThematicPlanTable';
 import { saveThematicPlanEdit, loadThematicPlanEdit } from '../../services/firestoreService.plans';
+import { getGradeHoursInfo } from '../../services/gemini/plans';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
@@ -14,6 +17,7 @@ interface AIThematicPlanGeneratorModalProps {
     prefillThemeName?: string;
     prefillGradeTitle?: string;
     prefillGradeId?: string;
+    prefillWeeks?: number;
 }
 
 export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModalProps> = ({
@@ -21,12 +25,17 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     prefillThemeName,
     prefillGradeTitle,
     prefillGradeId,
+    prefillWeeks,
 }) => {
     const { curriculum } = useCurriculum();
     const { addNotification } = useNotification();
     const { firebaseUser } = useAuth();
+    const { navigate } = useNavigation();
+    const printRef = useRef<HTMLDivElement>(null);
 
     const isPrefilled = Boolean(prefillThemeName && prefillGradeTitle);
+    // When coming from Annual Plan, show config screen first instead of auto-generating
+    const [showConfig, setShowConfig] = useState(isPrefilled);
 
     const [selectedGradeId, setSelectedGradeId] = useState<string>(curriculum?.grades[0]?.id || '');
     const [selectedTopicId, setSelectedTopicId] = useState<string>('');
@@ -76,36 +85,39 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [generatedPlan]);
 
-    // Auto-generate when coming from Annual Plan drill-down
-    useEffect(() => {
-        if (!isPrefilled || !curriculum || generatedPlan || isLoading) return;
-
-        const gradeMatch = (
-            // Prefer exact ID match (most reliable — avoids Roman numeral issues)
+    // Resolve grade+topic from prefill props (used both in config screen and when generating)
+    const gradeForConfig = useMemo(() => {
+        if (!curriculum || !isPrefilled) return null;
+        return (
             curriculum.grades.find(g => g.id === prefillGradeId) ??
-            // Fallback: title exact match
             curriculum.grades.find(g => g.title === prefillGradeTitle) ??
-            // Fallback: title contains grade level as number
             curriculum.grades.find(g => prefillGradeTitle?.includes(String(g.level))) ??
             curriculum.grades[0]
         );
+    }, [curriculum, isPrefilled, prefillGradeId, prefillGradeTitle]);
 
-        const topicMatch = gradeMatch?.topics.find(t =>
-            t.title.toLowerCase().includes((prefillThemeName ?? '').toLowerCase()) ||
-            (prefillThemeName ?? '').toLowerCase().includes(t.title.toLowerCase())
-        ) ?? gradeMatch?.topics[0];
+    const topicForConfig = useMemo(() => {
+        if (!gradeForConfig || !isPrefilled) return null;
+        return (
+            gradeForConfig.topics.find(t =>
+                t.title.toLowerCase().includes((prefillThemeName ?? '').toLowerCase()) ||
+                (prefillThemeName ?? '').toLowerCase().includes(t.title.toLowerCase())
+            ) ?? gradeForConfig.topics[0]
+        );
+    }, [gradeForConfig, isPrefilled, prefillThemeName]);
 
-        if (!gradeMatch || !topicMatch) return;
-
-        setSelectedGradeId(gradeMatch.id);
-        setSelectedTopicId(topicMatch.id);
+    const handleConfigGenerate = useCallback(() => {
+        if (!gradeForConfig || !topicForConfig) return;
+        setSelectedGradeId(gradeForConfig.id);
+        setSelectedTopicId(topicForConfig.id);
+        setShowConfig(false);
         setIsLoading(true);
-        geminiService.generateThematicPlan(gradeMatch, topicMatch)
+        geminiService.generateThematicPlan(gradeForConfig, topicForConfig)
             .then(p => setGeneratedPlan(p))
             .catch(err => addNotification((err as Error).message, 'error'))
             .finally(() => setIsLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [curriculum]);
+    }, [gradeForConfig, topicForConfig]);
 
     const handleGradeChange = (gradeId: string) => {
         setSelectedGradeId(gradeId);
@@ -154,8 +166,91 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         if (field === 'period') setPeriod(value);
     }, []);
 
-    const handlePrint = () => {
-        window.print();
+    const handlePrint = useReactToPrint({
+        contentRef: printRef,
+        documentTitle: `Тематски_план_${prefillThemeName ?? selectedTopicObj?.title ?? 'plan'}`,
+        pageStyle: `
+          @page { size: A4 landscape; margin: 10mm; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            thead { display: table-header-group; }
+          }
+        `,
+    });
+
+    // ── Config screen rendered when isPrefilled before generation ────────────
+    const renderConfigScreen = () => {
+        const gradeInfo = gradeForConfig ? getGradeHoursInfo(gradeForConfig.level) : null;
+        const weeks = prefillWeeks ?? 4;
+        const topicHours = gradeInfo ? weeks * gradeInfo.weeklyHours : null;
+        const exploreUrl = gradeForConfig ? `/explore?gradeId=${gradeForConfig.id}` : '/explore';
+
+        return (
+            <div className="p-6 space-y-5">
+                {/* Info cards row */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                        <p className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">Одделение</p>
+                        <p className="text-base font-bold text-blue-800">{gradeForConfig?.title ?? prefillGradeTitle}</p>
+                    </div>
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                        <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wide mb-1">Траење</p>
+                        <p className="text-base font-bold text-emerald-800">{weeks} {weeks === 1 ? 'недела' : 'недели'}</p>
+                    </div>
+                    {topicHours !== null && gradeInfo && (
+                        <div className="bg-violet-50 border border-violet-100 rounded-xl p-4">
+                            <p className="text-xs font-semibold text-violet-500 uppercase tracking-wide mb-1">Вкупно часови</p>
+                            <p className="text-base font-bold text-violet-800">
+                                {topicHours} часа
+                                <span className="text-xs font-normal text-violet-500 ml-1">
+                                    ({weeks}нед × {gradeInfo.weeklyHours}ч/нед, {gradeInfo.lessonMinutes}мин)
+                                </span>
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Topic match info */}
+                {topicForConfig && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Тематска целина во програмата</p>
+                        <p className="text-sm font-medium text-gray-800">{topicForConfig.title}</p>
+                        {topicForConfig.concepts && topicForConfig.concepts.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                                {topicForConfig.concepts.length} концепти: {topicForConfig.concepts.slice(0, 4).map(c => c.title).join(', ')}{topicForConfig.concepts.length > 4 ? '...' : ''}
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                {/* What AI will generate */}
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-800">
+                    <p className="font-semibold mb-2 flex items-center gap-2">
+                        <ICONS.sparkles className="w-4 h-4" />
+                        AI ќе генерира тематски план со:
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 text-indigo-700">
+                        <li>{topicHours ?? '~'} наставни единици со датум, цели и Bloom таксономија</li>
+                        <li>Конкретни активности и сценарија за секој час</li>
+                        <li>БРО стандарди III-А поврзани со секоја единица</li>
+                        <li>Официјален формат за печатење (МОН образец)</li>
+                    </ul>
+                </div>
+
+                {/* Link to Истражи програма */}
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    <span>Сакаш да ги видиш целите и стандардите прво?</span>
+                    <button
+                        type="button"
+                        onClick={() => { hideModal(); navigate(exploreUrl); }}
+                        className="text-brand-primary font-semibold hover:underline"
+                    >
+                        Истражи програма →
+                    </button>
+                </div>
+            </div>
+        );
     };
 
     const handleSaveEdits = async () => {
@@ -191,6 +286,10 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     // ── Render helpers ───────────────────────────────────────────────────────
 
     const renderContent = () => {
+        if (showConfig && isPrefilled && !generatedPlan && !isLoading) {
+            return renderConfigScreen();
+        }
+
         if (isLoading) {
             return (
                 <div className="p-8 text-center">
@@ -205,7 +304,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         if (editablePlan) {
             if (viewMode === 'official') {
                 return (
-                    <div className="p-4 bg-gray-100 min-h-[400px]">
+                    <div ref={printRef} className="p-4 bg-gray-100 min-h-[400px]">
                         {isEditing && (
                             <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-center gap-2 text-sm text-blue-700">
                                 <ICONS.edit className="w-4 h-4 flex-shrink-0" />
@@ -357,6 +456,27 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     };
 
     const renderFooter = () => {
+        // Config screen footer
+        if (showConfig && isPrefilled && !generatedPlan && !isLoading) {
+            return (
+                <div className="flex justify-between items-center bg-gray-50 p-4 rounded-b-lg border-t border-gray-200">
+                    <button type="button" onClick={hideModal}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm">
+                        Откажи
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleConfigGenerate}
+                        disabled={!gradeForConfig || !topicForConfig}
+                        className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 flex items-center gap-2 font-bold disabled:opacity-50"
+                    >
+                        <ICONS.sparkles className="w-4 h-4" />
+                        Генерирај тематски план
+                    </button>
+                </div>
+            );
+        }
+
         if (isLoading || !editablePlan) return null;
 
         return (

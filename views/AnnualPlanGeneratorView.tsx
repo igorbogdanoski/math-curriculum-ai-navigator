@@ -16,6 +16,7 @@ import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 import { CollabShareButton } from '../components/planner/CollabShareButton';
 import { usePlanning } from '../contexts/PlanningContext';
 import { useAnnualPlanGeneration } from '../hooks/useAnnualPlanGeneration';
+import { useNavigation } from '../contexts/NavigationContext';
 
 
 interface SortableTopicProps {
@@ -25,9 +26,11 @@ interface SortableTopicProps {
     onGenerateLesson: () => void;
     onGenerateThematic: () => void;
     onUpdate: (updated: AIGeneratedAnnualPlanTopic) => void;
+    exploreGradeId?: string;
 }
 
-const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerateLesson, onGenerateThematic, onUpdate }) => {
+const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerateLesson, onGenerateThematic, onUpdate, exploreGradeId }) => {
+    const { navigate } = useNavigation();
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState('');
@@ -136,6 +139,15 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerat
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 Уреди
                             </button>
+                            {exploreGradeId && (
+                                <button type="button"
+                                    onClick={() => navigate(`/explore?gradeId=${exploreGradeId}`)}
+                                    title="Виж ги целите и стандардите во Истражи програма"
+                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-indigo-200 text-indigo-600 text-xs font-medium rounded-lg hover:bg-indigo-50 shadow-sm">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                                    Програма
+                                </button>
+                            )}
                         </>
                     )}
                 </div>
@@ -711,6 +723,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                             topics: prev.topics.map((t, i) => i === idx ? updated : t),
                                                         } : null);
                                                     }}
+                                                    exploreGradeId={selectedGradeId}
                                                 />
                                             ))}
                                         </SortableContext>
@@ -742,6 +755,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                 prefillThemeName={thematicTopic.title}
                                 prefillGradeTitle={plan.grade}
                                 prefillGradeId={selectedGradeId}
+                                prefillWeeks={thematicTopic.durationWeeks}
                             />
                         )}
                     </div>
