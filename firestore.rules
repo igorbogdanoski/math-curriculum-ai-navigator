@@ -574,6 +574,65 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Curriculum overlays (teacher notes per topic) — S93-D ──
+    // Doc ID: {uid}_{gradeId}_t{topicIndex}
+    match /curriculum_overlays/{docId} {
+      allow read:   if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid || isAdmin();
+    }
+
+    // ── Weekly plans — S93-C ──
+    // Doc ID: {uid}_{gradeId}_w{weekNumber}
+    match /weekly_plans/{docId} {
+      allow read:   if isAuthenticated() && (
+        resource.data.uid == request.auth.uid ||
+        resource.data.sharedWithUids.hasAny([request.auth.uid]) ||
+        resource.data.publicLink == true
+      );
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.uid == request.auth.uid ||
+        resource.data.sharedWithUids.hasAny([request.auth.uid])
+      );
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid || isAdmin();
+    }
+
+    // ── Thematic plan edits — S73+ ──
+    // Doc ID: {uid}_{gradeId}_{topicId}
+    match /thematic_plan_edits/{docId} {
+      allow read:   if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid || isAdmin();
+    }
+
+    // ── Scenario observations (ObservationModal) — S91/S93 ──
+    match /scenario_observations/{docId} {
+      allow read:   if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid || isAdmin();
+    }
+
+    // ── Matura spaced rep — S68+ ──
+    match /matura_spaced_rep/{docId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == docId.split('_')[0];
+    }
+
+    // ── Academy SM2 cards — S83+ ──
+    match /academy_sm2/{docId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == docId.split('_')[0];
+    }
+
+    // ── Cognitive telemetry (anonymous learning analytics) — S83+ ──
+    match /cognitive_telemetry/{docId} {
+      allow create: if isAuthenticated();
+      allow read:   if isAdmin();
+      allow update, delete: if false;
+    }
+
     // Сè друго: одбиено
     match /{document=**} {
       allow read, write: if false;

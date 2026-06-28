@@ -26,6 +26,7 @@ export const CoachBubble: React.FC<Props> = ({ plan, planType, dismissKey, onDis
   const [isDismissed, setIsDismissed] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
+  const dismissedRef = useRef(false); // guard against double-dismiss
   const onDismissRef = useRef(onDismiss);
   onDismissRef.current = onDismiss;
 
@@ -61,6 +62,8 @@ export const CoachBubble: React.FC<Props> = ({ plan, planType, dismissKey, onDis
   }, [isLoading, isDismissed, feedback]);
 
   const handleDismiss = () => {
+    if (dismissedRef.current) return;
+    dismissedRef.current = true;
     if (timerRef.current) clearInterval(timerRef.current);
     localStorage.setItem(`${STORAGE_PREFIX}${dismissKey}`, '1');
     setIsDismissed(true);
