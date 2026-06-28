@@ -119,6 +119,7 @@ const GammaStudentView = safeLazy(() => import('./views/GammaStudentView').then(
 const EmbedConceptView = safeLazy(() => import('./views/EmbedConceptView').then(module => ({ default: module.EmbedConceptView })));
 const EmbedQuizView = safeLazy(() => import('./views/EmbedQuizView').then(module => ({ default: module.EmbedQuizView })));
 
+const ClassroomView = safeLazy(() => import('./views/ClassroomView').then(module => ({ default: module.ClassroomView })));
 const LoginView = safeLazy(() => import('./views/LoginView').then(module => ({ default: module.LoginView })));
 const StudentLoginView = safeLazy(() => import('./views/StudentLoginView').then(module => ({ default: module.StudentLoginView })));
 const StudentDashboardView = safeLazy(() => import('./views/StudentDashboardView').then(module => ({ default: module.StudentDashboardView })));
@@ -263,6 +264,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/annual-planner', component: AnnualPlanGeneratorView },
     { path: '/weekly-plan', component: WeeklyPlanView },
     { path: '/planner', component: PlannerView },
+    { path: '/classroom/:lessonPlanId', component: ClassroomView },
     { path: '/planner/lesson/view/:id', component: LessonPlanDetailView },
     { path: '/planner/lesson/:id', component: LessonPlanEditorView },
     { path: '/planner/lesson/new', component: LessonPlanEditorView },

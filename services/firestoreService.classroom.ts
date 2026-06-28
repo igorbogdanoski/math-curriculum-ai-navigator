@@ -335,3 +335,45 @@ export const fetchMaturaAssignmentsByClass = async (classId: string): Promise<Ma
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as MaturaAssignment));
 };
 
+// ── S98.2 — Classroom Execution Record ────────────────────────────────────────
+
+export interface ClassroomExecution {
+  lessonPlanId: string;
+  teacherUid: string;
+  grade: number;
+  topic: string;
+  phasesCompleted: number;
+  totalPhases: number;
+  executedAt: ReturnType<typeof serverTimestamp>;
+}
+
+/**
+ * Saves a post-class execution record to `lesson_executions` collection.
+ * Used by ClassroomView (S98.1) when teacher ends the class.
+ */
+export const saveClassroomExecution = async (
+  data: Omit<ClassroomExecution, 'executedAt'>,
+): Promise<string> => {
+  const ref = await addDoc(collection(db, 'lesson_executions'), {
+    ...data,
+    executedAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+/**
+ * Fetches the most recent executions for a teacher's lesson plan.
+ */
+export const fetchExecutionsForPlan = async (
+  lessonPlanId: string,
+): Promise<(ClassroomExecution & { id: string })[]> => {
+  const q = query(
+    collection(db, 'lesson_executions'),
+    where('lessonPlanId', '==', lessonPlanId),
+    orderBy('executedAt', 'desc'),
+    limit(10),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ClassroomExecution & { id: string }));
+};
+

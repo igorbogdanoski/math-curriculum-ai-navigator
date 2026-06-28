@@ -497,6 +497,18 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
                       </>
                     )}
                   </button>
+                  {/* S98.1 — Start Class */}
+                  {isEditing && id && (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/classroom/${id}`)}
+                      title="Стартувај ја реализацијата на часот"
+                      className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg shadow transition-colors font-semibold"
+                    >
+                      <span>🏫</span>
+                      <span className="hidden sm:inline">Стартувај час</span>
+                    </button>
+                  )}
                 </div>
               </form>
             </Card>
