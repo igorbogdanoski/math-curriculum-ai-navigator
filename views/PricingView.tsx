@@ -1,4 +1,5 @@
 import React, { useId, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 
 import { Check, Crown, Users, Zap, Shield, HeadphonesIcon, BookOpen, BarChart3, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -122,6 +123,13 @@ export const PricingView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <Helmet>
+        <title>Цени и планови — MisMath AI</title>
+        <meta name="description" content="Бесплатен план за наставници, Pro план со неограничени AI генерации (1200 МКД/год) и School план за цели училишта. Започни бесплатно денес." />
+        <meta property="og:title" content="Цени — MisMath AI Математичка Платформа" />
+        <meta property="og:url" content="https://ai.mismath.net/pricing" />
+        <link rel="canonical" href="https://ai.mismath.net/pricing" />
+      </Helmet>
 
       {/* Payment status banners */}
       {paymentStatus === 'success' && (

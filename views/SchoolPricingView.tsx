@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Building2, Users, CheckCircle2, Send, Shield, Headphones, BarChart3, Crown } from 'lucide-react';
 import { schoolService } from '../services/firestoreService.school';
 
@@ -42,6 +43,13 @@ export const SchoolPricingView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white py-16 px-4">
+      <Helmet>
+        <title>Школски план — MisMath AI за Училишта</title>
+        <meta name="description" content="MisMath AI за цели училишта — неограничени AI генерации за сите наставници, централна администрација, аналитики по класови и директна поддршка." />
+        <meta property="og:title" content="Школски план — MisMath AI" />
+        <meta property="og:url" content="https://ai.mismath.net/school-pricing" />
+        <link rel="canonical" href="https://ai.mismath.net/school-pricing" />
+      </Helmet>
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}

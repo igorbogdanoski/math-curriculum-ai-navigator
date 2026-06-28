@@ -42,10 +42,22 @@ export function getNextPacificMidnightMs(): number {
 }
 
 export function checkDailyQuotaGuard(): void {
-  // PAID TIER: skip client-side quota guard.
-  return;
-  /* eslint-disable-next-line no-unreachable */
-  /* ORIGINAL: try { const stored = quotaRead(); if (!stored) return; const parsed = JSON.parse(stored); if (Date.now() < parsed.nextResetMs) throw new RateLimitError(...); quotaClear(); } catch (e) { if (e instanceof RateLimitError) throw e; } */
+  // Client-side cache: skip API call when we already know the quota is exhausted.
+  // markDailyQuotaExhausted() sets this flag on server 429; premium users won't
+  // receive 429s (unlimited credits + key rotation) so this guard won't block them.
+  try {
+    const stored = quotaRead();
+    if (!stored) return;
+    const parsed = JSON.parse(stored) as { nextResetMs?: number };
+    if (!parsed.nextResetMs || Date.now() >= parsed.nextResetMs) {
+      quotaClear();
+      return;
+    }
+    const resetAt = new Date(parsed.nextResetMs).toLocaleTimeString('mk', { hour: '2-digit', minute: '2-digit' });
+    throw new RateLimitError(`Дневната AI квота е исцрпена. Се обновува во ${resetAt} (09:00 МК).`);
+  } catch (e) {
+    if (e instanceof RateLimitError) throw e;
+  }
 }
 
 export function markDailyQuotaExhausted(): void {

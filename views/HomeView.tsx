@@ -1,5 +1,6 @@
 import { useTour } from '../hooks/useTour';
 import React, { useEffect, useMemo, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Sparkles, CalendarDays, BarChart2, BookOpen, Radio, Library, Camera, Zap, X, Rocket, Users, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
@@ -363,6 +364,10 @@ export const HomeView: React.FC = () => {
 
   return (
     <div className="min-h-full bg-slate-50/70 p-4 md:p-6 max-w-[1600px] mx-auto animate-fade-in space-y-5">
+      <Helmet>
+        <title>{user?.name ? `${user.name} — MisMath AI` : 'MisMath AI — Дигитален Асистент за Математика'}</title>
+        <meta name="description" content="AI платформа за македонски наставници по математика — планирање, анализа, квизови, матура и педагошка поддршка." />
+      </Helmet>
 
       {/* ── HERO HEADER ──────────────────────────────────────────── */}
       <div

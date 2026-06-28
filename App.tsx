@@ -526,7 +526,10 @@ const AppCore: React.FC = () => {
 }
 
 
+import { HelmetProvider } from 'react-helmet-async';
+
 const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <HelmetProvider>
   <ErrorBoundary>
     <NetworkStatusProvider>
       <NotificationProvider>
@@ -565,6 +568,7 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       </NotificationProvider>
     </NetworkStatusProvider>
   </ErrorBoundary>
+  </HelmetProvider>
 );
 
 // E2.2 — Apply global accessibility settings from localStorage on startup
