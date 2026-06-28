@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { GradeModel, GradeEntry } from '../types';
 import { MobileGradeEntryModal } from '../components/gradebook/MobileGradeEntryModal';
+import { BROCoveragePanel } from '../components/gradebook/BROCoveragePanel';
+import { MATH_STANDARDS } from '../data/allNationalStandardsComplete';
 import {
   BookMarked, BarChart3, Target, GraduationCap, Plus, Trash2, Save,
   Loader2, Brain, TrendingUp, AlertTriangle, CheckCircle2,
@@ -98,6 +100,9 @@ export const GradeBookView: React.FC = () => {
   const [newRaw, setNewRaw] = useState('');
   const [newMax, setNewMax] = useState('100');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  // S99.1 SBG → БРО standard tagging
+  const [sbgStandardCode, setSbgStandardCode] = useState('');
+  const [sbgProficiency, setSbgProficiency] = useState<1 | 2 | 3 | 4>(3);
 
   const addEntry = () => {
     const errors: Record<string, string> = {};
@@ -122,10 +127,14 @@ export const GradeBookView: React.FC = () => {
       percentage: pct,
       masteryStatus: percentToMastery(pct),
       gradedAt: new Date().toISOString(),
+      ...(activeModel === 'sbg' && sbgStandardCode
+        ? { standardScores: { [sbgStandardCode]: sbgProficiency } }
+        : {}),
     };
     setEntries(prev => [...prev, entry]);
     setNewName('');
     setNewRaw('');
+    setSbgStandardCode('');
   };
 
   const removeEntry = (id: string) => setEntries(prev => prev.filter(e => e.studentId !== id));
@@ -524,6 +533,39 @@ export const GradeBookView: React.FC = () => {
             <Plus className="w-4 h-4" /> Додај
           </button>
         </div>
+        {/* S99.1 — SBG БРО standard tagging row */}
+        {activeModel === 'sbg' && gradeLevel <= 9 && (
+          <div className="flex flex-wrap gap-3 items-end border-t border-purple-100 pt-3">
+            <div className="flex-1 min-w-[180px] space-y-1">
+              <label className="text-[11px] font-semibold text-purple-700 uppercase tracking-wide">БРО Стандард (опц.)</label>
+              <select
+                value={sbgStandardCode}
+                onChange={e => setSbgStandardCode(e.target.value)}
+                aria-label="Избери БРО стандард"
+                className="w-full border border-purple-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-purple-400"
+              >
+                <option value="">— Избери стандард —</option>
+                {MATH_STANDARDS.map(s => (
+                  <option key={s.code} value={s.code}>{s.code}: {s.description.slice(0, 60)}…</option>
+                ))}
+              </select>
+            </div>
+            {sbgStandardCode && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-purple-700 uppercase tracking-wide">Профициенција (1–4)</label>
+                <div className="flex gap-1">
+                  {([1, 2, 3, 4] as const).map(n => (
+                    <button key={n} type="button"
+                      onClick={() => setSbgProficiency(n)}
+                      className={`w-8 h-8 rounded-lg text-sm font-bold border transition-colors ${sbgProficiency === n ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-300 hover:bg-purple-50'}`}
+                    >{n}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-[10px] text-gray-400 self-end">4=Одличен · 3=Задоволителен · 2=Во напредок · 1=Под очекувањата</p>
+          </div>
+        )}
       </Card>
 
       {/* Entries table */}
@@ -664,6 +706,16 @@ export const GradeBookView: React.FC = () => {
             <FileDown className="w-4 h-4" /> Печати PDF
           </button>
         </div>
+      )}
+
+      {/* S99.1 БРО Coverage Panel — SBG mode only */}
+      {activeModel === 'sbg' && entries.length > 0 && (
+        <Card className="p-5 bg-purple-50 border-purple-200">
+          <p className="text-xs font-black text-purple-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <GraduationCap className="w-4 h-4" /> БРО Покриеност по стандарди (III-А)
+          </p>
+          <BROCoveragePanel entries={entries} gradeLevel={gradeLevel} />
+        </Card>
       )}
 
       {/* AI Insights panel */}
