@@ -36,6 +36,12 @@ vi.mock('../services/firestoreService.classroom', () => ({
   saveClassroomExecution: vi.fn().mockResolvedValue('exec-1'),
 }));
 
+vi.mock('../services/geminiService', () => ({
+  geminiService: {
+    getChatResponseStream: vi.fn(async function* () { yield 'AI препорака'; }),
+  },
+}));
+
 vi.mock('react-helmet-async', () => ({
   Helmet: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

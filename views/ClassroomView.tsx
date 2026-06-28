@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getGradeHoursInfo } from '../services/gemini/plans';
 import { saveClassroomExecution } from '../services/firestoreService.classroom';
 import { Card } from '../components/common/Card';
+import { Loader2, Lightbulb } from 'lucide-react';
 
 interface ClassroomViewProps {
   lessonPlanId?: string;
@@ -264,7 +265,11 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ lessonPlanId }) =>
   const [classStarted, setClassStarted] = useState(false);
   const [classEnded, setClassEnded] = useState(false);
   const [isSavingExecution, setIsSavingExecution] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState('');
+  const [loadingAI, setLoadingAI] = useState(false);
+  const isMounted = useRef(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => { return () => { isMounted.current = false; }; }, []);
 
   // Reset timer when phase changes
   useEffect(() => {
@@ -324,19 +329,42 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ lessonPlanId }) =>
     setTimerRunning(false);
     setClassEnded(true);
 
+    const topic = plan?.theme || plan?.title || '';
+    const grade = plan?.grade ?? 8;
+
     if (plan && firebaseUser) {
       setIsSavingExecution(true);
       try {
         await saveClassroomExecution({
           lessonPlanId: plan.id ?? '',
           teacherUid: firebaseUser.uid,
-          grade: plan.grade ?? 0,
-          topic: plan.theme || plan.title || '',
+          grade,
+          topic,
           phasesCompleted: completedPhases.size,
           totalPhases: phases.length,
         });
       } catch { /* non-critical */ }
       finally { setIsSavingExecution(false); }
+    }
+
+    // S99.2 — AI adaptive suggestion (non-blocking, fire after save)
+    if (topic) {
+      setLoadingAI(true);
+      try {
+        const { geminiService } = await import('../services/geminiService');
+        const completion = completedPhases.size === phases.length ? 'целосно' : `${completedPhases.size}/${phases.length} фази`;
+        const prompt = `Наставникот го заврши часот по "${topic}" (${grade}. одделение). Реализирано: ${completion}.
+Дај точно 3 краткорочни препораки за следниот час (до 120 збора, на македонски). Форматирај со: "1. … 2. … 3. …". Препораките треба да покриваат: (а) што да се повтори или задлабочи, (б) каква брза проверка (Exit ticket / Dugga тест / Kahoot), (в) еден нов педагошки пристап или активност.`;
+        let text = '';
+        for await (const chunk of geminiService.getChatResponseStream([{ role: 'user', text: prompt }])) {
+          text += chunk;
+          if (isMounted.current) setAiSuggestion(text);
+        }
+      } catch {
+        if (isMounted.current) setAiSuggestion('Не можев да генерирам препораки. Обиди се повторно.');
+      } finally {
+        if (isMounted.current) setLoadingAI(false);
+      }
     }
   }, [plan, firebaseUser, completedPhases, phases.length]);
 
@@ -385,39 +413,61 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ lessonPlanId }) =>
 
   if (classEnded) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
         <Helmet>
           <title>Завршен час — {topic}</title>
         </Helmet>
-        <Card className="p-8 text-center max-w-md">
-          <p className="text-5xl mb-4">🎉</p>
-          <h2 className="text-2xl font-bold text-slate-700 mb-1">Часот е завршен!</h2>
-          <p className="text-slate-500 text-sm mb-6">{topic} · {grade}. одд.</p>
-          <div className="bg-emerald-50 rounded-xl p-4 mb-6">
-            <p className="text-emerald-700 font-semibold text-sm">
-              ✓ {completedPhases.size}/{phases.length} фази реализирани
-            </p>
-            {isSavingExecution && (
-              <p className="text-xs text-emerald-600 mt-1">Зачувувам извештај…</p>
+        <div className="w-full max-w-lg space-y-4">
+          <Card className="p-8 text-center">
+            <p className="text-5xl mb-4">🎉</p>
+            <h2 className="text-2xl font-bold text-slate-700 mb-1">Часот е завршен!</h2>
+            <p className="text-slate-500 text-sm mb-6">{topic} · {grade}. одд.</p>
+            <div className="bg-emerald-50 rounded-xl p-4 mb-6">
+              <p className="text-emerald-700 font-semibold text-sm">
+                ✓ {completedPhases.size}/{phases.length} фази реализирани
+              </p>
+              {isSavingExecution && (
+                <p className="text-xs text-emerald-600 mt-1">Зачувувам извештај…</p>
+              )}
+            </div>
+            <div className="flex gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => navigate(`/planner/lesson/${plan.id}`)}
+                className="px-4 py-2 bg-brand-primary text-white rounded-lg text-sm font-medium"
+              >
+                Назад кон планот
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium"
+              >
+                Почетна
+              </button>
+            </div>
+          </Card>
+
+          {/* S99.2 — Adaptive AI suggestion */}
+          <Card className="p-5 bg-amber-50 border-amber-200">
+            <div className="flex items-center gap-2 mb-3">
+              <Lightbulb className="w-5 h-5 text-amber-600 shrink-0" />
+              <h3 className="font-bold text-amber-800 text-sm">Препораки за следниот час</h3>
+            </div>
+            {loadingAI && !aiSuggestion && (
+              <div className="flex items-center gap-2 text-amber-700 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Генерирам адаптивни препораки…</span>
+              </div>
             )}
-          </div>
-          <div className="flex gap-3 justify-center">
-            <button
-              type="button"
-              onClick={() => navigate(`/planner/lesson/${plan.id}`)}
-              className="px-4 py-2 bg-brand-primary text-white rounded-lg text-sm font-medium"
-            >
-              Назад кон планот
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium"
-            >
-              Почетна
-            </button>
-          </div>
-        </Card>
+            {aiSuggestion && (
+              <p className="text-sm text-amber-900 leading-relaxed whitespace-pre-wrap">{aiSuggestion}</p>
+            )}
+            {!loadingAI && !aiSuggestion && (
+              <p className="text-xs text-amber-600 italic">Препораките ќе се прикажат откако ќе заврши зачувувањето.</p>
+            )}
+          </Card>
+        </div>
       </div>
     );
   }
