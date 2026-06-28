@@ -9,7 +9,7 @@
  *  - "End Class" → triggers post-class summary (S98.2)
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { usePlanner } from '../contexts/PlannerContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -255,7 +255,8 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ lessonPlanId }) =>
 
   const plan = lessonPlanId ? getLessonPlan(lessonPlanId) : undefined;
   const { lessonMinutes } = getGradeHoursInfo(plan?.grade ?? 8);
-  const phases = buildPhases(lessonMinutes);
+  // useMemo prevents phases from being a new array reference on every render
+  const phases = useMemo(() => buildPhases(lessonMinutes), [lessonMinutes]);
 
   // Timer state
   const [activePhaseIdx, setActivePhaseIdx] = useState(0);
@@ -271,10 +272,10 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ lessonPlanId }) =>
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => { return () => { isMounted.current = false; }; }, []);
 
-  // Reset timer when phase changes
+  // Reset timer when phase changes (phases is stable via useMemo)
   useEffect(() => {
     setSecondsLeft(phases[activePhaseIdx].minutes * 60);
-  }, [activePhaseIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activePhaseIdx, phases]);
 
   // Countdown
   useEffect(() => {

@@ -26,6 +26,8 @@ export function detectCurriculumGaps(
   }
 
   const lowerTitles = topicTitles.map(t => t.toLowerCase());
+  // Pre-compute significant words once (≥5 chars) — reused for every standard
+  const topicWords = lowerTitles.flatMap(t => t.split(/[\s,;.—:]+/).filter(w => w.length >= 5));
 
   const covered: NationalStandardComplete[] = [];
   const uncovered: NationalStandardComplete[] = [];
@@ -38,7 +40,6 @@ export function detectCurriculumGaps(
       for (const bridge of std.mathBridge) {
         const lowerBridge = bridge.toLowerCase();
         // topic includes bridge keyword, OR bridge includes any significant word from the topic (≥5 chars)
-        const topicWords = lowerTitles.flatMap(t => t.split(/[\s,;.—:]+/).filter(w => w.length >= 5));
         if (lowerTitles.some(t => t.includes(lowerBridge)) || topicWords.some(w => lowerBridge.includes(w))) {
           isCovered = true;
           break;
