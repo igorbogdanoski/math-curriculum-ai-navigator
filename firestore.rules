@@ -608,12 +608,14 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid || isAdmin();
     }
 
-    // ── Scenario observations (ObservationModal) — S91/S93 ──
+    // ── Scenario observations (ObservationModal + LessonStudyView) — S91/S93/S100 ──
+    // Read: any authenticated teacher can read (observations are collaborative/public teaching records)
+    // Write: only the author of the observation
     match /scenario_observations/{docId} {
-      allow read:   if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid || isAdmin();
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.authorUid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.authorUid == request.auth.uid;
+      allow delete: if (isAuthenticated() && resource.data.authorUid == request.auth.uid) || isAdmin();
     }
 
     // ── Matura spaced rep — S68+ ──

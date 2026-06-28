@@ -37,7 +37,9 @@ export function detectCurriculumGaps(
     if (std.mathBridge && std.mathBridge.length > 0) {
       for (const bridge of std.mathBridge) {
         const lowerBridge = bridge.toLowerCase();
-        if (lowerTitles.some(t => t.includes(lowerBridge) || lowerBridge.includes(t.slice(0, 6)))) {
+        // topic includes bridge keyword, OR bridge includes any significant word from the topic (≥5 chars)
+        const topicWords = lowerTitles.flatMap(t => t.split(/[\s,;.—:]+/).filter(w => w.length >= 5));
+        if (lowerTitles.some(t => t.includes(lowerBridge)) || topicWords.some(w => lowerBridge.includes(w))) {
           isCovered = true;
           break;
         }

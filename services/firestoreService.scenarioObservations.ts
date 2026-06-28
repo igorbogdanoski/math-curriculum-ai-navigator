@@ -10,7 +10,7 @@
 
 import {
   collection, addDoc, getDocs,
-  query, where, orderBy, serverTimestamp, type Timestamp,
+  query, where, orderBy, limit, serverTimestamp, type Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
@@ -60,7 +60,6 @@ export const fetchObservationsByTeacher = async (
   authorUid: string,
   limitCount = 50,
 ): Promise<ScenarioObservation[]> => {
-  const { limit } = await import('firebase/firestore');
   const snap = await getDocs(
     query(
       collection(db, COLLECTION),
