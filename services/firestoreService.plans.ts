@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, query, where, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import type { AIGeneratedThematicPlan } from '../types';
 
@@ -31,6 +31,50 @@ export interface ThematicPlanEditDoc {
   authorName: string;
   schoolName: string;
   period: string;
+}
+
+export interface TeacherThematicHistoryItem {
+  gradeId: string;
+  topicId: string;
+  thematicUnit: string;
+  /** pedagogical models mentioned across lessons */
+  teachingModels: string[];
+  /** summary of lesson key activities (first 3) */
+  lessonSummaries: string[];
+}
+
+/** Fetch the teacher's last 3 saved thematic plans for AI context injection. */
+export async function fetchTeacherThematicHistory(uid: string): Promise<TeacherThematicHistoryItem[]> {
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, 'thematic_plan_edits'),
+        where('uid', '==', uid),
+        orderBy('savedAt', 'desc'),
+        limit(3),
+      ),
+    );
+    return snap.docs.map(d => {
+      const data = d.data();
+      const plan = data.plan as AIGeneratedThematicPlan;
+      const lessons = plan?.lessons ?? [];
+      const allText = lessons.flatMap(l => [l.keyActivities, l.scenario?.intro ?? '', ...(l.scenario?.main ?? [])]).join(' ').toLowerCase();
+      const teachingModels: string[] = [];
+      if (allText.includes('5e') || allText.includes('5-e') || allText.includes('engage')) teachingModels.push('5E');
+      if (allText.includes('pbl') || allText.includes('проект')) teachingModels.push('PBL');
+      if (allText.includes('zpd') || allText.includes('зона') || allText.includes('скелинг')) teachingModels.push('ZPD');
+      if (allText.includes('кооперативн') || allText.includes('групна работа') || allText.includes('cooperative')) teachingModels.push('Кооперативно');
+      return {
+        gradeId: data.gradeId ?? '',
+        topicId: data.topicId ?? '',
+        thematicUnit: plan?.thematicUnit ?? data.topicId ?? '',
+        teachingModels: [...new Set(teachingModels)],
+        lessonSummaries: lessons.slice(0, 3).map(l => l.keyActivities ?? '').filter(Boolean),
+      };
+    });
+  } catch {
+    return [];
+  }
 }
 
 export async function loadThematicPlanEdit(

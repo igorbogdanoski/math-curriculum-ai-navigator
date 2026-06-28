@@ -34,6 +34,7 @@ import { FormativeNextStepCard } from '../components/dashboard/FormativeNextStep
 import { SpacedRepDueCard } from '../components/dashboard/SpacedRepDueCard';
 import { MaturaNextStepWidget } from '../components/dashboard/MaturaNextStepWidget';
 import { SmartHomeDashboard } from '../components/home/SmartHomeDashboard';
+import { PlanningHubWidget } from '../components/home/PlanningHubWidget';
 
 // ── Quick Actions strip — 5 most-used teacher actions ────────────────────────
 const getQuickActions = (t: any) => [
@@ -459,6 +460,9 @@ export const HomeView: React.FC = () => {
           onOpenGenerator={() => openGeneratorPanel({})}
         />
       )}
+
+      {/* ── ПЛАНИРАЧКИ ЦЕНТАР ──────────────────────────────────────── */}
+      <PlanningHubWidget />
 
       {/* ── ДЕНЕС — Daily signals (elevated above toolbox) ──────────── */}
       <section className="space-y-3" aria-label={t('home.section.todayFocus')}>

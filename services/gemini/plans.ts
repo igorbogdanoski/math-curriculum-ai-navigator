@@ -352,7 +352,7 @@ ${officialCurriculum}` : ''}
       return generateAndParseJSON<Omit<PlannerItem, 'id'>[]>([{ text: prompt }, { text: `Датуми: ${startDate} до ${endDate}` }], schema, DEFAULT_MODEL, AnnualPlanSchema, MAX_RETRIES, true, systemInstr, profile?.tier);
   },
 
-async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile): Promise<AIGeneratedThematicPlan> {
+async generateThematicPlan(grade: Grade, topic: Topic, profile?: TeachingProfile, teacherHistoryContext?: string): Promise<AIGeneratedThematicPlan> {
       const cacheKey = `thematic_${topic.id}_g${grade.level}`;
       try {
           const cached = await getCached<AIGeneratedThematicPlan>(cacheKey);
@@ -379,6 +379,7 @@ ${standardsHint}
 1. АНАЛИЗА НА ТЕМА: Кои се клучните стандарди за оценување според националната програма?
 2. ПЕДАГОШКИ ПРИСТАП: Разгледај три опции за редослед на лекциите. Избери ја онаа која гради најцврста логичка основа.
 3. ИНКЛУЗИВНОСТ: Kako активностите ќе ги поддржат и талентираните и учениците со потешкотии?
+${teacherHistoryContext ? `\n### КОНТЕКСТ ОД ПРЕТХОДНИТЕ ПЛАНОВИ НА НАСТАВНИКОТ\n${teacherHistoryContext}\nВАЖНО: Анализирај ги горните педагошки модели и предложи РАЗЛИЧЕН пристап за оваа тема за разновидност. Ако наставникот претежно користел 5E, предложи ZPD или PBL за оваа тема.\n` : ''}
 
 ### ИНСТРУКЦИИ ЗА СОДРЖИНА (6 задолжителни колони)
 - lessonUnit: Содржини и поими — конкретни поими кои се изучуваат (на пр. "Плоштина на правоаголен триаголник (P = a·b/2)")

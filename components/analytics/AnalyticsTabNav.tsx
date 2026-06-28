@@ -9,7 +9,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 export type AnalyticsTab =
   | 'overview' | 'trend' | 'students' | 'standards' | 'concepts' | 'grades'
   | 'alerts' | 'groups' | 'live' | 'classes' | 'questionBank' | 'coverage'
-  | 'assignments' | 'league' | 'cohort' | 'dok';
+  | 'assignments' | 'league' | 'cohort' | 'dok' | 'dugga';
 
 interface AnalyticsTabNavProps {
   activeTab: AnalyticsTab;
@@ -46,6 +46,7 @@ export const AnalyticsTabNav: React.FC<AnalyticsTabNavProps> = ({
     { id: 'league', label: '🏆 ' + t('analytics.tabs.league') },
     { id: 'cohort', label: '📊 Кохортна анализа' },
     { id: 'dok', label: '🎯 DoK Хитмапа' },
+    { id: 'dugga', label: '📝 Дуга резултати' },
   ];
 
   const activeSecondary = SECONDARY_TABS.find(tab => tab.id === activeTab);

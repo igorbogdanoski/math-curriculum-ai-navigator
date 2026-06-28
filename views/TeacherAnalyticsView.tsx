@@ -35,6 +35,7 @@ import { AssignmentsTab } from './analytics/AssignmentsTab';
 import { LeagueTab } from './analytics/LeagueTab';
 import { CohortTab } from './analytics/CohortTab';
 import { DoKHeatmapTab } from './analytics/DoKHeatmapTab';
+import { DuggaResultsTab } from './analytics/DuggaResultsTab';
 import { ZPDRecommendationsCard } from '../components/analytics/ZPDRecommendationsCard';
 import { MasteryTimelineCard } from '../components/analytics/MasteryTimelineCard';
 import { LearningStyleCard } from '../components/analytics/LearningStyleCard';
@@ -565,7 +566,7 @@ const { addNotification } = useNotification();
         )}
 
         <TabErrorBoundary key={activeTab} tabName={activeTab}>
-        {localResults.length === 0 && !(feedbackTaxonomyEnabled && feedbackBreakdown?.totalFeedback) && ['overview', 'trend', 'students', 'standards', 'concepts', 'grades', 'alerts', 'groups', 'coverage', 'league', 'cohort', 'dok'].includes(activeTab) ? (
+        {localResults.length === 0 && !(feedbackTaxonomyEnabled && feedbackBreakdown?.totalFeedback) && ['overview', 'trend', 'students', 'standards', 'concepts', 'grades', 'alerts', 'groups', 'coverage', 'league', 'cohort', 'dok', 'dugga'].includes(activeTab) ? (
           <Card className="text-center py-16">
             <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-500">{t('analytics.noResultsTitle')}</h2>
@@ -669,11 +670,14 @@ const { addNotification } = useNotification();
             {activeTab === 'dok' && (
               <DoKHeatmapTab results={localResults} />
             )}
+            {activeTab === 'dugga' && firebaseUser?.uid && (
+              <DuggaResultsTab teacherUid={firebaseUser.uid} />
+            )}
           </>
         )}
         </TabErrorBoundary>
 
-        {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments', 'league', 'cohort', 'dok'].includes(activeTab) && localResults.length > 0 && (
+        {hasMore && !['questionBank', 'live', 'classes', 'coverage', 'assignments', 'league', 'cohort', 'dok', 'dugga'].includes(activeTab) && localResults.length > 0 && (
           <div className="mt-6 flex flex-col items-center gap-1">
             <button
               type="button"

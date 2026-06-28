@@ -13,6 +13,10 @@ import type { AIGeneratedAnnualPlan, AIGeneratedAnnualPlanTopic } from '../types
 import { loadThematicPlanEdit } from '../services/firestoreService.plans';
 import { saveWeeklyPlan, loadWeeklyPlan } from '../services/firestoreService.weeklyPlans';
 import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
+import { PlanningChainBar } from '../components/planner/PlanningChainBar';
+import { ParentLetterModal } from '../components/planner/ParentLetterModal';
+import { WeeklyCollabModal } from '../components/planner/WeeklyCollabModal';
+import type { SavedWeeklyPlan } from '../services/firestoreService.weeklyPlans';
 
 // ── Local types ────────────────────────────────────────────────────────────────
 
@@ -115,7 +119,7 @@ function computeSlots(
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export const WeeklyPlanView: React.FC = () => {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, user } = useAuth();
   const { navigate } = useNavigation();
   const { addNotification } = useNotification();
   const { annualPlanId, grade, setPlanningState } = usePlanning();
@@ -130,6 +134,9 @@ export const WeeklyPlanView: React.FC = () => {
   const [thematicLessonMap, setThematicLessonMap] = useState<Record<number, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedWeek, setLastSavedWeek] = useState<number | null>(null);
+  const [showParentLetter, setShowParentLetter] = useState(false);
+  const [showCollabModal, setShowCollabModal] = useState(false);
+  const [collabSharedPlan, setCollabSharedPlan] = useState<{ plan: SavedWeeklyPlan; ownerName: string } | null>(null);
 
   // Load plans from Firestore
   useEffect(() => {
@@ -216,6 +223,11 @@ export const WeeklyPlanView: React.FC = () => {
     [topicRanges, weekNumber],
   );
 
+  const gradeNumForModal = (selectedPlan as any)?.planData?.grade?.match?.(/\d+/)?.[0];
+  const gradeObj = gradeNumForModal
+    ? curriculum?.grades.find(g => String(g.level) === gradeNumForModal) ?? null
+    : null;
+
   const handleGenerateLesson = (slot: WeeklySlot) => {
     if (!selectedPlan) return;
     const lessonUnit = thematicLessonMap[slot.lessonNumber];
@@ -297,6 +309,8 @@ export const WeeklyPlanView: React.FC = () => {
         }
       ` }} />
 
+      <PlanningChainBar currentStep="weekly" />
+
       {/* ── Header ── */}
       <div className="no-print flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-3">
@@ -372,6 +386,24 @@ export const WeeklyPlanView: React.FC = () => {
                 : <ICONS.bookmark className="w-4 h-4" />
             }
             {lastSavedWeek === weekNumber ? 'Зачувано' : 'Зачувај'}
+          </button>
+
+          {topicForWeek && (
+            <button
+              type="button"
+              onClick={() => setShowParentLetter(true)}
+              className="flex items-center gap-2 px-3 py-2 border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-sm transition-colors"
+            >
+              ✉️ Родителско писмо
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowCollabModal(true)}
+            className="flex items-center gap-2 px-3 py-2 border border-violet-200 text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg text-sm transition-colors"
+          >
+            📡 Collab
           </button>
 
           <button
@@ -638,6 +670,47 @@ export const WeeklyPlanView: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Parent Letter Modal */}
+      {showParentLetter && topicForWeek && (
+        <ParentLetterModal
+          topicTitle={topicForWeek.topic.title}
+          gradeLevel={selectedPlan?.planData.grade ? parseInt(String(selectedPlan.planData.grade), 10) || 6 : 6}
+          objectives={topicForWeek.topic.objectives ?? []}
+          weekNumber={weekNumber}
+          onClose={() => setShowParentLetter(false)}
+        />
+      )}
+
+      {/* Weekly Collab Modal */}
+      {showCollabModal && firebaseUser?.uid && gradeObj && (
+        <WeeklyCollabModal
+          planId={`${firebaseUser.uid}_${gradeObj.id}_w${weekNumber}`}
+          gradeId={gradeObj.id}
+          weekNumber={weekNumber}
+          ownerName={user?.name ?? 'Наставник'}
+          onViewShared={(plan, ownerName) => {
+            setCollabSharedPlan({ plan, ownerName });
+            setShowCollabModal(false);
+          }}
+          onClose={() => setShowCollabModal(false)}
+        />
+      )}
+
+      {/* Collab shared plan banner */}
+      {collabSharedPlan && (
+        <div className="fixed bottom-4 right-4 z-40 bg-white rounded-2xl shadow-2xl border border-violet-200 p-4 max-w-xs w-full">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-black text-violet-600 uppercase tracking-wide">Live — план на {collabSharedPlan.ownerName}</p>
+              <p className="text-xs text-slate-600 mt-0.5">Нед. {collabSharedPlan.plan.weekNumber} · {collabSharedPlan.plan.slots.length} часови</p>
+            </div>
+            <button type="button" onClick={() => setCollabSharedPlan(null)} aria-label="Затвори" className="p-0.5 hover:bg-gray-100 rounded-lg flex-shrink-0">
+              <ICONS.close className="w-3.5 h-3.5 text-gray-400" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

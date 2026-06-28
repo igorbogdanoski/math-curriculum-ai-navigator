@@ -2,10 +2,74 @@ import {
     Type, DEFAULT_MODEL, MAX_RETRIES, generateAndParseJSON, SAFETY_SETTINGS, callGeminiProxy,
     checkDailyQuotaGuard, sanitizePromptInput, withLangRule, buildDynamicSystemInstruction, JSON_SYSTEM_INSTRUCTION,
 } from './core';
-import type { AIGeneratedWorkedExample, SecondaryTrack } from '../../types';
+import type { AIGeneratedWorkedExample, SecondaryTrack, LessonPlan, AIGeneratedThematicPlan } from '../../types';
 import { DailyBriefSchema, WorkedExampleSchema } from '../../utils/schemas';
 
+export type CoachFeedback = {
+  message: string;
+  /** 'tip' = improvement suggestion, 'praise' = positive reinforcement */
+  type: 'tip' | 'praise';
+  /** Optional deep-link context */
+  action?: { label: string; route: string };
+};
+
 export const reportsAPI = {
+
+/** S93-E1: AI Pedagogical Coach — 1-sentence micro-feedback after saving a plan */
+async generateCoachFeedback(
+    plan: LessonPlan | AIGeneratedThematicPlan,
+    planType: 'lesson' | 'thematic',
+  ): Promise<CoachFeedback> {
+    let summary = '';
+
+    if (planType === 'lesson') {
+      const lp = plan as LessonPlan;
+      const mainCount = lp.scenario?.main?.length ?? 0;
+      const bloomLevels = [...new Set(lp.objectives?.map(o => o.bloomsLevel).filter(Boolean))];
+      const hasBloom = bloomLevels.length > 0 ? `Bloom нивоа: ${bloomLevels.join(', ')}.` : '';
+      const hasDiff = lp.differentiation ? 'Диференцијација: постои.' : 'Диференцијација: нема.';
+      const phaseInfo = `Воведна: ${lp.scenario?.introductory ? 'да' : 'не'} | Главна (${mainCount} акт.): ${mainCount > 0 ? 'да' : 'не'} | Завршна: ${lp.scenario?.concluding ? 'да' : 'не'}.`;
+      summary = `Тип: час. Наслов: „${sanitizePromptInput(lp.title ?? '', 60)}". Одделение: ${lp.grade}. ${hasBloom} ${hasDiff} ${phaseInfo}`;
+    } else {
+      const tp = plan as AIGeneratedThematicPlan;
+      const lessons = tp.lessons ?? [];
+      const allActivities = lessons.flatMap(l => [l.keyActivities, l.scenario?.intro ?? '', ...(l.scenario?.main ?? [])]).join(' ').toLowerCase();
+      const models: string[] = [];
+      if (allActivities.includes('5e') || allActivities.includes('engage')) models.push('5E');
+      if (allActivities.includes('pbl') || allActivities.includes('проект')) models.push('PBL');
+      if (allActivities.includes('zpd') || allActivities.includes('зона')) models.push('ZPD');
+      if (allActivities.includes('кооперативн') || allActivities.includes('групна')) models.push('Кооперативно');
+      summary = `Тип: тематски план. Единица: „${sanitizePromptInput(tp.thematicUnit ?? '', 60)}". Лекции: ${lessons.length}. Педагошки модели: ${models.join(', ') || 'нема детектирани'}.`;
+    }
+
+    const prompt = `Ти си педагошки ментор (коуч) кој дава ЕДЕН краток совет (1-2 реченици, максимум 30 збора) за наставник кој штотуку зачувал план.
+
+ПЛАН: ${summary}
+
+ПРАВИЛА:
+- Ако планот е добар: дај позитивна забелешка ("Одличен баланс...", "Браво за...")
+- Ако нешто недостасува: конкретен совет ("Пробај да...", "Размисли за...")
+- НЕ повторувај го насловот на планот
+- Пишувај директно, без вовед ("Советот е:", "Забелешка:")
+- САМО на македонски јазик
+
+Одговори со JSON: { "message": "...", "type": "tip" | "praise" }`;
+
+    try {
+      const result = await callGeminiProxy({
+        model: DEFAULT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      });
+      const parsed = JSON.parse(result.text);
+      return {
+        message: parsed.message ?? '',
+        type: parsed.type === 'praise' ? 'praise' : 'tip',
+      };
+    } catch {
+      return { message: 'Планот е зачуван. Продолжи со следната лекција!', type: 'praise' };
+    }
+  },
 
 async generateParentReport(
     studentName: string,
@@ -41,6 +105,55 @@ async generateParentReport(
       model: DEFAULT_MODEL,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       systemInstruction: withLangRule('Ти си педагошки советник кој пишува родителски извештаи.'),
+      safetySettings: SAFETY_SETTINGS,
+    });
+    return response.text.trim();
+  },
+
+/**
+ * S92: Generate a parent communication letter after a topic/week is completed.
+ * Returns the letter text in the requested language.
+ */
+async generateTopicParentLetter(params: {
+    topicTitle: string;
+    gradeLevel: number;
+    objectives: string[];
+    weekNumber?: number;
+    language: 'mk' | 'sq' | 'tr' | 'en';
+  }): Promise<string> {
+    const { topicTitle, gradeLevel, objectives, weekNumber, language } = params;
+    const safeTitle = sanitizePromptInput(topicTitle, 100);
+    const objList = objectives.slice(0, 6).map((o, i) => `${i + 1}. ${o}`).join('\n');
+
+    const langInstructions: Record<string, string> = {
+      mk: 'Пишувај САМО на македонски јазик. Тон: топол, јасен, охрабрувачки. Избегнувај стручен жаргон.',
+      sq: 'Shkruaj VETËM në gjuhën shqipe. Toni: i ngrohtë, i qartë, inkurajues. Shmang zhargonin profesional.',
+      tr: 'SADECE Türkçe yaz. Ton: sıcak, açık, teşvik edici. Teknik jargondan kaçın.',
+      en: 'Write ONLY in English. Tone: warm, clear, encouraging. Avoid professional jargon.',
+    };
+
+    const prompt = `Ти си педагошки советник. Напиши кратко родителско писмо (3-4 параграфи) за завршена наставна тема.
+
+ДЕТАЛИ:
+- Одделение: ${gradeLevel}
+- Тема: „${safeTitle}"
+${weekNumber ? `- Недела: ${weekNumber}` : ''}
+- Совладани исходи:
+${objList || '(не се наведени конкретни исходи)'}
+
+СТРУКТУРА:
+1. Кратка поздравна реченица до родителите
+2. Опис на темата — едноставно, без жаргон, 2-3 реченици
+3. Конкретни совети: "Можете дома да помогнете со..." (2-3 идеи поврзани со темата)
+4. Охрабрувачки заклучок — покани родителот да праша ако има прашања
+
+ЈАЗИЧНА ИНСТРУКЦИЈА: ${langInstructions[language] ?? langInstructions.mk}
+Должина: максимум 200 зборови. НЕ употребувај наслов или „До родителите на..." — директно во текст.`;
+
+    const response = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: withLangRule('Ти си педагошки советник кој пишува родителски писма.'),
       safetySettings: SAFETY_SETTINGS,
     });
     return response.text.trim();

@@ -32,7 +32,10 @@ import { LessonPlanExportMenu } from '../components/lesson-plan-editor/LessonPla
 import { LessonPlanDifferentiationPanel } from '../components/lesson-plan-editor/LessonPlanDifferentiationPanel';
 import { LessonPlanOfficialForm } from '../components/planner/LessonPlanOfficialForm';
 import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
+import { PlanningChainBar } from '../components/planner/PlanningChainBar';
+import { CoachBubble } from '../components/common/CoachBubble';
 import { PriorKnowledgeConnector } from '../components/lesson-plan-editor/PriorKnowledgeConnector';
+import { VerticalProgressionPanel } from '../components/lesson-plan-editor/VerticalProgressionPanel';
 import { PedagogicalModelsPanel } from '../components/lesson-plan-editor/PedagogicalModelsPanel';
 import { RichTaskPanel } from '../components/lesson-plan-editor/RichTaskPanel';
 import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
@@ -62,6 +65,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
   const [showMathTools, setShowMathTools] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [savedPlanForCoach, setSavedPlanForCoach] = useState<{ plan: typeof plan; key: string; navigateTo: string } | null>(null);
   const [showOfficialLessonForm, setShowOfficialLessonForm] = useState(false);
   const [isPublishingToBank, setIsPublishingToBank] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
@@ -78,6 +82,18 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
     isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
+
+  // Warn user before closing tab if they have unsaved content
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (plan.title && !isSaving) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [plan.title, isSaving]);
 
   const handleLessonOfficialPrint = useReactToPrint({
     contentRef: lessonOfficialFormRef,
@@ -158,13 +174,14 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         clearDraft();
         if (isMounted.current) {
           addNotification('Подготовката е успешно ажурирана!', 'success');
-          navigate('/my-lessons');
+          setSavedPlanForCoach({ plan, key: `lesson_${Date.now()}`, navigateTo: '/my-lessons' });
         }
       } else {
         const newPlanId = await addLessonPlan(plan as Omit<LessonPlan, 'id'>);
         clearDraft();
         if (isMounted.current) {
           addNotification('Подготовката е успешно креирана!', 'success');
+          setSavedPlanForCoach({ plan, key: `lesson_${newPlanId}`, navigateTo: `/planner/lesson/${newPlanId}` });
           // Auto-share to Scenario Bank if opted in
           if (autoShareToBank && firebaseUser?.uid && user) {
             publishScenario({
@@ -176,7 +193,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             }).then(() => addNotification('✅ Автоматски споделено во Банката!', 'success'))
               .catch(() => {});
           }
-          navigate(`/planner/lesson/${newPlanId}`);
+          // navigate happens via CoachBubble onDismiss or auto-dismiss after 8s
         }
       }
     } catch (error) {
@@ -260,7 +277,23 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
   return (
     <div className="p-8 animate-fade-in">
+      <PlanningChainBar currentStep="lesson" />
       <PlanningBreadcrumb />
+
+      {savedPlanForCoach && (
+        <div className="mb-4">
+          <CoachBubble
+            plan={savedPlanForCoach.plan as any}
+            planType="lesson"
+            dismissKey={savedPlanForCoach.key}
+            onDismiss={() => {
+              const dest = savedPlanForCoach.navigateTo;
+              setSavedPlanForCoach(null);
+              navigate(dest);
+            }}
+          />
+        </div>
+      )}
       <header className="mb-6 no-print flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <button type="button" onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">
@@ -430,6 +463,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           </div>
 
           <aside className="w-full lg:w-80 space-y-4">
+            <VerticalProgressionPanel
+              topicTitle={plan.theme || plan.title || ''}
+              gradeLevel={plan.grade ?? 6}
+            />
+
             <PriorKnowledgeConnector
               conceptIds={plan.conceptIds ?? []}
               currentGrade={plan.grade ?? 6}

@@ -8,9 +8,11 @@ import { geminiService } from '../../services/geminiService';
 import type { Grade, Topic, ThematicPlanLesson, AIGeneratedThematicPlan } from '../../types';
 import { ICONS } from '../../constants';
 import { OfficialThematicPlanTable } from './OfficialThematicPlanTable';
-import { saveThematicPlanEdit, loadThematicPlanEdit } from '../../services/firestoreService.plans';
+import { saveThematicPlanEdit, loadThematicPlanEdit, fetchTeacherThematicHistory, type TeacherThematicHistoryItem } from '../../services/firestoreService.plans';
 import { getGradeHoursInfo } from '../../services/gemini/plans';
 import { PedagogicalEnrichPanel } from './PedagogicalEnrichPanel';
+import { CoachBubble } from '../common/CoachBubble';
+import { ThematicPlanOfficialForm } from './ThematicPlanOfficialForm';
 
 interface AIThematicPlanGeneratorModalProps {
     hideModal: () => void;
@@ -19,6 +21,14 @@ interface AIThematicPlanGeneratorModalProps {
     prefillGradeTitle?: string;
     prefillGradeId?: string;
     prefillWeeks?: number;
+}
+
+function buildHistoryContext(history: TeacherThematicHistoryItem[]): string | undefined {
+    if (!history.length) return undefined;
+    const lines = history.map((h, i) =>
+        `Претходен план ${i + 1}: „${h.thematicUnit}" — педагошки модели: ${h.teachingModels.join(', ') || 'нема детектирани'}. Клучни активности: ${h.lessonSummaries.slice(0, 2).join(' | ') || 'нема'}.`
+    );
+    return lines.join('\n');
 }
 
 export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModalProps> = ({
@@ -52,6 +62,9 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     const [period, setPeriod] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [savedAt, setSavedAt] = useState<Date | null>(null);
+    const [teacherHistory, setTeacherHistory] = useState<TeacherThematicHistoryItem[]>([]);
+    const [coachKey, setCoachKey] = useState<string | null>(null);
+    const [showOfficialForm, setShowOfficialForm] = useState(false);
 
     const selectedGradeObj = useMemo(() =>
         curriculum?.grades.find(g => g.id === selectedGradeId),
@@ -62,6 +75,12 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     const selectedTopicObj = useMemo(() =>
         topicsForGrade.find(t => t.id === selectedTopicId),
     [topicsForGrade, selectedTopicId]);
+
+    // Fetch teacher's thematic history for AI context
+    useEffect(() => {
+        if (!firebaseUser?.uid) return;
+        fetchTeacherThematicHistory(firebaseUser.uid).then(setTeacherHistory).catch(() => {});
+    }, [firebaseUser?.uid]);
 
     // Sync editablePlan when generatedPlan arrives + check for saved edits
     useEffect(() => {
@@ -113,7 +132,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         setSelectedTopicId(topicForConfig.id);
         setShowConfig(false);
         setIsLoading(true);
-        geminiService.generateThematicPlan(gradeForConfig, topicForConfig)
+        geminiService.generateThematicPlan(gradeForConfig, topicForConfig, undefined, buildHistoryContext(teacherHistory))
             .then(p => setGeneratedPlan(p))
             .catch(err => addNotification((err as Error).message, 'error'))
             .finally(() => setIsLoading(false));
@@ -138,7 +157,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         }
         setIsLoading(true);
         try {
-            const plan = await geminiService.generateThematicPlan(selectedGradeObj, selectedTopicObj);
+            const plan = await geminiService.generateThematicPlan(selectedGradeObj, selectedTopicObj, undefined, buildHistoryContext(teacherHistory));
             setGeneratedPlan(plan);
         } catch (error) {
             addNotification((error as Error).message, 'error');
@@ -260,6 +279,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         try {
             await saveThematicPlanEdit(firebaseUser.uid, selectedGradeId, selectedTopicId, editablePlan, { authorName, schoolName, period });
             setSavedAt(new Date());
+            setCoachKey(`thematic_${selectedTopicId}_${Date.now()}`);
             addNotification('✅ Тематскиот план е зачуван!', 'success');
         } catch {
             addNotification('Грешка при зачувување. Обидете се повторно.', 'error');
@@ -283,6 +303,33 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
         return na - nb;
       });
     }, [editablePlan]);
+
+    // S94-E3: Bloom HOT% — Apply(3)+Analyze(4)+Evaluate(5)+Create(6) across all lessons
+    const bloomHotPct = useMemo(() => {
+      if (!editablePlan) return null;
+      const HOT_KEYWORDS = [
+        'примени', 'примена', 'применува', 'реши', 'решава', 'конструира', 'конструирање',
+        'анализира', 'анализирај', 'разложи', 'спореди', 'разликува', 'класифицира',
+        'оцени', 'оценува', 'евалуира', 'критички', 'вреднува', 'расправа', 'аргументира',
+        'создава', 'дизајнира', 'состави', 'планира', 'синтетизира', 'конципира', 'проект',
+        'примениte', 'применуваат',
+      ];
+      const LOW_KEYWORDS = [
+        'именува', 'наведи', 'набројува', 'дефинира', 'препознава', 'повторува', 'памети',
+        'објаснува', 'опишува', 'резимира', 'претвора', 'преведува', 'илустрира',
+      ];
+      let hot = 0; let low = 0;
+      editablePlan.lessons.forEach(l => {
+        const text = `${l.learningOutcomes} ${l.keyActivities}`.toLowerCase();
+        if (HOT_KEYWORDS.some(kw => text.includes(kw))) hot++;
+        else if (LOW_KEYWORDS.some(kw => text.includes(kw))) low++;
+      });
+      const total = editablePlan.lessons.length;
+      if (total === 0) return null;
+      return Math.round((hot / total) * 100);
+    }, [editablePlan]);
+
+    const showBloomHotAlert = bloomHotPct !== null && bloomHotPct < 20;
 
     // ── Render helpers ───────────────────────────────────────────────────────
 
@@ -544,6 +591,16 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                             }
                         </button>
                     )}
+                    {editablePlan && (
+                        <button
+                            type="button"
+                            onClick={() => setShowOfficialForm(true)}
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 flex items-center gap-2 text-sm"
+                            title="МОН официјален образец — A4 пејзаж, со потписи"
+                        >
+                            📄 МОН Образец
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={handlePrint}
@@ -561,6 +618,33 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         Затвори
                     </button>
                 </div>
+
+                {/* S94-E3: Bloom HOT Gap Alert */}
+                {showBloomHotAlert && editablePlan && (
+                    <div className="mx-2 mt-3 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                        <span className="text-lg shrink-0">⚠️</span>
+                        <div>
+                            <p className="text-xs font-black text-amber-800">
+                                Само {bloomHotPct}% HOT активности — МОН препорачува ≥20%
+                            </p>
+                            <p className="text-[11px] text-amber-700 mt-0.5">
+                                Додај активности со „анализира", „дизајнира", „оценува", „решава проблеми" во клучните активности на лекциите за да го зголемиш нивото на когнитивна сложеност.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* AI Coach feedback after save */}
+                {coachKey && editablePlan && (
+                    <div className="mt-3 mx-2 mb-1">
+                        <CoachBubble
+                            plan={editablePlan}
+                            planType="thematic"
+                            dismissKey={coachKey}
+                            onDismiss={() => setCoachKey(null)}
+                        />
+                    </div>
+                )}
             </div>
         );
     };
@@ -568,6 +652,7 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     if (!curriculum) return null;
 
     return (
+        <>
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in"
             onClick={hideModal}
@@ -608,5 +693,20 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                 {renderFooter()}
             </div>
         </div>
+
+        {/* S94-E1: МОН Official Form overlay */}
+        {showOfficialForm && editablePlan && (
+            <ThematicPlanOfficialForm
+                data={editablePlan}
+                gradeLabel={selectedGradeObj ? `${selectedGradeObj.level}. одделение` : ''}
+                subject="Математика"
+                authorName={authorName}
+                schoolName={schoolName}
+                period={period}
+                academicYear={new Date().getFullYear() + '/' + (new Date().getFullYear() + 1)}
+                onClose={() => setShowOfficialForm(false)}
+            />
+        )}
+        </>
     );
 };

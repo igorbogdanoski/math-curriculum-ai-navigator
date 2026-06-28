@@ -1,4 +1,11 @@
-﻿import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import {
+  fetchTopicOverlaysForGrade,
+  saveTopicOverlay,
+  deleteTopicOverlay,
+  type TopicOverlay,
+} from '../services/firestoreService.curriculumOverlays';
+import { useAuth } from '../contexts/AuthContext';
 import { useReactToPrint } from 'react-to-print';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -13,9 +20,11 @@ import { AIThematicPlanGeneratorModal } from '../components/planner/AIThematicPl
 import { AnnualPlanOfficialForm } from '../components/planner/AnnualPlanOfficialForm';
 import { PlanAnalyticsDashboard } from '../components/planner/PlanAnalyticsDashboard';
 import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
+import { PlanningChainBar } from '../components/planner/PlanningChainBar';
 import { CollabShareButton } from '../components/planner/CollabShareButton';
 import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
 import { usePlanning } from '../contexts/PlanningContext';
+import { usePlanner } from '../contexts/PlannerContext';
 import { useAnnualPlanGeneration } from '../hooks/useAnnualPlanGeneration';
 import { useNavigation } from '../contexts/NavigationContext';
 
@@ -28,9 +37,24 @@ interface SortableTopicProps {
     onGenerateThematic: () => void;
     onUpdate: (updated: AIGeneratedAnnualPlanTopic) => void;
     exploreGradeId?: string;
+    overlayNote?: string;
+    overlayColor?: TopicOverlay['color'];
+    onNoteChange: (note: string, color: TopicOverlay['color']) => void;
+    onNoteDelete: () => void;
+    lessonCount?: number;
 }
 
-const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerateLesson, onGenerateThematic, onUpdate, exploreGradeId }) => {
+const NOTE_COLORS: { key: TopicOverlay['color']; bg: string; border: string; text: string }[] = [
+    { key: 'yellow', bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-800' },
+    { key: 'blue',   bg: 'bg-blue-50',   border: 'border-blue-300',   text: 'text-blue-800' },
+    { key: 'green',  bg: 'bg-emerald-50', border: 'border-emerald-300', text: 'text-emerald-800' },
+    { key: 'pink',   bg: 'bg-pink-50',   border: 'border-pink-300',   text: 'text-pink-800' },
+];
+
+const SortableTopic: React.FC<SortableTopicProps> = ({
+    topic, id, idx, onGenerateLesson, onGenerateThematic, onUpdate, exploreGradeId,
+    overlayNote, overlayColor = 'yellow', onNoteChange, onNoteDelete, lessonCount,
+}) => {
     const { navigate } = useNavigation();
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
     const [isEditing, setIsEditing] = useState(false);
@@ -38,6 +62,13 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerat
     const [editWeeks, setEditWeeks] = useState(1);
     const [editObjectives, setEditObjectives] = useState('');
     const [editActivities, setEditActivities] = useState('');
+    const [showNote, setShowNote] = useState(false);
+    const [noteText, setNoteText] = useState(overlayNote ?? '');
+    const [noteColor, setNoteColor] = useState<TopicOverlay['color']>(overlayColor);
+
+    // Sync when parent reloads overlays (e.g. grade change)
+    useEffect(() => { setNoteText(overlayNote ?? ''); }, [overlayNote]);
+    useEffect(() => { setNoteColor(overlayColor); }, [overlayColor]);
 
     const handleStartEdit = () => {
         setEditTitle(topic.title);
@@ -149,6 +180,22 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerat
                                     Програма
                                 </button>
                             )}
+                            {/* S94-E5: Progress Tracker badge */}
+                            {lessonCount !== undefined && (
+                                <span
+                                    title={`${lessonCount} зачувани час${lessonCount === 1 ? '' : 'а'} за оваа тема`}
+                                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border shadow-sm ${lessonCount > 0 ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
+                                >
+                                    {lessonCount > 0 ? '✅' : '○'} {lessonCount} ч.
+                                </span>
+                            )}
+                            {/* S93-D: Мои Бележки toggle */}
+                            <button type="button"
+                                onClick={() => setShowNote(v => !v)}
+                                title={overlayNote ? 'Уреди белешка' : 'Додади белешка'}
+                                className={`flex items-center gap-1 px-2.5 py-1.5 border text-xs font-medium rounded-lg shadow-sm transition-colors ${overlayNote ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`}>
+                                📝{overlayNote ? ' Белешка' : ''}
+                            </button>
                         </>
                     )}
                 </div>
@@ -219,6 +266,59 @@ const SortableTopic: React.FC<SortableTopicProps> = ({ topic, id, idx, onGenerat
                 </div>
             </div>
             )}
+
+            {/* S93-D: Мои Бележки note overlay */}
+            {showNote && (
+                <div className={`border-t px-4 py-3 ${NOTE_COLORS.find(c => c.key === noteColor)?.bg ?? 'bg-yellow-50'} ${NOTE_COLORS.find(c => c.key === noteColor)?.border ?? 'border-yellow-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-black text-gray-600 uppercase tracking-wide">📝 Мои Бележки</span>
+                        <div className="flex gap-1 ml-auto">
+                            {NOTE_COLORS.map(c => (
+                                <button
+                                    key={c.key}
+                                    type="button"
+                                    aria-label={`Боја ${c.key}`}
+                                    onClick={() => setNoteColor(c.key)}
+                                    className={`w-5 h-5 rounded-full border-2 transition-transform ${c.bg} ${noteColor === c.key ? 'border-gray-600 scale-125' : 'border-gray-300'}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <textarea
+                        value={noteText}
+                        onChange={e => setNoteText(e.target.value)}
+                        rows={3}
+                        placeholder="Лична белешка за оваа тема (видлива само за тебе)..."
+                        className={`w-full text-sm border rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white/70 ${NOTE_COLORS.find(c => c.key === noteColor)?.text ?? 'text-yellow-800'}`}
+                        onPointerDown={e => e.stopPropagation()}
+                    />
+                    <div className="flex gap-2 mt-2">
+                        <button
+                            type="button"
+                            onClick={() => { onNoteChange(noteText, noteColor); setShowNote(false); }}
+                            className="px-3 py-1 bg-gray-700 text-white text-xs font-bold rounded-lg hover:bg-gray-800"
+                        >
+                            Зачувај
+                        </button>
+                        {overlayNote && (
+                            <button
+                                type="button"
+                                onClick={() => { onNoteDelete(); setNoteText(''); setShowNote(false); }}
+                                className="px-3 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-lg hover:bg-red-200"
+                            >
+                                Избриши
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setShowNote(false)}
+                            className="px-3 py-1 bg-white border border-gray-300 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50"
+                        >
+                            Откажи
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -247,12 +347,54 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
     } = useAnnualPlanGeneration({ planId });
 
     const { setPlanningState } = usePlanning();
+    const { lessonPlans } = usePlanner();
+
+    // ── S94-E5: Lesson count per topic title (for Progress Tracker badges) ──────
+    const lessonCountMap = useMemo(() => {
+        const map = new Map<string, number>();
+        lessonPlans.forEach((lp: { theme: string }) => {
+            if (!lp.theme) return;
+            map.set(lp.theme, (map.get(lp.theme) ?? 0) + 1);
+        });
+        return map;
+    }, [lessonPlans]);
 
     // ── UI-only state ──────────────────────────────────────────────────────────
     const [viewMode, setViewMode] = useState<'list' | 'gantt' | 'analytics'>('list');
     const [thematicTopic, setThematicTopic] = useState<AIGeneratedAnnualPlanTopic | null>(null);
     const [showOfficialForm, setShowOfficialForm] = useState(false);
     const [officialIsEditing, setOfficialIsEditing] = useState(false);
+
+    // ── S93-D: Curriculum Overlays (teacher notes per topic) ───────────────────
+    const [overlays, setOverlays] = useState<Map<number, TopicOverlay>>(new Map());
+    useEffect(() => {
+        if (!firebaseUser?.uid || !selectedGradeId) return;
+        fetchTopicOverlaysForGrade(firebaseUser.uid, selectedGradeId).then(list => {
+            const map = new Map<number, TopicOverlay>();
+            list.forEach(o => map.set(o.topicIndex, o));
+            setOverlays(map);
+        }).catch(() => {});
+    }, [firebaseUser?.uid, selectedGradeId]);
+
+    const handleNoteChange = useCallback(async (topicIdx: number, topicTitle: string, note: string, color: TopicOverlay['color']) => {
+        if (!firebaseUser?.uid || !selectedGradeId) return;
+        await saveTopicOverlay(firebaseUser.uid, selectedGradeId, topicIdx, topicTitle, note, color).catch(() => {});
+        setOverlays(prev => {
+            const next = new Map(prev);
+            next.set(topicIdx, { id: '', uid: firebaseUser.uid!, gradeId: selectedGradeId, topicIndex: topicIdx, topicTitle, note, color, updatedAt: null });
+            return next;
+        });
+    }, [firebaseUser?.uid, selectedGradeId]);
+
+    const handleNoteDelete = useCallback(async (topicIdx: number) => {
+        if (!firebaseUser?.uid || !selectedGradeId) return;
+        await deleteTopicOverlay(firebaseUser.uid, selectedGradeId, topicIdx).catch(() => {});
+        setOverlays(prev => {
+            const next = new Map(prev);
+            next.delete(topicIdx);
+            return next;
+        });
+    }, [firebaseUser?.uid, selectedGradeId]);
     const [officialAuthorName, setOfficialAuthorName] = useState('');
     const [officialSchoolName, setOfficialSchoolName] = useState('');
     const [officialAcademicYear, setOfficialAcademicYear] = useState('2026/2027');
@@ -299,6 +441,7 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
 
     return (
         <div className="p-6 max-w-6xl mx-auto space-y-6">
+            <PlanningChainBar currentStep="annual" />
             <PlanningBreadcrumb />
             {isLoadingExisting && (
                 <div className="flex items-center justify-center py-20">
@@ -726,6 +869,11 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
                                                         } : null);
                                                     }}
                                                     exploreGradeId={selectedGradeId}
+                                                    overlayNote={overlays.get(idx)?.note}
+                                                    overlayColor={overlays.get(idx)?.color}
+                                                    onNoteChange={(note, color) => handleNoteChange(idx, topic.title, note, color)}
+                                                    onNoteDelete={() => handleNoteDelete(idx)}
+                                                    lessonCount={lessonCountMap.get(topic.title) ?? 0}
                                                 />
                                             ))}
                                         </SortableContext>

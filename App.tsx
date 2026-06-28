@@ -171,6 +171,7 @@ const MindMapView = safeLazy(() => import('./views/MindMapView').then(module => 
 const AIMindMapView = safeLazy(() => import('./views/AIMindMapView').then(module => ({ default: module.AIMindMapView })));
 const RoadmapView = safeLazy(() => import('./views/RoadmapView').then(module => ({ default: module.RoadmapView })));
 const TeacherAnalyticsView = safeLazy(() => import('./views/TeacherAnalyticsView').then(module => ({ default: module.TeacherAnalyticsView })));
+const StandardsCoverageView = safeLazy(() => import('./views/StandardsCoverageView').then(module => ({ default: module.StandardsCoverageView })));
 const SystemAdminView = safeLazy(() => import('./views/SystemAdminView').then(module => ({ default: module.SystemAdminView })));
 const SLODashboardView = safeLazy(() => import('./views/SLODashboardView').then(module => ({ default: module.SLODashboardView })));
 const TestGeneratorView = safeLazy(() => import('./views/TestGeneratorView').then(module => ({ default: module.TestGeneratorView })));
@@ -293,6 +294,7 @@ const routes = [      { path: '/privacy', component: PrivacyPolicy },
     { path: '/pro-dev', component: ProfDevView },
     { path: '/reports/coverage', component: CoverageAnalyzerView },
     { path: '/analytics', component: TeacherAnalyticsView },
+    { path: '/standards-coverage', component: StandardsCoverageView },
     { path: '/test-generator', component: TestGeneratorView },
     { path: '/grade-book', component: GradeBookView },
     { path: '/test-review', component: WrittenTestReviewView },

@@ -3,6 +3,7 @@ import Fuse from 'fuse.js';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useGeneratorPanel } from '../../contexts/GeneratorPanelContext';
 import { useCurriculum } from '../../hooks/useCurriculum';
+import { usePlanner } from '../../contexts/PlannerContext';
 import { ICONS } from '../../constants';
 import {
   nextRecent, readRecent, writeRecent, nextCursor,
@@ -23,7 +24,7 @@ interface CommandItem {
   label: string;
   description?: string;
   icon: React.ElementType;
-  group: 'nav' | 'ai' | 'concept' | 'recent';
+  group: 'nav' | 'ai' | 'concept' | 'recent' | 'plan';
   color: string;
   action: () => void;
   keywords?: string;
@@ -46,6 +47,7 @@ export const CommandPalette: React.FC = () => {
   const { navigate } = useNavigation();
   const { openGeneratorPanel } = useGeneratorPanel();
   const { curriculum } = useCurriculum();
+  const { lessonPlans } = usePlanner();
 
   // ── Close helper — restores focus to the element that opened the palette ─
   const close = () => {
@@ -183,6 +185,27 @@ export const CommandPalette: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, curriculum]);
 
+  // ── S94-E6: Lesson plan dynamic search ──────────────────────────────────
+  const planItems = useMemo<CommandItem[]>(() => {
+    if (!query.trim() || query.length < 2) return [];
+    const items: CommandItem[] = lessonPlans.map((lp: { id: string; title: string; theme: string; grade: number }) => ({
+      id: `plan-${lp.id}`,
+      label: lp.title,
+      description: `Час · ${lp.theme ?? ''} · ${lp.grade ? `${lp.grade}. одд.` : ''}`,
+      icon: FileText,
+      group: 'plan' as const,
+      color: 'text-violet-500',
+      keywords: `${lp.title} ${lp.theme} план час`,
+      action: () => go(`/planner/lesson/${lp.id}`, lp.title, 'planner'),
+    }));
+    const fuse = new Fuse(items, {
+      keys: [{ name: 'label', weight: 0.7 }, { name: 'keywords', weight: 0.3 }],
+      threshold: 0.4,
+    });
+    return fuse.search(query).map(r => r.item).slice(0, 6);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, lessonPlans]);
+
   // ── Recent items ─────────────────────────────────────────────────────────
   const recentItems = useMemo<CommandItem[]>(() => {
     if (query.trim()) return [];
@@ -221,9 +244,9 @@ export const CommandPalette: React.FC = () => {
       threshold: 0.4,
       includeScore: true,
     });
-    return [...conceptItems, ...fuse.search(query).map(r => r.item)];
+    return [...planItems, ...conceptItems, ...fuse.search(query).map(r => r.item)];
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, navItems, aiItems, conceptItems, recentItems]);
+  }, [query, navItems, aiItems, conceptItems, planItems, recentItems]);
 
   // ── Keyboard navigation ──────────────────────────────────────────────────
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -257,6 +280,7 @@ export const CommandPalette: React.FC = () => {
   // ── Group labels ─────────────────────────────────────────────────────────
   const groupLabel: Record<string, string> = {
     recent: 'Последно посетено',
+    plan: 'Мои планови за час',
     nav: 'Навигација',
     ai: 'AI Акции',
     concept: 'Концепти од курикулум',

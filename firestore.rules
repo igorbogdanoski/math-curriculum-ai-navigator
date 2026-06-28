@@ -538,19 +538,20 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ── Колаборативни планови (collab_plans) — S88-E ──
-    // Само членовите на планот (ownerUid или collaboratorUids) можат да читаат/уредуваат.
+    // ── Колаборативни планови (collab_plans) — S88+ ──
+    // Сопственикот, explicit collaborators (sharedWithUids), или token-based (publicLink=true).
     match /collab_plans/{planId} {
       allow read:   if isAuthenticated() && (
         resource.data.ownerUid == request.auth.uid ||
-        request.auth.uid in resource.data.collaboratorUids ||
+        (resource.data.sharedWithUids != null && request.auth.uid in resource.data.sharedWithUids) ||
+        resource.data.publicLink == true ||
         isAdmin()
       );
       allow create: if isAuthenticated() && !isAnonymousStudent()
                     && request.resource.data.ownerUid == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.ownerUid == request.auth.uid ||
-        request.auth.uid in resource.data.collaboratorUids ||
+        (resource.data.sharedWithUids != null && request.auth.uid in resource.data.sharedWithUids) ||
         isAdmin()
       );
       allow delete: if isAuthenticated() && (

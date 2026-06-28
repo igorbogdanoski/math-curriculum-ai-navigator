@@ -28,6 +28,8 @@ export interface ScenarioObservation {
   whatToImprove: string;
   /** Student engagement level 1–5 */
   engagementLevel: 1 | 2 | 3 | 4 | 5;
+  /** Bloom taxonomy levels activated during this lesson */
+  bloomLevels?: string[];
   /** Grade level this was observed at */
   observedGrade: number;
   observedAt: Timestamp | null;

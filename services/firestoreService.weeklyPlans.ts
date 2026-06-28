@@ -10,8 +10,8 @@
 
 import {
   doc, getDoc, setDoc, getDocs,
-  collection, query, where, orderBy,
-  serverTimestamp, type Timestamp,
+  collection, query, where, orderBy, onSnapshot,
+  serverTimestamp, type Timestamp, type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
@@ -91,6 +91,23 @@ export const fetchMyWeeklyPlans = async (uid: string): Promise<SavedWeeklyPlan[]
     ),
   );
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedWeeklyPlan));
+};
+
+/**
+ * S93-C: Subscribe to another teacher's saved weekly plan for real-time read-only viewing.
+ * Used when a colleague shares their weekly plan link.
+ */
+export const subscribeSharedWeeklyPlan = (
+  ownerUid: string,
+  gradeId: string,
+  weekNumber: number,
+  onData: (plan: SavedWeeklyPlan | null) => void,
+): Unsubscribe => {
+  const id = `${ownerUid}_${gradeId}_w${weekNumber}`;
+  return onSnapshot(doc(db, COLLECTION, id), snap => {
+    if (!snap.exists()) { onData(null); return; }
+    onData({ id: snap.id, ...snap.data() } as SavedWeeklyPlan);
+  }, () => onData(null));
 };
 
 /** Fetch all weekly plans for a grade (for school-level overview) */
