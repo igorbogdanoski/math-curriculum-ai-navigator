@@ -58,9 +58,13 @@ const AppSkeleton = () => (
 );
 
 // Helper for safe lazy loading to prevent module resolution crashes.
-// On chunk-load failures (stale HTML after new deploy with new hashes),
-// force a hard reload so the browser fetches fresh index.html + new chunks.
+// On chunk-load failures (stale HTML after a new Vercel deploy with new chunk hashes),
+// emit a custom event so a banner can prompt the user to refresh voluntarily.
 const CHUNK_RELOAD_KEY = '__chunk_reload_attempted__';
+
+/** Dispatched when a lazy chunk 404s after a deployment — banner listens to this. */
+const NEW_VERSION_EVENT = 'app:new-version';
+
 const safeLazy = (importFunc: () => Promise<any>) => {
   return React.lazy(() =>
     importFunc().catch((error) => {
@@ -72,10 +76,27 @@ const safeLazy = (importFunc: () => Promise<any>) => {
         msg.includes('dynamically imported module') ||
         msg.includes('Loading chunk') ||
         msg.includes('ChunkLoadError');
-      if (isChunkLoadError && !sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
-        sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
-        window.location.reload();
-        return { default: () => null as any };
+      if (isChunkLoadError) {
+        // Signal to the NewVersionBanner — do NOT auto-reload silently
+        window.dispatchEvent(new CustomEvent(NEW_VERSION_EVENT));
+        return {
+          default: () => (
+            <div className="p-8 text-center">
+              <Card className="border-amber-200 bg-amber-50 max-w-md mx-auto">
+                <p className="text-2xl mb-2">🔄</p>
+                <h2 className="text-lg font-bold text-amber-800 mb-1">Нова верзија на апликацијата</h2>
+                <p className="text-amber-700 text-sm mb-4">Достапно е ажурирање. Освежи за да ја вчиташ новата верзија.</p>
+                <button
+                  type="button"
+                  onClick={() => { sessionStorage.removeItem(CHUNK_RELOAD_KEY); window.location.reload(); }}
+                  className="px-5 py-2 bg-amber-600 text-white rounded-lg font-semibold text-sm hover:bg-amber-700 transition-colors"
+                >
+                  Освежи сега
+                </button>
+              </Card>
+            </div>
+          )
+        };
       }
       return {
         default: () => (
@@ -85,19 +106,40 @@ const safeLazy = (importFunc: () => Promise<any>) => {
               <p className="text-gray-700">Оваа страница моментално не е достапна. Ве молиме освежете ја апликацијата.</p>
               <button
                 type="button"
-                onClick={() => { sessionStorage.removeItem(CHUNK_RELOAD_KEY); window.location.reload(); }}
+                onClick={() => window.location.reload()}
                 className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
               >
                 Освежи
               </button>
-              <pre className="mt-4 text-xs text-left bg-white p-2 rounded border text-red-500 overflow-auto">
-                {msg}
-              </pre>
             </Card>
           </div>
         )
       };
     })
+  );
+};
+
+/** Floating banner shown when a new app version is detected (chunk-hash mismatch after deploy). */
+const NewVersionBanner: React.FC = () => {
+  const [visible, setVisible] = React.useState(false);
+  React.useEffect(() => {
+    const handler = () => setVisible(true);
+    window.addEventListener(NEW_VERSION_EVENT, handler);
+    return () => window.removeEventListener(NEW_VERSION_EVENT, handler);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-800 text-white px-5 py-3 rounded-2xl shadow-2xl text-sm font-medium animate-fade-in">
+      <span>🔄 Нова верзија достапна</span>
+      <button
+        type="button"
+        onClick={() => { sessionStorage.removeItem(CHUNK_RELOAD_KEY); window.location.reload(); }}
+        className="bg-white text-slate-800 px-3 py-1 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors"
+      >
+        Освежи
+      </button>
+      <button type="button" onClick={() => setVisible(false)} className="opacity-60 hover:opacity-100 text-lg leading-none">×</button>
+    </div>
   );
 };
 
@@ -532,7 +574,10 @@ const AppCore: React.FC = () => {
         );
     }
     return (
-        <AuthenticatedApp />
+        <>
+            <AuthenticatedApp />
+            <NewVersionBanner />
+        </>
     );
 }
 
