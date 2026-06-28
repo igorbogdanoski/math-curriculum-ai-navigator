@@ -42,6 +42,7 @@ import { RichTaskPanel } from '../components/lesson-plan-editor/RichTaskPanel';
 import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
 import { LessonResourceHub } from '../components/lesson-plan-editor/LessonResourceHub';
 import { ContextualMathTools } from '../components/lesson-plan-editor/ContextualMathTools';
+import { StudentCognitiveProfilePanel } from '../components/lesson-plan-editor/StudentCognitiveProfilePanel';
 import type { ScenarioBankEntry } from '../services/firestoreService.scenarioBank';
 
 
@@ -566,6 +567,14 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             />
 
             <PedagogicalModelsPanel />
+
+            {/* S99.3 — Student Cognitive Profile */}
+            {firebaseUser?.uid && plan.grade && (
+              <StudentCognitiveProfilePanel
+                grade={plan.grade}
+                teacherUid={firebaseUser.uid}
+              />
+            )}
 
             {/* S97.1 — Contextual Math Tools */}
             {(plan.theme || plan.title) && (
