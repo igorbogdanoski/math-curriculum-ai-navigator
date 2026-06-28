@@ -289,6 +289,9 @@ export const ExtractionHubView: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingToBank, setIsSavingToBank] = useState(false);
   const [isCopiedAll, setIsCopiedAll] = useState(false);
+  // S96.3 — curriculum tagging before save
+  const [saveGrade, setSaveGrade] = useState<number | ''>('');
+  const [saveTopicId, setSaveTopicId] = useState('');
 
   const [enriching, setEnriching] = useState(false);
   const [genMaterialType, setGenMaterialType] = useState<QuickGenType>('SCENARIO');
@@ -696,6 +699,8 @@ export const ExtractionHubView: React.FC = () => {
         title: `Екстракција: ${label}`,
         type: 'problems',
         teacherUid: firebaseUser.uid,
+        gradeLevel: saveGrade !== '' ? saveGrade : undefined,
+        topicId: saveTopicId.trim() || undefined,
       });
       addNotification(`Зачувани ${result.tasks.length} задачи во библиотека! ✓`, 'success');
     } catch { addNotification('Зачувувањето не успеа.', 'error'); }
@@ -1327,7 +1332,7 @@ export const ExtractionHubView: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                     result.quality.label === 'excellent' ? 'bg-emerald-100 text-emerald-700' :
                     result.quality.label === 'good' ? 'bg-blue-100 text-blue-700' :
@@ -1336,6 +1341,26 @@ export const ExtractionHubView: React.FC = () => {
                   }`}>
                     {result.quality.score}% · {qualityMk[result.quality.label] ?? result.quality.label}
                   </span>
+                  {/* S96.3 — curriculum tagging */}
+                  <select
+                    value={saveGrade}
+                    onChange={e => setSaveGrade(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    title="Одделение за каталогизација"
+                  >
+                    <option value="">Одд.</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={saveTopicId}
+                    onChange={e => setSaveTopicId(e.target.value)}
+                    placeholder="Тема (за пребарување)"
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-600 w-36 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    title="Тема/топик за каталогизација во библиотека"
+                  />
                   <button
                     type="button"
                     onClick={copyAll}

@@ -219,7 +219,12 @@ function QuestionCard({ q, idx, total, onChange, onDelete, onMoveUp, onMoveDown 
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 
-export const KahootMakerView: React.FC = () => {
+interface KahootMakerViewProps {
+  prefillTopic?: string;
+  prefillGrade?: string;
+}
+
+export const KahootMakerView: React.FC<KahootMakerViewProps> = ({ prefillTopic, prefillGrade }) => {
   const { firebaseUser } = useAuth();
   const { navigate } = useNavigation();
   const { curriculum } = useCurriculum();
@@ -233,12 +238,21 @@ export const KahootMakerView: React.FC = () => {
   const [selectedTaskIndices, setSelectedTaskIndices] = useState<Set<number>>(new Set());
   const [docFile, setDocFile] = useState<File | null>(null);
   const [docCount, setDocCount] = useState(8);
-  const [promptText, setPromptText] = useState('');
+  const [promptText, setPromptText] = useState(prefillTopic ?? '');
   const [promptCount, setPromptCount] = useState(6);
 
-  // Curriculum context for prompt path
+  // Curriculum context for prompt path — pre-fill from URL params when coming from lesson plan
   const [promptGradeId, setPromptGradeId] = useState('');
   const [promptTopicId, setPromptTopicId] = useState('');
+
+  // Resolve prefillGrade (number string) to grade id once curriculum is loaded
+  useEffect(() => {
+    if (prefillGrade && curriculum && !promptGradeId) {
+      const gradeNum = Number(prefillGrade);
+      const found = curriculum.grades.find(g => g.level === gradeNum);
+      if (found) setPromptGradeId(found.id);
+    }
+  }, [prefillGrade, curriculum, promptGradeId]);
   const promptGrade = useMemo(
     () => curriculum?.grades.find(g => g.id === promptGradeId),
     [curriculum, promptGradeId],

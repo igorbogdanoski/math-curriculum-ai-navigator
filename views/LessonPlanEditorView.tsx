@@ -40,6 +40,9 @@ import { VerticalProgressionPanel } from '../components/lesson-plan-editor/Verti
 import { PedagogicalModelsPanel } from '../components/lesson-plan-editor/PedagogicalModelsPanel';
 import { RichTaskPanel } from '../components/lesson-plan-editor/RichTaskPanel';
 import { PedagogicalEnrichPanel } from '../components/planner/PedagogicalEnrichPanel';
+import { LessonResourceHub } from '../components/lesson-plan-editor/LessonResourceHub';
+import { ContextualMathTools } from '../components/lesson-plan-editor/ContextualMathTools';
+import type { ScenarioBankEntry } from '../services/firestoreService.scenarioBank';
 
 
 interface LessonPlanEditorViewProps {
@@ -80,6 +83,27 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const isEditing = useMemo(() => id !== undefined, [id]);
   const [isDirty, setIsDirty] = useState(false);
   const isInitialLoad = useRef(true);
+
+  // S96.2 — Scenario Bank → Lesson Plan Bridge
+  const handleImportScenario = useCallback((entry: ScenarioBankEntry) => {
+    setConfirmDialog({
+      message: 'Ова ќе ги замени постоечките сценарио полиња. Продолжи?',
+      title: 'Увези сценарио',
+      variant: 'warning',
+      onConfirm: () => {
+        setPlan(prev => ({
+          ...prev,
+          scenario: {
+            introductory: { text: entry.scenarioIntro, bloomsLevel: undefined, dokLevel: undefined },
+            main: entry.scenarioMain.map(text => ({ text, bloomsLevel: undefined, dokLevel: undefined })),
+            concluding: { text: entry.scenarioConcluding, bloomsLevel: undefined, dokLevel: undefined },
+          },
+        }));
+        setConfirmDialog(null);
+        addNotification('Сценариото е увезено во планот ✓', 'success');
+      },
+    });
+  }, [addNotification, setPlan]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -530,6 +554,68 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             />
 
             <PedagogicalModelsPanel />
+
+            {/* S97.1 — Contextual Math Tools */}
+            {(plan.theme || plan.title) && (
+              <ContextualMathTools
+                topicTitle={plan.theme || plan.title}
+                onNavigate={navigate}
+              />
+            )}
+
+            {/* S96.1 — Resource Hub */}
+            <Card className="p-3">
+              <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                <span>📚</span> Ресурси за оваа тема
+              </h3>
+              <LessonResourceHub
+                grade={plan.grade}
+                topicId={plan.topicId}
+                theme={plan.theme || plan.title}
+                uid={firebaseUser?.uid}
+                onNavigate={navigate}
+                onImportScenario={handleImportScenario}
+              />
+            </Card>
+
+            {/* S96.4 — Quick-Launch */}
+            {(plan.title || plan.theme) && plan.grade && (
+              <Card className="p-3">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Брзо создади
+                </h3>
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dugga/build?topic=${encodeURIComponent(plan.theme || plan.title || '')}&grade=${plan.grade}`)}
+                    className="flex items-center gap-2 px-3 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg text-xs font-medium transition-colors border border-violet-200"
+                  >
+                    <span>📊</span> Dugga тест за оваа тема
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/kahoot/make?prefillTopic=${encodeURIComponent(plan.theme || plan.title || '')}&prefillGrade=${plan.grade}`)}
+                    className="flex items-center gap-2 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-medium transition-colors border border-rose-200"
+                  >
+                    <span>🎮</span> Kahoot за оваа тема
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/gamma?prefillTopic=${encodeURIComponent(plan.theme || plan.title || '')}&prefillGrade=${plan.grade}`)}
+                    className="flex items-center gap-2 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-medium transition-colors border border-amber-200"
+                  >
+                    <span>🎬</span> Gamma презентација
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/extraction-hub')}
+                    className="flex items-center gap-2 px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-xs font-medium transition-colors border border-sky-200"
+                  >
+                    <span>📄</span> Извлечи задачи (PDF/веб)
+                  </button>
+                </div>
+              </Card>
+            )}
           </aside>
         </div>
       </div>
