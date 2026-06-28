@@ -1,5 +1,6 @@
 import { useTour } from '../hooks/useTour';
 import React, { useState, useMemo, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { Card } from '../components/common/Card';
 import { ICONS } from '../constants';
@@ -146,6 +147,11 @@ export const ExploreView: React.FC<{ gradeId?: string }> = ({ gradeId: initialGr
 
     return (
         <div className="flex flex-col md:flex-row h-full">
+            <Helmet>
+              <title>Истражи Наставна Програма — MisMath AI</title>
+              <meta name="description" content="Прегледај ги сите теми, концепти и цели на македонската математичка програма по одделение — основно и средно образование." />
+              <link rel="canonical" href="https://ai.mismath.net/explore" />
+            </Helmet>
             {/* Left Column: Track + Grade Selector */}
             <div data-tour="explore-grade-selector" className="w-full md:w-64 p-4 bg-white border-b md:border-b-0 md:border-r flex-shrink-0 flex flex-col gap-3">
                 {/* ── Track selector ── */}

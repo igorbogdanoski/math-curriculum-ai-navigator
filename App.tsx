@@ -28,6 +28,7 @@ import { ICONS } from './constants';
 import { Sidebar } from './components/Sidebar';
 import { SilentErrorBoundary } from './components/common/SilentErrorBoundary';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { PlanningErrorBoundary } from './components/common/PlanningErrorBoundary';
 import { Breadcrumbs } from './components/common/Breadcrumbs';
 import { RelatedTools } from './components/common/RelatedTools';
 import { GlobalSearchBar } from './components/common/GlobalSearchBar';
@@ -383,7 +384,13 @@ const AppContent: React.FC = () => {
                         <ErrorBoundary>
                             <Suspense fallback={<AppSkeleton />}>
                                 <div key={path} className="animate-fade-in-up origin-top">
-                                    <RenderComponent {...params} />
+                                    {(path.startsWith('/annual-planner') || path.startsWith('/weekly-plan') || path.startsWith('/planner/lesson')) ? (
+                                      <PlanningErrorBoundary>
+                                        <RenderComponent {...params} />
+                                      </PlanningErrorBoundary>
+                                    ) : (
+                                      <RenderComponent {...params} />
+                                    )}
                                 </div>
                             </Suspense>
                         </ErrorBoundary>

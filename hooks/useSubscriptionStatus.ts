@@ -1,0 +1,34 @@
+import { useAuth } from '../contexts/AuthContext';
+import type { TeachingProfile } from '../types';
+
+export type SubscriptionTier = 'Free' | 'Pro' | 'School' | 'Unlimited';
+
+export const LOW_CREDITS_THRESHOLD = 3;
+
+export interface SubscriptionStatus {
+  tier: SubscriptionTier;
+  creditsBalance: number;
+  isLowCredits: boolean;
+  isUnlimited: boolean;
+  isPro: boolean;
+}
+
+/** Derive tier from profile fields — tier field takes precedence. */
+export function deriveTier(profile: TeachingProfile | null): SubscriptionTier {
+  if (!profile) return 'Free';
+  if (profile.tier) return profile.tier;
+  if (profile.hasUnlimitedCredits) return 'Unlimited';
+  if (profile.isPremium) return 'Pro';
+  return 'Free';
+}
+
+export function useSubscriptionStatus(): SubscriptionStatus {
+  const { user } = useAuth();
+  const tier = deriveTier(user);
+  const creditsBalance = user?.aiCreditsBalance ?? 0;
+  const isUnlimited = tier === 'Unlimited' || tier === 'School' || (user?.hasUnlimitedCredits ?? false);
+  const isPro = tier === 'Pro' || isUnlimited;
+  const isLowCredits = !isUnlimited && creditsBalance <= LOW_CREDITS_THRESHOLD;
+
+  return { tier, creditsBalance, isLowCredits, isUnlimited, isPro };
+}

@@ -1,4 +1,5 @@
 ﻿import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import {
   fetchTopicOverlaysForGrade,
   saveTopicOverlay,
@@ -18,7 +19,9 @@ import { generatePlanICS, downloadICS } from '../utils/icalExport';
 import { PlanGanttChart } from '../components/planner/PlanGanttChart';
 import { AIThematicPlanGeneratorModal } from '../components/planner/AIThematicPlanGeneratorModal';
 import { AnnualPlanOfficialForm } from '../components/planner/AnnualPlanOfficialForm';
-import { PlanAnalyticsDashboard } from '../components/planner/PlanAnalyticsDashboard';
+const PlanAnalyticsDashboard = React.lazy(() =>
+  import('../components/planner/PlanAnalyticsDashboard').then(m => ({ default: m.PlanAnalyticsDashboard }))
+);
 import { PlanningBreadcrumb } from '../components/planner/PlanningBreadcrumb';
 import { PlanningChainBar } from '../components/planner/PlanningChainBar';
 import { CollabShareButton } from '../components/planner/CollabShareButton';
@@ -441,6 +444,11 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
 
     return (
         <div className="p-6 max-w-6xl mx-auto space-y-6">
+            <Helmet>
+              <title>Годишен Наставен План — MisMath AI</title>
+              <meta name="description" content="Генерирај AI-асистиран годишен план за математика според БРО програмата — по одделение, трифазна структура, Bloom анализа." />
+              <link rel="canonical" href="https://ai.mismath.net/annual-planner" />
+            </Helmet>
             <PlanningChainBar currentStep="annual" />
             <PlanningBreadcrumb />
             {isLoadingExisting && (
@@ -817,7 +825,9 @@ export const AnnualPlanGeneratorView: React.FC<AnnualPlanGeneratorViewProps> = (
 
                                 {viewMode === 'analytics' ? (
                                     <div className="mb-6">
-                                        <PlanAnalyticsDashboard plan={plan} weeklyHours={4} />
+                                        <React.Suspense fallback={<div className="flex items-center justify-center py-12 text-slate-400 text-sm">Вчитување аналитики...</div>}>
+                                            <PlanAnalyticsDashboard plan={plan} weeklyHours={4} />
+                                        </React.Suspense>
                                     </div>
                                 ) : viewMode === 'gantt' ? (
                                     <div className="mb-6">

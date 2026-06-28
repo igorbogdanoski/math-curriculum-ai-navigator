@@ -65,6 +65,8 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
     const [teacherHistory, setTeacherHistory] = useState<TeacherThematicHistoryItem[]>([]);
     const [coachKey, setCoachKey] = useState<string | null>(null);
     const [showOfficialForm, setShowOfficialForm] = useState(false);
+    const [broAccordionOpen, setBroAccordionOpen] = useState(false);
+    const [pedagAccordionOpen, setPedagAccordionOpen] = useState(false);
 
     const selectedGradeObj = useMemo(() =>
         curriculum?.grades.find(g => g.id === selectedGradeId),
@@ -391,22 +393,29 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                 <div className="p-6">
                     <h3 className="text-xl font-semibold mb-3 text-brand-primary">{editablePlan.thematicUnit}</h3>
 
-                    {/* БРО standards summary */}
+                    {/* БРО standards summary — accordion */}
                     {allCoveredStandards.length > 0 && (
-                        <div className="mb-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
-                            <p className="text-xs font-bold text-indigo-700 mb-2">
-                                📋 Покриени БРО стандарди III-А ({allCoveredStandards.length})
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {allCoveredStandards.map(code => (
-                                    <span
-                                        key={code}
-                                        className="px-2 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 text-[11px] font-bold"
-                                    >
-                                        {code}
-                                    </span>
-                                ))}
-                            </div>
+                        <div className="mb-4 border border-indigo-100 rounded-lg overflow-hidden">
+                            <button
+                                type="button"
+                                onClick={() => setBroAccordionOpen(o => !o)}
+                                className="w-full flex items-center justify-between px-3 py-2 bg-indigo-50 hover:bg-indigo-100 transition-colors text-xs font-bold text-indigo-700"
+                            >
+                                <span>📋 Покриени БРО стандарди III-А ({allCoveredStandards.length})</span>
+                                <span className="text-indigo-500">{broAccordionOpen ? '▲' : '▼'}</span>
+                            </button>
+                            {broAccordionOpen && (
+                                <div className="p-3 flex flex-wrap gap-1.5">
+                                    {allCoveredStandards.map(code => (
+                                        <span
+                                            key={code}
+                                            className="px-2 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 text-[11px] font-bold"
+                                        >
+                                            {code}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -452,19 +461,33 @@ export const AIThematicPlanGeneratorModal: React.FC<AIThematicPlanGeneratorModal
                         </table>
                     </div>
 
-                    {/* Pedagogical enrichment — shown in preview mode only */}
+                    {/* Pedagogical enrichment — accordion, preview mode only */}
                     {viewMode === 'preview' && (
                         <div className="px-6 pb-4">
-                            <PedagogicalEnrichPanel
-                                planType="thematic"
-                                planSummary={{
-                                    grade: selectedGradeObj?.title ?? '',
-                                    title: editablePlan.thematicUnit,
-                                    objectives: editablePlan.lessons.slice(0, 5).map(l => l.learningOutcomes),
-                                    activities: editablePlan.lessons.slice(0, 5).map(l => l.keyActivities),
-                                    weeks: prefillWeeks,
-                                }}
-                            />
+                            <div className="border border-violet-100 rounded-lg overflow-hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => setPedagAccordionOpen(o => !o)}
+                                    className="w-full flex items-center justify-between px-3 py-2 bg-violet-50 hover:bg-violet-100 transition-colors text-xs font-bold text-violet-700"
+                                >
+                                    <span>🎓 Педагошко збогатување на темата</span>
+                                    <span className="text-violet-400">{pedagAccordionOpen ? '▲' : '▼'}</span>
+                                </button>
+                                {pedagAccordionOpen && (
+                                    <div className="p-3">
+                                        <PedagogicalEnrichPanel
+                                            planType="thematic"
+                                            planSummary={{
+                                                grade: selectedGradeObj?.title ?? '',
+                                                title: editablePlan.thematicUnit,
+                                                objectives: editablePlan.lessons.slice(0, 5).map(l => l.learningOutcomes),
+                                                activities: editablePlan.lessons.slice(0, 5).map(l => l.keyActivities),
+                                                weeks: prefillWeeks,
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import {
   BookOpen, BarChart3, Dumbbell, FlaskConical, GraduationCap,
   ArrowRight, Star, Target, TrendingUp, LogIn, LogOut,
@@ -195,6 +196,11 @@ export const MaturaPortalView: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <Helmet>
+        <title>Матура Портал — Подготовка за Државна Матура | MisMath AI</title>
+        <meta name="description" content="AI-асистирана подготовка за државна матура по математика — вежбање, симулации, следење на напредок, персонализирани мисии." />
+        <link rel="canonical" href="https://ai.mismath.net/matura-portal" />
+      </Helmet>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">

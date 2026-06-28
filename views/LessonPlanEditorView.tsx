@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useReactToPrint } from 'react-to-print';
 import { logger } from '../utils/logger';
 import { usePlanner } from '../contexts/PlannerContext';
@@ -77,23 +78,32 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const isMounted = useRef(true);
   const lessonOfficialFormRef = useRef<HTMLDivElement>(null);
   const isEditing = useMemo(() => id !== undefined, [id]);
+  const [isDirty, setIsDirty] = useState(false);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
 
-  // Warn user before closing tab if they have unsaved content
+  // Track dirty state — skip the first render/load so editing an existing plan
+  // doesn't immediately show the unsaved-changes warning.
+  useEffect(() => {
+    if (isInitialLoad.current) { isInitialLoad.current = false; return; }
+    if (plan.title || plan.topicId) setIsDirty(true);
+  }, [plan]);
+
+  // Warn user before closing tab if they have unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (plan.title && !isSaving) {
+      if (isDirty && !isSaving) {
         e.preventDefault();
         e.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [plan.title, isSaving]);
+  }, [isDirty, isSaving]);
 
   const handleLessonOfficialPrint = useReactToPrint({
     contentRef: lessonOfficialFormRef,
@@ -173,6 +183,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         await updateLessonPlan(plan as LessonPlan);
         clearDraft();
         if (isMounted.current) {
+          setIsDirty(false);
           addNotification('Подготовката е успешно ажурирана!', 'success');
           setSavedPlanForCoach({ plan, key: `lesson_${Date.now()}`, navigateTo: '/my-lessons' });
         }
@@ -180,6 +191,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
         const newPlanId = await addLessonPlan(plan as Omit<LessonPlan, 'id'>);
         clearDraft();
         if (isMounted.current) {
+          setIsDirty(false);
           addNotification('Подготовката е успешно креирана!', 'success');
           setSavedPlanForCoach({ plan, key: `lesson_${newPlanId}`, navigateTo: `/planner/lesson/${newPlanId}` });
           // Auto-share to Scenario Bank if opted in
@@ -277,6 +289,10 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
 
   return (
     <div className="p-8 animate-fade-in">
+      <Helmet>
+        <title>{plan.title ? `${plan.title} — Подготовка | MisMath AI` : 'Подготовка за час — MisMath AI'}</title>
+        <meta name="description" content="Создај или уреди детална подготовка за час по математика со AI поддршка — цели, активности, диференцијација, Bloom анализа." />
+      </Helmet>
       <PlanningChainBar currentStep="lesson" />
       <PlanningBreadcrumb />
 

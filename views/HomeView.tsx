@@ -36,6 +36,7 @@ import { SpacedRepDueCard } from '../components/dashboard/SpacedRepDueCard';
 import { MaturaNextStepWidget } from '../components/dashboard/MaturaNextStepWidget';
 import { SmartHomeDashboard } from '../components/home/SmartHomeDashboard';
 import { PlanningHubWidget } from '../components/home/PlanningHubWidget';
+import { UpgradeNudge } from '../components/common/UpgradeNudge';
 
 // ── Quick Actions strip — 5 most-used teacher actions ────────────────────────
 const getQuickActions = (t: any) => [
@@ -465,6 +466,8 @@ export const HomeView: React.FC = () => {
           onOpenGenerator={() => openGeneratorPanel({})}
         />
       )}
+
+      <UpgradeNudge />
 
       {/* ── ПЛАНИРАЧКИ ЦЕНТАР ──────────────────────────────────────── */}
       <PlanningHubWidget />

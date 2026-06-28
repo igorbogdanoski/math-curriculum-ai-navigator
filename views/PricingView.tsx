@@ -129,6 +129,43 @@ export const PricingView: React.FC = () => {
         <meta property="og:title" content="Цени — MisMath AI Математичка Платформа" />
         <meta property="og:url" content="https://ai.mismath.net/pricing" />
         <link rel="canonical" href="https://ai.mismath.net/pricing" />
+        {/* Product schema — Free + Pro offers */}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": "MisMath AI",
+          "description": "AI платформа за македонски наставници по математика",
+          "url": "https://ai.mismath.net",
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Free план",
+              "price": "0",
+              "priceCurrency": "MKD",
+              "availability": "https://schema.org/InStock",
+              "url": "https://ai.mismath.net/pricing"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro план",
+              "price": "1200",
+              "priceCurrency": "MKD",
+              "availability": "https://schema.org/InStock",
+              "priceValidUntil": "2027-12-31",
+              "url": "https://ai.mismath.net/pricing"
+            }
+          ]
+        })}</script>
+        {/* FAQPage schema */}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": FAQ.map(f => ({
+            "@type": "Question",
+            "name": f.q,
+            "acceptedAnswer": { "@type": "Answer", "text": f.a }
+          }))
+        })}</script>
       </Helmet>
 
       {/* Payment status banners */}
