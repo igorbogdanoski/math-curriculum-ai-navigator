@@ -5,6 +5,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { GradeModel, GradeEntry } from '../types';
 import { MobileGradeEntryModal } from '../components/gradebook/MobileGradeEntryModal';
 import { BROCoveragePanel } from '../components/gradebook/BROCoveragePanel';
+import { MaturaReadinessPanel } from '../components/gradebook/MaturaReadinessPanel';
 import { MATH_STANDARDS } from '../data/allNationalStandardsComplete';
 import {
   BookMarked, BarChart3, Target, GraduationCap, Plus, Trash2, Save,
@@ -715,6 +716,16 @@ export const GradeBookView: React.FC = () => {
             <GraduationCap className="w-4 h-4" /> БРО Покриеност по стандарди (III-А)
           </p>
           <BROCoveragePanel entries={entries} gradeLevel={gradeLevel} />
+        </Card>
+      )}
+
+      {/* S100.3 — Matura Readiness Panel (grades 8–9) */}
+      {gradeLevel >= 8 && entries.length > 0 && (
+        <Card className="p-5 bg-rose-50 border-rose-200">
+          <p className="text-xs font-black text-rose-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <GraduationCap className="w-4 h-4" /> Matura Readiness Predictor
+          </p>
+          <MaturaReadinessPanel entries={entries} gradeLevel={gradeLevel} />
         </Card>
       )}
 

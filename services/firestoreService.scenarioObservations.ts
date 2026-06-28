@@ -54,3 +54,20 @@ export const fetchObservations = async (scenarioId: string): Promise<ScenarioObs
   );
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as ScenarioObservation));
 };
+
+/** S100.1 — fetch all observations by a teacher (for Lesson Study Hub) */
+export const fetchObservationsByTeacher = async (
+  authorUid: string,
+  limitCount = 50,
+): Promise<ScenarioObservation[]> => {
+  const { limit } = await import('firebase/firestore');
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTION),
+      where('authorUid', '==', authorUid),
+      orderBy('observedAt', 'desc'),
+      limit(limitCount),
+    ),
+  );
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ScenarioObservation));
+};

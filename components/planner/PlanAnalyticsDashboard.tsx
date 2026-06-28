@@ -16,6 +16,7 @@ import {
 import { BloomRadarChart } from './BloomRadarChart';
 import { QualityScoreCard } from './QualityScoreCard';
 import { NationalStandardsPanel } from './NationalStandardsPanel';
+import { CurriculumGapPanel } from './CurriculumGapPanel';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -470,6 +471,19 @@ ${safeWeak}
 
       {/* ── D: МОН Национални Стандарди ── */}
       <NationalStandardsPanel planTopics={(plan.topics ?? []).map(t => t.title)} gradeNum={gradeNum} />
+
+      {/* ── E: S100.2 — AI Curriculum Gap Detector ── */}
+      {gradeNum !== null && gradeNum <= 9 && (
+        <div className="border border-red-200 rounded-2xl bg-white shadow-sm p-5">
+          <p className="text-xs font-black text-red-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span>🔍</span> Gap Detector — БРО стандарди
+          </p>
+          <CurriculumGapPanel
+            planTopics={(plan.topics ?? []).map(t => t.title)}
+            gradeNum={gradeNum as number}
+          />
+        </div>
+      )}
     </div>
   );
 };

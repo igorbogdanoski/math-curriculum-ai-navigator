@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { useLessonResources } from '../../hooks/useLessonResources';
 import { getAvgRating, type ScenarioBankEntry } from '../../services/firestoreService.scenarioBank';
+import { rankScenarios } from '../../utils/smartRecommendations';
 import type { DuggaTest } from '../../services/firestoreService.dugga';
 import type { CachedMaterial } from '../../services/firestoreService.types';
 
@@ -194,6 +195,12 @@ export const LessonResourceHub: React.FC<Props> = ({
   const { scenarios, tests, extractedTasks, presentations, isLoading, error } =
     useLessonResources({ grade, topicId, theme, uid });
 
+  // S100.4 — rank scenarios by smart score (community + rating + proximity)
+  const rankedScenarios = grade
+    ? rankScenarios(scenarios, grade, theme ? [theme] : [], scenarios.length)
+        .map(r => r.entry)
+    : scenarios;
+
   const [openScenarios, setOpenScenarios] = useState(true);
   const [openTests, setOpenTests] = useState(true);
   const [openTasks, setOpenTasks] = useState(false);
@@ -254,7 +261,7 @@ export const LessonResourceHub: React.FC<Props> = ({
                 onCta={() => onNavigate('/scenario-bank')}
               />
             ) : (
-              scenarios.slice(0, 3).map(s => (
+              rankedScenarios.slice(0, 3).map(s => (
                 <ScenarioCard
                   key={s.id}
                   entry={s}
