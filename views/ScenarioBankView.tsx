@@ -208,8 +208,14 @@ export const ScenarioBankView: React.FC = () => {
     try {
       const { plansAPI } = await import('../services/gemini/plans');
       const parsed = await plansAPI.parseScenarioFromText(rawText, user ?? undefined);
+      const hasUsableContent = parsed.title || parsed.scenario?.introductory?.text || (parsed.scenario?.main?.length ?? 0) > 0;
+      if (!hasUsableContent) {
+        addNotification('AI не успеа да препознае структура. Провери дали датотеката содржи текст и обиди се повторно.', 'error');
+        return;
+      }
       sessionStorage.setItem('uploaded_scenario_prefill', JSON.stringify(parsed));
-      addNotification(`✅ „${fileName}" е структурирано — прегледај и уреди.`, 'success');
+      const truncWarning = rawText.length > 8000 ? ' (анализиран само прв дел)' : '';
+      addNotification(`✅ „${fileName}" е структурирано${truncWarning} — прегледај и уреди.`, 'success');
       navigate('/planner/lesson/new');
     } catch {
       addNotification('Грешка при анализа на документот. Пробајте повторно.', 'error');

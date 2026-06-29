@@ -307,13 +307,16 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
 
 /** Parses a teacher's own pre-existing scenario text (uploaded .docx/.pdf/.txt) into structured LessonPlan fields. Transcription only — never invents content absent from the source text. */
 async parseScenarioFromText(rawText: string, profile?: TeachingProfile): Promise<Partial<LessonPlan>> {
+      const safe = sanitizePromptInput(rawText, 10000);
+      const truncated = safe.length > 8000;
+      const excerpt = safe.slice(0, 8000);
       const prompt = `
 ### УЛОГА
 Ти си експерт за анализа на наставни материјали. Наставник ти дава текст од свое СОПСТВЕНО старо подготвено сценарио за час (можеби нестандардно структуриран, со OCR грешки или непотполн). Твоја задача е да го ПРЕПОЗНАЕШ и СТРУКТУРИРАШ во стандарден формат — БЕЗ да измислуваш содржина која не постои во текстот.
-
+${truncated ? '\n⚠️ Напомена: Текстот е искратен на 8000 знаци — работиш со почетниот дел на документот.\n' : ''}
 ### ТЕКСТ НА СТАРОТО СЦЕНАРИО
 """
-${sanitizePromptInput(rawText).slice(0, 8000)}
+${excerpt}
 """
 
 ### ИНСТРУКЦИИ
@@ -349,7 +352,8 @@ ${sanitizePromptInput(rawText).slice(0, 8000)}
           },
           required: ["title", "scenario"]
       };
-      return generateAndParseJSON<Partial<LessonPlan>>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, JSON_SYSTEM_INSTRUCTION, profile?.tier);
+      // Classification/transcription task — DEFAULT_MODEL is sufficient; thinking mode would waste 30-60s
+      return generateAndParseJSON<Partial<LessonPlan>>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, JSON_SYSTEM_INSTRUCTION, profile?.tier, { temperature: 0.3 });
   },
 
 async generateCalendarPlan(grade: Grade, startDate: string, endDate: string, holidays: string, winterBreak: {start: string, end: string}, profile?: TeachingProfile): Promise<Omit<PlannerItem, 'id'>[]> {
