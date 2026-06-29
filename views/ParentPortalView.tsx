@@ -157,7 +157,7 @@ export const ParentPortalView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="printable-root min-h-screen bg-gradient-to-br from-indigo-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
         {/* Main card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles, MessageSquare, Gamepad2, FileText } from 'lucide-react';
+import { useReactToPrint } from 'react-to-print';
+import { PrintShell } from '../components/common/PrintShell';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -183,6 +185,18 @@ export const ScenarioBankView: React.FC = () => {
     } catch { /* quota */ }
     navigate('/forum');
   };
+
+  const [printEntry, setPrintEntry] = useState<ScenarioBankEntry | null>(null);
+  const scenarioPrintRef = useRef<HTMLDivElement>(null);
+  const handleScenarioPrint = useReactToPrint({
+    contentRef: scenarioPrintRef,
+    documentTitle: `Scenarijo_${printEntry?.title?.slice(0, 30) ?? 'plan'}`,
+    pageStyle: '@page { size: A4 portrait; margin: 1.5cm 1.2cm; }',
+  });
+  const handlePrint = useCallback((entry: ScenarioBankEntry) => {
+    setPrintEntry(entry);
+    setTimeout(() => handleScenarioPrint(), 80);
+  }, [handleScenarioPrint]);
 
   const handleSave = async (entryId: string, saved: boolean) => {
     if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
@@ -446,6 +460,7 @@ export const ScenarioBankView: React.FC = () => {
               onUse={handleUse}
               onSave={handleSave}
               onDiscuss={handleDiscuss}
+              onPrint={handlePrint}
             />
           ))}
         </div>
@@ -474,6 +489,7 @@ export const ScenarioBankView: React.FC = () => {
                     onUse={handleUse}
                     onSave={handleSave}
                     onDiscuss={handleDiscuss}
+                    onPrint={handlePrint}
                   />
                   <div className="mt-1.5 px-1">
                     <button
@@ -497,6 +513,72 @@ export const ScenarioBankView: React.FC = () => {
           🎓 Секое сценарио може да се ремиксира — создај своја верзија и автоматски влегува во Банката
         </p>
       )}
+
+      {/* Hidden PrintShell — populated when user clicks print on a scenario card */}
+      <div className="absolute -left-[9999px] top-0">
+        <PrintShell
+          ref={scenarioPrintRef}
+          title={printEntry?.title ?? 'Сценарио за час'}
+          subtitle={printEntry ? `${printEntry.grade}. одд. · ${printEntry.topicTitle ?? ''}` : ''}
+          teacherName={printEntry?.authorName ?? ''}
+          grade={printEntry?.grade}
+          subject="Математика"
+        >
+          {printEntry && (
+            <div className="space-y-4 text-sm">
+              {/* Meta row */}
+              <div className="flex flex-wrap gap-4 text-[10pt] border-b border-gray-300 pb-3">
+                {printEntry.teachingModel && <span><strong>Модел:</strong> {printEntry.teachingModel}</span>}
+                {printEntry.bloomLevels?.length ? <span><strong>Bloom:</strong> {printEntry.bloomLevels.join(', ')}</span> : null}
+                {printEntry.dokLevel && <span><strong>DoK:</strong> {printEntry.dokLevel}</span>}
+                {printEntry.authorName && <span><strong>Автор:</strong> {printEntry.authorName}</span>}
+              </div>
+              {/* Scenario phases */}
+              {printEntry.objectives.length > 0 && (
+                <div>
+                  <p className="font-bold text-[10pt] mb-1">Цели на часот</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {printEntry.objectives.map((o, i) => <li key={i} className="text-[10pt]">{o}</li>)}
+                  </ul>
+                </div>
+              )}
+              <div>
+                <p className="font-bold text-[10pt] mb-1">Воведна активност</p>
+                <p className="text-[10pt]">{printEntry.scenarioIntro}</p>
+              </div>
+              {printEntry.scenarioMain.length > 0 && (
+                <div>
+                  <p className="font-bold text-[10pt] mb-1">Главни активности</p>
+                  <ol className="list-decimal list-inside space-y-0.5">
+                    {printEntry.scenarioMain.map((m, i) => <li key={i} className="text-[10pt]">{m}</li>)}
+                  </ol>
+                </div>
+              )}
+              <div>
+                <p className="font-bold text-[10pt] mb-1">Завршна активност</p>
+                <p className="text-[10pt]">{printEntry.scenarioConcluding}</p>
+              </div>
+              {printEntry.assessmentStandards.length > 0 && (
+                <div>
+                  <p className="font-bold text-[10pt] mb-1">БРО Стандарди</p>
+                  <p className="text-[10pt]">{printEntry.assessmentStandards.join(' · ')}</p>
+                </div>
+              )}
+              {/* Signature */}
+              <div className="mt-8 grid grid-cols-2 gap-8 text-[9pt]">
+                <div>
+                  <div className="border-b border-black w-48 mb-1" />
+                  <span>Наставник/-чка: {printEntry.authorName || '_________________'}</span>
+                </div>
+                <div>
+                  <div className="border-b border-black w-48 mb-1" />
+                  <span>Директор/-ка · Потпис и Печат</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </PrintShell>
+      </div>
     </div>
   );
 };

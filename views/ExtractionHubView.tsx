@@ -3,8 +3,10 @@ import {
   Sparkles, Globe, ChevronDown, ChevronUp, Loader2, AlertTriangle,
   Check, Copy, Save, Image as ImageIcon, Wand2, X, BookOpen,
   Play, Tag, ExternalLink, FileText, Upload, Link, Gamepad2,
-  Lightbulb, Layers, Camera, FileDown, Square, CheckSquare,
+  Lightbulb, Layers, Camera, FileDown, Square, CheckSquare, Printer,
 } from 'lucide-react';
+import { useReactToPrint } from 'react-to-print';
+import { PrintShell } from '../components/common/PrintShell';
 import { DokBadge } from '../components/common/DokBadge';
 import { getAuth } from 'firebase/auth';
 import { MathRenderer } from '../components/common/MathRenderer';
@@ -387,6 +389,14 @@ export const ExtractionHubView: React.FC = () => {
   const [selectedTaskIndices, setSelectedTaskIndices] = useState<Set<number>>(new Set());
   const toggleTaskSelection = (idx: number) =>
     setSelectedTaskIndices(prev => { const s = new Set(prev); s.has(idx) ? s.delete(idx) : s.add(idx); return s; });
+
+  const [printWithSolutions, setPrintWithSolutions] = useState(false);
+  const worksheetPrintRef = useRef<HTMLDivElement>(null);
+  const handleWorksheetPrint = useReactToPrint({
+    contentRef: worksheetPrintRef,
+    documentTitle: 'Raboten_List',
+    pageStyle: '@page { size: A4 portrait; margin: 1.5cm 1.2cm; }',
+  });
 
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingToBank, setIsSavingToBank] = useState(false);
@@ -1649,14 +1659,68 @@ export const ExtractionHubView: React.FC = () => {
                         a.download = 'raboten-list.md';
                         a.click();
                       }}
-                      className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700 transition"
+                      className="flex items-center gap-1.5 rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50 transition"
                     >
                       <FileDown className="h-3.5 w-3.5" />
-                      Извези работен лист
+                      .md
+                    </button>
+                    <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={printWithSolutions}
+                        onChange={e => setPrintWithSolutions(e.target.checked)}
+                        className="rounded accent-indigo-600"
+                      />
+                      со решенија
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleWorksheetPrint()}
+                      className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700 transition"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                      Испечати работен лист
                     </button>
                   </div>
                 </div>
               )}
+
+              {/* Hidden PrintShell for worksheet print */}
+              <div className="absolute -left-[9999px] top-0">
+                <PrintShell
+                  ref={worksheetPrintRef}
+                  title="Работен лист — Математика"
+                  subtitle={result.tasks.find(t => t.topicMk)?.topicMk ?? ''}
+                >
+                  {result.tasks
+                    .filter((_, i) => selectedTaskIndices.size === 0 || selectedTaskIndices.has(i))
+                    .map((task, n) => (
+                      <div key={n} className="worksheet-task mb-6">
+                        <div className="flex items-start gap-2">
+                          <span className="font-black text-sm shrink-0 mt-0.5">{n + 1}.</span>
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm mb-1">{task.title}</p>
+                            <p className="text-sm whitespace-pre-line">{task.latexStatement || task.statement}</p>
+                            {/* Answer box */}
+                            <div className="worksheet-answer-box mt-3 rounded border border-gray-400 min-h-[80px] p-2">
+                              {printWithSolutions && task.solution ? (
+                                <>
+                                  <p className="text-[9pt] font-bold text-gray-600 mb-1">Решение:</p>
+                                  {task.solution.steps.map((step, si) => (
+                                    <p key={si} className="text-[9pt] text-gray-700 mb-0.5">{si + 1}. {step}</p>
+                                  ))}
+                                  <p className="text-[9pt] font-bold mt-1">✓ {task.solution.finalAnswer}</p>
+                                </>
+                              ) : (
+                                <p className="text-[8pt] text-gray-300 italic">Простор за одговор</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </PrintShell>
+              </div>
 
               {/* Task cards grid */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

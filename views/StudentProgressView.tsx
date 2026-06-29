@@ -254,7 +254,7 @@ export const StudentProgressView: React.FC<Props> = ({ name: nameProp }) => {
   const printDate = new Date().toLocaleDateString('mk-MK', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="min-h-screen bg-indigo-600 p-4 md:p-8 flex flex-col items-center">
+    <div className="printable-root min-h-screen bg-indigo-600 p-4 md:p-8 flex flex-col items-center">
       {/* Header */}
       <div className="w-full max-w-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 text-white">
         <div className="flex items-center gap-3">

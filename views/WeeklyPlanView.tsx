@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, query, getDocs, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { ICONS } from '../constants';
@@ -17,6 +17,8 @@ import { PlanningChainBar } from '../components/planner/PlanningChainBar';
 import { ParentLetterModal } from '../components/planner/ParentLetterModal';
 import { WeeklyCollabModal } from '../components/planner/WeeklyCollabModal';
 import type { SavedWeeklyPlan } from '../services/firestoreService.weeklyPlans';
+import { useReactToPrint } from 'react-to-print';
+import { PrintShell } from '../components/common/PrintShell';
 
 // ── Local types ────────────────────────────────────────────────────────────────
 
@@ -254,7 +256,12 @@ export const WeeklyPlanView: React.FC = () => {
     });
   };
 
-  const handlePrint = () => window.print();
+  const weeklyPrintRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: weeklyPrintRef,
+    documentTitle: `Неделен_план_Нед${weekNumber}_${selectedPlan?.grade ?? ''}`,
+    pageStyle: '@page { size: A4 landscape; margin: 1cm 1.2cm; }',
+  });
 
   const handleSave = async () => {
     if (!firebaseUser?.uid || !selectedPlan || slots.length === 0) return;
@@ -503,15 +510,63 @@ export const WeeklyPlanView: React.FC = () => {
         </Card>
       ) : !selectedPlan ? null : (
         <>
-          {/* ── Print header (visible only on print) ── */}
-          <div className="hidden print:block mb-4">
-            <h1 className="text-xl font-bold text-center">НЕДЕЛЕН НАСТАВЕН ПЛАН</h1>
-            <p className="text-center text-sm">
-              {selectedPlan.subject} | {selectedPlan.grade} | Недела {weekNumber} | {WEEK_TO_MONTH[weekNumber]}
-            </p>
+          {/* ── Hidden PrintShell for useReactToPrint ── */}
+          <div className="absolute -left-[9999px] top-0">
+            <PrintShell
+              ref={weeklyPrintRef}
+              title="Неделен наставен план"
+              subtitle={`${selectedPlan.subject} · Недела ${weekNumber} од 36 · ${WEEK_TO_MONTH[weekNumber] ?? ''}`}
+              teacherName={user?.name ?? ''}
+              schoolName={user?.schoolName ?? ''}
+              grade={selectedPlan.planData.grade?.replace(/\D/g, '') ?? ''}
+              subject={selectedPlan.subject}
+            >
+              <table className="weekly-grid-table w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border border-gray-500 bg-gray-200 px-2 py-1 font-bold text-left w-14 print-header-bg">Час</th>
+                    {MK_DAYS.map((day, idx) => (
+                      <th key={day} className="border border-gray-500 bg-gray-200 px-2 py-1 font-bold text-center print-header-bg">
+                        {day}
+                        {periodsPerDay[idx] > 0 && (
+                          <div className="text-[8pt] font-normal text-gray-600">{periodsPerDay[idx]} ч.</div>
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: maxPeriods }, (_, periodIdx) => (
+                    <tr key={periodIdx}>
+                      <td className="border border-gray-500 px-2 py-1 text-center font-bold bg-gray-100 print-header-bg text-[8pt]">
+                        {periodIdx + 1}
+                      </td>
+                      {[0, 1, 2, 3, 4].map(dayIdx => {
+                        const slot = slots.find(s => s.dayIdx === dayIdx && s.periodIdx === periodIdx);
+                        const noClass = periodsPerDay[dayIdx] === 0 || periodIdx >= periodsPerDay[dayIdx];
+                        return (
+                          <td key={dayIdx} className={`border border-gray-500 px-2 py-1 align-top min-h-[60px] ${noClass ? 'bg-gray-50' : 'bg-white'}`}>
+                            {!noClass && slot ? (
+                              <div>
+                                <div className="text-[8pt] text-gray-500 mb-0.5">Час {slot.lessonNumber}</div>
+                                <div className="text-[9pt] font-medium">{slot.topicTitle}</div>
+                              </div>
+                            ) : noClass ? (
+                              <span className="text-gray-300 text-[8pt]">—</span>
+                            ) : (
+                              <span className="text-gray-400 text-[8pt] italic">Нема</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </PrintShell>
           </div>
 
-          {/* ── Weekly grid ── */}
+          {/* ── Weekly grid (screen) ── */}
           <div className="overflow-x-auto">
             <table className="weekly-grid-table w-full border-collapse min-w-[600px]">
               <colgroup>

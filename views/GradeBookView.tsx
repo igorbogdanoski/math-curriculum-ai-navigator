@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { Card } from '../components/common/Card';
+import { PrintShell } from '../components/common/PrintShell';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { GradeModel, GradeEntry } from '../types';
@@ -94,6 +96,13 @@ export const GradeBookView: React.FC = () => {
 
   const isMounted = useRef(true);
   useEffect(() => { return () => { isMounted.current = false; }; }, []);
+
+  const gradebookPrintRef = useRef<HTMLDivElement>(null);
+  const handleGradebookPrint = useReactToPrint({
+    contentRef: gradebookPrintRef,
+    documentTitle: `Тетратка_${className || 'класа'}_${gradeLevel}одд`,
+    pageStyle: '@page { size: A4 landscape; margin: 1cm 1.2cm; }',
+  });
 
   // New entry form
   const [newName, setNewName] = useState('');
@@ -702,12 +711,63 @@ export const GradeBookView: React.FC = () => {
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Зачувај тетратка
           </button>
-          <button type="button" onClick={() => window.print()}
+          <button type="button" onClick={() => handleGradebookPrint()}
             className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all">
             <FileDown className="w-4 h-4" /> Печати PDF
           </button>
         </div>
       )}
+
+      {/* Hidden gradebook print shell */}
+      <div className="absolute -left-[9999px] top-0">
+        <PrintShell
+          ref={gradebookPrintRef}
+          title="Електронска тетратка за оценување"
+          subtitle={`${className || 'Класа'} · ${gradeLevel}. одделение · Математика`}
+          grade={gradeLevel}
+          subject="Математика"
+        >
+          <table className="w-full border-collapse text-[9pt]">
+            <thead>
+              <tr className="print-header-bg">
+                <th className="border border-gray-600 px-2 py-1 text-left font-bold">#</th>
+                <th className="border border-gray-600 px-2 py-1 text-left font-bold">Ученик</th>
+                <th className="border border-gray-600 px-2 py-1 text-left font-bold">Тест</th>
+                <th className="border border-gray-600 px-2 py-1 text-center font-bold">%</th>
+                <th className="border border-gray-600 px-2 py-1 text-center font-bold">Оценка</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((e, idx) => {
+                const grade = e.percentage >= 85 ? 5 : e.percentage >= 75 ? 4 : e.percentage >= 65 ? 3 : e.percentage >= 50 ? 2 : 1;
+                return (
+                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="border border-gray-400 px-2 py-1 text-center text-gray-500">{idx + 1}</td>
+                    <td className="border border-gray-400 px-2 py-1 font-medium">{e.studentName}</td>
+                    <td className="border border-gray-400 px-2 py-1 text-gray-700">{e.testTitle}</td>
+                    <td className="border border-gray-400 px-2 py-1 text-center font-bold">{e.percentage}%</td>
+                    <td className="border border-gray-400 px-2 py-1 text-center font-black text-lg">{grade}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="print-header-bg font-bold">
+                <td colSpan={3} className="border border-gray-600 px-2 py-1 text-right">Просек на класата:</td>
+                <td className="border border-gray-600 px-2 py-1 text-center">{avg}%</td>
+                <td className="border border-gray-600 px-2 py-1 text-center">
+                  {avg >= 85 ? 5 : avg >= 75 ? 4 : avg >= 65 ? 3 : avg >= 50 ? 2 : 1}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+          <div className="mt-4 text-[8pt] text-gray-600">
+            <span className="font-bold">Вкупно ученици:</span> {entries.length} &nbsp;·&nbsp;
+            <span className="font-bold">Совладале (≥80%):</span> {mastered} &nbsp;·&nbsp;
+            <span className="font-bold">Во ризик (&lt;60%):</span> {atRisk}
+          </div>
+        </PrintShell>
+      </div>
 
       {/* S99.1 БРО Coverage Panel — SBG mode only */}
       {activeModel === 'sbg' && entries.length > 0 && (
