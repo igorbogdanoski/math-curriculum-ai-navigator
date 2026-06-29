@@ -337,3 +337,107 @@ class RagService {
 
 export const ragService = new RagService();
 export { SIMILARITY_THRESHOLD, CACHE_KEY, CACHE_TTL_MS };
+
+// ── Scenario Bank Semantic Search ─────────────────────────────────────────────
+
+const SCENARIO_EMBED_CACHE_KEY = 'scenario_bank_embeddings_v1';
+const SCENARIO_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+// Max entries to embed per search call (limits API calls for uncached entries)
+const SCENARIO_BATCH_LIMIT = 10;
+// Minimum similarity score to include an entry in results
+const SCENARIO_SIMILARITY_THRESHOLD = 0.25;
+
+interface ScenarioEmbeddingCache {
+  ts: number;
+  data: Record<string, number[]>; // entryId → 768-dim vector
+}
+
+function getScenarioEmbeddingCache(): Record<string, number[]> {
+  try {
+    const raw = sessionStorage.getItem(SCENARIO_EMBED_CACHE_KEY);
+    if (!raw) return {};
+    const parsed: ScenarioEmbeddingCache = JSON.parse(raw);
+    if (Date.now() - parsed.ts > SCENARIO_CACHE_TTL_MS) {
+      sessionStorage.removeItem(SCENARIO_EMBED_CACHE_KEY);
+      return {};
+    }
+    return parsed.data;
+  } catch { return {}; }
+}
+
+function saveScenarioEmbeddingCache(data: Record<string, number[]>): void {
+  try {
+    sessionStorage.setItem(SCENARIO_EMBED_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch { /* storage full — silent */ }
+}
+
+async function embedDocument(text: string): Promise<number[]> {
+  const { callEmbeddingProxy } = await import('./gemini/core');
+  return callEmbeddingProxy(text, undefined, 'RETRIEVAL_DOCUMENT', 768);
+}
+
+export interface ScenarioSearchEntry {
+  id: string;
+  title: string;
+  topicTitle: string;
+  objectives: string[];
+}
+
+export interface ScenarioSearchResult {
+  id: string;
+  similarity: number;
+}
+
+/**
+ * Semantic search over a loaded set of ScenarioBank entries.
+ *
+ * Algorithm:
+ *  1. Embed the query with RETRIEVAL_QUERY (1 API call).
+ *  2. For each entry: use cached 768-dim vector if available; embed with
+ *     RETRIEVAL_DOCUMENT for at most SCENARIO_BATCH_LIMIT uncached entries.
+ *  3. Rank by cosine similarity and return entries above threshold.
+ *
+ * Returns null when the feature is disabled (VITE_ENABLE_VECTOR_RAG !== 'true')
+ * or on any network/embedding error, so callers can fall back to text search.
+ *
+ * Feature flag: localStorage key `VITE_ENABLE_VECTOR_RAG` must equal `'true'`.
+ */
+export async function searchScenarioBankSemantic(
+  query: string,
+  entries: ScenarioSearchEntry[],
+): Promise<ScenarioSearchResult[] | null> {
+  if (localStorage.getItem('VITE_ENABLE_VECTOR_RAG') !== 'true') return null;
+  if (!query.trim() || entries.length === 0) return null;
+
+  try {
+    const queryVector = await embedQuery(query);
+    const cache = getScenarioEmbeddingCache();
+    const results: ScenarioSearchResult[] = [];
+    const uncached: ScenarioSearchEntry[] = [];
+
+    for (const entry of entries) {
+      const cached = cache[entry.id];
+      if (cached) {
+        results.push({ id: entry.id, similarity: cosineSimilarity(queryVector, cached) });
+      } else {
+        uncached.push(entry);
+      }
+    }
+
+    const toEmbed = uncached.slice(0, SCENARIO_BATCH_LIMIT);
+    for (const entry of toEmbed) {
+      const text = [entry.title, entry.topicTitle, ...entry.objectives].join(' ');
+      const vector = await embedDocument(text);
+      cache[entry.id] = vector;
+      results.push({ id: entry.id, similarity: cosineSimilarity(queryVector, vector) });
+    }
+
+    saveScenarioEmbeddingCache(cache);
+
+    return results
+      .filter(r => r.similarity > SCENARIO_SIMILARITY_THRESHOLD)
+      .sort((a, b) => b.similarity - a.similarity);
+  } catch {
+    return null;
+  }
+}

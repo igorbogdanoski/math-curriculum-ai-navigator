@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Filter, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Search, Filter, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -10,6 +10,7 @@ import {
   fetchScenarios, fetchMyScenarios, rateScenario,
   forkScenario, toggleSaveScenario, recordUsage,
 } from '../services/firestoreService.scenarioBank';
+import type { ScenarioSearchResult } from '../services/ragService';
 
 type TabMode = 'all' | 'mine' | 'saved' | 'bro';
 type SortBy = 'date' | 'rating' | 'forks' | 'usage';
@@ -34,6 +35,11 @@ export const ScenarioBankView: React.FC = () => {
   const [dokFilter, setDokFilter] = useState<number | null>(null);
   const [modelFilter, setModelFilter] = useState<TeachingModel | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>('date');
+
+  // Semantic search state
+  const [semanticRanking, setSemanticRanking] = useState<ScenarioSearchResult[] | null>(null);
+  const [isSemanticActive, setIsSemanticActive] = useState(false);
+  const semanticDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async (mode: TabMode) => {
     setIsLoading(true);
@@ -62,12 +68,48 @@ export const ScenarioBankView: React.FC = () => {
 
   useEffect(() => { load(tab); }, [load, tab]);
 
+  // Debounced semantic search — triggers after 800ms of typing when query > 2 chars
+  useEffect(() => {
+    if (semanticDebounceRef.current) clearTimeout(semanticDebounceRef.current);
+    const q = search.trim();
+
+    if (q.length < 3) {
+      setSemanticRanking(null);
+      setIsSemanticActive(false);
+      return;
+    }
+
+    semanticDebounceRef.current = setTimeout(async () => {
+      const { searchScenarioBankSemantic } = await import('../services/ragService');
+      const result = await searchScenarioBankSemantic(q, entries);
+      if (result !== null) {
+        setSemanticRanking(result);
+        setIsSemanticActive(true);
+      }
+    }, 800);
+
+    return () => {
+      if (semanticDebounceRef.current) clearTimeout(semanticDebounceRef.current);
+    };
+  }, [search, entries]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     let list = entries;
     if (tab === 'saved' && firebaseUser?.uid) {
       list = list.filter(e => (e.savedByUids ?? []).includes(firebaseUser.uid!));
     }
+
+    // When semantic ranking is active, use it to reorder + filter
+    if (semanticRanking !== null && q.length >= 3) {
+      const idOrder = new Map(semanticRanking.map((r, i) => [r.id, i]));
+      const semanticEntries = list
+        .filter(e => idOrder.has(e.id))
+        .sort((a, b) => (idOrder.get(a.id) ?? 999) - (idOrder.get(b.id) ?? 999));
+      // Fall back to text match if semantic returned 0 results
+      if (semanticEntries.length > 0) return semanticEntries;
+    }
+
     if (!q) return list;
     return list.filter(e =>
       e.title.toLowerCase().includes(q) ||
@@ -75,7 +117,7 @@ export const ScenarioBankView: React.FC = () => {
       e.authorName.toLowerCase().includes(q) ||
       e.objectives.some(o => o.toLowerCase().includes(q))
     );
-  }, [entries, search, tab, firebaseUser?.uid]);
+  }, [entries, search, tab, firebaseUser?.uid, semanticRanking]);
 
   const sorted = useMemo(() => {
     if (sortBy !== 'rating') return filtered;
@@ -185,10 +227,15 @@ export const ScenarioBankView: React.FC = () => {
             type="text"
             placeholder="Барај по наслов, тема, автор..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setIsSemanticActive(false); setSemanticRanking(null); }}
             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
         </div>
+        {isSemanticActive && (
+          <span className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-violet-50 border border-violet-200 text-violet-700 rounded-full">
+            <Sparkles className="w-3 h-3" /> Семантичко
+          </span>
+        )}
         <button
           type="button"
           onClick={() => setShowFilters(v => !v)}

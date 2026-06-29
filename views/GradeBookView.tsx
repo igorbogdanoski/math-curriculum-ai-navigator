@@ -500,7 +500,7 @@ export const GradeBookView: React.FC = () => {
         <p className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
           <Plus className="w-4 h-4" /> Додај резултат
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
           <div className="md:col-span-2 space-y-1">
             <input type="text" value={newName} onChange={e => { setNewName(e.target.value); setFormErrors(p => ({ ...p, name: '' })); }}
               placeholder="Име на ученик" aria-label="Име на ученик"
@@ -564,7 +564,7 @@ export const GradeBookView: React.FC = () => {
                 </div>
               </div>
             )}
-            <p className="text-[10px] text-gray-400 self-end">4=Одличен · 3=Задоволителен · 2=Во напредок · 1=Под очекувањата</p>
+            <p className="hidden sm:block text-[10px] text-gray-400 self-end">4=Одличен · 3=Задоволителен · 2=Во напредок · 1=Под очекувањата</p>
           </div>
         )}
       </Card>

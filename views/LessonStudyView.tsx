@@ -161,7 +161,7 @@ export const LessonStudyView: React.FC = () => {
               <BookOpen className="w-4 h-4 text-brand-primary" /> Внеси набљудување
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-600">ID на сценарио / наслов на час</label>
                   <input
@@ -188,7 +188,7 @@ export const LessonStudyView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-600">Улога</label>
                   <select
@@ -202,14 +202,15 @@ export const LessonStudyView: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-600">Ангажираност на учениците (1–5)</label>
-                  <div className="flex gap-1">
+                  <label className="text-xs font-semibold text-gray-600 leading-tight">Ангажираност (1–5)</label>
+                  <div className="flex gap-1.5">
                     {([1, 2, 3, 4, 5] as const).map(n => (
                       <button key={n} type="button"
                         onClick={() => setForm(f => ({ ...f, engagementLevel: n }))}
-                        className={`flex-1 h-9 rounded-lg text-sm font-bold border transition-colors ${form.engagementLevel === n ? 'bg-brand-primary text-white border-brand-primary' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                        aria-label={`Ангажираност ${n}`}
+                        className={`flex-1 min-w-0 h-10 rounded-lg text-sm font-bold border transition-colors ${form.engagementLevel === n ? 'bg-brand-primary text-white border-brand-primary' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
                       >
-                        <Star className={`w-3.5 h-3.5 mx-auto ${n <= form.engagementLevel ? 'text-amber-400 fill-current' : 'text-gray-300'}`} />
+                        <Star className={`w-4 h-4 mx-auto ${n <= form.engagementLevel ? 'text-amber-400 fill-current' : 'text-gray-300'}`} />
                       </button>
                     ))}
                   </div>
