@@ -21,6 +21,7 @@ import {
 import { auth } from '../firebaseConfig';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useStudentProgress } from '../hooks/useStudentProgress';
+import { aggregateCognitiveProfile } from '../hooks/useStudentCognitiveProfile';
 import { useStudentRealtime } from '../hooks/useStudentRealtime';
 import { fetchStudentDuggaSubmissionsByName } from '../services/firestoreService.dugga';
 import type { DuggaSubmission } from '../services/firestoreService.dugga';
@@ -119,6 +120,11 @@ export const StudentDashboardView: React.FC = () => {
   const xp = data?.gamification?.totalXP ?? 0;
   const streak = data?.gamification?.currentStreak ?? 0;
   const level = useMemo(() => Math.floor(Math.sqrt(xp / 50)) + 1, [xp]);
+
+  const cognitiveProfile = useMemo(() => {
+    if (!data?.results?.length && !data?.mastery?.length) return null;
+    return aggregateCognitiveProfile(studentName, data?.mastery ?? [], data?.results ?? []);
+  }, [data?.mastery, data?.results, studentName]);
 
   const pendingAssignments = useMemo(
     () => (assignments ?? [])
@@ -372,6 +378,63 @@ export const StudentDashboardView: React.FC = () => {
           ))}
         </div>
       </section>
+
+      {/* Cognitive Map */}
+      {cognitiveProfile && (
+        <section className="bg-white border border-gray-200 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Brain className="w-4 h-4 text-violet-500" />
+            <h3 className="font-semibold text-gray-800 text-sm">Мојата когнитивна карта</h3>
+            <span className="ml-auto text-xs text-gray-400">{cognitiveProfile.overallMasteryPct}% совладано</span>
+          </div>
+          {/* Overall progress bar */}
+          <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-violet-400 to-indigo-500 transition-all duration-700"
+              style={{ width: `${cognitiveProfile.overallMasteryPct}%` }}
+            />
+          </div>
+          {/* Strong / Weak topics */}
+          <div className="grid grid-cols-2 gap-3">
+            {cognitiveProfile.strongTopics.length > 0 && (
+              <div className="rounded-xl bg-emerald-50 p-3">
+                <p className="text-[11px] font-black text-emerald-600 uppercase tracking-wide mb-1.5">💪 Јаки страни</p>
+                <ul className="space-y-0.5">
+                  {cognitiveProfile.strongTopics.slice(0, 3).map(t => (
+                    <li key={t} className="text-xs text-emerald-800 truncate">• {t}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {cognitiveProfile.weakTopics.length > 0 && (
+              <div className="rounded-xl bg-red-50 p-3">
+                <p className="text-[11px] font-black text-red-500 uppercase tracking-wide mb-1.5">📌 Треба работа</p>
+                <ul className="space-y-0.5">
+                  {cognitiveProfile.weakTopics.slice(0, 3).map(t => (
+                    <li key={t} className="text-xs text-red-700 truncate">• {t}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          {/* DoK distribution */}
+          <div>
+            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-1">Ниво на мислење (DoK)</p>
+            <div className="flex gap-1 h-5">
+              {([1, 2, 3, 4] as const).map(d => {
+                const total = Object.values(cognitiveProfile.dokDistribution).reduce((s, v) => s + v, 0) || 1;
+                const pct = Math.round((cognitiveProfile.dokDistribution[d] / total) * 100);
+                const colors = ['bg-sky-300', 'bg-blue-400', 'bg-indigo-500', 'bg-violet-600'];
+                return pct > 0 ? (
+                  <div key={d} title={`DoK ${d}: ${pct}%`} className={`h-full rounded ${colors[d - 1]} flex items-center justify-center text-[9px] font-bold text-white`} style={{ width: `${pct}%` }}>
+                    {pct >= 12 ? `${d}` : ''}
+                  </div>
+                ) : null;
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Share with parent */}
       <section className="bg-white border border-gray-200 rounded-2xl p-4">

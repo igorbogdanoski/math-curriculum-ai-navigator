@@ -348,14 +348,30 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ lessonPlanId }) =>
       finally { setIsSavingExecution(false); }
     }
 
-    // S99.2 — AI adaptive suggestion (non-blocking, fire after save)
+    // S99.2 / S103-B — AI adaptive suggestion enriched with coverage gaps
     if (topic) {
       setLoadingAI(true);
       try {
         const { geminiService } = await import('../services/geminiService');
         const completion = completedPhases.size === phases.length ? 'целосно' : `${completedPhases.size}/${phases.length} фази`;
-        const prompt = `Наставникот го заврши часот по "${topic}" (${grade}. одделение). Реализирано: ${completion}.
-Дај точно 3 краткорочни препораки за следниот час (до 120 збора, на македонски). Форматирај со: "1. … 2. … 3. …". Препораките треба да покриваат: (а) што да се повтори или задлабочи, (б) каква брза проверка (Exit ticket / Dugga тест / Kahoot), (в) еден нов педагошки пристап или активност.`;
+
+        // Build coverage gap context for primary grades
+        let gapContext = '';
+        const gradeNum = grade as number;
+        if (!isNaN(gradeNum) && gradeNum <= 9) {
+          const { detectCurriculumGaps } = await import('../utils/curriculumGapDetector');
+          const topicTitles = [plan?.theme, plan?.title, plan?.topicId].filter(Boolean) as string[];
+          if (topicTitles.length > 0) {
+            const gaps = detectCurriculumGaps(topicTitles, gradeNum);
+            if (gaps.uncovered.length > 0) {
+              const topGaps = gaps.uncovered.slice(0, 3).map(s => s.description).join('; ');
+              gapContext = `\nНепокриени БРО стандарди (топ 3): ${topGaps}.`;
+            }
+          }
+        }
+
+        const prompt = `Наставникот го заврши часот по "${topic}" (${grade}. одделение). Реализирано: ${completion}.${gapContext}
+Дај точно 3 краткорочни препораки за следниот час (до 150 збора, на македонски). Форматирај со: "1. … 2. … 3. …". Препораките треба да покриваат: (а) што да се повтори или задлабочи врз основа на непокриените стандарди, (б) каква брза проверка (Exit ticket / Dugga тест / Kahoot), (в) еден нов педагошки пристап или активност.`;
         let text = '';
         for await (const chunk of geminiService.getChatResponseStream([{ role: 'user', text: prompt }])) {
           text += chunk;

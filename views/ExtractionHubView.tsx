@@ -3,6 +3,7 @@ import {
   Sparkles, Globe, ChevronDown, ChevronUp, Loader2, AlertTriangle,
   Check, Copy, Save, Image as ImageIcon, Wand2, X, BookOpen,
   Play, Tag, ExternalLink, FileText, Upload, Link, Gamepad2,
+  Lightbulb, Layers, Camera, FileDown, Square, CheckSquare,
 } from 'lucide-react';
 import { DokBadge } from '../components/common/DokBadge';
 import { getAuth } from 'firebase/auth';
@@ -19,6 +20,10 @@ import {
   type ExtractedWebTask,
   type EnrichedWebTask,
   type WebTaskExtractionOutput,
+  type TaskSolution,
+  type TaskDifferentiation,
+  generateTaskSolution,
+  generateTaskDifferentiation,
 } from '../services/gemini/visionContracts';
 import { callImagenProxy } from '../services/gemini/core';
 import { saveToLibrary, saveQuestion } from '../services/firestoreService.materials';
@@ -81,7 +86,7 @@ const MODEL_OPTIONS: ModelOption[] = [
 
 // ─── Source modes ─────────────────────────────────────────────────────────────
 
-type SourceMode = 'url' | 'youtube' | 'document';
+type SourceMode = 'url' | 'youtube' | 'document' | 'camera';
 
 // ─── Difficulty badge ─────────────────────────────────────────────────────────
 
@@ -116,11 +121,22 @@ const ExtractionProgress: React.FC<{ label: string; pct: number }> = ({ label, p
 
 // ─── Per-task card ────────────────────────────────────────────────────────────
 
-const TaskCard: React.FC<{ task: EnrichedWebTask; index: number }> = ({ task, index }) => {
+const TaskCard: React.FC<{
+  task: EnrichedWebTask;
+  index: number;
+  selected: boolean;
+  onSelect: (idx: number) => void;
+}> = ({ task, index, selected, onSelect }) => {
   const [imgDataUrl, setImgDataUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [solution, setSolution] = useState<TaskSolution | null>(task.solution ?? null);
+  const [isSolvingAI, setIsSolvingAI] = useState(false);
+  const [showSolution, setShowSolution] = useState(false);
+  const [differentiation, setDifferentiation] = useState<TaskDifferentiation | null>(task.differentiation ?? null);
+  const [isDiffLoading, setIsDiffLoading] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
 
   const generateImage = async () => {
     setIsGenerating(true);
@@ -139,10 +155,32 @@ const TaskCard: React.FC<{ task: EnrichedWebTask; index: number }> = ({ task, in
     setTimeout(() => setIsCopied(false), 2000);
   };
 
+  const handleSolve = async () => {
+    setIsSolvingAI(true);
+    const sol = await generateTaskSolution(task);
+    if (sol) { setSolution(sol); setShowSolution(true); }
+    setIsSolvingAI(false);
+  };
+
+  const handleDifferentiate = async () => {
+    setIsDiffLoading(true);
+    const diff = await generateTaskDifferentiation(task);
+    if (diff) { setDifferentiation(diff); setShowDiff(true); }
+    setIsDiffLoading(false);
+  };
+
   return (
-    <Card className="p-5 space-y-3">
+    <Card className={`p-5 space-y-3 transition-all ${selected ? 'ring-2 ring-indigo-500 ring-offset-1' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => onSelect(index)}
+            aria-label={selected ? 'Одбери' : 'Избери'}
+            className="shrink-0 text-indigo-500 hover:text-indigo-700 transition-colors"
+          >
+            {selected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5 text-gray-300" />}
+          </button>
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
             {index + 1}
           </span>
@@ -202,7 +240,7 @@ const TaskCard: React.FC<{ task: EnrichedWebTask; index: number }> = ({ task, in
       )}
       {imgError && <p className="text-xs text-red-500">{imgError}</p>}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={copyLatex}
@@ -221,7 +259,66 @@ const TaskCard: React.FC<{ task: EnrichedWebTask; index: number }> = ({ task, in
             {isGenerating ? 'Генерира...' : 'Слика'}
           </button>
         )}
+        {/* Solution Generator */}
+        <button
+          type="button"
+          onClick={solution ? () => setShowSolution(v => !v) : handleSolve}
+          disabled={isSolvingAI}
+          className="flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50 transition"
+        >
+          {isSolvingAI ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lightbulb className="h-3 w-3" />}
+          {isSolvingAI ? 'Решава...' : solution ? (showSolution ? 'Скриј решение' : 'Прикажи решение') : 'Решение'}
+        </button>
+        {/* Differentiation */}
+        <button
+          type="button"
+          onClick={differentiation ? () => setShowDiff(v => !v) : handleDifferentiate}
+          disabled={isDiffLoading}
+          className="flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-50 transition"
+        >
+          {isDiffLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Layers className="h-3 w-3" />}
+          {isDiffLoading ? 'Генерира...' : differentiation ? (showDiff ? 'Скриј нивоа' : '3 нивоа') : '3 нивоа'}
+        </button>
       </div>
+
+      {/* Solution panel */}
+      {showSolution && solution && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+          <p className="text-xs font-black text-amber-700 uppercase tracking-wide flex items-center gap-1">
+            <Lightbulb className="h-3.5 w-3.5" /> Решение чекор-по-чекор
+          </p>
+          <ol className="space-y-1.5">
+            {solution.steps.map((step, i) => (
+              <li key={i} className="text-sm text-slate-700 flex gap-2">
+                <span className="shrink-0 font-bold text-amber-600">{i + 1}.</span>
+                <MathRenderer text={step} />
+              </li>
+            ))}
+          </ol>
+          <div className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-bold text-amber-800">
+            ✓ <MathRenderer text={solution.finalAnswer} />
+          </div>
+        </div>
+      )}
+
+      {/* Differentiation panel */}
+      {showDiff && differentiation && (
+        <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 space-y-2">
+          <p className="text-xs font-black text-violet-700 uppercase tracking-wide flex items-center gap-1">
+            <Layers className="h-3.5 w-3.5" /> Диференцијација — 3 нивоа
+          </p>
+          {[
+            { key: 'support',  label: '🟢 Поддршка',  cls: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
+            { key: 'standard', label: '🔵 Стандардно', cls: 'bg-blue-50 border-blue-200 text-blue-800' },
+            { key: 'advanced', label: '🔴 Напредно',   cls: 'bg-red-50 border-red-200 text-red-800' },
+          ].map(({ key, label, cls }) => (
+            <div key={key} className={`rounded-lg border p-3 ${cls}`}>
+              <p className="text-[11px] font-black mb-1">{label}</p>
+              <MathRenderer text={differentiation[key as keyof TaskDifferentiation]} />
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 };
@@ -269,6 +366,7 @@ export const ExtractionHubView: React.FC = () => {
   const [ocrLanguage, setOcrLanguage] = useState<OcrLanguage>('auto');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // ── Shared ────────────────────────────────────────────────────────────────
   const [selectedModel, setSelectedModel] = useState('gemini-3.1-pro-preview');
@@ -286,6 +384,9 @@ export const ExtractionHubView: React.FC = () => {
   const [result, setResult] = useState<WebTaskExtractionOutput | null>(null);
   const [chunksInfo, setChunksInfo] = useState<{ processed: number; total: number; beforeDedup: number } | null>(null);
   const [docLabel, setDocLabel] = useState<string | null>(null);
+  const [selectedTaskIndices, setSelectedTaskIndices] = useState<Set<number>>(new Set());
+  const toggleTaskSelection = (idx: number) =>
+    setSelectedTaskIndices(prev => { const s = new Set(prev); s.has(idx) ? s.delete(idx) : s.add(idx); return s; });
 
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingToBank, setIsSavingToBank] = useState(false);
@@ -400,6 +501,12 @@ export const ExtractionHubView: React.FC = () => {
   }, [loadFile, isLoading, sourceMode]);
 
   const onFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await loadFile(file);
+    e.target.value = '';
+  }, [loadFile]);
+
+  const onCameraCapture = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) await loadFile(file);
     e.target.value = '';
@@ -842,6 +949,7 @@ export const ExtractionHubView: React.FC = () => {
               { mode: 'youtube' as SourceMode, icon: Play, label: 'YouTube', iconClass: 'fill-red-400 text-red-400' },
               { mode: 'url' as SourceMode, icon: Link, label: 'Веб URL', iconClass: '' },
               { mode: 'document' as SourceMode, icon: FileText, label: 'Документ', iconClass: '' },
+              { mode: 'camera' as SourceMode, icon: Camera, label: 'Камера', iconClass: 'text-emerald-500' },
             ].map(({ mode, icon: Icon, label, iconClass }) => (
               <button
                 key={mode}
@@ -1110,6 +1218,52 @@ export const ExtractionHubView: React.FC = () => {
                 >
                   <Sparkles className="h-4 w-4" />
                   Екстрахирај задачи
+                </button>
+              </div>
+            )}
+
+            {/* ── Camera mode ── */}
+            {sourceMode === 'camera' && (
+              <div className="space-y-3">
+                <p className="text-xs text-white/60">Сними или прикачи фотографија на страница со задачи (тетратка, табла, учебник).</p>
+                <div
+                  className="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-emerald-400/40 bg-emerald-500/5 px-6 py-8 text-center cursor-pointer hover:border-emerald-400/70 transition"
+                  onClick={() => !isLoading && cameraInputRef.current?.click()}
+                >
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="sr-only"
+                    aria-label="Сними слика со камера"
+                    title="Сними слика со камера"
+                    onChange={onCameraCapture}
+                    disabled={isLoading}
+                  />
+                  {uploadedDoc?.base64 ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="rounded-lg overflow-hidden max-h-40">
+                        <img src={`data:${uploadedDoc.mimeType ?? 'image/jpeg'};base64,${uploadedDoc.base64}`} alt="Снимена слика" className="max-h-40 object-contain" />
+                      </div>
+                      <span className="text-sm font-semibold text-emerald-300">{uploadedDoc.name}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Camera className="h-8 w-8 text-emerald-400" />
+                      <p className="text-sm font-semibold text-white/70">Допри за да сниме или избери слика</p>
+                      <p className="text-xs text-white/40">PNG · JPG · HEIC · WEBP</p>
+                    </>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={extractFromDocument}
+                  disabled={isLoading || !uploadedDoc}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3.5 font-bold text-white transition hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  Екстрахирај од слика
                 </button>
               </div>
             )}
@@ -1457,10 +1611,57 @@ export const ExtractionHubView: React.FC = () => {
                 </div>
               </div>
 
+              {/* Worksheet Builder action bar */}
+              {selectedTaskIndices.size > 0 && (
+                <div className="sticky top-4 z-10 flex items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 shadow-sm">
+                  <span className="text-sm font-bold text-indigo-700">
+                    <CheckSquare className="inline h-4 w-4 mr-1.5" />
+                    {selectedTaskIndices.size} избрани задачи
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTaskIndices(new Set(result.tasks.map((_, i) => i)))}
+                      className="text-xs font-semibold text-indigo-500 hover:text-indigo-700 transition"
+                    >
+                      Сите
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTaskIndices(new Set())}
+                      className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition"
+                    >
+                      Откажи
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tasks = result.tasks.filter((_, i) => selectedTaskIndices.has(i));
+                        const lines: string[] = ['# Работен лист\n'];
+                        tasks.forEach((t, n) => {
+                          lines.push(`**Задача ${n + 1}: ${t.title}**`);
+                          lines.push(t.latexStatement || t.statement);
+                          lines.push('');
+                        });
+                        const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = 'raboten-list.md';
+                        a.click();
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700 transition"
+                    >
+                      <FileDown className="h-3.5 w-3.5" />
+                      Извези работен лист
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Task cards grid */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {result.tasks.map((task, i) => (
-                  <TaskCard key={i} task={task} index={i} />
+                  <TaskCard key={i} task={task} index={i} selected={selectedTaskIndices.has(i)} onSelect={toggleTaskSelection} />
                 ))}
               </div>
             </>

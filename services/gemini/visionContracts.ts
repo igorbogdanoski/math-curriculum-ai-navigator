@@ -524,6 +524,17 @@ Rules:
 // Extracts structured math tasks from plain text (YouTube transcript / webpage)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+export interface TaskSolution {
+  steps: string[];
+  finalAnswer: string;
+}
+
+export interface TaskDifferentiation {
+  support: string;
+  standard: string;
+  advanced: string;
+}
+
 export interface ExtractedWebTask {
   title: string;
   statement: string;
@@ -532,6 +543,8 @@ export interface ExtractedWebTask {
   topicMk: string;
   imagenPrompt: string;
   dokLevel?: 1 | 2 | 3 | 4;
+  solution?: TaskSolution;
+  differentiation?: TaskDifferentiation;
 }
 
 export interface WebTaskExtractionOutput {
@@ -929,4 +942,58 @@ Return ONLY the JSON array with exactly ${tasks.length} items, no markdown.`;
   }
 
   return tasks;
+}
+
+// ── Solution Generator ────────────────────────────────────────────────────────
+
+export async function generateTaskSolution(task: ExtractedWebTask): Promise<TaskSolution | null> {
+  try {
+    const prompt = `Ти си македонски наставник по математика. Реши ја следнава задача чекор-по-чекор на македонски јазик. Користи LaTeX за формули ($ ... $).
+
+Задача: ${task.latexStatement || task.statement}
+Тема: ${task.topicMk}
+
+Врати го одговорот САМО во следниот JSON формат (без markdown):
+{"steps":["Чекор 1: ...","Чекор 2: ..."],"finalAnswer":"Одговорот е ..."}`;
+
+    const { callGeminiProxy } = await import('./core');
+    const resp = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 600 },
+    });
+    const stripped = resp.text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    const parsed = JSON.parse(stripped) as TaskSolution;
+    if (Array.isArray(parsed.steps) && typeof parsed.finalAnswer === 'string') return parsed;
+  } catch { /* return null on error */ }
+  return null;
+}
+
+// ── Differentiation Generator ─────────────────────────────────────────────────
+
+export async function generateTaskDifferentiation(task: ExtractedWebTask): Promise<TaskDifferentiation | null> {
+  try {
+    const prompt = `Ти си македонски наставник по математика. Врз основа на оваа задача, создај 3 верзии со различна тежина на македонски јазик. Користи LaTeX за формули ($ ... $).
+
+Оригинална задача: ${task.latexStatement || task.statement}
+Тема: ${task.topicMk}
+
+Врати САМО следниот JSON (без markdown):
+{
+  "support": "Полесна верзија за ученици со потреба за поддршка (помали броеви, насока дадена)",
+  "standard": "Иста тежина, само со сменети броеви/контекст",
+  "advanced": "Потешка верзија која бара подлабоко размислување или екстра чекор"
+}`;
+
+    const { callGeminiProxy } = await import('./core');
+    const resp = await callGeminiProxy({
+      model: DEFAULT_MODEL,
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 500 },
+    });
+    const stripped = resp.text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    const parsed = JSON.parse(stripped) as TaskDifferentiation;
+    if (typeof parsed.support === 'string' && typeof parsed.standard === 'string' && typeof parsed.advanced === 'string') return parsed;
+  } catch { /* return null on error */ }
+  return null;
 }
