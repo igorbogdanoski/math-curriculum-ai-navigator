@@ -726,6 +726,19 @@ const ThreadDetail: React.FC<ThreadDetailProps> = ({ thread, myUid, myName, onBa
         </button>
       </div>
 
+      {/* Linked scenario banner */}
+      {thread.scenarioId && (
+        <a
+          href={`#/scenario-bank`}
+          onClick={e => { e.preventDefault(); window.location.hash = '/scenario-bank'; }}
+          className="flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-xl px-4 py-2.5 text-sm text-sky-700 hover:bg-sky-100 transition-colors font-semibold"
+        >
+          <MessageSquare className="w-4 h-4 shrink-0" />
+          Поврзано сценарио: <span className="font-black">{thread.scenarioTitle ?? 'Отвори во Банката'}</span>
+          <span className="ml-auto text-sky-400 text-xs">→</span>
+        </a>
+      )}
+
       {/* Thread body — border-l colour comes from Tailwind class, not inline style */}
       <div className={`bg-white rounded-xl border-l-4 shadow-sm p-5 ${catCfg.border}`}>
         <div className="flex gap-4">

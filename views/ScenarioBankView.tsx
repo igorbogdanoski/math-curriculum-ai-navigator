@@ -8,7 +8,7 @@ import { ScenarioCard } from '../components/scenario-bank/ScenarioCard';
 import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel, EntryType } from '../services/firestoreService.scenarioBank';
 import {
   fetchScenarios, fetchMyScenarios, rateScenario,
-  forkScenario, toggleSaveScenario, recordUsage,
+  forkScenario, toggleSaveScenario, recordUsage, setScenarioPublic,
 } from '../services/firestoreService.scenarioBank';
 import type { ScenarioSearchResult } from '../services/ragService';
 
@@ -163,6 +163,12 @@ export const ScenarioBankView: React.FC = () => {
     } else {
       addNotification('Сценариото е прикачено. Отвори Уредувач за да го примениш.', 'info');
     }
+  };
+
+  const handleMakePublic = async (entryId: string, makePublic: boolean) => {
+    await setScenarioPublic(entryId, makePublic);
+    setEntries(prev => prev.map(e => e.id !== entryId ? e : { ...e, isPublic: makePublic }));
+    addNotification(makePublic ? '✅ Сценариото е јавно!' : '🔒 Сценариото е приватно.', 'success');
   };
 
   const handleDiscuss = (entry: ScenarioBankEntry) => {
@@ -444,6 +450,46 @@ export const ScenarioBankView: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Private drafts — shown only in "mine" tab */}
+      {tab === 'mine' && (() => {
+        const privateDrafts = entries.filter(e => !e.isPublic);
+        if (privateDrafts.length === 0) return null;
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-gray-500 uppercase tracking-wide">🔒 Приватни нацрти ({privateDrafts.length})</span>
+              <span className="text-xs text-gray-400">— само ти ги гледаш</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {privateDrafts.map(entry => (
+                <div key={entry.id} className="relative">
+                  <ScenarioCard
+                    entry={entry}
+                    currentUid={firebaseUser?.uid}
+                    currentName={user?.name ?? 'Наставник'}
+                    currentSchool={user?.schoolName ?? ''}
+                    onRate={handleRate}
+                    onFork={handleFork}
+                    onUse={handleUse}
+                    onSave={handleSave}
+                    onDiscuss={handleDiscuss}
+                  />
+                  <div className="mt-1.5 px-1">
+                    <button
+                      type="button"
+                      onClick={() => handleMakePublic(entry.id, true)}
+                      className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-bold py-2 rounded-lg transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Направи јавно во Банката
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Footer hint */}
       {sorted.length > 0 && (

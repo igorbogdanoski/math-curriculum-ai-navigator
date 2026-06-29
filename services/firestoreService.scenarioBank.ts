@@ -328,6 +328,11 @@ export const forkScenario = async (
   return newId;
 };
 
+/** Toggle public visibility of a scenario (teacher's own entries only) */
+export const setScenarioPublic = async (entryId: string, isPublic: boolean): Promise<void> => {
+  await updateDoc(doc(db, 'scenario_bank', entryId), { isPublic });
+};
+
 export const rateScenario = async (
   entryId: string,
   uid: string,
