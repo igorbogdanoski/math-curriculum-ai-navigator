@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { firestoreService } from '../services/firestoreService';
+import { saveKahootToBank } from '../services/firestoreService.scenarioBank';
 import { geminiService } from '../services/geminiService';
 import { useCurriculum } from '../hooks/useCurriculum';
 import type { KahootQuestion } from '../services/geminiService';
@@ -400,6 +401,16 @@ export const KahootMakerView: React.FC<KahootMakerViewProps> = ({ prefillTopic, 
         type: 'quiz',
         teacherUid: firebaseUser.uid,
       });
+      // Mirror to scenario_bank (private) so teacher can later publish it
+      saveKahootToBank({
+        title: quizContent.title,
+        grade: Number(promptGrade?.level ?? 0),
+        topicTitle: promptTopicObj?.title ?? '',
+        questionCount: valid.length,
+        authorUid: firebaseUser.uid,
+        authorName: firebaseUser.displayName ?? 'Наставник',
+        libraryDocId: quizId,
+      }).catch(() => { /* non-critical */ });
       const autoLaunch = { quizId, quizTitle: quizContent.title, timerPerQuestion: timerSeconds };
       try { sessionStorage.setItem(AUTO_LAUNCH_KEY, JSON.stringify(autoLaunch)); } catch { /* quota */ }
       navigate('/live/host');

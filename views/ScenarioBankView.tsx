@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, Filter, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles } from 'lucide-react';
+import { Search, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles, MessageSquare, Gamepad2, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
 import { ScenarioCard } from '../components/scenario-bank/ScenarioCard';
-import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel } from '../services/firestoreService.scenarioBank';
+import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel, EntryType } from '../services/firestoreService.scenarioBank';
 import {
   fetchScenarios, fetchMyScenarios, rateScenario,
   forkScenario, toggleSaveScenario, recordUsage,
@@ -34,6 +34,7 @@ export const ScenarioBankView: React.FC = () => {
   const [gradeFilter, setGradeFilter] = useState<number | null>(null);
   const [dokFilter, setDokFilter] = useState<number | null>(null);
   const [modelFilter, setModelFilter] = useState<TeachingModel | null>(null);
+  const [typeFilter, setTypeFilter] = useState<EntryType | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>('date');
 
   // Semantic search state
@@ -99,6 +100,9 @@ export const ScenarioBankView: React.FC = () => {
     if (tab === 'saved' && firebaseUser?.uid) {
       list = list.filter(e => (e.savedByUids ?? []).includes(firebaseUser.uid!));
     }
+    if (typeFilter) {
+      list = list.filter(e => (e.entryType ?? 'lesson_plan') === typeFilter);
+    }
 
     // When semantic ranking is active, use it to reorder + filter
     if (semanticRanking !== null && q.length >= 3) {
@@ -159,6 +163,19 @@ export const ScenarioBankView: React.FC = () => {
     } else {
       addNotification('Сценариото е прикачено. Отвори Уредувач за да го примениш.', 'info');
     }
+  };
+
+  const handleDiscuss = (entry: ScenarioBankEntry) => {
+    try {
+      sessionStorage.setItem('forum_new_thread_prefill', JSON.stringify({
+        scenarioId: entry.id,
+        scenarioTitle: entry.title,
+        title: `📚 ${entry.title} — дискусија`,
+        body: `Дискусија за сценариото „${entry.title}" (${entry.grade}. одделение, ${entry.topicTitle}).`,
+        category: 'discussion',
+      }));
+    } catch { /* quota */ }
+    navigate('/forum');
   };
 
   const handleSave = async (entryId: string, saved: boolean) => {
@@ -240,7 +257,7 @@ export const ScenarioBankView: React.FC = () => {
           type="button"
           onClick={() => setShowFilters(v => !v)}
           className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border transition-colors ${
-            showFilters || gradeFilter || dokFilter || modelFilter
+            showFilters || gradeFilter || dokFilter || modelFilter || typeFilter
               ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
               : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
           }`}
@@ -249,7 +266,7 @@ export const ScenarioBankView: React.FC = () => {
           Филтри
           {(gradeFilter || dokFilter || modelFilter) && (
             <span className="w-4 h-4 bg-indigo-600 text-white text-[9px] font-black rounded-full flex items-center justify-center">
-              {[gradeFilter, dokFilter, modelFilter].filter(Boolean).length}
+              {[gradeFilter, dokFilter, modelFilter, typeFilter].filter(Boolean).length}
             </span>
           )}
         </button>
@@ -334,12 +351,38 @@ export const ScenarioBankView: React.FC = () => {
               </div>
             </div>
 
+            {/* Entry type */}
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-gray-500 uppercase">Тип</p>
+              <div className="flex flex-wrap gap-1">
+                {([
+                  { key: null,                  label: 'Сите',       icon: null },
+                  { key: 'lesson_plan' as EntryType, label: 'Час',  icon: <FileText className="w-3 h-3" /> },
+                  { key: 'kahoot' as EntryType,     label: 'Kahoot', icon: <Gamepad2 className="w-3 h-3" /> },
+                  { key: 'extracted_material' as EntryType, label: 'Материјали', icon: <Search className="w-3 h-3" /> },
+                ] as const).map(opt => (
+                  <button
+                    key={String(opt.key)}
+                    type="button"
+                    onClick={() => setTypeFilter(opt.key)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                      typeFilter === opt.key
+                        ? 'bg-sky-600 text-white border-sky-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-sky-300'
+                    }`}
+                  >
+                    {opt.icon} {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Clear */}
-            {(gradeFilter || dokFilter || modelFilter) && (
+            {(gradeFilter || dokFilter || modelFilter || typeFilter) && (
               <div className="flex items-end">
                 <button
                   type="button"
-                  onClick={() => { setGradeFilter(null); setDokFilter(null); setModelFilter(null); }}
+                  onClick={() => { setGradeFilter(null); setDokFilter(null); setModelFilter(null); setTypeFilter(null); }}
                   className="text-xs text-red-500 hover:text-red-700 font-semibold underline"
                 >
                   Исчисти филтри
@@ -396,6 +439,7 @@ export const ScenarioBankView: React.FC = () => {
               onFork={handleFork}
               onUse={handleUse}
               onSave={handleSave}
+              onDiscuss={handleDiscuss}
             />
           ))}
         </div>

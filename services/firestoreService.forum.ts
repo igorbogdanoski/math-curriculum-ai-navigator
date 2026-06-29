@@ -78,6 +78,9 @@ export interface ForumThread {
   reactionsGreat: string[];
   /** Admin-pinned threads appear at top */
   isPinned: boolean;
+  /** Links this thread to a scenario bank entry */
+  scenarioId?: string | null;
+  scenarioTitle?: string | null;
   /** Soft-delete */
   deleted?: boolean;
   /** Moderation: 'pending' = awaiting admin review, 'approved' = visible to all.
@@ -135,6 +138,8 @@ export const createForumThread = async (data: {
   authorName: string;
   conceptId?: string;
   conceptTitle?: string;
+  scenarioId?: string;
+  scenarioTitle?: string;
   category?: ThreadCategory;
   title: string;
   body: string;
@@ -164,9 +169,10 @@ export const createForumThread = async (data: {
     isPinned:         false,
     deleted:          false,
     moderationStatus: data.skipModeration ? 'approved' : 'pending',
-    ...(data.dokLevel     ? { dokLevel:      data.dokLevel }     : {}),
-    ...(data.forumImageUrl? { forumImageUrl: data.forumImageUrl }: {}),
-    ...(data.shape3dShape ? { shape3dShape:  data.shape3dShape }  : {}),
+    ...(data.dokLevel      ? { dokLevel:       data.dokLevel }      : {}),
+    ...(data.forumImageUrl ? { forumImageUrl:  data.forumImageUrl } : {}),
+    ...(data.shape3dShape  ? { shape3dShape:   data.shape3dShape }  : {}),
+    ...(data.scenarioId    ? { scenarioId:     data.scenarioId, scenarioTitle: data.scenarioTitle ?? null } : {}),
   });
   return ref.id;
 };

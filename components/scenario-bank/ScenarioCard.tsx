@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, GitFork, Users, BadgeCheck, ChevronDown, ChevronUp, Shuffle, Lightbulb, Eye } from 'lucide-react';
+import { Star, GitFork, Users, BadgeCheck, ChevronDown, ChevronUp, Shuffle, Lightbulb, Eye, MessageSquare } from 'lucide-react';
 import type { ScenarioBankEntry } from '../../services/firestoreService.scenarioBank';
 import { getAvgRating, getUserRating } from '../../services/firestoreService.scenarioBank';
 import { DokBadge } from '../common/DokBadge';
@@ -36,11 +36,12 @@ interface Props {
   onFork: (entry: ScenarioBankEntry) => void;
   onUse: (entry: ScenarioBankEntry) => void;
   onSave: (entryId: string, saved: boolean) => void;
+  onDiscuss?: (entry: ScenarioBankEntry) => void;
 }
 
 export const ScenarioCard: React.FC<Props> = ({
   entry, currentUid, currentName = 'Наставник', currentSchool = '',
-  onRate, onFork, onUse, onSave,
+  onRate, onFork, onUse, onSave, onDiscuss,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
@@ -255,6 +256,17 @@ export const ScenarioCard: React.FC<Props> = ({
           >
             {isSaved ? '★' : '☆'}
           </button>
+          {onDiscuss && (
+            <button
+              type="button"
+              onClick={() => onDiscuss(entry)}
+              title="Отвори форум дискусија за ова сценарио"
+              aria-label="Дискутирај"
+              className="flex items-center gap-1 bg-sky-50 hover:bg-sky-100 text-sky-700 text-[11px] font-bold py-1.5 px-2 rounded-lg border border-sky-200 transition-colors"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

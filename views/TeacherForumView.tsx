@@ -215,12 +215,15 @@ interface NewThreadModalProps {
   authorName: string;
   initialImageDataUrl?: string | null;
   initialTitle?: string;
+  initialBody?: string;
+  initialScenarioId?: string;
+  initialScenarioTitle?: string;
   skipModeration?: boolean;
 }
 
-const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, concepts, authorUid, authorName, initialImageDataUrl, initialTitle, skipModeration }) => {
+const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, concepts, authorUid, authorName, initialImageDataUrl, initialTitle, initialBody, initialScenarioId, initialScenarioTitle, skipModeration }) => {
   const [title, setTitle] = useState(initialTitle ?? '');
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState(initialBody ?? '');
   const [conceptId, setConceptId] = useState('');
   const [category, setCategory] = useState<ThreadCategory>('question');
   const [saving, setSaving] = useState(false);
@@ -253,6 +256,7 @@ const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, con
         ...(dokLevel ? { dokLevel } : {}),
         ...(forumImageUrl ? { forumImageUrl } : {}),
         ...(show3d ? { shape3dShape } : {}),
+        ...(initialScenarioId ? { scenarioId: initialScenarioId, scenarioTitle: initialScenarioTitle } : {}),
       });
       const thread = await fetchForumThread(id);
       if (thread) onCreated(thread);
@@ -275,6 +279,13 @@ const NewThreadModal: React.FC<NewThreadModalProps> = ({ onClose, onCreated, con
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Scenario link banner */}
+          {initialScenarioTitle && (
+            <div className="flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2 text-xs text-sky-700 font-semibold">
+              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+              Поврзано сценарио: <span className="font-black">{initialScenarioTitle}</span>
+            </div>
+          )}
           {/* Category selector */}
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-2">Тип на пост *</label>
@@ -1046,6 +1057,9 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
   const [activeThread, setActiveThread] = useState<ForumThread | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [draftTitle,   setDraftTitle]   = useState<string | null>(null);
+  const [draftBody,    setDraftBody]    = useState<string | null>(null);
+  const [draftScenarioId,    setDraftScenarioId]    = useState<string | null>(null);
+  const [draftScenarioTitle, setDraftScenarioTitle] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterConceptId, setFilterConceptId] = useState('');
   const [filterCategory, setFilterCategory] = useState<ThreadCategory | ''>('');
@@ -1092,6 +1106,18 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
       sessionStorage.removeItem('forum_new_context');
       setDraftTitle(ctx);
       setShowNewModal(true);
+    }
+    const prefill = sessionStorage.getItem('forum_new_thread_prefill');
+    if (prefill) {
+      sessionStorage.removeItem('forum_new_thread_prefill');
+      try {
+        const p = JSON.parse(prefill);
+        if (p.title)         setDraftTitle(p.title);
+        if (p.body)          setDraftBody(p.body);
+        if (p.scenarioId)    setDraftScenarioId(p.scenarioId);
+        if (p.scenarioTitle) setDraftScenarioTitle(p.scenarioTitle);
+        setShowNewModal(true);
+      } catch { /* malformed */ }
     }
   }, []);
 
@@ -1555,13 +1581,23 @@ export const TeacherForumView: React.FC<{ thread?: string }> = ({ thread: thread
 
       {showNewModal && (
         <NewThreadModal
-          onClose={() => { setShowNewModal(false); setDraftImageUrl(null); setDraftTitle(null); }}
+          onClose={() => {
+            setShowNewModal(false);
+            setDraftImageUrl(null);
+            setDraftTitle(null);
+            setDraftBody(null);
+            setDraftScenarioId(null);
+            setDraftScenarioTitle(null);
+          }}
           onCreated={handleThreadCreated}
           concepts={concepts}
           authorUid={myUid}
           authorName={myName}
           initialImageDataUrl={draftImageUrl}
           initialTitle={draftTitle ?? undefined}
+          initialBody={draftBody ?? undefined}
+          initialScenarioId={draftScenarioId ?? undefined}
+          initialScenarioTitle={draftScenarioTitle ?? undefined}
           skipModeration={true}
         />
       )}

@@ -20,8 +20,11 @@ import type { LessonPlan, BloomsLevel } from '../types';
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export type TeachingModel = '5E' | 'PBL' | 'ZPD' | 'Cooperative' | 'Traditional';
+export type EntryType = 'lesson_plan' | 'kahoot' | 'extracted_material';
 
 export interface ScenarioBankEntry {
+  /** Discriminates between lesson plans, kahoot quizzes, and extracted materials */
+  entryType?: EntryType;
   id: string;
   // Core content (denormalised for fast browse without loading fullPlan)
   title: string;
@@ -193,6 +196,103 @@ export const publishScenario = async (p: PublishScenarioPayload): Promise<string
     deleted: false,
     isPublic: p.isPublic ?? true,
     authorNotes: p.authorNotes ?? '',
+  });
+  return ref.id;
+};
+
+export interface SaveKahootPayload {
+  title: string;
+  grade: number;
+  topicTitle: string;
+  questionCount: number;
+  authorUid: string;
+  authorName: string;
+  schoolName?: string;
+  /** national_library doc ID for launch link */
+  libraryDocId: string;
+}
+
+/** Save a Kahoot quiz as a private scenario bank entry (isPublic: false) */
+export const saveKahootToBank = async (p: SaveKahootPayload): Promise<string> => {
+  const ref = await addDoc(collection(db, 'scenario_bank'), {
+    entryType: 'kahoot' as EntryType,
+    title: p.title,
+    grade: p.grade,
+    subject: 'Математика',
+    topicTitle: p.topicTitle,
+    objectives: [],
+    scenarioIntro: '',
+    scenarioMain: [],
+    scenarioConcluding: '',
+    materials: [],
+    assessmentStandards: [],
+    bloomLevels: [],
+    dokLevel: null,
+    teachingModel: null,
+    duration: 20,
+    authorUid: p.authorUid,
+    authorName: p.authorName,
+    schoolName: p.schoolName ?? '',
+    originalId: null,
+    forkDepth: 0,
+    publishedAt: serverTimestamp(),
+    forkCount: 0,
+    usageCount: 0,
+    ratingsByUid: {},
+    savedByUids: [],
+    verifiedByBRO: false,
+    isFeatured: false,
+    deleted: false,
+    isPublic: false,
+    authorNotes: `Kahoot квиз — ${p.questionCount} прашања. libraryId: ${p.libraryDocId}`,
+  });
+  return ref.id;
+};
+
+export interface SaveExtractedMaterialPayload {
+  title: string;
+  grade?: number | string;
+  topicId?: string;
+  authorUid: string;
+  authorName: string;
+  schoolName?: string;
+  libraryDocId: string;
+}
+
+/** Save an extracted/OCR material as a private scenario bank entry */
+export const saveExtractedToBank = async (p: SaveExtractedMaterialPayload): Promise<string> => {
+  const grade = Number(p.grade) || 0;
+  const ref = await addDoc(collection(db, 'scenario_bank'), {
+    entryType: 'extracted_material' as EntryType,
+    title: p.title,
+    grade,
+    subject: 'Математика',
+    topicTitle: p.topicId ?? '',
+    objectives: [],
+    scenarioIntro: '',
+    scenarioMain: [],
+    scenarioConcluding: '',
+    materials: [],
+    assessmentStandards: [],
+    bloomLevels: [],
+    dokLevel: null,
+    teachingModel: null,
+    duration: 0,
+    authorUid: p.authorUid,
+    authorName: p.authorName,
+    schoolName: p.schoolName ?? '',
+    originalId: null,
+    forkDepth: 0,
+    publishedAt: serverTimestamp(),
+    forkCount: 0,
+    usageCount: 0,
+    ratingsByUid: {},
+    savedByUids: [],
+    verifiedByBRO: false,
+    isFeatured: false,
+    deleted: false,
+    isPublic: false,
+    authorNotes: `Извлечен материјал. libraryId: ${p.libraryDocId}`,
   });
   return ref.id;
 };

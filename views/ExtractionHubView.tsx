@@ -22,6 +22,7 @@ import {
 } from '../services/gemini/visionContracts';
 import { callImagenProxy } from '../services/gemini/core';
 import { saveToLibrary, saveQuestion } from '../services/firestoreService.materials';
+import { saveExtractedToBank } from '../services/firestoreService.scenarioBank';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -695,13 +696,22 @@ export const ExtractionHubView: React.FC = () => {
     setIsSaving(true);
     try {
       const label = sourceMode === 'document' ? (docLabel ?? 'Документ') : url.slice(0, 60);
-      await saveToLibrary(result, {
+      const libDocId = await saveToLibrary(result, {
         title: `Екстракција: ${label}`,
         type: 'problems',
         teacherUid: firebaseUser.uid,
         gradeLevel: saveGrade !== '' ? saveGrade : undefined,
         topicId: saveTopicId.trim() || undefined,
       });
+      // Mirror to scenario_bank (private) for discovery
+      saveExtractedToBank({
+        title: `Екстракција: ${label}`,
+        grade: saveGrade,
+        topicId: saveTopicId.trim() || undefined,
+        authorUid: firebaseUser.uid,
+        authorName: firebaseUser.displayName ?? 'Наставник',
+        libraryDocId: libDocId ?? '',
+      }).catch(() => { /* non-critical */ });
       addNotification(`Зачувани ${result.tasks.length} задачи во библиотека! ✓`, 'success');
     } catch { addNotification('Зачувувањето не успеа.', 'error'); }
     finally { setIsSaving(false); }
