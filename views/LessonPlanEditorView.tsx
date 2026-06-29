@@ -145,6 +145,19 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   useEffect(() => {
     if (isCurriculumLoading || !curriculum) return;
 
+    // S105 — Uploaded scenario AI-parse prefill (from ScenarioBank "Прикачи старо сценарио")
+    if (!isEditing) {
+      const uploadedRaw = sessionStorage.getItem('uploaded_scenario_prefill');
+      if (uploadedRaw) {
+        sessionStorage.removeItem('uploaded_scenario_prefill');
+        try {
+          const parsed = JSON.parse(uploadedRaw) as Partial<LessonPlan>;
+          setPlan({ ...initialPlanState, ...parsed });
+          return;
+        } catch { /* fall through to default prefill below */ }
+      }
+    }
+
     if (isEditing) {
       const existingPlan = getLessonPlan(id!);
       if (existingPlan) {

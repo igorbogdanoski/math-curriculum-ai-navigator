@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles, MessageSquare, Gamepad2, FileText } from 'lucide-react';
+import { Search, SlidersHorizontal, BookMarked, BadgeCheck, Shuffle, Plus, Sparkles, MessageSquare, Gamepad2, FileText, Upload, Loader2 } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { PrintShell } from '../components/common/PrintShell';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,7 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
 import { ScenarioCard } from '../components/scenario-bank/ScenarioCard';
+import { UploadScenarioModal } from '../components/scenario-bank/UploadScenarioModal';
 import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel, EntryType } from '../services/firestoreService.scenarioBank';
 import {
   fetchScenarios, fetchMyScenarios, rateScenario,
@@ -198,6 +199,25 @@ export const ScenarioBankView: React.FC = () => {
     setTimeout(() => handleScenarioPrint(), 80);
   }, [handleScenarioPrint]);
 
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isParsingUpload, setIsParsingUpload] = useState(false);
+
+  const handleUploadExtracted = useCallback(async (rawText: string, fileName: string) => {
+    setShowUploadModal(false);
+    setIsParsingUpload(true);
+    try {
+      const { plansAPI } = await import('../services/gemini/plans');
+      const parsed = await plansAPI.parseScenarioFromText(rawText, user ?? undefined);
+      sessionStorage.setItem('uploaded_scenario_prefill', JSON.stringify(parsed));
+      addNotification(`✅ „${fileName}" е структурирано — прегледај и уреди.`, 'success');
+      navigate('/planner/lesson/new');
+    } catch {
+      addNotification('Грешка при анализа на документот. Пробајте повторно.', 'error');
+    } finally {
+      setIsParsingUpload(false);
+    }
+  }, [user, navigate, addNotification]);
+
   const handleSave = async (entryId: string, saved: boolean) => {
     if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
     await toggleSaveScenario(entryId, firebaseUser.uid, saved);
@@ -228,13 +248,25 @@ export const ScenarioBankView: React.FC = () => {
           </p>
         </div>
         {user && (
-          <button
-            type="button"
-            onClick={() => navigate('/planner')}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-xl shadow transition-colors shrink-0"
-          >
-            <Plus className="w-4 h-4" /> Додај сценарио
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowUploadModal(true)}
+              disabled={isParsingUpload}
+              title="Прикачи свое старо сценарио (PDF/DOCX/TXT) — AI ќе го структурира"
+              className="flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-sm font-bold px-4 py-2 rounded-xl shadow-sm transition-colors disabled:opacity-50"
+            >
+              {isParsingUpload ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              {isParsingUpload ? 'Се анализира...' : 'Прикачи старо сценарио'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/planner')}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-xl shadow transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Додај сценарио
+            </button>
+          </div>
         )}
       </div>
 
@@ -579,6 +611,13 @@ export const ScenarioBankView: React.FC = () => {
           )}
         </PrintShell>
       </div>
+
+      {showUploadModal && (
+        <UploadScenarioModal
+          onClose={() => setShowUploadModal(false)}
+          onExtracted={handleUploadExtracted}
+        />
+      )}
     </div>
   );
 };

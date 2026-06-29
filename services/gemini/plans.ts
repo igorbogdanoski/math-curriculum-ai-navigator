@@ -305,6 +305,53 @@ async generateDetailedLessonPlan(context: GenerationContext, profile?: TeachingP
       return generateAndParseJSON<Partial<LessonPlan>>(contents, schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, systemInstr, profile?.tier);
   },
 
+/** Parses a teacher's own pre-existing scenario text (uploaded .docx/.pdf/.txt) into structured LessonPlan fields. Transcription only — never invents content absent from the source text. */
+async parseScenarioFromText(rawText: string, profile?: TeachingProfile): Promise<Partial<LessonPlan>> {
+      const prompt = `
+### УЛОГА
+Ти си експерт за анализа на наставни материјали. Наставник ти дава текст од свое СОПСТВЕНО старо подготвено сценарио за час (можеби нестандардно структуриран, со OCR грешки или непотполн). Твоја задача е да го ПРЕПОЗНАЕШ и СТРУКТУРИРАШ во стандарден формат — БЕЗ да измислуваш содржина која не постои во текстот.
+
+### ТЕКСТ НА СТАРОТО СЦЕНАРИО
+"""
+${sanitizePromptInput(rawText).slice(0, 8000)}
+"""
+
+### ИНСТРУКЦИИ
+1. Извлечи наслов, одделение (само ако е експлицитно споменато) и тема.
+2. Идентификувај цели на часот — ако се експлицитно наведени или јасно произлегуваат од содржината.
+3. Подели ја активноста на: Воведна / Главни активности (низа) / Завршна — според логичниот тек на ВЕЌЕ ПОСТОЈНИОТ текст. НЕ измислувај нова содржина и НЕ дополнувај го наставниот пристап.
+4. Извлечи материјали/наставни средства ако се споменати во текстот.
+5. Ако одделение или тема НЕ се спомнати, остави го полето празно — НЕ претпоставувај.
+6. assessmentStandards: остави празна низа — стандардите ги додава наставникот рачно подоцна.
+
+ВАЖНО: Ова е ТРАНСКРИПЦИЈА и СТРУКТУРИРАНЕ на постоечка содржина на наставник, НЕ креирање на нова. Празно поле е подобро од измислена содржина.
+`;
+      const schema = {
+          type: Type.OBJECT,
+          properties: {
+              title: { type: Type.STRING },
+              grade: { type: Type.NUMBER },
+              subject: { type: Type.STRING },
+              theme: { type: Type.STRING },
+              objectives: {
+                  type: Type.ARRAY,
+                  items: { type: Type.OBJECT, properties: { text: { type: Type.STRING } }, required: ["text"] }
+              },
+              scenario: {
+                  type: Type.OBJECT,
+                  properties: {
+                      introductory: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } },
+                      main: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } } },
+                      concluding: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } }
+                  }
+              },
+              materials: { type: Type.ARRAY, items: { type: Type.STRING } },
+          },
+          required: ["title", "scenario"]
+      };
+      return generateAndParseJSON<Partial<LessonPlan>>([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, true, JSON_SYSTEM_INSTRUCTION, profile?.tier);
+  },
+
 async generateCalendarPlan(grade: Grade, startDate: string, endDate: string, holidays: string, winterBreak: {start: string, end: string}, profile?: TeachingProfile): Promise<Omit<PlannerItem, 'id'>[]> {
       // Load official MoN 2025 curriculum for VI/VII/VIII — enriches AI with exact subtopics & hours
       const officialCurriculum = await buildOfficialCurriculumSummary(grade.level);
