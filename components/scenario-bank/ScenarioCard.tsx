@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, GitFork, Users, BadgeCheck, ChevronDown, ChevronUp, Shuffle, Lightbulb, Eye, MessageSquare, Printer } from 'lucide-react';
+import { Star, GitFork, Users, BadgeCheck, ChevronDown, ChevronUp, Shuffle, Lightbulb, Eye, MessageSquare, Printer, Pencil } from 'lucide-react';
 import type { ScenarioBankEntry } from '../../services/firestoreService.scenarioBank';
 import { getAvgRating, getUserRating } from '../../services/firestoreService.scenarioBank';
 import { DokBadge } from '../common/DokBadge';
@@ -36,13 +36,14 @@ interface Props {
   onFork: (entry: ScenarioBankEntry) => void;
   onUse: (entry: ScenarioBankEntry) => void;
   onSave: (entryId: string, saved: boolean) => void;
+  onEdit?: (entry: ScenarioBankEntry) => void;
   onDiscuss?: (entry: ScenarioBankEntry) => void;
   onPrint?: (entry: ScenarioBankEntry) => void;
 }
 
 export const ScenarioCard: React.FC<Props> = ({
   entry, currentUid, currentName = 'Наставник', currentSchool = '',
-  onRate, onFork, onUse, onSave, onDiscuss, onPrint,
+  onRate, onFork, onUse, onSave, onEdit, onDiscuss, onPrint,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
@@ -215,6 +216,17 @@ export const ScenarioCard: React.FC<Props> = ({
           >
             Користи
           </button>
+          {onEdit && currentUid === entry.authorUid && (
+            <button
+              type="button"
+              onClick={() => onEdit(entry)}
+              title="Уреди го своето сценарио"
+              aria-label="Уреди"
+              className="flex items-center gap-1 bg-violet-50 hover:bg-violet-100 text-violet-700 text-[11px] font-bold py-1.5 px-2 rounded-lg border border-violet-200 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Уреди
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onFork(entry)}

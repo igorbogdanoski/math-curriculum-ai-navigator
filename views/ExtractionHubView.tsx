@@ -188,11 +188,16 @@ const TaskCard: React.FC<{
           </span>
           <h3 className="font-semibold text-slate-800 truncate">{task.title}</h3>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5 flex-wrap justify-end">
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${DIFF_STYLE[task.difficulty]}`}>
             {DIFF_MK[task.difficulty]}
           </span>
           {task.dokLevel && <DokBadge level={task.dokLevel} size="compact" />}
+          {task.pedagogy?.bloomLevelMk && (
+            <span className="rounded-full bg-violet-50 border border-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+              {task.pedagogy.bloomLevelMk}
+            </span>
+          )}
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
             {task.topicMk}
           </span>
@@ -794,11 +799,22 @@ export const ExtractionHubView: React.FC = () => {
     }
   };
 
+  // ── Active tasks (selection-aware) ───────────────────────────────────────
+  // When tasks are selected (checkboxes), all operations use only those tasks.
+
+  const getActiveTasks = () => {
+    if (!result) return [];
+    return selectedTaskIndices.size > 0
+      ? result.tasks.filter((_, i) => selectedTaskIndices.has(i))
+      : result.tasks;
+  };
+
   // ── Copy all ──────────────────────────────────────────────────────────────
 
   const copyAll = async () => {
     if (!result) return;
-    const txt = result.tasks.map((t, i) =>
+    const tasks = getActiveTasks();
+    const txt = tasks.map((t, i) =>
       `${i + 1}. ${t.title}\n${t.latexStatement || t.statement}`
     ).join('\n\n');
     await navigator.clipboard.writeText(txt);
@@ -812,8 +828,10 @@ export const ExtractionHubView: React.FC = () => {
     if (!result || !firebaseUser) { addNotification('Треба да сте најавени.', 'warning'); return; }
     setIsSaving(true);
     try {
+      const tasks = getActiveTasks();
       const label = sourceMode === 'document' ? (docLabel ?? 'Документ') : url.slice(0, 60);
-      const libDocId = await saveToLibrary(result, {
+      const saveResult = { ...result, tasks };
+      const libDocId = await saveToLibrary(saveResult, {
         title: `Екстракција: ${label}`,
         type: 'problems',
         teacherUid: firebaseUser.uid,
@@ -829,7 +847,7 @@ export const ExtractionHubView: React.FC = () => {
         authorName: firebaseUser.displayName ?? 'Наставник',
         libraryDocId: libDocId ?? '',
       }).catch(() => { /* non-critical */ });
-      addNotification(`Зачувани ${result.tasks.length} задачи во библиотека! ✓`, 'success');
+      addNotification(`Зачувани ${tasks.length} задачи во библиотека! ✓`, 'success');
     } catch { addNotification('Зачувувањето не успеа.', 'error'); }
     finally { setIsSaving(false); }
   };
@@ -838,7 +856,8 @@ export const ExtractionHubView: React.FC = () => {
     if (!result || !firebaseUser) { addNotification('Треба да сте најавени.', 'warning'); return; }
     setIsSavingToBank(true);
     try {
-      await Promise.all(result.tasks.map(task =>
+      const tasks = getActiveTasks();
+      await Promise.all(tasks.map(task =>
         saveQuestion({
           question: task.latexStatement || task.statement,
           type: 'open',
@@ -850,14 +869,15 @@ export const ExtractionHubView: React.FC = () => {
           isPublic: false,
         })
       ));
-      addNotification(`${result.tasks.length} задачи зачувани во банка! ✓`, 'success');
+      addNotification(`${tasks.length} задачи зачувани во банка! ✓`, 'success');
     } catch { addNotification('Зачувувањето не успеа.', 'error'); }
     finally { setIsSavingToBank(false); }
   };
 
   const sendToGenerator = (materialType: QuickGenType = genMaterialType) => {
     if (!result) return;
-    const scenarioText = result.tasks
+    const tasks = getActiveTasks();
+    const scenarioText = tasks
       .map((t, i) => `${i + 1}. ${t.title}\n${t.latexStatement || t.statement}`)
       .join('\n\n');
     try {
@@ -872,8 +892,9 @@ export const ExtractionHubView: React.FC = () => {
 
   const sendToKahoot = () => {
     if (!result) return;
+    const tasks = getActiveTasks();
     try {
-      sessionStorage.setItem('kahoot_tasks', JSON.stringify(result.tasks));
+      sessionStorage.setItem('kahoot_tasks', JSON.stringify(tasks));
     } catch { /* quota */ }
     navigate('/kahoot/make');
   };
@@ -1515,6 +1536,22 @@ export const ExtractionHubView: React.FC = () => {
                   }`}>
                     {result.quality.score}% · {qualityMk[result.quality.label] ?? result.quality.label}
                   </span>
+                  {/* DoK distribution mini-bar */}
+                  {result.tasks.some(t => t.dokLevel) && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-slate-500 font-bold">DoK:</span>
+                      {([1, 2, 3, 4] as const).map(lvl => {
+                        const cnt = result.tasks.filter(t => t.dokLevel === lvl).length;
+                        if (!cnt) return null;
+                        const cls = lvl === 1 ? 'bg-green-100 text-green-700' : lvl === 2 ? 'bg-blue-100 text-blue-700' : lvl === 3 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+                        return (
+                          <span key={lvl} className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${cls}`}>
+                            {lvl}·{cnt}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                   {/* S96.3 — curriculum tagging */}
                   <select
                     value={saveGrade}
@@ -1546,20 +1583,21 @@ export const ExtractionHubView: React.FC = () => {
                     type="button"
                     onClick={saveAll}
                     disabled={isSaving}
+                    title={selectedTaskIndices.size > 0 ? `Зачувај ${selectedTaskIndices.size} избрани задачи` : 'Зачувај сите задачи во библиотека'}
                     className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition"
                   >
                     {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                    Библиотека
+                    Библиотека{selectedTaskIndices.size > 0 ? ` (${selectedTaskIndices.size})` : ''}
                   </button>
                   <button
                     type="button"
                     onClick={saveAllToBank}
                     disabled={isSavingToBank}
-                    title="Зачувај сите задачи во банка на задачи"
+                    title={selectedTaskIndices.size > 0 ? `Зачувај ${selectedTaskIndices.size} избрани во банка` : 'Зачувај сите задачи во банка'}
                     className="flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50 transition"
                   >
                     {isSavingToBank ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
-                    Банка
+                    Банка{selectedTaskIndices.size > 0 ? ` (${selectedTaskIndices.size})` : ''}
                   </button>
                   {/* Quick-generate split button */}
                   <div ref={genDropdownRef} className="relative">

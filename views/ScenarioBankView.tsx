@@ -161,6 +161,20 @@ export const ScenarioBankView: React.FC = () => {
     },
   });
 
+  const handleEdit = async (entry: ScenarioBankEntry) => {
+    // Direct edit: if the bank entry has a linked lesson plan ID, open it in the editor
+    if (entry.fullPlan?.id) {
+      navigate(`/planner/lesson/${entry.fullPlan.id}`);
+      return;
+    }
+    // Fallback: save as draft so the editor pre-fills from it
+    if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
+    const draft = entry.fullPlan ?? entryToDraft(entry);
+    await saveUploadDraft(firebaseUser.uid, draft, entry.title);
+    addNotification('✅ Сценариото е подготвено за уредување.', 'success');
+    navigate('/planner/lesson/new');
+  };
+
   const handleFork = async (entry: ScenarioBankEntry) => {
     if (!firebaseUser?.uid || !user) { addNotification('Мора да сте најавени.', 'warning'); return; }
     try {
@@ -605,6 +619,7 @@ export const ScenarioBankView: React.FC = () => {
               onFork={handleFork}
               onUse={handleUse}
               onSave={handleSave}
+              onEdit={handleEdit}
               onDiscuss={handleDiscuss}
               onPrint={handlePrint}
             />
@@ -634,6 +649,7 @@ export const ScenarioBankView: React.FC = () => {
                     onFork={handleFork}
                     onUse={handleUse}
                     onSave={handleSave}
+                    onEdit={handleEdit}
                     onDiscuss={handleDiscuss}
                     onPrint={handlePrint}
                   />
