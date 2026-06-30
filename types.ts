@@ -255,6 +255,7 @@ export interface LessonPlan {
   differentiationTabs?: { support: string; standard: string; advanced: string };
   reflectionPrompt?: string;
   selfAssessmentPrompt?: string;
+  teacherReflection?: LessonReflection;
   tags?: string[];
 
   // Math tool exports (GeoGebra / Desmos screenshots embedded in the plan)

@@ -50,6 +50,27 @@ function detectImplicitBRO(plan: Partial<LessonPlan>): string[] {
   }).slice(0, 5).map(s => s.code);
 }
 
+const SECONDARY_COMPETENCIES = [
+  { key: 'math_thinking',    label: 'Математичко размислување',      color: 'bg-violet-50 text-violet-700 border-violet-200', keywords: ['докажи', 'аналогија', 'апстрактен', 'логичк', 'дедукт', 'индукт', 'теорема', 'лема', 'аксиом'] },
+  { key: 'problem_solving',  label: 'Решавање проблеми',             color: 'bg-blue-50 text-blue-700 border-blue-200',       keywords: ['реши', 'задача', 'проблем', 'стратегија', 'алгоритам', 'пресметај', 'моделира', 'конструир'] },
+  { key: 'communication',    label: 'Комуникација',                  color: 'bg-emerald-50 text-emerald-700 border-emerald-200', keywords: ['презентир', 'образложи', 'објасни', 'дискутира', 'аргумент', 'опис', 'порака', 'убеди'] },
+  { key: 'critical_thinking',label: 'Критичко мислење',             color: 'bg-amber-50 text-amber-700 border-amber-200',     keywords: ['анализир', 'евалуир', 'споредба', 'критери', 'проценет', 'оценуваат', 'компарир'] },
+  { key: 'digital',          label: 'Дигитална компетентност',       color: 'bg-cyan-50 text-cyan-700 border-cyan-200',        keywords: ['geogebra', 'калкулатор', 'дигитал', 'апликација', 'desmos', 'онлајн', 'компјутер', 'графикон'] },
+  { key: 'cross_curricular', label: 'Меѓупредметни поврзувања',      color: 'bg-rose-50 text-rose-700 border-rose-200',        keywords: ['физика', 'хемија', 'биологија', 'историја', 'географија', 'реален живот', 'природа', 'економија'] },
+];
+
+function detectSecondaryCompetencies(plan: Partial<LessonPlan>): typeof SECONDARY_COMPETENCIES {
+  if (!plan.grade || plan.grade <= 9) return [];
+  const texts = [
+    plan.title, plan.theme,
+    ...(plan.objectives?.map(o => o.text) ?? []),
+    plan.scenario?.introductory?.text,
+    ...(plan.scenario?.main?.map(m => m.text) ?? []),
+    plan.scenario?.concluding?.text,
+  ].filter(Boolean).join(' ').toLowerCase();
+  return SECONDARY_COMPETENCIES.filter(c => c.keywords.some(kw => texts.includes(kw)));
+}
+
 export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss }) => {
   const [audit, setAudit] = useState<AuditResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -57,6 +78,8 @@ export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss }) => 
   const [expanded, setExpanded] = useState(false);
   const [confirmedBRO, setConfirmedBRO] = useState<Set<string>>(new Set());
   const [broSuggestions] = useState(() => detectImplicitBRO(plan));
+  const [secondaryCompetencies] = useState(() => detectSecondaryCompetencies(plan));
+  const isSecondary = (plan.grade ?? 0) > 9;
 
   const runAudit = useCallback(async () => {
     setIsRunning(true);
@@ -161,8 +184,8 @@ export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss }) => 
                 </div>
               )}
 
-              {/* BRO auto-suggestions */}
-              {broSuggestions.length > 0 && (
+              {/* BRO auto-suggestions (primary only) */}
+              {!isSecondary && broSuggestions.length > 0 && (
                 <div>
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">📋 Детектирани БРО Стандарди — потврди ги</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -180,6 +203,27 @@ export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss }) => 
                   {confirmedBRO.size > 0 && (
                     <p className="text-[10px] text-indigo-600 mt-1">💡 Потврдените стандарди додај ги рачно во полето „БРО Стандарди" подолу.</p>
                   )}
+                </div>
+              )}
+
+              {/* МОН Secondary Competencies (gymnasium) */}
+              {isSecondary && secondaryCompetencies.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">🎓 Детектирани МОН Компетенции (гимназија)</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {secondaryCompetencies.map(c => (
+                      <span key={c.key} className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border ${c.color}`}>
+                        {c.label}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-indigo-500 mt-1">💡 Компетенциите се авто-детектирани — провери ги и додај ги во описот на целите.</p>
+                </div>
+              )}
+              {isSecondary && secondaryCompetencies.length === 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">🎓 МОН Компетенции (гимназија)</p>
+                  <p className="text-[10px] text-gray-400">Не се детектирани компетенции — разработи целите за да ги вклучиш: математичко размислување, решавање проблеми, критичко мислење.</p>
                 </div>
               )}
 

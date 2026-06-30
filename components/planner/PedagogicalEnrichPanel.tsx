@@ -15,7 +15,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   Sparkles, ChevronDown, ChevronUp, Loader2,
-  CheckCircle2, AlertCircle, Info, Zap, Target, BookOpen,
+  CheckCircle2, AlertCircle, Info, Zap, Target, BookOpen, Brain, RefreshCw,
 } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -83,6 +83,13 @@ const PLAN_TYPE_LABELS: Record<PlanType, string> = {
   lesson:   'Сценарио на час',
 };
 
+interface GrowthMindsetResult {
+  mindsetScore: number;
+  fixedPhrases: string[];
+  rewrites: Array<{ original: string; rewrite: string }>;
+  summary: string;
+}
+
 export const PedagogicalEnrichPanel: React.FC<Props> = ({ planType, planSummary, label }) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -90,6 +97,9 @@ export const PedagogicalEnrichPanel: React.FC<Props> = ({ planType, planSummary,
   const [result, setResult] = useState<EnrichResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(null);
+  const [gmResult, setGmResult] = useState<GrowthMindsetResult | null>(null);
+  const [gmLoading, setGmLoading] = useState(false);
+  const [gmError, setGmError] = useState<string | null>(null);
 
   const handleEnrich = useCallback(async () => {
     setIsOpen(true);
@@ -109,6 +119,25 @@ export const PedagogicalEnrichPanel: React.FC<Props> = ({ planType, planSummary,
       setIsLoading(false);
     }
   }, [planType, planSummary, result, user]);
+
+  const handleGrowthMindset = useCallback(async () => {
+    if (gmLoading) return;
+    setGmLoading(true);
+    setGmError(null);
+    try {
+      const texts = [
+        ...(planSummary.objectives ?? []),
+        ...(planSummary.activities ?? []),
+        planSummary.title ?? '',
+      ];
+      const data = await geminiService.checkGrowthMindsetLanguage(texts);
+      setGmResult(data);
+    } catch {
+      setGmError('Грешка при анализа на Growth Mindset јазик.');
+    } finally {
+      setGmLoading(false);
+    }
+  }, [planSummary, gmLoading]);
 
   const scoreColor =
     !result ? '' :
@@ -317,6 +346,80 @@ export const PedagogicalEnrichPanel: React.FC<Props> = ({ planType, planSummary,
                 Анализирај повторно
               </button>
             </>
+          )}
+
+          {/* ── Growth Mindset Language Checker (Dweck 2006) ── */}
+          {isOpen && (
+            <div className="border-t border-purple-100 pt-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+                  <Brain className="w-3.5 h-3.5 text-emerald-500" />
+                  Growth Mindset Јазик (Dweck 2006)
+                </p>
+                {!gmResult ? (
+                  <button
+                    type="button"
+                    onClick={handleGrowthMindset}
+                    disabled={gmLoading}
+                    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl transition-colors"
+                  >
+                    {gmLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
+                    {gmLoading ? 'Анализира...' : 'Провери јазик'}
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => { setGmResult(null); handleGrowthMindset(); }} className="text-[10px] text-emerald-600 hover:underline flex items-center gap-1">
+                    <RefreshCw className="w-3 h-3" /> Повторно
+                  </button>
+                )}
+              </div>
+
+              {gmError && <p className="text-xs text-red-600">{gmError}</p>}
+
+              {gmResult && (
+                <div className="space-y-2">
+                  {/* Score */}
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xl font-black ${gmResult.mindsetScore >= 8 ? 'text-emerald-600' : gmResult.mindsetScore >= 5 ? 'text-amber-600' : 'text-red-600'}`}>
+                      {gmResult.mindsetScore}/10
+                    </span>
+                    <p className="text-[11px] text-gray-600 flex-1">{gmResult.summary}</p>
+                  </div>
+
+                  {/* Fixed phrases */}
+                  {gmResult.fixedPhrases.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-red-500 mb-1">Детектирани фиксни фрази:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {gmResult.fixedPhrases.map((p, i) => (
+                          <span key={i} className="text-[10px] px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full font-medium">
+                            {p}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rewrites */}
+                  {gmResult.rewrites.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-emerald-600 mb-1">Growth Mindset преформулации:</p>
+                      {gmResult.rewrites.slice(0, 3).map((r, i) => (
+                        <div key={i} className="text-[10px] bg-white border border-emerald-200 rounded-lg p-2 space-y-0.5">
+                          <p className="text-red-600 line-through opacity-70">{r.original}</p>
+                          <p className="text-emerald-700 font-semibold">→ {r.rewrite}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {gmResult.fixedPhrases.length === 0 && (
+                    <p className="text-[11px] text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Одличен Growth Mindset јазик — нема фиксни фрази!
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

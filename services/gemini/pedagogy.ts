@@ -544,6 +544,132 @@ async auditUploadedScenario(
   );
 },
 
+/** B2 — Growth Mindset Language Checker (Dweck 2006)
+ *  Detects fixed-mindset language in objectives/activities and suggests rewrites.
+ *  Temperature 0.3 for consistency. */
+async checkGrowthMindsetLanguage(texts: string[]): Promise<{
+  mindsetScore: number;
+  fixedPhrases: string[];
+  rewrites: Array<{ original: string; rewrite: string }>;
+  summary: string;
+}> {
+  const combined = texts.filter(Boolean).join('\n');
+  if (!combined.trim()) return { mindsetScore: 8, fixedPhrases: [], rewrites: [], summary: 'Нема текст за анализа.' };
+
+  const prompt = `You are a Growth Mindset language coach (Dweck 2006) analyzing a Macedonian math lesson plan.
+
+LESSON TEXT:
+${combined.slice(0, 2000)}
+
+TASK: Detect fixed-mindset language patterns (ability-focused: "talented", "gifted", "cannot", "is not able to", "weak students") and rewrite them as growth-mindset language (effort, strategy, yet, progress-focused).
+
+Return ONLY valid JSON:
+{
+  "mindsetScore": <integer 1-10 where 10=fully growth mindset>,
+  "fixedPhrases": ["phrase1", "phrase2"],
+  "rewrites": [
+    { "original": "...", "rewrite": "..." }
+  ],
+  "summary": "One sentence in Macedonian about the overall mindset quality of this lesson."
+}`;
+
+  const schema = {
+    type: 'object',
+    properties: {
+      mindsetScore: { type: 'number' },
+      fixedPhrases: { type: 'array', items: { type: 'string' } },
+      rewrites: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { original: { type: 'string' }, rewrite: { type: 'string' } },
+          required: ['original', 'rewrite'],
+        },
+      },
+      summary: { type: 'string' },
+    },
+    required: ['mindsetScore', 'fixedPhrases', 'rewrites', 'summary'],
+  };
+
+  return generateAndParseJSON(
+    [{ text: prompt }], schema, DEFAULT_MODEL,
+    undefined, 2, false, undefined, undefined, { temperature: 0.3 },
+  );
+},
+
+/** C1 — Culturally Responsive Teaching Audit (Hammond 2015, Gay 2010)
+ *  Analyzes lesson plan for cultural relevance, linguistic accessibility,
+ *  and equity. Returns score + specific suggestions. */
+async auditCulturalResponsiveness(plan: Partial<LessonPlan>): Promise<{
+  crtScore: number;
+  strengths: string[];
+  gaps: string[];
+  suggestions: Array<{ area: string; action: string; example: string }>;
+  summary: string;
+}> {
+  const texts = [
+    plan.title, plan.theme,
+    ...(plan.objectives?.map(o => o.text) ?? []),
+    plan.scenario?.introductory?.text,
+    ...(plan.scenario?.main?.map(m => m.text) ?? []),
+    plan.scenario?.concluding?.text,
+    plan.differentiation,
+  ].filter(Boolean).join('\n').slice(0, 2500);
+
+  if (!texts.trim()) return { crtScore: 5, strengths: [], gaps: ['Нема содржина за анализа'], suggestions: [], summary: 'Пополни ги полињата за да добиеш CRT анализа.' };
+
+  const gradeCtx = plan.grade ? `Grade ${plan.grade} students in North Macedonia (multilingual context: Macedonian, Albanian, Turkish communities).` : 'Students in North Macedonia.';
+
+  const prompt = `You are a Culturally Responsive Teaching (CRT) expert (Hammond 2015, Gay 2010) analyzing a math lesson plan.
+
+CONTEXT: ${gradeCtx}
+
+LESSON CONTENT:
+${texts}
+
+TASK: Audit this lesson for:
+1. Cultural relevance (real-world contexts from students' communities)
+2. Linguistic accessibility (clarity for multilingual learners)
+3. Equity (differentiation that avoids deficit thinking)
+4. Cultural identity validation (student funds of knowledge)
+5. Community connections (local/national context)
+
+Return ONLY valid JSON:
+{
+  "crtScore": <integer 1-10, 10=exemplary CRT>,
+  "strengths": ["strength1", "strength2"],
+  "gaps": ["gap1", "gap2"],
+  "suggestions": [
+    { "area": "area name", "action": "specific action in Macedonian", "example": "concrete classroom example" }
+  ],
+  "summary": "One sentence in Macedonian summarizing CRT quality."
+}`;
+
+  const schema = {
+    type: 'object',
+    properties: {
+      crtScore: { type: 'number' },
+      strengths: { type: 'array', items: { type: 'string' } },
+      gaps: { type: 'array', items: { type: 'string' } },
+      suggestions: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { area: { type: 'string' }, action: { type: 'string' }, example: { type: 'string' } },
+          required: ['area', 'action', 'example'],
+        },
+      },
+      summary: { type: 'string' },
+    },
+    required: ['crtScore', 'strengths', 'gaps', 'suggestions', 'summary'],
+  };
+
+  return generateAndParseJSON(
+    [{ text: prompt }], schema, DEFAULT_MODEL,
+    undefined, 2, false, undefined, undefined, { temperature: 0.4 },
+  );
+},
+
 async generateEmbedding(text: string): Promise<number[]> {
     const { callEmbeddingProxy } = await import('./core');
     return callEmbeddingProxy(text);
