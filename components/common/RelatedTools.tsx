@@ -124,7 +124,7 @@ const RELATED_TOOLS_MAP: Record<string, RelatedTool[]> = {
     { label: 'Мат. Уредник', path: '/math-editor', icon: 'sparkles' },
     { label: 'Дига Тест', path: '/dugga/build', icon: 'assessment' },
     { label: 'Гама', path: '/gamma', icon: 'play' },
-    { label: 'Геометрија 3D', path: '/geometry-3d', icon: 'geometry' },
+    { label: 'Геометрија 3D', path: '/data-viz?tab=solid', icon: 'geometry' },
   ],
   '/forum': [
     { label: 'AI Асистент', path: '/assistant', icon: 'assistant' },
@@ -154,7 +154,7 @@ const RELATED_TOOLS_MAP: Record<string, RelatedTool[]> = {
   ],
   '/geometry-2d': [
     { label: 'DataViz', path: '/data-viz', icon: 'chart' },
-    { label: 'Геометрија 3D', path: '/geometry-3d', icon: 'geometry' },
+    { label: 'Геометрија 3D', path: '/data-viz?tab=solid', icon: 'geometry' },
     { label: 'Мат. Уредник', path: '/math-editor', icon: 'sparkles' },
   ],
   '/grade-book': [

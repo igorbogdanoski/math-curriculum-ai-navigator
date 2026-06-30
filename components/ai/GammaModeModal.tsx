@@ -1097,7 +1097,7 @@ export const GammaModeModal: React.FC<Props> = ({ data, startIndex = 0, onClose 
                           count: 4,
                         }));
                       } catch { /* quota */ }
-                      window.open('#/kahoot-maker', '_blank');
+                      window.open('#/kahoot/make', '_blank');
                     }}
                     className="p-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white transition flex items-center gap-1 text-[10px] font-bold"
                   >

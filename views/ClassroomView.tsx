@@ -134,7 +134,7 @@ function PhaseActions({
         </button>
         <button
           type="button"
-          onClick={() => onNavigate('/geometry-2d')}
+          onClick={() => onNavigate('/data-viz?tab=geo2d')}
           className="px-3 py-1.5 bg-teal-100 hover:bg-teal-200 text-teal-800 rounded-lg text-xs font-medium transition-colors"
         >
           📐 Геометрија лаб

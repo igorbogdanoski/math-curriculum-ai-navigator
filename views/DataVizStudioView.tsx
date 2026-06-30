@@ -117,7 +117,12 @@ const FnTabPanel: React.FC = () => {
 export const DataVizStudioView: React.FC = () => {
   const { addNotification } = useNotification();
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<StudioTab>('chart');
+  const [activeTab, setActiveTab] = useState<StudioTab>(() => {
+    const hash = window.location.hash;
+    const tabParam = new URLSearchParams(hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '').get('tab');
+    const validTabs: StudioTab[] = ['chart', 'paper', 'ai', 'prob', 'fn', 'geo', 'stats', 'calc', 'linalg', 'solid', 'geo2d', 'conic'];
+    return (validTabs.includes(tabParam as StudioTab) ? tabParam : 'chart') as StudioTab;
+  });
 
   // Chart builder state
   const [tableData, setTableData] = useState<TableData>(DEFAULT_TABLE);
