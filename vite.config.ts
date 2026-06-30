@@ -357,7 +357,7 @@ export default defineConfig(({ mode }) => {
       // In development, requests go through the Vite dev middleware above.
       build: {
         sourcemap: !!process.env.SENTRY_AUTH_TOKEN, // Enable source maps when Sentry is configured
-        chunkSizeWarningLimit: 1000,
+        chunkSizeWarningLimit: 2600, // data-matura (~2.5MB) and vendor fallback (~2.1MB) are expected large chunks
         rollupOptions: {
           output: {
             // manualChunks — targeted vendor splitting for large libraries.
