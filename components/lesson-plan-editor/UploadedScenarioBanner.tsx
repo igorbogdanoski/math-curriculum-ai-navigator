@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Sparkles, CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp, Loader2, X } from 'lucide-react';
+import { Sparkles, CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp, Loader2, X, User, School } from 'lucide-react';
 import type { LessonPlan } from '../../types';
 import { geminiService } from '../../services/geminiService';
 import { MATH_STANDARDS } from '../../data/allNationalStandardsComplete';
@@ -118,6 +118,25 @@ export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss }) => 
           <X className="w-4 h-4 text-indigo-400" />
         </button>
       </div>
+
+      {/* Original author attribution */}
+      {(plan.originalAuthor || plan.originalSchool) && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white/60 border border-indigo-100 px-3 py-2">
+          {plan.originalAuthor && (
+            <span className="flex items-center gap-1.5 text-xs text-indigo-700 font-semibold">
+              <User className="w-3.5 h-3.5 text-indigo-400" />
+              {plan.originalAuthor}
+            </span>
+          )}
+          {plan.originalSchool && (
+            <span className="flex items-center gap-1.5 text-xs text-slate-600">
+              <School className="w-3.5 h-3.5 text-slate-400" />
+              {plan.originalSchool}
+            </span>
+          )}
+          <span className="text-[10px] text-indigo-400 ml-auto">Оригинален извор</span>
+        </div>
+      )}
 
       {/* Audit trigger */}
       {!audit && (

@@ -261,6 +261,10 @@ export interface LessonPlan {
   // Math tool exports (GeoGebra / Desmos screenshots embedded in the plan)
   mathEmbeds?: Array<{ tool: 'geogebra' | 'desmos'; dataUrl: string; createdAt: string }>;
 
+  // Upload attribution — set when a scenario is imported from an uploaded document
+  originalAuthor?: string;
+  originalSchool?: string;
+
   // Community Features
   isPublished?: boolean;
   authorName?: string;

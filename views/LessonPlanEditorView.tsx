@@ -166,7 +166,21 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
             // S106-Б — DraftMergeDialog: non-empty draft conflicts with upload
             setPendingUpload(draft);
           } else {
-            setPlan({ ...initialPlanState, ...draft.parsed });
+            // Auto-match curriculum topicId from the extracted theme text
+            const parsed = draft.parsed;
+            let autoTopicId = '';
+            if (parsed.theme && curriculum && parsed.grade) {
+              const gradeData = curriculum.grades.find(g => g.level === parsed.grade);
+              const themeNorm = parsed.theme.toLowerCase().trim();
+              const matchedTopic = gradeData?.topics.find(t => {
+                const tNorm = t.title.toLowerCase().trim();
+                return tNorm.includes(themeNorm) || themeNorm.includes(tNorm) ||
+                  // word-level overlap: ≥2 common words ≥4 chars
+                  themeNorm.split(/\s+/).filter(w => w.length >= 4 && tNorm.includes(w)).length >= 2;
+              });
+              if (matchedTopic) autoTopicId = matchedTopic.id;
+            }
+            setPlan({ ...initialPlanState, ...parsed, ...(autoTopicId ? { topicId: autoTopicId } : {}) });
             setShowUploadBanner(true);
           }
           // Notify about remaining queued scenarios
