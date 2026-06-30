@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, Suspense, lazy } from 
 import {
   BarChart2, FileSpreadsheet, Sparkles, Download, Printer,
   Palette, Settings2, Eye, PlusCircle, Grid3X3, ChevronDown, Sigma, TrendingUp, Triangle,
-  FlaskConical, FunctionSquare, Layers, Box, Shapes
+  FlaskConical, FunctionSquare, Layers, Box, Shapes, LayoutGrid
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { DataTable, DEFAULT_TABLE } from '../components/dataviz/DataTable';
@@ -31,6 +31,9 @@ const Geometry3DLab = lazy(() =>
 );
 const ConicSectionsLab = lazy(() =>
   import('../components/dataviz/ConicSectionsLab').then(m => ({ default: m.ConicSectionsLab }))
+)
+const AlgebraTilesLazy = lazy(() =>
+  import('../components/math/AlgebraTilesCanvas').then(m => ({ default: m.AlgebraTilesCanvas }))
 );
 
 const LabLoading: React.FC = () => (
@@ -73,7 +76,7 @@ const CHART_TYPES: ChartTypeDef[] = [
   { id: 'pictogram',               label: 'Пиктограм ★',          emoji: '🌟', desc: 'Сликовен дијаграм, МОН I–IV одд.',   minCols: 1 },
 ];
 
-type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic';
+type StudioTab = 'chart' | 'paper' | 'ai' | 'prob' | 'fn' | 'geo' | 'stats' | 'calc' | 'linalg' | 'solid' | 'geo2d' | 'conic' | 'algebra';
 
 // ─── S62-A4: Function tab with sub-tabs ──────────────────────────────────────
 type FnSubTab = 'grapher' | 'sliders';
@@ -120,7 +123,7 @@ export const DataVizStudioView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<StudioTab>(() => {
     const hash = window.location.hash;
     const tabParam = new URLSearchParams(hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '').get('tab');
-    const validTabs: StudioTab[] = ['chart', 'paper', 'ai', 'prob', 'fn', 'geo', 'stats', 'calc', 'linalg', 'solid', 'geo2d', 'conic'];
+    const validTabs: StudioTab[] = ['chart', 'paper', 'ai', 'prob', 'fn', 'geo', 'stats', 'calc', 'linalg', 'solid', 'geo2d', 'conic', 'algebra'];
     return (validTabs.includes(tabParam as StudioTab) ? tabParam : 'chart') as StudioTab;
   });
 
@@ -218,6 +221,7 @@ export const DataVizStudioView: React.FC = () => {
     { id: 'geo2d'  as StudioTab, label: t('dataviz.tab.geo2d'),  icon: Shapes,         color: 'pink'    },
     { id: 'solid'  as StudioTab, label: t('dataviz.tab.solid'),  icon: Box,            color: 'orange'  },
     { id: 'conic'  as StudioTab, label: t('dataviz.tab.conic'),  icon: Triangle,       color: 'violet'  },
+    { id: 'algebra' as StudioTab, label: t('dataviz.tab.algebra'), icon: LayoutGrid,    color: 'indigo'  },
   ];
 
   return (
@@ -662,6 +666,25 @@ export const DataVizStudioView: React.FC = () => {
             <SilentErrorBoundary>
               <Suspense fallback={<LabLoading />}>
                 <LinearAlgebraLab />
+              </Suspense>
+            </SilentErrorBoundary>
+          </div>
+        )}
+
+        {/* ══ TAB: ALGEBRA TILES ═══════════════════════════════════════════════ */}
+        {activeTab === 'algebra' && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <LayoutGrid className="w-5 h-5 text-indigo-500" /> Алгебарски Плочки
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Визуелна алгебра со плочки · Собирање/Одземање поими · Решавање равенки — МОН VI–VIII одд.
+              </p>
+            </div>
+            <SilentErrorBoundary>
+              <Suspense fallback={<LabLoading />}>
+                <AlgebraTilesLazy />
               </Suspense>
             </SilentErrorBoundary>
           </div>

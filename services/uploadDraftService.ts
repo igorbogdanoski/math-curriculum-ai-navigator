@@ -12,6 +12,7 @@ import type { LessonPlan } from '../types';
 
 const COLLECTION = 'scenario_upload_drafts';
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const SS_FALLBACK_KEY = 'upload_draft_ss_fallback'; // same-device fallback when Firestore unavailable
 
 interface QueueItem {
   parsed: Partial<LessonPlan>;
@@ -33,7 +34,12 @@ export async function saveUploadDraft(
   parsed: Partial<LessonPlan>,
   fileName: string,
 ): Promise<void> {
-  return saveUploadDraftBatch(uid, [{ parsed, fileName }]);
+  try {
+    return await saveUploadDraftBatch(uid, [{ parsed, fileName }]);
+  } catch {
+    // Firestore unavailable (rules not deployed yet, offline, etc.) — fall back to sessionStorage for same-device flow
+    sessionStorage.setItem(SS_FALLBACK_KEY, JSON.stringify({ parsed, fileName }));
+  }
 }
 
 /**
@@ -63,6 +69,16 @@ export async function saveUploadDraftBatch(
 export async function loadAndClearUploadDraft(
   uid: string,
 ): Promise<{ parsed: Partial<LessonPlan>; fileName: string; remaining: number } | null> {
+  // Check same-device sessionStorage fallback first (used when Firestore was unavailable at save time)
+  const fallback = sessionStorage.getItem(SS_FALLBACK_KEY);
+  if (fallback) {
+    sessionStorage.removeItem(SS_FALLBACK_KEY);
+    try {
+      const item = JSON.parse(fallback) as { parsed: Partial<LessonPlan>; fileName: string };
+      return { parsed: item.parsed, fileName: item.fileName, remaining: 0 };
+    } catch { /* malformed — fall through to Firestore */ }
+  }
+
   const ref = doc(db, COLLECTION, uid);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;

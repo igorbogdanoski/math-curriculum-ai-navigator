@@ -134,10 +134,24 @@ function PhaseActions({
         </button>
         <button
           type="button"
-          onClick={() => onNavigate('/data-viz?tab=geo2d')}
+          onClick={() => window.open(`${window.location.origin}${window.location.pathname}#/data-viz?tab=geo2d`, '_blank', 'width=1280,height=820,resizable=yes,scrollbars=yes')}
           className="px-3 py-1.5 bg-teal-100 hover:bg-teal-200 text-teal-800 rounded-lg text-xs font-medium transition-colors"
         >
-          📐 Геометрија лаб
+          📐 2D Геометрија
+        </button>
+        <button
+          type="button"
+          onClick={() => window.open(`${window.location.origin}${window.location.pathname}#/data-viz?tab=solid`, '_blank', 'width=1280,height=820,resizable=yes,scrollbars=yes')}
+          className="px-3 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-lg text-xs font-medium transition-colors"
+        >
+          🧊 3D Геометрија
+        </button>
+        <button
+          type="button"
+          onClick={() => window.open(`${window.location.origin}${window.location.pathname}#/data-viz?tab=algebra`, '_blank', 'width=1200,height=820,resizable=yes,scrollbars=yes')}
+          className="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 rounded-lg text-xs font-medium transition-colors"
+        >
+          🧩 Алгебарски плочки
         </button>
       </div>
     );

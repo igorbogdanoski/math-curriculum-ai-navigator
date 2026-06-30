@@ -149,6 +149,7 @@ export const mk: Record<string, string> = {
   'dataviz.tab.geo2d': '2D Геометрија',
   'dataviz.tab.solid': '3D Геометрија',
   'dataviz.tab.conic': 'Конусни пресеци',
+  'dataviz.tab.algebra': 'Алгебарски плочки',
   'common.learn_more': 'Дознај повеќе',
   'common.close': 'Затвори',
   'common.add': 'Додај',
