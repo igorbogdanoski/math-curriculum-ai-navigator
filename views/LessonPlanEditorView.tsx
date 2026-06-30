@@ -44,6 +44,9 @@ import { LessonResourceHub } from '../components/lesson-plan-editor/LessonResour
 import { ContextualMathTools } from '../components/lesson-plan-editor/ContextualMathTools';
 import { StudentCognitiveProfilePanel } from '../components/lesson-plan-editor/StudentCognitiveProfilePanel';
 import type { ScenarioBankEntry } from '../services/firestoreService.scenarioBank';
+import { UploadedScenarioBanner } from '../components/lesson-plan-editor/UploadedScenarioBanner';
+import { DraftMergeDialog } from '../components/lesson-plan-editor/DraftMergeDialog';
+import { loadAndClearUploadDraft } from '../services/uploadDraftService';
 
 
 interface LessonPlanEditorViewProps {
@@ -78,6 +81,9 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   const [officialLessonEditing, setOfficialLessonEditing] = useState(false);
   const [officialLessonOrientation, setOfficialLessonOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; title?: string; variant?: 'danger' | 'warning' | 'info'; onConfirm: () => void } | null>(null);
+
+  const [showUploadBanner, setShowUploadBanner] = useState(false);
+  const [pendingUpload, setPendingUpload] = useState<{ parsed: Partial<LessonPlan>; fileName: string } | null>(null);
 
   const isMounted = useRef(true);
   const lessonOfficialFormRef = useRef<HTMLDivElement>(null);
@@ -145,17 +151,22 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
   useEffect(() => {
     if (isCurriculumLoading || !curriculum) return;
 
-    // S105 — Uploaded scenario AI-parse prefill (from ScenarioBank "Прикачи старо сценарио")
-    if (!isEditing) {
-      const uploadedRaw = sessionStorage.getItem('uploaded_scenario_prefill');
-      if (uploadedRaw) {
-        sessionStorage.removeItem('uploaded_scenario_prefill');
+    // S106-Г — Cloud draft sync: load uploaded scenario from Firestore (replaces sessionStorage)
+    if (!isEditing && firebaseUser?.uid) {
+      void (async () => {
         try {
-          const parsed = JSON.parse(uploadedRaw) as Partial<LessonPlan>;
-          setPlan({ ...initialPlanState, ...parsed });
-          return;
-        } catch { /* fall through to default prefill below */ }
-      }
+          const draft = await loadAndClearUploadDraft(firebaseUser.uid!);
+          if (!draft) return;
+          const hasExistingContent = plan.title || plan.scenario?.introductory?.text || (plan.scenario?.main?.length ?? 0) > 0;
+          if (hasExistingContent) {
+            // S106-Б — DraftMergeDialog: non-empty draft conflicts with upload
+            setPendingUpload(draft);
+          } else {
+            setPlan({ ...initialPlanState, ...draft.parsed });
+            setShowUploadBanner(true);
+          }
+        } catch { /* silently ignore — non-critical */ }
+      })();
     }
 
     if (isEditing) {
@@ -334,6 +345,42 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       <PlanningChainBar currentStep="lesson" />
       <PlanningBreadcrumb />
 
+      {/* S106-Б DraftMergeDialog */}
+      {pendingUpload && (
+        <DraftMergeDialog
+          existingDraft={plan}
+          uploadedPlan={pendingUpload.parsed}
+          fileName={pendingUpload.fileName}
+          onReplace={() => {
+            setPlan({ ...initialPlanState, ...pendingUpload!.parsed });
+            setShowUploadBanner(true);
+            setPendingUpload(null);
+          }}
+          onMerge={() => {
+            setPlan((prev: Partial<LessonPlan>) => {
+              const up = pendingUpload!.parsed;
+              return {
+                ...prev,
+                title: prev.title || up.title,
+                theme: prev.theme || up.theme,
+                grade: prev.grade || up.grade,
+                subject: prev.subject || up.subject,
+                objectives: (prev.objectives?.length ?? 0) > 0 ? prev.objectives : up.objectives,
+                scenario: {
+                  introductory: { text: prev.scenario?.introductory?.text || up.scenario?.introductory?.text || '' },
+                  main: (prev.scenario?.main?.length ?? 0) > 0 ? prev.scenario!.main! : (up.scenario?.main ?? []),
+                  concluding: { text: prev.scenario?.concluding?.text || up.scenario?.concluding?.text || '' },
+                },
+                materials: (prev.materials?.length ?? 0) > 0 ? prev.materials : up.materials,
+              };
+            });
+            setShowUploadBanner(true);
+            setPendingUpload(null);
+          }}
+          onKeepDraft={() => setPendingUpload(null)}
+        />
+      )}
+
       {savedPlanForCoach && (
         <div className="mb-4">
           <CoachBubble
@@ -348,6 +395,13 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
           />
         </div>
       )}
+      {/* S106-Д Upload-Aware Pedagogical Banner */}
+      {showUploadBanner && !isEditing && (
+        <div className="mb-4">
+          <UploadedScenarioBanner plan={plan} onDismiss={() => setShowUploadBanner(false)} />
+        </div>
+      )}
+
       <header className="mb-6 no-print flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <button type="button" onClick={() => navigate('/my-lessons')} className="text-brand-secondary hover:underline mb-2">

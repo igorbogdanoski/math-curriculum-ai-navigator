@@ -468,6 +468,82 @@ ${actText ? `АКТИВНОСТИ:\n${actText}` : ''}
   return generateAndParseJSON([{ text: prompt }], schema, DEFAULT_MODEL, undefined, MAX_RETRIES, false, undefined, profile?.tier);
 },
 
+/** S106-Д — Pedagogical audit for a teacher's own uploaded scenario.
+ *  Returns completeness score, implicit Bloom levels, МОН phase coverage,
+ *  and ≤2 minimal enrichments needed for full compliance. */
+async auditUploadedScenario(
+  plan: Partial<LessonPlan>,
+  profile?: TeachingProfile,
+): Promise<{
+  completenessScore: number;
+  phases: { intro: boolean; main: boolean; concluding: boolean };
+  implicitBloom: Array<{ level: number; label: string; evidence: string }>;
+  suggestedEnrichments: string[];
+  strengths: string[];
+}> {
+  const intro  = plan.scenario?.introductory?.text  ?? '';
+  const main   = plan.scenario?.main?.map(m => m.text).join(' ') ?? '';
+  const concl  = plan.scenario?.concluding?.text    ?? '';
+  const objs   = plan.objectives?.map(o => o.text).join('; ') ?? '';
+  const mats   = plan.materials?.join(', ') ?? '';
+
+  const prompt = `Ти си педагошки аудитор на наставни сценарија. Анализирај го ова ПОСТОЕЧКО сценарио (внесено од наставник, не генерирано) и дај конкретен наод.
+
+СЦЕНАРИО:
+Наслов: ${sanitizePromptInput(plan.title ?? '', 200)}
+Одд.: ${plan.grade ?? '?'} | Тема: ${sanitizePromptInput(plan.theme ?? '', 200)}
+Цели: ${sanitizePromptInput(objs, 400)}
+Воведна: ${sanitizePromptInput(intro, 600)}
+Главна: ${sanitizePromptInput(main, 800)}
+Завршна: ${sanitizePromptInput(concl, 400)}
+Средства: ${sanitizePromptInput(mats, 200)}
+
+ЗАДАЧА:
+1. completenessScore (0-100): Колку е МОН-усогласено (трофазна структура 40мин, јасни цели, средства)?
+2. phases: Дали секоја фаза е ПРИСУТНА и НЕПРАЗНА?
+3. implicitBloom: Препознај имплицитни Bloom нивоа кои веќе ПОСТОЈАТ во текстот (не додавај нови). Максимум 3 наода. level=1..6 по ревидираната Bloom.
+4. suggestedEnrichments: Точно 2 конкретни, мали додатоци кои ќе го комплетираат сценариото. Специфични, акциски ("Додај 5-минутна рефлексија...").
+5. strengths: 2 конкретни педагошки силни страни кои веќе постојат.
+
+НЕ измислувај содржина. Анализирај само она што е дадено.`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      completenessScore: { type: Type.NUMBER },
+      phases: {
+        type: Type.OBJECT,
+        properties: {
+          intro:      { type: Type.BOOLEAN },
+          main:       { type: Type.BOOLEAN },
+          concluding: { type: Type.BOOLEAN },
+        },
+        required: ['intro', 'main', 'concluding'],
+      },
+      implicitBloom: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            level:    { type: Type.NUMBER },
+            label:    { type: Type.STRING },
+            evidence: { type: Type.STRING },
+          },
+          required: ['level', 'label', 'evidence'],
+        },
+      },
+      suggestedEnrichments: { type: Type.ARRAY, items: { type: Type.STRING } },
+      strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+    },
+    required: ['completenessScore', 'phases', 'implicitBloom', 'suggestedEnrichments', 'strengths'],
+  };
+
+  return generateAndParseJSON(
+    [{ text: prompt }], schema, DEFAULT_MODEL,
+    undefined, MAX_RETRIES, false, undefined, profile?.tier, { temperature: 0.4 },
+  );
+},
+
 async generateEmbedding(text: string): Promise<number[]> {
     const { callEmbeddingProxy } = await import('./core');
     return callEmbeddingProxy(text);

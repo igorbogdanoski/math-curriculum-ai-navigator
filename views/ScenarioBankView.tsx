@@ -8,6 +8,11 @@ import { useNotification } from '../contexts/NotificationContext';
 import { Card } from '../components/common/Card';
 import { ScenarioCard } from '../components/scenario-bank/ScenarioCard';
 import { UploadScenarioModal } from '../components/scenario-bank/UploadScenarioModal';
+import { ScenarioSelectionModal } from '../components/scenario-bank/ScenarioSelectionModal';
+import { BatchImportModal } from '../components/scenario-bank/BatchImportModal';
+import { saveUploadDraft } from '../services/uploadDraftService';
+import { splitScenarios } from '../services/scenarioSplitter';
+import type { ScenarioSegment } from '../services/scenarioSplitter';
 import type { ScenarioBankEntry, ScenarioBankFilter, TeachingModel, EntryType } from '../services/firestoreService.scenarioBank';
 import {
   fetchScenarios, fetchMyScenarios, rateScenario,
@@ -200,29 +205,103 @@ export const ScenarioBankView: React.FC = () => {
   }, [handleScenarioPrint]);
 
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
   const [isParsingUpload, setIsParsingUpload] = useState(false);
+  const [isBatchImporting, setIsBatchImporting] = useState(false);
+  const [pendingSegments, setPendingSegments] = useState<{ segments: ScenarioSegment[]; fileName: string } | null>(null);
+
+  /** Parse one rawText + fileName and save draft to Firestore, then navigate */
+  const parseSingleAndNavigate = useCallback(async (rawText: string, fileName: string) => {
+    const { plansAPI } = await import('../services/gemini/plans');
+    const parsed = await plansAPI.parseScenarioFromText(rawText, user ?? undefined);
+    const hasUsableContent = parsed.title || parsed.scenario?.introductory?.text || (parsed.scenario?.main?.length ?? 0) > 0;
+    if (!hasUsableContent) {
+      addNotification('AI не успеа да препознае структура. Провери дали датотеката содржи текст и обиди се повторно.', 'error');
+      return;
+    }
+    if (!firebaseUser?.uid) {
+      addNotification('Мора да сте најавени.', 'warning');
+      return;
+    }
+    // S106-Г — save to Firestore instead of sessionStorage
+    await saveUploadDraft(firebaseUser.uid, parsed, fileName);
+    const truncWarning = rawText.length > 8000 ? ' (анализиран само прв дел)' : '';
+    addNotification(`✅ „${fileName}" е структурирано${truncWarning} — прегледај и уреди.`, 'success');
+    navigate('/planner/lesson/new');
+  }, [user, firebaseUser, navigate, addNotification]);
 
   const handleUploadExtracted = useCallback(async (rawText: string, fileName: string) => {
     setShowUploadModal(false);
     setIsParsingUpload(true);
     try {
-      const { plansAPI } = await import('../services/gemini/plans');
-      const parsed = await plansAPI.parseScenarioFromText(rawText, user ?? undefined);
-      const hasUsableContent = parsed.title || parsed.scenario?.introductory?.text || (parsed.scenario?.main?.length ?? 0) > 0;
-      if (!hasUsableContent) {
-        addNotification('AI не успеа да препознае структура. Провери дали датотеката содржи текст и обиди се повторно.', 'error');
+      // S106-В — multi-scenario detection
+      const segments = splitScenarios(rawText);
+      if (segments.length >= 2) {
+        setPendingSegments({ segments, fileName });
         return;
       }
-      sessionStorage.setItem('uploaded_scenario_prefill', JSON.stringify(parsed));
-      const truncWarning = rawText.length > 8000 ? ' (анализиран само прв дел)' : '';
-      addNotification(`✅ „${fileName}" е структурирано${truncWarning} — прегледај и уреди.`, 'success');
-      navigate('/planner/lesson/new');
+      await parseSingleAndNavigate(rawText, fileName);
     } catch {
       addNotification('Грешка при анализа на документот. Пробајте повторно.', 'error');
     } finally {
       setIsParsingUpload(false);
     }
-  }, [user, navigate, addNotification]);
+  }, [parseSingleAndNavigate, addNotification]);
+
+  const handleSegmentsSelected = useCallback(async (selected: ScenarioSegment[]) => {
+    if (!firebaseUser?.uid || selected.length === 0) return;
+    setIsParsingUpload(true);
+    const fileName = pendingSegments?.fileName ?? 'документ';
+    try {
+      if (selected.length === 1) {
+        await parseSingleAndNavigate(selected[0].text, fileName);
+      } else {
+        // Multiple: parse all concurrently, save first to Firestore, notify about the rest
+        const { plansAPI } = await import('../services/gemini/plans');
+        const results = await Promise.allSettled(
+          selected.map(s => plansAPI.parseScenarioFromText(s.text, user ?? undefined))
+        );
+        const succeeded = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof plansAPI.parseScenarioFromText>>> => r.status === 'fulfilled').map(r => r.value);
+        if (succeeded.length === 0) {
+          addNotification('AI не успеа да структурира ниту едно сценарио.', 'error');
+          return;
+        }
+        // Save first one as active draft
+        await saveUploadDraft(firebaseUser.uid, succeeded[0], `${fileName} (1/${succeeded.length})`);
+        addNotification(`✅ Увезени ${succeeded.length} сценарија — Сценарио 1 е отворено. Останатите зачувај ги рачно.`, 'success');
+        navigate('/planner/lesson/new');
+      }
+    } catch {
+      addNotification('Грешка при структурирање на сценаријата.', 'error');
+    } finally {
+      setIsParsingUpload(false);
+      setPendingSegments(null);
+    }
+  }, [firebaseUser, pendingSegments, parseSingleAndNavigate, user, navigate, addNotification]);
+
+  const handleBatchImport = useCallback(async (files: Array<{ name: string; text: string }>) => {
+    if (!firebaseUser?.uid || files.length === 0) return;
+    setIsBatchImporting(true);
+    try {
+      const { plansAPI } = await import('../services/gemini/plans');
+      const results = await Promise.allSettled(
+        files.map(f => plansAPI.parseScenarioFromText(f.text, user ?? undefined).then(p => ({ ...p, _fileName: f.name })))
+      );
+      const succeeded = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof plansAPI.parseScenarioFromText>> & { _fileName: string }> => r.status === 'fulfilled').map(r => r.value);
+      if (succeeded.length === 0) {
+        addNotification('AI не успеа да структурира ниту еден фајл.', 'error');
+        return;
+      }
+      await saveUploadDraft(firebaseUser.uid, succeeded[0], succeeded[0]._fileName);
+      addNotification(`✅ Анализирани ${succeeded.length}/${files.length} датотеки — Прва е отворена за уредување.`, 'success');
+      setShowBatchModal(false);
+      navigate('/planner/lesson/new');
+    } catch {
+      addNotification('Грешка при групен увоз.', 'error');
+    } finally {
+      setIsBatchImporting(false);
+    }
+  }, [firebaseUser, user, navigate, addNotification]);
 
   const handleSave = async (entryId: string, saved: boolean) => {
     if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
@@ -255,6 +334,14 @@ export const ScenarioBankView: React.FC = () => {
         </div>
         {user && (
           <div className="flex gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowBatchModal(true)}
+              title="Групен увоз — избери повеќе датотеки одеднаш"
+              className="flex items-center gap-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 text-sm font-semibold px-3 py-2 rounded-xl shadow-sm transition-colors"
+            >
+              <FileText className="w-4 h-4" /> Групен увоз
+            </button>
             <button
               type="button"
               onClick={() => setShowUploadModal(true)}
@@ -622,6 +709,26 @@ export const ScenarioBankView: React.FC = () => {
         <UploadScenarioModal
           onClose={() => setShowUploadModal(false)}
           onExtracted={handleUploadExtracted}
+        />
+      )}
+
+      {/* S106-В — Multi-scenario selection modal */}
+      {pendingSegments && (
+        <ScenarioSelectionModal
+          segments={pendingSegments.segments}
+          fileName={pendingSegments.fileName}
+          onImportSelected={handleSegmentsSelected}
+          onClose={() => { setPendingSegments(null); setIsParsingUpload(false); }}
+          isImporting={isParsingUpload}
+        />
+      )}
+
+      {/* S106-Е — Batch import modal */}
+      {showBatchModal && (
+        <BatchImportModal
+          onClose={() => setShowBatchModal(false)}
+          onImportSelected={handleBatchImport}
+          isImporting={isBatchImporting}
         />
       )}
     </div>

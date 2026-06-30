@@ -1,17 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Upload, X, FileText, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
-import { toBase64, detectImageMime } from '../../views/extractionHubHelpers';
-
-type DocKind = 'pdf' | 'docx' | 'txt' | 'image';
-
-interface UploadedDoc {
-  name: string;
-  size: number;
-  kind: DocKind;
-  text?: string;
-  base64?: string;
-  mimeType?: string;
-}
+import { parseUploadedFile, type ParsedDocument } from '../../services/documentParser';
 
 interface Props {
   onClose: () => void;
@@ -19,53 +8,25 @@ interface Props {
   onExtracted: (rawText: string, fileName: string) => void;
 }
 
-const MAX_SIZE = 20 * 1024 * 1024;
-
 export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) => {
-  const [doc, setDoc] = useState<UploadedDoc | null>(null);
+  const [doc, setDoc] = useState<ParsedDocument | null>(null);
+  const [fileName, setFileName] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
-  const [isLoadingFile, setIsLoadingFile] = useState(false);
-  const [isExtractingPdf, setIsExtractingPdf] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadFile = useCallback(async (file: File) => {
-    if (file.size > MAX_SIZE) {
-      setError('Датотеката е поголема од 20 MB. Изберете помала датотека.');
-      return;
-    }
+  const handleFile = useCallback(async (file: File) => {
+    setIsBusy(true);
     setError(null);
     setDoc(null);
-    setIsLoadingFile(true);
     try {
-      const name = file.name;
-      const size = file.size;
-      const isPdf = file.type === 'application/pdf' || name.endsWith('.pdf');
-      const isDocx = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || name.endsWith('.docx');
-      const isTxt = file.type === 'text/plain' || name.endsWith('.txt');
-      const imageMime = detectImageMime(name, file.type);
-
-      if (imageMime) {
-        const ab = await file.arrayBuffer();
-        const base64 = toBase64(ab);
-        setDoc({ name, size, kind: 'image', base64, mimeType: imageMime });
-      } else if (isPdf) {
-        const ab = await file.arrayBuffer();
-        const base64 = toBase64(ab);
-        setDoc({ name, size, kind: 'pdf', base64 });
-      } else if (isDocx) {
-        const ab = await file.arrayBuffer();
-        const mammoth = await import('mammoth');
-        const { value: html } = await mammoth.convertToHtml({ arrayBuffer: ab });
-        const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-        setDoc({ name, size, kind: 'docx', text });
-      } else if (isTxt) {
-        const text = await file.text();
-        setDoc({ name, size, kind: 'txt', text });
-      } else {
-        setError('Поддржани формати: PDF, DOCX, TXT, PNG, JPG, WEBP.');
-      }
+      const parsed = await parseUploadedFile(file);
+      setDoc(parsed);
+      setFileName(file.name);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Грешка при читање на датотеката.');
     } finally {
-      setIsLoadingFile(false);
+      setIsBusy(false);
     }
   }, []);
 
@@ -73,43 +34,28 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) await loadFile(file);
-  }, [loadFile]);
+    if (file) await handleFile(file);
+  }, [handleFile]);
 
   const onFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) await loadFile(file);
-  }, [loadFile]);
+    if (file) await handleFile(file);
+  }, [handleFile]);
 
-  const handleContinue = useCallback(async () => {
+  const handleContinue = async () => {
     if (!doc) return;
     setError(null);
+    setIsBusy(true);
     try {
-      let rawText = '';
-      if (doc.kind === 'txt' || doc.kind === 'docx') {
-        rawText = doc.text ?? '';
-      } else if (doc.kind === 'pdf') {
-        setIsExtractingPdf(true);
-        const { extractTextFromDocument } = await import('../../services/gemini/visionContracts');
-        rawText = await extractTextFromDocument(doc.base64 ?? '');
-      } else if (doc.kind === 'image') {
-        setIsExtractingPdf(true);
-        const { extractTextFromImage } = await import('../../services/gemini/visionContracts');
-        rawText = await extractTextFromImage(doc.base64 ?? '', doc.mimeType ?? 'image/png');
-      }
-      if (!rawText.trim()) {
-        setError('Не успеа да се прочита текст од датотеката. Пробајте друга датотека.');
+      if (!doc.text.trim()) {
+        setError('Не успеа да се прочита текст. Пробајте друга датотека.');
         return;
       }
-      onExtracted(rawText, doc.name);
-    } catch {
-      setError('Грешка при читање на содржината. Пробајте повторно.');
+      onExtracted(doc.text, fileName);
     } finally {
-      setIsExtractingPdf(false);
+      setIsBusy(false);
     }
-  }, [doc, onExtracted]);
-
-  const isBusy = isLoadingFile || isExtractingPdf;
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -140,7 +86,7 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
           >
             <input
               type="file"
-              accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+              accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain,image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.zip" // future ZIP import
               onChange={onFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               aria-label="Прикачи датотека"
@@ -148,8 +94,8 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
             {doc ? (
               <div className="flex items-center justify-center gap-2 text-sm">
                 <FileText className="w-5 h-5 text-indigo-500" />
-                <span className="font-bold text-gray-800 truncate max-w-[260px]">{doc.name}</span>
-                <span className="text-gray-400">({(doc.size / 1024).toFixed(0)} KB)</span>
+                <span className="font-bold text-gray-800 truncate max-w-[260px]">{fileName}</span>
+                <span className="text-gray-400">({Math.round(doc.charCount / 1000 * 10) / 10} K chars)</span>
               </div>
             ) : (
               <div className="text-sm text-gray-500">
@@ -159,6 +105,23 @@ export const UploadScenarioModal: React.FC<Props> = ({ onClose, onExtracted }) =
               </div>
             )}
           </div>
+
+          {doc && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="px-2 py-0.5 rounded-full font-mono font-bold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
+                {doc.kind}
+              </span>
+              {doc.truncated && (
+                <span className="text-amber-700 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Долг документ — само прв дел ќе биде анализиран
+                </span>
+              )}
+              {doc.images.length > 0 && (
+                <span className="text-emerald-700">📷 {doc.images.length} слика(и) детектирани</span>
+              )}
+            </div>
+          )}
 
           {error && (
             <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
