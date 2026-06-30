@@ -481,7 +481,11 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({ id, 
       {/* S106-Д Upload-Aware Pedagogical Banner */}
       {showUploadBanner && !isEditing && (
         <div className="mb-4">
-          <UploadedScenarioBanner plan={plan} onDismiss={() => setShowUploadBanner(false)} />
+          <UploadedScenarioBanner
+            plan={plan}
+            onDismiss={() => setShowUploadBanner(false)}
+            onEnrich={(merged) => setPlan(prev => ({ ...prev, ...merged }))}
+          />
         </div>
       )}
 

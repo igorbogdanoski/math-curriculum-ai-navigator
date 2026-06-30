@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { Sparkles, CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp, Loader2, X, User, School } from 'lucide-react';
+import { Sparkles, CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronUp, Loader2, X, User, School, Wand2 } from 'lucide-react';
 import type { LessonPlan } from '../../types';
 import { geminiService } from '../../services/geminiService';
 import { MATH_STANDARDS } from '../../data/allNationalStandardsComplete';
+import { PlanDiffView } from './PlanDiffView';
 
 interface BloomHit { level: number; label: string; evidence: string }
 interface AuditResult {
@@ -16,6 +17,8 @@ interface AuditResult {
 interface Props {
   plan: Partial<LessonPlan>;
   onDismiss: () => void;
+  /** Called with the field-level merged plan after user accepts enrichment changes */
+  onEnrich?: (merged: Partial<LessonPlan>) => void;
 }
 
 const BLOOM_COLORS: Record<number, string> = {
@@ -71,9 +74,11 @@ function detectSecondaryCompetencies(plan: Partial<LessonPlan>): typeof SECONDAR
   return SECONDARY_COMPETENCIES.filter(c => c.keywords.some(kw => texts.includes(kw)));
 }
 
-export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss }) => {
+export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss, onEnrich }) => {
   const [audit, setAudit] = useState<AuditResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichedPlan, setEnrichedPlan] = useState<Partial<LessonPlan> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [confirmedBRO, setConfirmedBRO] = useState<Set<string>>(new Set());
@@ -94,6 +99,20 @@ export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss }) => 
       setIsRunning(false);
     }
   }, [plan]);
+
+  const runEnrich = useCallback(async () => {
+    if (!audit?.suggestedEnrichments.length) return;
+    setIsEnriching(true);
+    setError(null);
+    try {
+      const enriched = await geminiService.enrichUploadedScenario(plan, audit.suggestedEnrichments);
+      setEnrichedPlan(enriched);
+    } catch {
+      setError('Грешка при збогатување. Пробајте повторно.');
+    } finally {
+      setIsEnriching(false);
+    }
+  }, [plan, audit]);
 
   const toggleBRO = (code: string) => {
     setConfirmedBRO(prev => {
@@ -260,10 +279,10 @@ export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss }) => 
                 </div>
               )}
 
-              {/* Enrichments */}
+              {/* Enrichments + AI apply button */}
               {audit.suggestedEnrichments.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">🔧 Минимални додатоци за МОН-усогласеност</p>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">🔧 Минимални додатоци за МОН-усогласеност</p>
                   <ul className="space-y-1">
                     {audit.suggestedEnrichments.slice(0, 2).map((s, i) => (
                       <li key={i} className="flex items-start gap-1.5 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
@@ -271,6 +290,30 @@ export const UploadedScenarioBanner: React.FC<Props> = ({ plan, onDismiss }) => 
                       </li>
                     ))}
                   </ul>
+                  {onEnrich && !enrichedPlan && (
+                    <button
+                      type="button"
+                      onClick={runEnrich}
+                      disabled={isEnriching}
+                      className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      {isEnriching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                      {isEnriching ? 'AI збогатува...' : 'AI Збогати и Прегледај разлики'}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Side-by-side diff view after enrichment */}
+              {enrichedPlan && onEnrich && (
+                <div className="border-t border-indigo-100 pt-3">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2">📋 Прегледај промени — прифати или одбиј</p>
+                  <PlanDiffView
+                    original={plan}
+                    enriched={enrichedPlan}
+                    onAcceptAll={(merged) => { onEnrich(merged); onDismiss(); }}
+                    onDiscard={() => setEnrichedPlan(null)}
+                  />
                 </div>
               )}
             </div>

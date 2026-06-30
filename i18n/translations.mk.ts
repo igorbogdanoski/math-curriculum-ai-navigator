@@ -110,6 +110,7 @@ export const mk: Record<string, string> = {
   'nav.sloDashboard':      'SLO Контролна табла',
   'sidebar.moreTools': 'Повеќе алатки',
   'sidebar.less': 'Помалку',
+  'sidebar.sec.community': 'Заедница',
   'sidebar.sec.planning': 'Планирање',
   'sidebar.sec.programme': 'Наставна Програма',
   'sidebar.sec.aitools': 'AI Алатки',

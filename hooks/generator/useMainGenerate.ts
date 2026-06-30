@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { geminiService, isDailyQuotaKnownExhausted } from '../../services/geminiService';
 import { AI_COSTS, sanitizePromptInput } from '../../services/gemini/core';
+import { isUnlimitedProfile } from '../useSubscriptionStatus';
 import { streamLessonPlan } from '../../services/gemini/plans';
 import { AIGeneratedIdeasSchema } from '../../utils/schemas';
 import { RateLimitError } from '../../services/apiErrors';
@@ -78,7 +79,7 @@ export function useMainGenerate({
     else if (materialType === 'LEARNING_PATH') cost = AI_COSTS.LEARNING_PATH;
     if (includeIllustration && materialType !== 'ILLUSTRATION') cost += AI_COSTS.ILLUSTRATION;
 
-    if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+    if (user && user.role !== 'admin' && !isUnlimitedProfile(user)) {
       if ((user.aiCreditsBalance ?? 0) < cost) {
         openUpgradeModal?.(`Останавте без AI кредити! Оваа опција чини ${cost} кредити. Надградете на Pro пакет за неограничено генерирање.`);
         return;

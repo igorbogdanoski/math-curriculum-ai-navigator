@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
 import { useTour } from '../hooks/useTour';
 import { useGeneratorActions } from '../hooks/useGeneratorActions';
+import { isUnlimitedProfile } from '../hooks/useSubscriptionStatus';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useCurriculum } from '../hooks/useCurriculum';
@@ -61,7 +62,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     const { user, firebaseUser, updateLocalProfile } = useAuth();
 
     const requirePremiumOrCredits = (action: () => void, costMultiplier = 1, isPremiumOnly = false, featureName = "") => {
-        if (user?.role === 'admin' || user?.isPremium || user?.hasUnlimitedCredits) {
+        if (user?.role === 'admin' || isUnlimitedProfile(user)) {
             action();
             return;
         }
@@ -80,7 +81,7 @@ export const MaterialsGeneratorView: React.FC<Partial<GeneratorState>> = (props:
     };
 
     const deductCredits = async (amount = 1) => {
-        if (!user || user.role === 'admin' || user.isPremium || user.hasUnlimitedCredits) return;
+        if (!user || user.role === 'admin' || isUnlimitedProfile(user)) return;
         const originalBalance = user.aiCreditsBalance || 0;
         const newBalance = Math.max(0, originalBalance - amount);
         try {

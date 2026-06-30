@@ -2,6 +2,7 @@ import { logger } from '../../utils/logger';
 import { useState } from 'react';
 import { geminiService, isDailyQuotaKnownExhausted } from '../../services/geminiService';
 import { AI_COSTS } from '../../services/gemini/core';
+import { isUnlimitedProfile } from '../useSubscriptionStatus';
 import { RateLimitError } from '../../services/apiErrors';
 import { QuestionType } from '../../types';
 import type {
@@ -52,7 +53,7 @@ export function useBulkGenerate({
     if (isDailyQuotaKnownExhausted()) { setQuotaBannerFromStorage(); return; }
 
     const cost = AI_COSTS.BULK;
-    if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+    if (user && user.role !== 'admin' && !isUnlimitedProfile(user)) {
       if ((user.aiCreditsBalance ?? 0) < cost) {
         openUpgradeModal?.(`Останавте без AI кредити! Пакетот чини ${cost} кредити. Надградете на Pro за неограничено генерирање.`);
         return;

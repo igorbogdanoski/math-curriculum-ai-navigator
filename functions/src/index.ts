@@ -179,8 +179,9 @@ export const deductCredits = functions.https.onCall(async (data, context) => {
       const userData = userDoc.data();
       const currentBalance = userData?.aiCreditsBalance || 0;
       
-      // Allow bypass if they are premium/admin/unlimited (just in case they call it anyway)
-      if (userData?.role === 'admin' || userData?.isPremium || userData?.hasUnlimitedCredits) {
+      // Allow bypass if they are premium/admin/unlimited/school (just in case they call it anyway)
+      const userTier = userData?.tier as string | undefined;
+      if (userData?.role === 'admin' || userData?.isPremium || userData?.hasUnlimitedCredits || userTier === 'School' || userTier === 'Unlimited') {
          return { success: true, newBalance: currentBalance, bypassed: true };
       }
 

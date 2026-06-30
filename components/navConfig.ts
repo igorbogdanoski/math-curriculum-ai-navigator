@@ -109,6 +109,13 @@ export const SECONDARY_NAV_GROUPS: NavGroupConfig[] = [
       },
     ],
   },
+  // ── Заедница ─────────────────────────────────────────────────────────────────
+  {
+    sectionI18nKey: 'sidebar.sec.community',
+    items: [
+      { i18nKey: 'nav.forum', path: '/forum', iconKey: 'chatBubble', dynamicBadge: 'forumUnread' },
+    ],
+  },
   // ── Мој развој ───────────────────────────────────────────────────────────────
   {
     sectionI18nKey: 'sidebar.sec.development',

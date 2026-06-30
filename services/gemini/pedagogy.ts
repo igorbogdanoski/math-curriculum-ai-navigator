@@ -544,6 +544,68 @@ async auditUploadedScenario(
   );
 },
 
+/** Apply the 2 suggested enrichments from auditUploadedScenario to the plan
+ *  and return a new Partial<LessonPlan> with the improvements applied.
+ *  Temperature 0.3 for deterministic output. */
+async enrichUploadedScenario(
+  plan: Partial<LessonPlan>,
+  enrichments: string[],
+  profile?: TeachingProfile,
+): Promise<Partial<LessonPlan>> {
+  const intro = plan.scenario?.introductory?.text ?? '';
+  const main  = plan.scenario?.main?.map(m => m.text).join('\n') ?? '';
+  const concl = plan.scenario?.concluding?.text ?? '';
+  const objs  = plan.objectives?.map(o => o.text).join('; ') ?? '';
+
+  const prompt = `Ти си педагошки уредник. Примени ги следните конкретни подобрувања на ова наставно сценарио и врати ја подобрената верзија. НЕ измислувај нова содржина — само зголеми и подобри постоечката.
+
+ОРИГИНАЛНО СЦЕНАРИО:
+Наслов: ${sanitizePromptInput(plan.title ?? '', 200)}
+Одд.: ${plan.grade ?? '?'} | Тема: ${sanitizePromptInput(plan.theme ?? '', 200)}
+Цели: ${sanitizePromptInput(objs, 400)}
+Воведна: ${sanitizePromptInput(intro, 800)}
+Главна: ${sanitizePromptInput(main, 1200)}
+Завршна: ${sanitizePromptInput(concl, 600)}
+
+ПОДОБРУВАЊА ЗА ПРИМЕНА:
+${enrichments.map((e, i) => `${i + 1}. ${e}`).join('\n')}
+
+Врати JSON со истата структура — само полињата кои се изменети. За непроменети полиња врати ги оригиналните вредности.`;
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      title: { type: Type.STRING },
+      objectives: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: { text: { type: Type.STRING }, bloomsLevel: { type: Type.STRING } },
+          required: ['text'],
+        },
+      },
+      scenario: {
+        type: Type.OBJECT,
+        properties: {
+          introductory: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } },
+          main: {
+            type: Type.ARRAY,
+            items: { type: Type.OBJECT, properties: { text: { type: Type.STRING }, bloomsLevel: { type: Type.STRING } } },
+          },
+          concluding: { type: Type.OBJECT, properties: { text: { type: Type.STRING } } },
+        },
+      },
+      differentiation: { type: Type.STRING },
+    },
+    required: ['scenario'],
+  };
+
+  return generateAndParseJSON<Partial<LessonPlan>>(
+    [{ text: prompt }], schema, DEFAULT_MODEL,
+    undefined, MAX_RETRIES, false, undefined, profile?.tier, { temperature: 0.3 },
+  );
+},
+
 /** B2 — Growth Mindset Language Checker (Dweck 2006)
  *  Detects fixed-mindset language in objectives/activities and suggests rewrites.
  *  Temperature 0.3 for consistency. */

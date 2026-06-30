@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { geminiService, isDailyQuotaKnownExhausted } from '../services/geminiService';
 import { AI_COSTS } from '../services/gemini/core';
+import { isUnlimitedProfile } from './useSubscriptionStatus';
 import { RateLimitError } from '../services/apiErrors';
 import type { AIGeneratedAssessment, GenerationContext, TeachingProfile } from '../types';
 import type { GeneratorState } from './useGeneratorState';
@@ -48,7 +49,7 @@ export function useVariantGenerate({
 
     const cost = AI_COSTS.VARIANTS;
     // Upfront credit gate (cost: 3 credits for variants)
-    if (user && user.role !== 'admin' && !user.isPremium && !user.hasUnlimitedCredits) {
+    if (user && user.role !== 'admin' && !isUnlimitedProfile(user)) {
       if ((user.aiCreditsBalance ?? 0) < cost) {
         openUpgradeModal?.(`Останавте без AI кредити! Варијантите чинат ${cost} кредити. Надградете на Pro за неограничено генерирање.`);
         return;

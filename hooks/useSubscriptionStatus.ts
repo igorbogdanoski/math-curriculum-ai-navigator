@@ -25,6 +25,13 @@ export function deriveTier(profile: TeachingProfile | null): SubscriptionTier {
   return 'Free';
 }
 
+/** True if the user profile has unlimited AI generation (no credit deduction needed). */
+export function isUnlimitedProfile(profile: TeachingProfile | null | undefined): boolean {
+  if (!profile) return false;
+  const tier = deriveTier(profile);
+  return tier === 'Unlimited' || tier === 'School' || !!profile.hasUnlimitedCredits || !!profile.isPremium;
+}
+
 export function useSubscriptionStatus(): SubscriptionStatus {
   const { user } = useAuth();
   const tier = deriveTier(user);

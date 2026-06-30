@@ -635,6 +635,12 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == docId.split('_')[0];
     }
 
+    // ── Upload draft queue (scenario_upload_drafts) — S106+ ──
+    // Doc ID = uid. Only the owning teacher may read/write their own draft queue.
+    match /scenario_upload_drafts/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
     // ── Cognitive telemetry (anonymous learning analytics) — S83+ ──
     match /cognitive_telemetry/{docId} {
       allow create: if isAuthenticated();

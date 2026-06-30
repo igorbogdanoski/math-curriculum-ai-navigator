@@ -20,6 +20,7 @@ import {
 } from '../services/firestoreService.scenarioBank';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import type { ScenarioSearchResult } from '../services/ragService';
+import type { LessonPlan } from '../types';
 
 type TabMode = 'all' | 'mine' | 'saved' | 'bro' | 'admin';
 type SortBy = 'date' | 'rating' | 'forks' | 'usage';
@@ -150,43 +151,63 @@ export const ScenarioBankView: React.FC = () => {
   };
 
   /** Build a Partial<LessonPlan> from a ScenarioBankEntry (used when fullPlan is absent) */
-  const entryToDraft = (entry: ScenarioBankEntry) => ({
-    title: entry.title,
-    grade: entry.grade,
-    theme: entry.topicTitle,
-    objectives: entry.objectives.map(text => ({ text, bloomsLevel: 'Understanding' as const })),
-    scenario: {
-      introductory: { text: entry.scenarioIntro, duration: '' },
-      main: entry.scenarioMain.map(text => ({ text, bloomsLevel: 'Understanding' as const })),
-      concluding: { text: entry.scenarioConcluding, duration: '' },
-    },
-  });
+  const entryToDraft = (entry: ScenarioBankEntry): Partial<LessonPlan> => {
+    const base = {
+      title: entry.title,
+      grade: entry.grade,
+      theme: entry.topicTitle,
+      objectives: (entry.objectives ?? []).map(text => ({ text, bloomsLevel: 'Understanding' as const })),
+    };
+    // For non-lesson-plan entries (kahoot/extracted/generated), scenario fields are empty —
+    // populate introductory text with a reference to the material so the editor is not blank.
+    if (!entry.scenarioIntro && !entry.scenarioMain?.length) {
+      const typeLabel: Record<string, string> = {
+        kahoot: 'Kahoot квиз',
+        extracted_material: 'извлечен материјал',
+        generated_material: 'AI-генериран материјал',
+      };
+      const label = typeLabel[entry.entryType ?? ''] ?? 'материјал';
+      return {
+        ...base,
+        scenario: {
+          introductory: { text: `Воведна активност со ${label}: ${entry.title}`, duration: '' },
+          main: [{ text: entry.topicTitle ? `Главна активност: ${entry.topicTitle} — работа со ${label}.` : `Главна активност — работа со ${label}.`, bloomsLevel: 'Applying' as const }],
+          concluding: { text: 'Завршна дискусија и резиме.', duration: '' },
+        },
+      };
+    }
+    return {
+      ...base,
+      scenario: {
+        introductory: { text: entry.scenarioIntro ?? '', duration: '' },
+        main: (entry.scenarioMain ?? []).map(text => ({ text, bloomsLevel: 'Understanding' as const })),
+        concluding: { text: entry.scenarioConcluding ?? '', duration: '' },
+      },
+    };
+  };
 
   const handleEdit = async (entry: ScenarioBankEntry) => {
-    // Direct edit: if the bank entry has a linked lesson plan ID, open it in the editor
-    if (entry.fullPlan?.id) {
-      navigate(`/planner/lesson/${entry.fullPlan.id}`);
-      return;
-    }
-    // Fallback: save as draft so the editor pre-fills from it
     if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
-    const draft = entry.fullPlan ?? entryToDraft(entry);
-    await saveUploadDraft(firebaseUser.uid, draft, entry.title);
-    addNotification('✅ Сценариото е подготвено за уредување.', 'success');
-    navigate('/planner/lesson/new');
+    try {
+      // Always go through draft path — fullPlan.id points to local storage which may not exist on other devices
+      const draft = entry.fullPlan ?? entryToDraft(entry);
+      await saveUploadDraft(firebaseUser.uid, draft, entry.title);
+      navigate('/planner/lesson/new');
+    } catch {
+      addNotification('Грешка при вчитување на сценариото. Обидете се повторно.', 'error');
+    }
   };
 
   const handleFork = async (entry: ScenarioBankEntry) => {
     if (!firebaseUser?.uid || !user) { addNotification('Мора да сте најавени.', 'warning'); return; }
     try {
       await forkScenario(entry, firebaseUser.uid, user.name ?? 'Наставник', user.schoolName);
-      addNotification('✅ Ремиксот е создаден — отвора во Уредувач за уредување.', 'success');
       setEntries(prev => prev.map(e =>
         (e.id === (entry.originalId ?? entry.id)) ? { ...e, forkCount: e.forkCount + 1 } : e
       ));
-      // Save draft so the editor picks it up
       const draft = entry.fullPlan ?? entryToDraft(entry);
       await saveUploadDraft(firebaseUser.uid, draft, `Ремикс: ${entry.title}`);
+      addNotification('✅ Ремиксот е подготвен — отвора во Уредувач.', 'success');
       navigate('/planner/lesson/new');
     } catch {
       addNotification('Грешка при ремиксирање.', 'error');
@@ -195,12 +216,15 @@ export const ScenarioBankView: React.FC = () => {
 
   const handleUse = async (entry: ScenarioBankEntry) => {
     if (!firebaseUser?.uid) { addNotification('Мора да сте најавени.', 'warning'); return; }
-    await recordUsage(entry.id).catch(() => {});
-    setEntries(prev => prev.map(e => e.id !== entry.id ? e : { ...e, usageCount: e.usageCount + 1 }));
-    // Save the full plan (or reconstructed plan) as a draft → editor picks it up automatically
-    const draft = entry.fullPlan ?? entryToDraft(entry);
-    await saveUploadDraft(firebaseUser.uid, draft, entry.title);
-    navigate('/planner/lesson/new');
+    try {
+      await recordUsage(entry.id).catch(() => {});
+      setEntries(prev => prev.map(e => e.id !== entry.id ? e : { ...e, usageCount: e.usageCount + 1 }));
+      const draft = entry.fullPlan ?? entryToDraft(entry);
+      await saveUploadDraft(firebaseUser.uid, draft, entry.title);
+      navigate('/planner/lesson/new');
+    } catch {
+      addNotification('Грешка при вчитување на сценариото. Обидете се повторно.', 'error');
+    }
   };
 
   const handleMakePublic = async (entryId: string, makePublic: boolean) => {
@@ -255,7 +279,7 @@ export const ScenarioBankView: React.FC = () => {
     }
     // S106-Г — save to Firestore instead of sessionStorage
     await saveUploadDraft(firebaseUser.uid, parsed, fileName);
-    const truncWarning = rawText.length > 8000 ? ' (анализиран само прв дел)' : '';
+    const truncWarning = rawText.length > 13000 ? ' (анализиран само прв дел)' : '';
     addNotification(`✅ „${fileName}" е структурирано${truncWarning} — прегледај и уреди.`, 'success');
     navigate('/planner/lesson/new');
   }, [user, firebaseUser, navigate, addNotification]);

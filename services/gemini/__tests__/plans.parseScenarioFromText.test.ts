@@ -66,23 +66,23 @@ describe('plansAPI.parseScenarioFromText', () => {
     const prompt = (contents as Array<{ text: string }>)[0].text;
     expect(prompt).toContain(rawText);
     expect(prompt).toContain('ТРАНСКРИПЦИЈА');
-    expect(prompt).toContain('НЕ измислувај');
+    expect(prompt).toContain('измислуваш');
   });
 
-  it('truncates rawText to 8000 chars in the prompt', async () => {
+  it('truncates rawText to 13000 chars in the prompt', async () => {
     const { plansAPI } = await import('../plans');
-    const longText = 'a'.repeat(12000);
+    const longText = 'a'.repeat(18000);
     await plansAPI.parseScenarioFromText(longText);
 
     const [contents] = mockGenerateAndParseJSON.mock.calls[0];
     const prompt = (contents as Array<{ text: string }>)[0].text;
     const inPrompt = prompt.match(/"{3}([\s\S]*?)"{3}/)?.[1] ?? '';
-    expect(inPrompt.trim().length).toBeLessThanOrEqual(8000 + 10);
+    expect(inPrompt.trim().length).toBeLessThanOrEqual(13000 + 10);
   });
 
-  it('adds truncation warning when text exceeds 8000 chars', async () => {
+  it('adds truncation warning when text exceeds 13000 chars', async () => {
     const { plansAPI } = await import('../plans');
-    const longText = 'Текст '.repeat(2000);
+    const longText = 'Текст '.repeat(3000); // ~18000 chars
     await plansAPI.parseScenarioFromText(longText);
 
     const [contents] = mockGenerateAndParseJSON.mock.calls[0];
@@ -108,12 +108,14 @@ describe('plansAPI.parseScenarioFromText', () => {
     expect(schema.required).toContain('scenario');
   });
 
-  it('schema does NOT request assessmentStandards (never invented)', async () => {
+  it('schema includes assessmentStandards (extracted from text, never invented)', async () => {
     const { plansAPI } = await import('../plans');
     await plansAPI.parseScenarioFromText('Текст');
 
     const [, schema] = mockGenerateAndParseJSON.mock.calls[0];
-    expect(schema.properties).not.toHaveProperty('assessmentStandards');
+    // assessmentStandards is in schema so AI can extract existing standards from the document,
+    // but the prompt instructs to leave it empty if none are written in the text.
+    expect(schema.properties).toHaveProperty('assessmentStandards');
   });
 
   it('returns the structured plan from generateAndParseJSON', async () => {

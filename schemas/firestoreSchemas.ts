@@ -49,7 +49,7 @@ export const TeachingProfileSchema = z.object({
   aiCreditsBalance: z.number().optional(),
   isPremium: z.boolean().optional(),
   hasUnlimitedCredits: z.boolean().optional(),
-  tier: z.enum(['Free', 'Pro', 'Unlimited']).optional(),
+  tier: z.enum(['Free', 'Pro', 'School', 'Unlimited']).optional(),
   isMentor: z.boolean().optional(),
   style: z.enum(['Constructivist', 'Direct Instruction', 'Inquiry-Based', 'Project-Based']),
   experienceLevel: z.enum(['Beginner', 'Intermediate', 'Expert']),
